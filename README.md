@@ -16,15 +16,19 @@ npm install
 
 ### 2. Set Up Environment Variables
 
-The application requires environment variables to connect to Firebase. You should have a `.env` file in the root of your project with the following content, populated with your Firebase project credentials:
+The application requires environment variables for Firebase and its AI features. You should have a `.env` file in the root of your project. Add the following content, populated with your credentials:
 
 ```
+# Firebase Credentials (get from your Firebase project settings)
 NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-auth-domain
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-storage-bucket
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-messaging-sender-id
 NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
+
+# Gemini API Key for AI features (get from https://aistudio.google.com/app/apikey)
+GEMINI_API_KEY=your-gemini-api-key-here
 ```
 
 ### 3. Run the Development Servers
@@ -58,3 +62,5 @@ You're all set! You can now access the application in your browser and start bui
 **AI Features Not Working?**
 
 If you're seeing errors like "Could not connect to the AI service," make sure you have the Genkit development server running. In a separate terminal from your `npm run dev` process, you must run `npm run genkit:dev`. Both servers need to be running at the same time for the application to function correctly.
+
+If you see an error about a missing `GEMINI_API_KEY`, ensure you have set it up correctly in the `.env` file as described in the "Set Up Environment Variables" section.
