@@ -40,7 +40,7 @@ export function AdminPartCard({ part, onDelete, onUpdateStock }: AdminPartCardPr
     return (
         <TooltipProvider>
             <Card className={cn(
-            "flex flex-col justify-between h-full",
+            "flex flex-col justify-between h-full relative hover:z-10",
             part.stock === 0 && "grayscale"
             )}>
             <CardHeader className="p-4 relative">

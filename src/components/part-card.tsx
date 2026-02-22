@@ -39,7 +39,7 @@ export function PartCard({ part, onAddToBuild }: PartCardProps) {
   return (
     <TooltipProvider>
         <Card className={cn(
-        "flex flex-col justify-between h-full transform transition-transform duration-300 ease-in-out hover:-translate-y-1",
+        "flex flex-col justify-between h-full transform transition-transform duration-300 ease-in-out hover:-translate-y-1 relative hover:z-10",
         part.stock === 0 && "grayscale opacity-60"
         )}>
             <CardHeader className="p-4 relative">
