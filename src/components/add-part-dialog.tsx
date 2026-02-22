@@ -267,37 +267,37 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
                 </div>
 
                 <div className="space-y-4">
-                <FormLabel>Specifications</FormLabel>
-                <div className="flex gap-2">
-                    <Input
-                    placeholder="Key (e.g., Socket)"
-                    value={specKey}
-                    onChange={(e) => setSpecKey(e.target.value)}
-                    />
-                    <Input
-                    placeholder="Value (e.g., AM5)"
-                    value={specValue}
-                    onChange={(e) => setSpecValue(e.target.value)}
-                    />
-                    <Button type="button" size="icon" onClick={addSpecification}>
-                    <Plus />
-                    </Button>
-                </div>
-                <div className="flex flex-wrap gap-2 pt-2">
-                    {specifications.map((spec, index) => (
-                    <Badge key={index} variant="secondary" className="gap-1.5 pr-1.5">
-                        <span className="font-normal">{spec.key}:</span>
-                        <span>{spec.value}</span>
-                        <button
-                        type="button"
-                        onClick={() => removeSpecification(index)}
-                        className="rounded-full bg-background/50 hover:bg-background"
-                        >
-                        <X className="w-3 h-3" />
-                        </button>
-                    </Badge>
-                    ))}
-                </div>
+                  <FormLabel>Specifications</FormLabel>
+                  <div className="flex gap-2">
+                      <Input
+                      placeholder="Key (e.g., Socket)"
+                      value={specKey}
+                      onChange={(e) => setSpecKey(e.target.value)}
+                      />
+                      <Input
+                      placeholder="Value (e.g., AM5)"
+                      value={specValue}
+                      onChange={(e) => setSpecValue(e.target.value)}
+                      />
+                      <Button type="button" size="icon" onClick={addSpecification}>
+                      <Plus />
+                      </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-2">
+                      {specifications.map((spec, index) => (
+                      <Badge key={index} variant="secondary" className="gap-1.5 pr-1.5">
+                          <span className="font-normal">{spec.key}:</span>
+                          <span>{spec.value}</span>
+                          <button
+                          type="button"
+                          onClick={() => removeSpecification(index)}
+                          className="rounded-full bg-background/50 hover:bg-background"
+                          >
+                          <X className="w-3 h-3" />
+                          </button>
+                      </Badge>
+                      ))}
+                  </div>
                 </div>
               </div>
             </ScrollArea>
