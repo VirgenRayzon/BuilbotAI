@@ -1,5 +1,6 @@
 "use client";
 
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
@@ -38,7 +39,7 @@ export function PartCard({ part, onAddToBuild }: PartCardProps) {
   return (
     <TooltipProvider>
         <Card className={cn(
-        "flex flex-col justify-between h-full overflow-hidden transform transition-transform duration-300 ease-in-out hover:-translate-y-1",
+        "flex flex-col justify-between h-full transform transition-transform duration-300 ease-in-out hover:-translate-y-1",
         part.stock === 0 && "grayscale opacity-60"
         )}>
             <CardHeader className="p-4 relative">
@@ -49,6 +50,15 @@ export function PartCard({ part, onAddToBuild }: PartCardProps) {
                 <CardTitle className="text-lg font-headline leading-tight pr-10">{part.name}</CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0 flex-grow flex flex-col">
+                <div className="aspect-video relative w-full overflow-hidden rounded-md mb-4">
+                    <Image
+                        src={part.imageUrl}
+                        alt={part.name}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover"
+                    />
+                </div>
                 <div className="flex justify-between items-center mb-4">
                     <p className="text-2xl font-bold font-headline">{formatCurrency(part.price)}</p>
                     <Tooltip>
@@ -58,11 +68,11 @@ export function PartCard({ part, onAddToBuild }: PartCardProps) {
                         </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 p-2">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 p-2 max-w-xs">
                             {Object.entries(part.specifications).map(([key, value]) => (
                                 <React.Fragment key={key}>
                                     <div className="text-xs text-muted-foreground uppercase">{key}</div>
-                                    <div className="text-xs font-semibold text-right">{value}</div>
+                                    <div className="text-xs font-semibold text-right truncate" title={String(value)}>{String(value)}</div>
                                 </React.Fragment>
                             ))}
                             {part.wattage && (
@@ -82,9 +92,9 @@ export function PartCard({ part, onAddToBuild }: PartCardProps) {
                 <Separator />
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 flex-grow content-start">
                 {mainSpecs.map(([key, value]) => (
-                    <div key={key}>
-                    <p className="text-xs text-muted-foreground uppercase">{key}</p>
-                    <p className="font-semibold text-sm">{value}</p>
+                    <div key={key} className="min-w-0">
+                        <p className="text-xs text-muted-foreground uppercase">{key}</p>
+                        <p className="font-semibold text-sm truncate" title={String(value)}>{String(value)}</p>
                     </div>
                 ))}
                 </div>

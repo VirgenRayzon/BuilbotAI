@@ -1,6 +1,6 @@
-
 'use client';
 
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
@@ -40,7 +40,7 @@ export function AdminPartCard({ part, onDelete, onUpdateStock }: AdminPartCardPr
     return (
         <TooltipProvider>
             <Card className={cn(
-            "flex flex-col justify-between h-full overflow-hidden",
+            "flex flex-col justify-between h-full",
             part.stock === 0 && "grayscale"
             )}>
             <CardHeader className="p-4 relative">
@@ -72,6 +72,15 @@ export function AdminPartCard({ part, onDelete, onUpdateStock }: AdminPartCardPr
                 <CardTitle className="text-lg font-headline leading-tight pr-10">{part.name}</CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0 flex-grow flex flex-col">
+                 <div className="aspect-video relative w-full overflow-hidden rounded-md mb-4">
+                    <Image
+                        src={part.imageUrl}
+                        alt={part.name}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover"
+                    />
+                 </div>
                  <div className="flex justify-between items-center mb-4">
                     <p className="text-2xl font-bold font-headline">{formatCurrency(part.price)}</p>
                     <Tooltip>
@@ -81,11 +90,11 @@ export function AdminPartCard({ part, onDelete, onUpdateStock }: AdminPartCardPr
                         </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 p-2">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 p-2 max-w-xs">
                             {Object.entries(part.specifications).map(([key, value]) => (
                                 <React.Fragment key={key}>
                                     <div className="text-xs text-muted-foreground uppercase">{key}</div>
-                                    <div className="text-xs font-semibold text-right">{value}</div>
+                                    <div className="text-xs font-semibold text-right truncate" title={String(value)}>{String(value)}</div>
                                 </React.Fragment>
                             ))}
                             {part.wattage && (
@@ -102,9 +111,9 @@ export function AdminPartCard({ part, onDelete, onUpdateStock }: AdminPartCardPr
                 <div className="mt-4 space-y-4 flex-grow flex flex-col justify-end">
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 content-start">
                         {mainSpecs.map(([key, value]) => (
-                            <div key={key}>
+                            <div key={key} className="min-w-0">
                             <p className="text-xs text-muted-foreground uppercase">{key}</p>
-                            <p className="font-semibold text-sm">{value}</p>
+                            <p className="font-semibold text-sm truncate" title={String(value)}>{String(value)}</p>
                             </div>
                         ))}
                     </div>
