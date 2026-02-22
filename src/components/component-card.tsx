@@ -8,18 +8,12 @@ import {
 } from "@/components/ui/card";
 import type { ComponentData } from "@/lib/types";
 import Image from "next/image";
+import { formatCurrency } from "@/lib/utils";
 
 interface ComponentCardProps {
   name: string;
   component: ComponentData;
 }
-
-const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-PH", {
-      style: "currency",
-      currency: "PHP",
-    }).format(value);
-  };
 
 export function ComponentCard({ name, component }: ComponentCardProps) {
   const Icon = component.icon;

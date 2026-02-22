@@ -9,6 +9,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { Build, AiRecommendation } from "@/lib/types";
 import { Cpu, Server, CircuitBoard, MemoryStick, Bot, Wallet, HardDrive, Power, RectangleVertical, Wind } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/utils";
 
 const componentMetadata: { [key: string]: { icon: React.ElementType, image: any }} = {
   cpu: {
@@ -43,13 +44,6 @@ const componentMetadata: { [key: string]: { icon: React.ElementType, image: any 
     icon: Wind,
     image: PlaceHolderImages.find((img) => img.id === "cooler")!,
   },
-};
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-  }).format(value);
 };
 
 export default function AiBuildAdvisorPage() {

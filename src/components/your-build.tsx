@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import type { ComponentData } from "@/lib/types";
 import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, RectangleVertical as CaseIcon, Wind } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/utils";
 
 interface YourBuildProps {
     build: Record<string, ComponentData | null>;
@@ -19,13 +20,6 @@ const componentIcons: { [key: string]: React.ElementType } = {
     Case: CaseIcon,
     Cooler: Wind,
 };
-
-const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-PH", {
-      style: "currency",
-      currency: "PHP",
-    }).format(value);
-  };
 
 export function YourBuild({ build }: YourBuildProps) {
     const selectedParts = Object.values(build).filter(c => c !== null).length;
