@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { InventoryToolbar } from '@/components/inventory-toolbar';
 import { PrebuiltSystemCard } from '@/components/prebuilt-system-card';
 import type { PrebuiltSystem } from '@/lib/types';
