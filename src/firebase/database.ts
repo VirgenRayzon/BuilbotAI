@@ -13,12 +13,12 @@ const parts: Omit<Part, 'id'>[] = [
     price: 9800,
     stock: 25,
     imageUrl: 'https://picsum.photos/seed/ryzen55600x/800/600',
-    specifications: [
-      { key: 'Cores', value: '6' },
-      { key: 'Threads', value: '12' },
-      { key: 'Socket', value: 'AM4' },
-      { key: 'Max Boost Clock', value: '4.6GHz' },
-    ],
+    specifications: {
+      'Cores': '6',
+      'Threads': '12',
+      'Socket': 'AM4',
+      'Max Boost Clock': '4.6GHz',
+    },
   },
   {
     name: 'Intel Core i5-13600K',
@@ -27,12 +27,12 @@ const parts: Omit<Part, 'id'>[] = [
     price: 18500,
     stock: 18,
     imageUrl: 'https://picsum.photos/seed/i513600k/800/600',
-    specifications: [
-      { key: 'Cores', value: '14 (6P + 8E)' },
-      { key: 'Threads', value: '20' },
-      { key: 'Socket', value: 'LGA1700' },
-      { key: 'Max Turbo Frequency', value: '5.1GHz' },
-    ],
+    specifications: {
+      'Cores': '14 (6P + 8E)',
+      'Threads': '20',
+      'Socket': 'LGA1700',
+      'Max Turbo Frequency': '5.1GHz',
+    },
   },
   {
     name: 'AMD Ryzen 7 7800X3D',
@@ -41,12 +41,12 @@ const parts: Omit<Part, 'id'>[] = [
     price: 24500,
     stock: 12,
     imageUrl: 'https://picsum.photos/seed/ryzen77800x3d/800/600',
-    specifications: [
-      { key: 'Cores', value: '8' },
-      { key: 'Threads', value: '16' },
-      { key: 'Socket', value: 'AM5' },
-      { key: 'Max Boost Clock', value: '5.0GHz' },
-    ],
+    specifications: {
+      'Cores': '8',
+      'Threads': '16',
+      'Socket': 'AM5',
+      'Max Boost Clock': '5.0GHz',
+    },
   },
 
   // GPUs
@@ -57,11 +57,11 @@ const parts: Omit<Part, 'id'>[] = [
     price: 18000,
     stock: 20,
     imageUrl: 'https://picsum.photos/seed/rtx3060/800/600',
-    specifications: [
-      { key: 'Memory', value: '12GB GDDR6' },
-      { key: 'CUDA Cores', value: '3584' },
-      { key: 'Boost Clock', value: '1.78 GHz' },
-    ],
+    specifications: {
+      'Memory': '12GB GDDR6',
+      'CUDA Cores': '3584',
+      'Boost Clock': '1.78 GHz',
+    },
   },
   {
     name: 'AMD Radeon RX 7800 XT',
@@ -70,11 +70,11 @@ const parts: Omit<Part, 'id'>[] = [
     price: 31000,
     stock: 15,
     imageUrl: 'https://picsum.photos/seed/rx7800xt/800/600',
-    specifications: [
-      { key: 'Memory', value: '16GB GDDR6' },
-      { key: 'Stream Processors', value: '3840' },
-      { key: 'Game Clock', value: '2124 MHz' },
-    ],
+    specifications: {
+      'Memory': '16GB GDDR6',
+      'Stream Processors': '3840',
+      'Game Clock': '2124 MHz',
+    },
   },
   {
     name: 'NVIDIA GeForce RTX 4070 Super',
@@ -83,11 +83,11 @@ const parts: Omit<Part, 'id'>[] = [
     price: 40000,
     stock: 10,
     imageUrl: 'https://picsum.photos/seed/rtx4070super/800/600',
-    specifications: [
-      { key: 'Memory', value: '12GB GDDR6X' },
-      { key: 'CUDA Cores', value: '7168' },
-      { key: 'Boost Clock', value: '2.48 GHz' },
-    ],
+    specifications: {
+      'Memory': '12GB GDDR6X',
+      'CUDA Cores': '7168',
+      'Boost Clock': '2.48 GHz',
+    },
   },
 
   // Motherboards
@@ -98,12 +98,12 @@ const parts: Omit<Part, 'id'>[] = [
     price: 7500,
     stock: 22,
     imageUrl: 'https://picsum.photos/seed/b550mplus/800/600',
-    specifications: [
-      { key: 'Socket', value: 'AM4' },
-      { key: 'Form Factor', value: 'Micro-ATX' },
-      { key: 'Chipset', value: 'B550' },
-      { key: 'Memory Slots', value: '4' },
-    ],
+    specifications: {
+      'Socket': 'AM4',
+      'Form Factor': 'Micro-ATX',
+      'Chipset': 'B550',
+      'Memory Slots': '4',
+    },
   },
   {
     name: 'Gigabyte B760M AORUS ELITE AX',
@@ -112,12 +112,12 @@ const parts: Omit<Part, 'id'>[] = [
     price: 11000,
     stock: 17,
     imageUrl: 'https://picsum.photos/seed/b760maoruselite/800/600',
-    specifications: [
-      { key: 'Socket', value: 'LGA1700' },
-      { key: 'Form Factor', value: 'Micro-ATX' },
-      { key: 'Chipset', value: 'B760' },
-      { key: 'Memory Type', value: 'DDR5' },
-    ],
+    specifications: {
+      'Socket': 'LGA1700',
+      'Form Factor': 'Micro-ATX',
+      'Chipset': 'B760',
+      'Memory Type': 'DDR5',
+    },
   },
 
   // RAM
@@ -128,11 +128,11 @@ const parts: Omit<Part, 'id'>[] = [
     price: 2800,
     stock: 30,
     imageUrl: 'https://picsum.photos/seed/corsairlpx16gb/800/600',
-    specifications: [
-      { key: 'Type', value: 'DDR4' },
-      { key: 'Capacity', value: '16GB (2x8GB)' },
-      { key: 'Speed', value: '3200MHz' },
-    ],
+    specifications: {
+      'Type': 'DDR4',
+      'Capacity': '16GB (2x8GB)',
+      'Speed': '3200MHz',
+    },
   },
   {
     name: 'G.Skill Trident Z5 RGB 32GB (2x16GB) DDR5 6000MHz',
@@ -141,11 +141,11 @@ const parts: Omit<Part, 'id'>[] = [
     price: 7200,
     stock: 15,
     imageUrl: 'https://picsum.photos/seed/tridentz532gb/800/600',
-    specifications: [
-      { key: 'Type', value: 'DDR5' },
-      { key: 'Capacity', value: '32GB (2x16GB)' },
-      { key: 'Speed', value: '6000MHz' },
-    ],
+    specifications: {
+      'Type': 'DDR5',
+      'Capacity': '32GB (2x16GB)',
+      'Speed': '6000MHz',
+    },
   },
 ];
 
@@ -192,20 +192,24 @@ const prebuiltSystems: Omit<PrebuiltSystem, 'id'>[] = [
 
 // Parts
 export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
-    const partData: Omit<Part, 'id'> = {
+    const specificationsMap = part.specifications.reduce((acc, spec) => {
+        acc[spec.key] = spec.value;
+        return acc;
+    }, {} as Record<string, string>);
+    
+    const partData = {
         name: part.partName,
-        category: part.category as Part['category'],
         brand: part.brand,
         price: part.price,
         stock: part.stockCount,
         imageUrl: part.imageUrl || `https://picsum.photos/seed/${part.partName.replace(/\s+/g, '').toLowerCase()}/800/600`,
-        specifications: part.specifications
+        specifications: specificationsMap
     };
-    await addDoc(collection(firestore, 'pcParts'), partData);
+    await addDoc(collection(firestore, part.category), partData);
 }
 
-export async function deletePart(firestore: Firestore, partId: string) {
-    await deleteDoc(doc(firestore, 'pcParts', partId));
+export async function deletePart(firestore: Firestore, partId: string, category: Part['category']) {
+    await deleteDoc(doc(firestore, category, partId));
 }
 
 // Prebuilt Systems
@@ -242,10 +246,19 @@ export async function seedDatabase(firestore: Firestore) {
     const batch = writeBatch(firestore);
 
     // Seed parts
-    const partsCollection = collection(firestore, 'pcParts');
-    parts.forEach(partData => {
-        const docRef = doc(partsCollection);
-        batch.set(docRef, partData);
+    parts.forEach(part => {
+        const { category, ...partData } = part;
+        const collectionRef = collection(firestore, category);
+        const docRef = doc(collectionRef);
+        
+        const specificationsMap = Array.isArray(partData.specifications) 
+            ? partData.specifications.reduce((acc, spec: any) => {
+                acc[spec.key] = spec.value;
+                return acc;
+              }, {} as Record<string, string>)
+            : partData.specifications;
+
+        batch.set(docRef, { ...partData, specifications: specificationsMap });
     });
 
     // Seed prebuilt systems

@@ -12,6 +12,8 @@ import { useFirestore } from "@/firebase";
 import { collection } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
+type PartWithoutCategory = Omit<Part, 'category'>;
+
 const componentCategories = [
   { name: "CPU", icon: Cpu, selected: true },
   { name: "GPU", icon: Server, selected: true },
@@ -25,8 +27,40 @@ const componentCategories = [
 
 export default function BuilderPage() {
     const firestore = useFirestore();
-    const partsQuery = useMemo(() => firestore ? collection(firestore, 'pcParts') : null, [firestore]);
-    const { data: allParts, loading } = useCollection<Part>(partsQuery);
+
+    // Fetch each category collection
+    const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
+    const { data: cpus, loading: cpusLoading } = useCollection<PartWithoutCategory>(cpuQuery);
+    const gpuQuery = useMemo(() => firestore ? collection(firestore, 'GPU') : null, [firestore]);
+    const { data: gpus, loading: gpusLoading } = useCollection<PartWithoutCategory>(gpuQuery);
+    const motherboardQuery = useMemo(() => firestore ? collection(firestore, 'Motherboard') : null, [firestore]);
+    const { data: motherboards, loading: motherboardsLoading } = useCollection<PartWithoutCategory>(motherboardQuery);
+    const ramQuery = useMemo(() => firestore ? collection(firestore, 'RAM') : null, [firestore]);
+    const { data: rams, loading: ramsLoading } = useCollection<PartWithoutCategory>(ramQuery);
+    const storageQuery = useMemo(() => firestore ? collection(firestore, 'Storage') : null, [firestore]);
+    const { data: storages, loading: storagesLoading } = useCollection<PartWithoutCategory>(storageQuery);
+    const psuQuery = useMemo(() => firestore ? collection(firestore, 'PSU') : null, [firestore]);
+    const { data: psus, loading: psusLoading } = useCollection<PartWithoutCategory>(psuQuery);
+    const caseQuery = useMemo(() => firestore ? collection(firestore, 'Case') : null, [firestore]);
+    const { data: cases, loading: casesLoading } = useCollection<PartWithoutCategory>(caseQuery);
+    const coolerQuery = useMemo(() => firestore ? collection(firestore, 'Cooler') : null, [firestore]);
+    const { data: coolers, loading: coolersLoading } = useCollection<PartWithoutCategory>(coolerQuery);
+
+    // Combine all parts and add category back
+    const allParts = useMemo(() => {
+        const allParts: Part[] = [];
+        cpus?.forEach(p => allParts.push({ ...p, category: 'CPU' }));
+        gpus?.forEach(p => allParts.push({ ...p, category: 'GPU' }));
+        motherboards?.forEach(p => allParts.push({ ...p, category: 'Motherboard' }));
+        rams?.forEach(p => allParts.push({ ...p, category: 'RAM' }));
+        storages?.forEach(p => allParts.push({ ...p, category: 'Storage' }));
+        psus?.forEach(p => allParts.push({ ...p, category: 'PSU' }));
+        cases?.forEach(p => allParts.push({ ...p, category: 'Case' }));
+        coolers?.forEach(p => allParts.push({ ...p, category: 'Cooler' }));
+        return allParts;
+    }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers]);
+    
+    const loading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading;
 
     const [build, setBuild] = useState<Record<string, ComponentData | null>>({
         CPU: null,
@@ -54,7 +88,7 @@ export default function BuilderPage() {
       const componentData: ComponentData = {
         model: part.name,
         price: part.price,
-        description: part.specifications.slice(0, 2).map(s => `${s.key}: ${s.value}`).join(' | '),
+        description: Object.entries(part.specifications).slice(0, 2).map(([key, value]) => `${key}: ${value}`).join(' | '),
         image: part.imageUrl,
         imageHint: part.name.toLowerCase().split(' ').slice(0, 2).join(' '),
         icon: componentCategories.find(c => c.name === category)!.icon,

@@ -32,7 +32,7 @@ import {
 
 interface InventoryTableProps {
   parts: Part[];
-  onDelete: (partId: string) => void;
+  onDelete: (partId: string, category: Part['category']) => void;
 }
 
 export function InventoryTable({ parts, onDelete }: InventoryTableProps) {
@@ -103,7 +103,7 @@ export function InventoryTable({ parts, onDelete }: InventoryTableProps) {
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
-                      onClick={() => onDelete(part.id)}
+                      onClick={() => onDelete(part.id, part.category)}
                       className="bg-destructive hover:bg-destructive/90"
                     >
                       Delete

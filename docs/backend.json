@@ -1,40 +1,22 @@
 
 {
   "entities": {
-    "PartSpecification": {
-      "title": "Part Specification",
-      "description": "A key-value pair describing a specification of a PC part.",
-      "type": "object",
-      "properties": {
-        "key": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
-        }
-      },
-      "required": ["key", "value"]
-    },
     "Part": {
       "title": "PC Part",
       "description": "Represents a single PC component in the inventory.",
       "type": "object",
       "properties": {
         "name": { "type": "string" },
-        "category": {
-          "type": "string",
-          "enum": ["CPU", "GPU", "Motherboard", "RAM", "Storage", "PSU", "Case", "Cooler"]
-        },
         "brand": { "type": "string" },
         "price": { "type": "number" },
         "stock": { "type": "number" },
         "imageUrl": { "type": "string", "format": "uri" },
         "specifications": {
-          "type": "array",
-          "items": { "$ref": "#/entities/PartSpecification" }
+          "type": "object",
+          "description": "A map of key-value pairs for technical specs."
         }
       },
-      "required": ["name", "category", "brand", "price", "stock", "imageUrl", "specifications"]
+      "required": ["name", "brand", "price", "stock", "imageUrl", "specifications"]
     },
     "PrebuiltSystemComponents": {
         "title": "Prebuilt System Components",
@@ -75,10 +57,14 @@
     "providers": []
   },
   "firestore": {
-    "/pcParts/{partId}": {
-      "schema": { "$ref": "#/entities/Part" },
-      "description": "Collection of all PC parts available in the inventory."
-    },
+    "/CPU/{partId}": { "schema": { "$ref": "#/entities/Part" } },
+    "/GPU/{partId}": { "schema": { "$ref": "#/entities/Part" } },
+    "/Motherboard/{partId}": { "schema": { "$ref": "#/entities/Part" } },
+    "/RAM/{partId}": { "schema": { "$ref": "#/entities/Part" } },
+    "/Storage/{partId}": { "schema": { "$ref": "#/entities/Part" } },
+    "/PSU/{partId}": { "schema": { "$ref": "#/entities/Part" } },
+    "/Case/{partId}": { "schema": { "$ref": "#/entities/Part" } },
+    "/Cooler/{partId}": { "schema": { "$ref": "#/entities/Part" } },
     "/prebuiltSystems/{systemId}": {
       "schema": { "$ref": "#/entities/PrebuiltSystem" },
       "description": "Collection of all pre-built PC systems."

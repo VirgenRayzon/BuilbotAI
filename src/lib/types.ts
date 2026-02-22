@@ -24,11 +24,6 @@ export type Build = {
 
 export type AiRecommendation = AiBuildAdvisorRecommendationsOutput;
 
-export type PartSpecification = {
-  key: string;
-  value: string;
-};
-
 export type Part = {
   id: string;
   name: string;
@@ -37,7 +32,7 @@ export type Part = {
   price: number;
   stock: number;
   imageUrl: string;
-  specifications: PartSpecification[];
+  specifications: Record<string, string | number>;
 };
 
 export type PrebuiltSystem = {

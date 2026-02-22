@@ -19,7 +19,7 @@ import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { TableSkeleton } from '@/components/table-skeleton';
 
-const componentCategories = [
+const componentCategories: { name: Part['category'], selected: boolean }[] = [
   { name: "CPU", selected: true },
   { name: "GPU", selected: true },
   { name: "Motherboard", selected: true },
@@ -30,17 +30,50 @@ const componentCategories = [
   { name: "Cooler", selected: true },
 ];
 
+type PartWithoutCategory = Omit<Part, 'category'>;
+
 export default function AdminPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [isSeeding, startSeedingTransition] = useTransition();
     const [hasCheckedAndSeeded, setHasCheckedAndSeeded] = useState(false);
 
-    const partsQuery = useMemo(() => firestore ? collection(firestore, 'pcParts') : null, [firestore]);
-    const { data: parts, loading: partsLoading, error: partsError } = useCollection<Part>(partsQuery);
+    // Fetch each category collection
+    const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
+    const { data: cpus, loading: cpusLoading } = useCollection<PartWithoutCategory>(cpuQuery);
+    const gpuQuery = useMemo(() => firestore ? collection(firestore, 'GPU') : null, [firestore]);
+    const { data: gpus, loading: gpusLoading } = useCollection<PartWithoutCategory>(gpuQuery);
+    const motherboardQuery = useMemo(() => firestore ? collection(firestore, 'Motherboard') : null, [firestore]);
+    const { data: motherboards, loading: motherboardsLoading } = useCollection<PartWithoutCategory>(motherboardQuery);
+    const ramQuery = useMemo(() => firestore ? collection(firestore, 'RAM') : null, [firestore]);
+    const { data: rams, loading: ramsLoading } = useCollection<PartWithoutCategory>(ramQuery);
+    const storageQuery = useMemo(() => firestore ? collection(firestore, 'Storage') : null, [firestore]);
+    const { data: storages, loading: storagesLoading } = useCollection<PartWithoutCategory>(storageQuery);
+    const psuQuery = useMemo(() => firestore ? collection(firestore, 'PSU') : null, [firestore]);
+    const { data: psus, loading: psusLoading } = useCollection<PartWithoutCategory>(psuQuery);
+    const caseQuery = useMemo(() => firestore ? collection(firestore, 'Case') : null, [firestore]);
+    const { data: cases, loading: casesLoading } = useCollection<PartWithoutCategory>(caseQuery);
+    const coolerQuery = useMemo(() => firestore ? collection(firestore, 'Cooler') : null, [firestore]);
+    const { data: coolers, loading: coolersLoading } = useCollection<PartWithoutCategory>(coolerQuery);
 
     const prebuiltSystemsQuery = useMemo(() => firestore ? collection(firestore, 'prebuiltSystems') : null, [firestore]);
     const { data: prebuiltSystems, loading: prebuiltsLoading, error: prebuiltsError } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);
+
+    // Combine all parts and add category back
+    const parts = useMemo(() => {
+        const allParts: Part[] = [];
+        cpus?.forEach(p => allParts.push({ ...p, category: 'CPU' }));
+        gpus?.forEach(p => allParts.push({ ...p, category: 'GPU' }));
+        motherboards?.forEach(p => allParts.push({ ...p, category: 'Motherboard' }));
+        rams?.forEach(p => allParts.push({ ...p, category: 'RAM' }));
+        storages?.forEach(p => allParts.push({ ...p, category: 'Storage' }));
+        psus?.forEach(p => allParts.push({ ...p, category: 'PSU' }));
+        cases?.forEach(p => allParts.push({ ...p, category: 'Case' }));
+        coolers?.forEach(p => allParts.push({ ...p, category: 'Cooler' }));
+        return allParts;
+    }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers]);
+    
+    const partsLoading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading;
 
     const [categories, setCategories] = useState(componentCategories);
 
@@ -48,9 +81,9 @@ export default function AdminPage() {
         if (!firestore || partsLoading || prebuiltsLoading || hasCheckedAndSeeded || isSeeding) {
             return;
         }
-
+        
         // Only seed if there are no errors and the collections are confirmed to be empty
-        if (!partsError && !prebuiltsError && parts?.length === 0 && prebuiltSystems?.length === 0) {
+        if (!prebuiltsError && parts.length === 0 && prebuiltSystems?.length === 0) {
             startSeedingTransition(async () => {
                 try {
                     await seedDatabase(firestore);
@@ -70,7 +103,7 @@ export default function AdminPage() {
         }
         setHasCheckedAndSeeded(true);
 
-    }, [firestore, parts, prebuiltSystems, partsLoading, prebuiltsLoading, hasCheckedAndSeeded, isSeeding, toast, partsError, prebuiltsError]);
+    }, [firestore, parts, prebuiltSystems, partsLoading, prebuiltsLoading, hasCheckedAndSeeded, isSeeding, toast, prebuiltsError]);
 
 
     const handleCategoryChange = (categoryName: string, selected: boolean) => {
@@ -84,9 +117,9 @@ export default function AdminPage() {
         await addPart(firestore, newPartData);
     };
 
-    const handleDeletePart = async (partId: string) => {
+    const handleDeletePart = async (partId: string, category: Part['category']) => {
         if (!firestore) return;
-        await deletePart(firestore, partId);
+        await deletePart(firestore, partId, category);
     };
 
     const handleAddPrebuilt = async (newPrebuiltData: AddPrebuiltFormSchema) => {
