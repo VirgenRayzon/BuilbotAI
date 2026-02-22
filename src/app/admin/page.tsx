@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Package, PackageCheck } from "lucide-react";
 import { InventoryToolbar } from '@/components/inventory-toolbar';
 import { Card, CardContent } from '@/components/ui/card';
+import { AddPartDialog } from '@/components/add-part-dialog';
+import { AddPrebuiltDialog } from '@/components/add-prebuilt-dialog';
 
 const componentCategories = [
   { name: "CPU", selected: true },
@@ -41,14 +43,18 @@ export default function AdminPage() {
                             Manage Prebuilts
                         </TabsTrigger>
                     </TabsList>
-                    <Button>
-                        <Plus className="mr-2" />
-                        Add New Part
-                    </Button>
                 </div>
                 <TabsContent value="stock">
                     <div>
-                        <h2 className="text-2xl font-headline font-bold mb-4">INVENTORY OVERVIEW</h2>
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-2xl font-headline font-bold">INVENTORY OVERVIEW</h2>
+                            <AddPartDialog>
+                                <Button>
+                                    <Plus className="mr-2" />
+                                    Add New Part
+                                </Button>
+                            </AddPartDialog>
+                        </div>
                         <InventoryToolbar 
                             categories={categories}
                             onCategoryChange={handleCategoryChange}
@@ -63,7 +69,15 @@ export default function AdminPage() {
                 </TabsContent>
                 <TabsContent value="prebuilts">
                     <div>
-                        <h2 className="text-2xl font-headline font-bold mb-4">PREBUILTS OVERVIEW</h2>
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-2xl font-headline font-bold">PREBUILTS OVERVIEW</h2>
+                            <AddPrebuiltDialog>
+                                <Button>
+                                    <Plus className="mr-2" />
+                                    Add New Prebuilt
+                                </Button>
+                            </AddPrebuiltDialog>
+                        </div>
                         <Card className="mt-6 min-h-[300px] flex items-center justify-center">
                             <CardContent className="text-center text-muted-foreground p-6">
                                 <p>No pre-built systems configured.</p>
