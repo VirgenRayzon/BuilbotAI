@@ -10,6 +10,7 @@ import { Loader2, Shield, LogOut } from "lucide-react";
 import { useUserProfile } from "@/context/user-profile";
 import { useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
+import { ThemeToggle } from "./theme-toggle";
 
 export function Header() {
   const pathname = usePathname();
@@ -72,6 +73,7 @@ export function Header() {
                 </Button>
             )
           )}
+           <ThemeToggle />
         </div>
       </div>
     </header>

@@ -61,12 +61,13 @@ export type AddPartFormSchema = z.infer<typeof formSchema>;
 
 interface AddPartDialogProps {
   children: React.ReactNode;
-  onAddPart: (data: AddPartFormSchema) => void;
+  onAddPart: (data: AddPartFormSchema) => Promise<void>;
 }
 
 export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
   const [open, setOpen] = useState(false);
   const [isAiPending, startAiTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const [specKey, setSpecKey] = useState("");
@@ -129,14 +130,25 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
     form.setValue("specifications", specifications.filter((_, i) => i !== index));
   };
 
-  const onSubmit = (values: AddPartFormSchema) => {
-    onAddPart(values);
-    toast({
-      title: "Part Added!",
-      description: `${values.partName} has been added to the inventory.`,
-    });
-    form.reset();
-    setOpen(false);
+  const onSubmit = async (values: AddPartFormSchema) => {
+    setIsSubmitting(true);
+    try {
+        await onAddPart(values);
+        toast({
+          title: "Part Added!",
+          description: `${values.partName} has been added to the inventory.`,
+        });
+        form.reset();
+        setOpen(false);
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Error adding part",
+            description: error.message || "An unexpected error occurred.",
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   return (
@@ -303,9 +315,12 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
             </ScrollArea>
             <DialogFooter className="pt-6">
               <DialogClose asChild>
-                <Button type="button" variant="ghost">Cancel</Button>
+                <Button type="button" variant="ghost" disabled={isSubmitting}>Cancel</Button>
               </DialogClose>
-              <Button type="submit">Add Part</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Add Part
+              </Button>
             </DialogFooter>
           </form>
         </Form>

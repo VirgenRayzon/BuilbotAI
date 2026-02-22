@@ -7,6 +7,7 @@ import { Footer } from "@/components/footer";
 import "./globals.css";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { UserProfileProvider } from "@/context/user-profile";
+import { ThemeProvider } from "@/context/theme-provider";
 
 export const metadata: Metadata = {
   title: "Buildbot AI",
@@ -19,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -37,14 +38,16 @@ export default function RootLayout({
         />
       </head>
       <body className={cn("font-body antialiased", "flex flex-col min-h-screen")}>
-        <FirebaseClientProvider>
-          <UserProfileProvider>
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-            <Toaster />
-          </UserProfileProvider>
-        </FirebaseClientProvider>
+        <ThemeProvider defaultTheme="dark" storageKey="buildbot-ui-theme">
+          <FirebaseClientProvider>
+            <UserProfileProvider>
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+              <Toaster />
+            </UserProfileProvider>
+          </FirebaseClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

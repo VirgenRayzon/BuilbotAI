@@ -113,6 +113,11 @@ export default function AdminPage() {
 
     const handleAddPart = async (newPartData: AddPartFormSchema) => {
         if (!firestore) return;
+    
+        if (parts.some(part => part.name.toLowerCase() === newPartData.partName.toLowerCase())) {
+            throw new Error(`A part named "${newPartData.partName}" already exists.`);
+        }
+    
         await addPart(firestore, newPartData);
     };
 
