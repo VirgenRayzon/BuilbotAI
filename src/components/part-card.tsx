@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from 'next/image';
@@ -5,8 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import type { Part } from '@/lib/types';
-import { Plus, Info } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Plus, Info, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -19,19 +19,16 @@ import React from 'react';
 
 interface PartCardProps {
   part: Part;
-  onAddToBuild: (part: Part) => void;
+  onToggleBuild: (part: Part) => void;
+  isSelected: boolean;
 }
 
-export function PartCard({ part, onAddToBuild }: PartCardProps) {
-  const { toast } = useToast();
-
-  const handleAdd = () => {
-    if (part.stock === 0) return;
-    onAddToBuild(part);
-    toast({
-      title: 'Part Added',
-      description: `${part.name} has been added to your build.`,
-    });
+export function PartCard({ part, onToggleBuild, isSelected }: PartCardProps) {
+  
+  const handleToggle = () => {
+    // Prevent adding out of stock items, but allow removing them
+    if (part.stock === 0 && !isSelected) return;
+    onToggleBuild(part);
   }
   
   const mainSpecs = Object.entries(part.specifications).slice(0, 4);
@@ -39,24 +36,34 @@ export function PartCard({ part, onAddToBuild }: PartCardProps) {
   return (
     <TooltipProvider>
         <Card className={cn(
-        "flex flex-col justify-between h-full transform transition-transform duration-300 ease-in-out hover:-translate-y-1 relative hover:z-10",
+        "flex flex-col justify-between h-full transform transition-transform duration-300 ease-in-out hover:-translate-y-1 relative group",
         part.stock === 0 && "grayscale opacity-60"
         )}>
+           <div className={cn(
+                "absolute inset-0 bg-gradient-to-t from-black/20 to-transparent transition-opacity duration-300 opacity-0 group-hover:opacity-100",
+                 isSelected && "opacity-100"
+            )} />
             <CardHeader className="p-4 relative">
-                <Button size="icon" onClick={handleAdd} disabled={part.stock === 0} className="absolute top-4 right-4 h-8 w-8 rounded-full">
-                <Plus className="h-4 w-4" />
+                 <Button
+                    size="icon"
+                    onClick={handleToggle}
+                    disabled={part.stock === 0 && !isSelected}
+                    variant={isSelected ? 'destructive' : 'default'}
+                    className="absolute top-4 right-4 h-8 w-8 rounded-full z-20"
+                >
+                    {isSelected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                 </Button>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider">{part.brand}</p>
                 <CardTitle className="text-lg font-headline leading-tight pr-10">{part.name}</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-0 flex-grow flex flex-col">
+            <CardContent className="p-4 pt-0 flex-grow flex flex-col z-10">
                 <div className="aspect-video relative w-full overflow-hidden rounded-md mb-4">
                     <Image
                         src={part.imageUrl}
                         alt={part.name}
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        className="object-cover"
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                 </div>
                 <div className="flex justify-between items-center mb-4">
@@ -67,7 +74,7 @@ export function PartCard({ part, onAddToBuild }: PartCardProps) {
                             <Info className="h-4 w-4" />
                         </Button>
                         </TooltipTrigger>
-                        <TooltipContent>
+                        <TooltipContent side="top" align="end" className="z-50">
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1 p-2 max-w-xs">
                             {Object.entries(part.specifications).map(([key, value]) => (
                                 <React.Fragment key={key}>

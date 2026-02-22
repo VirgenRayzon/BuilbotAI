@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { YourBuild } from "@/components/your-build";
-import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, RectangleVertical as CaseIcon, Wind, Plus } from "lucide-react";
+import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, RectangleVertical as CaseIcon, Wind, Plus, X } from "lucide-react";
 import type { ComponentData, Part } from "@/lib/types";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
 import { PartCard } from "@/components/part-card";
@@ -87,20 +87,29 @@ export default function BuilderPage() {
         );
     };
 
-    const handleAddToBuild = (part: Part) => {
+    const handlePartToggle = (part: Part) => {
       const category = part.category;
-      const componentData: ComponentData = {
-        model: part.name,
-        price: part.price,
-        description: Object.entries(part.specifications).slice(0, 2).map(([key, value]) => `${key}: ${value}`).join(' | '),
-        image: part.imageUrl,
-        imageHint: part.name.toLowerCase().split(' ').slice(0, 2).join(' '),
-        icon: componentCategories.find(c => c.name === category)!.icon,
-        wattage: part.wattage,
-      };
-
-      setBuild(prevBuild => ({ ...prevBuild, [category]: componentData }));
-      toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
+      const isCurrentlySelected = build[category]?.model === part.name;
+  
+      if (isCurrentlySelected) {
+        // Part is already selected, so remove it
+        setBuild(prevBuild => ({ ...prevBuild, [category]: null }));
+        toast({ title: 'Part Removed', description: `${part.name} has been removed from your build.` });
+      } else {
+        // Part is not selected or a different one is, so add/replace it
+        const componentData: ComponentData = {
+          model: part.name,
+          price: part.price,
+          description: Object.entries(part.specifications).slice(0, 2).map(([key, value]) => `${key}: ${value}`).join(' | '),
+          image: part.imageUrl,
+          imageHint: part.name.toLowerCase().split(' ').slice(0, 2).join(' '),
+          icon: componentCategories.find(c => c.name === category)!.icon,
+          wattage: part.wattage,
+        };
+  
+        setBuild(prevBuild => ({ ...prevBuild, [category]: componentData }));
+        toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
+      }
     };
 
     const sortedAndFilteredParts = useMemo(() => {
@@ -154,7 +163,12 @@ export default function BuilderPage() {
             view === 'grid' ? (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
                   {sortedAndFilteredParts.map(part => (
-                      <PartCard key={part.id} part={part} onAddToBuild={handleAddToBuild} />
+                      <PartCard
+                        key={part.id}
+                        part={part}
+                        onToggleBuild={handlePartToggle}
+                        isSelected={build[part.category]?.model === part.name}
+                      />
                   ))}
               </div>
             ) : (
@@ -169,30 +183,38 @@ export default function BuilderPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {sortedAndFilteredParts.map(part => (
-                        <TableRow key={part.id} className={part.stock === 0 ? "opacity-50 grayscale" : ""}>
-                          <TableCell className="font-medium">
-                            <div className="flex items-center gap-3">
-                              <Image src={part.imageUrl} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
-                              <div>
-                                <p className="font-semibold">{part.name}</p>
-                                <p className="text-xs text-muted-foreground">{part.brand}</p>
+                      {sortedAndFilteredParts.map(part => {
+                        const isSelected = build[part.category]?.model === part.name;
+                        return (
+                          <TableRow key={part.id} className={part.stock === 0 ? "opacity-50 grayscale" : ""}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-3">
+                                <Image src={part.imageUrl} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
+                                <div>
+                                  <p className="font-semibold">{part.name}</p>
+                                  <p className="text-xs text-muted-foreground">{part.brand}</p>
+                                </div>
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                             <Badge variant={part.stock > 5 ? "secondary" : part.stock > 0 ? "destructive" : "outline"}>
-                                {part.stock > 0 ? `${part.stock} in stock` : "Out of stock"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">{formatCurrency(part.price)}</TableCell>
-                          <TableCell>
-                            <Button size="icon" onClick={() => handleAddToBuild(part)} disabled={part.stock === 0}>
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={part.stock > 5 ? "secondary" : part.stock > 0 ? "destructive" : "outline"}>
+                                  {part.stock > 0 ? `${part.stock} in stock` : "Out of stock"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">{formatCurrency(part.price)}</TableCell>
+                            <TableCell>
+                              <Button
+                                size="icon"
+                                onClick={() => handlePartToggle(part)}
+                                disabled={part.stock === 0 && !isSelected}
+                                variant={isSelected ? 'destructive' : 'default'}
+                              >
+                                {isSelected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </Card>
