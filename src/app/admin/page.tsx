@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useTransition, useMemo } from 'react';
+import React, { useState, useTransition, useMemo, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Package, PackageCheck, ServerCrash } from "lucide-react";
@@ -34,6 +34,7 @@ export default function AdminPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [isSeeding, startSeedingTransition] = useTransition();
+    const [hasCheckedAndSeeded, setHasCheckedAndSeeded] = useState(false);
 
     const partsQuery = useMemo(() => firestore ? collection(firestore, 'parts') : null, [firestore]);
     const { data: parts, loading: partsLoading } = useCollection<Part>(partsQuery);
@@ -43,6 +44,24 @@ export default function AdminPage() {
 
     const [categories, setCategories] = useState(componentCategories);
 
+    useEffect(() => {
+        if (!firestore || partsLoading || prebuiltsLoading || hasCheckedAndSeeded || isSeeding) {
+            return;
+        }
+
+        if (parts?.length === 0 && prebuiltSystems?.length === 0) {
+            startSeedingTransition(async () => {
+                await seedDatabase(firestore);
+                toast({
+                    title: "Database Seeded!",
+                    description: "Your database was empty, so initial parts and prebuilt systems have been added.",
+                });
+            });
+        }
+        setHasCheckedAndSeeded(true);
+
+    }, [firestore, parts, prebuiltSystems, partsLoading, prebuiltsLoading, hasCheckedAndSeeded, isSeeding, toast]);
+
     const handleCategoryChange = (categoryName: string, selected: boolean) => {
         setCategories(prev =>
             prev.map(cat => (cat.name === categoryName ? { ...cat, selected } : cat))
@@ -51,16 +70,7 @@ export default function AdminPage() {
 
     const handleAddPart = async (newPartData: AddPartFormSchema) => {
         if (!firestore) return;
-        const partToAdd = {
-            name: newPartData.partName,
-            category: newPartData.category as Part['category'],
-            brand: newPartData.brand,
-            price: newPartData.price,
-            stock: newPartData.stockCount,
-            imageUrl: newPartData.imageUrl || `https://picsum.photos/seed/${newPartData.partName.replace(/\s+/g, '').toLowerCase()}/800/600`,
-            specifications: newPartData.specifications
-        };
-        await addPart(firestore, partToAdd);
+        await addPart(firestore, newPartData);
     };
 
     const handleDeletePart = async (partId: string) => {
@@ -70,45 +80,18 @@ export default function AdminPage() {
 
     const handleAddPrebuilt = async (newPrebuiltData: AddPrebuiltFormSchema) => {
         if (!firestore) return;
-        const { name, tier, description, price, imageUrl, ...components } = newPrebuiltData;
-        const prebuiltToAdd = {
-            name,
-            tier: tier as PrebuiltSystem['tier'],
-            description,
-            price,
-            imageUrl: imageUrl || `https://picsum.photos/seed/${name.replace(/\s+/g, '').toLowerCase()}/800/600`,
-            components: {
-                cpu: components.cpu,
-                gpu: components.gpu,
-                motherboard: components.motherboard,
-                ram: components.ram,
-                storage: components.storage,
-                psu: components.psu,
-                case: components.case,
-                cooler: components.cooler
-            }
-        };
-        await addPrebuiltSystem(firestore, prebuiltToAdd);
+        await addPrebuiltSystem(firestore, newPrebuiltData);
     };
 
     const handleDeletePrebuilt = async (systemId: string) => {
         if (!firestore) return;
         await deletePrebuiltSystem(firestore, systemId);
     };
-
-    const handleSeedDatabase = () => {
-        if (!firestore) return;
-        startSeedingTransition(async () => {
-            await seedDatabase(firestore);
-            toast({
-                title: "Database Seeded!",
-                description: "Initial parts and prebuilt systems have been added.",
-            });
-        });
-    }
     
     const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
     const filteredParts = parts?.filter(part => selectedCategories.includes(part.category)) ?? [];
+
+    const dataIsLoading = partsLoading || prebuiltsLoading || isSeeding;
 
     return (
         <div className="container mx-auto p-4 md:p-8">
@@ -124,9 +107,6 @@ export default function AdminPage() {
                             Manage Prebuilts
                         </TabsTrigger>
                     </TabsList>
-                    <Button onClick={handleSeedDatabase} disabled={isSeeding}>
-                        {isSeeding ? "Seeding..." : "Seed Initial Data"}
-                    </Button>
                 </div>
                 <TabsContent value="stock">
                     <div>
@@ -145,7 +125,7 @@ export default function AdminPage() {
                             itemCount={filteredParts.length}
                         />
                         <Card className="mt-6">
-                            {partsLoading ? <TableSkeleton columns={6} /> : (
+                            {dataIsLoading ? <TableSkeleton columns={6} /> : (
                                 (parts?.length ?? 0) > 0 ? (
                                     filteredParts.length > 0 ? (
                                         <InventoryTable parts={filteredParts} onDelete={handleDeletePart} />
@@ -160,7 +140,7 @@ export default function AdminPage() {
                                             <ServerCrash className="mx-auto h-12 w-12 text-muted-foreground" />
                                             <h3 className="mt-4 text-lg font-medium">No items in inventory.</h3>
                                             <p className="mt-1 text-sm text-muted-foreground">
-                                                You can seed initial data or add parts manually.
+                                                Your inventory is currently empty.
                                             </p>
                                         </div>
                                     </CardContent>
@@ -181,7 +161,7 @@ export default function AdminPage() {
                             </AddPrebuiltDialog>
                         </div>
                         <Card className="mt-6">
-                            {prebuiltsLoading ? <TableSkeleton columns={4} /> : (
+                            {dataIsLoading ? <TableSkeleton columns={4} /> : (
                                 (prebuiltSystems?.length ?? 0) > 0 ? (
                                     <PrebuiltsTable systems={prebuiltSystems!} onDelete={handleDeletePrebuilt} />
                                 ) : (
@@ -190,7 +170,7 @@ export default function AdminPage() {
                                             <ServerCrash className="mx-auto h-12 w-12 text-muted-foreground" />
                                             <h3 className="mt-4 text-lg font-medium">No pre-built systems configured.</h3>
                                             <p className="mt-1 text-sm text-muted-foreground">
-                                                You can seed initial data or add systems manually.
+                                                Your pre-built systems inventory is currently empty.
                                             </p>
                                         </div>
                                     </CardContent>
