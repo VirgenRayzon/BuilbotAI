@@ -6,7 +6,7 @@ import {
   FirestoreError,
   QuerySnapshot,
 } from 'firebase/firestore';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 
 export interface UseCollectionOptions {
   // Define any options here if needed in the future
@@ -19,9 +19,6 @@ export function useCollection<T>(
   const [data, setData] = useState<T[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<FirestoreError | null>(null);
-
-  const queryRef = useRef(query);
-  queryRef.current = query;
 
   useEffect(() => {
     if (!query) {
@@ -52,7 +49,7 @@ export function useCollection<T>(
     );
 
     return () => unsubscribe();
-  }, [query?.path, query?._query.filters, query?._query.orderBy]); // Refetch on query change
+  }, [query]); // Refetch on query change
 
   return { data, loading, error };
 }

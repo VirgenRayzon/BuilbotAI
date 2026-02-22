@@ -49,7 +49,7 @@ export function useDoc<T>(
     );
 
     return () => unsubscribe();
-  }, [docRef?.path]); // Refetch on docRef path change
+  }, [docRef]); // Refetch on docRef path change
 
   return { data, loading, error };
 }

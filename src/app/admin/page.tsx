@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Package, PackageCheck, ServerCrash } from "lucide-react";
@@ -53,12 +53,11 @@ export default function AdminPage() {
     const { toast } = useToast();
     const [isSeeding, startSeedingTransition] = useTransition();
 
-    const { data: parts, loading: partsLoading } = useCollection<Part>(
-        firestore ? collection(firestore, 'parts') : null
-    );
-    const { data: prebuiltSystems, loading: prebuiltsLoading } = useCollection<PrebuiltSystem>(
-        firestore ? collection(firestore, 'prebuiltSystems') : null
-    );
+    const partsQuery = useMemo(() => firestore ? collection(firestore, 'parts') : null, [firestore]);
+    const { data: parts, loading: partsLoading } = useCollection<Part>(partsQuery);
+
+    const prebuiltSystemsQuery = useMemo(() => firestore ? collection(firestore, 'prebuiltSystems') : null, [firestore]);
+    const { data: prebuiltSystems, loading: prebuiltsLoading } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);
 
     const [categories, setCategories] = useState(componentCategories);
 

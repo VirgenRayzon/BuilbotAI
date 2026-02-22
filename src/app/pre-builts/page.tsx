@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { InventoryToolbar } from '@/components/inventory-toolbar';
 import { PrebuiltSystemCard } from '@/components/prebuilt-system-card';
@@ -20,9 +20,8 @@ const prebuiltCategories = [
 
 export default function PreBuiltsPage() {
     const firestore = useFirestore();
-    const { data: prebuiltSystems, loading } = useCollection<PrebuiltSystem>(
-        firestore ? collection(firestore, 'prebuiltSystems') : null
-    );
+    const prebuiltSystemsQuery = useMemo(() => firestore ? collection(firestore, 'prebuiltSystems') : null, [firestore]);
+    const { data: prebuiltSystems, loading } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);
 
     const [categories, setCategories] = useState(prebuiltCategories);
 

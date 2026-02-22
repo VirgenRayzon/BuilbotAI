@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { YourBuild } from "@/components/your-build";
 import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, RectangleVertical as CaseIcon, Wind } from "lucide-react";
@@ -25,9 +25,8 @@ const componentCategories = [
 
 export default function BuilderPage() {
     const firestore = useFirestore();
-    const { data: allParts, loading } = useCollection<Part>(
-        firestore ? collection(firestore, 'parts') : null
-    );
+    const partsQuery = useMemo(() => firestore ? collection(firestore, 'parts') : null, [firestore]);
+    const { data: allParts, loading } = useCollection<Part>(partsQuery);
 
     const [build, setBuild] = useState<Record<string, ComponentData | null>>({
         CPU: null,
