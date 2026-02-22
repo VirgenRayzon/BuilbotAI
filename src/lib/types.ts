@@ -23,3 +23,38 @@ export type Build = {
 };
 
 export type AiRecommendation = AiBuildAdvisorRecommendationsOutput;
+
+export type PartSpecification = {
+  key: string;
+  value: string;
+};
+
+export type Part = {
+  id: string;
+  name: string;
+  category: 'CPU' | 'GPU' | 'Motherboard' | 'RAM' | 'Storage' | 'PSU' | 'Case' | 'Cooler';
+  brand: string;
+  price: number;
+  stock: number;
+  imageUrl: string;
+  specifications: PartSpecification[];
+};
+
+export type PrebuiltSystem = {
+  id: string;
+  name: string;
+  tier: 'Entry' | 'Mid-Range' | 'High-End' | 'Workstation';
+  description?: string;
+  price: number;
+  imageUrl: string;
+  components: {
+    cpu?: string;
+    gpu?: string;
+    motherboard?: string;
+    ram?: string;
+    storage?: string;
+    psu?: string;
+    case?: string;
+    cooler?: string;
+  };
+};
