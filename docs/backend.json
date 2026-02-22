@@ -11,6 +11,7 @@
         "price": { "type": "number" },
         "stock": { "type": "number" },
         "imageUrl": { "type": "string", "format": "uri" },
+        "wattage": { "type": "number", "description": "Estimated power consumption in watts." },
         "specifications": {
           "type": "object",
           "description": "A map of key-value pairs for technical specs."

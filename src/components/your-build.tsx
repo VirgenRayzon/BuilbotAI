@@ -1,10 +1,12 @@
+
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { ComponentData } from "@/lib/types";
-import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, RectangleVertical as CaseIcon, Wind } from "lucide-react";
+import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, RectangleVertical as CaseIcon, Wind, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
+import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 
 interface YourBuildProps {
     build: Record<string, ComponentData | null>;
@@ -25,12 +27,20 @@ export function YourBuild({ build }: YourBuildProps) {
     const selectedParts = Object.values(build).filter(c => c !== null).length;
     const totalParts = Object.keys(build).length;
 
+    const totalWattage = Object.entries(build).reduce((acc, [name, component]) => {
+        if (name === 'PSU' || !component?.wattage) {
+            return acc;
+        }
+        return acc + component.wattage;
+    }, 0);
+
+    const psu = build['PSU'];
+    const psuWattage = psu?.wattage || 0;
+    const showPsuWarning = psuWattage > 0 && psuWattage < totalWattage;
+
     const totalPrice = Object.values(build).reduce((acc, component) => {
         return acc + (component?.price || 0);
     }, 0);
-
-    // Dummy wattage for now
-    const estimatedWattage = "50W"; 
 
     return (
         <Card className="sticky top-20">
@@ -46,10 +56,15 @@ export function YourBuild({ build }: YourBuildProps) {
                             <div className="p-2 bg-muted rounded-md">
                                 <Icon className="w-6 h-6 text-muted-foreground" />
                             </div>
-                            <div>
+                            <div className="flex-1">
                                 <p className="font-semibold text-sm">{name}</p>
                                 <p className="text-xs text-muted-foreground">{component?.model ?? "Not selected"}</p>
                             </div>
+                            {component?.wattage && (
+                                <p className="text-xs font-semibold text-muted-foreground">
+                                    {name === 'PSU' ? `${component.wattage}W` : `~${component.wattage}W`}
+                                </p>
+                            )}
                         </div>
                     )
                 })}
@@ -58,7 +73,7 @@ export function YourBuild({ build }: YourBuildProps) {
 
                 <div className="flex justify-between items-center text-sm">
                     <p className="text-muted-foreground">EST. WATTAGE</p>
-                    <p className="font-semibold">{estimatedWattage}</p>
+                    <p className="font-semibold">{totalWattage}W</p>
                 </div>
                 
                 <Separator />
@@ -69,7 +84,16 @@ export function YourBuild({ build }: YourBuildProps) {
                 </div>
 
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex-col items-stretch gap-4">
+                {showPsuWarning && (
+                    <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Power Supply Warning</AlertTitle>
+                        <AlertDescription>
+                            Your PSU ({psuWattage}W) may be insufficient for the estimated {totalWattage}W load.
+                        </AlertDescription>
+                    </Alert>
+                )}
                 <Button className="w-full" size="lg" disabled={selectedParts === 0}>Checkout Build</Button>
             </CardFooter>
         </Card>

@@ -8,6 +8,7 @@ export type ComponentData = {
   image: string;
   imageHint: string;
   icon: React.ComponentType<{ className?: string }>;
+  wattage?: number;
 };
 
 export type Build = {
@@ -34,6 +35,7 @@ export type Part = {
   stock: number;
   imageUrl: string;
   specifications: Record<string, string | number>;
+  wattage?: number;
 };
 
 export type PrebuiltSystem = {

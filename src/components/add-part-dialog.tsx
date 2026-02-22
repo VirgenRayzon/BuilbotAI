@@ -53,6 +53,7 @@ const formSchema = z.object({
   price: z.coerce.number().min(0, "Price must be a positive number."),
   stockCount: z.coerce.number().int().min(0, "Stock must be a positive integer."),
   imageUrl: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
+  wattage: z.coerce.number().min(0, "Wattage must be a positive number.").optional(),
   specifications: z.array(specificationSchema),
 });
 
@@ -80,6 +81,7 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
       price: 0,
       stockCount: 0,
       imageUrl: "",
+      wattage: undefined,
       specifications: [],
     },
   });
@@ -99,6 +101,7 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
         form.setValue("category", result.category, { shouldValidate: true });
         form.setValue("brand", result.brand, { shouldValidate: true });
         form.setValue("price", result.price, { shouldValidate: true });
+        form.setValue("wattage", result.wattage, { shouldValidate: true });
         form.setValue("specifications", result.specifications, { shouldValidate: true });
         if (!form.getValues('imageUrl')) {
             const seed = result.partName.replace(/\s+/g, '').toLowerCase();
@@ -145,8 +148,8 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <ScrollArea className="max-h-[70vh] pr-4">
-              <div className="space-y-6 px-6">
+            <ScrollArea className="max-h-[70vh] -mx-6 px-6">
+              <div className="space-y-6 py-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
                     <div className="md:col-span-2">
                         <FormField
@@ -222,6 +225,25 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
                             <FormLabel>Stock Count</FormLabel>
                             <FormControl>
                             <Input type="number" placeholder="e.g., 10" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="wattage"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Wattage (W)</FormLabel>
+                            <FormControl>
+                            <Input
+                                type="number"
+                                placeholder="e.g., 170"
+                                {...field}
+                                value={field.value ?? ''}
+                                onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                             />
                             </FormControl>
                             <FormMessage />
                         </FormItem>

@@ -96,6 +96,7 @@ export default function BuilderPage() {
         image: part.imageUrl,
         imageHint: part.name.toLowerCase().split(' ').slice(0, 2).join(' '),
         icon: componentCategories.find(c => c.name === category)!.icon,
+        wattage: part.wattage,
       };
 
       setBuild(prevBuild => ({ ...prevBuild, [category]: componentData }));
