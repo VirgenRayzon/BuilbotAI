@@ -15,6 +15,11 @@ export type Build = {
   gpu: ComponentData;
   motherboard: ComponentData;
   ram: ComponentData;
+  storage: ComponentData;
+  psu: ComponentData;
+  case: ComponentData;
+  cooler: ComponentData;
+  estimatedWattage: string;
 };
 
 export type AiRecommendation = AiBuildAdvisorRecommendationsOutput;

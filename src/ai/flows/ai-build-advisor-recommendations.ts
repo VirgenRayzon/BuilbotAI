@@ -60,6 +60,23 @@ const AiBuildAdvisorRecommendationsOutputSchema = z.object({
     model: z.string().describe('The recommended RAM model and specifications (e.g., "Corsair Vengeance RGB DDR5 32GB (2x16GB) 6000MHz").'),
     description: z.string().describe('A brief explanation for the RAM recommendation, including type and speed considerations.'),
   }),
+  storage: z.object({
+    model: z.string().describe('The recommended Storage (SSD/HDD) model name.'),
+    description: z.string().describe('A brief explanation for the Storage recommendation.'),
+  }),
+  psu: z.object({
+    model: z.string().describe('The recommended Power Supply Unit (PSU) model name.'),
+    description: z.string().describe('A brief explanation for the PSU recommendation.'),
+  }),
+  case: z.object({
+    model: z.string().describe('The recommended PC Case model name.'),
+    description: z.string().describe('A brief explanation for the Case recommendation.'),
+  }),
+  cooler: z.object({
+    model: z.string().describe('The recommended CPU Cooler model name.'),
+    description: z.string().describe('A brief explanation for the Cooler recommendation.'),
+  }),
+  estimatedWattage: z.string().describe('The estimated total wattage for the build, in the format "550W".'),
 });
 export type AiBuildAdvisorRecommendationsOutput = z.infer<
   typeof AiBuildAdvisorRecommendationsOutputSchema
@@ -77,7 +94,7 @@ const aiBuildAdvisorRecommendationsPrompt = ai.definePrompt({
   name: 'aiBuildAdvisorRecommendationsPrompt',
   input: { schema: AiBuildAdvisorRecommendationsInputSchema },
   output: { schema: AiBuildAdvisorRecommendationsOutputSchema },
-  prompt: `You are an expert PC building advisor. Your goal is to recommend a set of compatible core components (CPU, GPU, Motherboard, RAM) for a user based on their specific needs. Ensure all recommended components are compatible with each other.\n\nProvide a brief summary of the overall build strategy, and then detail the recommendations for each component, including the model name and a concise reason for its selection.\n\nUser's PC building goals:\nIntended Use: {{{intendedUse}}}\nBudget: {{{budget}}}\nDesired Performance Level: {{{performanceLevel}}}\n{{#if additionalNotes}}\nAdditional Notes: {{{additionalNotes}}}\n{{/if}}\n\nPlease format your response as a JSON object strictly following the output schema provided.`,
+  prompt: `You are an expert PC building advisor. Your goal is to recommend a set of compatible core components (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, Cooler) for a user based on their specific needs. Ensure all recommended components are compatible with each other.\n\nProvide a brief summary of the overall build strategy, and then detail the recommendations for each component, including the model name and a concise reason for its selection. Also provide an estimated total wattage for the build.\n\nUser's PC building goals:\nIntended Use: {{{intendedUse}}}\nBudget: {{{budget}}}\nDesired Performance Level: {{{performanceLevel}}}\n{{#if additionalNotes}}\nAdditional Notes: {{{additionalNotes}}}\n{{/if}}\n\nPlease format your response as a JSON object strictly following the output schema provided.`,
 });
 
 // Genkit Flow Definition

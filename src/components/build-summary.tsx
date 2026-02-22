@@ -4,7 +4,7 @@ import type { Build } from "@/lib/types";
 import { ComponentCard } from "./component-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Bot, Info } from "lucide-react";
+import { Bot, Info, Zap } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Skeleton } from "./ui/skeleton";
 
@@ -18,11 +18,10 @@ export function BuildSummary({ build, isPending }: BuildSummaryProps) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-24 w-full rounded-lg" />
-        <div className="grid md:grid-cols-2 gap-6">
-          <Skeleton className="h-72 w-full rounded-lg" />
-          <Skeleton className="h-72 w-full rounded-lg" />
-          <Skeleton className="h-72 w-full rounded-lg" />
-          <Skeleton className="h-72 w-full rounded-lg" />
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <Skeleton key={i} className="h-72 w-full rounded-lg" />
+          ))}
         </div>
       </div>
     );
@@ -48,6 +47,10 @@ export function BuildSummary({ build, isPending }: BuildSummaryProps) {
     { name: "Graphics Card", data: build.gpu },
     { name: "Motherboard", data: build.motherboard },
     { name: "RAM", data: build.ram },
+    { name: "Storage", data: build.storage },
+    { name: "Power Supply", data: build.psu },
+    { name: "Case", data: build.case },
+    { name: "Cooler", data: build.cooler },
   ];
 
   return (
@@ -65,7 +68,19 @@ export function BuildSummary({ build, isPending }: BuildSummaryProps) {
           <AlertDescription>{build.summary}</AlertDescription>
         </Alert>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-headline">
+              <Zap className="w-5 h-5 text-primary" />
+              Estimated Wattage
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{build.estimatedWattage}</p>
+          </CardContent>
+        </Card>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {components.map((component, index) => (
             <motion.div
               key={component.name}

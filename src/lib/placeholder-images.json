@@ -23,6 +23,30 @@
       "description": "A stick of RAM.",
       "imageUrl": "https://images.unsplash.com/photo-1676554565685-3aeb5d7ad1b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cmFtJTIwbWVtb3J5JTIwc3RpY2t8ZW58MHx8fHwxNzcxNzQ2NjU3fDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "ram memory stick"
+    },
+    {
+      "id": "storage",
+      "description": "A fast SSD.",
+      "imageUrl": "https://images.unsplash.com/photo-1721333090141-fc6946f28eaa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzc2QlMjBzdG9yYWdlfGVufDB8fHx8MTc3MTc0NzI4NXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "ssd storage"
+    },
+    {
+      "id": "psu",
+      "description": "A reliable power supply unit.",
+      "imageUrl": "https://images.unsplash.com/photo-1672689944912-9a123a34a1cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cG93ZXIlMjBzdXBwbHl8ZW58MHx8fHwxNzcxNzQ3Mjg1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "power supply"
+    },
+    {
+      "id": "case",
+      "description": "A stylish PC case.",
+      "imageUrl": "https://images.unsplash.com/photo-1618339220157-daa2cd9ade56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxjb21wdXRlciUyMGNhc2V8ZW58MHx8fHwxNzcxNzQ3Mjg1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "computer case"
+    },
+    {
+      "id": "cooler",
+      "description": "An efficient CPU cooler.",
+      "imageUrl": "https://images.unsplash.com/photo-1705614232873-190b1770c6be?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxjcHUlMjBjb29sZXJ8ZW58MHx8fHwxNzcxNzQ3Mjg1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cpu cooler"
     }
   ]
 }
