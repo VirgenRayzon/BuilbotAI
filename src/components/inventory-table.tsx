@@ -1,3 +1,4 @@
+
 import {
   Table,
   TableBody,
@@ -7,17 +8,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
-import { MoreHorizontal, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import type { Part } from "@/lib/types";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,13 +23,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { StockEditor } from "./stock-editor";
 
 interface InventoryTableProps {
   parts: Part[];
   onDelete: (partId: string, category: Part['category']) => void;
+  onUpdateStock: (partId: string, category: Part['category'], newStock: number) => void;
 }
 
-export function InventoryTable({ parts, onDelete }: InventoryTableProps) {
+export function InventoryTable({ parts, onDelete, onUpdateStock }: InventoryTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -65,34 +61,22 @@ export function InventoryTable({ parts, onDelete }: InventoryTableProps) {
             </TableCell>
             <TableCell>{part.category}</TableCell>
             <TableCell>{part.brand}</TableCell>
-            <TableCell className="text-center">
-              <Badge variant={part.stock > 5 ? "secondary" : "destructive"}>
-                {part.stock}
-              </Badge>
+            <TableCell className="w-[150px]">
+              <StockEditor 
+                stock={part.stock}
+                onStockChange={(newStock) => onUpdateStock(part.id, part.category, newStock)}
+              />
             </TableCell>
             <TableCell className="text-right">
               {formatCurrency(part.price)}
             </TableCell>
             <TableCell>
               <AlertDialog>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem
-                        onSelect={(e) => e.preventDefault()}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </AlertDialogTrigger>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>

@@ -1,5 +1,5 @@
 
-import { addDoc, collection, deleteDoc, doc, Firestore, setDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, Firestore, setDoc, updateDoc } from "firebase/firestore";
 import type { AddPartFormSchema } from "@/components/add-part-dialog";
 import type { AddPrebuiltFormSchema } from "@/components/add-prebuilt-dialog";
 import type { Part, PrebuiltSystem, UserProfile } from "@/lib/types";
@@ -20,6 +20,10 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
         specifications: specificationsMap
     };
     await addDoc(collection(firestore, part.category), partData);
+}
+
+export async function updatePart(firestore: Firestore, category: Part['category'], partId: string, data: Partial<Omit<Part, 'id' | 'category'>>) {
+    await updateDoc(doc(firestore, category, partId), data);
 }
 
 export async function deletePart(firestore: Firestore, partId: string, category: Part['category']) {

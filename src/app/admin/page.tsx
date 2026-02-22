@@ -14,11 +14,13 @@ import type { Part, PrebuiltSystem } from '@/lib/types';
 import { InventoryTable } from '@/components/inventory-table';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { addPart, deletePart, addPrebuiltSystem, deletePrebuiltSystem } from '@/firebase/database';
+import { addPart, deletePart, addPrebuiltSystem, deletePrebuiltSystem, updatePart } from '@/firebase/database';
 import { collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { TableSkeleton } from '@/components/table-skeleton';
 import { useUserProfile } from '@/context/user-profile';
+import { AdminPartCard } from '@/components/admin-part-card';
+import { PrebuiltSystemCard } from '@/components/prebuilt-system-card';
 
 const componentCategories: { name: Part['category'], selected: boolean }[] = [
   { name: "CPU", selected: true },
@@ -56,11 +58,14 @@ export default function AdminPage() {
     const [partCategories, setPartCategories] = useState(componentCategories);
     const [partSortBy, setPartSortBy] = useState('Name');
     const [partSortDirection, setPartSortDirection] = useState<'asc' | 'desc'>('asc');
+    const [partView, setPartView] = useState<'grid' | 'list'>('list');
 
     // Prebuilts state
     const [prebuiltCategories, setPrebuiltCategories] = useState(prebuiltTiers);
     const [prebuiltSortBy, setPrebuiltSortBy] = useState('Name');
     const [prebuiltSortDirection, setPrebuiltSortDirection] = useState<'asc' | 'desc'>('asc');
+    const [prebuiltView, setPrebuiltView] = useState<'grid' | 'list'>('list');
+
 
     // Fetch each category collection
     const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
@@ -109,6 +114,11 @@ export default function AdminPage() {
     const handleAddPart = async (newPartData: AddPartFormSchema) => {
         if (!firestore) return;
         await addPart(firestore, newPartData);
+    };
+
+    const handleUpdatePartStock = async (partId: string, category: Part['category'], newStock: number) => {
+        if (!firestore) return;
+        await updatePart(firestore, category, partId, { stock: newStock });
     };
 
     const handleDeletePart = async (partId: string, category: Part['category']) => {
@@ -194,18 +204,33 @@ export default function AdminPage() {
                             sortDirection={partSortDirection}
                             onSortDirectionChange={setPartSortDirection}
                             supportedSorts={['Name', 'Price', 'Brand', 'Stock']}
+                            showViewToggle={true}
+                            view={partView}
+                            onViewChange={(v) => v && setPartView(v as 'grid' | 'list')}
                         />
-                        <Card className="mt-6">
-                            {partsLoading ? <TableSkeleton columns={6} /> : (
-                                (parts?.length ?? 0) > 0 ? (
-                                    filteredAndSortedParts.length > 0 ? (
-                                        <InventoryTable parts={filteredAndSortedParts} onDelete={handleDeletePart} />
+                        {partsLoading ? <TableSkeleton columns={6} /> : (
+                            (parts?.length ?? 0) > 0 ? (
+                                filteredAndSortedParts.length > 0 ? (
+                                    partView === 'list' ? (
+                                        <Card className="mt-6">
+                                            <InventoryTable parts={filteredAndSortedParts} onDelete={handleDeletePart} onUpdateStock={handleUpdatePartStock} />
+                                        </Card>
                                     ) : (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
+                                            {filteredAndSortedParts.map(part => (
+                                                <AdminPartCard key={part.id} part={part} onDelete={handleDeletePart} onUpdateStock={handleUpdatePartStock} />
+                                            ))}
+                                        </div>
+                                    )
+                                ) : (
+                                    <Card className="mt-6">
                                         <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
                                             <p>No items match the selected categories.</p>
                                         </CardContent>
-                                    )
-                                ) : (
+                                    </Card>
+                                )
+                            ) : (
+                                <Card className="mt-6">
                                     <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
                                         <div className='text-center'>
                                             <ServerCrash className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -215,9 +240,9 @@ export default function AdminPage() {
                                             </p>
                                         </div>
                                     </CardContent>
-                                )
-                            )}
-                        </Card>
+                                </Card>
+                            )
+                        )}
                     </div>
                 </TabsContent>
                 <TabsContent value="prebuilts">
@@ -240,18 +265,34 @@ export default function AdminPage() {
                             sortDirection={prebuiltSortDirection}
                             onSortDirectionChange={setPrebuiltSortDirection}
                             supportedSorts={['Name', 'Price', 'Tier']}
+                            showViewToggle={true}
+                            view={prebuiltView}
+                            onViewChange={(v) => v && setPrebuiltView(v as 'grid' | 'list')}
                         />
-                        <Card className="mt-6">
-                            {prebuiltsLoading ? <TableSkeleton columns={4} /> : (
-                                (prebuiltSystems?.length ?? 0) > 0 ? (
-                                     filteredAndSortedPrebuilts.length > 0 ? (
-                                        <PrebuiltsTable systems={filteredAndSortedPrebuilts} onDelete={handleDeletePrebuilt} />
+                        
+                        {prebuiltsLoading ? <TableSkeleton columns={4} /> : (
+                            (prebuiltSystems?.length ?? 0) > 0 ? (
+                                 filteredAndSortedPrebuilts.length > 0 ? (
+                                    prebuiltView === 'list' ? (
+                                        <Card className="mt-6">
+                                            <PrebuiltsTable systems={filteredAndSortedPrebuilts} onDelete={handleDeletePrebuilt} />
+                                        </Card>
                                     ) : (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                                            {filteredAndSortedPrebuilts.map(system => (
+                                                <PrebuiltSystemCard key={system.id} system={system} />
+                                            ))}
+                                        </div>
+                                    )
+                                ) : (
+                                    <Card className="mt-6">
                                         <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
                                             <p>No systems match the selected categories.</p>
                                         </CardContent>
-                                    )
-                                ) : (
+                                    </Card>
+                                )
+                            ) : (
+                                <Card className="mt-6">
                                      <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
                                         <div className='text-center'>
                                             <ServerCrash className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -261,9 +302,9 @@ export default function AdminPage() {
                                             </p>
                                         </div>
                                     </CardContent>
-                                )
-                            )}
-                        </Card>
+                                </Card>
+                            )
+                        )}
                     </div>
                 </TabsContent>
             </Tabs>
