@@ -21,7 +21,16 @@ export async function getAiRecommendations(
     return result;
   } catch (error) {
     console.error("Error fetching AI recommendations:", error);
-    return null;
+    if (error instanceof Error) {
+      if (error.message.includes("fetch failed")) {
+        return {
+          error:
+            "Could not connect to the AI service. Is 'npm run genkit:dev' running in another terminal?",
+        };
+      }
+      return { error: error.message };
+    }
+    return { error: "An unknown error occurred." };
   }
 }
 
@@ -31,7 +40,16 @@ export async function getAiPartDetails(input: ExtractPartDetailsInput) {
     return result;
   } catch (error) {
     console.error("Error fetching AI part details:", error);
-    return null;
+    if (error instanceof Error) {
+      if (error.message.includes("fetch failed")) {
+        return {
+          error:
+            "Could not connect to the AI service. Is 'npm run genkit:dev' running in another terminal?",
+        };
+      }
+      return { error: error.message };
+    }
+    return { error: "An unknown error occurred." };
   }
 }
 
@@ -42,6 +60,12 @@ export async function getAiPrebuiltSuggestions(input: AiPrebuiltAdvisorInput) {
   } catch (error) {
     console.error("Error fetching AI prebuilt suggestions:", error);
     if (error instanceof Error) {
+      if (error.message.includes("fetch failed")) {
+        return {
+          error:
+            "Could not connect to the AI service. Is 'npm run genkit:dev' running in another terminal?",
+        };
+      }
       return { error: error.message };
     }
     return { error: "An unknown error occurred." };

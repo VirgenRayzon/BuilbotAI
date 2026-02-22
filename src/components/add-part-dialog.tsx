@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useTransition } from "react";
@@ -97,7 +96,7 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
     }
     startAiTransition(async () => {
       const result = await getAiPartDetails({ partName });
-      if (result) {
+      if (result && !("error" in result)) {
         form.setValue("partName", result.partName, { shouldValidate: true });
         form.setValue("category", result.category, { shouldValidate: true });
         form.setValue("brand", result.brand, { shouldValidate: true });
@@ -112,7 +111,7 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
         toast({
           variant: "destructive",
           title: "AI Error",
-          description: "Could not fetch details for this part.",
+          description: (result as any)?.error || "Could not fetch details for this part.",
         });
       }
     });

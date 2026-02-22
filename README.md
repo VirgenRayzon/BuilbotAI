@@ -52,3 +52,9 @@ npm run genkit:dev
 This will start the AI flows, making them available to your Next.js application.
 
 You're all set! You can now access the application in your browser and start building.
+
+### Troubleshooting
+
+**AI Features Not Working?**
+
+If you're seeing errors like "Could not connect to the AI service," make sure you have the Genkit development server running. In a separate terminal from your `npm run dev` process, you must run `npm run genkit:dev`. Both servers need to be running at the same time for the application to function correctly.

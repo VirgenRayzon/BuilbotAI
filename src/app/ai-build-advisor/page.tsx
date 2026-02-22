@@ -54,11 +54,12 @@ export default function AiBuildAdvisorPage() {
   const handleGetRecommendations = (data: FormSchema) => {
     startTransition(async () => {
       const result = await getAiRecommendations(data);
-      if (!result) {
+      if (!result || "error" in result) {
         toast({
           variant: "destructive",
           title: "Error",
           description:
+            (result as any)?.error ||
             "Failed to get recommendations from the AI. Please try again.",
         });
         return;
