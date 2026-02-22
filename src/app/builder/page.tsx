@@ -1,7 +1,7 @@
 
 "use client";
 import React, { useState, useMemo } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { YourBuild } from "@/components/your-build";
 import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, RectangleVertical as CaseIcon, Wind, Plus } from "lucide-react";
 import type { ComponentData, Part } from "@/lib/types";
