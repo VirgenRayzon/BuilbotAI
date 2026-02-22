@@ -1,10 +1,11 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Package, PackageCheck, ServerCrash } from "lucide-react";
+import { Plus, Package, PackageCheck, ServerCrash, Loader2 } from "lucide-react";
 import { InventoryToolbar } from '@/components/inventory-toolbar';
 import { Card, CardContent } from '@/components/ui/card';
 import { AddPartDialog, type AddPartFormSchema } from '@/components/add-part-dialog';
@@ -17,6 +18,7 @@ import { addPart, deletePart, addPrebuiltSystem, deletePrebuiltSystem } from '@/
 import { collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { TableSkeleton } from '@/components/table-skeleton';
+import { useUserProfile } from '@/context/user-profile';
 
 const componentCategories: { name: Part['category'], selected: boolean }[] = [
   { name: "CPU", selected: true },
@@ -33,6 +35,15 @@ type PartWithoutCategory = Omit<Part, 'category'>;
 
 export default function AdminPage() {
     const firestore = useFirestore();
+    const router = useRouter();
+    const { authUser, profile, loading: userLoading } = useUserProfile();
+
+    // Route protection
+    useEffect(() => {
+        if (!userLoading && (!authUser || !profile?.isAdmin)) {
+            router.replace('/signin');
+        }
+    }, [authUser, profile, userLoading, router]);
 
     // Fetch each category collection
     const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
@@ -105,6 +116,14 @@ export default function AdminPage() {
 
     const stockIsLoading = partsLoading;
     const prebuiltsAreLoading = prebuiltsLoading;
+
+    if (userLoading || !authUser || !profile?.isAdmin) {
+        return (
+            <div className="flex items-center justify-center min-h-[80vh]">
+                <Loader2 className="w-12 h-12 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto p-4 md:p-8">

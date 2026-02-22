@@ -51,10 +51,20 @@
         }
       },
       "required": ["name", "tier", "price", "imageUrl", "components"]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user profile information.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "isAdmin": { "type": "boolean" }
+      },
+      "required": ["email", "isAdmin"]
     }
   },
   "auth": {
-    "providers": []
+    "providers": ["email-password"]
   },
   "firestore": {
     "/CPU/{partId}": { "schema": { "$ref": "#/entities/Part" } },
@@ -68,6 +78,10 @@
     "/prebuiltSystems/{systemId}": {
       "schema": { "$ref": "#/entities/PrebuiltSystem" },
       "description": "Collection of all pre-built PC systems."
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Stores user profile data."
     }
   }
 }

@@ -1,8 +1,8 @@
 
-import { addDoc, collection, deleteDoc, doc, Firestore } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, Firestore, setDoc } from "firebase/firestore";
 import type { AddPartFormSchema } from "@/components/add-part-dialog";
 import type { AddPrebuiltFormSchema } from "@/components/add-prebuilt-dialog";
-import type { Part, PrebuiltSystem } from "@/lib/types";
+import type { Part, PrebuiltSystem, UserProfile } from "@/lib/types";
 
 // Parts
 export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
@@ -53,4 +53,9 @@ export async function addPrebuiltSystem(firestore: Firestore, system: AddPrebuil
 
 export async function deletePrebuiltSystem(firestore: Firestore, systemId: string) {
     await deleteDoc(doc(firestore, 'prebuiltSystems', systemId));
+}
+
+// Users
+export async function createUserProfile(firestore: Firestore, userId: string, data: Omit<UserProfile, 'id'>) {
+    await setDoc(doc(firestore, 'users', userId), data);
 }

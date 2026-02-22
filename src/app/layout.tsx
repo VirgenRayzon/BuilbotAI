@@ -6,6 +6,7 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import "./globals.css";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
+import { UserProfileProvider } from "@/context/user-profile";
 
 export const metadata: Metadata = {
   title: "Forge Architect AI",
@@ -37,10 +38,12 @@ export default function RootLayout({
       </head>
       <body className={cn("font-body antialiased", "flex flex-col min-h-screen")}>
         <FirebaseClientProvider>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <Toaster />
+          <UserProfileProvider>
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <Toaster />
+          </UserProfileProvider>
         </FirebaseClientProvider>
       </body>
     </html>

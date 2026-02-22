@@ -1,3 +1,4 @@
+
 import type { AiBuildAdvisorRecommendationsOutput } from "@/ai/flows/ai-build-advisor-recommendations";
 
 export type ComponentData = {
@@ -52,4 +53,10 @@ export type PrebuiltSystem = {
     case?: string;
     cooler?: string;
   };
+};
+
+export type UserProfile = {
+  id: string;
+  email: string;
+  isAdmin: boolean;
 };
