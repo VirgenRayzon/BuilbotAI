@@ -60,9 +60,9 @@ export function YourBuild({ build }: YourBuildProps) {
                                 <p className="font-semibold text-sm">{name}</p>
                                 <p className="text-xs text-muted-foreground">{component?.model ?? "Not selected"}</p>
                             </div>
-                            {component?.wattage && (
+                            {component?.wattage && name !== 'PSU' && (
                                 <p className="text-xs font-semibold text-muted-foreground">
-                                    {name === 'PSU' ? `${component.wattage}W` : `~${component.wattage}W`}
+                                    {`~${component.wattage}W`}
                                 </p>
                             )}
                         </div>
