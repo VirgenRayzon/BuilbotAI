@@ -1,17 +1,23 @@
+
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useTransition } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Package, PackageCheck } from "lucide-react";
+import { Plus, Package, PackageCheck, ServerCrash } from "lucide-react";
 import { InventoryToolbar } from '@/components/inventory-toolbar';
 import { Card, CardContent } from '@/components/ui/card';
 import { AddPartDialog, type AddPartFormSchema } from '@/components/add-part-dialog';
 import { AddPrebuiltDialog, type AddPrebuiltFormSchema } from '@/components/add-prebuilt-dialog';
-import { parts as initialParts, prebuiltSystems as initialPrebuilts } from '@/lib/database';
 import type { Part, PrebuiltSystem } from '@/lib/types';
 import { InventoryTable } from '@/components/inventory-table';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { addPart, deletePart, addPrebuiltSystem, deletePrebuiltSystem, seedDatabase } from '@/firebase/database';
+import { collection } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const componentCategories = [
   { name: "CPU", selected: true },
@@ -24,10 +30,37 @@ const componentCategories = [
   { name: "Cooler", selected: true },
 ];
 
+function AdminLoadingSkeleton() {
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <Skeleton className="h-10 w-48" />
+                <Skeleton className="h-10 w-36" />
+            </div>
+            <Skeleton className="h-24 w-full mb-6" />
+            <Card>
+                <CardContent>
+                    <Skeleton className="h-[300px] w-full" />
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+
 export default function AdminPage() {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [isSeeding, startSeedingTransition] = useTransition();
+
+    const { data: parts, loading: partsLoading } = useCollection<Part>(
+        firestore ? collection(firestore, 'parts') : null
+    );
+    const { data: prebuiltSystems, loading: prebuiltsLoading } = useCollection<PrebuiltSystem>(
+        firestore ? collection(firestore, 'prebuiltSystems') : null
+    );
+
     const [categories, setCategories] = useState(componentCategories);
-    const [parts, setParts] = useState<Part[]>(initialParts);
-    const [prebuiltSystems, setPrebuiltSystems] = useState<PrebuiltSystem[]>(initialPrebuilts);
 
     const handleCategoryChange = (categoryName: string, selected: boolean) => {
         setCategories(prev =>
@@ -35,52 +68,41 @@ export default function AdminPage() {
         );
     };
 
-    const handleAddPart = (newPartData: AddPartFormSchema) => {
-        const newPart: Part = {
-            id: `part-${Date.now()}`,
-            name: newPartData.partName,
-            category: newPartData.category as Part['category'],
-            brand: newPartData.brand,
-            price: newPartData.price,
-            stock: newPartData.stockCount,
-            imageUrl: newPartData.imageUrl || `https://picsum.photos/seed/${newPartData.partName.replace(/\s+/g, '')}/800/600`,
-            specifications: newPartData.specifications,
-        };
-        setParts(prev => [newPart, ...prev]);
+    const handleAddPart = async (newPartData: AddPartFormSchema) => {
+        if (!firestore) return;
+        await addPart(firestore, newPartData);
     };
 
-    const handleDeletePart = (partId: string) => {
-        setParts(prev => prev.filter(p => p.id !== partId));
+    const handleDeletePart = async (partId: string) => {
+        if (!firestore) return;
+        await deletePart(firestore, partId);
     };
 
-    const handleAddPrebuilt = (newPrebuiltData: AddPrebuiltFormSchema) => {
-        const newPrebuilt: PrebuiltSystem = {
-            id: `prebuilt-${Date.now()}`,
-            name: newPrebuiltData.name,
-            tier: newPrebuiltData.tier as PrebuiltSystem['tier'],
-            price: newPrebuiltData.price,
-            description: newPrebuiltData.description,
-            imageUrl: newPrebuiltData.imageUrl || `https://picsum.photos/seed/${newPrebuiltData.name.replace(/\s+/g, '')}/800/600`,
-            components: {
-                cpu: newPrebuiltData.cpu,
-                gpu: newPrebuiltData.gpu,
-                motherboard: newPrebuiltData.motherboard,
-                ram: newPrebuiltData.ram,
-                storage: newPrebuiltData.storage,
-                psu: newPrebuiltData.psu,
-                case: newPrebuiltData.case,
-                cooler: newPrebuiltData.cooler,
-            }
-        };
-        setPrebuiltSystems(prev => [newPrebuilt, ...prev]);
+    const handleAddPrebuilt = async (newPrebuiltData: AddPrebuiltFormSchema) => {
+        if (!firestore) return;
+        await addPrebuiltSystem(firestore, newPrebuiltData);
     };
 
-    const handleDeletePrebuilt = (systemId: string) => {
-        setPrebuiltSystems(prev => prev.filter(s => s.id !== systemId));
+    const handleDeletePrebuilt = async (systemId: string) => {
+        if (!firestore) return;
+        await deletePrebuiltSystem(firestore, systemId);
     };
+
+    const handleSeedDatabase = () => {
+        if (!firestore) return;
+        startSeedingTransition(async () => {
+            await seedDatabase(firestore);
+            toast({
+                title: "Database Seeded!",
+                description: "Initial parts and prebuilt systems have been added.",
+            });
+        });
+    }
     
     const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
-    const filteredParts = parts.filter(part => selectedCategories.includes(part.category));
+    const filteredParts = parts?.filter(part => selectedCategories.includes(part.category)) ?? [];
+
+    const isLoading = partsLoading || prebuiltsLoading;
 
     return (
         <div className="container mx-auto p-4 md:p-8">
@@ -96,61 +118,80 @@ export default function AdminPage() {
                             Manage Prebuilts
                         </TabsTrigger>
                     </TabsList>
+                    <Button onClick={handleSeedDatabase} disabled={isSeeding}>
+                        {isSeeding ? "Seeding..." : "Seed Initial Data"}
+                    </Button>
                 </div>
                 <TabsContent value="stock">
-                    <div>
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-2xl font-headline font-bold">INVENTORY OVERVIEW</h2>
-                            <AddPartDialog onAddPart={handleAddPart}>
-                                <Button>
-                                    <Plus className="mr-2" />
-                                    Add New Part
-                                </Button>
-                            </AddPartDialog>
-                        </div>
-                        <InventoryToolbar 
-                            categories={categories}
-                            onCategoryChange={handleCategoryChange}
-                            itemCount={filteredParts.length}
-                        />
-                        <Card className="mt-6">
-                            {parts.length > 0 ? (
-                                filteredParts.length > 0 ? (
-                                    <InventoryTable parts={filteredParts} onDelete={handleDeletePart} />
+                     {isLoading ? <AdminLoadingSkeleton /> : (
+                        <div>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-2xl font-headline font-bold">INVENTORY OVERVIEW</h2>
+                                <AddPartDialog onAddPart={handleAddPart}>
+                                    <Button>
+                                        <Plus className="mr-2" />
+                                        Add New Part
+                                    </Button>
+                                </AddPartDialog>
+                            </div>
+                            <InventoryToolbar 
+                                categories={categories}
+                                onCategoryChange={handleCategoryChange}
+                                itemCount={filteredParts.length}
+                            />
+                            <Card className="mt-6">
+                                {(parts?.length ?? 0) > 0 ? (
+                                    filteredParts.length > 0 ? (
+                                        <InventoryTable parts={filteredParts} onDelete={handleDeletePart} />
+                                    ) : (
+                                        <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
+                                            <p>No items match the selected categories.</p>
+                                        </CardContent>
+                                    )
                                 ) : (
                                     <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
-                                        <p>No items match the selected categories.</p>
+                                        <div className='text-center'>
+                                            <ServerCrash className="mx-auto h-12 w-12 text-muted-foreground" />
+                                            <h3 className="mt-4 text-lg font-medium">No items in inventory.</h3>
+                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                You can seed initial data or add parts manually.
+                                            </p>
+                                        </div>
                                     </CardContent>
-                                )
-                            ) : (
-                                <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
-                                    <p>No items in inventory.</p>
-                                </CardContent>
-                            )}
-                        </Card>
-                    </div>
+                                )}
+                            </Card>
+                        </div>
+                     )}
                 </TabsContent>
                 <TabsContent value="prebuilts">
-                    <div>
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-2xl font-headline font-bold">PREBUILTS OVERVIEW</h2>
-                            <AddPrebuiltDialog onAddPrebuilt={handleAddPrebuilt}>
-                                <Button>
-                                    <Plus className="mr-2" />
-                                    Add New Prebuilt
-                                </Button>
-                            </AddPrebuiltDialog>
+                     {isLoading ? <AdminLoadingSkeleton /> : (
+                        <div>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-2xl font-headline font-bold">PREBUILTS OVERVIEW</h2>
+                                <AddPrebuiltDialog onAddPrebuilt={handleAddPrebuilt} parts={parts ?? []}>
+                                    <Button>
+                                        <Plus className="mr-2" />
+                                        Add New Prebuilt
+                                    </Button>
+                                </AddPrebuiltDialog>
+                            </div>
+                            <Card className="mt-6">
+                                {(prebuiltSystems?.length ?? 0) > 0 ? (
+                                    <PrebuiltsTable systems={prebuiltSystems!} onDelete={handleDeletePrebuilt} />
+                                ) : (
+                                     <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
+                                        <div className='text-center'>
+                                            <ServerCrash className="mx-auto h-12 w-12 text-muted-foreground" />
+                                            <h3 className="mt-4 text-lg font-medium">No pre-built systems configured.</h3>
+                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                You can seed initial data or add systems manually.
+                                            </p>
+                                        </div>
+                                    </CardContent>
+                                )}
+                            </Card>
                         </div>
-                        <Card className="mt-6">
-                             {prebuiltSystems.length > 0 ? (
-                                <PrebuiltsTable systems={prebuiltSystems} onDelete={handleDeletePrebuilt} />
-                            ) : (
-                                <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
-                                    <p>No pre-built systems configured.</p>
-                                </CardContent>
-                            )}
-                        </Card>
-                    </div>
+                     )}
                 </TabsContent>
             </Tabs>
         </div>

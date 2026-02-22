@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -5,8 +6,11 @@ import { YourBuild } from "@/components/your-build";
 import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, RectangleVertical as CaseIcon, Wind } from "lucide-react";
 import type { ComponentData, Part } from "@/lib/types";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
-import { parts as allParts } from "@/lib/database";
 import { PartCard } from "@/components/part-card";
+import { useCollection } from "@/firebase/firestore/use-collection";
+import { useFirestore } from "@/firebase";
+import { collection } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const componentCategories = [
   { name: "CPU", icon: Cpu, selected: true },
@@ -20,6 +24,11 @@ const componentCategories = [
 ];
 
 export default function BuilderPage() {
+    const firestore = useFirestore();
+    const { data: allParts, loading } = useCollection<Part>(
+        firestore ? collection(firestore, 'parts') : null
+    );
+
     const [build, setBuild] = useState<Record<string, ComponentData | null>>({
         CPU: null,
         GPU: null,
@@ -59,7 +68,7 @@ export default function BuilderPage() {
     };
 
     const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
-    const filteredParts = allParts.filter(part => selectedCategories.includes(part.category));
+    const filteredParts = allParts?.filter(part => selectedCategories.includes(part.category)) ?? [];
 
   return (
     <main className="container mx-auto p-4 md:p-8">
@@ -81,7 +90,26 @@ export default function BuilderPage() {
             />
           </div>
 
-          {filteredParts.length > 0 ? (
+          {loading ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+              {[...Array(6)].map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-4">
+                    <Skeleton className="aspect-video w-full mb-2" />
+                    <Skeleton className="h-5 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </CardContent>
+                  <CardContent className="p-4 pt-0">
+                    <Skeleton className="h-4 w-1/4" />
+                  </CardContent>
+                  <CardContent className="p-4 pt-0 flex justify-between items-center">
+                    <Skeleton className="h-6 w-1/3" />
+                    <Skeleton className="h-9 w-20" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : filteredParts.length > 0 ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
                 {filteredParts.map(part => (
                     <PartCard key={part.id} part={part} onAddToBuild={handleAddToBuild} />

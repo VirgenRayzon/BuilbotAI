@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition, useMemo } from "react";
@@ -36,7 +37,6 @@ import { ScrollArea } from "./ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Loader2, Sparkles, Info, Zap } from "lucide-react";
 import { getAiPrebuiltSuggestions } from "@/app/actions";
-import { parts } from "@/lib/database";
 import type { Part } from "@/lib/types";
 
 const formSchema = z.object({
@@ -60,16 +60,17 @@ export type AddPrebuiltFormSchema = z.infer<typeof formSchema>;
 interface AddPrebuiltDialogProps {
   children: React.ReactNode;
   onAddPrebuilt: (data: AddPrebuiltFormSchema) => void;
+  parts: Part[];
 }
 
-export function AddPrebuiltDialog({ children, onAddPrebuilt }: AddPrebuiltDialogProps) {
+export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuiltDialogProps) {
   const [open, setOpen] = useState(false);
   const [isAiPending, startAiTransition] = useTransition();
   const [aiResult, setAiResult] = useState<{wattage: string; summary: string} | null>(null);
   const { toast } = useToast();
   
   const inventory = useMemo(() => {
-    return parts.reduce((acc, part) => {
+    return (parts || []).reduce((acc, part) => {
         const category = part.category;
         if (!acc[category]) {
             acc[category] = [];
@@ -77,7 +78,7 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt }: AddPrebuiltDialog
         acc[category].push(part);
         return acc;
     }, {} as Record<Part['category'], Part[]>);
-  }, []);
+  }, [parts]);
 
   const componentCategories = Object.keys(inventory) as (keyof typeof inventory)[];
 
@@ -125,6 +126,10 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt }: AddPrebuiltDialog
             form.setValue("name", result.systemName, { shouldValidate: true });
             form.setValue("description", result.description, { shouldValidate: true });
             form.setValue("price", result.price, { shouldValidate: true });
+            if (!form.getValues("imageUrl")) {
+                const seed = result.systemName.replace(/\s+/g, '').toLowerCase();
+                form.setValue("imageUrl", `https://picsum.photos/seed/${seed}/800/600`);
+            }
             setAiResult({ wattage: result.estimatedWattage, summary: result.compatibilitySummary });
             toast({
                 title: "AI Suggestions Applied",

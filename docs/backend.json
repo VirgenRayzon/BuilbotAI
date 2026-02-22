@@ -1,0 +1,87 @@
+
+{
+  "entities": {
+    "PartSpecification": {
+      "title": "Part Specification",
+      "description": "A key-value pair describing a specification of a PC part.",
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": ["key", "value"]
+    },
+    "Part": {
+      "title": "PC Part",
+      "description": "Represents a single PC component in the inventory.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": {
+          "type": "string",
+          "enum": ["CPU", "GPU", "Motherboard", "RAM", "Storage", "PSU", "Case", "Cooler"]
+        },
+        "brand": { "type": "string" },
+        "price": { "type": "number" },
+        "stock": { "type": "number" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "specifications": {
+          "type": "array",
+          "items": { "$ref": "#/entities/PartSpecification" }
+        }
+      },
+      "required": ["name", "category", "brand", "price", "stock", "imageUrl", "specifications"]
+    },
+    "PrebuiltSystemComponents": {
+        "title": "Prebuilt System Components",
+        "description": "A list of components included in a pre-built system.",
+        "type": "object",
+        "properties": {
+            "cpu": { "type": "string" },
+            "gpu": { "type": "string" },
+            "motherboard": { "type": "string" },
+            "ram": { "type": "string" },
+            "storage": { "type": "string" },
+            "psu": { "type": "string" },
+            "case": { "type": "string" },
+            "cooler": { "type": "string" }
+        }
+    },
+    "PrebuiltSystem": {
+      "title": "Pre-built System",
+      "description": "Represents a fully assembled PC available for purchase.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "tier": {
+          "type": "string",
+          "enum": ["Entry", "Mid-Range", "High-End", "Workstation"]
+        },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "components": {
+          "$ref": "#/entities/PrebuiltSystemComponents"
+        }
+      },
+      "required": ["name", "tier", "price", "imageUrl", "components"]
+    }
+  },
+  "auth": {
+    "providers": []
+  },
+  "firestore": {
+    "/parts/{partId}": {
+      "schema": { "$ref": "#/entities/Part" },
+      "description": "Collection of all PC parts available in the inventory."
+    },
+    "/prebuiltSystems/{systemId}": {
+      "schema": { "$ref": "#/entities/PrebuiltSystem" },
+      "description": "Collection of all pre-built PC systems."
+    }
+  }
+}

@@ -1,11 +1,15 @@
+
 "use client";
 
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { InventoryToolbar } from '@/components/inventory-toolbar';
-import { prebuiltSystems } from '@/lib/database';
 import { PrebuiltSystemCard } from '@/components/prebuilt-system-card';
 import type { PrebuiltSystem } from '@/lib/types';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { useFirestore } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const prebuiltCategories = [
     { name: "Entry", selected: true },
@@ -15,6 +19,11 @@ const prebuiltCategories = [
 ];
 
 export default function PreBuiltsPage() {
+    const firestore = useFirestore();
+    const { data: prebuiltSystems, loading } = useCollection<PrebuiltSystem>(
+        firestore ? collection(firestore, 'prebuiltSystems') : null
+    );
+
     const [categories, setCategories] = useState(prebuiltCategories);
 
     const handleCategoryChange = (categoryName: string, selected: boolean) => {
@@ -24,7 +33,7 @@ export default function PreBuiltsPage() {
     };
 
     const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
-    const filteredSystems = prebuiltSystems.filter(system => selectedCategories.includes(system.tier));
+    const filteredSystems = prebuiltSystems?.filter(system => selectedCategories.includes(system.tier)) ?? [];
 
     return (
         <main className="container mx-auto p-4 md:p-8">
@@ -41,7 +50,26 @@ export default function PreBuiltsPage() {
                 itemCount={filteredSystems.length}
             />
             
-            {filteredSystems.length > 0 ? (
+            {loading ? (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                    {[...Array(3)].map((_, i) => (
+                        <Card key={i}>
+                            <CardContent className="p-4">
+                                <Skeleton className="aspect-video w-full mb-2" />
+                                <Skeleton className="h-5 w-3/4 mb-2" />
+                                <Skeleton className="h-4 w-1/2" />
+                            </CardContent>
+                            <CardContent className="p-4 pt-0">
+                                <Skeleton className="h-4 w-1/4" />
+                            </CardContent>
+                            <CardContent className="p-4 pt-0 flex justify-between items-center">
+                                <Skeleton className="h-6 w-1/3" />
+                                <Skeleton className="h-9 w-28" />
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            ) : filteredSystems.length > 0 ? (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
                     {filteredSystems.map(system => (
                         <PrebuiltSystemCard key={system.id} system={system} />
