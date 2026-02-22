@@ -1,21 +1,20 @@
 "use client";
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { YourBuild } from "@/components/your-build";
-import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, RectangleVertical as CaseIcon, Wind, Search } from "lucide-react";
+import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, RectangleVertical as CaseIcon, Wind } from "lucide-react";
 import type { ComponentData } from "@/lib/types";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
 
 const componentCategories = [
   { name: "CPU", icon: Cpu, selected: true },
-  { name: "GPU", icon: Server, selected: false },
-  { name: "Motherboard", icon: CircuitBoard, selected: false },
-  { name: "RAM", icon: MemoryStick, selected: false },
-  { name: "Storage", icon: HardDrive, selected: false },
-  { name: "PSU", icon: Power, selected: false },
-  { name: "Case", icon: CaseIcon, selected: false },
-  { name: "Cooler", icon: Wind, selected: false },
+  { name: "GPU", icon: Server, selected: true },
+  { name: "Motherboard", icon: CircuitBoard, selected: true },
+  { name: "RAM", icon: MemoryStick, selected: true },
+  { name: "Storage", icon: HardDrive, selected: true },
+  { name: "PSU", icon: Power, selected: true },
+  { name: "Case", icon: CaseIcon, selected: true },
+  { name: "Cooler", icon: Wind, selected: true },
 ];
 
 export default function BuilderPage() {
@@ -31,7 +30,7 @@ export default function BuilderPage() {
     });
     
     const [categories, setCategories] = useState(
-      componentCategories.map(c => ({ name: c.name, selected: true }))
+      componentCategories.map(c => ({ name: c.name, selected: true, icon: c.icon }))
     );
 
     const handleCategoryChange = (categoryName: string, selected: boolean) => {
@@ -53,10 +52,6 @@ export default function BuilderPage() {
       <div className="grid lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8">
           <div className="space-y-4">
-            <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder={`Search components...`} className="pl-10" />
-            </div>
             <InventoryToolbar
               categories={categories}
               onCategoryChange={handleCategoryChange}
