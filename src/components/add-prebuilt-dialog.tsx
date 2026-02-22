@@ -183,8 +183,8 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <ScrollArea className="max-h-[60vh]">
-              <div className="space-y-6 px-4">
+            <ScrollArea className="max-h-[70vh] pr-4">
+              <div className="space-y-6 px-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
                     <FormField
                         control={form.control}
@@ -272,7 +272,7 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
                 
                 <div className="space-y-4">
                     <FormLabel>Select Components</FormLabel>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6 pt-2">
+                    <div className="grid grid-cols-1 gap-y-6 pt-2">
                         {componentCategories.map(cat => (
                             <FormField
                                 key={cat}

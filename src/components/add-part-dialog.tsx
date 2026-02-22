@@ -145,8 +145,8 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <ScrollArea className="max-h-[70vh]">
-              <div className="space-y-6 px-4">
+            <ScrollArea className="max-h-[70vh] pr-4">
+              <div className="space-y-6 px-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
                     <div className="md:col-span-2">
                         <FormField
