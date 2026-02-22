@@ -144,141 +144,141 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <ScrollArea className="max-h-[70vh] p-1 pr-6">
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
-                  <div className="md:col-span-2">
-                    <FormField
-                      control={form.control}
-                      name="partName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Part Name</FormLabel>
-                          <div className="flex gap-2">
-                            <FormControl>
-                              <Input placeholder="e.g., NVIDIA GeForce RTX 3060" {...field} />
-                            </FormControl>
-                            <Button type="button" variant="outline" size="icon" onClick={handleGetAiDetails} disabled={isAiPending}>
-                              {isAiPending ? <Loader2 className="animate-spin" /> : <Sparkles />}
-                            </Button>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Category</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a category" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {componentCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="brand"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Brand</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., NVIDIA" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Price (PHP)</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g., 17500" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="stockCount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Stock Count</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g., 10" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="md:col-span-2">
-                    <FormField
-                      control={form.control}
-                      name="imageUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Image URL (Auto-populates if blank)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://..." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
+            <ScrollArea className="max-h-[70vh] pr-6">
+                <div className="p-1 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
+                        <div className="md:col-span-2">
+                            <FormField
+                            control={form.control}
+                            name="partName"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Part Name</FormLabel>
+                                <div className="flex gap-2">
+                                    <FormControl>
+                                    <Input placeholder="e.g., NVIDIA GeForce RTX 3060" {...field} />
+                                    </FormControl>
+                                    <Button type="button" variant="outline" size="icon" onClick={handleGetAiDetails} disabled={isAiPending}>
+                                    {isAiPending ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                                    </Button>
+                                </div>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                        </div>
+                        <FormField
+                            control={form.control}
+                            name="category"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Category</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Select a category" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {componentCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="brand"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Brand</FormLabel>
+                                <FormControl>
+                                <Input placeholder="e.g., NVIDIA" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="price"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Price (PHP)</FormLabel>
+                                <FormControl>
+                                <Input type="number" placeholder="e.g., 17500" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="stockCount"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Stock Count</FormLabel>
+                                <FormControl>
+                                <Input type="number" placeholder="e.g., 10" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <div className="md:col-span-2">
+                            <FormField
+                            control={form.control}
+                            name="imageUrl"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Image URL (Auto-populates if blank)</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="https://..." {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                        </div>
+                    </div>
 
-                <div className="space-y-4">
-                  <FormLabel>Specifications</FormLabel>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Key (e.g., Socket)"
-                      value={specKey}
-                      onChange={(e) => setSpecKey(e.target.value)}
-                    />
-                    <Input
-                      placeholder="Value (e.g., AM5)"
-                      value={specValue}
-                      onChange={(e) => setSpecValue(e.target.value)}
-                    />
-                    <Button type="button" size="icon" onClick={addSpecification}>
-                      <Plus />
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {specifications.map((spec, index) => (
-                      <Badge key={index} variant="secondary" className="gap-1.5 pr-1.5">
-                        <span className="font-normal">{spec.key}:</span>
-                        <span>{spec.value}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeSpecification(index)}
-                          className="rounded-full bg-background/50 hover:bg-background"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
+                    <div className="space-y-4">
+                    <FormLabel>Specifications</FormLabel>
+                    <div className="flex gap-2">
+                        <Input
+                        placeholder="Key (e.g., Socket)"
+                        value={specKey}
+                        onChange={(e) => setSpecKey(e.target.value)}
+                        />
+                        <Input
+                        placeholder="Value (e.g., AM5)"
+                        value={specValue}
+                        onChange={(e) => setSpecValue(e.target.value)}
+                        />
+                        <Button type="button" size="icon" onClick={addSpecification}>
+                        <Plus />
+                        </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-2">
+                        {specifications.map((spec, index) => (
+                        <Badge key={index} variant="secondary" className="gap-1.5 pr-1.5">
+                            <span className="font-normal">{spec.key}:</span>
+                            <span>{spec.value}</span>
+                            <button
+                            type="button"
+                            onClick={() => removeSpecification(index)}
+                            className="rounded-full bg-background/50 hover:bg-background"
+                            >
+                            <X className="w-3 h-3" />
+                            </button>
+                        </Badge>
+                        ))}
+                    </div>
+                    </div>
                 </div>
-              </div>
             </ScrollArea>
-            <DialogFooter className="pt-4">
+            <DialogFooter className="pt-6">
               <DialogClose asChild>
                 <Button type="button" variant="ghost">Cancel</Button>
               </DialogClose>

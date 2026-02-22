@@ -69,7 +69,8 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
   const { toast } = useToast();
   
   const inventory = useMemo(() => {
-    return (parts || []).reduce((acc, part) => {
+    const componentOrder: Part['category'][] = ["CPU", "GPU", "Motherboard", "RAM", "Storage", "PSU", "Case", "Cooler"];
+    const unsortedInventory = (parts || []).reduce((acc, part) => {
         const category = part.category;
         if (!acc[category]) {
             acc[category] = [];
@@ -77,6 +78,17 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
         acc[category].push(part);
         return acc;
     }, {} as Record<Part['category'], Part[]>);
+    
+    const sortedInventory = {} as Record<Part['category'], Part[]>;
+    for (const category of componentOrder) {
+        if (unsortedInventory[category]) {
+            sortedInventory[category] = unsortedInventory[category];
+        } else {
+            sortedInventory[category] = [];
+        }
+    }
+    return sortedInventory;
+
   }, [parts]);
 
   const componentCategories = Object.keys(inventory) as (keyof typeof inventory)[];
@@ -170,8 +182,8 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <ScrollArea className="max-h-[70vh] p-1 pr-6">
-              <div className="space-y-6">
+            <ScrollArea className="max-h-[70vh] pr-6">
+              <div className="p-1 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
                     <FormField
                         control={form.control}
@@ -309,7 +321,6 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
                         </Alert>
                     </div>
                 )}
-
               </div>
             </ScrollArea>
             <DialogFooter className="pt-6">
