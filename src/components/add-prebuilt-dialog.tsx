@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition, useMemo } from "react";
@@ -183,7 +184,7 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <ScrollArea className="max-h-[60vh]">
-              <div className="space-y-6 pr-6">
+              <div className="space-y-6 px-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
                     <FormField
                         control={form.control}
