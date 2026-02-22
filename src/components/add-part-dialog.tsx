@@ -143,28 +143,30 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
           <DialogTitle className="font-headline text-2xl">Add New Component</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)}>
             <ScrollArea className="max-h-[70vh] p-1 pr-6">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="partName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Part Name</FormLabel>
-                        <div className="flex gap-2">
-                          <FormControl>
-                            <Input placeholder="e.g., NVIDIA GeForce RTX 3060" {...field} />
-                          </FormControl>
-                          <Button type="button" variant="outline" size="icon" onClick={handleGetAiDetails} disabled={isAiPending}>
-                            {isAiPending ? <Loader2 className="animate-spin" /> : <Sparkles />}
-                          </Button>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
+                  <div className="md:col-span-2">
+                    <FormField
+                      control={form.control}
+                      name="partName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Part Name</FormLabel>
+                          <div className="flex gap-2">
+                            <FormControl>
+                              <Input placeholder="e.g., NVIDIA GeForce RTX 3060" {...field} />
+                            </FormControl>
+                            <Button type="button" variant="outline" size="icon" onClick={handleGetAiDetails} disabled={isAiPending}>
+                              {isAiPending ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                            </Button>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   <FormField
                     control={form.control}
                     name="category"
@@ -185,9 +187,6 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
                       </FormItem>
                     )}
                   />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="brand"
@@ -214,9 +213,7 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
                       </FormItem>
                     )}
                   />
-                </div>
-
-                <FormField
+                  <FormField
                     control={form.control}
                     name="stockCount"
                     render={({ field }) => (
@@ -229,22 +226,24 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
                       </FormItem>
                     )}
                   />
+                  <div className="md:col-span-2">
+                    <FormField
+                      control={form.control}
+                      name="imageUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Image URL (Auto-populates if blank)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://..." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="imageUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Image URL (Auto-populates if blank)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://..." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <FormLabel>Specifications</FormLabel>
                   <div className="flex gap-2">
                     <Input

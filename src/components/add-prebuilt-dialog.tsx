@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useTransition, useMemo } from "react";
@@ -172,25 +171,25 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <ScrollArea className="max-h-[70vh] p-1 pr-6">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
                     <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>System Name</FormLabel>
-                        <div className="flex gap-2">
-                          <FormControl>
-                            <Input placeholder="e.g., Ultimate Gamer V1" {...field} />
-                          </FormControl>
-                          <Button type="button" variant="outline" size="icon" onClick={handleAiAssist} disabled={isAiPending}>
-                            {isAiPending ? <Loader2 className="animate-spin" /> : <Sparkles />}
-                          </Button>
-                        </div>
-                        <FormMessage />
-                        </FormItem>
-                    )}
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>System Name</FormLabel>
+                            <div className="flex gap-2">
+                            <FormControl>
+                                <Input placeholder="e.g., Ultimate Gamer V1" {...field} />
+                            </FormControl>
+                            <Button type="button" variant="outline" size="icon" onClick={handleAiAssist} disabled={isAiPending}>
+                                {isAiPending ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                            </Button>
+                            </div>
+                            <FormMessage />
+                            </FormItem>
+                        )}
                     />
                     <FormField
                         control={form.control}
@@ -215,23 +214,21 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
                             </FormItem>
                         )}
                     />
-                </div>
-                
-                <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Description</FormLabel>
-                            <FormControl>
-                                <Textarea placeholder="Brief description of the system..." {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                        <FormField
+                            control={form.control}
+                            name="description"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Description</FormLabel>
+                                    <FormControl>
+                                        <Textarea placeholder="Brief description of the system..." {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
                     <FormField
                         control={form.control}
                         name="price"
@@ -260,9 +257,9 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
                     />
                 </div>
                 
-                <div className="space-y-2">
+                <div className="space-y-4">
                     <FormLabel>Select Components</FormLabel>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6 pt-2">
                         {componentCategories.map(cat => (
                             <FormField
                                 key={cat}
