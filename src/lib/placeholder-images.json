@@ -1,3 +1,28 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "cpu",
+      "description": "A modern CPU.",
+      "imageUrl": "https://images.unsplash.com/photo-1613483187636-c2024013d54a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxjcHUlMjBwcm9jZXNzb3J8ZW58MHx8fHwxNzcxNjMzMzE3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cpu processor"
+    },
+    {
+      "id": "gpu",
+      "description": "A powerful graphics card.",
+      "imageUrl": "https://images.unsplash.com/photo-1692049065982-fc40fa2d4403?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Z3JhcGhpY3MlMjBjYXJkfGVufDB8fHx8MTc3MTcyNDk2M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "graphics card"
+    },
+    {
+      "id": "motherboard",
+      "description": "A computer motherboard.",
+      "imageUrl": "https://images.unsplash.com/photo-1586920740280-e7da670f7cb7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxtb3RoZXJib2FyZCUyMGNpcmN1aXR8ZW58MHx8fHwxNzcxNzQ2NjU3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "motherboard circuit"
+    },
+    {
+      "id": "ram",
+      "description": "A stick of RAM.",
+      "imageUrl": "https://images.unsplash.com/photo-1676554565685-3aeb5d7ad1b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cmFtJTIwbWVtb3J5JTIwc3RpY2t8ZW58MHx8fHwxNzcxNzQ2NjU3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "ram memory stick"
+    }
+  ]
 }
