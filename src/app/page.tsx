@@ -3,8 +3,10 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { YourBuild } from "@/components/your-build";
 import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, RectangleVertical as CaseIcon, Wind } from "lucide-react";
-import type { ComponentData } from "@/lib/types";
+import type { ComponentData, Part } from "@/lib/types";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
+import { parts as allParts } from "@/lib/database";
+import { PartCard } from "@/components/part-card";
 
 const componentCategories = [
   { name: "CPU", icon: Cpu, selected: true },
@@ -39,6 +41,26 @@ export default function BuilderPage() {
         );
     };
 
+    const handleAddToBuild = (part: Part) => {
+      const category = part.category;
+      const componentData: ComponentData = {
+        model: part.name,
+        price: part.price,
+        description: part.specifications.slice(0, 2).map(s => `${s.key}: ${s.value}`).join(' | '),
+        image: part.imageUrl,
+        imageHint: part.name.toLowerCase().split(' ').slice(0, 2).join(' '),
+        icon: componentCategories.find(c => c.name === category)!.icon,
+      };
+
+      setBuild(prevBuild => ({
+        ...prevBuild,
+        [category]: componentData,
+      }));
+    };
+
+    const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
+    const filteredParts = allParts.filter(part => selectedCategories.includes(part.category));
+
   return (
     <main className="container mx-auto p-4 md:p-8">
       <div className="text-left mb-8">
@@ -55,15 +77,23 @@ export default function BuilderPage() {
             <InventoryToolbar
               categories={categories}
               onCategoryChange={handleCategoryChange}
-              itemCount={0}
+              itemCount={filteredParts.length}
             />
           </div>
 
-          <Card className="mt-6 min-h-[400px] flex items-center justify-center">
-            <CardContent className="text-center text-muted-foreground p-6">
-              <p>No components found.</p>
-            </CardContent>
-          </Card>
+          {filteredParts.length > 0 ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                {filteredParts.map(part => (
+                    <PartCard key={part.id} part={part} onAddToBuild={handleAddToBuild} />
+                ))}
+            </div>
+          ) : (
+             <Card className="mt-6 min-h-[400px] flex items-center justify-center">
+                <CardContent className="text-center text-muted-foreground p-6">
+                  <p>No components found for the selected categories.</p>
+                </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="lg:col-span-4">
