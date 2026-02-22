@@ -201,11 +201,11 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
         imageUrl: part.imageUrl || `https://picsum.photos/seed/${part.partName.replace(/\s+/g, '').toLowerCase()}/800/600`,
         specifications: part.specifications
     };
-    await addDoc(collection(firestore, 'parts'), partData);
+    await addDoc(collection(firestore, 'pcParts'), partData);
 }
 
 export async function deletePart(firestore: Firestore, partId: string) {
-    await deleteDoc(doc(firestore, 'parts', partId));
+    await deleteDoc(doc(firestore, 'pcParts', partId));
 }
 
 // Prebuilt Systems
@@ -242,7 +242,7 @@ export async function seedDatabase(firestore: Firestore) {
     const batch = writeBatch(firestore);
 
     // Seed parts
-    const partsCollection = collection(firestore, 'parts');
+    const partsCollection = collection(firestore, 'pcParts');
     parts.forEach(partData => {
         const docRef = doc(partsCollection);
         batch.set(docRef, partData);

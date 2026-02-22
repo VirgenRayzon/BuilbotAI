@@ -36,11 +36,11 @@ export default function AdminPage() {
     const [isSeeding, startSeedingTransition] = useTransition();
     const [hasCheckedAndSeeded, setHasCheckedAndSeeded] = useState(false);
 
-    const partsQuery = useMemo(() => firestore ? collection(firestore, 'parts') : null, [firestore]);
-    const { data: parts, loading: partsLoading } = useCollection<Part>(partsQuery);
+    const partsQuery = useMemo(() => firestore ? collection(firestore, 'pcParts') : null, [firestore]);
+    const { data: parts, loading: partsLoading, error: partsError } = useCollection<Part>(partsQuery);
 
     const prebuiltSystemsQuery = useMemo(() => firestore ? collection(firestore, 'prebuiltSystems') : null, [firestore]);
-    const { data: prebuiltSystems, loading: prebuiltsLoading } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);
+    const { data: prebuiltSystems, loading: prebuiltsLoading, error: prebuiltsError } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);
 
     const [categories, setCategories] = useState(componentCategories);
 
@@ -49,18 +49,29 @@ export default function AdminPage() {
             return;
         }
 
-        if (parts?.length === 0 && prebuiltSystems?.length === 0) {
+        // Only seed if there are no errors and the collections are confirmed to be empty
+        if (!partsError && !prebuiltsError && parts?.length === 0 && prebuiltSystems?.length === 0) {
             startSeedingTransition(async () => {
-                await seedDatabase(firestore);
-                toast({
-                    title: "Database Seeded!",
-                    description: "Your database was empty, so initial parts and prebuilt systems have been added.",
-                });
+                try {
+                    await seedDatabase(firestore);
+                    toast({
+                        title: "Database Seeded!",
+                        description: "Your database was empty, so initial parts and prebuilt systems have been added.",
+                    });
+                } catch (e) {
+                    console.error("Seeding failed:", e);
+                    toast({
+                        variant: "destructive",
+                        title: "Seeding Failed",
+                        description: "Could not add initial data to the database. Please check your Firestore permissions.",
+                    });
+                }
             });
         }
         setHasCheckedAndSeeded(true);
 
-    }, [firestore, parts, prebuiltSystems, partsLoading, prebuiltsLoading, hasCheckedAndSeeded, isSeeding, toast]);
+    }, [firestore, parts, prebuiltSystems, partsLoading, prebuiltsLoading, hasCheckedAndSeeded, isSeeding, toast, partsError, prebuiltsError]);
+
 
     const handleCategoryChange = (categoryName: string, selected: boolean) => {
         setCategories(prev =>
@@ -91,7 +102,8 @@ export default function AdminPage() {
     const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
     const filteredParts = parts?.filter(part => selectedCategories.includes(part.category)) ?? [];
 
-    const dataIsLoading = partsLoading || prebuiltsLoading || isSeeding;
+    const stockIsLoading = partsLoading || isSeeding;
+    const prebuiltsAreLoading = prebuiltsLoading || isSeeding;
 
     return (
         <div className="container mx-auto p-4 md:p-8">
@@ -125,7 +137,7 @@ export default function AdminPage() {
                             itemCount={filteredParts.length}
                         />
                         <Card className="mt-6">
-                            {dataIsLoading ? <TableSkeleton columns={6} /> : (
+                            {stockIsLoading ? <TableSkeleton columns={6} /> : (
                                 (parts?.length ?? 0) > 0 ? (
                                     filteredParts.length > 0 ? (
                                         <InventoryTable parts={filteredParts} onDelete={handleDeletePart} />
@@ -161,7 +173,7 @@ export default function AdminPage() {
                             </AddPrebuiltDialog>
                         </div>
                         <Card className="mt-6">
-                            {dataIsLoading ? <TableSkeleton columns={4} /> : (
+                            {prebuiltsAreLoading ? <TableSkeleton columns={4} /> : (
                                 (prebuiltSystems?.length ?? 0) > 0 ? (
                                     <PrebuiltsTable systems={prebuiltSystems!} onDelete={handleDeletePrebuilt} />
                                 ) : (

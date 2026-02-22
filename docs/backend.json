@@ -75,7 +75,7 @@
     "providers": []
   },
   "firestore": {
-    "/parts/{partId}": {
+    "/pcParts/{partId}": {
       "schema": { "$ref": "#/entities/Part" },
       "description": "Collection of all PC parts available in the inventory."
     },

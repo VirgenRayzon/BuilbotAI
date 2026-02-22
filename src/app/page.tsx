@@ -25,7 +25,7 @@ const componentCategories = [
 
 export default function BuilderPage() {
     const firestore = useFirestore();
-    const partsQuery = useMemo(() => firestore ? collection(firestore, 'parts') : null, [firestore]);
+    const partsQuery = useMemo(() => firestore ? collection(firestore, 'pcParts') : null, [firestore]);
     const { data: allParts, loading } = useCollection<Part>(partsQuery);
 
     const [build, setBuild] = useState<Record<string, ComponentData | null>>({
