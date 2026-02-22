@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { YourBuild } from "@/components/your-build";
-import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, Rectangle as CaseIcon, Wind, Search, Filter } from "lucide-react";
+import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, RectangleVertical as CaseIcon, Wind, Search, Filter } from "lucide-react";
 import type { ComponentData } from "@/lib/types";
 
 const componentCategories = [

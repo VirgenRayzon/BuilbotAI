@@ -7,7 +7,7 @@ import { BuildSummary } from "@/components/build-summary";
 import { getAiRecommendations } from "@/app/actions";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { Build, AiRecommendation } from "@/lib/types";
-import { Cpu, Server, CircuitBoard, MemoryStick, Bot, Wallet, HardDrive, Power, Rectangle, Wind } from "lucide-react";
+import { Cpu, Server, CircuitBoard, MemoryStick, Bot, Wallet, HardDrive, Power, RectangleVertical, Wind } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const componentMetadata: { [key: string]: { icon: React.ElementType, image: any }} = {
@@ -36,7 +36,7 @@ const componentMetadata: { [key: string]: { icon: React.ElementType, image: any 
     image: PlaceHolderImages.find((img) => img.id === "psu")!,
   },
   case: {
-    icon: Rectangle,
+    icon: RectangleVertical,
     image: PlaceHolderImages.find((img) => img.id === "case")!,
   },
   cooler: {

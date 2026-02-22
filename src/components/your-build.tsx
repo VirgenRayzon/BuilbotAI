@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { ComponentData } from "@/lib/types";
-import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, Rectangle as CaseIcon, Wind } from "lucide-react";
+import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, RectangleVertical as CaseIcon, Wind } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface YourBuildProps {
