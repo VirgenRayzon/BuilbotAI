@@ -28,7 +28,7 @@ export function YourBuild({ build }: YourBuildProps) {
     const totalParts = Object.keys(build).length;
 
     const totalWattage = Object.entries(build).reduce((acc, [name, component]) => {
-        if (name !== 'PSU' && component && typeof component.wattage === 'number') {
+        if ((name === 'CPU' || name === 'GPU') && component && typeof component.wattage === 'number') {
             return acc + component.wattage;
         }
         return acc;
@@ -60,7 +60,7 @@ export function YourBuild({ build }: YourBuildProps) {
                                 <p className="font-semibold text-sm">{name}</p>
                                 <p className="text-xs text-muted-foreground">{component?.model ?? "Not selected"}</p>
                             </div>
-                            {component && typeof component.wattage === 'number' && name !== 'PSU' && (
+                            {component && typeof component.wattage === 'number' && (name === 'CPU' || name === 'GPU') && (
                                 <p className="text-xs font-semibold text-muted-foreground">
                                     {`~${component.wattage}W`}
                                 </p>

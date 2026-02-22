@@ -43,7 +43,7 @@ const prompt = ai.definePrompt({
   output: { schema: ExtractPartDetailsOutputSchema },
   prompt: `You are an expert PC component database. Your task is to extract key details for a given PC part name.
 
-Given the part name, provide the full corrected part name, identify its category, brand, an estimated price in Philippine Pesos (PHP), and an estimated power consumption in watts (if applicable).
+Given the part name, provide the full corrected part name, identify its category, brand, and an estimated price in Philippine Pesos (PHP).
 
 Crucially, you must also provide a list of key-value specifications that are **consistent and specific to the component's category**. Adhere strictly to the following keys for each category:
 
@@ -58,7 +58,7 @@ Crucially, you must also provide a list of key-value specifications that are **c
 
 The category must be one of the following: "CPU", "GPU", "Motherboard", "RAM", "Storage", "PSU", "Case", "Cooler".
 
-For components that consume power (like CPUs and GPUs), provide an estimated wattage in the top-level 'wattage' field. For PSUs, the advertised wattage (e.g., 850 for an 850W PSU) is the primary value for the 'wattage' field and should not be in the specifications list.
+Only provide the top-level 'wattage' field for 'CPU', 'GPU', and 'PSU' categories. For 'CPU' and 'GPU', this should be the estimated power consumption. For 'PSU', this should be the advertised output wattage (e.g., 850 for an 850W PSU). For all other categories (Motherboard, RAM, Storage, Case, Cooler), DO NOT include the 'wattage' field in the output.
 
 Part Name: {{{partName}}}
 
