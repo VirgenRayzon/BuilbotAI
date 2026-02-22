@@ -46,9 +46,9 @@ const componentMetadata: { [key: string]: { icon: React.ElementType, image: any 
 };
 
 const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-PH", {
     style: "currency",
-    currency: "USD",
+    currency: "PHP",
   }).format(value);
 };
 
@@ -76,7 +76,7 @@ export default function AiBuildAdvisorPage() {
         type: keyof typeof componentMetadata
       ) => {
         const metadata = componentMetadata[type];
-        const price = Math.floor(Math.random() * 400) + 50;
+        const price = Math.floor(Math.random() * 20000) + 2500;
         return {
           ...component,
           price,

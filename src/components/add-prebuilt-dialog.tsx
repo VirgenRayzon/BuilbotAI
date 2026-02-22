@@ -88,9 +88,9 @@ export function AddPrebuiltDialog({ children }: { children: React.ReactNode }) {
                     name="price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Price (USD)</FormLabel>
+                        <FormLabel>Price (PHP)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="e.g., 2500" {...field} />
+                          <Input type="number" placeholder="e.g., 125000" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

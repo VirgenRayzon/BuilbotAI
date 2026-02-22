@@ -89,10 +89,13 @@ export function AddPartDialog({ children }: { children: React.ReactNode }) {
     startAiTransition(async () => {
       const result = await getAiPartDetails({ partName });
       if (result) {
+        form.setValue("partName", result.partName, { shouldValidate: true });
+        form.setValue("category", result.category, { shouldValidate: true });
         form.setValue("brand", result.brand, { shouldValidate: true });
+        form.setValue("price", result.price, { shouldValidate: true });
         form.setValue("specifications", result.specifications, { shouldValidate: true });
         if (!form.getValues('imageUrl')) {
-            const seed = partName.replace(/\s+/g, '').toLowerCase();
+            const seed = result.partName.replace(/\s+/g, '').toLowerCase();
             form.setValue('imageUrl', `https://picsum.photos/seed/${seed}/800/600`);
         }
       } else {
@@ -163,7 +166,7 @@ export function AddPartDialog({ children }: { children: React.ReactNode }) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Category</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a category" />
@@ -198,9 +201,9 @@ export function AddPartDialog({ children }: { children: React.ReactNode }) {
                     name="price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Price (USD)</FormLabel>
+                        <FormLabel>Price (PHP)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="e.g., 350" {...field} />
+                          <Input type="number" placeholder="e.g., 17500" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
