@@ -26,7 +26,7 @@ export function Header() {
 
   const navLinks = [
     { href: "/builder", label: "Builder" },
-    { href: "/ai-build-advisor", label: "AI Build Advisor" },
+    { href: "/ai-build-advisor", label: "Build Advisor" },
     { href: "/pre-builts", label: "Pre-builts" },
     ...(profile?.isAdmin
       ? [{ href: "/admin", label: "Admin", admin: true }]
@@ -66,14 +66,11 @@ export function Header() {
               Sign Out
             </Button>
           ) : (
-            <>
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/signin">Sign In</Link>
-              </Button>
-              <Button asChild size="sm">
-                <Link href="/signup">Sign Up</Link>
-              </Button>
-            </>
+            (pathname === '/signin' || pathname === '/signup') && (
+                <Button asChild variant="ghost" size="sm">
+                    <Link href="/">Home</Link>
+                </Button>
+            )
           )}
         </div>
       </div>

@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
-import { MoreHorizontal, Trash2 } from "lucide-react";
+import { MoreHorizontal, Trash2, ShoppingCart } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import type { PrebuiltSystem } from "@/lib/types";
 import {
@@ -29,13 +29,24 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface PrebuiltsTableProps {
   systems: PrebuiltSystem[];
-  onDelete: (systemId: string) => void;
+  onDelete?: (systemId: string) => void;
+  showActions?: boolean;
 }
 
-export function PrebuiltsTable({ systems, onDelete }: PrebuiltsTableProps) {
+export function PrebuiltsTable({ systems, onDelete, showActions = true }: PrebuiltsTableProps) {
+  const { toast } = useToast();
+
+  const handleAddToCart = (systemName: string) => {
+    toast({
+      title: 'Added to Cart',
+      description: `${systemName} has been added to your cart.`,
+    });
+  }
+
   return (
     <Table>
       <TableHeader>
@@ -73,43 +84,49 @@ export function PrebuiltsTable({ systems, onDelete }: PrebuiltsTableProps) {
               {formatCurrency(system.price)}
             </TableCell>
             <TableCell>
-              <AlertDialog>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                     <AlertDialogTrigger asChild>
-                      <DropdownMenuItem
-                        onSelect={(e) => e.preventDefault()}
-                        className="text-destructive"
+              {showActions && onDelete ? (
+                <AlertDialog>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                       <AlertDialogTrigger asChild>
+                        <DropdownMenuItem
+                          onSelect={(e) => e.preventDefault()}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </AlertDialogTrigger>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the prebuilt system.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => onDelete(system.id)}
+                        className="bg-destructive hover:bg-destructive/90"
                       >
-                        <Trash2 className="mr-2 h-4 w-4" />
                         Delete
-                      </DropdownMenuItem>
-                    </AlertDialogTrigger>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete the prebuilt system.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => onDelete(system.id)}
-                      className="bg-destructive hover:bg-destructive/90"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              ) : (
+                <Button size="icon" variant="outline" onClick={() => handleAddToCart(system.name)}>
+                  <ShoppingCart className="h-4 w-4" />
+                </Button>
+              )}
             </TableCell>
           </TableRow>
         ))}

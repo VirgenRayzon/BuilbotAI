@@ -31,7 +31,7 @@ export default function StartPage() {
     <div className="flex items-center justify-center min-h-[70vh]">
       <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-headline">Welcome to Forge Architect AI</CardTitle>
+          <CardTitle className="text-3xl font-headline">Welcome to Buildbot AI</CardTitle>
           <CardDescription className="pt-2">Your AI-powered PC building guide. Sign in or create an account to get started.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">

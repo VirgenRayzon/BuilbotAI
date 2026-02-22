@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from 'next/image';
@@ -8,6 +9,7 @@ import type { Part } from '@/lib/types';
 import { Plus } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface PartCardProps {
   part: Part;
@@ -26,7 +28,10 @@ export function PartCard({ part, onAddToBuild }: PartCardProps) {
   }
 
   return (
-    <Card className="flex flex-col h-full overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 ease-in-out">
+    <Card className={cn(
+      "flex flex-col h-full overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 ease-in-out",
+      part.stock === 0 && "grayscale opacity-60"
+    )}>
       <CardHeader className="p-4 pb-2">
         <div className="aspect-video relative w-full overflow-hidden rounded-md mb-2">
           <Image
@@ -51,9 +56,8 @@ export function PartCard({ part, onAddToBuild }: PartCardProps) {
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-between items-center">
         <p className="text-lg font-bold font-headline">{formatCurrency(part.price)}</p>
-        <Button size="sm" onClick={handleAdd} disabled={part.stock === 0}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add
+        <Button size="icon" onClick={handleAdd} disabled={part.stock === 0}>
+          <Plus className="h-4 w-4" />
         </Button>
       </CardFooter>
     </Card>

@@ -1,6 +1,6 @@
-# Forge Architect AI
+# Buildbot AI
 
-This is a Next.js starter project for Forge Architect AI, an application that helps users build custom PCs with AI assistance.
+This is a Next.js starter project for Buildbot AI, an application that helps users build custom PCs with AI assistance.
 
 ## Getting Started
 

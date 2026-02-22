@@ -9,7 +9,7 @@ import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { UserProfileProvider } from "@/context/user-profile";
 
 export const metadata: Metadata = {
-  title: "Forge Architect AI",
+  title: "Buildbot AI",
   description: "Your AI-powered PC building guide.",
 };
 

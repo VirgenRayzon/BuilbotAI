@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -35,15 +36,31 @@ interface InventoryToolbarProps {
   categories: Category[];
   onCategoryChange: (categoryName: string, selected: boolean) => void;
   itemCount: number;
+
+  sortBy: string;
+  onSortByChange: (value: string) => void;
+  sortDirection: 'asc' | 'desc';
+  onSortDirectionChange: (value: 'asc' | 'desc') => void;
+  supportedSorts: string[];
+
+  view?: 'grid' | 'list';
+  onViewChange?: (value: 'grid' | 'list') => void;
+  showViewToggle?: boolean;
 }
 
 export function InventoryToolbar({
   categories,
   onCategoryChange,
   itemCount,
+  sortBy,
+  onSortByChange,
+  sortDirection,
+  onSortDirectionChange,
+  supportedSorts,
+  view,
+  onViewChange,
+  showViewToggle = false,
 }: InventoryToolbarProps) {
-  const [sortAsc, setSortAsc] = React.useState(true);
-  const [view, setView] = React.useState("grid");
   const hasIcons = React.useMemo(() => categories.some(c => c.icon), [categories]);
 
   const handleToggleChange = (value: string[]) => {
@@ -86,7 +103,7 @@ export function InventoryToolbar({
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
                   <Filter className="mr-2 h-4 w-4" />
-                  All Categories
+                  Categories
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56">
@@ -109,23 +126,29 @@ export function InventoryToolbar({
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
                 <ArrowUpDown className="mr-2 h-4 w-4" />
-                Sort by Name
+                Sort by {sortBy}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuCheckboxItem checked>Name</DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem>Price</DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem>Date Added</DropdownMenuCheckboxItem>
+              {supportedSorts.map(sortOption => (
+                <DropdownMenuCheckboxItem
+                  key={sortOption}
+                  checked={sortBy === sortOption}
+                  onCheckedChange={() => onSortByChange(sortOption)}
+                >
+                  {sortOption}
+                </DropdownMenuCheckboxItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button variant="ghost" size="sm" onClick={() => setSortAsc(!sortAsc)}>
-            {sortAsc ? (
+          <Button variant="ghost" size="sm" onClick={() => onSortDirectionChange(sortDirection === 'asc' ? 'desc' : 'asc')}>
+            {sortDirection === 'asc' ? (
               <ArrowUpAZ className="mr-2 h-4 w-4" />
             ) : (
               <ArrowDownAZ className="mr-2 h-4 w-4" />
             )}
-            {sortAsc ? "ASC" : "DESC"}
+            {sortDirection.toUpperCase()}
           </Button>
         </div>
 
@@ -133,14 +156,16 @@ export function InventoryToolbar({
           <Badge variant="secondary" className="hidden sm:inline-flex">
             Showing {itemCount} items
           </Badge>
-          <ToggleGroup type="single" value={view} onValueChange={setView} variant="outline" className="hidden sm:flex">
-            <ToggleGroupItem value="list" aria-label="Toggle list view">
-              <List className="h-4 w-4" />
-            </ToggleGroupItem>
-            <ToggleGroupItem value="grid" aria-label="Toggle grid view">
-              <LayoutGrid className="h-4 w-4" />
-            </ToggleGroupItem>
-          </ToggleGroup>
+          {showViewToggle && view && onViewChange && (
+            <ToggleGroup type="single" value={view} onValueChange={(v) => v && onViewChange(v as 'grid' | 'list')} variant="outline" className="hidden sm:flex">
+              <ToggleGroupItem value="list" aria-label="Toggle list view">
+                <List className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="grid" aria-label="Toggle grid view">
+                <LayoutGrid className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+          )}
         </div>
       </div>
     </div>

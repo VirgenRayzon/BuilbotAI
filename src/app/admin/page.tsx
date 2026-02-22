@@ -31,6 +31,13 @@ const componentCategories: { name: Part['category'], selected: boolean }[] = [
   { name: "Cooler", selected: true },
 ];
 
+const prebuiltTiers = [
+    { name: "Entry", selected: true },
+    { name: "Mid-Range", selected: true },
+    { name: "High-End", selected: true },
+    { name: "Workstation", selected: true },
+];
+
 type PartWithoutCategory = Omit<Part, 'category'>;
 
 export default function AdminPage() {
@@ -44,6 +51,16 @@ export default function AdminPage() {
             router.replace('/signin');
         }
     }, [authUser, profile, userLoading, router]);
+
+    // Parts state
+    const [partCategories, setPartCategories] = useState(componentCategories);
+    const [partSortBy, setPartSortBy] = useState('Name');
+    const [partSortDirection, setPartSortDirection] = useState<'asc' | 'desc'>('asc');
+
+    // Prebuilts state
+    const [prebuiltCategories, setPrebuiltCategories] = useState(prebuiltTiers);
+    const [prebuiltSortBy, setPrebuiltSortBy] = useState('Name');
+    const [prebuiltSortDirection, setPrebuiltSortDirection] = useState<'asc' | 'desc'>('asc');
 
     // Fetch each category collection
     const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
@@ -66,7 +83,6 @@ export default function AdminPage() {
     const prebuiltSystemsQuery = useMemo(() => firestore ? collection(firestore, 'prebuiltSystems') : null, [firestore]);
     const { data: prebuiltSystems, loading: prebuiltsLoading } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);
 
-    // Combine all parts and add category back
     const parts = useMemo(() => {
         const allParts: Part[] = [];
         cpus?.forEach(p => allParts.push({ ...p, category: 'CPU' }));
@@ -82,13 +98,12 @@ export default function AdminPage() {
     
     const partsLoading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading;
 
-    const [categories, setCategories] = useState(componentCategories);
-
-
-    const handleCategoryChange = (categoryName: string, selected: boolean) => {
-        setCategories(prev =>
-            prev.map(cat => (cat.name === categoryName ? { ...cat, selected } : cat))
-        );
+    const handlePartCategoryChange = (categoryName: string, selected: boolean) => {
+        setPartCategories(prev => prev.map(cat => (cat.name === categoryName ? { ...cat, selected } : cat)));
+    };
+    
+    const handlePrebuiltCategoryChange = (categoryName: string, selected: boolean) => {
+        setPrebuiltCategories(prev => prev.map(cat => (cat.name === categoryName ? { ...cat, selected } : cat)));
     };
 
     const handleAddPart = async (newPartData: AddPartFormSchema) => {
@@ -111,11 +126,30 @@ export default function AdminPage() {
         await deletePrebuiltSystem(firestore, systemId);
     };
     
-    const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
-    const filteredParts = parts?.filter(part => selectedCategories.includes(part.category)) ?? [];
+    const filteredAndSortedParts = useMemo(() => {
+        const selectedCategories = partCategories.filter(c => c.selected).map(c => c.name);
+        return (parts?.filter(part => selectedCategories.includes(part.category)) ?? [])
+            .sort((a, b) => {
+                let compare = 0;
+                if (partSortBy === 'Name') compare = a.name.localeCompare(b.name);
+                else if (partSortBy === 'Price') compare = a.price - b.price;
+                else if (partSortBy === 'Brand') compare = a.brand.localeCompare(b.brand);
+                else if (partSortBy === 'Stock') compare = a.stock - b.stock;
+                return partSortDirection === 'asc' ? compare : -compare;
+            });
+    }, [parts, partCategories, partSortBy, partSortDirection]);
 
-    const stockIsLoading = partsLoading;
-    const prebuiltsAreLoading = prebuiltsLoading;
+    const filteredAndSortedPrebuilts = useMemo(() => {
+        const selectedCategories = prebuiltCategories.filter(c => c.selected).map(c => c.name);
+        return (prebuiltSystems?.filter(system => selectedCategories.includes(system.tier)) ?? [])
+            .sort((a, b) => {
+                let compare = 0;
+                if (prebuiltSortBy === 'Name') compare = a.name.localeCompare(b.name);
+                else if (prebuiltSortBy === 'Price') compare = a.price - b.price;
+                else if (prebuiltSortBy === 'Tier') compare = a.tier.localeCompare(b.tier);
+                return prebuiltSortDirection === 'asc' ? compare : -compare;
+            });
+    }, [prebuiltSystems, prebuiltCategories, prebuiltSortBy, prebuiltSortDirection]);
 
     if (userLoading || !authUser || !profile?.isAdmin) {
         return (
@@ -152,15 +186,20 @@ export default function AdminPage() {
                             </AddPartDialog>
                         </div>
                         <InventoryToolbar 
-                            categories={categories}
-                            onCategoryChange={handleCategoryChange}
-                            itemCount={filteredParts.length}
+                            categories={partCategories}
+                            onCategoryChange={handlePartCategoryChange}
+                            itemCount={filteredAndSortedParts.length}
+                            sortBy={partSortBy}
+                            onSortByChange={setPartSortBy}
+                            sortDirection={partSortDirection}
+                            onSortDirectionChange={setPartSortDirection}
+                            supportedSorts={['Name', 'Price', 'Brand', 'Stock']}
                         />
                         <Card className="mt-6">
-                            {stockIsLoading ? <TableSkeleton columns={6} /> : (
+                            {partsLoading ? <TableSkeleton columns={6} /> : (
                                 (parts?.length ?? 0) > 0 ? (
-                                    filteredParts.length > 0 ? (
-                                        <InventoryTable parts={filteredParts} onDelete={handleDeletePart} />
+                                    filteredAndSortedParts.length > 0 ? (
+                                        <InventoryTable parts={filteredAndSortedParts} onDelete={handleDeletePart} />
                                     ) : (
                                         <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
                                             <p>No items match the selected categories.</p>
@@ -192,10 +231,26 @@ export default function AdminPage() {
                                 </Button>
                             </AddPrebuiltDialog>
                         </div>
+                        <InventoryToolbar 
+                            categories={prebuiltCategories}
+                            onCategoryChange={handlePrebuiltCategoryChange}
+                            itemCount={filteredAndSortedPrebuilts.length}
+                            sortBy={prebuiltSortBy}
+                            onSortByChange={setPrebuiltSortBy}
+                            sortDirection={prebuiltSortDirection}
+                            onSortDirectionChange={setPrebuiltSortDirection}
+                            supportedSorts={['Name', 'Price', 'Tier']}
+                        />
                         <Card className="mt-6">
-                            {prebuiltsAreLoading ? <TableSkeleton columns={4} /> : (
+                            {prebuiltsLoading ? <TableSkeleton columns={4} /> : (
                                 (prebuiltSystems?.length ?? 0) > 0 ? (
-                                    <PrebuiltsTable systems={prebuiltSystems!} onDelete={handleDeletePrebuilt} />
+                                     filteredAndSortedPrebuilts.length > 0 ? (
+                                        <PrebuiltsTable systems={filteredAndSortedPrebuilts} onDelete={handleDeletePrebuilt} />
+                                    ) : (
+                                        <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
+                                            <p>No systems match the selected categories.</p>
+                                        </CardContent>
+                                    )
                                 ) : (
                                      <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
                                         <div className='text-center'>

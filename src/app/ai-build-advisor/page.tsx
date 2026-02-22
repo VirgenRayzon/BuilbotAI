@@ -8,7 +8,6 @@ import { getAiRecommendations } from "@/app/actions";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { Build, AiRecommendation } from "@/lib/types";
 import { Cpu, Server, CircuitBoard, MemoryStick, Bot, Wallet, HardDrive, Power, RectangleVertical, Wind } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 
 const componentMetadata: { [key: string]: { icon: React.ElementType, image: any }} = {
@@ -107,28 +106,6 @@ export default function AiBuildAdvisorPage() {
     });
   };
 
-  const handleShare = () => {
-    if (!build) return;
-    const shareText = `Check out my PC build from Forge Architect AI!
-CPU: ${build.cpu.model}
-GPU: ${build.gpu.model}
-Motherboard: ${build.motherboard.model}
-RAM: ${build.ram.model}
-Storage: ${build.storage.model}
-PSU: ${build.psu.model}
-Case: ${build.case.model}
-Cooler: ${build.cooler.model}
----
-Total Estimated Cost: ${formatCurrency(totalPrice)}
-Estimated Wattage: ${build.estimatedWattage}
-`;
-    navigator.clipboard.writeText(shareText);
-    toast({
-      title: "Build Copied!",
-      description: "Your build configuration has been copied to the clipboard.",
-    });
-  };
-
   return (
     <main className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-8">
       <div className="grid lg:grid-cols-12 gap-8 h-full">
@@ -137,7 +114,7 @@ Estimated Wattage: ${build.estimatedWattage}
             <div className="flex items-center gap-3 mb-4">
               <Bot className="w-8 h-8 text-primary" />
               <h2 className="text-2xl font-headline font-semibold">
-                AI Build Advisor
+                Build Advisor
               </h2>
             </div>
             <p className="text-muted-foreground mb-6">
@@ -161,7 +138,6 @@ Estimated Wattage: ${build.estimatedWattage}
                       </p>
                   </div>
               </div>
-              <Button onClick={handleShare} disabled={!build}>Share Build</Button>
           </div>
 
           <BuildSummary build={build} isPending={isPending} />
