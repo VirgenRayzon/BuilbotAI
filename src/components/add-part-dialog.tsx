@@ -57,7 +57,12 @@ const formSchema = z.object({
 
 export type AddPartFormSchema = z.infer<typeof formSchema>;
 
-export function AddPartDialog({ children }: { children: React.ReactNode }) {
+interface AddPartDialogProps {
+  children: React.ReactNode;
+  onAddPart: (data: AddPartFormSchema) => void;
+}
+
+export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
   const [open, setOpen] = useState(false);
   const [isAiPending, startAiTransition] = useTransition();
   const { toast } = useToast();
@@ -121,7 +126,7 @@ export function AddPartDialog({ children }: { children: React.ReactNode }) {
   };
 
   const onSubmit = (values: AddPartFormSchema) => {
-    console.log("New Part Added:", values);
+    onAddPart(values);
     toast({
       title: "Part Added!",
       description: `${values.partName} has been added to the inventory.`,

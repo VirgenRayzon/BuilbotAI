@@ -69,7 +69,12 @@ const formSchema = z.object({
 
 export type AddPrebuiltFormSchema = z.infer<typeof formSchema>;
 
-export function AddPrebuiltDialog({ children }: { children: React.ReactNode }) {
+interface AddPrebuiltDialogProps {
+  children: React.ReactNode;
+  onAddPrebuilt: (data: AddPrebuiltFormSchema) => void;
+}
+
+export function AddPrebuiltDialog({ children, onAddPrebuilt }: AddPrebuiltDialogProps) {
   const [open, setOpen] = useState(false);
   const [isAiPending, startAiTransition] = useTransition();
   const [aiResult, setAiResult] = useState<{wattage: string; summary: string} | null>(null);
@@ -135,7 +140,7 @@ export function AddPrebuiltDialog({ children }: { children: React.ReactNode }) {
   };
 
   const onSubmit = (values: AddPrebuiltFormSchema) => {
-    console.log("New Prebuilt Added:", values);
+    onAddPrebuilt(values);
     toast({
       title: "Prebuilt System Added!",
       description: `${values.name} has been added.`,
