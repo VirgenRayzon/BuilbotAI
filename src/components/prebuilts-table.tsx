@@ -82,7 +82,10 @@ export function PrebuiltsTable({ systems, onDelete }: PrebuiltsTableProps) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                      <AlertDialogTrigger asChild>
-                      <DropdownMenuItem className="text-destructive">
+                      <DropdownMenuItem
+                        onSelect={(e) => e.preventDefault()}
+                        className="text-destructive"
+                      >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                       </DropdownMenuItem>
