@@ -28,15 +28,15 @@ export function YourBuild({ build }: YourBuildProps) {
     const totalParts = Object.keys(build).length;
 
     const totalWattage = Object.entries(build).reduce((acc, [name, component]) => {
-        if (name === 'PSU' || !component?.wattage) {
-            return acc;
+        if (name !== 'PSU' && component && typeof component.wattage === 'number') {
+            return acc + component.wattage;
         }
-        return acc + component.wattage;
+        return acc;
     }, 0);
 
     const psu = build['PSU'];
-    const psuWattage = psu?.wattage || 0;
-    const showPsuWarning = psuWattage > 0 && psuWattage < totalWattage;
+    const psuWattage = psu && typeof psu.wattage === 'number' ? psu.wattage : 0;
+    const showPsuWarning = psuWattage > 0 && totalWattage > 0 && psuWattage < totalWattage;
 
     const totalPrice = Object.values(build).reduce((acc, component) => {
         return acc + (component?.price || 0);
@@ -60,7 +60,7 @@ export function YourBuild({ build }: YourBuildProps) {
                                 <p className="font-semibold text-sm">{name}</p>
                                 <p className="text-xs text-muted-foreground">{component?.model ?? "Not selected"}</p>
                             </div>
-                            {component?.wattage && name !== 'PSU' && (
+                            {component && typeof component.wattage === 'number' && name !== 'PSU' && (
                                 <p className="text-xs font-semibold text-muted-foreground">
                                     {`~${component.wattage}W`}
                                 </p>
