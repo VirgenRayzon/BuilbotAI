@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useTransition, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Package, PackageCheck, ServerCrash } from "lucide-react";
@@ -13,10 +13,9 @@ import type { Part, PrebuiltSystem } from '@/lib/types';
 import { InventoryTable } from '@/components/inventory-table';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { addPart, deletePart, addPrebuiltSystem, deletePrebuiltSystem, seedDatabase } from '@/firebase/database';
+import { addPart, deletePart, addPrebuiltSystem, deletePrebuiltSystem } from '@/firebase/database';
 import { collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
-import { useToast } from '@/hooks/use-toast';
 import { TableSkeleton } from '@/components/table-skeleton';
 
 const componentCategories: { name: Part['category'], selected: boolean }[] = [
@@ -34,9 +33,6 @@ type PartWithoutCategory = Omit<Part, 'category'>;
 
 export default function AdminPage() {
     const firestore = useFirestore();
-    const { toast } = useToast();
-    const [isSeeding, startSeedingTransition] = useTransition();
-    const [hasCheckedAndSeeded, setHasCheckedAndSeeded] = useState(false);
 
     // Fetch each category collection
     const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
@@ -57,7 +53,7 @@ export default function AdminPage() {
     const { data: coolers, loading: coolersLoading } = useCollection<PartWithoutCategory>(coolerQuery);
 
     const prebuiltSystemsQuery = useMemo(() => firestore ? collection(firestore, 'prebuiltSystems') : null, [firestore]);
-    const { data: prebuiltSystems, loading: prebuiltsLoading, error: prebuiltsError } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);
+    const { data: prebuiltSystems, loading: prebuiltsLoading } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);
 
     // Combine all parts and add category back
     const parts = useMemo(() => {
@@ -76,34 +72,6 @@ export default function AdminPage() {
     const partsLoading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading;
 
     const [categories, setCategories] = useState(componentCategories);
-
-    useEffect(() => {
-        if (!firestore || partsLoading || prebuiltsLoading || hasCheckedAndSeeded || isSeeding) {
-            return;
-        }
-        
-        // Only seed if there are no errors and the collections are confirmed to be empty
-        if (!prebuiltsError && parts.length === 0 && prebuiltSystems?.length === 0) {
-            startSeedingTransition(async () => {
-                try {
-                    await seedDatabase(firestore);
-                    toast({
-                        title: "Database Seeded!",
-                        description: "Your database was empty, so initial parts and prebuilt systems have been added.",
-                    });
-                } catch (e) {
-                    console.error("Seeding failed:", e);
-                    toast({
-                        variant: "destructive",
-                        title: "Seeding Failed",
-                        description: "Could not add initial data to the database. Please check your Firestore permissions.",
-                    });
-                }
-            });
-        }
-        setHasCheckedAndSeeded(true);
-
-    }, [firestore, parts, prebuiltSystems, partsLoading, prebuiltsLoading, hasCheckedAndSeeded, isSeeding, toast, prebuiltsError]);
 
 
     const handleCategoryChange = (categoryName: string, selected: boolean) => {
@@ -135,8 +103,8 @@ export default function AdminPage() {
     const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
     const filteredParts = parts?.filter(part => selectedCategories.includes(part.category)) ?? [];
 
-    const stockIsLoading = partsLoading || isSeeding;
-    const prebuiltsAreLoading = prebuiltsLoading || isSeeding;
+    const stockIsLoading = partsLoading;
+    const prebuiltsAreLoading = prebuiltsLoading;
 
     return (
         <div className="container mx-auto p-4 md:p-8">
