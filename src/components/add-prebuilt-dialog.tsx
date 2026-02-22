@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -36,20 +36,8 @@ import { ScrollArea } from "./ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Loader2, Sparkles, Info, Zap } from "lucide-react";
 import { getAiPrebuiltSuggestions } from "@/app/actions";
-
-// Mock data for component selection. In a real app, this would come from your inventory database.
-const mockInventory = {
-    CPU: [{ id: 'cpu1', name: 'AMD Ryzen 7 7800X3D' }, { id: 'cpu2', name: 'Intel Core i9-14900K' }],
-    GPU: [{ id: 'gpu1', name: 'NVIDIA GeForce RTX 4090' }, { id: 'gpu2', name: 'AMD Radeon RX 7900 XTX' }],
-    Motherboard: [{ id: 'mobo1', name: 'ASUS ROG Strix X670E-F' }, { id: 'mobo2', name: 'Gigabyte Z790 Aorus Elite' }],
-    RAM: [{ id: 'ram1', name: 'G.Skill Trident Z5 RGB 32GB DDR5-6000' }, { id: 'ram2', name: 'Corsair Vengeance 32GB DDR5-5600' }],
-    Storage: [{ id: 'storage1', name: 'Samsung 990 Pro 2TB NVMe SSD' }, { id: 'storage2', name: 'Crucial P5 Plus 1TB NVMe SSD' }],
-    PSU: [{ id: 'psu1', name: 'SeaSonic FOCUS Plus Gold 850W' }, { id: 'psu2', name: 'Corsair RM1000e 1000W' }],
-    Case: [{ id: 'case1', name: 'Lian Li PC-O11 Dynamic EVO' }, { id: 'case2', name: 'Fractal Design Meshify 2' }],
-    Cooler: [{ id: 'cooler1', name: 'Noctua NH-D15' }, { id: 'cooler2', name: 'Deepcool LS720 360mm AIO' }],
-};
-
-const componentCategories = Object.keys(mockInventory) as (keyof typeof mockInventory)[];
+import { parts } from "@/lib/database";
+import type { Part } from "@/lib/types";
 
 const formSchema = z.object({
   name: z.string().min(1, "System name is required."),
@@ -79,6 +67,19 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt }: AddPrebuiltDialog
   const [isAiPending, startAiTransition] = useTransition();
   const [aiResult, setAiResult] = useState<{wattage: string; summary: string} | null>(null);
   const { toast } = useToast();
+  
+  const inventory = useMemo(() => {
+    return parts.reduce((acc, part) => {
+        const category = part.category;
+        if (!acc[category]) {
+            acc[category] = [];
+        }
+        acc[category].push(part);
+        return acc;
+    }, {} as Record<Part['category'], Part[]>);
+  }, []);
+
+  const componentCategories = Object.keys(inventory) as (keyof typeof inventory)[];
 
   const form = useForm<AddPrebuiltFormSchema>({
     resolver: zodResolver(formSchema),
@@ -256,7 +257,6 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt }: AddPrebuiltDialog
                 
                 <div className="space-y-2">
                     <FormLabel>Select Components</FormLabel>
-                    <p className="text-xs text-muted-foreground">Component data is mocked for demonstration. In a real app, this would be your inventory.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                         {componentCategories.map(cat => (
                             <FormField
@@ -266,14 +266,14 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt }: AddPrebuiltDialog
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel className="text-xs text-muted-foreground font-semibold">{cat}</FormLabel>
-                                         <Select onValueChange={field.onChange} value={field.value}>
+                                         <Select onValueChange={field.onChange} value={field.value || ""}>
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder={`Select ${cat}`} />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {(mockInventory[cat] as {id: string, name: string}[]).map(item => (
+                                                {(inventory[cat] || []).map(item => (
                                                     <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
                                                 ))}
                                             </SelectContent>
