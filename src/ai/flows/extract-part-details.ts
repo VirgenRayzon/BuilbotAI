@@ -29,7 +29,7 @@ const ExtractPartDetailsOutputSchema = z.object({
   brand: z.string().describe('The brand name of the component (e.g., "NVIDIA", "AMD", "Intel").'),
   price: z.number().describe("An estimated price for the component in Philippine Pesos (PHP)."),
   wattage: z.number().optional().describe("An estimated power consumption in watts for the component (e.g. 125 for a CPU or 850 for a PSU). Should be a number."),
-  specifications: z.array(SpecificationSchema).describe('A list of key-value specifications for the component. Return a maximum of 6 of the most important specifications.'),
+  specifications: z.array(SpecificationSchema).describe('A list of key-value specifications for the component, following strict category-specific keys.'),
 });
 export type ExtractPartDetailsOutput = z.infer<typeof ExtractPartDetailsOutputSchema>;
 
@@ -43,18 +43,22 @@ const prompt = ai.definePrompt({
   output: { schema: ExtractPartDetailsOutputSchema },
   prompt: `You are an expert PC component database. Your task is to extract key details for a given PC part name.
 
-Given the part name, provide the full corrected part name, identify the category, the brand, provide an estimated price in Philippine Pesos (PHP), an estimated power consumption in watts (if applicable), and the top 5-6 most important and common specifications. Do not include the part name or brand in the specifications. The category must be one of the following: "CPU", "GPU", "Motherboard", "RAM", "Storage", "PSU", "Case", "Cooler".
+Given the part name, provide the full corrected part name, identify its category, brand, an estimated price in Philippine Pesos (PHP), and an estimated power consumption in watts (if applicable).
 
-For components that consume power (like CPUs, GPUs), provide an estimated wattage. For power supply units (PSUs), the wattage is a key specification and must be extracted to the 'wattage' field.
+Crucially, you must also provide a list of key-value specifications that are **consistent and specific to the component's category**. Adhere strictly to the following keys for each category:
 
-Here are some examples:
-- For "NVIDIA GeForce RTX 3060", you should identify the brand as "NVIDIA", category as "GPU", provide a PHP price, a wattage around 170, and specifications like "Memory: 12GB GDDR6", "CUDA Cores: 3584".
-- For "AMD Ryzen 5 5600X", brand is "AMD", category is "CPU", wattage around 65, and specs could be "Cores: 6", "Threads: 12", "Socket: AM4".
-- For "Kingston Fury Beast 32GB DDR5", brand is "Kingston", category is "RAM", wattage is very low (e.g. 5) and specs could be "Capacity: 32GB (2x16GB)", "Speed: 5600MT/s", "Type: DDR5".
-- For "Samsung 980 Pro 1TB", brand is "Samsung", category is "Storage", wattage is very low (e.g. 10) and specs could be "Capacity: 1TB", "Interface: NVMe PCIe 4.0", "Form Factor: M.2".
-- For "Corsair RM850x", brand is "Corsair", category is "PSU", wattage is 850, and specs could be "Efficiency: 80+ Gold", "Form Factor: ATX". Note how the 850W is extracted to the wattage field.
-- For "ASUS ROG Strix B550-F Gaming", brand is "ASUS", category is "Motherboard", wattage can be estimated around 50, and specs could be "Socket: AM4", "Chipset: B550", "Form Factor: ATX".
+- **CPU**: Provide 'Cores', 'Threads', 'Socket', 'Base Clock', and 'Boost Clock'.
+- **GPU**: Provide 'VRAM Capacity', 'Memory Interface', 'Boost Clock', and 'Game Clock'.
+- **Motherboard**: Provide 'Socket', 'Chipset', 'Form Factor', 'Memory Slots', and 'Max RAM'.
+- **RAM**: Provide 'Capacity', 'Speed', 'Type', and 'CAS Latency'.
+- **Storage**: Provide 'Capacity', 'Type' (e.g., NVMe SSD, SATA SSD, HDD), 'Interface', and 'Form Factor'.
+- **PSU**: Provide 'Efficiency' (e.g., 80+ Gold), 'Form Factor', and 'Modularity'.
+- **Case**: Provide 'Type' (e.g., ATX Mid Tower), 'Motherboard Support', and 'Max GPU Length'.
+- **Cooler**: Provide 'Type' (e.g., Air, AIO Liquid), 'Fan RPM', and 'Socket Support'.
 
+The category must be one of the following: "CPU", "GPU", "Motherboard", "RAM", "Storage", "PSU", "Case", "Cooler".
+
+For components that consume power (like CPUs and GPUs), provide an estimated wattage in the top-level 'wattage' field. For PSUs, the advertised wattage (e.g., 850 for an 850W PSU) is the primary value for the 'wattage' field and should not be in the specifications list.
 
 Part Name: {{{partName}}}
 
