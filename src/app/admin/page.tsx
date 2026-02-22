@@ -17,7 +17,7 @@ import { addPart, deletePart, addPrebuiltSystem, deletePrebuiltSystem, seedDatab
 import { collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
+import { TableSkeleton } from '@/components/table-skeleton';
 
 const componentCategories = [
   { name: "CPU", selected: true },
@@ -29,24 +29,6 @@ const componentCategories = [
   { name: "Case", selected: true },
   { name: "Cooler", selected: true },
 ];
-
-function AdminLoadingSkeleton() {
-    return (
-        <div>
-            <div className="flex justify-between items-center mb-4">
-                <Skeleton className="h-10 w-48" />
-                <Skeleton className="h-10 w-36" />
-            </div>
-            <Skeleton className="h-24 w-full mb-6" />
-            <Card>
-                <CardContent>
-                    <Skeleton className="h-[300px] w-full" />
-                </CardContent>
-            </Card>
-        </div>
-    );
-}
-
 
 export default function AdminPage() {
     const firestore = useFirestore();
@@ -69,7 +51,16 @@ export default function AdminPage() {
 
     const handleAddPart = async (newPartData: AddPartFormSchema) => {
         if (!firestore) return;
-        await addPart(firestore, newPartData);
+        const partToAdd = {
+            name: newPartData.partName,
+            category: newPartData.category as Part['category'],
+            brand: newPartData.brand,
+            price: newPartData.price,
+            stock: newPartData.stockCount,
+            imageUrl: newPartData.imageUrl || `https://picsum.photos/seed/${newPartData.partName.replace(/\s+/g, '').toLowerCase()}/800/600`,
+            specifications: newPartData.specifications
+        };
+        await addPart(firestore, partToAdd);
     };
 
     const handleDeletePart = async (partId: string) => {
@@ -79,7 +70,25 @@ export default function AdminPage() {
 
     const handleAddPrebuilt = async (newPrebuiltData: AddPrebuiltFormSchema) => {
         if (!firestore) return;
-        await addPrebuiltSystem(firestore, newPrebuiltData);
+        const { name, tier, description, price, imageUrl, ...components } = newPrebuiltData;
+        const prebuiltToAdd = {
+            name,
+            tier: tier as PrebuiltSystem['tier'],
+            description,
+            price,
+            imageUrl: imageUrl || `https://picsum.photos/seed/${name.replace(/\s+/g, '').toLowerCase()}/800/600`,
+            components: {
+                cpu: components.cpu,
+                gpu: components.gpu,
+                motherboard: components.motherboard,
+                ram: components.ram,
+                storage: components.storage,
+                psu: components.psu,
+                case: components.case,
+                cooler: components.cooler
+            }
+        };
+        await addPrebuiltSystem(firestore, prebuiltToAdd);
     };
 
     const handleDeletePrebuilt = async (systemId: string) => {
@@ -101,8 +110,6 @@ export default function AdminPage() {
     const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
     const filteredParts = parts?.filter(part => selectedCategories.includes(part.category)) ?? [];
 
-    const isLoading = partsLoading || prebuiltsLoading;
-
     return (
         <div className="container mx-auto p-4 md:p-8">
             <Tabs defaultValue="stock">
@@ -122,24 +129,24 @@ export default function AdminPage() {
                     </Button>
                 </div>
                 <TabsContent value="stock">
-                     {isLoading ? <AdminLoadingSkeleton /> : (
-                        <div>
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-2xl font-headline font-bold">INVENTORY OVERVIEW</h2>
-                                <AddPartDialog onAddPart={handleAddPart}>
-                                    <Button>
-                                        <Plus className="mr-2" />
-                                        Add New Part
-                                    </Button>
-                                </AddPartDialog>
-                            </div>
-                            <InventoryToolbar 
-                                categories={categories}
-                                onCategoryChange={handleCategoryChange}
-                                itemCount={filteredParts.length}
-                            />
-                            <Card className="mt-6">
-                                {(parts?.length ?? 0) > 0 ? (
+                    <div>
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-2xl font-headline font-bold">INVENTORY OVERVIEW</h2>
+                            <AddPartDialog onAddPart={handleAddPart}>
+                                <Button>
+                                    <Plus className="mr-2" />
+                                    Add New Part
+                                </Button>
+                            </AddPartDialog>
+                        </div>
+                        <InventoryToolbar 
+                            categories={categories}
+                            onCategoryChange={handleCategoryChange}
+                            itemCount={filteredParts.length}
+                        />
+                        <Card className="mt-6">
+                            {partsLoading ? <TableSkeleton columns={6} /> : (
+                                (parts?.length ?? 0) > 0 ? (
                                     filteredParts.length > 0 ? (
                                         <InventoryTable parts={filteredParts} onDelete={handleDeletePart} />
                                     ) : (
@@ -157,25 +164,25 @@ export default function AdminPage() {
                                             </p>
                                         </div>
                                     </CardContent>
-                                )}
-                            </Card>
-                        </div>
-                     )}
+                                )
+                            )}
+                        </Card>
+                    </div>
                 </TabsContent>
                 <TabsContent value="prebuilts">
-                     {isLoading ? <AdminLoadingSkeleton /> : (
-                        <div>
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-2xl font-headline font-bold">PREBUILTS OVERVIEW</h2>
-                                <AddPrebuiltDialog onAddPrebuilt={handleAddPrebuilt} parts={parts ?? []}>
-                                    <Button>
-                                        <Plus className="mr-2" />
-                                        Add New Prebuilt
-                                    </Button>
-                                </AddPrebuiltDialog>
-                            </div>
-                            <Card className="mt-6">
-                                {(prebuiltSystems?.length ?? 0) > 0 ? (
+                    <div>
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-2xl font-headline font-bold">PREBUILTS OVERVIEW</h2>
+                            <AddPrebuiltDialog onAddPrebuilt={handleAddPrebuilt} parts={parts ?? []}>
+                                <Button>
+                                    <Plus className="mr-2" />
+                                    Add New Prebuilt
+                                </Button>
+                            </AddPrebuiltDialog>
+                        </div>
+                        <Card className="mt-6">
+                            {prebuiltsLoading ? <TableSkeleton columns={4} /> : (
+                                (prebuiltSystems?.length ?? 0) > 0 ? (
                                     <PrebuiltsTable systems={prebuiltSystems!} onDelete={handleDeletePrebuilt} />
                                 ) : (
                                      <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
@@ -187,10 +194,10 @@ export default function AdminPage() {
                                             </p>
                                         </div>
                                     </CardContent>
-                                )}
-                            </Card>
-                        </div>
-                     )}
+                                )
+                            )}
+                        </Card>
+                    </div>
                 </TabsContent>
             </Tabs>
         </div>
