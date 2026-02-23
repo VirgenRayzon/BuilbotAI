@@ -21,16 +21,17 @@ import { TableSkeleton } from '@/components/table-skeleton';
 import { useUserProfile } from '@/context/user-profile';
 import { AdminPartCard } from '@/components/admin-part-card';
 import { PrebuiltSystemCard } from '@/components/prebuilt-system-card';
+import { PaginationControls } from "@/components/pagination-controls";
 
 const componentCategories: { name: Part['category'], selected: boolean }[] = [
-  { name: "CPU", selected: true },
-  { name: "GPU", selected: true },
-  { name: "Motherboard", selected: true },
-  { name: "RAM", selected: true },
-  { name: "Storage", selected: true },
-  { name: "PSU", selected: true },
-  { name: "Case", selected: true },
-  { name: "Cooler", selected: true },
+    { name: "CPU", selected: true },
+    { name: "GPU", selected: true },
+    { name: "Motherboard", selected: true },
+    { name: "RAM", selected: true },
+    { name: "Storage", selected: true },
+    { name: "PSU", selected: true },
+    { name: "Case", selected: true },
+    { name: "Cooler", selected: true },
 ];
 
 const prebuiltTiers = [
@@ -59,13 +60,16 @@ export default function AdminPage() {
     const [partSortBy, setPartSortBy] = useState('Name');
     const [partSortDirection, setPartSortDirection] = useState<'asc' | 'desc'>('asc');
     const [partView, setPartView] = useState<'grid' | 'list'>('list');
+    const [partCurrentPage, setPartCurrentPage] = useState(1);
+    const [partItemsPerPage, setPartItemsPerPage] = useState(10);
 
     // Prebuilts state
     const [prebuiltCategories, setPrebuiltCategories] = useState(prebuiltTiers);
     const [prebuiltSortBy, setPrebuiltSortBy] = useState('Name');
     const [prebuiltSortDirection, setPrebuiltSortDirection] = useState<'asc' | 'desc'>('asc');
     const [prebuiltView, setPrebuiltView] = useState<'grid' | 'list'>('list');
-
+    const [prebuiltCurrentPage, setPrebuiltCurrentPage] = useState(1);
+    const [prebuiltItemsPerPage, setPrebuiltItemsPerPage] = useState(10);
 
     // Fetch each category collection
     const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
@@ -100,24 +104,30 @@ export default function AdminPage() {
         coolers?.forEach(p => allParts.push({ ...p, category: 'Cooler' }));
         return allParts;
     }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers]);
-    
+
     const partsLoading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading;
 
     const handlePartCategoryChange = (categoryName: string, selected: boolean) => {
-        setPartCategories(prev => prev.map(cat => (cat.name === categoryName ? { ...cat, selected } : cat)));
+        setPartCurrentPage(1);
+        setPartCategories(prev =>
+            prev.map(cat => (cat.name === categoryName ? { ...cat, selected } : cat))
+        );
     };
-    
-    const handlePrebuiltCategoryChange = (categoryName: string, selected: boolean) => {
-        setPrebuiltCategories(prev => prev.map(cat => (cat.name === categoryName ? { ...cat, selected } : cat)));
+
+    const handlePrebuiltCategoryChange = (tierName: string, selected: boolean) => {
+        setPrebuiltCurrentPage(1);
+        setPrebuiltCategories(prev =>
+            prev.map(tier => (tier.name === tierName ? { ...tier, selected } : tier))
+        );
     };
 
     const handleAddPart = async (newPartData: AddPartFormSchema) => {
         if (!firestore) return;
-    
+
         if (parts.some(part => part.name.toLowerCase() === newPartData.partName.toLowerCase())) {
             throw new Error(`A part named "${newPartData.partName}" already exists.`);
         }
-    
+
         await addPart(firestore, newPartData);
     };
 
@@ -140,7 +150,7 @@ export default function AdminPage() {
         if (!firestore) return;
         await deletePrebuiltSystem(firestore, systemId);
     };
-    
+
     const filteredAndSortedParts = useMemo(() => {
         const selectedCategories = partCategories.filter(c => c.selected).map(c => c.name);
         return (parts?.filter(part => selectedCategories.includes(part.category)) ?? [])
@@ -165,6 +175,18 @@ export default function AdminPage() {
                 return prebuiltSortDirection === 'asc' ? compare : -compare;
             });
     }, [prebuiltSystems, prebuiltCategories, prebuiltSortBy, prebuiltSortDirection]);
+
+    const partTotalPages = Math.ceil(filteredAndSortedParts.length / partItemsPerPage);
+    const paginatedParts = useMemo(() => {
+        const startIndex = (partCurrentPage - 1) * partItemsPerPage;
+        return filteredAndSortedParts.slice(startIndex, startIndex + partItemsPerPage);
+    }, [filteredAndSortedParts, partCurrentPage, partItemsPerPage]);
+
+    const prebuiltTotalPages = Math.ceil(filteredAndSortedPrebuilts.length / prebuiltItemsPerPage);
+    const paginatedPrebuilts = useMemo(() => {
+        const startIndex = (prebuiltCurrentPage - 1) * prebuiltItemsPerPage;
+        return filteredAndSortedPrebuilts.slice(startIndex, startIndex + prebuiltItemsPerPage);
+    }, [filteredAndSortedPrebuilts, prebuiltCurrentPage, prebuiltItemsPerPage]);
 
     if (userLoading || !authUser || !profile?.isAdmin) {
         return (
@@ -200,14 +222,14 @@ export default function AdminPage() {
                                 </Button>
                             </AddPartDialog>
                         </div>
-                        <InventoryToolbar 
+                        <InventoryToolbar
                             categories={partCategories}
                             onCategoryChange={handlePartCategoryChange}
                             itemCount={filteredAndSortedParts.length}
                             sortBy={partSortBy}
-                            onSortByChange={setPartSortBy}
+                            onSortByChange={(val) => { setPartSortBy(val); setPartCurrentPage(1); }}
                             sortDirection={partSortDirection}
-                            onSortDirectionChange={setPartSortDirection}
+                            onSortDirectionChange={(val) => { setPartSortDirection(val); setPartCurrentPage(1); }}
                             supportedSorts={['Name', 'Price', 'Brand', 'Stock']}
                             showViewToggle={true}
                             view={partView}
@@ -217,15 +239,33 @@ export default function AdminPage() {
                             (parts?.length ?? 0) > 0 ? (
                                 filteredAndSortedParts.length > 0 ? (
                                     partView === 'list' ? (
-                                        <Card className="mt-6">
-                                            <InventoryTable parts={filteredAndSortedParts} onDelete={handleDeletePart} onUpdateStock={handleUpdatePartStock} />
-                                        </Card>
+                                        <>
+                                            <Card className="mt-6">
+                                                <InventoryTable parts={paginatedParts} onDelete={handleDeletePart} onUpdateStock={handleUpdatePartStock} />
+                                            </Card>
+                                            <PaginationControls
+                                                currentPage={partCurrentPage}
+                                                totalPages={partTotalPages}
+                                                itemsPerPage={partItemsPerPage}
+                                                onPageChange={setPartCurrentPage}
+                                                onItemsPerPageChange={setPartItemsPerPage}
+                                            />
+                                        </>
                                     ) : (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
-                                            {filteredAndSortedParts.map(part => (
-                                                <AdminPartCard key={part.id} part={part} onDelete={handleDeletePart} onUpdateStock={handleUpdatePartStock} />
-                                            ))}
-                                        </div>
+                                        <>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
+                                                {paginatedParts.map(part => (
+                                                    <AdminPartCard key={part.id} part={part} onDelete={handleDeletePart} onUpdateStock={handleUpdatePartStock} />
+                                                ))}
+                                            </div>
+                                            <PaginationControls
+                                                currentPage={partCurrentPage}
+                                                totalPages={partTotalPages}
+                                                itemsPerPage={partItemsPerPage}
+                                                onPageChange={setPartCurrentPage}
+                                                onItemsPerPageChange={setPartItemsPerPage}
+                                            />
+                                        </>
                                     )
                                 ) : (
                                     <Card className="mt-6">
@@ -261,33 +301,51 @@ export default function AdminPage() {
                                 </Button>
                             </AddPrebuiltDialog>
                         </div>
-                        <InventoryToolbar 
+                        <InventoryToolbar
                             categories={prebuiltCategories}
                             onCategoryChange={handlePrebuiltCategoryChange}
                             itemCount={filteredAndSortedPrebuilts.length}
                             sortBy={prebuiltSortBy}
-                            onSortByChange={setPrebuiltSortBy}
+                            onSortByChange={(val) => { setPrebuiltSortBy(val); setPrebuiltCurrentPage(1); }}
                             sortDirection={prebuiltSortDirection}
-                            onSortDirectionChange={setPrebuiltSortDirection}
+                            onSortDirectionChange={(val) => { setPrebuiltSortDirection(val); setPrebuiltCurrentPage(1); }}
                             supportedSorts={['Name', 'Price', 'Tier']}
                             showViewToggle={true}
                             view={prebuiltView}
                             onViewChange={(v) => v && setPrebuiltView(v as 'grid' | 'list')}
                         />
-                        
+
                         {prebuiltsLoading ? <TableSkeleton columns={4} /> : (
                             (prebuiltSystems?.length ?? 0) > 0 ? (
-                                 filteredAndSortedPrebuilts.length > 0 ? (
+                                filteredAndSortedPrebuilts.length > 0 ? (
                                     prebuiltView === 'list' ? (
-                                        <Card className="mt-6">
-                                            <PrebuiltsTable systems={filteredAndSortedPrebuilts} onDelete={handleDeletePrebuilt} />
-                                        </Card>
+                                        <>
+                                            <Card className="mt-6">
+                                                <PrebuiltsTable systems={paginatedPrebuilts} onDelete={handleDeletePrebuilt} />
+                                            </Card>
+                                            <PaginationControls
+                                                currentPage={prebuiltCurrentPage}
+                                                totalPages={prebuiltTotalPages}
+                                                itemsPerPage={prebuiltItemsPerPage}
+                                                onPageChange={setPrebuiltCurrentPage}
+                                                onItemsPerPageChange={setPrebuiltItemsPerPage}
+                                            />
+                                        </>
                                     ) : (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-                                            {filteredAndSortedPrebuilts.map(system => (
-                                                <PrebuiltSystemCard key={system.id} system={system} />
-                                            ))}
-                                        </div>
+                                        <>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                                                {paginatedPrebuilts.map(system => (
+                                                    <PrebuiltSystemCard key={system.id} system={system} />
+                                                ))}
+                                            </div>
+                                            <PaginationControls
+                                                currentPage={prebuiltCurrentPage}
+                                                totalPages={prebuiltTotalPages}
+                                                itemsPerPage={prebuiltItemsPerPage}
+                                                onPageChange={setPrebuiltCurrentPage}
+                                                onItemsPerPageChange={setPrebuiltItemsPerPage}
+                                            />
+                                        </>
                                     )
                                 ) : (
                                     <Card className="mt-6">
@@ -298,7 +356,7 @@ export default function AdminPage() {
                                 )
                             ) : (
                                 <Card className="mt-6">
-                                     <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
+                                    <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
                                         <div className='text-center'>
                                             <ServerCrash className="mx-auto h-12 w-12 text-muted-foreground" />
                                             <h3 className="mt-4 text-lg font-medium">No pre-built systems configured.</h3>

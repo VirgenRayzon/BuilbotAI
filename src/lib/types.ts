@@ -9,6 +9,8 @@ export type ComponentData = {
   imageHint: string;
   icon: React.ComponentType<{ className?: string }>;
   wattage?: number;
+  socket?: string;
+  ramType?: string;
 };
 
 export type Build = {

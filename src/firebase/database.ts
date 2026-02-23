@@ -10,13 +10,13 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
         acc[spec.key] = spec.value;
         return acc;
     }, {} as Record<string, string>);
-    
+
     const partData = {
         name: part.partName,
         brand: part.brand,
         price: part.price,
         stock: part.stockCount,
-        imageUrl: part.imageUrl || `https://picsum.photos/seed/${part.partName.replace(/\s+/g, '').toLowerCase()}/800/600`,
+        imageUrl: part.imageUrl || `https://picsum.photos/seed/${part.partName.replace(/\s+/g, '').toLowerCase()}/800/600?pc,component`,
         specifications: specificationsMap,
         ...(part.wattage !== undefined && { wattage: part.wattage })
     };
@@ -34,13 +34,13 @@ export async function deletePart(firestore: Firestore, partId: string, category:
 // Prebuilt Systems
 export async function addPrebuiltSystem(firestore: Firestore, system: AddPrebuiltFormSchema) {
     const { name, tier, description, price, imageUrl, cpu, gpu, motherboard, ram, storage, psu, case: caseComponent, cooler } = system;
-    
+
     const systemData: Omit<PrebuiltSystem, 'id'> = {
         name,
         tier: tier as PrebuiltSystem['tier'],
         description,
         price,
-        imageUrl: imageUrl || `https://picsum.photos/seed/${name.replace(/\s+/g, '').toLowerCase()}/800/600`,
+        imageUrl: imageUrl || `https://picsum.photos/seed/${name.replace(/\s+/g, '').toLowerCase()}/800/600?gaming,pc`,
         components: {
             cpu,
             gpu,

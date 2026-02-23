@@ -1,10 +1,24 @@
-
 "use client";
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { YourBuild } from "@/components/your-build";
-import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, RectangleVertical as CaseIcon, Wind, Plus, X } from "lucide-react";
-import type { ComponentData, Part } from "@/lib/types";
+import {
+  Cpu,
+  Monitor,
+  CircuitBoard,
+  MemoryStick,
+  HardDrive,
+  PlugZap,
+  Square,
+  Wind,
+  Plus,
+  X,
+  Trash2,
+  Info,
+  CheckCircle2,
+  AlertTriangle
+} from "lucide-react";
+import type { ComponentData, Part, Build } from "@/lib/types";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
 import { PartCard } from "@/components/part-card";
 import { useCollection } from "@/firebase/firestore/use-collection";
@@ -17,86 +31,98 @@ import Image from "next/image";
 import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { PaginationControls } from "@/components/pagination-controls";
 
 type PartWithoutCategory = Omit<Part, 'category'>;
 
 const componentCategories = [
   { name: "CPU", icon: Cpu, selected: true },
-  { name: "GPU", icon: Server, selected: true },
+  { name: "GPU", icon: Monitor, selected: true },
   { name: "Motherboard", icon: CircuitBoard, selected: true },
   { name: "RAM", icon: MemoryStick, selected: true },
   { name: "Storage", icon: HardDrive, selected: true },
-  { name: "PSU", icon: Power, selected: true },
-  { name: "Case", icon: CaseIcon, selected: true },
+  { name: "PSU", icon: PlugZap, selected: true },
+  { name: "Case", icon: Square, selected: true },
   { name: "Cooler", icon: Wind, selected: true },
 ];
 
 export default function BuilderPage() {
-    const firestore = useFirestore();
-    const { toast } = useToast();
+  const firestore = useFirestore();
+  const { toast } = useToast();
 
-    // Fetch each category collection
-    const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
-    const { data: cpus, loading: cpusLoading } = useCollection<PartWithoutCategory>(cpuQuery);
-    const gpuQuery = useMemo(() => firestore ? collection(firestore, 'GPU') : null, [firestore]);
-    const { data: gpus, loading: gpusLoading } = useCollection<PartWithoutCategory>(gpuQuery);
-    const motherboardQuery = useMemo(() => firestore ? collection(firestore, 'Motherboard') : null, [firestore]);
-    const { data: motherboards, loading: motherboardsLoading } = useCollection<PartWithoutCategory>(motherboardQuery);
-    const ramQuery = useMemo(() => firestore ? collection(firestore, 'RAM') : null, [firestore]);
-    const { data: rams, loading: ramsLoading } = useCollection<PartWithoutCategory>(ramQuery);
-    const storageQuery = useMemo(() => firestore ? collection(firestore, 'Storage') : null, [firestore]);
-    const { data: storages, loading: storagesLoading } = useCollection<PartWithoutCategory>(storageQuery);
-    const psuQuery = useMemo(() => firestore ? collection(firestore, 'PSU') : null, [firestore]);
-    const { data: psus, loading: psusLoading } = useCollection<PartWithoutCategory>(psuQuery);
-    const caseQuery = useMemo(() => firestore ? collection(firestore, 'Case') : null, [firestore]);
-    const { data: cases, loading: casesLoading } = useCollection<PartWithoutCategory>(caseQuery);
-    const coolerQuery = useMemo(() => firestore ? collection(firestore, 'Cooler') : null, [firestore]);
-    const { data: coolers, loading: coolersLoading } = useCollection<PartWithoutCategory>(coolerQuery);
+  // Fetch each category collection
+  const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
+  const { data: cpus, loading: cpusLoading } = useCollection<PartWithoutCategory>(cpuQuery);
+  const gpuQuery = useMemo(() => firestore ? collection(firestore, 'GPU') : null, [firestore]);
+  const { data: gpus, loading: gpusLoading } = useCollection<PartWithoutCategory>(gpuQuery);
+  const motherboardQuery = useMemo(() => firestore ? collection(firestore, 'Motherboard') : null, [firestore]);
+  const { data: motherboards, loading: motherboardsLoading } = useCollection<PartWithoutCategory>(motherboardQuery);
+  const ramQuery = useMemo(() => firestore ? collection(firestore, 'RAM') : null, [firestore]);
+  const { data: rams, loading: ramsLoading } = useCollection<PartWithoutCategory>(ramQuery);
+  const storageQuery = useMemo(() => firestore ? collection(firestore, 'Storage') : null, [firestore]);
+  const { data: storages, loading: storagesLoading } = useCollection<PartWithoutCategory>(storageQuery);
+  const psuQuery = useMemo(() => firestore ? collection(firestore, 'PSU') : null, [firestore]);
+  const { data: psus, loading: psusLoading } = useCollection<PartWithoutCategory>(psuQuery);
+  const caseQuery = useMemo(() => firestore ? collection(firestore, 'Case') : null, [firestore]);
+  const { data: cases, loading: casesLoading } = useCollection<PartWithoutCategory>(caseQuery);
+  const coolerQuery = useMemo(() => firestore ? collection(firestore, 'Cooler') : null, [firestore]);
+  const { data: coolers, loading: coolersLoading } = useCollection<PartWithoutCategory>(coolerQuery);
 
-    // Combine all parts and add category back
-    const allParts = useMemo(() => {
-        const allParts: Part[] = [];
-        cpus?.forEach(p => allParts.push({ ...p, category: 'CPU' }));
-        gpus?.forEach(p => allParts.push({ ...p, category: 'GPU' }));
-        motherboards?.forEach(p => allParts.push({ ...p, category: 'Motherboard' }));
-        rams?.forEach(p => allParts.push({ ...p, category: 'RAM' }));
-        storages?.forEach(p => allParts.push({ ...p, category: 'Storage' }));
-        psus?.forEach(p => allParts.push({ ...p, category: 'PSU' }));
-        cases?.forEach(p => allParts.push({ ...p, category: 'Case' }));
-        coolers?.forEach(p => allParts.push({ ...p, category: 'Cooler' }));
-        return allParts;
-    }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers]);
-    
-    const loading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading;
+  // Combine all parts and add category back
+  const allParts = useMemo(() => {
+    const allParts: Part[] = [];
+    cpus?.forEach(p => allParts.push({ ...p, category: 'CPU' }));
+    gpus?.forEach(p => allParts.push({ ...p, category: 'GPU' }));
+    motherboards?.forEach(p => allParts.push({ ...p, category: 'Motherboard' }));
+    rams?.forEach(p => allParts.push({ ...p, category: 'RAM' }));
+    storages?.forEach(p => allParts.push({ ...p, category: 'Storage' }));
+    psus?.forEach(p => allParts.push({ ...p, category: 'PSU' }));
+    cases?.forEach(p => allParts.push({ ...p, category: 'Case' }));
+    coolers?.forEach(p => allParts.push({ ...p, category: 'Cooler' }));
+    return allParts;
+  }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers]);
 
-    const [build, setBuild] = useState<Record<string, ComponentData | null>>({
-        CPU: null, GPU: null, Motherboard: null, RAM: null, Storage: null, PSU: null, Case: null, Cooler: null,
-    });
-    
-    const [categories, setCategories] = useState(
-      componentCategories.map(c => ({ name: c.name, selected: true, icon: c.icon }))
+  const loading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading;
+
+  const [build, setBuild] = useState<Record<string, ComponentData | ComponentData[] | null>>({
+    CPU: null, GPU: null, Motherboard: null, RAM: null, Storage: [], PSU: null, Case: null, Cooler: null,
+  });
+
+  const [categories, setCategories] = useState(
+    componentCategories.map(c => ({ name: c.name, selected: true, icon: c.icon }))
+  );
+
+  const [sortBy, setSortBy] = useState('Name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [view, setView] = useState<'grid' | 'list'>('grid');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const handleCategoryChange = (categoryName: string, selected: boolean) => {
+    setCurrentPage(1);
+    setCategories(prev =>
+      prev.map(cat => (cat.name === categoryName ? { ...cat, selected } : cat))
     );
+  };
 
-    const [sortBy, setSortBy] = useState('Name');
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-    const [view, setView] = useState<'grid' | 'list'>('grid');
+  const handlePartToggle = (part: Part) => {
+    const category = part.category;
 
-    const handleCategoryChange = (categoryName: string, selected: boolean) => {
-        setCategories(prev =>
-            prev.map(cat => (cat.name === categoryName ? { ...cat, selected } : cat))
-        );
-    };
+    if (category === 'Storage') {
+      const currentStorage = build['Storage'] as ComponentData[];
+      const isCurrentlySelected = currentStorage.some(c => c.model === part.name);
 
-    const handlePartToggle = (part: Part) => {
-      const category = part.category;
-      const isCurrentlySelected = build[category]?.model === part.name;
-  
       if (isCurrentlySelected) {
-        // Part is already selected, so remove it
-        setBuild(prevBuild => ({ ...prevBuild, [category]: null }));
+        setBuild(prevBuild => ({
+          ...prevBuild,
+          Storage: currentStorage.filter(c => c.model !== part.name)
+        }));
         toast({ title: 'Part Removed', description: `${part.name} has been removed from your build.` });
       } else {
-        // Part is not selected or a different one is, so add/replace it
+        if (part.stock === 0) {
+          toast({ variant: 'destructive', title: 'Out of Stock', description: `${part.name} is currently unavailable.` });
+          return;
+        }
         const componentData: ComponentData = {
           model: part.name,
           price: part.price,
@@ -105,23 +131,113 @@ export default function BuilderPage() {
           imageHint: part.name.toLowerCase().split(' ').slice(0, 2).join(' '),
           icon: componentCategories.find(c => c.name === category)!.icon,
           wattage: part.wattage,
+          socket: part.specifications['Socket']?.toString() || part.specifications['socket']?.toString(),
+          ramType: part.specifications['Memory Type']?.toString() || part.specifications['RAM Type']?.toString() || part.specifications['Memory']?.toString(),
         };
-  
-        setBuild(prevBuild => ({ ...prevBuild, [category]: componentData }));
+        setBuild(prevBuild => ({
+          ...prevBuild,
+          Storage: [...currentStorage, componentData]
+        }));
         toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
       }
-    };
+      return;
+    }
 
-    const sortedAndFilteredParts = useMemo(() => {
-        const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
-        return (allParts?.filter(part => selectedCategories.includes(part.category)) ?? [])
-            .sort((a, b) => {
-                let compare = 0;
-                if (sortBy === 'Name') compare = a.name.localeCompare(b.name);
-                else if (sortBy === 'Price') compare = a.price - b.price;
-                return sortDirection === 'asc' ? compare : -compare;
-            });
-    }, [allParts, categories, sortBy, sortDirection]);
+    const isCurrentlySelected = (build[category] as ComponentData)?.model === part.name;
+
+    if (isCurrentlySelected) {
+      // Part is already selected, so remove it
+      setBuild(prevBuild => ({ ...prevBuild, [category]: null }));
+      toast({ title: 'Part Removed', description: `${part.name} has been removed from your build.` });
+    } else {
+      if (part.stock === 0) {
+        toast({ variant: 'destructive', title: 'Out of Stock', description: `${part.name} is currently unavailable.` });
+        return;
+      }
+
+      // Part is not selected or a different one is, so add/replace it
+      const componentData: ComponentData = {
+        model: part.name,
+        price: part.price,
+        description: Object.entries(part.specifications).slice(0, 2).map(([key, value]) => `${key}: ${value}`).join(' | '),
+        image: part.imageUrl,
+        imageHint: part.name.toLowerCase().split(' ').slice(0, 2).join(' '),
+        icon: componentCategories.find(c => c.name === category)!.icon,
+        wattage: part.wattage,
+        socket: part.specifications['Socket']?.toString() || part.specifications['socket']?.toString(),
+        ramType: part.specifications['Memory Type']?.toString() || part.specifications['RAM Type']?.toString() || part.specifications['Memory']?.toString(),
+      };
+
+      setBuild(prevBuild => ({ ...prevBuild, [category]: componentData }));
+      toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
+    }
+  };
+
+  const checkCompatibility = (part: Part, currentBuild: any) => {
+    const category = part.category;
+    const cpu = currentBuild['CPU'] as ComponentData | null;
+    const mobo = currentBuild['Motherboard'] as ComponentData | null;
+    const ram = currentBuild['RAM'] as ComponentData | null;
+
+    const partSocket = part.specifications['Socket']?.toString() || part.specifications['socket']?.toString();
+    const partRamType = part.specifications['Memory Type']?.toString() || part.specifications['RAM Type']?.toString() || part.specifications['Memory']?.toString();
+
+    if (category === 'CPU') {
+      if (mobo && mobo.socket && partSocket && mobo.socket !== partSocket) {
+        return { compatible: false, message: `This CPU uses ${partSocket} socket, but your motherboard is ${mobo.socket}.` };
+      }
+    }
+
+    if (category === 'Motherboard') {
+      if (cpu && cpu.socket && partSocket && cpu.socket !== partSocket) {
+        return { compatible: false, message: `This motherboard is ${partSocket}, but your CPU uses ${cpu.socket}.` };
+      }
+      if (ram && ram.ramType && partRamType) {
+        // Simple string inclusion check for RAM types (e.g. "DDR5" in "DDR5-6000")
+        if (!partRamType.toLowerCase().includes(ram.ramType.toLowerCase()) && !ram.ramType.toLowerCase().includes(partRamType.toLowerCase())) {
+          return { compatible: false, message: `This motherboard supports ${partRamType}, but your RAM is ${ram.ramType}.` };
+        }
+      }
+    }
+
+    if (category === 'RAM') {
+      if (mobo && mobo.ramType && partRamType) {
+        if (!mobo.ramType.toLowerCase().includes(partRamType.toLowerCase()) && !partRamType.toLowerCase().includes(mobo.ramType.toLowerCase())) {
+          return { compatible: false, message: `Your motherboard supports ${mobo.ramType}, but this RAM is ${partRamType}.` };
+        }
+      }
+    }
+
+    return { compatible: true, message: '' };
+  };
+
+  const sortedAndFilteredParts = useMemo(() => {
+    const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
+    const parts = (allParts?.filter(part => selectedCategories.includes(part.category)) ?? [])
+      .sort((a, b) => {
+        let compare = 0;
+        if (sortBy === 'Name') compare = a.name.localeCompare(b.name);
+        else if (sortBy === 'Price') compare = a.price - b.price;
+        return sortDirection === 'asc' ? compare : -compare;
+      });
+
+    return parts.map(part => ({
+      ...part,
+      compatibility: checkCompatibility(part, build)
+    }));
+  }, [allParts, categories, sortBy, sortDirection, build]);
+
+  const totalPages = Math.ceil(sortedAndFilteredParts.length / itemsPerPage);
+  const paginatedParts = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sortedAndFilteredParts.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedAndFilteredParts, currentPage, itemsPerPage]);
+
+  const isSelected = (part: Part) => {
+    return part.category === 'Storage'
+      ? (build['Storage'] as ComponentData[]).some(c => c.model === part.name)
+      : (build[part.category] as ComponentData)?.model === part.name;
+  };
 
   return (
     <main className="container mx-auto p-4 md:p-8">
@@ -136,17 +252,17 @@ export default function BuilderPage() {
       <div className="grid lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8">
           <InventoryToolbar
-              categories={categories}
-              onCategoryChange={handleCategoryChange}
-              itemCount={sortedAndFilteredParts.length}
-              sortBy={sortBy}
-              onSortByChange={setSortBy}
-              sortDirection={sortDirection}
-              onSortDirectionChange={setSortDirection}
-              supportedSorts={['Name', 'Price']}
-              view={view}
-              onViewChange={setView}
-              showViewToggle={true}
+            categories={categories}
+            onCategoryChange={handleCategoryChange}
+            itemCount={sortedAndFilteredParts.length}
+            sortBy={sortBy}
+            onSortByChange={(val) => { setSortBy(val); setCurrentPage(1); }}
+            sortDirection={sortDirection}
+            onSortDirectionChange={(val) => { setSortDirection(val); setCurrentPage(1); }}
+            supportedSorts={['Name', 'Price']}
+            view={view}
+            onViewChange={setView}
+            showViewToggle={true}
           />
 
           {loading ? (
@@ -161,75 +277,94 @@ export default function BuilderPage() {
             </div>
           ) : sortedAndFilteredParts.length > 0 ? (
             view === 'grid' ? (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-                  {sortedAndFilteredParts.map(part => (
-                      <PartCard
-                        key={part.id}
-                        part={part}
-                        onToggleBuild={handlePartToggle}
-                        isSelected={build[part.category]?.model === part.name}
-                      />
+              <>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                  {paginatedParts.map(part => (
+                    <PartCard
+                      key={part.id}
+                      part={part}
+                      onToggleBuild={handlePartToggle}
+                      isSelected={isSelected(part)}
+                      compatibility={part.compatibility}
+                    />
                   ))}
-              </div>
+                </div>
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={setItemsPerPage}
+                />
+              </>
             ) : (
-                <Card className="mt-6">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Item</TableHead>
-                        <TableHead>Stock</TableHead>
-                        <TableHead className="text-right">Price</TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {sortedAndFilteredParts.map(part => {
-                        const isSelected = build[part.category]?.model === part.name;
-                        return (
-                          <TableRow key={part.id} className={part.stock === 0 ? "opacity-50 grayscale" : ""}>
-                            <TableCell className="font-medium">
-                              <div className="flex items-center gap-3">
-                                <Image src={part.imageUrl} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
-                                <div>
-                                  <p className="font-semibold">{part.name}</p>
-                                  <p className="text-xs text-muted-foreground">{part.brand}</p>
-                                </div>
+              <Card className="mt-6">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead>Stock</TableHead>
+                      <TableHead className="text-right">Price</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedParts.map(part => {
+                      const isSelected = part.category === 'Storage'
+                        ? (build['Storage'] as ComponentData[]).some(c => c.model === part.name)
+                        : (build[part.category] as ComponentData)?.model === part.name;
+                      return (
+                        <TableRow key={part.id} className={part.stock === 0 ? "opacity-50 grayscale" : ""}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-3">
+                              <Image src={part.imageUrl} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
+                              <div>
+                                <p className="font-semibold">{part.name}</p>
+                                <p className="text-xs text-muted-foreground">{part.brand}</p>
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={part.stock > 5 ? "secondary" : part.stock > 0 ? "destructive" : "outline"}>
-                                  {part.stock > 0 ? `${part.stock} in stock` : "Out of stock"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">{formatCurrency(part.price)}</TableCell>
-                            <TableCell>
-                              <Button
-                                size="icon"
-                                onClick={() => handlePartToggle(part)}
-                                disabled={part.stock === 0 && !isSelected}
-                                variant={isSelected ? 'destructive' : 'default'}
-                              >
-                                {isSelected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </Card>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={part.stock > 5 ? "secondary" : part.stock > 0 ? "destructive" : "outline"}>
+                              {part.stock > 0 ? `${part.stock} in stock` : "Out of stock"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">{formatCurrency(part.price)}</TableCell>
+                          <TableCell>
+                            <Button
+                              size="icon"
+                              onClick={() => handlePartToggle(part)}
+                              disabled={part.stock === 0 && !isSelected}
+                              variant={isSelected ? 'destructive' : 'default'}
+                            >
+                              {isSelected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={setItemsPerPage}
+                />
+              </Card>
             )
           ) : (
-             <Card className="mt-6 min-h-[400px] flex items-center justify-center">
-                <CardContent className="text-center text-muted-foreground p-6">
-                  <p>No components found for the selected categories.</p>
-                </CardContent>
+            <Card className="mt-6 min-h-[400px] flex items-center justify-center">
+              <CardContent className="text-center text-muted-foreground p-6">
+                <p>No components found for the selected categories.</p>
+              </CardContent>
             </Card>
           )}
         </div>
 
         <div className="lg:col-span-4">
-            <YourBuild build={build} />
+          <YourBuild build={build} />
         </div>
       </div>
     </main>

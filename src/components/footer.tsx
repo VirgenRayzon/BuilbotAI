@@ -16,9 +16,9 @@ export function Footer() {
           <div>
             <h3 className="font-semibold font-headline text-foreground">Product</h3>
             <nav className="mt-4 space-y-2">
-              <Link href="/" className="block text-muted-foreground hover:text-foreground">Builder</Link>
+              <Link href="/builder" className="block text-muted-foreground hover:text-foreground">Builder</Link>
               <Link href="/pre-builts" className="block text-muted-foreground hover:text-foreground">Pre-builts</Link>
-              <Link href="/" className="block text-muted-foreground hover:text-foreground">Components</Link>
+              <Link href="/builder" className="block text-muted-foreground hover:text-foreground">Components</Link>
               <Link href="#" className="block text-muted-foreground hover:text-foreground">Pricing</Link>
             </nav>
           </div>

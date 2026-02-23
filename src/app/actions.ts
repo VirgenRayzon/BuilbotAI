@@ -28,6 +28,11 @@ export async function getAiRecommendations(
             "Could not connect to the AI service. Is 'npm run genkit:dev' running in another terminal?",
         };
       }
+      if (error.message.includes("GEMINI_API_KEY") || error.message.includes("FAILED_PRECONDITION")) {
+        return {
+          error: "Missing GEMINI_API_KEY. Please set it in your .env file to enable AI features.",
+        };
+      }
       return { error: error.message };
     }
     return { error: "An unknown error occurred." };
