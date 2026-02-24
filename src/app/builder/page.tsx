@@ -16,7 +16,8 @@ import {
   Trash2,
   Info,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Lightbulb
 } from "lucide-react";
 import type { ComponentData, Part, Build } from "@/lib/types";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
@@ -32,6 +33,8 @@ import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { PaginationControls } from "@/components/pagination-controls";
+import { AIBuildCritique } from "@/components/ai-build-critique";
+import { SmartBudget } from "@/components/smart-budget";
 
 type PartWithoutCategory = Omit<Part, 'category'>;
 
@@ -97,6 +100,7 @@ export default function BuilderPage() {
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [showSmartBudget, setShowSmartBudget] = useState(false);
 
   const handleCategoryChange = (categoryName: string, selected: boolean) => {
     setCurrentPage(1);
@@ -241,16 +245,41 @@ export default function BuilderPage() {
 
   return (
     <main className="container mx-auto p-4 md:p-8">
-      <div className="text-left mb-8">
-        <h1 className="text-4xl font-headline font-bold">Build Your Masterpiece</h1>
-        <p className="text-muted-foreground mt-2">
-          Select high-performance components and let our AI ensure everything fits
-          perfectly together.
-        </p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+        <div className="text-left">
+          <h1 className="text-4xl font-headline font-bold">Build Your Masterpiece</h1>
+          <p className="text-muted-foreground mt-2">
+            Select high-performance components and let our AI ensure everything fits
+            perfectly together.
+          </p>
+        </div>
+        {!showSmartBudget && (
+          <Button
+            variant="outline"
+            className="font-headline tracking-wide flex items-center gap-2 border-primary/50 text-primary hover:bg-primary/10"
+            onClick={() => setShowSmartBudget(true)}
+          >
+            <Lightbulb className="h-4 w-4" /> AI Smart Budget
+          </Button>
+        )}
       </div>
 
       <div className="grid lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8">
+          {showSmartBudget && (
+            <div className="mb-6 animate-in fade-in slide-in-from-top-4">
+              <SmartBudget
+                inventory={allParts}
+                onApplyBuild={(newBuild) => {
+                  setBuild(newBuild);
+                  setShowSmartBudget(false);
+                  toast({ title: 'AI Build Applied', description: 'Your cart has been updated with the AI recommendations.' });
+                }}
+                onClose={() => setShowSmartBudget(false)}
+              />
+            </div>
+          )}
+
           <InventoryToolbar
             categories={categories}
             onCategoryChange={handleCategoryChange}
@@ -364,7 +393,10 @@ export default function BuilderPage() {
         </div>
 
         <div className="lg:col-span-4">
-          <YourBuild build={build} />
+          <div className="sticky top-20 flex flex-col gap-6 max-h-[calc(100vh-6rem)] overflow-y-auto pb-4 pr-2">
+            <YourBuild build={build} />
+            <AIBuildCritique build={build} />
+          </div>
         </div>
       </div>
     </main>

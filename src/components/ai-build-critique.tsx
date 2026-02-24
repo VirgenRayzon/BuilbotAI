@@ -1,0 +1,171 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { BrainCircuit, Loader2, ThumbsUp, ThumbsDown, AlertTriangle, MonitorPlay, Zap } from "lucide-react";
+import { getAiBuildCritique } from "@/app/actions";
+import { ComponentData } from "@/lib/types";
+
+interface AIBuildCritiqueProps {
+    build: Record<string, ComponentData | ComponentData[] | null>;
+}
+
+export function AIBuildCritique({ build }: AIBuildCritiqueProps) {
+    const [analysis, setAnalysis] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleAnalyze = async () => {
+        setLoading(true);
+        setError(null);
+
+        const inputData: any = {};
+        Object.entries(build).forEach(([key, val]) => {
+            if (val) {
+                if (Array.isArray(val)) {
+                    inputData[key] = val.map((v: any) => ({
+                        model: v.model,
+                        price: v.price,
+                    }));
+                } else {
+                    const singleVal = val as any;
+                    inputData[key] = {
+                        model: singleVal.model,
+                        price: singleVal.price,
+                    };
+                }
+            }
+        });
+
+        try {
+            const result = await getAiBuildCritique(inputData);
+            if ('error' in result) {
+                setError(result.error as string);
+            } else {
+                setAnalysis(result);
+            }
+        } catch (err) {
+            setError("An unexpected error occurred during analysis.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Card className="w-full mt-6 bg-gradient-to-br from-card to-secondary/10 border-primary/20">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 font-headline text-2xl">
+                    <BrainCircuit className="h-6 w-6 text-primary" />
+                    AI Build Critique
+                </CardTitle>
+                <CardDescription>
+                    Get an expert AI analysis of your current parts selection.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                {!analysis && !loading && !error && (
+                    <div className="flex justify-center p-4">
+                        <Button onClick={handleAnalyze} size="lg" className="w-full font-headline tracking-wide">
+                            Analyze My Build
+                        </Button>
+                    </div>
+                )}
+
+                {loading && (
+                    <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                        <p className="text-muted-foreground animate-pulse">Our AI is analyzing your components...</p>
+                    </div>
+                )}
+
+                {error && (
+                    <div className="bg-destructive/10 text-destructive p-4 rounded-md">
+                        <p className="font-semibold flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Analysis Failed</p>
+                        <p className="text-sm mt-1">{error}</p>
+                        <Button variant="outline" size="sm" onClick={handleAnalyze} className="mt-3">Try Again</Button>
+                    </div>
+                )}
+
+                {analysis && !loading && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+                        {/* Pros and Cons */}
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/20">
+                                <h4 className="font-semibold text-green-600 dark:text-green-400 flex items-center gap-2 mb-3">
+                                    <ThumbsUp className="h-5 w-5" /> Pros
+                                </h4>
+                                <ul className="space-y-2 text-sm">
+                                    {analysis.prosCons.pros.map((pro: string, idx: number) => (
+                                        <li key={idx} className="flex gap-2"><span className="text-green-500">•</span> {pro}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <div className="bg-red-500/10 rounded-lg p-4 border border-red-500/20">
+                                <h4 className="font-semibold text-red-600 dark:text-red-400 flex items-center gap-2 mb-3">
+                                    <ThumbsDown className="h-5 w-5" /> Cons
+                                </h4>
+                                <ul className="space-y-2 text-sm">
+                                    {analysis.prosCons.cons.map((con: string, idx: number) => (
+                                        <li key={idx} className="flex gap-2"><span className="text-red-500">•</span> {con}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+
+                        {/* Bottleneck Analysis */}
+                        <div className="bg-secondary/20 rounded-lg p-4">
+                            <h4 className="font-semibold flex items-center gap-2 mb-2">
+                                <AlertTriangle className="h-5 w-5 text-yellow-500" /> Bottleneck Analysis
+                            </h4>
+                            <p className="text-sm text-muted-foreground">{analysis.bottleneckAnalysis}</p>
+                        </div>
+
+                        {/* FPS Estimates */}
+                        <div className="space-y-3">
+                            <h4 className="font-semibold flex items-center gap-2">
+                                <MonitorPlay className="h-5 w-5 text-primary" /> Estimated Performance
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                {analysis.fpsEstimates.map((est: any, idx: number) => (
+                                    <div key={idx} className="bg-card border rounded-md p-3 text-center">
+                                        <p className="text-xs text-muted-foreground uppercase tracking-wider">{est.game}</p>
+                                        <p className="text-2xl font-headline font-bold text-primary my-1">{est.estimatedFps}</p>
+                                        <Badge variant="secondary" className="text-xs">{est.resolution}</Badge>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Suggestions */}
+                        {analysis.suggestions && analysis.suggestions.length > 0 && (
+                            <div className="space-y-3">
+                                <h4 className="font-semibold flex items-center gap-2">
+                                    <Zap className="h-5 w-5 text-orange-500" /> AI Suggestions
+                                </h4>
+                                <div className="space-y-2">
+                                    {analysis.suggestions.map((sug: any, idx: number) => (
+                                        <div key={idx} className="bg-card border rounded-md p-3 text-sm">
+                                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                <span className="line-through text-muted-foreground">{sug.originalComponent}</span>
+                                                <span className="text-muted-foreground text-xs font-bold">→</span>
+                                                <span className="font-semibold text-primary">{sug.suggestedComponent}</span>
+                                            </div>
+                                            <p className="text-muted-foreground italic text-xs">{sug.reason}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex justify-center pt-2">
+                            <Button variant="outline" onClick={handleAnalyze} disabled={loading}>
+                                Re-analyze Build
+                            </Button>
+                        </div>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}

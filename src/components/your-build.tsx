@@ -101,7 +101,7 @@ export function YourBuild({ build }: YourBuildProps) {
     }, 0);
 
     return (
-        <Card className="sticky top-20">
+        <Card className="flex flex-col">
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="font-headline">Your Build</CardTitle>
                 <Badge variant="secondary">{selectedParts} / {totalParts} Parts</Badge>

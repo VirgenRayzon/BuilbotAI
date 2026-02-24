@@ -1,10 +1,7 @@
-import { genkit, z } from "genkit";
-import { gemini15Flash } from "@genkit-ai/googleai";
+'use server';
 
-const aiPlugin = genkit({
-    plugins: [],
-    model: gemini15Flash,
-});
+import { ai } from "@/ai/genkit";
+import { z } from "genkit";
 
 const ComponentDataSchema = z.object({
     model: z.string(),
@@ -13,14 +10,14 @@ const ComponentDataSchema = z.object({
     category: z.string().optional(),
 });
 
-export const AiBuildCritiqueInputSchema = z.record(
+const AiBuildCritiqueInputSchema = z.record(
     z.string(),
     z.union([ComponentDataSchema, z.array(ComponentDataSchema), z.null()])
 );
 
 export type AiBuildCritiqueInput = z.infer<typeof AiBuildCritiqueInputSchema>;
 
-export const aiBuildCritique = aiPlugin.defineFlow(
+const aiBuildCritique = ai.defineFlow(
     {
         name: "aiBuildCritique",
         inputSchema: AiBuildCritiqueInputSchema,
@@ -51,9 +48,10 @@ export const aiBuildCritique = aiPlugin.defineFlow(
             .map(([category, partData]) => {
                 if (!partData) return `${category}: None selected`;
                 if (Array.isArray(partData)) {
-                    return `${category}: ${partData.map((p) => `${p.brand || ''} ${p.model} ($${p.price})`).join(', ')}`;
+                    return `${category}: ${partData.map((p: z.infer<typeof ComponentDataSchema>) => `${p.brand || ''} ${p.model} ($${p.price})`).join(', ')}`;
                 }
-                return `${category}: ${partData.brand || ''} ${partData.model} ($${partData.price})`;
+                const singlePart = partData as z.infer<typeof ComponentDataSchema>;
+                return `${category}: ${singlePart.brand || ''} ${singlePart.model} ($${singlePart.price})`;
             })
             .join('\n');
 
@@ -72,7 +70,7 @@ Please provide your analysis strictly matching the requested JSON output format.
 If the build is completely empty, state that the user needs to select parts first in the pros/cons and leave the other fields empty or give generic advice.
 `;
 
-        const response = await aiPlugin.generate({
+        const response = await ai.generate({
             prompt: prompt,
             output: {
                 schema: z.object({
@@ -99,6 +97,13 @@ If the build is completely empty, state that the user needs to select parts firs
             }
         });
 
-        return response.output();
+        if (!response.output) {
+            throw new Error("AI returned a null output.");
+        }
+        return response.output;
     }
 );
+
+export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
+    return aiBuildCritique(input);
+}
