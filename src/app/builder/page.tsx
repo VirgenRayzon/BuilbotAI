@@ -34,6 +34,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { PaginationControls } from "@/components/pagination-controls";
 import { SmartBudget } from "@/components/smart-budget";
+import { AIBuildCritique } from "@/components/ai-build-critique";
+import { PCVisualizer } from "@/components/pc-visualizer";
 
 type PartWithoutCategory = Omit<Part, 'category'>;
 
@@ -424,7 +426,9 @@ export default function BuilderPage() {
 
         <div className="lg:col-span-4">
           <div className="sticky top-20 flex flex-col gap-6 max-h-[calc(100vh-6rem)] overflow-y-auto pb-4 pr-2">
+            <PCVisualizer build={build} />
             <YourBuild build={build} onClearBuild={handleClearBuild} onRemovePart={handleRemovePart} />
+            <AIBuildCritique build={build} />
           </div>
         </div>
       </div>
