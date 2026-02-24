@@ -8,8 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 
+import Link from "next/link";
+
 interface YourBuildProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
+    onClearBuild: () => void;
+    hideReviewButton?: boolean;
 }
 
 function RadialGauge({ value, max, size = 120, strokeWidth = 10 }: { value: number; max: number; size?: number; strokeWidth?: number }) {
@@ -72,7 +76,7 @@ const componentIcons: { [key: string]: React.ElementType } = {
     Cooler: Wind,
 };
 
-export function YourBuild({ build }: YourBuildProps) {
+export function YourBuild({ build, onClearBuild, hideReviewButton }: YourBuildProps) {
     const selectedParts = Object.entries(build).reduce((acc, [name, value]) => {
         if (Array.isArray(value)) return acc + value.length;
         return acc + (value ? 1 : 0);
@@ -171,7 +175,16 @@ export function YourBuild({ build }: YourBuildProps) {
                         </AlertDescription>
                     </Alert>
                 )}
-                <Button className="w-full" size="lg" disabled={selectedParts === 0}>Checkout Build</Button>
+                <div className="flex flex-col gap-3 w-full">
+                    {!hideReviewButton && (
+                        <Button className="w-full" size="lg" disabled={selectedParts === 0} asChild>
+                            <Link href="/ai-build-advisor">Review with Build Advisor</Link>
+                        </Button>
+                    )}
+                    <Button variant="outline" className="w-full" onClick={onClearBuild} disabled={selectedParts === 0}>
+                        Clear Build
+                    </Button>
+                </div>
             </CardFooter>
         </Card >
     )

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { YourBuild } from "@/components/your-build";
 import {
@@ -33,7 +33,6 @@ import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { PaginationControls } from "@/components/pagination-controls";
-import { AIBuildCritique } from "@/components/ai-build-critique";
 import { SmartBudget } from "@/components/smart-budget";
 
 type PartWithoutCategory = Omit<Part, 'category'>;
@@ -90,6 +89,32 @@ export default function BuilderPage() {
   const [build, setBuild] = useState<Record<string, ComponentData | ComponentData[] | null>>({
     CPU: null, GPU: null, Motherboard: null, RAM: null, Storage: [], PSU: null, Case: null, Cooler: null,
   });
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('pc_builder_state');
+    if (saved) {
+      try {
+        setBuild(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse saved build", e);
+      }
+    }
+    setIsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem('pc_builder_state', JSON.stringify(build));
+    }
+  }, [build, isLoaded]);
+
+  const handleClearBuild = () => {
+    setBuild({
+      CPU: null, GPU: null, Motherboard: null, RAM: null, Storage: [], PSU: null, Case: null, Cooler: null,
+    });
+    toast({ title: 'Build Cleared', description: 'Your build has been reset.' });
+  };
 
   const [categories, setCategories] = useState(
     componentCategories.map(c => ({ name: c.name, selected: true, icon: c.icon }))
@@ -394,8 +419,7 @@ export default function BuilderPage() {
 
         <div className="lg:col-span-4">
           <div className="sticky top-20 flex flex-col gap-6 max-h-[calc(100vh-6rem)] overflow-y-auto pb-4 pr-2">
-            <YourBuild build={build} />
-            <AIBuildCritique build={build} />
+            <YourBuild build={build} onClearBuild={handleClearBuild} />
           </div>
         </div>
       </div>
