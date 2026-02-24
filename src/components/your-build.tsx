@@ -43,7 +43,7 @@ function PowerMeter({ value, max }: { value: number; max: number }) {
     );
 }
 
-const componentIcons: { [key: string]: React.ElementType } = {
+const componentIcons: Record<string, React.ComponentType<{ className?: string }>> = {
     CPU: Cpu,
     GPU: Server,
     Motherboard: CircuitBoard,
@@ -132,7 +132,7 @@ export function YourBuild({ build, onClearBuild, onRemovePart }: YourBuildProps)
             </CardHeader>
             <CardContent className="px-5 py-4 space-y-3">
                 {Object.entries(build).map(([name, component]) => {
-                    const Icon = componentIcons[name];
+                    const Icon = componentIcons[name] || Cpu;
                     const components = Array.isArray(component) ? component : (component ? [component] : []);
 
                     if (components.length === 0) {

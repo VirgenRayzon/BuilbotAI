@@ -35,7 +35,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
     const value = useMemo(() => ({
         authUser,
         profile,
-        loading: authUser === undefined || (authUser && profileLoading),
+        loading: !!(authUser === undefined || (authUser && profileLoading)),
     }), [authUser, profile, profileLoading]);
 
     return (

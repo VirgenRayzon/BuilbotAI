@@ -29,7 +29,7 @@ import { ScrollArea, ScrollBar } from "./ui/scroll-area";
 type Category = {
   name: string;
   selected: boolean;
-  icon?: React.ElementType;
+  icon?: React.ComponentType<{ className?: string }>;
 };
 
 interface InventoryToolbarProps {

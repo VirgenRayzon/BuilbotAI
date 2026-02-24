@@ -281,7 +281,7 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel className="text-xs text-muted-foreground font-semibold">{cat}</FormLabel>
-                                                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                                                        <Select onValueChange={field.onChange} value={(field.value as string) || ""}>
                                                             <FormControl>
                                                                 <SelectTrigger>
                                                                     <SelectValue placeholder={`Select ${cat}`} />
