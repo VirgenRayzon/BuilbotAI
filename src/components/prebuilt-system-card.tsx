@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/tooltip";
 import { AlertCircle } from 'lucide-react';
 import { PrebuiltDetailsModal } from './prebuilt-details-modal';
+import { PrebuiltCardSpecs } from './prebuilt-card-specs';
 
 interface PrebuiltSystemCardProps {
   system: PrebuiltSystem;
@@ -53,6 +54,9 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
           </div>
           <CardTitle className="text-lg font-headline leading-tight h-12 line-clamp-2 group-hover:text-primary transition-colors">{system.name}</CardTitle>
           <CardDescription className="text-xs pt-1 h-10 line-clamp-2 text-muted-foreground/80">{system.description}</CardDescription>
+          <div className="min-h-[56px] pt-1">
+            <PrebuiltCardSpecs components={system.components} />
+          </div>
         </CardHeader>
         <CardContent className="flex-grow p-4 pt-0">
           <Badge variant="outline" className="text-xs">

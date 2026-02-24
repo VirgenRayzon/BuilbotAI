@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/tooltip";
 import { AlertCircle } from "lucide-react";
 import { PrebuiltDetailsModal } from "./prebuilt-details-modal";
+import { PrebuiltCardSpecs } from "./prebuilt-card-specs";
 
 interface PrebuiltsTableProps {
   systems: PrebuiltSystem[];
@@ -76,11 +77,14 @@ export function PrebuiltsTable({ systems, onDelete, showActions = true }: Prebui
                       className="object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="font-headline text-base group-hover:text-primary transition-colors">{system.name}</p>
                     <p className="text-xs text-muted-foreground line-clamp-1 max-w-[400px]">
                       {system.description}
                     </p>
+                    <div className="hidden sm:block">
+                      <PrebuiltCardSpecs components={system.components} />
+                    </div>
                   </div>
                 </div>
               </TableCell>
