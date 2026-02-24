@@ -8,8 +8,8 @@
  * - AiBuildAdvisorRecommendationsOutput - The return type for the aiBuildAdvisorRecommendations function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 // Input Schema Definition
 const AiBuildAdvisorRecommendationsInputSchema = z.object({
@@ -21,7 +21,7 @@ const AiBuildAdvisorRecommendationsInputSchema = z.object({
   budget: z
     .string()
     .describe(
-      'The approximate budget for the PC build (e.g., "around $1000", "high-end, no budget limit", "budget-friendly under $700").'
+      'The approximate budget for the PC build in Philippine Peso (PHP) (e.g., "around ₱50,000", "75k PHP budget").'
     ),
   performanceLevel: z
     .string()
@@ -94,7 +94,26 @@ const aiBuildAdvisorRecommendationsPrompt = ai.definePrompt({
   name: 'aiBuildAdvisorRecommendationsPrompt',
   input: { schema: AiBuildAdvisorRecommendationsInputSchema },
   output: { schema: AiBuildAdvisorRecommendationsOutputSchema },
-  prompt: `You are an expert PC building advisor. Your goal is to recommend a set of compatible core components (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, Cooler) for a user based on their specific needs. Ensure all recommended components are compatible with each other.\n\nProvide a brief summary of the overall build strategy, and then detail the recommendations for each component, including the model name and a concise reason for its selection. Also provide an estimated total wattage for the build.\n\nUser's PC building goals:\nIntended Use: {{{intendedUse}}}\nBudget: {{{budget}}}\nDesired Performance Level: {{{performanceLevel}}}\n{{#if additionalNotes}}\nAdditional Notes: {{{additionalNotes}}}\n{{/if}}\n\nPlease format your response as a JSON object strictly following the output schema provided.`,
+  prompt: `You are an expert PC building advisor specializing in the Philippine market. Your goal is to recommend a set of compatible core components (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, Cooler) for a user based on their specific needs.
+
+CRITICAL RULES:
+1. CURRENCY: All price discussions and budget considerations MUST be in Philippine Peso (PHP). Use the ₱ symbol.
+2. LOCAL PRICING: Provide estimated prices that reflect the current PC component market in the Philippines (e.g., shops like Dynaquest, PCHub, Gilmore prices).
+3. INVENTORY AVAILABILITY: Only recommend parts that are commonly available in standard PC parts inventories. If the user provides a specific inventory, prioritize items from that list.
+4. COMPATIBILITY: Ensure all recommended components are 100% compatible.
+5. BUDGET ADHERENCE: Strictly follow the PHP budget provided by the user.
+
+Provide a brief summary of the overall build strategy in the context of the Philippine market, and then detail the recommendations for each component, including the model name and a concise reason for its selection (mentioning why it's a good value in PHP where applicable). Also provide an estimated total wattage for the build.
+
+User's PC building goals:
+Intended Use: {{{intendedUse}}}
+Budget: {{{budget}}} (PHP)
+Desired Performance Level: {{{performanceLevel}}}
+{{#if additionalNotes}}
+Additional Notes: {{{additionalNotes}}}
+{{/if}}
+
+Please format your response as a JSON object strictly following the output schema provided.`,
 });
 
 // Genkit Flow Definition

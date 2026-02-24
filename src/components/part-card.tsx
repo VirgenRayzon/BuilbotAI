@@ -23,13 +23,15 @@ interface PartCardProps {
     onToggleBuild: (part: Part) => void;
     isSelected: boolean;
     compatibility?: { compatible: boolean; message: string };
+    effectiveStock?: number;
 }
 
-export function PartCard({ part, onToggleBuild, isSelected, compatibility }: PartCardProps) {
+export function PartCard({ part, onToggleBuild, isSelected, compatibility, effectiveStock }: PartCardProps) {
+    const currentStock = effectiveStock !== undefined ? effectiveStock : part.stock;
 
     const handleToggle = () => {
         // Prevent adding out of stock items, but allow removing them
-        if (part.stock === 0 && !isSelected) return;
+        if (currentStock === 0 && !isSelected) return;
         onToggleBuild(part);
     }
 
@@ -39,7 +41,7 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility }: Par
         <TooltipProvider>
             <Card className={cn(
                 "flex flex-col justify-between h-full transform transition-transform duration-300 ease-in-out hover:-translate-y-1 relative group",
-                part.stock === 0 && "grayscale opacity-60"
+                currentStock === 0 && "grayscale opacity-60"
             )}>
                 <div className={cn(
                     "absolute inset-0 bg-gradient-to-t from-black/20 to-transparent transition-opacity duration-300 opacity-0 group-hover:opacity-100",
@@ -68,7 +70,7 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility }: Par
                     <Button
                         size="icon"
                         onClick={handleToggle}
-                        disabled={part.stock === 0 && !isSelected}
+                        disabled={currentStock === 0 && !isSelected}
                         variant={isSelected ? 'destructive' : 'default'}
                         className="absolute top-4 right-4 h-8 w-8 rounded-full z-20"
                     >
@@ -109,7 +111,7 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility }: Par
                                     )}
                                     <React.Fragment>
                                         <div className="text-xs text-muted-foreground uppercase">Stock</div>
-                                        <div className="text-xs font-semibold text-right">{part.stock > 0 ? part.stock : 'Out of stock'}</div>
+                                        <div className="text-xs font-semibold text-right">{currentStock > 0 ? currentStock : 'Out of stock'}</div>
                                     </React.Fragment>
                                 </div>
                             </TooltipContent>

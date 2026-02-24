@@ -25,6 +25,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { getMissingParts } from "@/lib/prebuilt-utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { AlertCircle } from "lucide-react";
 
 interface PrebuiltsTableProps {
   systems: PrebuiltSystem[];
@@ -82,9 +90,9 @@ export function PrebuiltsTable({ systems, onDelete, showActions = true }: Prebui
               {showActions && onDelete ? (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
-                        <Trash2 className="h-4 w-4" />
-                     </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
@@ -104,11 +112,35 @@ export function PrebuiltsTable({ systems, onDelete, showActions = true }: Prebui
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-              ) : (
-                <Button size="icon" variant="outline" onClick={() => handleAddToCart(system.name)}>
-                  <ShoppingCart className="h-4 w-4" />
-                </Button>
-              )}
+              ) : (() => {
+                const missingParts = getMissingParts(system);
+                const isComplete = missingParts.length === 0;
+
+                if (!isComplete) {
+                  return (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="cursor-not-allowed">
+                            <Button size="icon" variant="outline" disabled className="opacity-50">
+                              <AlertCircle className="h-4 w-4 text-warning" />
+                            </Button>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Missing: {missingParts.join(', ')}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                }
+
+                return (
+                  <Button size="icon" variant="outline" onClick={() => handleAddToCart(system.name)}>
+                    <ShoppingCart className="h-4 w-4" />
+                  </Button>
+                );
+              })()}
             </TableCell>
           </TableRow>
         ))}

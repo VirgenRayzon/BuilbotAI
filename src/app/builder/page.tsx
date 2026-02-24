@@ -16,8 +16,7 @@ import {
   Trash2,
   Info,
   CheckCircle2,
-  AlertTriangle,
-  Lightbulb
+  AlertTriangle
 } from "lucide-react";
 import type { ComponentData, Part, Build } from "@/lib/types";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
@@ -33,8 +32,6 @@ import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { PaginationControls } from "@/components/pagination-controls";
-import { SmartBudget } from "@/components/smart-budget";
-import { AIBuildCritique } from "@/components/ai-build-critique";
 import { PCVisualizer } from "@/components/pc-visualizer";
 
 type PartWithoutCategory = Omit<Part, 'category'>;
@@ -141,7 +138,18 @@ export default function BuilderPage() {
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [showSmartBudget, setShowSmartBudget] = useState(false);
+
+  const getCountInBuild = (partName: string) => {
+    let count = 0;
+    Object.entries(build).forEach(([category, data]) => {
+      if (Array.isArray(data)) {
+        count += data.filter(d => d.model === partName).length;
+      } else if (data && data.model === partName) {
+        count++;
+      }
+    });
+    return count;
+  };
 
   const handleCategoryChange = (categoryName: string, selected: boolean) => {
     setCurrentPage(1);
@@ -154,8 +162,9 @@ export default function BuilderPage() {
     const category = part.category;
 
     if (category === 'Storage') {
-      if (part.stock === 0) {
-        toast({ variant: 'destructive', title: 'Out of Stock', description: `${part.name} is currently unavailable.` });
+      const currentCount = getCountInBuild(part.name);
+      if (currentCount >= part.stock) {
+        toast({ variant: 'destructive', title: 'Out of Stock', description: `No more units of ${part.name} available.` });
         return;
       }
 
@@ -186,7 +195,8 @@ export default function BuilderPage() {
       setBuild(prevBuild => ({ ...prevBuild, [category]: null }));
       toast({ title: 'Part Removed', description: `${part.name} has been removed from your build.` });
     } else {
-      if (part.stock === 0) {
+      const currentCount = getCountInBuild(part.name);
+      if (currentCount >= part.stock) {
         toast({ variant: 'destructive', title: 'Out of Stock', description: `${part.name} is currently unavailable.` });
         return;
       }
@@ -257,10 +267,14 @@ export default function BuilderPage() {
         return sortDirection === 'asc' ? compare : -compare;
       });
 
-    return parts.map(part => ({
-      ...part,
-      compatibility: checkCompatibility(part, build)
-    }));
+    return parts.map(part => {
+      const effectiveStock = part.stock - getCountInBuild(part.name);
+      return {
+        ...part,
+        effectiveStock,
+        compatibility: checkCompatibility(part, build)
+      };
+    });
   }, [allParts, categories, sortBy, sortDirection, build]);
 
   const totalPages = Math.ceil(sortedAndFilteredParts.length / itemsPerPage);
@@ -285,32 +299,10 @@ export default function BuilderPage() {
             perfectly together.
           </p>
         </div>
-        {!showSmartBudget && (
-          <Button
-            variant="outline"
-            className="font-headline tracking-wide flex items-center gap-2 border-primary/50 text-primary hover:bg-primary/10"
-            onClick={() => setShowSmartBudget(true)}
-          >
-            <Lightbulb className="h-4 w-4" /> AI Smart Budget
-          </Button>
-        )}
       </div>
 
       <div className="grid lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8">
-          {showSmartBudget && (
-            <div className="mb-6 animate-in fade-in slide-in-from-top-4">
-              <SmartBudget
-                inventory={allParts}
-                onApplyBuild={(newBuild) => {
-                  setBuild(newBuild);
-                  setShowSmartBudget(false);
-                  toast({ title: 'AI Build Applied', description: 'Your cart has been updated with the AI recommendations.' });
-                }}
-                onClose={() => setShowSmartBudget(false)}
-              />
-            </div>
-          )}
 
           <InventoryToolbar
             categories={categories}
@@ -344,9 +336,10 @@ export default function BuilderPage() {
                     <PartCard
                       key={part.id}
                       part={part}
+                      effectiveStock={(part as any).effectiveStock}
                       onToggleBuild={handlePartToggle}
                       isSelected={isSelected(part)}
-                      compatibility={part.compatibility}
+                      compatibility={(part as any).compatibility}
                     />
                   ))}
                 </div>
@@ -375,7 +368,7 @@ export default function BuilderPage() {
                         ? (build['Storage'] as ComponentData[]).some(c => c.model === part.name)
                         : (build[part.category] as ComponentData)?.model === part.name;
                       return (
-                        <TableRow key={part.id} className={part.stock === 0 ? "opacity-50 grayscale" : ""}>
+                        <TableRow key={part.id} className={(part as any).effectiveStock === 0 && !isSelected ? "opacity-50 grayscale" : ""}>
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-3">
                               <Image src={part.imageUrl} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
@@ -386,8 +379,8 @@ export default function BuilderPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={part.stock > 5 ? "secondary" : part.stock > 0 ? "destructive" : "outline"}>
-                              {part.stock > 0 ? `${part.stock} in stock` : "Out of stock"}
+                            <Badge variant={(part as any).effectiveStock > 5 ? "secondary" : (part as any).effectiveStock > 0 ? "destructive" : "outline"}>
+                              {(part as any).effectiveStock > 0 ? `${(part as any).effectiveStock} in stock` : "Out of stock"}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">{formatCurrency(part.price)}</TableCell>
@@ -395,7 +388,7 @@ export default function BuilderPage() {
                             <Button
                               size="icon"
                               onClick={() => handlePartToggle(part)}
-                              disabled={part.stock === 0 && !isSelected}
+                              disabled={(part as any).effectiveStock === 0 && !isSelected}
                               variant={isSelected ? 'destructive' : 'default'}
                             >
                               {isSelected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
@@ -428,10 +421,9 @@ export default function BuilderPage() {
           <div className="sticky top-20 flex flex-col gap-6 max-h-[calc(100vh-6rem)] overflow-y-auto pb-4 pr-2">
             <PCVisualizer build={build} />
             <YourBuild build={build} onClearBuild={handleClearBuild} onRemovePart={handleRemovePart} />
-            <AIBuildCritique build={build} />
           </div>
         </div>
       </div>
-    </main>
+    </main >
   );
 }

@@ -12,6 +12,7 @@ import { formatCurrency } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AIBuildCritique } from "@/components/ai-build-critique";
 import { YourBuild } from "@/components/your-build";
+import { useMemo } from "react";
 
 const componentMetadata: { [key: string]: { icon: React.ComponentType<{ className?: string }>, image: any } } = {
   cpu: {
@@ -49,11 +50,12 @@ const componentMetadata: { [key: string]: { icon: React.ComponentType<{ classNam
 };
 
 export default function AiBuildAdvisorPage() {
+  const { toast } = useToast();
+
   const [build, setBuild] = useState<Build | null>(null);
   const [builderState, setBuilderState] = useState<Record<string, ComponentData | ComponentData[] | null> | null>(null);
   const [totalPrice, setTotalPrice] = useState(0);
   const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
 
   useEffect(() => {
     const saved = localStorage.getItem('pc_builder_state');
@@ -128,6 +130,20 @@ export default function AiBuildAdvisorPage() {
     });
   };
 
+  const handleRemovePart = (category: string, index?: number) => {
+    if (!builderState) return;
+    const next = { ...builderState };
+    if (category === 'Storage' && typeof index === 'number') {
+      const currentStorage = [...(next['Storage'] as ComponentData[])];
+      currentStorage.splice(index, 1);
+      next['Storage'] = currentStorage;
+    } else {
+      next[category] = null;
+    }
+    setBuilderState(next);
+    localStorage.setItem('pc_builder_state', JSON.stringify(next));
+  };
+
   const generativeContent = (
     <div className="grid lg:grid-cols-12 gap-8 h-full">
       <aside className="lg:col-span-4 lg:sticky lg:top-20 self-start">
@@ -153,9 +169,9 @@ export default function AiBuildAdvisorPage() {
           <div className="flex items-center gap-3">
             <Wallet className="w-8 h-8 text-primary" />
             <div>
-              <h3 className="text-muted-foreground text-sm">Estimated Cost</h3>
+              <h3 className="text-muted-foreground text-sm">Estimated Cost (PHP)</h3>
               <p className="text-3xl font-bold font-headline">
-                {formatCurrency(totalPrice)}
+                ₱{totalPrice.toLocaleString()}
               </p>
             </div>
           </div>
@@ -182,7 +198,7 @@ export default function AiBuildAdvisorPage() {
                   <YourBuild build={builderState} onClearBuild={() => {
                     localStorage.removeItem('pc_builder_state');
                     setBuilderState(null);
-                  }} hideReviewButton={true} />
+                  }} onRemovePart={handleRemovePart} />
                 </div>
               </div>
               <div className="lg:col-span-8">

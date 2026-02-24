@@ -1,12 +1,15 @@
-
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { ComponentData } from "@/lib/types";
-import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, RectangleVertical as CaseIcon, Wind, AlertCircle, X as CloseIcon } from "lucide-react";
+import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, RectangleVertical as CaseIcon, Wind, AlertCircle, X as CloseIcon, BrainCircuit, Loader2, ThumbsUp, ThumbsDown, MonitorPlay, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { getAiBuildCritique } from "@/app/actions";
 
 import Link from "next/link";
 
@@ -14,7 +17,6 @@ interface YourBuildProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
     onClearBuild: () => void;
     onRemovePart: (category: string, index?: number) => void;
-    hideReviewButton?: boolean;
 }
 
 function PowerMeter({ value, max }: { value: number; max: number }) {
@@ -52,7 +54,49 @@ const componentIcons: { [key: string]: React.ElementType } = {
     Cooler: Wind,
 };
 
-export function YourBuild({ build, onClearBuild, onRemovePart, hideReviewButton }: YourBuildProps) {
+export function YourBuild({ build, onClearBuild, onRemovePart }: YourBuildProps) {
+    const [analysis, setAnalysis] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const handleAnalyze = async () => {
+        setLoading(true);
+        setError(null);
+        setIsDialogOpen(true);
+
+        const inputData: any = {};
+        Object.entries(build).forEach(([key, val]) => {
+            if (val) {
+                if (Array.isArray(val)) {
+                    inputData[key] = val.map((v: any) => ({
+                        model: v.model,
+                        price: v.price,
+                    }));
+                } else {
+                    const singleVal = val as any;
+                    inputData[key] = {
+                        model: singleVal.model,
+                        price: singleVal.price,
+                    };
+                }
+            }
+        });
+
+        try {
+            const result = await getAiBuildCritique(inputData);
+            if ('error' in result) {
+                setError(result.error as string);
+            } else {
+                setAnalysis(result);
+            }
+        } catch (err) {
+            setError("An unexpected error occurred during analysis.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const selectedParts = Object.entries(build).reduce((acc, [name, value]) => {
         if (Array.isArray(value)) return acc + value.length;
         return acc + (value ? 1 : 0);
@@ -160,12 +204,133 @@ export function YourBuild({ build, onClearBuild, onRemovePart, hideReviewButton 
                     </Alert>
                 )}
                 <div className="flex flex-col gap-3 w-full">
-                    {!hideReviewButton && (
-                        <Button className="w-full" size="lg" disabled={selectedParts === 0} asChild>
-                            <Link href="/ai-build-advisor">Review with Build Advisor</Link>
+                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                        <Button
+                            className="w-full font-headline tracking-wide flex items-center gap-2 bg-primary hover:bg-primary/90"
+                            size="lg"
+                            disabled={selectedParts === 0}
+                            onClick={handleAnalyze}
+                        >
+                            <BrainCircuit className="h-5 w-5" /> Analyze My Build
                         </Button>
-                    )}
-                    <Button variant="outline" className="w-full" onClick={onClearBuild} disabled={selectedParts === 0}>
+                        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+                            <DialogHeader className="p-6 pb-2">
+                                <DialogTitle className="flex items-center gap-2 font-headline text-3xl">
+                                    <BrainCircuit className="h-8 w-8 text-primary" />
+                                    AI Build Critique
+                                </DialogTitle>
+                                <DialogDescription className="text-base">
+                                    Expert AI analysis of your current parts selection.
+                                </DialogDescription>
+                            </DialogHeader>
+
+                            <ScrollArea className="flex-1 p-6 pt-2">
+                                {loading && (
+                                    <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                                        <p className="text-lg font-medium animate-pulse">Our AI is analyzing your components...</p>
+                                    </div>
+                                )}
+
+                                {error && (
+                                    <div className="bg-destructive/10 text-destructive p-6 rounded-lg border border-destructive/20">
+                                        <div className="flex items-center gap-2 mb-2 font-bold text-lg">
+                                            <AlertCircle className="h-6 w-6" />
+                                            Analysis Failed
+                                        </div>
+                                        <p className="mb-4">{error}</p>
+                                        <Button variant="outline" onClick={handleAnalyze}>Try Again</Button>
+                                    </div>
+                                )}
+
+                                {analysis && !loading && (
+                                    <div className="space-y-8 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        {/* Pros and Cons */}
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <div className="bg-green-500/10 rounded-xl p-5 border border-green-500/20">
+                                                <h4 className="font-bold text-green-600 dark:text-green-400 flex items-center gap-2 mb-4 text-lg">
+                                                    <ThumbsUp className="h-5 w-5" /> Pros
+                                                </h4>
+                                                <ul className="space-y-3 text-sm">
+                                                    {analysis.prosCons.pros.map((pro: string, idx: number) => (
+                                                        <li key={idx} className="flex gap-2 leading-relaxed">
+                                                            <span className="text-green-500 font-bold">•</span> {pro}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                            <div className="bg-red-500/10 rounded-xl p-5 border border-red-500/20">
+                                                <h4 className="font-bold text-red-600 dark:text-red-400 flex items-center gap-2 mb-4 text-lg">
+                                                    <ThumbsDown className="h-5 w-5" /> Cons
+                                                </h4>
+                                                <ul className="space-y-3 text-sm">
+                                                    {analysis.prosCons.cons.map((con: string, idx: number) => (
+                                                        <li key={idx} className="flex gap-2 leading-relaxed">
+                                                            <span className="text-red-500 font-bold">•</span> {con}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </div>
+
+                                        {/* Bottleneck Analysis */}
+                                        <div className="bg-secondary/30 rounded-xl p-5 border border-border/50">
+                                            <h4 className="font-bold flex items-center gap-2 mb-3 text-lg">
+                                                <AlertCircle className="h-5 w-5 text-yellow-500" /> Bottleneck Analysis
+                                            </h4>
+                                            <p className="text-sm text-foreground/90 leading-relaxed italic">
+                                                "{analysis.bottleneckAnalysis}"
+                                            </p>
+                                        </div>
+
+                                        {/* FPS Estimates */}
+                                        <div className="space-y-4">
+                                            <h4 className="font-bold flex items-center gap-2 text-lg">
+                                                <MonitorPlay className="h-6 w-6 text-primary" /> Estimated Gaming Performance
+                                            </h4>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                                {analysis.fpsEstimates.map((est: any, idx: number) => (
+                                                    <div key={idx} className="bg-card border-2 rounded-xl p-4 text-center shadow-sm">
+                                                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-2">{est.game}</p>
+                                                        <p className="text-3xl font-headline font-black text-primary mb-1">{est.estimatedFps}</p>
+                                                        <Badge variant="outline" className="text-[10px] font-bold py-0">{est.resolution}</Badge>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Suggestions */}
+                                        {analysis.suggestions && analysis.suggestions.length > 0 && (
+                                            <div className="space-y-4 pt-2">
+                                                <h4 className="font-bold flex items-center gap-2 text-lg">
+                                                    <Zap className="h-6 w-6 text-orange-500" /> AI Optimization Suggestions
+                                                </h4>
+                                                <div className="space-y-3">
+                                                    {analysis.suggestions.map((sug: any, idx: number) => (
+                                                        <div key={idx} className="bg-card border rounded-xl p-4 shadow-sm hover:border-primary/30 transition-colors">
+                                                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                                <span className="line-through text-muted-foreground text-xs">{sug.originalComponent}</span>
+                                                                <span className="text-primary font-black text-xs">→</span>
+                                                                <span className="font-bold text-primary">{sug.suggestedComponent}</span>
+                                                            </div>
+                                                            <p className="text-muted-foreground text-xs leading-relaxed">{sug.reason}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="pt-4 pb-2">
+                                            <Button variant="outline" className="w-full" onClick={handleAnalyze} disabled={loading}>
+                                                Refresh Analysis
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </ScrollArea>
+                        </DialogContent>
+                    </Dialog>
+
+                    <Button variant="ghost" className="w-full text-muted-foreground hover:text-destructive h-8 text-xs" onClick={onClearBuild} disabled={selectedParts === 0}>
                         Clear Build
                     </Button>
                 </div>

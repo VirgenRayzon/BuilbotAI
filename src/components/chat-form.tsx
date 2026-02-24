@@ -90,7 +90,7 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
             <FormItem>
               <FormLabel>Budget</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., ~$1500, budget-friendly" {...field} />
+                <Input placeholder="e.g., ~₱50,000, 75k PHP budget" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

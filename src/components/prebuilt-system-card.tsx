@@ -8,6 +8,14 @@ import type { PrebuiltSystem } from '@/lib/types';
 import { ShoppingCart } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { getMissingParts } from '@/lib/prebuilt-utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { AlertCircle } from 'lucide-react';
 
 interface PrebuiltSystemCardProps {
   system: PrebuiltSystem;
@@ -16,7 +24,12 @@ interface PrebuiltSystemCardProps {
 export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
   const { toast } = useToast();
 
+  const missingParts = getMissingParts(system);
+  const isComplete = missingParts.length === 0;
+
   const handleAddToCart = () => {
+    if (!isComplete) return;
+
     toast({
       title: 'Added to Cart',
       description: `${system.name} has been added to your cart.`,
@@ -39,16 +52,35 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
         <CardDescription className="text-xs pt-1 h-8 line-clamp-2">{system.description}</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow p-4 pt-0">
-          <Badge variant="outline" className="text-xs">
-            {system.tier}
-          </Badge>
+        <Badge variant="outline" className="text-xs">
+          {system.tier}
+        </Badge>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-between items-center">
         <p className="text-lg font-bold font-headline">{formatCurrency(system.price)}</p>
-        <Button size="sm" onClick={handleAddToCart}>
-          <ShoppingCart className="mr-2 h-4 w-4" />
-          Add to Cart
-        </Button>
+
+        {!isComplete ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="cursor-not-allowed">
+                  <Button size="sm" variant="outline" disabled className="opacity-50">
+                    <AlertCircle className="mr-2 h-4 w-4" />
+                    Incomplete
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Missing: {missingParts.join(', ')}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <Button size="sm" onClick={handleAddToCart}>
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            Add to Cart
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
