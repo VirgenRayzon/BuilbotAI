@@ -37,19 +37,20 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
   }
 
   return (
-    <Card className="flex flex-col h-full overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 ease-in-out">
-      <CardHeader className="p-4 pb-2">
-        <div className="aspect-video relative w-full overflow-hidden rounded-md mb-2">
+    <Card className="flex flex-col h-full overflow-hidden transform group hover:-translate-y-1.5 transition-all duration-300 ease-out hover:shadow-xl hover:border-primary/40">
+      <CardHeader className="p-4 pb-2 relative z-10">
+        <div className="aspect-video relative w-full overflow-hidden rounded-md mb-2 shadow-sm group-hover:shadow-md transition-shadow">
+          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <Image
             src={system.imageUrl}
             alt={system.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
         </div>
-        <CardTitle className="text-base font-headline leading-tight h-10 line-clamp-2">{system.name}</CardTitle>
-        <CardDescription className="text-xs pt-1 h-8 line-clamp-2">{system.description}</CardDescription>
+        <CardTitle className="text-lg font-headline leading-tight h-12 line-clamp-2 group-hover:text-primary transition-colors">{system.name}</CardTitle>
+        <CardDescription className="text-xs pt-1 h-10 line-clamp-2 text-muted-foreground/80">{system.description}</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow p-4 pt-0">
         <Badge variant="outline" className="text-xs">

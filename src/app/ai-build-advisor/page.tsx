@@ -96,6 +96,7 @@ export default function AiBuildAdvisorPage() {
         const price = Math.floor(Math.random() * 20000) + 2500;
         return {
           ...component,
+          id: `ai-suggested-${type}`,
           price,
           icon: metadata.icon,
           image: metadata.image.imageUrl,

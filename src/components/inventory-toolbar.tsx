@@ -24,7 +24,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import React from "react";
-import { Layers } from "lucide-react";
+import { Layers, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 type Category = {
   name: string;
@@ -46,6 +47,9 @@ interface InventoryToolbarProps {
   view?: 'grid' | 'list';
   onViewChange?: (value: 'grid' | 'list') => void;
   showViewToggle?: boolean;
+
+  searchQuery?: string;
+  onSearchQueryChange?: (value: string) => void;
 }
 
 export function InventoryToolbar({
@@ -60,6 +64,8 @@ export function InventoryToolbar({
   view,
   onViewChange,
   showViewToggle = false,
+  searchQuery,
+  onSearchQueryChange,
 }: InventoryToolbarProps) {
   const hasIcons = React.useMemo(() => categories.some(c => c.icon), [categories]);
 
@@ -105,8 +111,21 @@ export function InventoryToolbar({
           })}
         </ToggleGroup>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-card p-2">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-card p-2 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 flex-1">
+          {onSearchQueryChange && (
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search..."
+                className="pl-8 h-9 bg-background focus-visible:ring-1"
+                value={searchQuery || ''}
+                onChange={(e) => onSearchQueryChange(e.target.value)}
+              />
+            </div>
+          )}
+
           {!hasIcons && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

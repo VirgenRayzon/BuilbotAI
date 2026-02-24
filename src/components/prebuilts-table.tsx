@@ -62,28 +62,30 @@ export function PrebuiltsTable({ systems, onDelete, showActions = true }: Prebui
       </TableHeader>
       <TableBody>
         {systems.map((system) => (
-          <TableRow key={system.id}>
-            <TableCell className="font-medium">
-              <div className="flex items-center gap-3">
-                <Image
-                  src={system.imageUrl}
-                  alt={system.name}
-                  width={40}
-                  height={40}
-                  className="rounded-sm object-cover"
-                />
+          <TableRow key={system.id} className="group hover:bg-muted/50 transition-colors">
+            <TableCell className="font-medium p-4">
+              <div className="flex items-center gap-4">
+                <div className="relative w-16 h-12 rounded-md overflow-hidden bg-muted flex-shrink-0 border shadow-sm group-hover:border-primary/30 transition-colors">
+                  <Image
+                    src={system.imageUrl}
+                    alt={system.name}
+                    fill
+                    sizes="64px"
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                </div>
                 <div>
-                  <p>{system.name}</p>
-                  <p className="text-xs text-muted-foreground line-clamp-1">
+                  <p className="font-headline text-base group-hover:text-primary transition-colors">{system.name}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-1 max-w-[400px]">
                     {system.description}
                   </p>
                 </div>
               </div>
             </TableCell>
             <TableCell>
-              <Badge variant="outline">{system.tier}</Badge>
+              <Badge variant="secondary" className="font-medium bg-secondary/50">{system.tier}</Badge>
             </TableCell>
-            <TableCell className="text-right">
+            <TableCell className="text-right font-headline font-bold text-lg">
               {formatCurrency(system.price)}
             </TableCell>
             <TableCell>
