@@ -6,10 +6,11 @@ import { useAuth } from '..';
 
 export const useUser = () => {
   const auth = useAuth();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null | undefined>(undefined);
 
   useEffect(() => {
     if (!auth) {
+      setUser(null);
       return;
     }
     const unsubscribe = onIdTokenChanged(auth, (user) => {
@@ -19,3 +20,4 @@ export const useUser = () => {
   }, [auth]);
   return user;
 };
+

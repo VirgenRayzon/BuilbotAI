@@ -153,9 +153,16 @@ export default function BuilderPage() {
 
   const handleCategoryChange = (categoryName: string, selected: boolean) => {
     setCurrentPage(1);
-    setCategories(prev =>
-      prev.map(cat => (cat.name === categoryName ? { ...cat, selected } : cat))
-    );
+    setCategories(prev => {
+      if (categoryName === 'All') {
+        return prev.map(cat => ({ ...cat, selected: true }));
+      } else {
+        return prev.map(cat => ({
+          ...cat,
+          selected: cat.name === categoryName
+        }));
+      }
+    });
   };
 
   const handlePartToggle = (part: Part) => {
@@ -169,6 +176,7 @@ export default function BuilderPage() {
       }
 
       const componentData: ComponentData = {
+        id: part.id,
         model: part.name,
         price: part.price,
         description: Object.entries(part.specifications).slice(0, 2).map(([key, value]) => `${key}: ${value}`).join(' | '),
@@ -203,6 +211,7 @@ export default function BuilderPage() {
 
       // Part is not selected or a different one is, so add/replace it
       const componentData: ComponentData = {
+        id: part.id,
         model: part.name,
         price: part.price,
         description: Object.entries(part.specifications).slice(0, 2).map(([key, value]) => `${key}: ${value}`).join(' | '),
@@ -418,9 +427,9 @@ export default function BuilderPage() {
         </div>
 
         <div className="lg:col-span-4">
-          <div className="sticky top-20 flex flex-col gap-6 max-h-[calc(100vh-6rem)] overflow-y-auto pb-4 pr-2">
+          <div className="sticky top-20 flex flex-col gap-6 h-[calc(100vh-6rem)] pb-4 pr-2">
             <PCVisualizer build={build} />
-            <YourBuild build={build} onClearBuild={handleClearBuild} onRemovePart={handleRemovePart} />
+            <YourBuild build={build} onClearBuild={handleClearBuild} onRemovePart={handleRemovePart} className="flex-1 min-h-0" />
           </div>
         </div>
       </div>

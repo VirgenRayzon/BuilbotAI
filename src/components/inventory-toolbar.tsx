@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import React from "react";
-import { ScrollArea, ScrollBar } from "./ui/scroll-area";
+import { Layers } from "lucide-react";
 
 type Category = {
   name: string;
@@ -63,38 +63,47 @@ export function InventoryToolbar({
 }: InventoryToolbarProps) {
   const hasIcons = React.useMemo(() => categories.some(c => c.icon), [categories]);
 
-  const handleToggleChange = (value: string[]) => {
-    const newSelection = value.length > 0 ? value : categories.map(c => c.name);
-    categories.forEach(cat => {
-      onCategoryChange(cat.name, newSelection.includes(cat.name));
-    });
+  const handleToggleChange = (value: string) => {
+    if (!value) return; // Don't allow deselecting everything without clicking another button
+    onCategoryChange(value, true);
   };
 
-  const selectedForToggle = categories.filter(c => c.selected).map(c => c.name);
+  const allSelected = categories.every(c => c.selected);
+  const selectedValue = allSelected ? "All" : categories.find(c => c.selected)?.name || "All";
 
   return (
     <div className="space-y-4">
       {hasIcons && (
-        <ScrollArea className="w-full whitespace-nowrap">
-          <ToggleGroup
-            type="multiple"
-            variant="outline"
-            value={selectedForToggle}
-            onValueChange={handleToggleChange}
-            className="justify-start gap-2 pb-1"
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          value={selectedValue}
+          onValueChange={handleToggleChange}
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2 w-full"
+        >
+          <ToggleGroupItem
+            value="All"
+            aria-label="Show all categories"
+            className="flex-1 px-3 py-2 h-auto flex-col sm:flex-row gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
           >
-            {categories.map((cat) => {
-              const Icon = cat.icon!;
-              return (
-                <ToggleGroupItem key={cat.name} value={cat.name} aria-label={`Toggle ${cat.name}`}>
-                  <Icon className="mr-2 h-4 w-4" />
-                  {cat.name}
-                </ToggleGroupItem>
-              );
-            })}
-          </ToggleGroup>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+            <Layers className="h-4 w-4" />
+            <span className="text-xs font-medium">All</span>
+          </ToggleGroupItem>
+          {categories.map((cat) => {
+            const Icon = cat.icon!;
+            return (
+              <ToggleGroupItem
+                key={cat.name}
+                value={cat.name}
+                aria-label={`Toggle ${cat.name}`}
+                className="flex-1 px-3 py-2 h-auto flex-col sm:flex-row gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+              >
+                <Icon className="h-4 w-4" />
+                <span className="text-xs font-medium">{cat.name}</span>
+              </ToggleGroupItem>
+            );
+          })}
+        </ToggleGroup>
       )}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-card p-2">
         <div className="flex flex-wrap items-center gap-2">

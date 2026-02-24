@@ -2,6 +2,7 @@
 import type { AiBuildAdvisorRecommendationsOutput } from "@/ai/flows/ai-build-advisor-recommendations";
 
 export type ComponentData = {
+  id: string;
   model: string;
   description: string;
   price: number;
@@ -63,4 +64,27 @@ export type UserProfile = {
   id: string;
   email: string;
   isAdmin: boolean;
+};
+
+export type OrderItem = {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+};
+
+export type Order = {
+  id: string;
+  userId: string;
+  userEmail: string;
+  items: OrderItem[];
+  totalPrice: number;
+  createdAt: any; // Firestore Timestamp
+};
+
+export type PopularityMetrics = {
+  partId: string;
+  name: string;
+  category: string;
+  purchaseCount: number;
 };

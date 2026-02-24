@@ -8,10 +8,11 @@ import type { UserProfile } from '@/lib/types';
 import { doc } from 'firebase/firestore';
 
 interface UserProfileContextValue {
-    authUser: User | null;
+    authUser: User | null | undefined;
     profile: UserProfile | null;
     loading: boolean;
 }
+
 
 const UserProfileContext = createContext<UserProfileContextValue>({
     authUser: null,
