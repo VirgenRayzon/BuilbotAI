@@ -116,6 +116,20 @@ export default function BuilderPage() {
     toast({ title: 'Build Cleared', description: 'Your build has been reset.' });
   };
 
+  const handleRemovePart = (category: string, index?: number) => {
+    setBuild(prev => {
+      const next = { ...prev };
+      if (category === 'Storage' && typeof index === 'number') {
+        const currentStorage = [...(next['Storage'] as ComponentData[])];
+        currentStorage.splice(index, 1);
+        next['Storage'] = currentStorage;
+      } else {
+        next[category] = null;
+      }
+      return next;
+    });
+  };
+
   const [categories, setCategories] = useState(
     componentCategories.map(c => ({ name: c.name, selected: true, icon: c.icon }))
   );
@@ -138,37 +152,28 @@ export default function BuilderPage() {
     const category = part.category;
 
     if (category === 'Storage') {
-      const currentStorage = build['Storage'] as ComponentData[];
-      const isCurrentlySelected = currentStorage.some(c => c.model === part.name);
-
-      if (isCurrentlySelected) {
-        setBuild(prevBuild => ({
-          ...prevBuild,
-          Storage: currentStorage.filter(c => c.model !== part.name)
-        }));
-        toast({ title: 'Part Removed', description: `${part.name} has been removed from your build.` });
-      } else {
-        if (part.stock === 0) {
-          toast({ variant: 'destructive', title: 'Out of Stock', description: `${part.name} is currently unavailable.` });
-          return;
-        }
-        const componentData: ComponentData = {
-          model: part.name,
-          price: part.price,
-          description: Object.entries(part.specifications).slice(0, 2).map(([key, value]) => `${key}: ${value}`).join(' | '),
-          image: part.imageUrl,
-          imageHint: part.name.toLowerCase().split(' ').slice(0, 2).join(' '),
-          icon: componentCategories.find(c => c.name === category)!.icon,
-          wattage: part.wattage,
-          socket: part.specifications['Socket']?.toString() || part.specifications['socket']?.toString(),
-          ramType: part.specifications['Memory Type']?.toString() || part.specifications['RAM Type']?.toString() || part.specifications['Memory']?.toString(),
-        };
-        setBuild(prevBuild => ({
-          ...prevBuild,
-          Storage: [...currentStorage, componentData]
-        }));
-        toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
+      if (part.stock === 0) {
+        toast({ variant: 'destructive', title: 'Out of Stock', description: `${part.name} is currently unavailable.` });
+        return;
       }
+
+      const componentData: ComponentData = {
+        model: part.name,
+        price: part.price,
+        description: Object.entries(part.specifications).slice(0, 2).map(([key, value]) => `${key}: ${value}`).join(' | '),
+        image: part.imageUrl,
+        imageHint: part.name.toLowerCase().split(' ').slice(0, 2).join(' '),
+        icon: componentCategories.find(c => c.name === category)!.icon,
+        wattage: part.wattage,
+        socket: part.specifications['Socket']?.toString() || part.specifications['socket']?.toString(),
+        ramType: part.specifications['Memory Type']?.toString() || part.specifications['RAM Type']?.toString() || part.specifications['Memory']?.toString(),
+      };
+
+      setBuild(prevBuild => ({
+        ...prevBuild,
+        Storage: [...(prevBuild['Storage'] as ComponentData[]), componentData]
+      }));
+      toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
       return;
     }
 
@@ -419,7 +424,7 @@ export default function BuilderPage() {
 
         <div className="lg:col-span-4">
           <div className="sticky top-20 flex flex-col gap-6 max-h-[calc(100vh-6rem)] overflow-y-auto pb-4 pr-2">
-            <YourBuild build={build} onClearBuild={handleClearBuild} />
+            <YourBuild build={build} onClearBuild={handleClearBuild} onRemovePart={handleRemovePart} />
           </div>
         </div>
       </div>
