@@ -179,13 +179,13 @@ export default function BuilderPage() {
         id: part.id,
         model: part.name,
         price: part.price,
-        description: Object.entries(part.specifications).slice(0, 2).map(([key, value]) => `${key}: ${value}`).join(' | '),
+        description: Object.entries(part.specifications || {}).slice(0, 2).map(([key, value]) => `${key}: ${value}`).join(' | '),
         image: part.imageUrl,
         imageHint: part.name.toLowerCase().split(' ').slice(0, 2).join(' '),
         icon: componentCategories.find(c => c.name === category)!.icon,
         wattage: part.wattage,
-        socket: part.specifications['Socket']?.toString() || part.specifications['socket']?.toString(),
-        ramType: part.specifications['Memory Type']?.toString() || part.specifications['RAM Type']?.toString() || part.specifications['Memory']?.toString(),
+        socket: part.specifications?.['Socket']?.toString() || part.specifications?.['socket']?.toString(),
+        ramType: part.specifications?.['Memory Type']?.toString() || part.specifications?.['RAM Type']?.toString() || part.specifications?.['Memory']?.toString(),
       };
 
       setBuild(prevBuild => ({
@@ -214,13 +214,13 @@ export default function BuilderPage() {
         id: part.id,
         model: part.name,
         price: part.price,
-        description: Object.entries(part.specifications).slice(0, 2).map(([key, value]) => `${key}: ${value}`).join(' | '),
+        description: Object.entries(part.specifications || {}).slice(0, 2).map(([key, value]) => `${key}: ${value}`).join(' | '),
         image: part.imageUrl,
         imageHint: part.name.toLowerCase().split(' ').slice(0, 2).join(' '),
         icon: componentCategories.find(c => c.name === category)!.icon,
         wattage: part.wattage,
-        socket: part.specifications['Socket']?.toString() || part.specifications['socket']?.toString(),
-        ramType: part.specifications['Memory Type']?.toString() || part.specifications['RAM Type']?.toString() || part.specifications['Memory']?.toString(),
+        socket: part.specifications?.['Socket']?.toString() || part.specifications?.['socket']?.toString(),
+        ramType: part.specifications?.['Memory Type']?.toString() || part.specifications?.['RAM Type']?.toString() || part.specifications?.['Memory']?.toString(),
       };
 
       setBuild(prevBuild => ({ ...prevBuild, [category]: componentData }));
@@ -234,8 +234,8 @@ export default function BuilderPage() {
     const mobo = currentBuild['Motherboard'] as ComponentData | null;
     const ram = currentBuild['RAM'] as ComponentData | null;
 
-    const partSocket = part.specifications['Socket']?.toString() || part.specifications['socket']?.toString();
-    const partRamType = part.specifications['Memory Type']?.toString() || part.specifications['RAM Type']?.toString() || part.specifications['Memory']?.toString();
+    const partSocket = part.specifications?.['Socket']?.toString() || part.specifications?.['socket']?.toString();
+    const partRamType = part.specifications?.['Memory Type']?.toString() || part.specifications?.['RAM Type']?.toString() || part.specifications?.['Memory']?.toString();
 
     if (category === 'CPU') {
       if (mobo && mobo.socket && partSocket && mobo.socket !== partSocket) {
@@ -271,8 +271,8 @@ export default function BuilderPage() {
     const parts = (allParts?.filter(part => selectedCategories.includes(part.category)) ?? [])
       .sort((a, b) => {
         let compare = 0;
-        if (sortBy === 'Name') compare = a.name.localeCompare(b.name);
-        else if (sortBy === 'Price') compare = a.price - b.price;
+        if (sortBy === 'Name') compare = (a.name || '').localeCompare(b.name || '');
+        else if (sortBy === 'Price') compare = (a.price || 0) - (b.price || 0);
         return sortDirection === 'asc' ? compare : -compare;
       });
 

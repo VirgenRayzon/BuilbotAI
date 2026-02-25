@@ -6,6 +6,9 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(value: number) {
+  if (isNaN(value) || value === undefined || value === null) {
+    return "₱0.00";
+  }
   return new Intl.NumberFormat("en-PH", {
     style: "currency",
     currency: "PHP",

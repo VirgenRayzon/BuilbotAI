@@ -35,7 +35,7 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
         onToggleBuild(part);
     }
 
-    const mainSpecs = Object.entries(part.specifications).slice(0, 4);
+    const mainSpecs = Object.entries(part.specifications || {}).slice(0, 4);
 
     return (
         <TooltipProvider>
@@ -80,7 +80,7 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                 <CardContent className="p-4 pt-0 flex-grow flex flex-col z-10">
                     <div className="aspect-video relative w-full overflow-hidden rounded-md mb-4">
                         <Image
-                            src={part.imageUrl}
+                            src={part.imageUrl || '/placeholder-part.png'}
                             alt={part.name}
                             fill
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -97,7 +97,7 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                             </TooltipTrigger>
                             <TooltipContent side="top" align="end" className="z-50">
                                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 p-2 max-w-xs">
-                                    {Object.entries(part.specifications).map(([key, value]) => (
+                                    {Object.entries(part.specifications || {}).map(([key, value]) => (
                                         <React.Fragment key={key}>
                                             <div className="text-xs text-muted-foreground uppercase">{key}</div>
                                             <div className="text-xs font-semibold text-right truncate" title={String(value)}>{String(value)}</div>
