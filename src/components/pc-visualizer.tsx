@@ -1,59 +1,10 @@
 "use client";
 
-import React, { Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Environment, ContactShadows } from "@react-three/drei";
+import React from "react";
 import { ComponentData } from "@/lib/types";
 
 interface PCVisualizerProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
-}
-
-function PartMesh({ position, size, color, label, visible }: { position: [number, number, number], size: [number, number, number], color: string, label: string, visible: boolean }) {
-    if (!visible) return null;
-    return (
-        <mesh position={position}>
-            <boxGeometry args={size} />
-            <meshStandardMaterial color={color} metalness={0.5} roughness={0.2} />
-        </mesh>
-    );
-}
-
-function Case() {
-    return (
-        <group>
-            {/* Bottom */}
-            <mesh position={[0, -1.5, 0]}>
-                <boxGeometry args={[3, 0.1, 4]} />
-                <meshStandardMaterial color="#1a1a1a" />
-            </mesh>
-            {/* Back */}
-            <mesh position={[0, 0, -2]}>
-                <boxGeometry args={[3, 3, 0.1]} />
-                <meshStandardMaterial color="#1a1a1a" />
-            </mesh>
-            {/* Bottom Side (Motherboard tray) */}
-            <mesh position={[-1.4, 0, 0]}>
-                <boxGeometry args={[0.1, 3, 4]} />
-                <meshStandardMaterial color="#1a1a1a" />
-            </mesh>
-            {/* Top */}
-            <mesh position={[0, 1.5, 0]}>
-                <boxGeometry args={[3, 0.1, 4]} />
-                <meshStandardMaterial color="#1a1a1a" />
-            </mesh>
-            {/* Front (Transparent-ish) */}
-            <mesh position={[0, 0, 2]}>
-                <boxGeometry args={[3, 3, 0.05]} />
-                <meshStandardMaterial color="#333" transparent opacity={0.3} />
-            </mesh>
-            {/* Glass Side */}
-            <mesh position={[1.5, 0, 0]}>
-                <boxGeometry args={[0.05, 3, 4]} />
-                <meshStandardMaterial color="#88aaff" transparent opacity={0.2} />
-            </mesh>
-        </group>
-    );
 }
 
 export function PCVisualizer({ build }: PCVisualizerProps) {
@@ -66,97 +17,137 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
     const hasStorage = Array.isArray(build["Storage"]) ? build["Storage"].length > 0 : !!build["Storage"];
     const hasCase = !!build["Case"];
 
+    const caseData = build["Case"] as ComponentData | null;
+    const moboData = build["Motherboard"] as ComponentData | null;
+    const gpuData = build["GPU"] as ComponentData | null;
+
+    // Default dimensions if not specified (in pixels/arbitrary units for SVG)
+    const caseWidth = caseData?.dimensions?.width || 210;
+    const caseHeight = caseData?.dimensions?.height || 450;
+
+    // Scale factor to fit 400px height relative to case height
+    const scale = 350 / caseHeight;
+    const padding = 20;
+
+    const svgWidth = (caseWidth * scale) + (padding * 2);
+    const svgHeight = (caseHeight * scale) + (padding * 2);
+
     return (
-        <div className="w-full h-[400px] bg-black/5 rounded-xl border border-primary/10 relative overflow-hidden group">
+        <div className="w-full h-[400px] bg-black/5 rounded-xl border border-primary/10 relative overflow-hidden group flex items-center justify-center">
             <div className="absolute top-4 left-4 z-10">
-                <h3 className="text-sm font-headline font-bold text-muted-foreground uppercase tracking-widest">3D Build Preview</h3>
+                <h3 className="text-sm font-headline font-bold text-muted-foreground uppercase tracking-widest">2D Build Preview</h3>
             </div>
 
-            <Canvas shadows dpr={[1, 2]}>
-                <PerspectiveCamera makeDefault position={[5, 3, 5]} fov={50} />
-                <OrbitControls enablePan={false} minDistance={4} maxDistance={10} />
+            <svg
+                width={svgWidth}
+                height={svgHeight}
+                viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                className="drop-shadow-2xl"
+            >
+                {/* Case Outline */}
+                <rect
+                    x={padding}
+                    y={padding}
+                    width={caseWidth * scale}
+                    height={caseHeight * scale}
+                    rx={8}
+                    fill="#1a1a1a"
+                    stroke="#333"
+                    strokeWidth={2}
+                />
 
-                <ambientLight intensity={0.5} />
-                <pointLight position={[10, 10, 10]} intensity={1} castShadow />
-                <spotLight position={[-10, 10, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
+                {/* Motherboard */}
+                {hasMobo && (
+                    <rect
+                        x={padding + 5}
+                        y={padding + 50}
+                        width={(moboData?.dimensions?.width || 244) * scale}
+                        height={(moboData?.dimensions?.height || 305) * scale}
+                        fill="#1b4332"
+                        stroke="#2d6a4f"
+                        strokeWidth={1}
+                        rx={4}
+                    />
+                )}
 
-                <Suspense fallback={null}>
-                    <group position={[0, 0, 0]}>
-                        <Case />
+                {/* CPU */}
+                {hasCPU && (
+                    <rect
+                        x={padding + 40}
+                        y={padding + 100}
+                        width={40 * scale}
+                        height={40 * scale}
+                        fill="#555"
+                        rx={2}
+                    />
+                )}
 
-                        {/* Motherboard */}
-                        <PartMesh
-                            position={[-1.3, 0, 0]}
-                            size={[0.1, 2.5, 2]}
-                            color="#1b4332"
-                            label="Motherboard"
-                            visible={hasMobo}
-                        />
+                {/* RAM */}
+                {hasRAM && (
+                    <rect
+                        x={padding + 90}
+                        y={padding + 80}
+                        width={10 * scale}
+                        height={100 * scale}
+                        fill="#333"
+                        rx={1}
+                    />
+                )}
 
-                        {/* CPU (on top of Mobo) */}
-                        <PartMesh
-                            position={[-1.2, 0.5, 0]}
-                            size={[0.15, 0.4, 0.4]}
-                            color="#555"
-                            label="CPU"
-                            visible={hasCPU}
-                        />
+                {/* GPU */}
+                {hasGPU && (
+                    <rect
+                        x={padding + 20}
+                        y={padding + 200}
+                        width={(gpuData?.dimensions?.width || 280) * scale}
+                        height={(gpuData?.dimensions?.height || 120) * scale}
+                        fill="#b91c1c"
+                        stroke="#991b1b"
+                        strokeWidth={1}
+                        rx={4}
+                    />
+                )}
 
-                        {/* RAM (on top of Mobo) */}
-                        <PartMesh
-                            position={[-1.2, 0.5, 0.6]}
-                            size={[0.15, 0.8, 0.05]}
-                            color="#333"
-                            label="RAM"
-                            visible={hasRAM}
-                        />
+                {/* PSU */}
+                {hasPSU && (
+                    <rect
+                        x={padding + 5}
+                        y={padding + (caseHeight * scale) - (86 * scale) - 5}
+                        width={150 * scale}
+                        height={86 * scale}
+                        fill="#111"
+                        rx={4}
+                    />
+                )}
 
-                        {/* GPU (connected to Mobo) */}
-                        <PartMesh
-                            position={[-0.8, -0.2, 0]}
-                            size={[0.8, 0.4, 2]}
-                            color="#b91c1c"
-                            label="GPU"
-                            visible={hasGPU}
-                        />
+                {/* Storage */}
+                {hasStorage && (
+                    <rect
+                        x={padding + (caseWidth * scale) - (100 * scale) - 10}
+                        y={padding + 100}
+                        width={100 * scale}
+                        height={20 * scale}
+                        fill="#222"
+                        rx={2}
+                    />
+                )}
 
-                        {/* PSU (at bottom) */}
-                        <PartMesh
-                            position={[0, -1.2, -1]}
-                            size={[1.5, 0.6, 1.5]}
-                            color="#111"
-                            label="PSU"
-                            visible={hasPSU}
-                        />
-
-                        {/* Storage (SSD/HDD) */}
-                        <PartMesh
-                            position={[0, -1.2, 1]}
-                            size={[1, 0.1, 1.5]}
-                            color="#222"
-                            label="Storage"
-                            visible={hasStorage}
-                        />
-
-                        {/* Cooler (on CPU) */}
-                        <PartMesh
-                            position={[-0.9, 0.5, 0]}
-                            size={[0.5, 0.6, 0.6]}
-                            color="#3b82f6"
-                            label="Cooler"
-                            visible={hasCooler}
-                        />
-                    </group>
-
-                    <ContactShadows position={[0, -1.5, 0]} opacity={0.4} scale={10} blur={2} far={4} />
-                    <Environment preset="city" />
-                </Suspense>
-            </Canvas>
+                {/* Cooler */}
+                {hasCooler && (
+                    <circle
+                        cx={padding + 60}
+                        cy={padding + 120}
+                        r={30 * scale}
+                        fill="#3b82f6"
+                        fillOpacity={0.6}
+                    />
+                )}
+            </svg>
 
             {!hasMobo && !hasGPU && !hasCPU && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <p className="text-sm text-muted-foreground bg-background/80 px-4 py-2 rounded-full border border-border shadow-sm">
-                        Add parts to see your build in 3D
+                        Add parts to see your build in 2D
                     </p>
                 </div>
             )}

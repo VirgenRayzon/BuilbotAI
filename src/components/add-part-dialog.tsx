@@ -53,6 +53,12 @@ const formSchema = z.object({
   stockCount: z.coerce.number().int().min(0, "Stock must be a positive integer."),
   imageUrl: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
   wattage: z.coerce.number().min(0, "Wattage must be a positive number.").optional(),
+  performanceScore: z.coerce.number().min(0).max(100).optional(),
+  dimensions: z.object({
+    width: z.coerce.number().min(0),
+    height: z.coerce.number().min(0),
+    depth: z.coerce.number().min(0),
+  }).optional(),
   specifications: z.array(specificationSchema),
 });
 
@@ -82,6 +88,12 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
       stockCount: 0,
       imageUrl: "",
       wattage: undefined,
+      performanceScore: 50,
+      dimensions: {
+        width: 0,
+        height: 0,
+        depth: 0,
+      },
       specifications: [],
     },
   });
@@ -95,17 +107,19 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
       return;
     }
     startAiTransition(async () => {
-      const result = await getAiPartDetails({ partName });
+      const result = await getAiPartDetails({ partName }) as any;
       if (result && !("error" in result)) {
         form.setValue("partName", result.partName, { shouldValidate: true });
         form.setValue("category", result.category, { shouldValidate: true });
         form.setValue("brand", result.brand, { shouldValidate: true });
         form.setValue("price", result.price, { shouldValidate: true });
         form.setValue("wattage", result.wattage, { shouldValidate: true });
+        form.setValue("performanceScore", result.performanceScore || (result.performanceTier ? result.performanceTier * 10 : 50), { shouldValidate: true });
+        form.setValue("dimensions", result.dimensions || { width: 100, height: 100, depth: 100 }, { shouldValidate: true });
         form.setValue("specifications", result.specifications, { shouldValidate: true });
         if (!form.getValues('imageUrl')) {
-            const seed = result.partName.replace(/\s+/g, '').toLowerCase();
-            form.setValue('imageUrl', `https://picsum.photos/seed/${seed}/800/600`);
+          const seed = result.partName.replace(/\s+/g, '').toLowerCase();
+          form.setValue('imageUrl', `https://picsum.photos/seed/${seed}/800/600`);
         }
       } else {
         toast({
@@ -132,21 +146,21 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
   const onSubmit = async (values: AddPartFormSchema) => {
     setIsSubmitting(true);
     try {
-        await onAddPart(values);
-        toast({
-          title: "Part Added!",
-          description: `${values.partName} has been added to the inventory.`,
-        });
-        form.reset();
-        setOpen(false);
+      await onAddPart(values);
+      toast({
+        title: "Part Added!",
+        description: `${values.partName} has been added to the inventory.`,
+      });
+      form.reset();
+      setOpen(false);
     } catch (error: any) {
-        toast({
-            variant: "destructive",
-            title: "Error adding part",
-            description: error.message || "An unexpected error occurred.",
-        });
+      toast({
+        variant: "destructive",
+        title: "Error adding part",
+        description: error.message || "An unexpected error occurred.",
+      });
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -162,152 +176,207 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
             <ScrollArea className="max-h-[70vh] -mx-6 px-6">
               <div className="space-y-6 py-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
-                    <div className="md:col-span-2">
-                        <FormField
-                        control={form.control}
-                        name="partName"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Part Name</FormLabel>
-                            <div className="flex gap-2">
-                                <FormControl>
-                                <Input placeholder="e.g., NVIDIA GeForce RTX 3060" {...field} />
-                                </FormControl>
-                                <Button type="button" variant="outline" size="icon" onClick={handleGetAiDetails} disabled={isAiPending}>
-                                {isAiPending ? <Loader2 className="animate-spin" /> : <Sparkles />}
-                                </Button>
-                            </div>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                    </div>
+                  <div className="md:col-span-2">
                     <FormField
-                        control={form.control}
-                        name="category"
-                        render={({ field }) => (
+                      control={form.control}
+                      name="partName"
+                      render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Category</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                          <FormLabel>Part Name</FormLabel>
+                          <div className="flex gap-2">
                             <FormControl>
-                                <SelectTrigger>
-                                <SelectValue placeholder="Select a category" />
-                                </SelectTrigger>
+                              <Input placeholder="e.g., NVIDIA GeForce RTX 3060" {...field} />
                             </FormControl>
-                            <SelectContent>
-                                {componentCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                            </SelectContent>
-                            </Select>
-                            <FormMessage />
+                            <Button type="button" variant="outline" size="icon" onClick={handleGetAiDetails} disabled={isAiPending}>
+                              {isAiPending ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                            </Button>
+                          </div>
+                          <FormMessage />
                         </FormItem>
-                        )}
+                      )}
                     />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a category" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {componentCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="brand"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Brand</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., NVIDIA" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Price (PHP)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g., 17500" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="stockCount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Stock Count</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g., 10" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="wattage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Wattage (W)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="e.g., 170"
+                            {...field}
+                            value={field.value ?? ''}
+                            onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="md:col-span-2">
                     <FormField
-                        control={form.control}
-                        name="brand"
-                        render={({ field }) => (
+                      control={form.control}
+                      name="imageUrl"
+                      render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Brand</FormLabel>
-                            <FormControl>
-                            <Input placeholder="e.g., NVIDIA" {...field} />
-                            </FormControl>
-                            <FormMessage />
+                          <FormLabel>Image URL (Auto-populates if blank)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://..." {...field} />
+                          </FormControl>
+                          <FormMessage />
                         </FormItem>
-                        )}
+                      )}
                     />
-                    <FormField
-                        control={form.control}
-                        name="price"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Price (PHP)</FormLabel>
-                            <FormControl>
-                            <Input type="number" placeholder="e.g., 17500" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="stockCount"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Stock Count</FormLabel>
-                            <FormControl>
-                            <Input type="number" placeholder="e.g., 10" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="wattage"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Wattage (W)</FormLabel>
-                            <FormControl>
-                            <Input
-                                type="number"
-                                placeholder="e.g., 170"
-                                {...field}
-                                value={field.value ?? ''}
-                                onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                             />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <div className="md:col-span-2">
-                        <FormField
-                        control={form.control}
-                        name="imageUrl"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Image URL (Auto-populates if blank)</FormLabel>
-                            <FormControl>
-                                <Input placeholder="https://..." {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="performanceScore"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Performance Index (0-100)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="50" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="dimensions.width"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Width (mm)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="0" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="dimensions.height"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Height (mm)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="0" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="dimensions.depth"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Depth (mm)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="0" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
                 <div className="space-y-4">
                   <FormLabel>Specifications</FormLabel>
                   <div className="flex gap-2">
-                      <Input
+                    <Input
                       placeholder="Key (e.g., Socket)"
                       value={specKey}
                       onChange={(e) => setSpecKey(e.target.value)}
-                      />
-                      <Input
+                    />
+                    <Input
                       placeholder="Value (e.g., AM5)"
                       value={specValue}
                       onChange={(e) => setSpecValue(e.target.value)}
-                      />
-                      <Button type="button" size="icon" onClick={addSpecification}>
+                    />
+                    <Button type="button" size="icon" onClick={addSpecification}>
                       <Plus />
-                      </Button>
+                    </Button>
                   </div>
                   <div className="flex flex-wrap gap-2 pt-2">
-                      {specifications.map((spec, index) => (
+                    {specifications.map((spec, index) => (
                       <Badge key={index} variant="secondary" className="gap-1.5 pr-1.5">
-                          <span className="font-normal">{spec.key}:</span>
-                          <span>{spec.value}</span>
-                          <button
+                        <span className="font-normal">{spec.key}:</span>
+                        <span>{spec.value}</span>
+                        <button
                           type="button"
                           onClick={() => removeSpecification(index)}
                           className="rounded-full bg-background/50 hover:bg-background"
-                          >
+                        >
                           <X className="w-3 h-3" />
-                          </button>
+                        </button>
                       </Badge>
-                      ))}
+                    ))}
                   </div>
                 </div>
               </div>

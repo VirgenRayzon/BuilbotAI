@@ -18,7 +18,9 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
         stock: part.stockCount,
         imageUrl: part.imageUrl || `https://picsum.photos/seed/${part.partName.replace(/\s+/g, '').toLowerCase()}/800/600?pc,component`,
         specifications: specificationsMap,
-        ...(part.wattage !== undefined && { wattage: part.wattage })
+        ...(part.wattage !== undefined && { wattage: part.wattage }),
+        ...(part.performanceScore !== undefined && { performanceScore: part.performanceScore }),
+        ...(part.dimensions !== undefined && { dimensions: part.dimensions })
     };
     await addDoc(collection(firestore, part.category), partData);
 }

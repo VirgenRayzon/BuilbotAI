@@ -1,6 +1,9 @@
 
 import type { AiBuildAdvisorRecommendationsOutput } from "@/ai/flows/ai-build-advisor-recommendations";
 
+export type Resolution = '1080p' | '1440p' | '4K';
+export type WorkloadType = 'Esports' | 'AAA' | 'Balanced';
+
 export type ComponentData = {
   id: string;
   model: string;
@@ -12,6 +15,13 @@ export type ComponentData = {
   wattage?: number;
   socket?: string;
   ramType?: string;
+  performanceTier?: number; // 1-10 (Legacy)
+  performanceScore?: number; // 0-100 (New)
+  dimensions?: {
+    width: number;
+    height: number;
+    depth: number;
+  };
 };
 
 export type Build = {
@@ -39,6 +49,13 @@ export type Part = {
   imageUrl: string;
   specifications: Record<string, string | number>;
   wattage?: number;
+  performanceTier?: number;
+  performanceScore?: number;
+  dimensions?: {
+    width: number;
+    height: number;
+    depth: number;
+  };
 };
 
 export type PrebuiltSystem = {

@@ -8,8 +8,8 @@
  * - ExtractPartDetailsOutput - The return type for the extractPartDetails function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const SpecificationSchema = z.object({
   key: z.string().describe('The name of the specification (e.g., "CUDA Cores", "Socket").'),

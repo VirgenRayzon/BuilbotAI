@@ -8,15 +8,18 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getAiBuildCritique } from "@/app/actions";
+import { Resolution, WorkloadType } from "@/lib/types";
 
 import Link from "next/link";
 import { processCheckout } from "@/app/checkout-actions";
 import { useUser } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { OrderItem } from "@/lib/types";
-import { ShoppingCart, CheckCircle2 } from "lucide-react";
+import { ShoppingCart, CheckCircle2, Gauge } from "lucide-react";
+import { calculateBottleneck } from "@/lib/bottleneck";
 
 interface YourBuildProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
@@ -49,6 +52,36 @@ function PowerMeter({ value, max }: { value: number; max: number }) {
     );
 }
 
+function BottleneckMeter({ build, resolution, workload }: { build: Record<string, ComponentData | ComponentData[] | null>, resolution: Resolution, workload: WorkloadType }) {
+    const result = calculateBottleneck(build, resolution, workload);
+    if (result.type === 'None') return null;
+
+    let colorClass = "bg-emerald-500";
+    if (result.score > 40) colorClass = "bg-red-500";
+    else if (result.score > 20) colorClass = "bg-amber-500";
+
+    return (
+        <div className="space-y-2 mt-4 pt-4 border-t border-border/50">
+            <div className="flex justify-between items-baseline">
+                <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none">Bottleneck Range</span>
+                    <Badge variant="outline" className="text-[10px] h-4 py-0 font-bold uppercase tracking-tighter">
+                        {result.type === 'Balanced' ? 'Optimal' : `${result.type} Limited`}
+                    </Badge>
+                </div>
+                <span className="text-sm font-bold font-headline">{Math.round(result.score)}%</span>
+            </div>
+            <div className="h-1.5 w-full bg-secondary/50 rounded-full overflow-hidden border border-border/50">
+                <div
+                    className={`h-full transition-all duration-1000 ease-out ${colorClass}`}
+                    style={{ width: `${(result.score / 60) * 100}%` }}
+                />
+            </div>
+            <p className="text-[10px] text-muted-foreground leading-tight italic">{result.message}</p>
+        </div>
+    );
+}
+
 const componentIcons: Record<string, React.ComponentType<{ className?: string }>> = {
     CPU: Cpu,
     GPU: Server,
@@ -64,6 +97,8 @@ export function YourBuild({ build, onClearBuild, onRemovePart, className }: Your
     const [analysis, setAnalysis] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [resolution, setResolution] = useState<Resolution>('1440p');
+    const [workload, setWorkload] = useState<WorkloadType>('Balanced');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isCheckoutDialogOpen, setIsCheckoutDialogOpen] = useState(false);
     const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -199,7 +234,31 @@ export function YourBuild({ build, onClearBuild, onRemovePart, className }: Your
         <Card className={`h-full flex flex-col border-primary/20 shadow-2xl overflow-hidden ring-1 ring-primary/5 ${className || ""}`}>
             <CardHeader className="flex flex-row items-center justify-between py-5 bg-muted/40 border-b flex-none">
                 <CardTitle className="font-headline text-xl">Your Build</CardTitle>
-                <Badge variant="secondary" className="font-mono text-xs px-2 py-0.5">{selectedParts}/{totalParts} PARTS</Badge>
+                <div className="flex flex-col gap-2 items-end">
+                    <div className="flex items-center gap-2">
+                        <Select value={resolution} onValueChange={(val: any) => setResolution(val)}>
+                            <SelectTrigger className="h-7 text-[10px] w-[80px] bg-background/50">
+                                <SelectValue placeholder="Res" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="1080p" className="text-[10px]">1080p</SelectItem>
+                                <SelectItem value="1440p" className="text-[10px]">1440p</SelectItem>
+                                <SelectItem value="4K" className="text-[10px]">4K</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Select value={workload} onValueChange={(val: any) => setWorkload(val)}>
+                            <SelectTrigger className="h-7 text-[10px] w-[90px] bg-background/50">
+                                <SelectValue placeholder="Workload" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Balanced" className="text-[10px]">Balanced</SelectItem>
+                                <SelectItem value="Esports" className="text-[10px]">Esports</SelectItem>
+                                <SelectItem value="AAA" className="text-[10px]">AAA</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <Badge variant="secondary" className="font-mono text-xs px-2 py-0.5 whitespace-nowrap">{selectedParts}/{totalParts} PARTS</Badge>
+                </div>
             </CardHeader>
             <CardContent className="px-5 py-4 flex-1 flex flex-col min-h-0">
                 <ScrollArea className="flex-1 pr-4 -mr-4">
@@ -261,6 +320,7 @@ export function YourBuild({ build, onClearBuild, onRemovePart, className }: Your
                 <div className="pt-4 flex-none">
                     <Separator className="mb-3 opacity-50" />
                     <PowerMeter value={totalWattage} max={psuWattage} />
+                    <BottleneckMeter build={build} resolution={resolution} workload={workload} />
 
                     <div className="flex justify-between items-center pt-3 mt-3 border-t border-dashed">
                         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Total Cost</span>

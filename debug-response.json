@@ -1,0 +1,28 @@
+{
+  "message": {
+    "role": "model",
+    "content": []
+  },
+  "finishReason": "stop",
+  "usage": {
+    "inputTokens": 257,
+    "outputTokens": 272,
+    "totalTokens": 529
+  },
+  "custom": {},
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "text": "\nYou are an expert PC building consultant. Analyze the following PC build and provide a detailed critique.\n\nCurrent Build:\nCPU: Intel i9 ($500)\n\nPlease provide your analysis strictly outputting ONLY valid JSON matching the requested JSON output format. No markdown blocks, no other text.\n\n1. Pros and Cons: List the strong points and weak points of the build.\n2. Bottleneck Analysis: Identify any significant bottlenecks (e.g., CPU too weak for GPU, insufficient RAM for modern gaming, PSU wattage concerns). Be concise but informative.\n3. FPS Estimates: Provide estimated frames per second for 3 popular, modern, demanding games. Specify the resolution (e.g., 1080p Ultra, 1440p High) that makes the most sense for this build tier.\n4. Suggestions: Suggest alternative parts that would improve the build's value, performance, or fix any severe bottlenecks.\n\nIf the build is completely empty, state that the user needs to select parts first in the pros/cons and leave the other fields empty or give generic advice.\n"
+          }
+        ]
+      }
+    ],
+    "config": {},
+    "tools": [],
+    "output": {}
+  }
+}
