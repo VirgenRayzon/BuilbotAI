@@ -90,10 +90,10 @@ export function InventoryToolbar({
           <ToggleGroupItem
             value="All"
             aria-label="Show all categories"
-            className="flex-1 px-3 py-2 h-auto flex-col sm:flex-row gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+            className="flex-1 px-3 py-2 h-10 flex flex-row items-center gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all border border-transparent data-[state=off]:border-border data-[state=off]:hover:bg-accent rounded-md"
           >
             <Layers className="h-4 w-4" />
-            <span className="text-xs font-medium">All</span>
+            <span className="text-sm font-medium">All</span>
           </ToggleGroupItem>
           {categories.map((cat) => {
             const Icon = cat.icon!;
@@ -102,17 +102,17 @@ export function InventoryToolbar({
                 key={cat.name}
                 value={cat.name}
                 aria-label={`Toggle ${cat.name}`}
-                className="flex-1 px-3 py-2 h-auto flex-col sm:flex-row gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                className="flex-1 px-3 py-2 h-10 flex flex-row items-center gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all border border-transparent data-[state=off]:border-border data-[state=off]:hover:bg-accent rounded-md"
               >
                 <Icon className="h-4 w-4" />
-                <span className="text-xs font-medium">{cat.name}</span>
+                <span className="text-sm font-medium">{cat.name}</span>
               </ToggleGroupItem>
             );
           })}
         </ToggleGroup>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-card p-2 shadow-sm">
-        <div className="flex flex-wrap items-center gap-3 flex-1">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg bg-card border p-2 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3">
           {onSearchQueryChange && (
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -129,7 +129,7 @@ export function InventoryToolbar({
           {!hasIcons && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" className="h-9">
                   <Filter className="mr-2 h-4 w-4" />
                   Categories
                 </Button>
@@ -152,8 +152,8 @@ export function InventoryToolbar({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <ArrowUpDown className="mr-2 h-4 w-4" />
+              <Button variant="outline" className="h-9 font-normal">
+                <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
                 Sort by {sortBy}
               </Button>
             </DropdownMenuTrigger>
@@ -170,29 +170,31 @@ export function InventoryToolbar({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button variant="ghost" size="sm" onClick={() => onSortDirectionChange(sortDirection === 'asc' ? 'desc' : 'asc')}>
+          <Button variant="ghost" size="sm" onClick={() => onSortDirectionChange(sortDirection === 'asc' ? 'desc' : 'asc')} className="h-9 font-normal hidden sm:inline-flex">
             {sortDirection === 'asc' ? (
-              <ArrowUpAZ className="mr-2 h-4 w-4" />
+              <ArrowUpAZ className="mr-2 h-4 w-4 text-muted-foreground" />
             ) : (
-              <ArrowDownAZ className="mr-2 h-4 w-4" />
+              <ArrowDownAZ className="mr-2 h-4 w-4 text-muted-foreground" />
             )}
             {sortDirection.toUpperCase()}
           </Button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="hidden sm:inline-flex">
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <span className="hidden sm:inline-flex font-medium bg-muted/50 px-3 py-1.5 rounded-md">
             Showing {itemCount} items
-          </Badge>
+          </span>
           {showViewToggle && view && onViewChange && (
-            <ToggleGroup type="single" value={view} onValueChange={(v) => v && onViewChange(v as 'grid' | 'list')} variant="outline" className="hidden sm:flex">
-              <ToggleGroupItem value="list" aria-label="Toggle list view">
-                <List className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="grid" aria-label="Toggle grid view">
-                <LayoutGrid className="h-4 w-4" />
-              </ToggleGroupItem>
-            </ToggleGroup>
+            <div className="flex items-center border rounded-md p-1 bg-background">
+              <ToggleGroup type="single" value={view} onValueChange={(v) => v && onViewChange(v as 'grid' | 'list')} className="gap-1">
+                <ToggleGroupItem value="list" aria-label="Toggle list view" className="h-7 w-7 px-0">
+                  <List className="h-4 w-4" />
+                </ToggleGroupItem>
+                <ToggleGroupItem value="grid" aria-label="Toggle grid view" className="h-7 w-7 px-0">
+                  <LayoutGrid className="h-4 w-4" />
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
           )}
         </div>
       </div>

@@ -5,7 +5,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Package, PackageCheck, ServerCrash, Loader2, BarChart3, History, TrendingUp, DollarSign } from "lucide-react";
+import { Plus, Package, PackageCheck, ServerCrash, Loader2, BarChart3, History, TrendingUp, DollarSign, Cpu, Monitor, CircuitBoard, MemoryStick, HardDrive, PlugZap, Square, Wind } from "lucide-react";
 import { Order } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -26,15 +26,15 @@ import { AdminPartCard } from '@/components/admin-part-card';
 import { PrebuiltSystemCard } from '@/components/prebuilt-system-card';
 import { PaginationControls } from "@/components/pagination-controls";
 
-const componentCategories: { name: Part['category'], selected: boolean }[] = [
-    { name: "CPU", selected: true },
-    { name: "GPU", selected: true },
-    { name: "Motherboard", selected: true },
-    { name: "RAM", selected: true },
-    { name: "Storage", selected: true },
-    { name: "PSU", selected: true },
-    { name: "Case", selected: true },
-    { name: "Cooler", selected: true },
+const componentCategories: { name: Part['category'], selected: boolean, icon?: React.ComponentType }[] = [
+    { name: "CPU", selected: true, icon: Cpu },
+    { name: "GPU", selected: true, icon: Monitor },
+    { name: "Motherboard", selected: true, icon: CircuitBoard },
+    { name: "RAM", selected: true, icon: MemoryStick },
+    { name: "Storage", selected: true, icon: HardDrive },
+    { name: "PSU", selected: true, icon: PlugZap },
+    { name: "Case", selected: true, icon: Square },
+    { name: "Cooler", selected: true, icon: Wind },
 ];
 
 const prebuiltTiers = [
@@ -115,16 +115,28 @@ export default function AdminPage() {
 
     const handlePartCategoryChange = (categoryName: string, selected: boolean) => {
         setPartCurrentPage(1);
-        setPartCategories(prev =>
-            prev.map(cat => (cat.name === categoryName ? { ...cat, selected } : cat))
-        );
+        setPartCategories(prev => {
+            if (categoryName === 'All') {
+                return prev.map(cat => ({ ...cat, selected: true }));
+            }
+            return prev.map(cat => ({
+                ...cat,
+                selected: cat.name === categoryName
+            }));
+        });
     };
 
     const handlePrebuiltCategoryChange = (tierName: string, selected: boolean) => {
         setPrebuiltCurrentPage(1);
-        setPrebuiltCategories(prev =>
-            prev.map(tier => (tier.name === tierName ? { ...tier, selected } : tier))
-        );
+        setPrebuiltCategories(prev => {
+            if (tierName === 'All') {
+                return prev.map(tier => ({ ...tier, selected: true }));
+            }
+            return prev.map(tier => ({
+                ...tier,
+                selected: tier.name === tierName
+            }));
+        });
     };
 
     const handleAddPart = async (newPartData: AddPartFormSchema) => {

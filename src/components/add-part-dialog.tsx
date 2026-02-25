@@ -115,7 +115,7 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
         form.setValue("price", result.price, { shouldValidate: true });
         form.setValue("wattage", result.wattage, { shouldValidate: true });
         form.setValue("performanceScore", result.performanceScore || (result.performanceTier ? result.performanceTier * 10 : 50), { shouldValidate: true });
-        form.setValue("dimensions", result.dimensions || { width: 100, height: 100, depth: 100 }, { shouldValidate: true });
+        form.setValue("dimensions", result.dimensions || { width: 0, height: 0, depth: 0 }, { shouldValidate: true });
         form.setValue("specifications", result.specifications, { shouldValidate: true });
         if (!form.getValues('imageUrl')) {
           const seed = result.partName.replace(/\s+/g, '').toLowerCase();
