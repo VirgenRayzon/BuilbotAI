@@ -2,11 +2,26 @@
 
 import { z } from "genkit";
 
+
+import { calculateBottleneck } from "@/lib/bottleneck";
+import { checkCompatibility } from "@/lib/compatibility";
+
 const ComponentDataSchema = z.object({
     model: z.string(),
     price: z.number(),
     brand: z.string().optional(),
     category: z.string().optional(),
+    wattage: z.number().optional(),
+    performanceScore: z.number().optional(),
+    performanceTier: z.number().optional(),
+    socket: z.string().optional(),
+    ramType: z.string().optional(),
+    dimensions: z.object({
+        width: z.number(),
+        height: z.number(),
+        depth: z.number(),
+    }).optional(),
+    specifications: z.record(z.string(), z.any()).optional(),
 });
 
 const AiBuildCritiqueInputSchema = z.record(
@@ -21,6 +36,10 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
         throw new Error("Missing NVIDIA_API_KEY for Build Critique.");
     }
 
+    // 1. Perform deterministic analysis
+    const bottleneck = calculateBottleneck(input as any);
+    const compatibilityIssues = checkCompatibility(input as any);
+
     const buildContext = Object.entries(input)
         .map(([category, partData]) => {
             if (!partData) return `${category}: None selected`;
@@ -32,20 +51,29 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
         })
         .join('\n');
 
+    const analysisContext = `
+DETERMINISTIC ANALYSIS RESULTS:
+- Bottleneck: ${bottleneck.message} (Raw Score: ${bottleneck.score}, Type: ${bottleneck.type})
+- Compatibility Issues: ${compatibilityIssues.length > 0 ? compatibilityIssues.map(i => `[${i.severity.toUpperCase()}] ${i.message}`).join('; ') : 'None detected'}
+`;
+
     const prompt = `
 You are an expert PC building consultant. Analyze the following PC build and provide a detailed critique.
+Use the provided DETERMINISTIC ANALYSIS RESULTS as the ground truth for technical compatibility and hardware balancing.
 
 Current Build:
 ${buildContext}
 
+${analysisContext}
+
 Please provide your analysis strictly outputting ONLY valid JSON matching the requested JSON output format. No markdown blocks, no other text.
 
-1. Pros and Cons: List the strong points and weak points of the build.
-2. Bottleneck Analysis: Identify any significant bottlenecks (e.g., CPU too weak for GPU, insufficient RAM for modern gaming, PSU wattage concerns). Be concise but informative.
-3. FPS Estimates: Provide estimated frames per second for 3 popular, modern, demanding games. Specify the resolution (e.g., 1080p Ultra, 1440p High) that makes the most sense for this build tier.
-4. Suggestions: Suggest alternative parts that would improve the build's value, performance, or fix any severe bottlenecks.
+1. Pros and Cons: List the strong points and weak points of the build. Incorporate any deterministic compatibility issues here.
+2. Bottleneck Analysis: Expand on the provided bottleneck result. Explain what it means for the user's experience and how they might fix it.
+3. FPS Estimates: Provide estimated frames per second for 3 popular, modern, demanding games based on the build's performance tier.
+4. Suggestions: Suggest alternative parts that would improve the build's value, performance, or fix any severe bottlenecks/compatibility issues.
 
-If the build is completely empty, state that the user needs to select parts first in the pros/cons and leave the other fields empty or give generic advice.
+If the build is completely empty, state that the user needs to select parts first.
 
 FORMAT TO MATCH:
 {
@@ -98,3 +126,4 @@ FORMAT TO MATCH:
         throw error;
     }
 }
+

@@ -22,6 +22,7 @@ export type ComponentData = {
     height: number;
     depth: number;
   };
+  specifications?: Record<string, string | number>;
 };
 
 export type Build = {
@@ -51,6 +52,8 @@ export type Part = {
   wattage?: number;
   performanceTier?: number;
   performanceScore?: number;
+  socket?: string;
+  ramType?: string;
   dimensions?: {
     width: number;
     height: number;

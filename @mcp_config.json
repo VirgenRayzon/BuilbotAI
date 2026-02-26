@@ -1,0 +1,9 @@
+{
+    "mcpServers": {
+        "notebooklm": {
+            "command": "C:\\Users\\User-4090\\.local\\bin\\notebooklm-mcp.exe",
+            "args": [],
+            "env": {}
+        }
+    }
+}

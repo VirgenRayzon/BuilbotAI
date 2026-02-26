@@ -184,8 +184,11 @@ export default function BuilderPage() {
         imageHint: part.name.toLowerCase().split(' ').slice(0, 2).join(' '),
         icon: componentCategories.find(c => c.name === category)!.icon,
         wattage: part.wattage,
-        socket: part.specifications?.['Socket']?.toString() || part.specifications?.['socket']?.toString(),
-        ramType: part.specifications?.['Memory Type']?.toString() || part.specifications?.['RAM Type']?.toString() || part.specifications?.['Memory']?.toString(),
+        socket: part.socket || part.specifications?.['Socket']?.toString() || part.specifications?.['socket']?.toString(),
+        ramType: part.ramType || part.specifications?.['Memory Type']?.toString() || part.specifications?.['RAM Type']?.toString() || part.specifications?.['Memory']?.toString(),
+        performanceScore: part.performanceScore,
+        specifications: part.specifications,
+        dimensions: part.dimensions,
       };
 
       setBuild(prevBuild => ({
@@ -196,6 +199,7 @@ export default function BuilderPage() {
       return;
     }
 
+    const { compatible, message } = checkCompatibility(part, build);
     const isCurrentlySelected = (build[category] as ComponentData)?.model === part.name;
 
     if (isCurrentlySelected) {
@@ -203,6 +207,15 @@ export default function BuilderPage() {
       setBuild(prevBuild => ({ ...prevBuild, [category]: null }));
       toast({ title: 'Part Removed', description: `${part.name} has been removed from your build.` });
     } else {
+      if (!compatible) {
+        toast({
+          variant: 'destructive',
+          title: 'Compatibility Error',
+          description: message || `This ${category} is not compatible with your current build.`
+        });
+        return;
+      }
+
       const currentCount = getCountInBuild(part.name);
       if (currentCount >= part.stock) {
         toast({ variant: 'destructive', title: 'Out of Stock', description: `${part.name} is currently unavailable.` });
@@ -234,31 +247,42 @@ export default function BuilderPage() {
     const mobo = currentBuild['Motherboard'] as ComponentData | null;
     const ram = currentBuild['RAM'] as ComponentData | null;
 
-    const partSocket = part.specifications?.['Socket']?.toString() || part.specifications?.['socket']?.toString();
-    const partRamType = part.specifications?.['Memory Type']?.toString() || part.specifications?.['RAM Type']?.toString() || part.specifications?.['Memory']?.toString();
+    const partSocket = part.socket || part.specifications?.['Socket']?.toString() || part.specifications?.['socket']?.toString();
+    const partRamType = part.ramType || part.specifications?.['Memory Type']?.toString() || part.specifications?.['RAM Type']?.toString() || part.specifications?.['Memory']?.toString();
 
     if (category === 'CPU') {
-      if (mobo && mobo.socket && partSocket && mobo.socket !== partSocket) {
-        return { compatible: false, message: `This CPU uses ${partSocket} socket, but your motherboard is ${mobo.socket}.` };
+      if (mobo && (mobo.socket || mobo.specifications?.['Socket'])) {
+        const moboSocket = mobo.socket || mobo.specifications?.['Socket']?.toString();
+        if (partSocket && moboSocket && moboSocket !== partSocket) {
+          return { compatible: false, message: `This CPU uses ${partSocket} socket, but your motherboard is ${moboSocket}.` };
+        }
       }
     }
 
     if (category === 'Motherboard') {
-      if (cpu && cpu.socket && partSocket && cpu.socket !== partSocket) {
-        return { compatible: false, message: `This motherboard is ${partSocket}, but your CPU uses ${cpu.socket}.` };
+      if (cpu && (cpu.socket || cpu.specifications?.['Socket'])) {
+        const cpuSocket = cpu.socket || cpu.specifications?.['Socket']?.toString();
+        if (partSocket && cpuSocket && cpuSocket !== partSocket) {
+          return { compatible: false, message: `This motherboard is ${partSocket}, but your CPU uses ${cpuSocket}.` };
+        }
       }
-      if (ram && ram.ramType && partRamType) {
-        // Simple string inclusion check for RAM types (e.g. "DDR5" in "DDR5-6000")
-        if (!partRamType.toLowerCase().includes(ram.ramType.toLowerCase()) && !ram.ramType.toLowerCase().includes(partRamType.toLowerCase())) {
-          return { compatible: false, message: `This motherboard supports ${partRamType}, but your RAM is ${ram.ramType}.` };
+      if (ram && (ram.ramType || ram.specifications?.['Memory Type'] || ram.specifications?.['RAM Type'])) {
+        const currentRamType = ram.ramType || ram.specifications?.['Memory Type']?.toString() || ram.specifications?.['RAM Type']?.toString();
+        if (partRamType && currentRamType) {
+          if (!partRamType.toLowerCase().includes(currentRamType.toLowerCase()) && !currentRamType.toLowerCase().includes(partRamType.toLowerCase())) {
+            return { compatible: false, message: `This motherboard supports ${partRamType}, but your RAM is ${currentRamType}.` };
+          }
         }
       }
     }
 
     if (category === 'RAM') {
-      if (mobo && mobo.ramType && partRamType) {
-        if (!mobo.ramType.toLowerCase().includes(partRamType.toLowerCase()) && !partRamType.toLowerCase().includes(mobo.ramType.toLowerCase())) {
-          return { compatible: false, message: `Your motherboard supports ${mobo.ramType}, but this RAM is ${partRamType}.` };
+      if (mobo && (mobo.ramType || mobo.specifications?.['Memory Type'] || mobo.specifications?.['RAM Type'])) {
+        const moboRamType = mobo.ramType || mobo.specifications?.['Memory Type']?.toString() || mobo.specifications?.['RAM Type']?.toString();
+        if (moboRamType && partRamType) {
+          if (!moboRamType.toLowerCase().includes(partRamType.toLowerCase()) && !partRamType.toLowerCase().includes(moboRamType.toLowerCase())) {
+            return { compatible: false, message: `Your motherboard supports ${moboRamType}, but this RAM is ${partRamType}.` };
+          }
         }
       }
     }
@@ -397,7 +421,7 @@ export default function BuilderPage() {
                             <Button
                               size="icon"
                               onClick={() => handlePartToggle(part)}
-                              disabled={(part as any).effectiveStock === 0 && !isSelected}
+                              disabled={((part as any).effectiveStock === 0 && !isSelected) || ((part as any).compatibility && !(part as any).compatibility.compatible && !isSelected)}
                               variant={isSelected ? 'destructive' : 'default'}
                             >
                               {isSelected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}

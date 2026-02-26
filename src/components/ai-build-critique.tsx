@@ -26,12 +26,26 @@ export function AIBuildCritique({ build }: AIBuildCritiqueProps) {
                     inputData[key] = val.map((v: any) => ({
                         model: v.model,
                         price: v.price,
+                        brand: v.brand,
+                        wattage: v.wattage,
+                        socket: v.socket,
+                        ramType: v.ramType,
+                        performanceScore: v.performanceScore,
+                        dimensions: v.dimensions,
+                        specifications: v.specifications,
                     }));
                 } else {
                     const singleVal = val as any;
                     inputData[key] = {
                         model: singleVal.model,
                         price: singleVal.price,
+                        brand: singleVal.brand,
+                        wattage: singleVal.wattage,
+                        socket: singleVal.socket,
+                        ramType: singleVal.ramType,
+                        performanceScore: singleVal.performanceScore,
+                        dimensions: singleVal.dimensions,
+                        specifications: singleVal.specifications,
                     };
                 }
             }

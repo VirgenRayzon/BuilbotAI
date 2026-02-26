@@ -70,7 +70,7 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                     <Button
                         size="icon"
                         onClick={handleToggle}
-                        disabled={currentStock === 0 && !isSelected}
+                        disabled={(currentStock === 0 && !isSelected) || (compatibility && !compatibility.compatible && !isSelected)}
                         variant={isSelected ? 'destructive' : 'default'}
                         className="absolute top-4 right-4 h-8 w-8 rounded-full z-20"
                     >
