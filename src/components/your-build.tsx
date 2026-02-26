@@ -25,6 +25,7 @@ interface YourBuildProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
     onClearBuild: () => void;
     onRemovePart: (category: string, index?: number) => void;
+    onAnalyze?: () => void;
     className?: string;
 }
 
@@ -83,17 +84,17 @@ function BottleneckMeter({ build, resolution, workload }: { build: Record<string
 }
 
 const componentIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-    CPU: Cpu,
-    GPU: Server,
-    Motherboard: CircuitBoard,
-    RAM: MemoryStick,
-    Storage: HardDrive,
-    PSU: Power,
-    Case: CaseIcon,
-    Cooler: Wind,
+    cpu: Cpu,
+    gpu: Server,
+    motherboard: CircuitBoard,
+    ram: MemoryStick,
+    storage: HardDrive,
+    psu: Power,
+    case: CaseIcon,
+    cooler: Wind,
 };
 
-export function YourBuild({ build, onClearBuild, onRemovePart, className }: YourBuildProps) {
+export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, className }: YourBuildProps) {
     const [analysis, setAnalysis] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -163,6 +164,10 @@ export function YourBuild({ build, onClearBuild, onRemovePart, className }: Your
     };
 
     const handleAnalyze = async () => {
+        if (onAnalyze) {
+            onAnalyze();
+            return;
+        }
         setLoading(true);
         setError(null);
         setIsDialogOpen(true);
@@ -264,7 +269,7 @@ export function YourBuild({ build, onClearBuild, onRemovePart, className }: Your
                 <ScrollArea className="flex-1 pr-4 -mr-4">
                     <div className="space-y-3 py-1">
                         {Object.entries(build).map(([name, component]) => {
-                            const Icon = componentIcons[name] || Cpu;
+                            const Icon = componentIcons[name.toLowerCase()] || Cpu;
                             const components = Array.isArray(component) ? component : (component ? [component] : []);
 
                             if (components.length === 0) {
@@ -285,8 +290,12 @@ export function YourBuild({ build, onClearBuild, onRemovePart, className }: Your
                                 <div key={name} className="space-y-1.5">
                                     {components.map((c, idx) => (
                                         <div key={`${name}-${idx}`} className="flex items-center gap-4 py-1.5 animate-in fade-in slide-in-from-left-3 duration-300 group">
-                                            <div className="p-2 bg-primary/15 rounded flex items-center justify-center border border-primary/20 shadow-sm">
-                                                <Icon className="w-4 h-4 text-primary" />
+                                            <div
+                                                className="p-2 bg-primary/15 rounded flex items-center justify-center border border-primary/20 shadow-sm cursor-pointer transition-all hover:bg-destructive/20 hover:border-destructive/30 hover:scale-105 active:scale-95 group/icon"
+                                                onClick={() => onRemovePart(name, name === 'Storage' ? idx : undefined)}
+                                                title={`Remove ${name}`}
+                                            >
+                                                <Icon className="w-4 h-4 text-primary group-hover/icon:text-destructive transition-colors" />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-xs font-bold text-primary uppercase tracking-wider leading-none mb-1">

@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ChatForm, type FormSchema } from "@/components/chat-form";
 import { BuildSummary } from "@/components/build-summary";
-import { getAiRecommendations } from "@/app/actions";
+import { getAiRecommendations, getAiBuildCritique } from "@/app/actions";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { Build, AiRecommendation, ComponentData } from "@/lib/types";
 import { Cpu, Server, CircuitBoard, MemoryStick, Bot, Wallet, HardDrive, Power, RectangleVertical, Wind } from "lucide-react";
@@ -57,6 +57,23 @@ export default function AiBuildAdvisorPage() {
   const [totalPrice, setTotalPrice] = useState(0);
   const [isPending, startTransition] = useTransition();
 
+  const [critiqueAnalysis, setCritiqueAnalysis] = useState<any>(null);
+  const [critiqueLoading, setCritiqueLoading] = useState(false);
+  const [critiqueError, setCritiqueError] = useState<string | null>(null);
+
+  const getBuildKey = (state: Record<string, ComponentData | ComponentData[] | null> | null) => {
+    if (!state) return "";
+    const partIds: string[] = [];
+    Object.values(state).forEach(val => {
+      if (Array.isArray(val)) {
+        val.forEach(v => partIds.push(v.id));
+      } else if (val) {
+        partIds.push(val.id);
+      }
+    });
+    return partIds.sort().join('|');
+  };
+
   useEffect(() => {
     const saved = localStorage.getItem('pc_builder_state');
     if (saved) {
@@ -67,6 +84,20 @@ export default function AiBuildAdvisorPage() {
         );
         if (hasParts) {
           setBuilderState(parsed);
+
+          // Load cached critique if available
+          const cache = localStorage.getItem('pc_critique_cache');
+          if (cache) {
+            try {
+              const parsedCache = JSON.parse(cache);
+              const buildKey = getBuildKey(parsed);
+              if (parsedCache[buildKey]) {
+                setCritiqueAnalysis(parsedCache[buildKey]);
+              }
+            } catch (e) {
+              console.error("Failed to parse critique cache", e);
+            }
+          }
         }
       } catch (e) {
         console.error("Failed to parse saved build", e);
@@ -143,6 +174,103 @@ export default function AiBuildAdvisorPage() {
     }
     setBuilderState(next);
     localStorage.setItem('pc_builder_state', JSON.stringify(next));
+
+    // Clear analysis if build changed and doesn't match cache
+    const newKey = getBuildKey(next);
+    const cache = localStorage.getItem('pc_critique_cache');
+    if (cache) {
+      try {
+        const parsedCache = JSON.parse(cache);
+        if (parsedCache[newKey]) {
+          setCritiqueAnalysis(parsedCache[newKey]);
+        } else {
+          setCritiqueAnalysis(null);
+        }
+      } catch (e) {
+        setCritiqueAnalysis(null);
+      }
+    } else {
+      setCritiqueAnalysis(null);
+    }
+  };
+
+  const handleCritique = async (forceRefresh: boolean = false) => {
+    if (!builderState) return;
+
+    const buildKey = getBuildKey(builderState);
+    if (!forceRefresh) {
+      const cache = localStorage.getItem('pc_critique_cache');
+      if (cache) {
+        try {
+          const parsedCache = JSON.parse(cache);
+          if (parsedCache[buildKey]) {
+            setCritiqueAnalysis(parsedCache[buildKey]);
+            return;
+          }
+        } catch (e) { }
+      }
+    }
+
+    setCritiqueLoading(true);
+    setCritiqueError(null);
+
+    const inputData: any = {};
+    Object.entries(builderState).forEach(([key, val]) => {
+      if (val) {
+        if (Array.isArray(val)) {
+          inputData[key] = val.map((v: any) => ({
+            model: v.model,
+            price: v.price,
+            brand: v.brand,
+            wattage: v.wattage,
+            socket: v.socket,
+            ramType: v.ramType,
+            performanceScore: v.performanceScore,
+            dimensions: v.dimensions,
+            specifications: v.specifications,
+          }));
+        } else {
+          const singleVal = val as any;
+          inputData[key] = {
+            model: singleVal.model,
+            price: singleVal.price,
+            brand: singleVal.brand,
+            wattage: singleVal.wattage,
+            socket: singleVal.socket,
+            ramType: singleVal.ramType,
+            performanceScore: singleVal.performanceScore,
+            dimensions: singleVal.dimensions,
+            specifications: singleVal.specifications,
+          };
+        }
+      }
+    });
+
+    try {
+      const result = await getAiBuildCritique(inputData);
+      if ('error' in result) {
+        setCritiqueError(result.error as string);
+      } else {
+        setCritiqueAnalysis(result);
+
+        // Save to cache
+        const cache = localStorage.getItem('pc_critique_cache') || '{}';
+        try {
+          const parsedCache = JSON.parse(cache);
+          parsedCache[buildKey] = result;
+          // Limit cache size to 10 entries (LRU-ish)
+          const keys = Object.keys(parsedCache);
+          if (keys.length > 10) {
+            delete parsedCache[keys[0]];
+          }
+          localStorage.setItem('pc_critique_cache', JSON.stringify(parsedCache));
+        } catch (e) { }
+      }
+    } catch (err) {
+      setCritiqueError("An unexpected error occurred during analysis.");
+    } finally {
+      setCritiqueLoading(false);
+    }
   };
 
   const generativeContent = (
@@ -199,11 +327,17 @@ export default function AiBuildAdvisorPage() {
                   <YourBuild build={builderState} onClearBuild={() => {
                     localStorage.removeItem('pc_builder_state');
                     setBuilderState(null);
-                  }} onRemovePart={handleRemovePart} />
+                  }} onRemovePart={handleRemovePart} onAnalyze={handleCritique} />
                 </div>
               </div>
               <div className="lg:col-span-8">
-                <AIBuildCritique build={builderState} />
+                <AIBuildCritique
+                  build={builderState}
+                  externalAnalysis={critiqueAnalysis}
+                  externalLoading={critiqueLoading}
+                  externalError={critiqueError}
+                  onRefresh={() => handleCritique(true)}
+                />
               </div>
             </div>
           </TabsContent>

@@ -8,16 +8,25 @@ import { ComponentData } from "@/lib/types";
 
 interface AIBuildCritiqueProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
+    externalAnalysis?: any;
+    externalLoading?: boolean;
+    externalError?: string | null;
+    onRefresh?: () => void;
 }
 
-export function AIBuildCritique({ build }: AIBuildCritiqueProps) {
-    const [analysis, setAnalysis] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+export function AIBuildCritique({ build, externalAnalysis, externalLoading, externalError, onRefresh }: AIBuildCritiqueProps) {
+    const [internalAnalysis, setInternalAnalysis] = useState<any>(null);
+    const [internalLoading, setInternalLoading] = useState(false);
+    const [internalError, setInternalError] = useState<string | null>(null);
+
+    const isControlled = externalAnalysis !== undefined || externalLoading !== undefined || externalError !== undefined;
+    const analysis = isControlled ? externalAnalysis : internalAnalysis;
+    const loading = isControlled ? externalLoading : internalLoading;
+    const error = isControlled ? externalError : internalError;
 
     const handleAnalyze = async () => {
-        setLoading(true);
-        setError(null);
+        setInternalLoading(true);
+        setInternalError(null);
 
         const inputData: any = {};
         Object.entries(build).forEach(([key, val]) => {
@@ -54,14 +63,14 @@ export function AIBuildCritique({ build }: AIBuildCritiqueProps) {
         try {
             const result = await getAiBuildCritique(inputData);
             if ('error' in result) {
-                setError(result.error as string);
+                setInternalError(result.error as string);
             } else {
-                setAnalysis(result);
+                setInternalAnalysis(result);
             }
         } catch (err) {
-            setError("An unexpected error occurred during analysis.");
+            setInternalError("An unexpected error occurred during analysis.");
         } finally {
-            setLoading(false);
+            setInternalLoading(false);
         }
     };
 
@@ -77,7 +86,7 @@ export function AIBuildCritique({ build }: AIBuildCritiqueProps) {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                {!analysis && !loading && !error && (
+                {!analysis && !loading && !error && !isControlled && (
                     <div className="flex justify-center p-4">
                         <Button onClick={handleAnalyze} size="lg" className="w-full font-headline tracking-wide">
                             Analyze My Build
@@ -172,9 +181,9 @@ export function AIBuildCritique({ build }: AIBuildCritiqueProps) {
                             </div>
                         )}
 
-                        <div className="flex justify-center pt-2">
-                            <Button variant="outline" onClick={handleAnalyze} disabled={loading}>
-                                Re-analyze Build
+                        <div className="pt-4 pb-2">
+                            <Button variant="outline" className="w-full" onClick={isControlled && onRefresh ? onRefresh : handleAnalyze} disabled={loading}>
+                                Refresh Analysis
                             </Button>
                         </div>
                     </div>
