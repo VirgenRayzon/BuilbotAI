@@ -51,8 +51,8 @@ const ExtractPartDetailsOutputSchema = z.object({
 export type ExtractPartDetailsOutput = z.infer<typeof ExtractPartDetailsOutputSchema>;
 
 export async function extractPartDetails(input: ExtractPartDetailsInput): Promise<ExtractPartDetailsOutput> {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error("Missing GEMINI_API_KEY for Extract Part Details.");
+  if (!process.env.GOOGLE_API_KEY) {
+    throw new Error("Missing GOOGLE_API_KEY for Extract Part Details.");
   }
 
   let groundedContext = "";
@@ -107,43 +107,27 @@ ADDITIONAL FIELDS:
 - 'ramType': Extract "DDR4" or "DDR5" into this top-level field for RAM and Motherboards.
 - 'dimensions': Extract {width, height, depth} in mm. Crucial for GPUs (length is width) and Cases.
 
-Please provide your analysis strictly outputting ONLY valid JSON matching the requested JSON output format. No markdown blocks, no other text.
-
-Part Name: ${input.partName}
-
-FORMAT TO MATCH:
-{
-  "partName": "...",
-  "category": "...",
-  "brand": "...",
-  "price": 0,
-  "wattage": 0,
-  "performanceScore": 50,
-  "socket": "...",
-  "ramType": "...",
-  "dimensions": { "width": 0, "height": 0, "depth": 0 },
-  "specifications": [ { "key": "...", "value": "..." } ]
-}`;
+Part Name: ${input.partName}`;
 
   try {
-    const { output } = await ai.generate({
-      prompt,
+    const response = await ai.generate({
+      prompt: prompt,
       output: {
         schema: ExtractPartDetailsOutputSchema,
       },
       config: {
         temperature: 0.2,
-      }
+      },
     });
 
-    if (!output) {
-      throw new Error("AI returned empty output.");
+    if (!response.output) {
+      throw new Error("AI returned an empty response.");
     }
 
-    return output;
+    return response.output;
+
   } catch (error: any) {
     console.error("Extract Part Details failed:", error);
     throw error;
   }
 }
-

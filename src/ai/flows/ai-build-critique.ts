@@ -1,5 +1,6 @@
 'use server';
 
+import { ai } from "@/ai/genkit";
 import { z } from "genkit";
 
 
@@ -31,8 +32,6 @@ const AiBuildCritiqueInputSchema = z.record(
 
 export type AiBuildCritiqueInput = z.infer<typeof AiBuildCritiqueInputSchema>;
 
-import { ai } from "@/ai/genkit";
-
 const AiBuildCritiqueOutputSchema = z.object({
     prosCons: z.object({
         pros: z.array(z.string()),
@@ -51,11 +50,9 @@ const AiBuildCritiqueOutputSchema = z.object({
     })),
 });
 
-export type AiBuildCritiqueOutput = z.infer<typeof AiBuildCritiqueOutputSchema>;
-
-export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput): Promise<AiBuildCritiqueOutput> {
-    if (!process.env.GEMINI_API_KEY) {
-        throw new Error("Missing GEMINI_API_KEY for Build Critique.");
+export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
+    if (!process.env.GOOGLE_API_KEY) {
+        throw new Error("Missing GOOGLE_API_KEY for Build Critique.");
     }
 
     // 1. Perform deterministic analysis
@@ -88,8 +85,6 @@ ${buildContext}
 
 ${analysisContext}
 
-Please provide your analysis strictly outputting valid JSON matching the requested format.
-
 1. Pros and Cons: List the strong points and weak points of the build. Incorporate any deterministic compatibility issues here.
 2. Bottleneck Analysis: Expand on the provided bottleneck result. Explain what it means for the user's experience and how they might fix it.
 3. FPS Estimates: Provide estimated frames per second for 3 popular, modern, demanding games based on the build's performance tier.
@@ -98,25 +93,24 @@ Please provide your analysis strictly outputting valid JSON matching the request
 If the build is completely empty, state that the user needs to select parts first.`;
 
     try {
-        const { output } = await ai.generate({
-            prompt,
+        const response = await ai.generate({
+            prompt: prompt,
             output: {
                 schema: AiBuildCritiqueOutputSchema,
             },
             config: {
                 temperature: 0.2,
-            }
+            },
         });
 
-        if (!output) {
-            throw new Error("AI returned empty output.");
+        if (!response.output) {
+            throw new Error("AI returned a null output.");
         }
 
-        return output;
+        return response.output;
 
     } catch (error: any) {
         console.error("AI Build Critique failed:", error);
         throw error;
     }
 }
-
