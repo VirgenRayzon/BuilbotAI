@@ -38,7 +38,7 @@ export async function getAiRecommendations(
       }
       if (error.message.includes("NVIDIA_API_KEY") || error.message.includes("GEMINI_API_KEY") || error.message.includes("FAILED_PRECONDITION")) {
         return {
-          error: "Missing API Key. Please set NVIDIA_API_KEY in your .env file to enable AI features.",
+          error: "Missing API Key. Please set GEMINI_API_KEY in your .env file to enable AI features.",
         };
       }
       return { error: error.message };
@@ -100,7 +100,7 @@ export async function getAiBuildCritique(input: AiBuildCritiqueInput) {
       }
       if (error.message.includes("NVIDIA_API_KEY") || error.message.includes("GEMINI_API_KEY") || error.message.includes("FAILED_PRECONDITION")) {
         return {
-          error: "Missing API Key. Please set NVIDIA_API_KEY in your .env file to enable AI features.",
+          error: "Missing API Key. Please set GEMINI_API_KEY in your .env file to enable AI features.",
         };
       }
       return { error: error.message };
@@ -124,7 +124,7 @@ export async function getAiSmartBudget(input: AiSmartBudgetInput) {
       }
       if (error.message.includes("NVIDIA_API_KEY") || error.message.includes("GEMINI_API_KEY") || error.message.includes("FAILED_PRECONDITION")) {
         return {
-          error: "Missing API Key. Please set NVIDIA_API_KEY in your .env file to enable AI features.",
+          error: "Missing API Key. Please set GEMINI_API_KEY in your .env file to enable AI features.",
         };
       }
       return { error: error.message };

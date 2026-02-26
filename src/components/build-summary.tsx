@@ -35,7 +35,7 @@ export function BuildSummary({ build, isPending }: BuildSummaryProps) {
           Your build awaits
         </h3>
         <p className="text-muted-foreground mt-2 max-w-sm">
-          Use the AI Build Advisor to generate your personalized PC component
+          Use the Buildbot Advisor to generate your personalized PC component
           list.
         </p>
       </div>
@@ -64,7 +64,7 @@ export function BuildSummary({ build, isPending }: BuildSummaryProps) {
       >
         <Alert>
           <Info className="h-4 w-4" />
-          <AlertTitle className="font-headline">AI Build Summary</AlertTitle>
+          <AlertTitle className="font-headline">Buildbot Build Summary</AlertTitle>
           <AlertDescription>{build.summary}</AlertDescription>
         </Alert>
 

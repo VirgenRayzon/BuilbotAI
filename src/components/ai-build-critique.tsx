@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BrainCircuit, Loader2, ThumbsUp, ThumbsDown, AlertTriangle, MonitorPlay, Zap } from "lucide-react";
+import { BrainCircuit, Loader2, ThumbsUp, ThumbsDown, AlertTriangle, MonitorPlay, Zap, Bot } from "lucide-react";
 import { getAiBuildCritique } from "@/app/actions";
 import { ComponentData } from "@/lib/types";
 
@@ -79,25 +79,34 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-headline text-2xl">
                     <BrainCircuit className="h-6 w-6 text-primary" />
-                    AI Build Critique
+                    Buildbot Build Critique
                 </CardTitle>
                 <CardDescription>
                     Get an expert AI analysis of your current parts selection.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                {!analysis && !loading && !error && !isControlled && (
-                    <div className="flex justify-center p-4">
-                        <Button onClick={handleAnalyze} size="lg" className="w-full font-headline tracking-wide">
-                            Analyze My Build
-                        </Button>
+                {!analysis && !loading && !error && (
+                    <div className="flex flex-col items-center justify-center py-16 px-8 border-2 border-dashed border-muted-foreground/20 rounded-xl bg-muted/10 space-y-6">
+                        <Bot className="h-20 w-20 text-muted-foreground/30" />
+                        <div className="text-center space-y-3">
+                            <h3 className="text-2xl font-headline font-semibold tracking-tight">Your build awaits</h3>
+                            <p className="text-muted-foreground max-w-sm mx-auto text-lg leading-relaxed">
+                                Use the Buildbot Advisor to generate your personalized PC component list, or start adding parts to your build.
+                            </p>
+                        </div>
+                        {!isControlled && (
+                            <Button onClick={handleAnalyze} size="lg" className="mt-6 font-headline tracking-widest uppercase text-xs h-12 px-10">
+                                Analyze My Build
+                            </Button>
+                        )}
                     </div>
                 )}
 
                 {loading && (
                     <div className="flex flex-col items-center justify-center py-8 space-y-4">
                         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                        <p className="text-muted-foreground animate-pulse">Our AI is analyzing your components...</p>
+                        <p className="text-muted-foreground animate-pulse">Buildbot is analyzing your components...</p>
                     </div>
                 )}
 
@@ -164,7 +173,7 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                         {analysis.suggestions && analysis.suggestions.length > 0 && (
                             <div className="space-y-3">
                                 <h4 className="font-semibold flex items-center gap-2">
-                                    <Zap className="h-5 w-5 text-orange-500" /> AI Suggestions
+                                    <Zap className="h-5 w-5 text-orange-500" /> Buildbot Suggestions
                                 </h4>
                                 <div className="space-y-2">
                                     {analysis.suggestions.map((sug: any, idx: number) => (

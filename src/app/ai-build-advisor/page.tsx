@@ -7,7 +7,7 @@ import { BuildSummary } from "@/components/build-summary";
 import { getAiRecommendations, getAiBuildCritique } from "@/app/actions";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { Build, AiRecommendation, ComponentData } from "@/lib/types";
-import { Cpu, Server, CircuitBoard, MemoryStick, Bot, Wallet, HardDrive, Power, RectangleVertical, Wind } from "lucide-react";
+import { Cpu, Server, CircuitBoard, MemoryStick, Bot, Wallet, Database, Power, RectangleVertical, Wind } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AIBuildCritique } from "@/components/ai-build-critique";
@@ -32,7 +32,7 @@ const componentMetadata: { [key: string]: { icon: React.ComponentType<{ classNam
     image: PlaceHolderImages.find((img) => img.id === "ram")!,
   },
   storage: {
-    icon: HardDrive,
+    icon: Database,
     image: PlaceHolderImages.find((img) => img.id === "storage")!,
   },
   psu: {
@@ -280,11 +280,11 @@ export default function AiBuildAdvisorPage() {
           <div className="flex items-center gap-3 mb-4">
             <Bot className="w-8 h-8 text-primary" />
             <h2 className="text-2xl font-headline font-semibold">
-              Build Advisor
+              Buildbot Advisor
             </h2>
           </div>
           <p className="text-muted-foreground mb-6">
-            Describe your dream PC, and our AI will suggest a compatible set
+            Describe your dream PC, and Buildbot will suggest a compatible set
             of core components to get you started.
           </p>
           <ChatForm

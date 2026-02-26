@@ -4,19 +4,20 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { YourBuild } from "@/components/your-build";
 import {
   Cpu,
-  Monitor,
+  Server,
   CircuitBoard,
   MemoryStick,
-  HardDrive,
-  PlugZap,
-  Square,
+  Database,
+  Power,
+  RectangleVertical,
   Wind,
   Plus,
   X,
   Trash2,
   Info,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Monitor
 } from "lucide-react";
 import type { ComponentData, Part, Build } from "@/lib/types";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
@@ -37,14 +38,14 @@ import { PCVisualizer } from "@/components/pc-visualizer";
 type PartWithoutCategory = Omit<Part, 'category'>;
 
 const componentCategories = [
-  { name: "CPU", icon: Cpu, selected: true },
-  { name: "GPU", icon: Monitor, selected: true },
-  { name: "Motherboard", icon: CircuitBoard, selected: true },
-  { name: "RAM", icon: MemoryStick, selected: true },
-  { name: "Storage", icon: HardDrive, selected: true },
-  { name: "PSU", icon: PlugZap, selected: true },
-  { name: "Case", icon: Square, selected: true },
-  { name: "Cooler", icon: Wind, selected: true },
+  { name: "CPU", icon: Cpu },
+  { name: "GPU", icon: Server },
+  { name: "Motherboard", icon: CircuitBoard },
+  { name: "RAM", icon: MemoryStick },
+  { name: "Storage", icon: Database },
+  { name: "PSU", icon: Power },
+  { name: "Case", icon: RectangleVertical },
+  { name: "Cooler", icon: Wind },
 ];
 
 export default function BuilderPage() {

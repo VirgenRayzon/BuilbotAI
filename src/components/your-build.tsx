@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { ComponentData } from "@/lib/types";
-import { Cpu, Server, CircuitBoard, MemoryStick, HardDrive, Power, RectangleVertical as CaseIcon, Wind, AlertCircle, X as CloseIcon, BrainCircuit, Loader2, ThumbsUp, ThumbsDown, MonitorPlay, Zap } from "lucide-react";
+import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical as CaseIcon, Wind, AlertCircle, X as CloseIcon, BrainCircuit, Loader2, ThumbsUp, ThumbsDown, MonitorPlay, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
@@ -88,7 +88,7 @@ const componentIcons: Record<string, React.ComponentType<{ className?: string }>
     gpu: Server,
     motherboard: CircuitBoard,
     ram: MemoryStick,
-    storage: HardDrive,
+    storage: Database,
     psu: Power,
     case: CaseIcon,
     cooler: Wind,
@@ -361,7 +361,7 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, classN
                             <DialogHeader className="p-6 pb-2">
                                 <DialogTitle className="flex items-center gap-2 font-headline text-3xl">
                                     <BrainCircuit className="h-8 w-8 text-primary" />
-                                    AI Build Critique
+                                    Buildbot Build Critique
                                 </DialogTitle>
                                 <DialogDescription className="text-base">
                                     Expert AI analysis of your current parts selection.
@@ -372,7 +372,7 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, classN
                                 {loading && (
                                     <div className="flex flex-col items-center justify-center py-20 space-y-4">
                                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                                        <p className="text-lg font-medium animate-pulse">Our AI is analyzing your components...</p>
+                                        <p className="text-lg font-medium animate-pulse">Buildbot is analyzing your components...</p>
                                     </div>
                                 )}
 
@@ -447,7 +447,7 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, classN
                                         {analysis.suggestions && analysis.suggestions.length > 0 && (
                                             <div className="space-y-4 pt-2">
                                                 <h4 className="font-bold flex items-center gap-2 text-lg">
-                                                    <Zap className="h-6 w-6 text-orange-500" /> AI Optimization Suggestions
+                                                    <Zap className="h-6 w-6 text-orange-500" /> Buildbot Optimization Suggestions
                                                 </h4>
                                                 <div className="space-y-3">
                                                     {analysis.suggestions.map((sug: any, idx: number) => (

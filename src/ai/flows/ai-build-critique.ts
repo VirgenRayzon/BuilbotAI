@@ -31,9 +31,31 @@ const AiBuildCritiqueInputSchema = z.record(
 
 export type AiBuildCritiqueInput = z.infer<typeof AiBuildCritiqueInputSchema>;
 
-export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
-    if (!process.env.NVIDIA_API_KEY) {
-        throw new Error("Missing NVIDIA_API_KEY for Build Critique.");
+import { ai } from "@/ai/genkit";
+
+const AiBuildCritiqueOutputSchema = z.object({
+    prosCons: z.object({
+        pros: z.array(z.string()),
+        cons: z.array(z.string()),
+    }),
+    bottleneckAnalysis: z.string(),
+    fpsEstimates: z.array(z.object({
+        game: z.string(),
+        resolution: z.string(),
+        estimatedFps: z.string(),
+    })),
+    suggestions: z.array(z.object({
+        originalComponent: z.string(),
+        suggestedComponent: z.string(),
+        reason: z.string(),
+    })),
+});
+
+export type AiBuildCritiqueOutput = z.infer<typeof AiBuildCritiqueOutputSchema>;
+
+export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput): Promise<AiBuildCritiqueOutput> {
+    if (!process.env.GEMINI_API_KEY) {
+        throw new Error("Missing GEMINI_API_KEY for Build Critique.");
     }
 
     // 1. Perform deterministic analysis
@@ -66,60 +88,31 @@ ${buildContext}
 
 ${analysisContext}
 
-Please provide your analysis strictly outputting ONLY valid JSON matching the requested JSON output format. No markdown blocks, no other text.
+Please provide your analysis strictly outputting valid JSON matching the requested format.
 
 1. Pros and Cons: List the strong points and weak points of the build. Incorporate any deterministic compatibility issues here.
 2. Bottleneck Analysis: Expand on the provided bottleneck result. Explain what it means for the user's experience and how they might fix it.
 3. FPS Estimates: Provide estimated frames per second for 3 popular, modern, demanding games based on the build's performance tier.
 4. Suggestions: Suggest alternative parts that would improve the build's value, performance, or fix any severe bottlenecks/compatibility issues.
 
-If the build is completely empty, state that the user needs to select parts first.
-
-FORMAT TO MATCH:
-{
-  "prosCons": { "pros": ["..."], "cons": ["..."] },
-  "bottleneckAnalysis": "...",
-  "fpsEstimates": [ { "game": "...", "resolution": "...", "estimatedFps": "..." } ],
-  "suggestions": [ { "originalComponent": "...", "suggestedComponent": "...", "reason": "..." } ]
-}
-`;
+If the build is completely empty, state that the user needs to select parts first.`;
 
     try {
-        const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${process.env.NVIDIA_API_KEY}`,
-                'Content-Type': 'application/json'
+        const { output } = await ai.generate({
+            prompt,
+            output: {
+                schema: AiBuildCritiqueOutputSchema,
             },
-            body: JSON.stringify({
-                model: 'meta/llama-3.3-70b-instruct',
-                messages: [{ role: 'user', content: prompt }],
+            config: {
                 temperature: 0.2,
-                max_tokens: 2048
-            })
+            }
         });
 
-        if (!res.ok) {
-            throw new Error(`NVIDIA API Error: ${res.statusText}`);
+        if (!output) {
+            throw new Error("AI returned empty output.");
         }
 
-        const data = await res.json();
-        const text = data.choices?.[0]?.message?.content;
-
-        if (!text) {
-            throw new Error("AI returned an empty string.");
-        }
-
-        let parsedData;
-        try {
-            const jsonStr = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-            parsedData = JSON.parse(jsonStr);
-        } catch (e) {
-            console.error("Raw text:", text);
-            throw new Error("Failed to parse JSON response from AI.");
-        }
-
-        return parsedData;
+        return output;
 
     } catch (error: any) {
         console.error("AI Build Critique failed:", error);

@@ -51,8 +51,8 @@ const ExtractPartDetailsOutputSchema = z.object({
 export type ExtractPartDetailsOutput = z.infer<typeof ExtractPartDetailsOutputSchema>;
 
 export async function extractPartDetails(input: ExtractPartDetailsInput): Promise<ExtractPartDetailsOutput> {
-  if (!process.env.NVIDIA_API_KEY) {
-    throw new Error("Missing NVIDIA_API_KEY for Extract Part Details.");
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error("Missing GEMINI_API_KEY for Extract Part Details.");
   }
 
   let groundedContext = "";
@@ -123,46 +123,24 @@ FORMAT TO MATCH:
   "ramType": "...",
   "dimensions": { "width": 0, "height": 0, "depth": 0 },
   "specifications": [ { "key": "...", "value": "..." } ]
-}
-`;
+}`;
 
   try {
-    const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.NVIDIA_API_KEY}`,
-        'Content-Type': 'application/json'
+    const { output } = await ai.generate({
+      prompt,
+      output: {
+        schema: ExtractPartDetailsOutputSchema,
       },
-      body: JSON.stringify({
-        model: 'meta/llama-3.3-70b-instruct',
-        messages: [{ role: 'user', content: prompt }],
+      config: {
         temperature: 0.2,
-        max_tokens: 1024
-      })
+      }
     });
 
-    if (!res.ok) {
-      throw new Error(`NVIDIA API Error: ${res.statusText}`);
+    if (!output) {
+      throw new Error("AI returned empty output.");
     }
 
-    const data = await res.json();
-    const text = data.choices?.[0]?.message?.content;
-
-    if (!text) {
-      throw new Error("AI returned an empty string.");
-    }
-
-    let parsedData;
-    try {
-      const jsonStr = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-      parsedData = JSON.parse(jsonStr);
-    } catch (e) {
-      console.error("Raw text:", text);
-      throw new Error("Failed to parse JSON response from AI.");
-    }
-
-    return parsedData;
-
+    return output;
   } catch (error: any) {
     console.error("Extract Part Details failed:", error);
     throw error;

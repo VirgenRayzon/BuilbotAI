@@ -9,8 +9,8 @@ export function Footer() {
           <div className="col-span-1 md:col-span-2">
             <Logo />
             <p className="mt-4 text-muted-foreground max-w-sm">
-              The ultimate platform for PC enthusiasts. Build, optimize, and
-              share your custom rigs with the power of AI.
+              The ultimate platform for PC enthusiasts. Build and optimize
+              your custom rigs with the power of AI.
             </p>
           </div>
           <div>
@@ -32,7 +32,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-12 pt-8 border-t flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Forge Architect AI. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Buildbot AI. All rights reserved.</p>
           <div className="flex gap-4 mt-4 sm:mt-0">
             <Link href="#" className="hover:text-foreground">Privacy Policy</Link>
             <Link href="#" className="hover:text-foreground">Terms of Service</Link>
