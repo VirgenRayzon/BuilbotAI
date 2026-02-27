@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BrainCircuit, Loader2, ThumbsUp, ThumbsDown, AlertTriangle, MonitorPlay, Zap, Bot } from "lucide-react";
+import { BrainCircuit, Loader2, ThumbsUp, ThumbsDown, AlertTriangle, MonitorPlay, Zap, Bot, Plus, Sparkles } from "lucide-react";
 import { getAiBuildCritique } from "@/app/actions";
 import { ComponentData } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 
 interface AIBuildCritiqueProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
@@ -23,6 +24,26 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
     const analysis = isControlled ? externalAnalysis : internalAnalysis;
     const loading = isControlled ? externalLoading : internalLoading;
     const error = isControlled ? externalError : internalError;
+
+    const { toast } = useToast();
+
+    const handleApplySuggestion = (modelName: string) => {
+        const parentWindow = window as any;
+        if (parentWindow.__BOT_ADD_PART__) {
+            parentWindow.__BOT_ADD_PART__(modelName);
+            toast({
+                title: "Finding part...",
+                description: `Searching for ${modelName} in inventory.`,
+            });
+        } else {
+            const event = new CustomEvent('add-suggestion', { detail: { model: modelName } });
+            window.dispatchEvent(event);
+            toast({
+                title: "Applying Suggestion",
+                description: `Adding ${modelName} to your build...`,
+            });
+        }
+    };
 
     const handleAnalyze = async () => {
         setInternalLoading(true);
@@ -177,13 +198,23 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                                 </h4>
                                 <div className="space-y-2">
                                     {analysis.suggestions.map((sug: any, idx: number) => (
-                                        <div key={idx} className="bg-card border rounded-md p-3 text-sm">
+                                        <div
+                                            key={idx}
+                                            className="bg-card border rounded-xl p-4 shadow-sm hover:border-primary/50 transition-all group flex flex-col gap-3 relative cursor-pointer active:scale-[0.98]"
+                                            onClick={() => handleApplySuggestion(sug.suggestedComponent)}
+                                        >
                                             <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                <span className="line-through text-muted-foreground">{sug.originalComponent}</span>
-                                                <span className="text-muted-foreground text-xs font-bold">→</span>
-                                                <span className="font-semibold text-primary">{sug.suggestedComponent}</span>
+                                                <span className="line-through text-muted-foreground text-xs">{sug.originalComponent}</span>
+                                                <span className="text-primary font-black text-xs">→</span>
+                                                <span className="font-bold text-primary group-hover:underline">{sug.suggestedComponent}</span>
                                             </div>
-                                            <p className="text-muted-foreground italic text-xs">{sug.reason}</p>
+                                            <p className="text-muted-foreground text-xs leading-relaxed pr-8">{sug.reason}</p>
+                                            <div className="absolute top-4 right-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Plus className="h-4 w-4" />
+                                            </div>
+                                            <div className="text-[10px] font-bold text-primary/60 uppercase tracking-widest mt-1 opacity-100 flex items-center gap-1">
+                                                <Sparkles className="h-3 w-3" /> Quick Add
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

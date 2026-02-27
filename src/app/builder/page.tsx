@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { YourBuild } from "@/components/your-build";
 import {
@@ -34,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { PaginationControls } from "@/components/pagination-controls";
 import { PCVisualizer } from "@/components/pc-visualizer";
+import { useUserProfile } from "@/context/user-profile";
 
 type PartWithoutCategory = Omit<Part, 'category'>;
 
@@ -51,6 +53,15 @@ const componentCategories = [
 export default function BuilderPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { authUser, loading: authLoading } = useUserProfile();
+  const router = useRouter();
+
+  // Redirect unauthenticated users to sign-in
+  useEffect(() => {
+    if (!authLoading && !authUser) {
+      router.push('/signin');
+    }
+  }, [authUser, authLoading, router]);
 
   // Fetch each category collection
   const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
@@ -84,18 +95,83 @@ export default function BuilderPage() {
     return allParts;
   }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers]);
 
-  const loading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading;
-
   const [build, setBuild] = useState<Record<string, ComponentData | ComponentData[] | null>>({
     CPU: null, GPU: null, Motherboard: null, RAM: null, Storage: [], PSU: null, Case: null, Cooler: null,
   });
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Handle AI suggestions from window-level
+  useEffect(() => {
+    const findPartRobustly = (suggestion: string) => {
+      // 1. Exact Match
+      let part = allParts.find(p => p.name.toLowerCase() === suggestion.toLowerCase());
+      if (part) return part;
+
+      // 2. Remove parentheticals (e.g. "Model X (or similar)")
+      const cleanSuggestion = suggestion.replace(/\s*\(.*?\)\s*/g, '').trim().toLowerCase();
+      part = allParts.find(p => p.name.toLowerCase() === cleanSuggestion);
+      if (part) return part;
+
+      // 3. Substring match (if suggestion is a specific name that exists in a longer name)
+      part = allParts.find(p => p.name.toLowerCase().includes(cleanSuggestion) || cleanSuggestion.includes(p.name.toLowerCase()));
+      if (part) return part;
+
+      // 4. Token intersection (find part with highest matching word count)
+      const suggestionTokens = cleanSuggestion.split(' ').filter(t => t.length > 2);
+      let bestMatch = null;
+      let maxScore = 0;
+
+      for (const p of allParts) {
+        const nameTokens = p.name.toLowerCase().split(' ');
+        let score = 0;
+        for (const token of suggestionTokens) {
+          if (nameTokens.some(nt => nt.includes(token) || token.includes(nt))) {
+            score++;
+          }
+        }
+        if (score > maxScore && score >= suggestionTokens.length * 0.5) { // At least 50% tokens match
+          maxScore = score;
+          bestMatch = p;
+        }
+      }
+
+      return bestMatch;
+    };
+
+    const handleAddSuggestion = (e: any) => {
+      const modelName = e.detail.model;
+      const part = findPartRobustly(modelName);
+      if (part) {
+        handlePartToggle(part);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Part Not Found",
+          description: `Could not find "${modelName}" in the current inventory.`
+        });
+      }
+    };
+
+    (window as any).__BOT_ADD_PART__ = (modelName: string) => {
+      const part = findPartRobustly(modelName);
+      if (part) handlePartToggle(part);
+    };
+
+    window.addEventListener('add-suggestion', handleAddSuggestion);
+    return () => {
+      window.removeEventListener('add-suggestion', handleAddSuggestion);
+      delete (window as any).__BOT_ADD_PART__;
+    };
+  }, [allParts, build]);
+
+  const loading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading;
+
   useEffect(() => {
     const saved = localStorage.getItem('pc_builder_state');
     if (saved) {
       try {
-        setBuild(JSON.parse(saved));
+        const parsedState = JSON.parse(saved);
+        setBuild(prev => ({ ...prev, ...parsedState }));
       } catch (e) {
         console.error("Failed to parse saved build", e);
       }
@@ -188,6 +264,7 @@ export default function BuilderPage() {
         socket: part.socket || part.specifications?.['Socket']?.toString() || part.specifications?.['socket']?.toString(),
         ramType: part.ramType || part.specifications?.['Memory Type']?.toString() || part.specifications?.['RAM Type']?.toString() || part.specifications?.['Memory']?.toString(),
         performanceScore: part.performanceScore,
+        performanceTier: part.performanceTier,
         specifications: part.specifications,
         dimensions: part.dimensions,
       };
@@ -235,6 +312,10 @@ export default function BuilderPage() {
         wattage: part.wattage,
         socket: part.specifications?.['Socket']?.toString() || part.specifications?.['socket']?.toString(),
         ramType: part.specifications?.['Memory Type']?.toString() || part.specifications?.['RAM Type']?.toString() || part.specifications?.['Memory']?.toString(),
+        performanceScore: part.performanceScore,
+        performanceTier: part.performanceTier,
+        specifications: part.specifications,
+        dimensions: part.dimensions,
       };
 
       setBuild(prevBuild => ({ ...prevBuild, [category]: componentData }));
@@ -248,41 +329,43 @@ export default function BuilderPage() {
     const mobo = currentBuild['Motherboard'] as ComponentData | null;
     const ram = currentBuild['RAM'] as ComponentData | null;
 
-    const partSocket = part.socket || part.specifications?.['Socket']?.toString() || part.specifications?.['socket']?.toString();
-    const partRamType = part.ramType || part.specifications?.['Memory Type']?.toString() || part.specifications?.['RAM Type']?.toString() || part.specifications?.['Memory']?.toString();
+    const normalize = (s?: string | null) => s?.toString().trim().toLowerCase() || '';
+
+    const partSocket = normalize(part.socket || part.specifications?.['Socket']?.toString() || part.specifications?.['socket']?.toString());
+    const partRamType = normalize(part.ramType || part.specifications?.['Memory Type']?.toString() || part.specifications?.['RAM Type']?.toString() || part.specifications?.['Memory']?.toString());
 
     if (category === 'CPU') {
-      if (mobo && (mobo.socket || mobo.specifications?.['Socket'])) {
-        const moboSocket = mobo.socket || mobo.specifications?.['Socket']?.toString();
+      if (mobo) {
+        const moboSocket = normalize(mobo.socket || mobo.specifications?.['Socket']?.toString());
         if (partSocket && moboSocket && moboSocket !== partSocket) {
-          return { compatible: false, message: `This CPU uses ${partSocket} socket, but your motherboard is ${moboSocket}.` };
+          return { compatible: false, message: `This CPU uses ${partSocket.toUpperCase()} socket, but your motherboard is ${moboSocket.toUpperCase()}.` };
         }
       }
     }
 
     if (category === 'Motherboard') {
-      if (cpu && (cpu.socket || cpu.specifications?.['Socket'])) {
-        const cpuSocket = cpu.socket || cpu.specifications?.['Socket']?.toString();
+      if (cpu) {
+        const cpuSocket = normalize(cpu.socket || cpu.specifications?.['Socket']?.toString());
         if (partSocket && cpuSocket && cpuSocket !== partSocket) {
-          return { compatible: false, message: `This motherboard is ${partSocket}, but your CPU uses ${cpuSocket}.` };
+          return { compatible: false, message: `This motherboard is ${partSocket.toUpperCase()}, but your CPU uses ${cpuSocket.toUpperCase()}.` };
         }
       }
-      if (ram && (ram.ramType || ram.specifications?.['Memory Type'] || ram.specifications?.['RAM Type'])) {
-        const currentRamType = ram.ramType || ram.specifications?.['Memory Type']?.toString() || ram.specifications?.['RAM Type']?.toString();
+      if (ram) {
+        const currentRamType = normalize(ram.ramType || ram.specifications?.['Memory Type']?.toString() || ram.specifications?.['RAM Type']?.toString());
         if (partRamType && currentRamType) {
-          if (!partRamType.toLowerCase().includes(currentRamType.toLowerCase()) && !currentRamType.toLowerCase().includes(partRamType.toLowerCase())) {
-            return { compatible: false, message: `This motherboard supports ${partRamType}, but your RAM is ${currentRamType}.` };
+          if (!partRamType.includes(currentRamType) && !currentRamType.includes(partRamType)) {
+            return { compatible: false, message: `This motherboard supports ${partRamType.toUpperCase()}, but your RAM is ${currentRamType.toUpperCase()}.` };
           }
         }
       }
     }
 
     if (category === 'RAM') {
-      if (mobo && (mobo.ramType || mobo.specifications?.['Memory Type'] || mobo.specifications?.['RAM Type'])) {
-        const moboRamType = mobo.ramType || mobo.specifications?.['Memory Type']?.toString() || mobo.specifications?.['RAM Type']?.toString();
+      if (mobo) {
+        const moboRamType = normalize(mobo.ramType || mobo.specifications?.['Memory Type']?.toString() || mobo.specifications?.['RAM Type']?.toString());
         if (moboRamType && partRamType) {
-          if (!moboRamType.toLowerCase().includes(partRamType.toLowerCase()) && !partRamType.toLowerCase().includes(moboRamType.toLowerCase())) {
-            return { compatible: false, message: `Your motherboard supports ${moboRamType}, but this RAM is ${partRamType}.` };
+          if (!moboRamType.includes(partRamType) && !partRamType.includes(moboRamType)) {
+            return { compatible: false, message: `Your motherboard supports ${moboRamType.toUpperCase()}, but this RAM is ${partRamType.toUpperCase()}.` };
           }
         }
       }
@@ -452,9 +535,9 @@ export default function BuilderPage() {
         </div>
 
         <div className="lg:col-span-4">
-          <div className="sticky top-20 flex flex-col gap-6 h-[calc(100vh-6rem)] pb-4 pr-2">
+          <div className="sticky top-20 flex flex-col gap-6 pb-4 pr-2">
+            <YourBuild build={build} onClearBuild={handleClearBuild} onRemovePart={handleRemovePart} />
             <PCVisualizer build={build} />
-            <YourBuild build={build} onClearBuild={handleClearBuild} onRemovePart={handleRemovePart} className="flex-1 min-h-0" />
           </div>
         </div>
       </div>

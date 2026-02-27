@@ -72,7 +72,8 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
 
     const analysisContext = `
 DETERMINISTIC ANALYSIS RESULTS:
-- Bottleneck: ${bottleneck.message} (Raw Score: ${bottleneck.score}, Type: ${bottleneck.type})
+- Bottleneck Status: ${bottleneck.status}
+- Bottleneck Message: ${bottleneck.message}
 - Compatibility Issues: ${compatibilityIssues.length > 0 ? compatibilityIssues.map(i => `[${i.severity.toUpperCase()}] ${i.message}`).join('; ') : 'None detected'}
 `;
 

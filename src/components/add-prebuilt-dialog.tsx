@@ -289,7 +289,7 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
                                                             </FormControl>
                                                             <SelectContent>
                                                                 {(inventory[cat] || []).map(item => (
-                                                                    <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
+                                                                    <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>
                                                                 ))}
                                                             </SelectContent>
                                                         </Select>

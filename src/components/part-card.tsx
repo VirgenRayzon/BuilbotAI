@@ -4,7 +4,7 @@
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatToPHP } from '@/lib/utils';
 import type { Part } from '@/lib/types';
 import { Plus, Info, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -87,8 +87,20 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                             className="object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                     </div>
-                    <div className="flex justify-between items-center mb-4">
-                        <p className="text-2xl font-bold font-headline">{formatCurrency(part.price)}</p>
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <p className="text-2xl font-bold font-headline">{formatCurrency(part.price)}</p>
+                            {part.usdSrp && (
+                                <div className="mt-1">
+                                    <span className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                                        {formatToPHP(part.usdSrp)}
+                                    </span>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5 max-w-[140px] leading-tight">
+                                        Estimated Local SRP<br />(Converted from ${part.usdSrp} USD)
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">

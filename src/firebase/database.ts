@@ -42,7 +42,7 @@ export async function addPrebuiltSystem(firestore: Firestore, system: AddPrebuil
         tier: tier as PrebuiltSystem['tier'],
         description,
         price,
-        imageUrl: imageUrl || `https://picsum.photos/seed/${name.replace(/\s+/g, '').toLowerCase()}/800/600?gaming,pc`,
+        imageUrl: imageUrl || `https://placehold.co/800x600/1a1a2e/e0e0e0?text=${encodeURIComponent(name)}`,
         components: {
             cpu,
             gpu,

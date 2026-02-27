@@ -1,123 +1,83 @@
+import { ComponentData, Resolution } from "./types";
 
-import { ComponentData, Resolution, WorkloadType } from "./types";
+export type ComponentTier = 1 | 2 | 3 | 4; // 1: Entry, 2: Mid, 3: High, 4: Enthusiast
 
-export type BottleneckResult = {
-    score: number; // 0-100 (clamped at 60 as per spec)
-    type: "None" | "CPU" | "GPU" | "Balanced";
+export interface BottleneckResult {
+    status: 'Balanced' | 'Slight Mismatch' | 'Severe Mismatch' | 'Incomplete';
     message: string;
-    cpuScore: number;
-    gpuScore: number;
-    cpuEff: number;
-    gpuEff: number;
-};
+    color: string; // For UI styling
+}
 
-type FactorPair = { cpu: number; gpu: number };
-
-const FACTOR_MATRIX: Record<Resolution, Record<WorkloadType, FactorPair>> = {
-    '1080p': {
-        'Esports': { cpu: 0.80, gpu: 1.20 }, // High CPU stress -> CPU Bottleneck
-        'AAA': { cpu: 0.95, gpu: 1.05 },     // Slight CPU stress
-        'Balanced': { cpu: 0.90, gpu: 1.10 } // General 1080p leans CPU
-    },
-    '1440p': {
-        'Esports': { cpu: 0.95, gpu: 1.05 }, // Slight CPU stress
-        'AAA': { cpu: 1.10, gpu: 0.90 },     // Slight GPU stress
-        'Balanced': { cpu: 1.00, gpu: 1.00 } // True neutral
-    },
-    '4K': {
-        'Esports': { cpu: 1.10, gpu: 0.90 }, // Slight GPU stress
-        'AAA': { cpu: 1.30, gpu: 0.70 },     // High GPU stress -> GPU Bottleneck
-        'Balanced': { cpu: 1.20, gpu: 0.80 } // General 4K leans GPU
-    }
-};
-
-export function calculateBottleneck(
+export const calculateBottleneck = (
     build: Record<string, ComponentData | ComponentData[] | null>,
-    resolution: Resolution = '1440p',
-    workload: WorkloadType = 'Balanced'
-): BottleneckResult {
+    resolution: Resolution = '1080p'
+): BottleneckResult => {
     const cpu = build["CPU"] as ComponentData | null;
     const gpu = build["GPU"] as ComponentData | null;
-    const ram = build["RAM"] ?? null;
-
-    const ramList = Array.isArray(ram) ? ram : (ram ? [ram] : []);
-    const totalRamGb = ramList.reduce((acc, r) => {
-        const match = r.model.match(/(\d+)GB/i);
-        return acc + (match ? parseInt(match[1]) : 8); // Default to 8 if not found
-    }, 0);
 
     if (!cpu || !gpu) {
         return {
-            score: 0,
-            type: "None",
-            message: "Add both a CPU and GPU to see bottleneck analysis.",
-            cpuScore: 0,
-            gpuScore: 0,
-            cpuEff: 0,
-            gpuEff: 0,
+            status: 'Incomplete',
+            message: 'Add both a CPU and GPU to see the system balance analysis.',
+            color: '#9ca3af', // Gray
         };
     }
 
-    // Use performanceScore (0-100), fallback to performanceTier * 10 if missing
-    const cpuScore = cpu.performanceScore ?? (cpu.performanceTier ? cpu.performanceTier * 10 : 50);
-    const gpuScore = gpu.performanceScore ?? (gpu.performanceTier ? gpu.performanceTier * 10 : 50);
+    // Use performanceTier (1-4) or fallback to mapping the 0-100 score to 1-4 for safety
+    const getTier = (comp: ComponentData): ComponentTier => {
+        if (comp.performanceTier) return Math.min(Math.max(comp.performanceTier, 1), 4) as ComponentTier;
+        if (comp.performanceScore) {
+            if (comp.performanceScore >= 85) return 4;
+            if (comp.performanceScore >= 65) return 3;
+            if (comp.performanceScore >= 45) return 2;
+            return 1;
+        }
+        return 2; // Default to mid-range if unknown
+    };
 
-    // Step 1: Apply Factors based on Resolution and Workload
-    const factors = FACTOR_MATRIX[resolution][workload];
-    let cpuEff = cpuScore * factors.cpu;
-    let gpuEff = gpuScore * factors.gpu;
+    const cpuTier = getTier(cpu);
+    const gpuTier = getTier(gpu);
 
-    // Step 2: Apply RAM Penalties
-    if (totalRamGb < 8) cpuEff -= 15;
-    else if (totalRamGb < 16) cpuEff -= 8;
+    const delta = cpuTier - gpuTier;
 
-    // Single Channel Penalty
-    if (ramList.length === 1 && !ramList[0].model.toLowerCase().includes('2x') && !ramList[0].model.toLowerCase().includes('kit')) {
-        cpuEff -= 5;
-    }
-
-    // Step 3: Compute bottleneck percentage
-    const diff = gpuEff - cpuEff;
-    const maxEff = Math.max(cpuEff, gpuEff);
-    const rawPercentage = (Math.abs(diff) / maxEff) * 100;
-    const score = Math.min(rawPercentage, 60);
-
-    // Step 4: Determine outcome
-    if (score < 10) {
+    // Case 1: CPU is much weaker than GPU
+    if (delta <= -2) {
         return {
-            score,
-            type: "Balanced",
-            message: "Excellent! Your components are perfectly matched for this scenario.",
-            cpuScore,
-            gpuScore,
-            cpuEff,
-            gpuEff,
+            status: 'Severe Mismatch',
+            message: `Your CPU is significantly underpowered for this GPU. Expect major stutters at ${resolution}.`,
+            color: '#ef4444', // Red
         };
     }
 
-    if (gpuEff > cpuEff) {
-        let tip = "Upgrade your CPU to unlock higher frame rates.";
-        if (workload === 'Esports') tip = "A faster CPU is critical for high-refresh competitive gaming.";
+    // Case 2: CPU is slightly weaker than GPU
+    if (delta === -1) {
+        if (resolution === '4K') {
+            return {
+                status: 'Balanced',
+                message: 'At 4K, this pairing is well-balanced as the workload is GPU-heavy.',
+                color: '#22c55e', // Green
+            };
+        }
         return {
-            score,
-            type: "CPU",
-            message: `${Math.round(score)}% CPU Bottleneck. ${tip}`,
-            cpuScore,
-            gpuScore,
-            cpuEff,
-            gpuEff,
-        };
-    } else {
-        let tip = "Your GPU is the limiting factor in this workload.";
-        if (resolution === '4K' || workload === 'AAA') tip = "Consider a more powerful GPU for smoother high-fidelity performance.";
-        return {
-            score,
-            type: "GPU",
-            message: `${Math.round(score)}% GPU Bottleneck. ${tip}`,
-            cpuScore,
-            gpuScore,
-            cpuEff,
-            gpuEff,
+            status: 'Slight Mismatch',
+            message: `Minor CPU bottleneck possible at ${resolution}. Consider a one-tier higher CPU for better 1% lows.`,
+            color: '#f59e0b', // Amber
         };
     }
-}
+
+    // Case 3: GPU is much weaker than CPU (Inverse Bottleneck)
+    if (delta >= 2) {
+        return {
+            status: 'Slight Mismatch',
+            message: 'Your CPU is overkill for this GPU. You could save money by dropping a CPU tier without losing FPS.',
+            color: '#f59e0b', // Amber
+        };
+    }
+
+    // Default: Perfectly Balanced
+    return {
+        status: 'Balanced',
+        message: 'This is a high-efficiency pairing with optimal performance scaling.',
+        color: '#22c55e', // Green
+    };
+};

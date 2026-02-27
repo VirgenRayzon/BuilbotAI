@@ -9,6 +9,7 @@ export type ComponentData = {
   model: string;
   description: string;
   price: number;
+  usdSrp?: number;
   image: string;
   imageHint: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -46,6 +47,7 @@ export type Part = {
   category: 'CPU' | 'GPU' | 'Motherboard' | 'RAM' | 'Storage' | 'PSU' | 'Case' | 'Cooler';
   brand: string;
   price: number;
+  usdSrp?: number;
   stock: number;
   imageUrl: string;
   specifications: Record<string, string | number>;

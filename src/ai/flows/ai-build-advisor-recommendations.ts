@@ -47,34 +47,42 @@ const AiBuildAdvisorRecommendationsOutputSchema = z.object({
   cpu: z.object({
     model: z.string().describe('The recommended CPU model name.'),
     description: z.string().describe('A brief explanation for the CPU recommendation.'),
+    estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
   }),
   gpu: z.object({
     model: z.string().describe('The recommended GPU model name.'),
     description: z.string().describe('A brief explanation for the GPU recommendation.'),
+    estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
   }),
   motherboard: z.object({
     model: z.string().describe('The recommended Motherboard model name.'),
     description: z.string().describe('A brief explanation for the Motherboard recommendation, highlighting compatibility with CPU and RAM.'),
+    estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
   }),
   ram: z.object({
     model: z.string().describe('The recommended RAM model and specifications (e.g., "Corsair Vengeance RGB DDR5 32GB (2x16GB) 6000MHz").'),
     description: z.string().describe('A brief explanation for the RAM recommendation, including type and speed considerations.'),
+    estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
   }),
   storage: z.object({
     model: z.string().describe('The recommended Storage (SSD/HDD) model name.'),
     description: z.string().describe('A brief explanation for the Storage recommendation.'),
+    estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
   }),
   psu: z.object({
     model: z.string().describe('The recommended Power Supply Unit (PSU) model name.'),
     description: z.string().describe('A brief explanation for the PSU recommendation.'),
+    estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
   }),
   case: z.object({
     model: z.string().describe('The recommended PC Case model name.'),
     description: z.string().describe('A brief explanation for the Case recommendation.'),
+    estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
   }),
   cooler: z.object({
     model: z.string().describe('The recommended CPU Cooler model name.'),
     description: z.string().describe('A brief explanation for the Cooler recommendation.'),
+    estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
   }),
   estimatedWattage: z.string().describe('The estimated total wattage for the build, in the format "550W".'),
 });
@@ -103,7 +111,7 @@ CRITICAL RULES:
 4. COMPATIBILITY: Ensure all recommended components are 100% compatible.
 5. BUDGET ADHERENCE: Strictly follow the PHP budget provided by the user.
 
-Provide a brief summary of the overall build strategy in the context of the Philippine market, and then detail the recommendations for each component, including the model name and a concise reason for its selection (mentioning why it's a good value in PHP where applicable). Also provide an estimated total wattage for the build.
+Provide a brief summary of the overall build strategy in the context of the Philippine market, and then detail the recommendations for each component, including the model name, estimated PHP price, and a concise reason for its selection (mentioning why it's a good value in PHP where applicable). Also provide an estimated total wattage for the build.
 
 User's PC building goals:
 Intended Use: {{{intendedUse}}}
@@ -113,7 +121,7 @@ Desired Performance Level: {{{performanceLevel}}}
 Additional Notes: {{{additionalNotes}}}
 {{/if}}
 
-Please format your response as a JSON object strictly following the output schema provided.`,
+Please format your response as a JSON object strictly following the output schema provided. The estimatedPrice for each component must be a realistic PHP price number (not a string).`,
 });
 
 // Genkit Flow Definition

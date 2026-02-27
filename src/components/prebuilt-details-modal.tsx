@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +14,7 @@ import { getMissingParts } from "@/lib/prebuilt-utils";
 import { BrainCircuit, ShoppingCart, Loader2, AlertCircle, ThumbsUp, ThumbsDown, MonitorPlay, Zap, ExternalLink, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getAiBuildCritique } from "@/app/actions";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { useFirestore } from "@/firebase";
 
 interface PrebuiltDetailsModalProps {
@@ -32,6 +33,7 @@ export function PrebuiltDetailsModal({ system, children }: PrebuiltDetailsModalP
 
     const { toast } = useToast();
     const firestore = useFirestore();
+    const router = useRouter();
 
     const missingParts = getMissingParts(system);
     const isComplete = missingParts.length === 0;
@@ -49,14 +51,28 @@ export function PrebuiltDetailsModal({ system, children }: PrebuiltDetailsModalP
                             return;
                         }
 
-                        const collectionName = category.charAt(0).toUpperCase() + category.slice(1);
+                        const collectionMap: Record<string, string> = {
+                            cpu: 'CPU', gpu: 'GPU', motherboard: 'Motherboard',
+                            ram: 'RAM', storage: 'Storage', psu: 'PSU',
+                            case: 'Case', cooler: 'Cooler',
+                        };
+                        const collectionName = collectionMap[category] || category;
+                        // First try looking up by document ID
                         const partRef = doc(firestore, collectionName, id as string);
                         const snap = await getDoc(partRef);
 
                         if (snap.exists()) {
                             partsRecord[category] = { id: snap.id, ...snap.data() } as Part;
                         } else {
-                            partsRecord[category] = null;
+                            // Fall back: query by name field (for legacy data that stored names instead of IDs)
+                            const q = query(collection(firestore, collectionName), where("name", "==", id));
+                            const querySnap = await getDocs(q);
+                            if (!querySnap.empty) {
+                                const docSnap = querySnap.docs[0];
+                                partsRecord[category] = { id: docSnap.id, ...docSnap.data() } as Part;
+                            } else {
+                                partsRecord[category] = null;
+                            }
                         }
                     });
 
@@ -80,11 +96,52 @@ export function PrebuiltDetailsModal({ system, children }: PrebuiltDetailsModalP
 
     const handleAddToCart = () => {
         if (!isComplete) return;
+
+        // Convert resolved parts into a builder-compatible build state
+        const categoryMap: Record<string, string> = {
+            cpu: 'CPU', gpu: 'GPU', motherboard: 'Motherboard',
+            ram: 'RAM', storage: 'Storage', psu: 'PSU',
+            case: 'Case', cooler: 'Cooler',
+        };
+
+        const buildState: Record<string, any> = {
+            CPU: null, GPU: null, Motherboard: null, RAM: null,
+            Storage: [], PSU: null, Case: null, Cooler: null,
+        };
+
+        Object.entries(components).forEach(([category, part]) => {
+            if (!part) return;
+            const buildCategory = categoryMap[category] || category;
+            const componentData = {
+                id: part.id,
+                model: part.name,
+                price: part.price,
+                description: Object.entries(part.specifications || {}).slice(0, 2).map(([k, v]) => `${k}: ${v}`).join(' | '),
+                image: part.imageUrl,
+                imageHint: part.name.toLowerCase().split(' ').slice(0, 2).join(' '),
+                wattage: part.wattage,
+                socket: part.socket || part.specifications?.['Socket']?.toString(),
+                ramType: part.ramType || part.specifications?.['Memory Type']?.toString(),
+                performanceScore: part.performanceScore,
+                specifications: part.specifications,
+                dimensions: part.dimensions,
+            };
+
+            if (buildCategory === 'Storage') {
+                buildState['Storage'] = [componentData];
+            } else {
+                buildState[buildCategory] = componentData;
+            }
+        });
+
+        localStorage.setItem('pc_builder_state', JSON.stringify(buildState));
+
         toast({
-            title: 'Added to Cart',
-            description: `${system.name} has been added to your cart.`,
+            title: 'Build Loaded',
+            description: `${system.name} components have been loaded into the builder. Proceed to checkout!`,
         });
         setIsOpen(false);
+        router.push('/builder');
     };
 
     const handleAnalyze = async () => {

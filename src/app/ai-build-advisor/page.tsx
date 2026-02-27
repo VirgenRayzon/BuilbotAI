@@ -124,7 +124,7 @@ export default function AiBuildAdvisorPage() {
         type: keyof typeof componentMetadata
       ) => {
         const metadata = componentMetadata[type];
-        const price = Math.floor(Math.random() * 20000) + 2500;
+        const price = (component as any).estimatedPrice || 0;
         return {
           ...component,
           id: `ai-suggested-${type}`,

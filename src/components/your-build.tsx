@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { ComponentData } from "@/lib/types";
-import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical as CaseIcon, Wind, AlertCircle, X as CloseIcon, BrainCircuit, Loader2, ThumbsUp, ThumbsDown, MonitorPlay, Zap } from "lucide-react";
+import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical as CaseIcon, Wind, AlertCircle, X as CloseIcon, BrainCircuit, Loader2, ThumbsUp, ThumbsDown, MonitorPlay, Zap, Plus, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
@@ -53,32 +54,22 @@ function PowerMeter({ value, max }: { value: number; max: number }) {
     );
 }
 
-function BottleneckMeter({ build, resolution, workload }: { build: Record<string, ComponentData | ComponentData[] | null>, resolution: Resolution, workload: WorkloadType }) {
-    const result = calculateBottleneck(build, resolution, workload);
-    if (result.type === 'None') return null;
+function BottleneckMeter({ build, resolution }: { build: Record<string, ComponentData | ComponentData[] | null>, resolution: Resolution }) {
+    const result = calculateBottleneck(build, resolution);
 
-    let colorClass = "bg-emerald-500";
-    if (result.score > 40) colorClass = "bg-red-500";
-    else if (result.score > 20) colorClass = "bg-amber-500";
+    if (result.status === 'Incomplete') return null;
 
     return (
-        <div className="space-y-2 mt-4 pt-4 border-t border-border/50">
-            <div className="flex justify-between items-baseline">
-                <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none">Bottleneck Range</span>
-                    <Badge variant="outline" className="text-[10px] h-4 py-0 font-bold uppercase tracking-tighter">
-                        {result.type === 'Balanced' ? 'Optimal' : `${result.type} Limited`}
-                    </Badge>
-                </div>
-                <span className="text-sm font-bold font-headline">{Math.round(result.score)}%</span>
-            </div>
-            <div className="h-1.5 w-full bg-secondary/50 rounded-full overflow-hidden border border-border/50">
-                <div
-                    className={`h-full transition-all duration-1000 ease-out ${colorClass}`}
-                    style={{ width: `${(result.score / 60) * 100}%` }}
-                />
-            </div>
-            <p className="text-[10px] text-muted-foreground leading-tight italic">{result.message}</p>
+        <div
+            className="mt-4 p-4 border-l-4 rounded-r-md bg-muted/40 transition-colors duration-300"
+            style={{ borderColor: result.color }}
+        >
+            <h4 className="font-headline font-bold mb-1 flex items-center gap-2" style={{ color: result.color }}>
+                <Gauge className="w-4 h-4" /> System Balance: {result.status}
+            </h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+                {result.message}
+            </p>
         </div>
     );
 }
@@ -214,11 +205,13 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, classN
     }, 0);
     const totalParts = Object.keys(build).length;
 
-    const totalWattage = Object.entries(build).reduce((acc, [name, component]) => {
-        if (name === 'Storage' && Array.isArray(component)) {
+    const totalWattage = Object.entries(build).reduce((acc, [key, component]) => {
+        // PSU wattage is its capacity (supply), not consumption (demand) — exclude it
+        if (key === 'PSU') return acc;
+        if (Array.isArray(component)) {
             return acc + component.reduce((sum, c) => sum + (c.wattage || 0), 0);
         }
-        if ((name === 'CPU' || name === 'GPU') && component && !Array.isArray(component) && typeof component.wattage === 'number') {
+        if (component && !Array.isArray(component) && typeof component.wattage === 'number') {
             return acc + component.wattage;
         }
         return acc;
@@ -234,6 +227,31 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, classN
         }
         return acc + (component?.price || 0);
     }, 0);
+
+    const router = useRouter();
+
+    const handleApplySuggestion = (modelName: string) => {
+        // This relies on the parent having access to the full part catalog or being able to trigger a selection
+        // Since we are in YourBuild, we communicate back via event or if global parts available
+        // For now, we'll try to find the part in the actual inventory if passed down, 
+        // but often we just need to trigger the parent's toggle function.
+        const parentWindow = window as any;
+        if (parentWindow.__BOT_ADD_PART__) {
+            parentWindow.__BOT_ADD_PART__(modelName);
+            toast({
+                title: "Finding part...",
+                description: `Searching for ${modelName} in inventory.`,
+            });
+        } else {
+            // Alternative: Dispatch a custom event
+            const event = new CustomEvent('add-suggestion', { detail: { model: modelName } });
+            window.dispatchEvent(event);
+            toast({
+                title: "Applying Suggestion",
+                description: `Adding ${modelName} to your build...`,
+            });
+        }
+    };
 
     return (
         <Card className={`h-full flex flex-col border-primary/20 shadow-2xl overflow-hidden ring-1 ring-primary/5 ${className || ""}`}>
@@ -304,7 +322,7 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, classN
                                                 <p className="text-sm font-semibold truncate leading-tight tracking-tight">{c.model}</p>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                {typeof c.wattage === 'number' && (name === 'CPU' || name === 'GPU' || name === 'Storage') && (
+                                                {typeof c.wattage === 'number' && (
                                                     <span className="text-[10px] font-bold text-muted-foreground bg-secondary px-1.5 py-0.5 rounded shadow-inner">
                                                         {c.wattage}W
                                                     </span>
@@ -329,7 +347,7 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, classN
                 <div className="pt-4 flex-none">
                     <Separator className="mb-3 opacity-50" />
                     <PowerMeter value={totalWattage} max={psuWattage} />
-                    <BottleneckMeter build={build} resolution={resolution} workload={workload} />
+                    <BottleneckMeter build={build} resolution={resolution} />
 
                     <div className="flex justify-between items-center pt-3 mt-3 border-t border-dashed">
                         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Total Cost</span>
@@ -348,131 +366,20 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, classN
                     </Alert>
                 )}
                 <div className="flex flex-col gap-3 w-full">
-                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                        <Button
-                            className="w-full font-headline tracking-wide flex items-center gap-2 bg-primary hover:bg-primary/90"
-                            size="lg"
-                            disabled={selectedParts === 0}
-                            onClick={handleAnalyze}
-                        >
-                            <BrainCircuit className="h-5 w-5" /> Analyze My Build
-                        </Button>
-                        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
-                            <DialogHeader className="p-6 pb-2">
-                                <DialogTitle className="flex items-center gap-2 font-headline text-3xl">
-                                    <BrainCircuit className="h-8 w-8 text-primary" />
-                                    Buildbot Build Critique
-                                </DialogTitle>
-                                <DialogDescription className="text-base">
-                                    Expert AI analysis of your current parts selection.
-                                </DialogDescription>
-                            </DialogHeader>
-
-                            <ScrollArea className="flex-1 p-6 pt-2">
-                                {loading && (
-                                    <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                                        <p className="text-lg font-medium animate-pulse">Buildbot is analyzing your components...</p>
-                                    </div>
-                                )}
-
-                                {error && (
-                                    <div className="bg-destructive/10 text-destructive p-6 rounded-lg border border-destructive/20">
-                                        <div className="flex items-center gap-2 mb-2 font-bold text-lg">
-                                            <AlertCircle className="h-6 w-6" />
-                                            Analysis Failed
-                                        </div>
-                                        <p className="mb-4">{error}</p>
-                                        <Button variant="outline" onClick={handleAnalyze}>Try Again</Button>
-                                    </div>
-                                )}
-
-                                {analysis && !loading && (
-                                    <div className="space-y-8 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                        {/* Pros and Cons */}
-                                        <div className="grid md:grid-cols-2 gap-4">
-                                            <div className="bg-green-500/10 rounded-xl p-5 border border-green-500/20">
-                                                <h4 className="font-bold text-green-600 dark:text-green-400 flex items-center gap-2 mb-4 text-lg">
-                                                    <ThumbsUp className="h-5 w-5" /> Pros
-                                                </h4>
-                                                <ul className="space-y-3 text-sm">
-                                                    {analysis.prosCons.pros.map((pro: string, idx: number) => (
-                                                        <li key={idx} className="flex gap-2 leading-relaxed">
-                                                            <span className="text-green-500 font-bold">•</span> {pro}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                            <div className="bg-red-500/10 rounded-xl p-5 border border-red-500/20">
-                                                <h4 className="font-bold text-red-600 dark:text-red-400 flex items-center gap-2 mb-4 text-lg">
-                                                    <ThumbsDown className="h-5 w-5" /> Cons
-                                                </h4>
-                                                <ul className="space-y-3 text-sm">
-                                                    {analysis.prosCons.cons.map((con: string, idx: number) => (
-                                                        <li key={idx} className="flex gap-2 leading-relaxed">
-                                                            <span className="text-red-500 font-bold">•</span> {con}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        </div>
-
-                                        {/* Bottleneck Analysis */}
-                                        <div className="bg-secondary/30 rounded-xl p-5 border border-border/50">
-                                            <h4 className="font-bold flex items-center gap-2 mb-3 text-lg">
-                                                <AlertCircle className="h-5 w-5 text-yellow-500" /> Bottleneck Analysis
-                                            </h4>
-                                            <p className="text-sm text-foreground/90 leading-relaxed italic">
-                                                "{analysis.bottleneckAnalysis}"
-                                            </p>
-                                        </div>
-
-                                        {/* FPS Estimates */}
-                                        <div className="space-y-4">
-                                            <h4 className="font-bold flex items-center gap-2 text-lg">
-                                                <MonitorPlay className="h-6 w-6 text-primary" /> Estimated Gaming Performance
-                                            </h4>
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                                {analysis.fpsEstimates.map((est: any, idx: number) => (
-                                                    <div key={idx} className="bg-card border-2 rounded-xl p-4 text-center shadow-sm">
-                                                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-2">{est.game}</p>
-                                                        <p className="text-3xl font-headline font-black text-primary mb-1">{est.estimatedFps}</p>
-                                                        <Badge variant="outline" className="text-[10px] font-bold py-0">{est.resolution}</Badge>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Suggestions */}
-                                        {analysis.suggestions && analysis.suggestions.length > 0 && (
-                                            <div className="space-y-4 pt-2">
-                                                <h4 className="font-bold flex items-center gap-2 text-lg">
-                                                    <Zap className="h-6 w-6 text-orange-500" /> Buildbot Optimization Suggestions
-                                                </h4>
-                                                <div className="space-y-3">
-                                                    {analysis.suggestions.map((sug: any, idx: number) => (
-                                                        <div key={idx} className="bg-card border rounded-xl p-4 shadow-sm hover:border-primary/30 transition-colors">
-                                                            <div className="flex flex-wrap items-center gap-2 mb-2">
-                                                                <span className="line-through text-muted-foreground text-xs">{sug.originalComponent}</span>
-                                                                <span className="text-primary font-black text-xs">→</span>
-                                                                <span className="font-bold text-primary">{sug.suggestedComponent}</span>
-                                                            </div>
-                                                            <p className="text-muted-foreground text-xs leading-relaxed">{sug.reason}</p>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                        <div className="pt-4 pb-2">
-                                            <Button variant="outline" className="w-full" onClick={handleAnalyze} disabled={loading}>
-                                                Refresh Analysis
-                                            </Button>
-                                        </div>
-                                    </div>
-                                )}
-                            </ScrollArea>
-                        </DialogContent>
-                    </Dialog>
+                    <Button
+                        className="w-full font-headline tracking-wide flex items-center gap-2 bg-primary hover:bg-primary/90"
+                        size="lg"
+                        disabled={selectedParts === 0}
+                        onClick={() => {
+                            if (onAnalyze) {
+                                onAnalyze();
+                            } else {
+                                router.push('/ai-build-advisor');
+                            }
+                        }}
+                    >
+                        <BrainCircuit className="h-5 w-5" /> Analyze My Build
+                    </Button>
 
                     <Button variant="ghost" className="w-full text-muted-foreground hover:text-destructive h-8 text-xs" onClick={onClearBuild} disabled={selectedParts === 0}>
                         Clear Build
