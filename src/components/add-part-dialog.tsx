@@ -117,9 +117,10 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
         form.setValue("performanceScore", result.performanceScore || (result.performanceTier ? result.performanceTier * 10 : 50), { shouldValidate: true });
         form.setValue("dimensions", result.dimensions || { width: 0, height: 0, depth: 0 }, { shouldValidate: true });
         form.setValue("specifications", result.specifications, { shouldValidate: true });
+
         if (!form.getValues('imageUrl')) {
           const seed = result.partName.replace(/\s+/g, '').toLowerCase();
-          form.setValue('imageUrl', `https://picsum.photos/seed/${seed}/800/600`);
+          form.setValue('imageUrl', `https://picsum.photos/seed/${seed}/800/600`, { shouldValidate: true });
         }
       } else {
         toast({

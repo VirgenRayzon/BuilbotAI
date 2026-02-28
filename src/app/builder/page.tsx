@@ -36,6 +36,9 @@ import { Badge } from "@/components/ui/badge";
 import { PaginationControls } from "@/components/pagination-controls";
 import { PCVisualizer } from "@/components/pc-visualizer";
 import { useUserProfile } from "@/context/user-profile";
+import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
+import { BuilderFloatingChat } from "@/components/builder-floating-chat";
+import type { Resolution, WorkloadType } from "@/lib/types";
 
 type PartWithoutCategory = Omit<Part, 'category'>;
 
@@ -98,6 +101,8 @@ export default function BuilderPage() {
   const [build, setBuild] = useState<Record<string, ComponentData | ComponentData[] | null>>({
     CPU: null, GPU: null, Motherboard: null, RAM: null, Storage: [], PSU: null, Case: null, Cooler: null,
   });
+  const [resolution, setResolution] = useState<Resolution>('1440p');
+  const [workload, setWorkload] = useState<WorkloadType>('Balanced');
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Handle AI suggestions from window-level
@@ -407,7 +412,7 @@ export default function BuilderPage() {
   };
 
   return (
-    <main className="container mx-auto p-4 md:p-8">
+    <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-4 md:py-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div className="text-left">
           <h1 className="text-4xl font-headline font-bold">Build Your Masterpiece</h1>
@@ -418,8 +423,23 @@ export default function BuilderPage() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-8">
+      <div className="grid lg:grid-cols-12 gap-6 xl:gap-8">
+        {/* Left Sidebar: 2D Preview & Analytics */}
+        <div className="lg:col-span-3 hidden lg:block">
+          <div className="sticky top-20 flex flex-col gap-6 h-[calc(100vh-100px)] overflow-y-auto no-scrollbar pb-4 pr-1">
+            <PCVisualizer build={build} />
+            <BuilderSidebarLeft
+              build={build}
+              resolution={resolution}
+              onResolutionChange={setResolution}
+              workload={workload}
+              onWorkloadChange={setWorkload}
+            />
+          </div>
+        </div>
+
+        {/* Center: Parts Grid */}
+        <div className="lg:col-span-6">
 
           <InventoryToolbar
             categories={categories}
@@ -534,13 +554,22 @@ export default function BuilderPage() {
           )}
         </div>
 
-        <div className="lg:col-span-4">
+        {/* Right Sidebar: Your Build */}
+        <div className="lg:col-span-3">
           <div className="sticky top-20 flex flex-col gap-6 pb-4 pr-2">
-            <YourBuild build={build} onClearBuild={handleClearBuild} onRemovePart={handleRemovePart} />
-            <PCVisualizer build={build} />
+            <YourBuild
+              build={build}
+              onClearBuild={handleClearBuild}
+              onRemovePart={handleRemovePart}
+              resolution={resolution}
+              onResolutionChange={setResolution}
+              workload={workload}
+              onWorkloadChange={setWorkload}
+            />
           </div>
         </div>
       </div>
+      <BuilderFloatingChat />
     </main >
   );
 }

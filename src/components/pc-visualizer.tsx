@@ -7,26 +7,72 @@ interface PCVisualizerProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
 }
 
-function extractDimension(val: any): number | null {
+function extractDimension(val: any, index: number = 0): number | null {
     if (typeof val === 'number') return val;
     if (typeof val === 'string') {
-        const match = val.match(/(\d+(\.\d+)?)/);
-        return match ? parseFloat(match[1]) : null;
+        const lowerVal = val.toLowerCase();
+        // Handle "2.5 slots" or "3-slot"
+        if (lowerVal.includes('slot')) {
+            const num = parseFloat(lowerVal.match(/(\d+(\.\d+)?)/)?.[0] || "");
+            if (!isNaN(num)) return num;
+        }
+        const matches = val.match(/(\d+(\.\d+)?)/g);
+        if (matches && matches[index]) return parseFloat(matches[index]);
     }
     return null;
 }
 
-function getActualDimension(part: ComponentData | null, type: 'GPU' | 'Cooler' | 'PSU'): number {
+function getActualDimension(part: ComponentData | null, type: 'GPU' | 'Cooler' | 'PSU', aspect: 'primary' | 'secondary' = 'primary'): number {
     if (!part) return 0;
-    let val = 0;
-    if (type === 'GPU') {
-        val = extractDimension(part.dimensions?.depth) || extractDimension(part.dimensions?.width) || extractDimension(part.specifications?.['Length']) || 0;
-    } else if (type === 'Cooler') {
-        val = extractDimension(part.dimensions?.height) || extractDimension(part.specifications?.['Height']) || 0;
-    } else if (type === 'PSU') {
-        val = extractDimension(part.dimensions?.depth) || extractDimension(part.dimensions?.width) || extractDimension(part.specifications?.['Length']) || 0;
+
+    // Check direct dimensions first
+    if (part.dimensions) {
+        if (type === 'Cooler') return part.dimensions.height;
+        if (aspect === 'primary') {
+            return Math.max(part.dimensions.depth || 0, part.dimensions.width || 0);
+        } else {
+            // Secondary for GPU is height/thickness
+            return part.dimensions.height || 0;
+        }
     }
-    return val;
+
+    const specs = part.specifications || {};
+    const keys = Object.keys(specs);
+
+    // Find value by checking synonyms (case-insensitive)
+    const findValue = (synonyms: string[], targetIndex: number = 0) => {
+        const foundKey = keys.find(k => synonyms.some(s => k.toLowerCase() === s.toLowerCase()));
+        return foundKey ? extractDimension(specs[foundKey], targetIndex) : null;
+    };
+
+    if (type === 'GPU') {
+        if (aspect === 'primary') {
+            return findValue(['Length', 'Card Length', 'Max Length', 'GPU Length', 'Depth', 'GPU Depth', 'Length (mm)', 'Dimensions'], 0) || 0;
+        } else {
+            // Check for explicit thickness/slot first
+            let slotCount = findValue(['Slot', 'Slot Size', 'Expansion Slots'], 0);
+            if (slotCount !== null && slotCount < 6) return slotCount * 22; // ~22mm per slot
+
+            let thickness = findValue(['Thickness', 'Width', 'Card Width', 'Height'], 0);
+            // If the value is suspicious (like > 100mm), it might be the PCB height, not thickness.
+            if (thickness !== null) {
+                if (thickness > 100) return 66; // Fallback to chunky 3-slot look (approx 66mm)
+                return thickness;
+            }
+
+            // Otherwise check 3rd number in Dimensions string (L x H x W)
+            let dim3 = findValue(['Dimensions'], 2);
+            if (dim3) return dim3;
+
+            return 50; // Default chunky look
+        }
+    } else if (type === 'Cooler') {
+        return findValue(['Height', 'Cooler Height', 'Max Height', 'CPU Cooler Height', 'Height (mm)'], 0) || 0;
+    } else if (type === 'PSU') {
+        return findValue(['Length', 'PSU Length', 'Max Length', 'Max PSU Length', 'Depth', 'PSU Depth', 'PSU Dimensions'], 0) || 0;
+    }
+
+    return 0;
 }
 
 export function PCVisualizer({ build }: PCVisualizerProps) {
@@ -38,163 +84,248 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
 
     const hasCase = !!caseData;
 
-    // Hardcoded max dimensions as defaults or pull from case specs if available
-    const maxGpuLength = extractDimension(caseData?.specifications?.["Max GPU Length"]) || 325;
-    const maxCoolerHeight = extractDimension(caseData?.specifications?.["Max CPU Cooler Height"]) || 174;
-    const maxPsuLength = extractDimension(caseData?.specifications?.["Max PSU Length"]) || 170;
+    // Actual component dimensions (in mm) or defaults
+    const actualGpuLength = getActualDimension(gpuData, 'GPU', 'primary') || 0;
+    const actualGpuThickness = getActualDimension(gpuData, 'GPU', 'secondary') || 60;
+    const actualCoolerHeight = getActualDimension(coolerData, 'Cooler') || 0;
+    const actualPsuLength = getActualDimension(psuData, 'PSU') || 0;
 
-    // Actual component dimensions
-    const actualGpuLength = getActualDimension(gpuData, 'GPU');
-    const actualCoolerHeight = getActualDimension(coolerData, 'Cooler');
-    const actualPsuLength = getActualDimension(psuData, 'PSU');
+    // Motherboard dimensions based on Form Factor
+    const moboFF = (moboData?.specifications?.["Form Factor"] as string)?.toUpperCase() || "";
+    let moboWidth = 244;  // default ATX
+    let moboHeight = 305;
+    let moboLabel = "ATX BOARD";
 
-    // Default Case Layout Base Dimensions
-    const baseWidth = Math.max(400, maxGpuLength + 50); // Ensure the frame encompasses large GPUs
-    const baseHeight = 450;
-    const padding = 20;
+    if (moboFF.includes("ITX")) {
+        moboWidth = 170;
+        moboHeight = 170;
+        moboLabel = "ITX BOARD";
+    } else if (moboFF.includes("MATX") || moboFF.includes("MICRO ATX")) {
+        moboWidth = 244;
+        moboHeight = 244;
+        moboLabel = "mATX BOARD";
+    } else if (moboFF.includes("EATX") || moboFF.includes("E-ATX")) {
+        moboWidth = 330;
+        moboHeight = 305;
+        moboLabel = "E-ATX BOARD";
+    }
 
-    // Conversion factor from mm to SVG pixels. 
-    // We maintain a 1:1 ratio for simplicity, scaled later by viewBox mapping.
-    const mmToPx = (mm: number) => mm;
+    // Default Case Layout Base Dimensions (use dimensions if available)
+    let baseWidth = 450;
+    let baseHeight = 500;
 
-    const svgWidth = baseWidth + padding * 2;
-    const svgHeight = baseHeight + padding * 2;
+    if (caseData && caseData.dimensions) {
+        // Cases are deep, tall, wide. Usually depth is the visual width in this 2D side-profile map
+        baseWidth = caseData.dimensions.depth || 450;
+        baseHeight = caseData.dimensions.height || 500;
+    }
+
+    const padding = 40; // Increased padding to prevent edge clipping of overhanging parts
+
+    // Calculate the absolute bounds based on part positioning (relative to case top-left)
+    const moboX = padding + 30; // 30mm from the rear (left side in this view)
+    const moboY = padding + 40; // 40mm from the top exhaust
+
+    // GPU sits relative to the case rear (PCIe slot)
+    const gpuX = padding + 10;
+    // GPU typically starts around 100-140mm down from the top of an ATX board
+    const gpuY = moboY + 140;
+
+    // Check if the GPU length exceeds the case width
+    const gpuOuterX = gpuX + (actualGpuLength || 320);
+
+    // PSU sits at the bottom rear
+    const psuX = padding + 20;
+    // Assume a 120mm tall bottom shroud, PSU sits inside it
+    const psuY = padding + baseHeight - 100;
+    const psuOuterX = psuX + (actualPsuLength || 160);
+
+    // The maximum visual span required
+    const maxRequiredWidth = Math.max(
+        baseWidth + (padding * 2), // The case width + padding
+        gpuOuterX + padding,       // The furthest GPU edge + padding
+        psuOuterX + padding,       // The furthest PSU edge + padding
+        moboX + moboWidth + padding // The furthest mobo edge + padding
+    );
+
+    const maxRequiredHeight = baseHeight + (padding * 2);
 
     return (
         <div className="w-full h-[450px] bg-[#111] rounded-xl border border-primary/10 relative overflow-hidden group flex items-center justify-center font-sans shadow-inner">
             <div className="absolute top-4 left-4 z-10 flex flex-col gap-1">
-                <h3 className="text-sm font-headline font-bold text-white tracking-widest bg-black/50 px-2 py-1 rounded">2D CLEARANCE PREVIEW</h3>
-                {caseData && <span className="text-xs text-muted-foreground bg-black/50 px-2 py-1 rounded w-fit">{caseData.model}</span>}
+                <h3 className="text-[10px] font-headline font-bold text-white/40 tracking-[0.2em] bg-white/5 px-2 py-1 rounded">2D CLEARANCE PREVIEW</h3>
+                {caseData && <span className="text-[10px] text-primary/60 bg-primary/5 px-2 py-1 rounded w-fit border border-primary/10 uppercase tracking-wider">{caseData.model}</span>}
             </div>
 
             <svg
                 width="100%"
                 height="100%"
-                viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                // The viewBox dynamically adjusts its scale ratio to fit standard cases and over-extended GPUs
+                viewBox={`0 0 ${maxRequiredWidth} ${maxRequiredHeight}`}
                 preserveAspectRatio="xMidYMid meet"
                 className="drop-shadow-2xl"
             >
-                {/* Defs for gradients */}
                 <defs>
                     <linearGradient id="moboGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#2563eb" stopOpacity={0.15} />
-                        <stop offset="100%" stopColor="#1e3a8a" stopOpacity={0.4} />
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.05} />
+                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.15} />
                     </linearGradient>
-                    <linearGradient id="gpuGradMax" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.1} />
-                        <stop offset="100%" stopColor="#059669" stopOpacity={0.2} />
+                    <linearGradient id="gpuGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="#10b981" stopOpacity={0.2} />
                     </linearGradient>
-                    <linearGradient id="gpuGradActual" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="#059669" stopOpacity={0.8} />
+                    <linearGradient id="psuGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.2} />
                     </linearGradient>
-                    <linearGradient id="psuGradMax" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.1} />
-                        <stop offset="100%" stopColor="#d97706" stopOpacity={0.2} />
-                    </linearGradient>
-                    <linearGradient id="psuGradActual" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.5} />
-                        <stop offset="100%" stopColor="#d97706" stopOpacity={0.8} />
-                    </linearGradient>
+
+                    {/* Pattern for clipping area outside the case to show interference */}
+                    <pattern id="diagonalHatch" width="10" height="10" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+                        <line x1="0" y1="0" x2="0" y2="10" stroke="#ef4444" strokeWidth="2" opacity="0.5" />
+                    </pattern>
                 </defs>
 
-                {/* Case Outline Basic Case Interior Frame */}
-                <rect x={padding} y={padding} width={baseWidth} height={baseHeight} rx={8} fill="#18181b" stroke="#3f3f46" strokeWidth={3} />
+                {/* Case Outline Interior Frame */}
+                {hasCase && (
+                    <rect x={padding} y={padding} width={baseWidth} height={baseHeight} rx={12} fill="#141417" stroke="#333" strokeWidth={2} />
+                )}
 
-                {/* Vertical Cable Management Slots / Rubber Grommets */}
-                {[0, 1, 2].map((i) => (
-                    <rect key={`slot-${i}`} x={padding + baseWidth - 70} y={padding + 80 + i * 90} width={25} height={60} rx={6} fill="#0d0d0d" stroke="#27272a" />
-                ))}
+                {/* Internal components only visible if case is selected and part exists */}
+                {hasCase && (
+                    <>
+                        {/* Motherboard Zone */}
+                        {moboData && (
+                            <g transform={`translate(${moboX}, ${moboY})`}>
+                                <rect
+                                    width={moboWidth}
+                                    height={moboHeight}
+                                    rx={4}
+                                    fill="url(#moboGrad)"
+                                    stroke={moboWidth + 30 > baseWidth || moboHeight + 40 > baseHeight ? "#ef4444" : "#3b82f6"}
+                                    strokeWidth={moboWidth + 30 > baseWidth || moboHeight + 40 > baseHeight ? 2.5 : 1.5}
+                                    strokeDasharray="4 4"
+                                    className="transition-all duration-500"
+                                />
 
-                {/* ATX Motherboard Zone (Blue) */}
-                <g transform={`translate(${padding + 30}, ${padding + 50})`}>
-                    <rect width={244} height={305} rx={6} fill="url(#moboGrad)" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 4" />
-                    <text x={20} y={280} fill="#60a5fa" fontSize="24" fontWeight="bold" opacity={0.5}>ATX</text>
+                                <text
+                                    x={moboWidth / 2}
+                                    y={moboHeight - 15}
+                                    fill={moboWidth + 30 > baseWidth ? "#ef4444" : "#3b82f6"}
+                                    fontSize="12"
+                                    fontWeight="bold"
+                                    textAnchor="middle"
+                                    opacity={0.4}
+                                    className="uppercase tracking-widest"
+                                >
+                                    {moboLabel} {moboWidth + 30 > baseWidth ? " (TOO WIDE)" : ""}
+                                </text>
 
-                    {/* CPU Cooler Zone (Green) relative to Mobo socket area */}
-                    <g transform={`translate(40, 40)`}>
-                        <rect width={130} height={mmToPx(maxCoolerHeight)} rx={4} fill="#10b981" fillOpacity={0.1} stroke="#10b981" strokeWidth={1} strokeDasharray="4 4" />
+                                {/* CPU Socket Area (visual center for cooler) */}
+                                <rect x={moboWidth / 2 - 25} y={40} width={50} height={50} rx={4} fill="#222" stroke="#444" strokeWidth={1} />
 
-                        {/* Actual Cooler */}
-                        {actualCoolerHeight > 0 && (
-                            <rect width={130} height={mmToPx(actualCoolerHeight)} rx={4} fill="#10b981" fillOpacity={0.3} stroke="#34d399" strokeWidth={2} />
+                                {/* Cooler Box (centered on socket) */}
+                                {coolerData && (
+                                    <g transform={`translate(${moboWidth / 2 - 60}, 15)`}>
+                                        <rect
+                                            width={120}
+                                            height={actualCoolerHeight > 0 ? actualCoolerHeight : 100}
+                                            rx={4}
+                                            fill="#10b981"
+                                            fillOpacity={0.15}
+                                            stroke="#10b981"
+                                            strokeWidth={1.5}
+                                            strokeDasharray="4 4"
+                                            className="transition-all duration-500"
+                                        />
+                                        <text x={60} y={35} fill="#10b981" fontSize="10" fontWeight="bold" textAnchor="middle" opacity={0.5}>COOLER</text>
+                                    </g>
+                                )}
+                            </g>
                         )}
 
-                        <text x={65} y={45} fill="#a7f3d0" fontSize="22" fontWeight="bold" textAnchor="middle">
-                            {actualCoolerHeight > 0 ? `${actualCoolerHeight}mm` : `${maxCoolerHeight}mm`}
-                        </text>
-                        {actualCoolerHeight > 0 && (
-                            <text x={65} y={65} fill="#6ee7b7" fontSize="13" fontWeight="500" textAnchor="middle">
-                                (MAX {maxCoolerHeight}mm)
-                            </text>
+                        {/* GPU Box */}
+                        {gpuData && (
+                            <g transform={`translate(${gpuX}, ${gpuY})`}>
+                                <rect
+                                    width={actualGpuLength > 0 ? actualGpuLength : 320}
+                                    height={Math.max(20, Math.min(actualGpuThickness, 120))}
+                                    rx={8}
+                                    fill={gpuOuterX > baseWidth + padding ? "url(#diagonalHatch)" : "url(#gpuGrad)"}
+                                    stroke={gpuOuterX > baseWidth + padding ? "#ef4444" : "#10b981"}
+                                    strokeWidth={gpuOuterX > baseWidth + padding ? 2.5 : 1.5}
+                                    strokeDasharray="4 4"
+                                    className="transition-all duration-500"
+                                />
+                                <text
+                                    x={15}
+                                    y={Math.min(actualGpuThickness, 120) / 2 + 5}
+                                    fill={gpuOuterX > baseWidth + padding ? "#ef4444" : "#10b981"}
+                                    fontSize="12"
+                                    fontWeight="bold"
+                                    className="uppercase tracking-widest font-mono"
+                                >
+                                    {actualGpuLength > 0 ? `${actualGpuLength}MM` : "GPU"}
+                                    {actualGpuThickness > 0 && actualGpuThickness < 120 ? ` × ${Math.round(actualGpuThickness)}MM` : ""}
+                                    {gpuOuterX > baseWidth + padding ? " (BLOCKED)" : ""}
+                                </text>
+                            </g>
                         )}
-                    </g>
-                </g>
 
-                {/* GPU Clearance Zone (Green Horizontal Box) */}
-                {/* Positioned approximately at PCIe slots x16 location */}
-                <g transform={`translate(${padding + 10}, ${padding + 220})`}>
-                    {/* Max GPU Area */}
-                    <rect width={mmToPx(maxGpuLength)} height={65} rx={8} fill="url(#gpuGradMax)" stroke="#10b981" strokeWidth={1} strokeDasharray="4 4" />
+                        {/* PSU Shroud and Unit */}
+                        <g transform={`translate(${padding}, ${padding + baseHeight - 120})`}>
+                            {/* Shroud */}
+                            <rect width={baseWidth} height={120} rx={12} fill="#0d0d0d" stroke="#222" strokeWidth={2} />
 
-                    {/* Actual GPU Area */}
-                    {actualGpuLength > 0 && (
-                        <rect width={mmToPx(actualGpuLength)} height={65} rx={8} fill="url(#gpuGradActual)" stroke="#34d399" strokeWidth={2} />
-                    )}
-
-                    <text x={actualGpuLength > 0 ? Math.min(mmToPx(actualGpuLength) / 2, mmToPx(maxGpuLength) / 2) : mmToPx(maxGpuLength) / 2} y={40} fill="#a7f3d0" fontSize="24" fontWeight="bold" textAnchor="middle" className="drop-shadow-md">
-                        {actualGpuLength > 0 ? `${actualGpuLength}mm` : `MAX: ${maxGpuLength}mm`}
-                    </text>
-                    {actualGpuLength > 0 && (
-                        <text x={mmToPx(maxGpuLength) - 10} y={40} fill="#6ee7b7" fontSize="14" fontWeight="bold" textAnchor="end" opacity={0.8}>
-                            MAX: {maxGpuLength}mm
-                        </text>
-                    )}
-                </g>
-
-                {/* Rear PCIe Slot Covers */}
-                <g transform={`translate(${padding + 5}, ${padding + 180})`}>
-                    {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-                        <g key={`pcie-${i}`} transform={`translate(0, ${i * 18})`}>
-                            <rect width={10} height={15} rx={2} fill="#27272a" />
-                            <text x={-20} y={12} fill="#eab308" fontSize="10">{i + 1}</text>
+                            {/* PSU Box */}
+                            {psuData && (
+                                <g transform={`translate(20, 20)`}>
+                                    <rect
+                                        width={actualPsuLength > 0 ? actualPsuLength : 160}
+                                        height={80}
+                                        rx={4}
+                                        fill={psuOuterX > baseWidth + padding ? "url(#diagonalHatch)" : "url(#psuGrad)"}
+                                        stroke={psuOuterX > baseWidth + padding ? "#ef4444" : "#f59e0b"}
+                                        strokeWidth={psuOuterX > baseWidth + padding ? 2.5 : 1.5}
+                                        strokeDasharray="4 4"
+                                        className="transition-all duration-500"
+                                    />
+                                    <text
+                                        x={15}
+                                        y={45}
+                                        fill={psuOuterX > baseWidth + padding ? "#ef4444" : "#f59e0b"}
+                                        fontSize="12"
+                                        fontWeight="bold"
+                                        className="uppercase tracking-widest"
+                                        opacity={0.6}
+                                    >
+                                        PSU {actualPsuLength > 0 ? `(${actualPsuLength}mm)` : "ATX"}
+                                        {psuOuterX > baseWidth + padding ? " (TOO LONG)" : ""}
+                                    </text>
+                                </g>
+                            )}
                         </g>
-                    ))}
-                </g>
 
-                {/* PSU Clearance Zone (Yellow Bottom Box) */}
-                <g transform={`translate(${padding + 10}, ${padding + baseHeight - 110})`}>
-                    {/* PSU Shroud boundary */}
-                    <rect width={baseWidth - 20} height={100} rx={6} fill="#0d0d0d" stroke="#27272a" strokeWidth={2} />
-
-                    {/* Max PSU Area Box */}
-                    <rect x={10} y={10} width={mmToPx(maxPsuLength)} height={80} rx={4} fill="url(#psuGradMax)" stroke="#fbbf24" strokeWidth={1.5} strokeDasharray="4 4" />
-
-                    {/* Actual PSU Fill */}
-                    {actualPsuLength > 0 && (
-                        <rect x={10} y={10} width={mmToPx(actualPsuLength)} height={80} rx={4} fill="url(#psuGradActual)" stroke="#fcd34d" strokeWidth={2.5} />
-                    )}
-
-                    {/* PSU Texts */}
-                    <text x={25} y={42} fill="#fef3c7" fontSize="16" fontWeight="bold" className="drop-shadow-sm">
-                        {actualPsuLength > 0 ? `PSU Length: ${actualPsuLength}mm` : "ATX power supply"}
-                    </text>
-                    <text x={25} y={65} fill="#fde68a" fontSize="14" opacity={0.9}>
-                        (Max: {maxPsuLength}mm)
-                    </text>
-                </g>
-
+                        {/* Rear PCIe Slot Covers */}
+                        <g transform={`translate(${padding + 5}, ${padding + 160})`}>
+                            {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+                                <rect key={`pcie-${i}`} y={i * 20} width={8} height={16} rx={2} fill="#222" />
+                            ))}
+                        </g>
+                    </>
+                )}
             </svg>
 
             {/* Empty State Overlay */}
             {!hasCase && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                    <p className="text-sm font-medium text-white bg-black/80 px-4 py-2 rounded-xl border border-[#333] shadow-lg backdrop-blur-md">
-                        Please select a PC Case to view spatial clearances
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 backdrop-blur-[2px]">
+                    <p className="text-[11px] font-bold text-white tracking-[0.2em] uppercase bg-black/80 px-6 py-3 rounded-full border border-white/5 shadow-2xl">
+                        Select a PC Case to begin clearance preview
                     </p>
                 </div>
             )}
         </div>
     );
 }
+
+
 

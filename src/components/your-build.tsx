@@ -27,31 +27,11 @@ interface YourBuildProps {
     onClearBuild: () => void;
     onRemovePart: (category: string, index?: number) => void;
     onAnalyze?: () => void;
+    resolution: Resolution;
+    onResolutionChange: (res: Resolution) => void;
+    workload: WorkloadType;
+    onWorkloadChange: (workload: WorkloadType) => void;
     className?: string;
-}
-
-function PowerMeter({ value, max }: { value: number; max: number }) {
-    const maxToUse = max > 0 ? max : Math.max(value + 200, 600);
-    const percentage = Math.min((value / maxToUse) * 100, 100);
-
-    let colorClass = "bg-emerald-500 text-emerald-500";
-    if (percentage > 90) colorClass = "bg-red-500 text-red-500";
-    else if (percentage > 70) colorClass = "bg-amber-500 text-amber-500";
-
-    return (
-        <div className="space-y-2">
-            <div className="flex justify-between items-baseline">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Power Demand</span>
-                <span className="text-base font-bold font-headline">{value}W <span className="text-muted-foreground font-normal text-xs">/ {maxToUse}W</span></span>
-            </div>
-            <div className="h-1.5 w-full bg-secondary/50 rounded-full overflow-hidden border border-border/50">
-                <div
-                    className={`h-full transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(0,0,0,0.2)] ${colorClass.split(' ')[0]}`}
-                    style={{ width: `${percentage}%` }}
-                />
-            </div>
-        </div>
-    );
 }
 
 function BottleneckMeter({ build, resolution }: { build: Record<string, ComponentData | ComponentData[] | null>, resolution: Resolution }) {
@@ -85,12 +65,11 @@ const componentIcons: Record<string, React.ComponentType<{ className?: string }>
     cooler: Wind,
 };
 
-export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, className }: YourBuildProps) {
+export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, resolution, onResolutionChange, workload, onWorkloadChange, className }: YourBuildProps) {
     const [analysis, setAnalysis] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [resolution, setResolution] = useState<Resolution>('1440p');
-    const [workload, setWorkload] = useState<WorkloadType>('Balanced');
+    // resolution and workload are now passed as props
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isCheckoutDialogOpen, setIsCheckoutDialogOpen] = useState(false);
     const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -258,28 +237,6 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, classN
             <CardHeader className="flex flex-row items-center justify-between py-5 bg-muted/40 border-b flex-none">
                 <CardTitle className="font-headline text-xl">Your Build</CardTitle>
                 <div className="flex flex-col gap-2 items-end">
-                    <div className="flex items-center gap-2">
-                        <Select value={resolution} onValueChange={(val: any) => setResolution(val)}>
-                            <SelectTrigger className="h-7 text-[10px] w-[80px] bg-background/50">
-                                <SelectValue placeholder="Res" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="1080p" className="text-[10px]">1080p</SelectItem>
-                                <SelectItem value="1440p" className="text-[10px]">1440p</SelectItem>
-                                <SelectItem value="4K" className="text-[10px]">4K</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Select value={workload} onValueChange={(val: any) => setWorkload(val)}>
-                            <SelectTrigger className="h-7 text-[10px] w-[90px] bg-background/50">
-                                <SelectValue placeholder="Workload" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Balanced" className="text-[10px]">Balanced</SelectItem>
-                                <SelectItem value="Esports" className="text-[10px]">Esports</SelectItem>
-                                <SelectItem value="AAA" className="text-[10px]">AAA</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
                     <Badge variant="secondary" className="font-mono text-xs px-2 py-0.5 whitespace-nowrap">{selectedParts}/{totalParts} PARTS</Badge>
                 </div>
             </CardHeader>
@@ -346,7 +303,6 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, classN
 
                 <div className="pt-4 flex-none">
                     <Separator className="mb-3 opacity-50" />
-                    <PowerMeter value={totalWattage} max={psuWattage} />
                     <BottleneckMeter build={build} resolution={resolution} />
 
                     <div className="flex justify-between items-center pt-3 mt-3 border-t border-dashed">

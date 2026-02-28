@@ -6,12 +6,14 @@ import { ChatForm, type FormSchema } from "@/components/chat-form";
 import { BuildSummary } from "@/components/build-summary";
 import { getAiRecommendations, getAiBuildCritique } from "@/app/actions";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import type { Build, AiRecommendation, ComponentData } from "@/lib/types";
+import type { Build, AiRecommendation, ComponentData, Resolution, WorkloadType } from "@/lib/types";
 import { Cpu, Server, CircuitBoard, MemoryStick, Bot, Wallet, Database, Power, RectangleVertical, Wind } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AIBuildCritique } from "@/components/ai-build-critique";
 import { YourBuild } from "@/components/your-build";
+import { PCVisualizer } from "@/components/pc-visualizer";
+import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
 import { useMemo } from "react";
 
 const componentMetadata: { [key: string]: { icon: React.ComponentType<{ className?: string }>, image: any } } = {
@@ -56,6 +58,8 @@ export default function AiBuildAdvisorPage() {
   const [builderState, setBuilderState] = useState<Record<string, ComponentData | ComponentData[] | null> | null>(null);
   const [totalPrice, setTotalPrice] = useState(0);
   const [isPending, startTransition] = useTransition();
+  const [resolution, setResolution] = useState<Resolution>('1440p');
+  const [workload, setWorkload] = useState<WorkloadType>('AAA');
 
   const [critiqueAnalysis, setCritiqueAnalysis] = useState<any>(null);
   const [critiqueLoading, setCritiqueLoading] = useState(false);
@@ -312,7 +316,7 @@ export default function AiBuildAdvisorPage() {
   );
 
   return (
-    <main className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-8">
+    <main className="flex-1 w-full max-w-[1800px] mx-auto p-4 md:p-8">
       {builderState ? (
         <Tabs defaultValue="critique" className="w-full h-full">
           <TabsList className="grid w-full grid-cols-2 mb-8 max-w-md mx-auto">
@@ -321,16 +325,45 @@ export default function AiBuildAdvisorPage() {
           </TabsList>
 
           <TabsContent value="critique" className="mt-0 h-full">
-            <div className="grid lg:grid-cols-12 gap-8 h-full">
-              <div className="lg:col-span-4">
-                <div className="sticky top-20 flex flex-col gap-6 max-h-[calc(100vh-6rem)] overflow-y-auto pb-4 pr-2">
-                  <YourBuild build={builderState} onClearBuild={() => {
-                    localStorage.removeItem('pc_builder_state');
-                    setBuilderState(null);
-                  }} onRemovePart={handleRemovePart} onAnalyze={handleCritique} />
+            <div className="grid lg:grid-cols-12 gap-6 h-full">
+
+              {/* Left Column: Visualizer & Analytics (Matches Builder's lg:col-span-3) */}
+              <div className="lg:col-span-3">
+                <div className="sticky top-20 flex flex-col gap-6 max-h-[calc(100vh-6rem)] overflow-y-auto pb-4 pr-2 custom-scrollbar">
+                  <div className="flex flex-col gap-6">
+                    <PCVisualizer build={builderState} />
+                    <BuilderSidebarLeft
+                      build={builderState}
+                      resolution={resolution}
+                      onResolutionChange={setResolution}
+                      workload={workload}
+                      onWorkloadChange={setWorkload}
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="lg:col-span-8">
+
+              {/* Middle Column: Your Build Specs */}
+              <div className="lg:col-span-3 border-r border-border/50 pr-6">
+                <div className="sticky top-20 flex flex-col gap-6 max-h-[calc(100vh-6rem)] overflow-y-auto pb-4 pr-2 custom-scrollbar">
+                  <YourBuild
+                    build={builderState}
+                    onClearBuild={() => {
+                      localStorage.removeItem('pc_builder_state');
+                      setBuilderState(null);
+                    }}
+                    onRemovePart={handleRemovePart}
+                    onAnalyze={handleCritique}
+                    resolution={resolution}
+                    onResolutionChange={setResolution}
+                    workload={workload}
+                    onWorkloadChange={setWorkload}
+                  />
+                </div>
+              </div>
+
+              {/* Right Column: AI Critique */}
+              <div className="lg:col-span-6 pl-2">
                 <AIBuildCritique
                   build={builderState}
                   externalAnalysis={critiqueAnalysis}
@@ -339,6 +372,7 @@ export default function AiBuildAdvisorPage() {
                   onRefresh={() => handleCritique(true)}
                 />
               </div>
+
             </div>
           </TabsContent>
           <TabsContent value="generate" className="mt-0 h-full">

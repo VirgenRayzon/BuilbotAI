@@ -8,6 +8,18 @@ export interface BottleneckResult {
     color: string; // For UI styling
 }
 
+// Use performanceTier (1-4) or fallback to mapping the 0-100 score to 1-4 for safety
+export const getTier = (comp: ComponentData): ComponentTier => {
+    if (comp.performanceTier) return Math.min(Math.max(comp.performanceTier, 1), 4) as ComponentTier;
+    if (comp.performanceScore) {
+        if (comp.performanceScore >= 85) return 4;
+        if (comp.performanceScore >= 65) return 3;
+        if (comp.performanceScore >= 45) return 2;
+        return 1;
+    }
+    return 2; // Default to mid-range if unknown
+};
+
 export const calculateBottleneck = (
     build: Record<string, ComponentData | ComponentData[] | null>,
     resolution: Resolution = '1080p'
@@ -22,18 +34,6 @@ export const calculateBottleneck = (
             color: '#9ca3af', // Gray
         };
     }
-
-    // Use performanceTier (1-4) or fallback to mapping the 0-100 score to 1-4 for safety
-    const getTier = (comp: ComponentData): ComponentTier => {
-        if (comp.performanceTier) return Math.min(Math.max(comp.performanceTier, 1), 4) as ComponentTier;
-        if (comp.performanceScore) {
-            if (comp.performanceScore >= 85) return 4;
-            if (comp.performanceScore >= 65) return 3;
-            if (comp.performanceScore >= 45) return 2;
-            return 1;
-        }
-        return 2; // Default to mid-range if unknown
-    };
 
     const cpuTier = getTier(cpu);
     const gpuTier = getTier(gpu);
