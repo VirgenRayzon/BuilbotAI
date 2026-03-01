@@ -16,8 +16,8 @@ export type ComponentData = {
   wattage?: number;
   socket?: string;
   ramType?: string;
-  performanceTier?: number; // 1-10 (Legacy)
-  performanceScore?: number; // 0-100 (New)
+  performanceTier?: number; // 1-4 (Entry=1, Mid=2, High=3, Enthusiast=4)
+  performanceScore?: number; // 0-100 (preferred — used for tier fallback)
   dimensions?: {
     width: number;
     height: number;
@@ -52,8 +52,8 @@ export type Part = {
   imageUrl: string;
   specifications: Record<string, string | number>;
   wattage?: number;
-  performanceTier?: number;
-  performanceScore?: number;
+  performanceTier?: number; // 1-4 (Entry=1, Mid=2, High=3, Enthusiast=4)
+  performanceScore?: number; // 0-100 (preferred — used for tier fallback)
   socket?: string;
   ramType?: string;
   dimensions?: {

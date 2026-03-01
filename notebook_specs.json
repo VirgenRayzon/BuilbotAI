@@ -1,0 +1,14 @@
+[
+  {
+    "query": "List ALL the core business logic rules for BuildbotAI. Include: PSU overhead requirements, bottleneck tier system, currency conversion rates, DDR matching requirements, and any other specific technical constraints.",
+    "response": "Error calling tool 'chat_with_notebook': Chat interaction failed: Not authenticated or browser not ready"
+  },
+  {
+    "query": "What are the exact data structures and fields expected for a PC Component in BuildbotAI?",
+    "response": "Error calling tool 'chat_with_notebook': Chat interaction failed: Not authenticated or browser not ready"
+  },
+  {
+    "query": "What compatibility checks must the system perform? List every rule including socket, RAM DDR generation, form factor, cooler TDP, GPU clearance, and any special motherboard connectors.",
+    "response": "Error calling tool 'chat_with_notebook': Chat interaction failed: Not authenticated or browser not ready"
+  }
+]

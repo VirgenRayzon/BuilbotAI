@@ -18,6 +18,8 @@ export function checkCompatibility(build: Record<string, ComponentData | Compone
     const gpu = build["GPU"] as ComponentData | null;
     const case_ = build["Case"] as ComponentData | null;
     const cooler = build["Cooler"] as ComponentData | null;
+    const storage = build["Storage"];
+    const storageList = Array.isArray(storage) ? storage : storage ? [storage] : [];
 
     // 1. Socket Compatibility
     if (cpu && mobo) {
@@ -39,35 +41,60 @@ export function checkCompatibility(build: Record<string, ComponentData | Compone
         }
     }
 
-    // 2. RAM Type Compatibility
-    if (mobo && ram) {
+    // 2. RAM Type Compatibility (Mobo ↔ RAM AND CPU ↔ RAM — spec: match strictly to both)
+    if (ram) {
         const ramList = Array.isArray(ram) ? ram : [ram];
-        const moboRamTypeRaw = mobo.ramType || mobo.specifications?.["Memory Type"] || mobo.specifications?.["RAM Type"] || mobo.specifications?.["Memory"];
-        const moboRamType = moboRamTypeRaw ? String(moboRamTypeRaw).toUpperCase() : null;
 
-        ramList.forEach(r => {
-            const ramTypeRaw = r.ramType || r.specifications?.["Type"] || r.specifications?.["Memory Type"] || (r.model.includes("DDR5") ? "DDR5" : r.model.includes("DDR4") ? "DDR4" : null);
-            const ramType = ramTypeRaw ? String(ramTypeRaw).toUpperCase() : null;
+        // 2a. Mobo ↔ RAM
+        if (mobo) {
+            const moboRamTypeRaw = mobo.ramType || mobo.specifications?.["RAM Type"] || mobo.specifications?.["Memory Type"] || mobo.specifications?.["Memory"];
+            const moboRamType = moboRamTypeRaw ? String(moboRamTypeRaw).toUpperCase() : null;
 
-            if (moboRamType && ramType) {
-                // If neither contains the other, it's a mismatch (e.g., DDR4 vs DDR5)
-                if (!moboRamType.includes(ramType) && !ramType.includes(moboRamType)) {
-                    issues.push({
-                        severity: "error",
-                        message: `RAM type mismatch: Motherboard supports ${moboRamType} but ${r.model} is ${ramType}.`,
-                        componentA: "Motherboard",
-                        componentB: "RAM"
-                    });
+            ramList.forEach(r => {
+                const ramTypeRaw = r.ramType || r.specifications?.["Type"] || r.specifications?.["Memory Type"] || (r.model.includes("DDR5") ? "DDR5" : r.model.includes("DDR4") ? "DDR4" : null);
+                const ramType = ramTypeRaw ? String(ramTypeRaw).toUpperCase() : null;
+
+                if (moboRamType && ramType) {
+                    if (!moboRamType.includes(ramType) && !ramType.includes(moboRamType)) {
+                        issues.push({
+                            severity: "error",
+                            message: `RAM type mismatch: Motherboard supports ${moboRamType} but ${r.model} is ${ramType}.`,
+                            componentA: "Motherboard",
+                            componentB: "RAM"
+                        });
+                    }
                 }
+            });
+        }
+
+        // 2b. CPU ↔ RAM (spec: DDR gen must match both CPU and Motherboard)
+        if (cpu) {
+            const cpuMemTypeRaw = cpu.specifications?.["Memory Type"] || cpu.specifications?.["Supported Memory"];
+            const cpuMemType = cpuMemTypeRaw ? String(cpuMemTypeRaw).toUpperCase() : null;
+
+            if (cpuMemType) {
+                ramList.forEach(r => {
+                    const ramTypeRaw = r.ramType || r.specifications?.["Type"] || r.specifications?.["Memory Type"] || (r.model.includes("DDR5") ? "DDR5" : r.model.includes("DDR4") ? "DDR4" : null);
+                    const ramType = ramTypeRaw ? String(ramTypeRaw).toUpperCase() : null;
+
+                    if (ramType && !cpuMemType.includes(ramType) && !ramType.includes(cpuMemType)) {
+                        issues.push({
+                            severity: "error",
+                            message: `RAM type mismatch: CPU supports ${cpuMemType} but ${r.model} is ${ramType}.`,
+                            componentA: "CPU",
+                            componentB: "RAM"
+                        });
+                    }
+                });
             }
-        });
+        }
     }
 
-    // 3. PSU Wattage Check
+    // 3. PSU Wattage Check (spec: 20-30% overhead — error at >80% load, warning at >65%)
     if (psu) {
         let totalWattage = 0;
-        Object.values(build).forEach(val => {
-            if (!val) return;
+        Object.entries(build).forEach(([key, val]) => {
+            if (key === 'PSU' || !val) return; // Exclude PSU itself
             const items = Array.isArray(val) ? val : [val];
             items.forEach(item => {
                 totalWattage += item.wattage || 0;
@@ -77,25 +104,29 @@ export function checkCompatibility(build: Record<string, ComponentData | Compone
         const psuWattageMatch = psu.model.match(/(\d+)W/i);
         const psuCapacity = psu.wattage || (psuWattageMatch ? parseInt(psuWattageMatch[1]) : 0);
 
-        if (psuCapacity > 0 && totalWattage > psuCapacity * 0.9) {
+        if (psuCapacity > 0 && totalWattage > psuCapacity * 0.8) {
+            // Less than 20% headroom — spec violation (error)
             issues.push({
                 severity: "error",
-                message: `Insufficient Power: Total estimated wattage (${totalWattage}W) is too close to or exceeds PSU capacity (${psuCapacity}W).`,
+                message: `Insufficient Power Headroom: Total estimated draw (${totalWattage}W) leaves less than 20% headroom on the PSU (${psuCapacity}W). Upgrade to at least ${Math.ceil(totalWattage * 1.25)}W.`,
                 componentA: "PSU"
             });
-        } else if (psuCapacity > 0 && totalWattage > psuCapacity * 0.7) {
+        } else if (psuCapacity > 0 && totalWattage > psuCapacity * 0.65) {
+            // Less than 35% headroom — early warning
             issues.push({
                 severity: "warning",
-                message: `Power Headroom: Total estimated wattage (${totalWattage}W) is over 70% of PSU capacity (${psuCapacity}W). Consider a higher wattage PSU for efficiency and future upgrades.`,
+                message: `Power Headroom Warning: Total estimated draw (${totalWattage}W) is over 65% of PSU capacity (${psuCapacity}W). Consider a higher wattage PSU for efficiency and future upgrades.`,
                 componentA: "PSU"
             });
         }
     }
 
-    // 4. Case Clearance (Simplified)
+    // 4. Case GPU Clearance (spec: GPU length in mm vs case max GPU length)
     if (case_ && gpu) {
-        const gpuLength = gpu.dimensions?.width || 0; // Assuming width is the longest dimension for GPU
-        const caseGpuMaxVal = case_.specifications?.["Max GPU Length"] || case_.dimensions?.width || 0;
+        // GPU's physical length — check the dedicated spec key first, then dimensions
+        const gpuLengthRaw = gpu.specifications?.["Length (Depth) (mm)"] || gpu.dimensions?.depth || gpu.dimensions?.width || 0;
+        const gpuLength = typeof gpuLengthRaw === 'string' ? parseFloat(gpuLengthRaw) : gpuLengthRaw;
+        const caseGpuMaxVal = case_.specifications?.["Max GPU Length"] || case_.dimensions?.depth || 0;
         const caseGpuMax = typeof caseGpuMaxVal === 'string' ? parseFloat(caseGpuMaxVal) : caseGpuMaxVal;
 
         if (gpuLength > 0 && typeof caseGpuMax === 'number' && caseGpuMax > 0 && gpuLength > caseGpuMax) {
@@ -104,6 +135,67 @@ export function checkCompatibility(build: Record<string, ComponentData | Compone
                 message: `GPU Length: ${gpu.model} (${gpuLength}mm) may not fit in the selected case (Max ${caseGpuMax}mm).`,
                 componentA: "Case",
                 componentB: "GPU"
+            });
+        }
+    }
+
+    // 5. Cooler TDP check (spec: cooler wattage must meet or exceed CPU TDP)
+    if (cpu && cooler) {
+        const cpuTdp = cpu.wattage || 0;
+        const coolerRating = cooler.wattage || 0;
+
+        if (cpuTdp > 0 && coolerRating > 0 && coolerRating < cpuTdp) {
+            issues.push({
+                severity: "error",
+                message: `Cooler Insufficient: ${cooler.model} is rated for ${coolerRating}W but your CPU (${cpu.model}) has a ${cpuTdp}W TDP. Upgrade to a cooler rated for at least ${cpuTdp}W.`,
+                componentA: "Cooler",
+                componentB: "CPU"
+            });
+        }
+    }
+
+    // 6. Back-Connect (BTF/Project Stealth) motherboard compatibility check
+    if (mobo && case_) {
+        const moboModelUpper = mobo.model.toUpperCase();
+        const moboSpecs = JSON.stringify(mobo.specifications || {}).toUpperCase();
+        const isBtfMobo = moboModelUpper.includes("BTF") || moboModelUpper.includes("PROJECT STEALTH") || moboSpecs.includes("BACK-CONNECT") || moboSpecs.includes("BTF");
+
+        if (isBtfMobo) {
+            const caseModelUpper = case_.model.toUpperCase();
+            const caseSpecs = JSON.stringify(case_.specifications || {}).toUpperCase();
+            // Check both 'Back-Connect Cutout' (new key) and legacy lookups
+            const caseHasBtfCutout = caseModelUpper.includes("BTF") || caseModelUpper.includes("PROJECT STEALTH") || caseSpecs.includes("BTF") || caseSpecs.includes("BACK-CONNECT") || caseSpecs.includes("HIDDEN CONNECTOR") || (case_.specifications?.["Back-Connect Cutout"] || '').toString().toUpperCase().includes('YES');
+
+            if (!caseHasBtfCutout) {
+                issues.push({
+                    severity: "warning",
+                    message: `Back-Connect Compatibility: ${mobo.model} is a BTF/Back-Connect motherboard. Ensure your case (${case_.model}) has the required rear cutout for hidden cables. Verify in the case specifications before purchasing.`,
+                    componentA: "Motherboard",
+                    componentB: "Case"
+                });
+            }
+        }
+    }
+
+    // 7. M.2 / PCIe Lane Warning for multiple storage drives
+    if (mobo && storageList.length > 1) {
+        // Support "3x Gen4" format — extract just the leading number
+        const moboM2SlotsRaw = mobo.specifications?.["M.2 Slots"] || mobo.specifications?.["M2 Slots"] || null;
+        const moboM2Slots = moboM2SlotsRaw ? String(moboM2SlotsRaw).match(/(\d+)/)?.[1] ?? moboM2SlotsRaw : null;
+        const slotCount = moboM2Slots ? parseInt(String(moboM2Slots)) : null;
+
+        if (slotCount !== null && storageList.length > slotCount) {
+            issues.push({
+                severity: "error",
+                message: `M.2 Slot Limit: You have ${storageList.length} storage drives but the motherboard (${mobo.model}) only has ${slotCount} M.2 slot(s). Remove a drive or use a SATA SSD instead.`,
+                componentA: "Motherboard",
+                componentB: "Storage"
+            });
+        } else if (storageList.length > 1) {
+            issues.push({
+                severity: "warning",
+                message: `PCIe Lane Sharing: With ${storageList.length} NVMe drives installed, some M.2 slots may share PCIe bandwidth with other slots (e.g., SATA ports). Verify your motherboard's lane bifurcation specs to avoid bottlenecks.`,
+                componentA: "Storage"
             });
         }
     }

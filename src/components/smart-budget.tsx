@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Cpu, DollarSign, Loader2, Save, X, Lightbulb } from "lucide-react";
+import { Cpu, Loader2, Save, X, Lightbulb } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 import { getAiSmartBudget } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 
@@ -106,13 +107,13 @@ export function SmartBudget({ inventory, onApplyBuild, onClose }: SmartBudgetPro
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="space-y-2">
-                    <Label htmlFor="budget">Target Budget (USD)</Label>
+                    <Label htmlFor="budget">Target Budget (PHP ₱)</Label>
                     <div className="relative">
-                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-semibold">₱</span>
                         <Input
                             id="budget"
                             type="number"
-                            placeholder="e.g. 1500"
+                            placeholder="e.g. 90000"
                             className="pl-9"
                             value={budget}
                             onChange={(e) => setBudget(e.target.value)}
@@ -134,7 +135,10 @@ export function SmartBudget({ inventory, onApplyBuild, onClose }: SmartBudgetPro
                 {loading && (
                     <div className="flex flex-col items-center justify-center p-6 space-y-4 bg-secondary/20 rounded-lg">
                         <Cpu className="h-8 w-8 animate-spin text-primary" />
-                        <p className="text-sm text-center text-muted-foreground animate-pulse">Scanning inventory for optimal combinations...</p>
+                        <div className="text-center space-y-1">
+                            <p className="text-sm font-semibold text-primary animate-pulse">Buildbot is Calculating Your Optimal Build…</p>
+                            <p className="text-xs text-muted-foreground">Scanning inventory for the best price-to-performance combinations.</p>
+                        </div>
                     </div>
                 )}
 
@@ -142,7 +146,7 @@ export function SmartBudget({ inventory, onApplyBuild, onClose }: SmartBudgetPro
                     <div className="mt-4 p-4 border rounded-lg bg-card animate-in fade-in slide-in-from-bottom-2">
                         <h4 className="font-semibold text-lg mb-2 flex justify-between">
                             Recommended Build
-                            <span className="text-primary font-headline">${result.totalCost.toLocaleString()}</span>
+                            <span className="text-primary font-headline">{formatCurrency(result.totalCost)}</span>
                         </h4>
                         <p className="text-sm text-muted-foreground mb-4 italic">"{result.reasoning}"</p>
 

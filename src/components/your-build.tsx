@@ -198,7 +198,7 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, resolu
 
     const psu = build['PSU'] as ComponentData | null;
     const psuWattage = psu && typeof psu.wattage === 'number' ? psu.wattage : 0;
-    const showPsuWarning = psuWattage > 0 && totalWattage > 0 && psuWattage < totalWattage;
+    const showPsuWarning = psuWattage > 0 && totalWattage > 0 && psuWattage < totalWattage * 1.2;
 
     const totalPrice = Object.values(build).reduce((acc, component) => {
         if (Array.isArray(component)) {

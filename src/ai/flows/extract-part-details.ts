@@ -36,7 +36,7 @@ const ExtractPartDetailsOutputSchema = z.object({
   partName: z.string().describe("The full, corrected name of the PC component."),
   category: z.enum(componentCategories).describe('The category of the component.'),
   brand: z.string().describe('The brand name of the component (e.g., "NVIDIA", "AMD", "Intel", "ASUS").'),
-  price: z.number().describe("Realistic estimated retail price in PHP. Multiply USD MSRP by 56."),
+  price: z.number().describe("Realistic estimated retail price in PHP. Multiply USD MSRP by 60."),
   wattage: z.number().optional().describe("Estimated power consumption (W) or rated output for PSU."),
   performanceScore: z.number().optional().describe("0-100 score relative to modern high-end standards."),
   socket: z.string().optional().describe("Socket type for CPU/Mobo/Cooler (e.g., AM5, LGA1700)."),

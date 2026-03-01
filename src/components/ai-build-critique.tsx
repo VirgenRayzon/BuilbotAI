@@ -125,9 +125,12 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                 )}
 
                 {loading && (
-                    <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                    <div className="flex flex-col items-center justify-center py-10 space-y-4">
                         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                        <p className="text-muted-foreground animate-pulse">Buildbot is analyzing your components...</p>
+                        <div className="text-center space-y-1">
+                            <p className="text-sm font-semibold text-primary animate-pulse">Buildbot is Reviewing Your Components…</p>
+                            <p className="text-xs text-muted-foreground">Analyzing compatibility, performance, and value.</p>
+                        </div>
                     </div>
                 )}
 
