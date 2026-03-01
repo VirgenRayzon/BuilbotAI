@@ -35,6 +35,7 @@ import { ScrollArea } from "./ui/scroll-area";
 
 const componentCategories = [
   "CPU", "GPU", "Motherboard", "RAM", "Storage", "PSU", "Case", "Cooler",
+  "Monitor", "Keyboard", "Mouse", "Headset",
 ];
 
 const CATEGORY_SPECS: Record<string, { key: string; placeholder: string }[]> = {
@@ -99,6 +100,7 @@ const CATEGORY_SPECS: Record<string, { key: string; placeholder: string }[]> = {
   Case: [
     { key: "Max GPU Length", placeholder: "e.g., 400 mm" },
     { key: "Max Cooler Height", placeholder: "e.g., 170 mm" },
+    { key: "Max Radiator Size (mm)", placeholder: "e.g., 360" },
     { key: "Mobo Support", placeholder: "e.g., ATX, M-ATX, ITX" },
     { key: "Radiator Support", placeholder: "e.g., 360mm Top, 240mm Front" },
     { key: "Back-Connect Cutout", placeholder: "e.g., Yes / No" },
@@ -111,6 +113,31 @@ const CATEGORY_SPECS: Record<string, { key: string; placeholder: string }[]> = {
     { key: "Height", placeholder: "e.g., 165 mm" },
     { key: "Radiator Size", placeholder: "e.g., 360 mm" },
     { key: "Type", placeholder: "e.g., Air / AIO Liquid" },
+  ],
+  Monitor: [
+    { key: "Screen Size", placeholder: "e.g., 27 inch" },
+    { key: "Resolution", placeholder: "e.g., 2560 x 1440" },
+    { key: "Refresh Rate", placeholder: "e.g., 144 Hz" },
+    { key: "Panel Type", placeholder: "e.g., IPS / VA / OLED" },
+    { key: "Response Time", placeholder: "e.g., 1ms GtG" },
+  ],
+  Keyboard: [
+    { key: "Type", placeholder: "e.g., Mechanical / Membrane" },
+    { key: "Switches", placeholder: "e.g., Cherry MX Red" },
+    { key: "Layout", placeholder: "e.g., Full Size / TKL / 60%" },
+    { key: "Backlighting", placeholder: "e.g., RGB / Single Color" },
+  ],
+  Mouse: [
+    { key: "Sensor", placeholder: "e.g., Hero 25K" },
+    { key: "DPI", placeholder: "e.g., 25600" },
+    { key: "Connectivity", placeholder: "e.g., Wired / Wireless" },
+    { key: "Weight", placeholder: "e.g., 63g" },
+  ],
+  Headset: [
+    { key: "Type", placeholder: "e.g., Over-Ear / In-Ear" },
+    { key: "Connectivity", placeholder: "e.g., Wired / Wireless / Bluetooth" },
+    { key: "Driver Size", placeholder: "e.g., 50mm" },
+    { key: "Microphone", placeholder: "e.g., Detachable / Built-in" },
   ],
 };
 

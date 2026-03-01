@@ -85,12 +85,12 @@ export function InventoryToolbar({
           variant="outline"
           value={selectedValue}
           onValueChange={handleToggleChange}
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2 w-full"
+          className="flex flex-wrap gap-2 w-full"
         >
           <ToggleGroupItem
             value="All"
             aria-label="Show all categories"
-            className="flex-1 px-3 py-2 h-10 flex flex-row items-center gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all border border-transparent data-[state=off]:border-border data-[state=off]:hover:bg-accent rounded-md"
+            className="px-3 py-2 h-10 flex flex-row items-center gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all border border-transparent data-[state=off]:border-border data-[state=off]:hover:bg-accent rounded-md min-w-fit"
           >
             <Layers className="h-5 w-5 shrink-0" />
             <span className="text-sm font-medium">All</span>
@@ -102,7 +102,7 @@ export function InventoryToolbar({
                 key={cat.name}
                 value={cat.name}
                 aria-label={`Toggle ${cat.name}`}
-                className="flex-1 px-3 py-2 h-10 flex flex-row items-center gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all border border-transparent data-[state=off]:border-border data-[state=off]:hover:bg-accent rounded-md"
+                className="px-3 py-2 h-10 flex flex-row items-center gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all border border-transparent data-[state=off]:border-border data-[state=off]:hover:bg-accent rounded-md min-w-fit"
               >
                 <Icon className="h-5 w-5 shrink-0" />
                 <span className="text-sm font-medium">{cat.name}</span>

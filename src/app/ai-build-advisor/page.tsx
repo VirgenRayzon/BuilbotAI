@@ -329,7 +329,7 @@ export default function AiBuildAdvisorPage() {
 
               {/* Left Column: Visualizer & Analytics (Matches Builder's lg:col-span-3) */}
               <div className="lg:col-span-3">
-                <div className="sticky top-20 flex flex-col gap-6 max-h-[calc(100vh-6rem)] overflow-y-auto pb-4 pr-2 custom-scrollbar">
+                <div className="sticky top-20 flex flex-col gap-6 pb-4 pr-2">
                   <div className="flex flex-col gap-6">
                     <PCVisualizer build={builderState} />
                     <BuilderSidebarLeft
@@ -343,8 +343,19 @@ export default function AiBuildAdvisorPage() {
                 </div>
               </div>
 
-              {/* Middle Column: Your Build Specs */}
-              <div className="lg:col-span-3 border-r border-border/50 pr-6">
+              {/* Middle Column: AI Critique (Previously Right) */}
+              <div className="lg:col-span-6 border-x border-border/50 px-6">
+                <AIBuildCritique
+                  build={builderState}
+                  externalAnalysis={critiqueAnalysis}
+                  externalLoading={critiqueLoading}
+                  externalError={critiqueError}
+                  onRefresh={() => handleCritique(true)}
+                />
+              </div>
+
+              {/* Right Column: Your Build Specs (Previously Middle) */}
+              <div className="lg:col-span-3 pl-2">
                 <div className="sticky top-20 flex flex-col gap-6 max-h-[calc(100vh-6rem)] overflow-y-auto pb-4 pr-2 custom-scrollbar">
                   <YourBuild
                     build={builderState}
@@ -358,19 +369,9 @@ export default function AiBuildAdvisorPage() {
                     onResolutionChange={setResolution}
                     workload={workload}
                     onWorkloadChange={setWorkload}
+                    showSystemBalance={false}
                   />
                 </div>
-              </div>
-
-              {/* Right Column: AI Critique */}
-              <div className="lg:col-span-6 pl-2">
-                <AIBuildCritique
-                  build={builderState}
-                  externalAnalysis={critiqueAnalysis}
-                  externalLoading={critiqueLoading}
-                  externalError={critiqueError}
-                  onRefresh={() => handleCritique(true)}
-                />
               </div>
 
             </div>

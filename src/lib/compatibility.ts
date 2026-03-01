@@ -200,5 +200,77 @@ export function checkCompatibility(build: Record<string, ComponentData | Compone
         }
     }
 
+    // 8. Radiator Size Check (spec: AIO radiator must be <= Case max radiator support)
+    if (case_ && cooler) {
+        const coolerModel = cooler.model.toLowerCase();
+        const radiatorSizeRaw = cooler.specifications?.["Radiator Size"] || "";
+        const radiatorSize = parseInt(String(radiatorSizeRaw).match(/(\d+)/)?.[0] || "0");
+
+        const isAio = coolerModel.includes("aio") || coolerModel.includes("liquid") || radiatorSize > 0;
+
+        if (isAio && radiatorSize > 0) {
+            const caseMaxRadRaw = case_.specifications?.["Max Radiator Size (mm)"] || 0;
+            const caseMaxRad = typeof caseMaxRadRaw === 'string' ? parseFloat(caseMaxRadRaw) : caseMaxRadRaw;
+
+            if (caseMaxRad > 0 && radiatorSize > caseMaxRad) {
+                issues.push({
+                    severity: "error",
+                    message: `Radiator Size Mismatch: ${cooler.model} uses a ${radiatorSize}mm radiator, but ${case_.model} only supports up to ${caseMaxRad}mm.`,
+                    componentA: "Case",
+                    componentB: "Cooler"
+                });
+            }
+        }
+    }
+
+    // 9. Motherboard Form Factor compatibility check (Hierarchy: E-ATX > ATX > M-ATX > ITX)
+    if (case_ && mobo) {
+        const moboFormFactorRaw = mobo.specifications?.["Form Factor"] || "";
+        const moboFF = String(moboFormFactorRaw).trim().toUpperCase();
+
+        const caseMoboSupportRaw = case_.specifications?.["Mobo Support"] || "";
+        const caseSupport = String(caseMoboSupportRaw).toUpperCase();
+
+        const caseTypeRaw = case_.specifications?.["Type"] || "";
+        const caseType = String(caseTypeRaw).toUpperCase();
+
+        if (moboFF && (caseSupport || caseType)) {
+            const ffOrder: Record<string, number> = {
+                'E-ATX': 4, 'EATX': 4,
+                'ATX': 3,
+                'M-ATX': 2, 'MATX': 2, 'MICRO-ATX': 2,
+                'ITX': 1, 'MINI-ITX': 1
+            };
+
+            const moboSize = ffOrder[moboFF] || 0;
+
+            // 1. Check explicit support list first
+            const supportedFormFactors = caseSupport.split(/[\s,]+/).filter(Boolean);
+            let isSupported = supportedFormFactors.some(ff => {
+                const ffSize = ffOrder[ff] || 0;
+                return ffSize >= moboSize;
+            });
+
+            // 2. If not in explicit list, check the Case Type (e.g., "ATX Mid Tower" implies ATX support)
+            if (!isSupported && caseType) {
+                Object.keys(ffOrder).forEach(ff => {
+                    if (caseType.includes(ff)) {
+                        const caseMaxSize = ffOrder[ff];
+                        if (caseMaxSize >= moboSize) isSupported = true;
+                    }
+                });
+            }
+
+            if (!isSupported && moboSize > 0) {
+                issues.push({
+                    severity: "error",
+                    message: `Motherboard Form Factor: ${mobo.model} (${moboFF}) is too large for ${case_.model}. This case supports up to ${caseSupport || caseType}.`,
+                    componentA: "Case",
+                    componentB: "Motherboard"
+                });
+            }
+        }
+    }
+
     return issues;
 }

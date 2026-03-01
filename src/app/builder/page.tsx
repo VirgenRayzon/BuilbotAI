@@ -18,7 +18,10 @@ import {
   Info,
   CheckCircle2,
   AlertTriangle,
-  Monitor
+  Monitor,
+  Keyboard,
+  Mouse,
+  Headphones
 } from "lucide-react";
 import type { ComponentData, Part, Build } from "@/lib/types";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
@@ -51,6 +54,10 @@ const componentCategories = [
   { name: "PSU", icon: Power },
   { name: "Case", icon: RectangleVertical },
   { name: "Cooler", icon: Wind },
+  { name: "Monitor", icon: Monitor },
+  { name: "Keyboard", icon: Keyboard },
+  { name: "Mouse", icon: Mouse },
+  { name: "Headset", icon: Headphones },
 ];
 
 export default function BuilderPage() {
@@ -83,6 +90,14 @@ export default function BuilderPage() {
   const { data: cases, loading: casesLoading } = useCollection<PartWithoutCategory>(caseQuery);
   const coolerQuery = useMemo(() => firestore ? collection(firestore, 'Cooler') : null, [firestore]);
   const { data: coolers, loading: coolersLoading } = useCollection<PartWithoutCategory>(coolerQuery);
+  const monitorQuery = useMemo(() => firestore ? collection(firestore, 'Monitor') : null, [firestore]);
+  const { data: monitors, loading: monitorsLoading } = useCollection<PartWithoutCategory>(monitorQuery);
+  const keyboardQuery = useMemo(() => firestore ? collection(firestore, 'Keyboard') : null, [firestore]);
+  const { data: keyboards, loading: keyboardsLoading } = useCollection<PartWithoutCategory>(keyboardQuery);
+  const mouseQuery = useMemo(() => firestore ? collection(firestore, 'Mouse') : null, [firestore]);
+  const { data: mice, loading: miceLoading } = useCollection<PartWithoutCategory>(mouseQuery);
+  const headsetQuery = useMemo(() => firestore ? collection(firestore, 'Headset') : null, [firestore]);
+  const { data: headsets, loading: headsetsLoading } = useCollection<PartWithoutCategory>(headsetQuery);
 
   // Combine all parts and add category back
   const allParts = useMemo(() => {
@@ -95,11 +110,16 @@ export default function BuilderPage() {
     psus?.forEach(p => allParts.push({ ...p, category: 'PSU' }));
     cases?.forEach(p => allParts.push({ ...p, category: 'Case' }));
     coolers?.forEach(p => allParts.push({ ...p, category: 'Cooler' }));
+    monitors?.forEach(p => allParts.push({ ...p, category: 'Monitor' }));
+    keyboards?.forEach(p => allParts.push({ ...p, category: 'Keyboard' }));
+    mice?.forEach(p => allParts.push({ ...p, category: 'Mouse' }));
+    headsets?.forEach(p => allParts.push({ ...p, category: 'Headset' }));
     return allParts;
-  }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers]);
+  }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers, monitors, keyboards, mice, headsets]);
 
   const [build, setBuild] = useState<Record<string, ComponentData | ComponentData[] | null>>({
     CPU: null, GPU: null, Motherboard: null, RAM: null, Storage: [], PSU: null, Case: null, Cooler: null,
+    Monitor: null, Keyboard: null, Mouse: null, Headset: null,
   });
   const [resolution, setResolution] = useState<Resolution>('1440p');
   const [workload, setWorkload] = useState<WorkloadType>('Balanced');
@@ -169,7 +189,7 @@ export default function BuilderPage() {
     };
   }, [allParts, build]);
 
-  const loading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading;
+  const loading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading || monitorsLoading || keyboardsLoading || miceLoading || headsetsLoading;
 
   useEffect(() => {
     const saved = localStorage.getItem('pc_builder_state');
@@ -193,6 +213,7 @@ export default function BuilderPage() {
   const handleClearBuild = () => {
     setBuild({
       CPU: null, GPU: null, Motherboard: null, RAM: null, Storage: [], PSU: null, Case: null, Cooler: null,
+      Monitor: null, Keyboard: null, Mouse: null, Headset: null,
     });
     toast({ title: 'Build Cleared', description: 'Your build has been reset.' });
   };
@@ -330,6 +351,13 @@ export default function BuilderPage() {
 
   const checkCompatibility = (part: Part, currentBuild: any) => {
     const category = part.category;
+
+    // Accessories are always compatible
+    const accessoryCategories = ['Monitor', 'Keyboard', 'Mouse', 'Headset'];
+    if (accessoryCategories.includes(category)) {
+      return { compatible: true, message: '' };
+    }
+
     const cpu = currentBuild['CPU'] as ComponentData | null;
     const mobo = currentBuild['Motherboard'] as ComponentData | null;
     const ram = currentBuild['RAM'] as ComponentData | null;
@@ -376,7 +404,97 @@ export default function BuilderPage() {
       }
     }
 
+    if (category === 'Cooler') {
+      const case_ = (currentBuild['Case'] as ComponentData | null);
+      if (case_) {
+        const coolerModel = part.name.toLowerCase();
+        const radiatorSizeRaw = part.specifications?.["Radiator Size"] || "";
+        const radiatorSize = parseInt(String(radiatorSizeRaw).match(/(\d+)/)?.[0] || "0");
+        const isAio = coolerModel.includes("aio") || coolerModel.includes("liquid") || radiatorSize > 0;
+
+        if (isAio && radiatorSize > 0) {
+          const caseMaxRadRaw = case_.specifications?.["Max Radiator Size (mm)"] || 0;
+          const caseMaxRad = typeof caseMaxRadRaw === 'string' ? parseFloat(caseMaxRadRaw) : caseMaxRadRaw;
+
+          if (caseMaxRad > 0 && radiatorSize > caseMaxRad) {
+            return { compatible: false, message: `Radiator Mismatch: This ${radiatorSize}mm cooler exceeds the max radiator size (${caseMaxRad}mm) for your selected case.` };
+          }
+        }
+      }
+    }
+
+    if (category === 'Case') {
+      const cooler = (currentBuild['Cooler'] as ComponentData | null);
+      if (cooler) {
+        const caseMaxRadRaw = part.specifications?.["Max Radiator Size (mm)"] || 0;
+        const caseMaxRad = typeof caseMaxRadRaw === 'string' ? parseFloat(caseMaxRadRaw) : caseMaxRadRaw;
+
+        const coolerModel = cooler.model.toLowerCase();
+        const radiatorSizeRaw = cooler.specifications?.["Radiator Size"] || "";
+        const radiatorSize = parseInt(String(radiatorSizeRaw).match(/(\d+)/)?.[0] || "0");
+        const isAio = coolerModel.includes("aio") || coolerModel.includes("liquid") || radiatorSize > 0;
+
+        if (isAio && radiatorSize > 0 && caseMaxRad > 0 && radiatorSize > caseMaxRad) {
+          return { compatible: false, message: `Case Incompatible: This case supports up to ${caseMaxRad}mm radiators, but your selected cooler is ${radiatorSize}mm.` };
+        }
+      }
+
+      const mobo = (currentBuild['Motherboard'] as ComponentData | null);
+      if (mobo) {
+        const moboFF = normalize(mobo.specifications?.["Form Factor"]?.toString());
+        const caseSupport = normalize(part.specifications?.["Mobo Support"]?.toString());
+        const caseType = normalize(part.specifications?.["Type"]?.toString());
+
+        if (moboFF && caseFFMatch(caseSupport, moboFF, caseType) === false) {
+          return { compatible: false, message: `Case Incompatible: This case supports up to ${caseSupport.toUpperCase() || 'smaller'} boards, but your motherboard is ${moboFF.toUpperCase()}.` };
+        }
+      }
+    }
+
+    if (category === 'Motherboard') {
+      const case_ = (currentBuild['Case'] as ComponentData | null);
+      if (case_) {
+        const moboFF = normalize(part.specifications?.["Form Factor"]?.toString());
+        const caseSupport = normalize(case_.specifications?.["Mobo Support"]?.toString());
+        const caseType = normalize(case_.specifications?.["Type"]?.toString());
+
+        if (moboFF && caseFFMatch(caseSupport, moboFF, caseType) === false) {
+          return { compatible: false, message: `Motherboard Mismatch: This ${moboFF.toUpperCase()} board is too large for your selected case (Supports: ${caseSupport.toUpperCase() || 'smaller'}).` };
+        }
+      }
+    }
+
     return { compatible: true, message: '' };
+  };
+
+  const caseFFMatch = (caseSupport: string, moboFF: string, caseType: string = '') => {
+    if (!moboFF) return true;
+
+    const ffOrder: Record<string, number> = {
+      'E-ATX': 4, 'EATX': 4,
+      'ATX': 3,
+      'M-ATX': 2, 'MATX': 2, 'MICRO-ATX': 2,
+      'ITX': 1, 'MINI-ITX': 1
+    };
+
+    const targetSize = ffOrder[moboFF.toUpperCase()] || 0;
+    if (targetSize === 0) return true; // Unknown mobo format, skip
+
+    // 1. Check explicit list
+    const supported = (caseSupport || '').toUpperCase().split(/[\s,]+/).filter(Boolean);
+    let isSupported = supported.some(ff => (ffOrder[ff] || 0) >= targetSize);
+
+    // 2. Fallback to case type name (e.g. "ATX Mid Tower")
+    if (!isSupported && caseType) {
+      const typeUpper = caseType.toUpperCase();
+      Object.keys(ffOrder).forEach(ff => {
+        if (typeUpper.includes(ff) && ffOrder[ff] >= targetSize) {
+          isSupported = true;
+        }
+      });
+    }
+
+    return isSupported;
   };
 
   const sortedAndFilteredParts = useMemo(() => {
@@ -426,7 +544,7 @@ export default function BuilderPage() {
       <div className="grid lg:grid-cols-12 gap-6 xl:gap-8">
         {/* Left Sidebar: 2D Preview & Analytics */}
         <div className="lg:col-span-3 hidden lg:block">
-          <div className="sticky top-20 flex flex-col gap-6 h-[calc(100vh-100px)] overflow-y-auto no-scrollbar pb-4 pr-1">
+          <div className="sticky top-20 flex flex-col gap-6 pb-4 pr-1">
             <PCVisualizer build={build} />
             <BuilderSidebarLeft
               build={build}
@@ -565,6 +683,7 @@ export default function BuilderPage() {
               onResolutionChange={setResolution}
               workload={workload}
               onWorkloadChange={setWorkload}
+              showSystemBalance={false}
             />
           </div>
         </div>

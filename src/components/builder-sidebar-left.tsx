@@ -203,7 +203,8 @@ function BottleneckMeter({ build, resolution }: { build: Record<string, Componen
 
 export function BuilderSidebarLeft({ build, resolution, onResolutionChange, workload, onWorkloadChange, className }: BuilderSidebarLeftProps) {
     const totalWattage = Object.entries(build).reduce((acc, [key, component]) => {
-        if (key === 'PSU') return acc;
+        const internalParts = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler'];
+        if (!internalParts.includes(key) || key === 'PSU') return acc;
         if (Array.isArray(component)) {
             return acc + component.reduce((sum, c) => sum + (c.wattage || 0), 0);
         }

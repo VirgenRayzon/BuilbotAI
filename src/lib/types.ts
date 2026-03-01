@@ -44,7 +44,7 @@ export type AiRecommendation = AiBuildAdvisorRecommendationsOutput;
 export type Part = {
   id: string;
   name: string;
-  category: 'CPU' | 'GPU' | 'Motherboard' | 'RAM' | 'Storage' | 'PSU' | 'Case' | 'Cooler';
+  category: 'CPU' | 'GPU' | 'Motherboard' | 'RAM' | 'Storage' | 'PSU' | 'Case' | 'Cooler' | 'Monitor' | 'Keyboard' | 'Mouse' | 'Headset';
   brand: string;
   price: number;
   usdSrp?: number;

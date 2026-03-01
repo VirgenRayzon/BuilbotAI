@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { ComponentData } from "@/lib/types";
-import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical as CaseIcon, Wind, AlertCircle, X as CloseIcon, BrainCircuit, Loader2, ThumbsUp, ThumbsDown, MonitorPlay, Zap, Plus, Sparkles } from "lucide-react";
+import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical as CaseIcon, Wind, AlertCircle, X as CloseIcon, BrainCircuit, Loader2, ThumbsUp, ThumbsDown, MonitorPlay, Zap, Plus, Sparkles, Monitor, Keyboard, Mouse, Headphones } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
@@ -31,6 +31,7 @@ interface YourBuildProps {
     onResolutionChange: (res: Resolution) => void;
     workload: WorkloadType;
     onWorkloadChange: (workload: WorkloadType) => void;
+    showSystemBalance?: boolean;
     className?: string;
 }
 
@@ -63,9 +64,13 @@ const componentIcons: Record<string, React.ComponentType<{ className?: string }>
     psu: Power,
     case: CaseIcon,
     cooler: Wind,
+    monitor: Monitor,
+    keyboard: Keyboard,
+    mouse: Mouse,
+    headset: Headphones,
 };
 
-export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, resolution, onResolutionChange, workload, onWorkloadChange, className }: YourBuildProps) {
+export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, resolution, onResolutionChange, workload, onWorkloadChange, showSystemBalance = true, className }: YourBuildProps) {
     const [analysis, setAnalysis] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -186,7 +191,10 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, resolu
 
     const totalWattage = Object.entries(build).reduce((acc, [key, component]) => {
         // PSU wattage is its capacity (supply), not consumption (demand) — exclude it
-        if (key === 'PSU') return acc;
+        // Accessories also don't count towards PC internal power draw
+        const internalParts = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler'];
+        if (!internalParts.includes(key) || key === 'PSU') return acc;
+
         if (Array.isArray(component)) {
             return acc + component.reduce((sum, c) => sum + (c.wattage || 0), 0);
         }
@@ -243,7 +251,9 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, resolu
             <CardContent className="px-5 py-4 flex-1 flex flex-col min-h-0">
                 <ScrollArea className="flex-1 pr-4 -mr-4">
                     <div className="space-y-3 py-1">
-                        {Object.entries(build).map(([name, component]) => {
+                        {/* Internal Parts Section */}
+                        {['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler'].map((name) => {
+                            const component = build[name];
                             const Icon = componentIcons[name.toLowerCase()] || Cpu;
                             const components = Array.isArray(component) ? component : (component ? [component] : []);
 
@@ -298,12 +308,66 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, resolu
                                 </div>
                             );
                         })}
+
+                        {/* Accessories Section Divider */}
+                        <div className="pt-4 pb-2">
+                            <div className="flex items-center gap-2">
+                                <Separator className="flex-1 opacity-30" />
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] whitespace-nowrap">Accessories</span>
+                                <Separator className="flex-1 opacity-30" />
+                            </div>
+                        </div>
+
+                        {/* Accessories Slots */}
+                        {['Monitor', 'Keyboard', 'Mouse', 'Headset'].map((name) => {
+                            const component = build[name];
+                            const Icon = componentIcons[name.toLowerCase()] || Monitor;
+
+                            if (!component) {
+                                return (
+                                    <div key={name} className="flex items-center gap-4 py-1.5 opacity-40 grayscale group cursor-default transition-all hover:opacity-100 hover:grayscale-0">
+                                        <div className="p-2 bg-secondary/80 rounded flex items-center justify-center">
+                                            <Icon className="w-4 h-4 text-muted-foreground" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider leading-none mb-1">{name}</p>
+                                            <p className="text-[10px] text-muted-foreground/80 italic font-medium">Click to add</p>
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            const c = component as ComponentData;
+                            return (
+                                <div key={name} className="flex items-center gap-4 py-1.5 animate-in fade-in slide-in-from-left-3 duration-300 group">
+                                    <div
+                                        className="p-2 bg-primary/10 rounded flex items-center justify-center border border-primary/10 shadow-sm cursor-pointer transition-all hover:bg-destructive/20 hover:border-destructive/30 hover:scale-105 active:scale-95 group/icon"
+                                        onClick={() => onRemovePart(name)}
+                                        title={`Remove ${name}`}
+                                    >
+                                        <Icon className="w-4 h-4 text-primary/80 group-hover/icon:text-destructive transition-colors" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-bold text-primary/80 uppercase tracking-wider leading-none mb-1">{name}</p>
+                                        <p className="text-sm font-semibold truncate leading-tight tracking-tight">{c.model}</p>
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive text-muted-foreground"
+                                        onClick={() => onRemovePart(name)}
+                                    >
+                                        <CloseIcon className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            );
+                        })}
                     </div>
                 </ScrollArea>
 
                 <div className="pt-4 flex-none">
                     <Separator className="mb-3 opacity-50" />
-                    <BottleneckMeter build={build} resolution={resolution} />
+                    {showSystemBalance !== false && <BottleneckMeter build={build} resolution={resolution} />}
 
                     <div className="flex justify-between items-center pt-3 mt-3 border-t border-dashed">
                         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Total Cost</span>
