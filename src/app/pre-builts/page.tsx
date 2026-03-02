@@ -27,15 +27,22 @@ export default function PreBuiltsPage() {
     const { data: prebuiltSystems, loading } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);
 
     const [categories, setCategories] = useState(prebuiltCategories);
-    const [sortBy, setSortBy] = useState('Name');
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+    const [sortBy, setSortBy] = useState('Date Added');
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
     const [view, setView] = useState<'grid' | 'list'>('grid');
     const [searchQuery, setSearchQuery] = useState('');
 
     const handleCategoryChange = (categoryName: string, selected: boolean) => {
-        setCategories(prev =>
-            prev.map(cat => (cat.name === categoryName ? { ...cat, selected } : cat))
-        );
+        setCategories(prev => {
+            if (categoryName === 'All') {
+                const anyUnselected = prev.some(cat => !cat.selected);
+                return prev.map(cat => ({ ...cat, selected: anyUnselected }));
+            }
+            return prev.map(cat => ({
+                ...cat,
+                selected: cat.name === categoryName ? true : false
+            }));
+        });
     };
 
     const filteredAndSortedSystems = useMemo(() => {
@@ -53,6 +60,11 @@ export default function PreBuiltsPage() {
                 if (sortBy === 'Name') compare = a.name.localeCompare(b.name);
                 else if (sortBy === 'Price') compare = a.price - b.price;
                 else if (sortBy === 'Tier') compare = a.tier.localeCompare(b.tier);
+                else if (sortBy === 'Date Added') {
+                    const dateA = a.createdAt?.toDate?.() || a.createdAt || 0;
+                    const dateB = b.createdAt?.toDate?.() || b.createdAt || 0;
+                    compare = new Date(dateA).getTime() - new Date(dateB).getTime();
+                }
                 return sortDirection === 'asc' ? compare : -compare;
             });
     }, [prebuiltSystems, categories, sortBy, sortDirection, searchQuery]);
@@ -74,7 +86,7 @@ export default function PreBuiltsPage() {
                 onSortByChange={setSortBy}
                 sortDirection={sortDirection}
                 onSortDirectionChange={setSortDirection}
-                supportedSorts={['Name', 'Price', 'Tier']}
+                supportedSorts={['Date Added', 'Name', 'Price', 'Tier']}
                 view={view}
                 onViewChange={setView}
                 showViewToggle={true}

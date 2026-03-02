@@ -61,6 +61,7 @@ export type Part = {
     height: number;
     depth: number;
   };
+  createdAt?: any;
 };
 
 export type PrebuiltSystem = {
@@ -80,6 +81,7 @@ export type PrebuiltSystem = {
     case?: string;
     cooler?: string;
   };
+  createdAt?: any;
 };
 
 export type UserProfile = {

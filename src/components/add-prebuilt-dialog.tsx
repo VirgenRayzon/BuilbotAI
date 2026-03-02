@@ -1,14 +1,18 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
+import { useState, useTransition, useMemo, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { cn } from "@/lib/utils";
 import {
     Dialog,
     DialogContent,
     DialogTrigger,
     DialogClose,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,10 +32,15 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "./ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { Loader2, Sparkles, Info, Zap, Cpu, BrainCircuit, Search } from "lucide-react";
+import { Loader2, Sparkles, Info, Zap, Cpu, BrainCircuit, Search, Check, ChevronDown } from "lucide-react";
 import { getAiPrebuiltSuggestions } from "@/app/actions";
 import type { Part } from "@/lib/types";
 
@@ -76,6 +85,16 @@ function PartSelector({
     onOpenChange: (v: boolean) => void;
 }) {
     const [query, setQuery] = useState("");
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (isOpen) {
+            const timer = setTimeout(() => {
+                inputRef.current?.focus();
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
 
     const sorted = useMemo(
         () => [...items].sort((a, b) => a.name.localeCompare(b.name)),
@@ -90,43 +109,36 @@ function PartSelector({
         [sorted, query]
     );
 
-    const selectedName = items.find((p) => p.id === value)?.name;
+    const selectedPart = items.find((p) => p.id === value);
 
     return (
-        <Select
-            onValueChange={(v) => {
-                onChange(v);
-                onOpenChange(false);
-                setQuery("");
-            }}
-            value={value}
-            open={isOpen}
-            onOpenChange={(o) => {
-                onOpenChange(o);
-                if (!o) setQuery("");
-            }}
-        >
-            <FormControl>
-                <SelectTrigger className="bg-muted/40 border-border/60 h-9 text-sm">
-                    <SelectValue placeholder={`Select ${category}…`}>
-                        {selectedName || ""}
-                    </SelectValue>
-                </SelectTrigger>
-            </FormControl>
-            <SelectContent className="p-0">
-                {/* Search input pinned at top */}
+        <Popover open={isOpen} onOpenChange={onOpenChange}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between bg-muted/40 border-border/60 h-9 px-3 text-sm font-normal"
+                >
+                    <span className="truncate">
+                        {selectedPart ? selectedPart.name : `Select ${category}…`}
+                    </span>
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[400px] p-0" align="start">
                 <div className="flex items-center gap-2 px-3 py-2 border-b border-border/60 sticky top-0 bg-popover z-10">
                     <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     <input
+                        ref={inputRef}
                         className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
                         placeholder={`Search ${category}…`}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        // Prevent select from closing on key events
-                        onKeyDown={(e) => e.stopPropagation()}
+                        autoComplete="off"
                     />
                     {query && (
                         <button
+                            type="button"
                             onClick={() => setQuery("")}
                             className="text-muted-foreground hover:text-foreground text-xs"
                         >
@@ -134,19 +146,36 @@ function PartSelector({
                         </button>
                     )}
                 </div>
-                <ScrollArea className="max-h-52">
-                    {filtered.length === 0 ? (
-                        <p className="text-xs text-muted-foreground text-center py-4">No parts found.</p>
-                    ) : (
-                        filtered.map((item) => (
-                            <SelectItem key={item.id} value={item.id} className="text-sm">
-                                {item.name}
-                            </SelectItem>
-                        ))
-                    )}
+                <ScrollArea className="h-60">
+                    <div className="p-1">
+                        {filtered.length === 0 ? (
+                            <p className="text-xs text-muted-foreground text-center py-4">No parts found.</p>
+                        ) : (
+                            filtered.map((item) => (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    onClick={() => {
+                                        onChange(item.id);
+                                        onOpenChange(false);
+                                        setQuery("");
+                                    }}
+                                    className={cn(
+                                        "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground",
+                                        value === item.id && "bg-accent text-accent-foreground"
+                                    )}
+                                >
+                                    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                                        {value === item.id && <Check className="h-3.5 w-3.5" />}
+                                    </span>
+                                    <span className="truncate">{item.name}</span>
+                                </button>
+                            ))
+                        )}
+                    </div>
                 </ScrollArea>
-            </SelectContent>
-        </Select>
+            </PopoverContent>
+        </Popover>
     );
 }
 
@@ -244,6 +273,13 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-4xl p-0 gap-0 overflow-hidden border-primary/20 bg-background shadow-2xl [&>button.absolute]:hidden">
+
+                <DialogHeader className="sr-only">
+                    <DialogTitle>Add New Prebuilt System</DialogTitle>
+                    <DialogDescription>
+                        Search and select components from inventory to create a new pre-built system.
+                    </DialogDescription>
+                </DialogHeader>
 
                 {/* ── Header ── */}
                 <div className="px-6 pt-6 pb-4 border-b border-border/60 bg-muted/30">

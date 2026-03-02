@@ -5,7 +5,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Package, PackageCheck, ServerCrash, Loader2, BarChart3, History, TrendingUp, DollarSign, Cpu, Monitor, CircuitBoard, MemoryStick, HardDrive, PlugZap, Square, Wind } from "lucide-react";
+import { Plus, Package, PackageCheck, ServerCrash, Loader2, BarChart3, History, TrendingUp, DollarSign, Cpu, Monitor, CircuitBoard, MemoryStick, HardDrive, PlugZap, Square, Wind, Mouse, Headset } from "lucide-react";
 import { Order } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -23,18 +23,23 @@ import { useFirestore } from '@/firebase';
 import { TableSkeleton } from '@/components/table-skeleton';
 import { useUserProfile } from '@/context/user-profile';
 import { AdminPartCard } from '@/components/admin-part-card';
+import { AdminPrebuiltCard } from '@/components/admin-prebuilt-card';
 import { PrebuiltSystemCard } from '@/components/prebuilt-system-card';
 import { PaginationControls } from "@/components/pagination-controls";
 
-const componentCategories: { name: Part['category'], selected: boolean, icon?: React.ComponentType }[] = [
-    { name: "CPU", selected: true, icon: Cpu },
-    { name: "GPU", selected: true, icon: Monitor },
-    { name: "Motherboard", selected: true, icon: CircuitBoard },
-    { name: "RAM", selected: true, icon: MemoryStick },
-    { name: "Storage", selected: true, icon: HardDrive },
-    { name: "PSU", selected: true, icon: PlugZap },
-    { name: "Case", selected: true, icon: Square },
-    { name: "Cooler", selected: true, icon: Wind },
+const componentCategories: { name: Part['category'], selected: boolean }[] = [
+    { name: "CPU", selected: true },
+    { name: "GPU", selected: true },
+    { name: "Motherboard", selected: true },
+    { name: "RAM", selected: true },
+    { name: "Storage", selected: true },
+    { name: "PSU", selected: true },
+    { name: "Case", selected: true },
+    { name: "Cooler", selected: true },
+    { name: "Monitor", selected: true },
+    { name: "Keyboard", selected: true },
+    { name: "Mouse", selected: true },
+    { name: "Headset", selected: true },
 ];
 
 const prebuiltTiers = [
@@ -60,17 +65,18 @@ export default function AdminPage() {
 
     // Parts state
     const [partCategories, setPartCategories] = useState(componentCategories);
-    const [partSortBy, setPartSortBy] = useState('Name');
-    const [partSortDirection, setPartSortDirection] = useState<'asc' | 'desc'>('asc');
-    const [partView, setPartView] = useState<'grid' | 'list'>('list');
+    const [partSortBy, setPartSortBy] = useState('Date Added');
+    const [partSortDirection, setPartSortDirection] = useState<'asc' | 'desc'>('desc');
+    const [partView, setPartView] = useState<'grid' | 'list'>('grid');
     const [partCurrentPage, setPartCurrentPage] = useState(1);
     const [partItemsPerPage, setPartItemsPerPage] = useState(10);
+    const [partSearchQuery, setPartSearchQuery] = useState('');
 
     // Prebuilts state
     const [prebuiltCategories, setPrebuiltCategories] = useState(prebuiltTiers);
-    const [prebuiltSortBy, setPrebuiltSortBy] = useState('Name');
-    const [prebuiltSortDirection, setPrebuiltSortDirection] = useState<'asc' | 'desc'>('asc');
-    const [prebuiltView, setPrebuiltView] = useState<'grid' | 'list'>('list');
+    const [prebuiltSortBy, setPrebuiltSortBy] = useState('Date Added');
+    const [prebuiltSortDirection, setPrebuiltSortDirection] = useState<'asc' | 'desc'>('desc');
+    const [prebuiltView, setPrebuiltView] = useState<'grid' | 'list'>('grid');
     const [prebuiltCurrentPage, setPrebuiltCurrentPage] = useState(1);
     const [prebuiltItemsPerPage, setPrebuiltItemsPerPage] = useState(10);
 
@@ -92,6 +98,15 @@ export default function AdminPage() {
     const coolerQuery = useMemo(() => firestore ? collection(firestore, 'Cooler') : null, [firestore]);
     const { data: coolers, loading: coolersLoading } = useCollection<PartWithoutCategory>(coolerQuery);
 
+    const monitorQuery = useMemo(() => firestore ? collection(firestore, 'Monitor') : null, [firestore]);
+    const { data: monitors, loading: monitorsLoading } = useCollection<PartWithoutCategory>(monitorQuery);
+    const keyboardQuery = useMemo(() => firestore ? collection(firestore, 'Keyboard') : null, [firestore]);
+    const { data: keyboards, loading: keyboardsLoading } = useCollection<PartWithoutCategory>(keyboardQuery);
+    const mouseQuery = useMemo(() => firestore ? collection(firestore, 'Mouse') : null, [firestore]);
+    const { data: mice, loading: miceLoading } = useCollection<PartWithoutCategory>(mouseQuery);
+    const headsetQuery = useMemo(() => firestore ? collection(firestore, 'Headset') : null, [firestore]);
+    const { data: headsets, loading: headsetsLoading } = useCollection<PartWithoutCategory>(headsetQuery);
+
     const prebuiltSystemsQuery = useMemo(() => firestore ? collection(firestore, 'prebuiltSystems') : null, [firestore]);
     const { data: prebuiltSystems, loading: prebuiltsLoading } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);
 
@@ -108,20 +123,25 @@ export default function AdminPage() {
         psus?.forEach(p => allParts.push({ ...p, category: 'PSU' }));
         cases?.forEach(p => allParts.push({ ...p, category: 'Case' }));
         coolers?.forEach(p => allParts.push({ ...p, category: 'Cooler' }));
+        monitors?.forEach(p => allParts.push({ ...p, category: 'Monitor' }));
+        keyboards?.forEach(p => allParts.push({ ...p, category: 'Keyboard' }));
+        mice?.forEach(p => allParts.push({ ...p, category: 'Mouse' }));
+        headsets?.forEach(p => allParts.push({ ...p, category: 'Headset' }));
         return allParts;
-    }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers]);
+    }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers, monitors, keyboards, mice, headsets]);
 
-    const partsLoading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading;
+    const partsLoading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading || monitorsLoading || keyboardsLoading || miceLoading || headsetsLoading;
 
     const handlePartCategoryChange = (categoryName: string, selected: boolean) => {
         setPartCurrentPage(1);
         setPartCategories(prev => {
             if (categoryName === 'All') {
-                return prev.map(cat => ({ ...cat, selected: true }));
+                const anyUnselected = prev.some(cat => !cat.selected);
+                return prev.map(cat => ({ ...cat, selected: anyUnselected }));
             }
             return prev.map(cat => ({
                 ...cat,
-                selected: cat.name === categoryName
+                selected: cat.name === categoryName ? true : false
             }));
         });
     };
@@ -130,11 +150,12 @@ export default function AdminPage() {
         setPrebuiltCurrentPage(1);
         setPrebuiltCategories(prev => {
             if (tierName === 'All') {
-                return prev.map(tier => ({ ...tier, selected: true }));
+                const anyUnselected = prev.some(t => !t.selected);
+                return prev.map(t => ({ ...t, selected: anyUnselected }));
             }
             return prev.map(tier => ({
                 ...tier,
-                selected: tier.name === tierName
+                selected: tier.name === tierName ? true : false
             }));
         });
     };
@@ -171,16 +192,26 @@ export default function AdminPage() {
 
     const filteredAndSortedParts = useMemo(() => {
         const selectedCategories = partCategories.filter(c => c.selected).map(c => c.name);
-        return (parts?.filter(part => selectedCategories.includes(part.category)) ?? [])
+        return (parts?.filter(part => {
+            const matchesCategory = selectedCategories.includes(part.category);
+            const matchesSearch = part.name.toLowerCase().includes(partSearchQuery.toLowerCase()) ||
+                part.brand.toLowerCase().includes(partSearchQuery.toLowerCase());
+            return matchesCategory && matchesSearch;
+        }) ?? [])
             .sort((a, b) => {
                 let compare = 0;
                 if (partSortBy === 'Name') compare = a.name.localeCompare(b.name);
                 else if (partSortBy === 'Price') compare = a.price - b.price;
                 else if (partSortBy === 'Brand') compare = a.brand.localeCompare(b.brand);
                 else if (partSortBy === 'Stock') compare = a.stock - b.stock;
+                else if (partSortBy === 'Date Added') {
+                    const aDate = (a as any).createdAt?.toDate?.() || a.createdAt || 0;
+                    const bDate = (b as any).createdAt?.toDate?.() || b.createdAt || 0;
+                    compare = new Date(aDate).getTime() - new Date(bDate).getTime();
+                }
                 return partSortDirection === 'asc' ? compare : -compare;
             });
-    }, [parts, partCategories, partSortBy, partSortDirection]);
+    }, [parts, partCategories, partSortBy, partSortDirection, partSearchQuery]);
 
     const filteredAndSortedPrebuilts = useMemo(() => {
         const selectedCategories = prebuiltCategories.filter(c => c.selected).map(c => c.name);
@@ -190,6 +221,11 @@ export default function AdminPage() {
                 if (prebuiltSortBy === 'Name') compare = a.name.localeCompare(b.name);
                 else if (prebuiltSortBy === 'Price') compare = a.price - b.price;
                 else if (prebuiltSortBy === 'Tier') compare = a.tier.localeCompare(b.tier);
+                else if (prebuiltSortBy === 'Date Added') {
+                    const aDate = (a as any).createdAt?.toDate?.() || a.createdAt || 0;
+                    const bDate = (b as any).createdAt?.toDate?.() || b.createdAt || 0;
+                    compare = new Date(aDate).getTime() - new Date(bDate).getTime();
+                }
                 return prebuiltSortDirection === 'asc' ? compare : -compare;
             });
     }, [prebuiltSystems, prebuiltCategories, prebuiltSortBy, prebuiltSortDirection]);
@@ -269,10 +305,12 @@ export default function AdminPage() {
                             onSortByChange={(val) => { setPartSortBy(val); setPartCurrentPage(1); }}
                             sortDirection={partSortDirection}
                             onSortDirectionChange={(val) => { setPartSortDirection(val); setPartCurrentPage(1); }}
-                            supportedSorts={['Name', 'Price', 'Brand', 'Stock']}
+                            supportedSorts={['Date Added', 'Name', 'Price', 'Brand', 'Stock']}
                             showViewToggle={true}
                             view={partView}
                             onViewChange={(v) => v && setPartView(v as 'grid' | 'list')}
+                            searchQuery={partSearchQuery}
+                            onSearchQueryChange={setPartSearchQuery}
                         />
                         {partsLoading ? <TableSkeleton columns={6} /> : (
                             (parts?.length ?? 0) > 0 ? (
@@ -348,7 +386,7 @@ export default function AdminPage() {
                             onSortByChange={(val) => { setPrebuiltSortBy(val); setPrebuiltCurrentPage(1); }}
                             sortDirection={prebuiltSortDirection}
                             onSortDirectionChange={(val) => { setPrebuiltSortDirection(val); setPrebuiltCurrentPage(1); }}
-                            supportedSorts={['Name', 'Price', 'Tier']}
+                            supportedSorts={['Date Added', 'Name', 'Price', 'Tier']}
                             showViewToggle={true}
                             view={prebuiltView}
                             onViewChange={(v) => v && setPrebuiltView(v as 'grid' | 'list')}
@@ -374,7 +412,7 @@ export default function AdminPage() {
                                         <>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
                                                 {paginatedPrebuilts.map(system => (
-                                                    <PrebuiltSystemCard key={system.id} system={system} />
+                                                    <AdminPrebuiltCard key={system.id} system={system} onDelete={handleDeletePrebuilt} />
                                                 ))}
                                             </div>
                                             <PaginationControls

@@ -456,7 +456,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                             {cfg.topRad && isAio && (
                                 <motion.g
                                     initial={{ opacity: 0, y: -20 }}
-                                    animate={{ opacity: 1, y: 0, x: cx(cfg.topRad.x), y: cy(cfg.topRad.y) }}
+                                    animate={{ opacity: 1, x: cx(cfg.topRad.x), y: cy(cfg.topRad.y) }}
                                     exit={{ opacity: 0, y: -20 }}
                                     transition={springConfig}
                                 >

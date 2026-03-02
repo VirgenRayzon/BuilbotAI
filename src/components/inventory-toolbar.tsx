@@ -134,8 +134,16 @@ export function InventoryToolbar({
                   Categories
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
+              <DropdownMenuContent className="w-56" align="start">
                 <DropdownMenuLabel>Filter by Category</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem
+                  checked={categories.every(c => c.selected)}
+                  onCheckedChange={() => onCategoryChange('All', true)}
+                  className="font-bold"
+                >
+                  All Categories
+                </DropdownMenuCheckboxItem>
                 <DropdownMenuSeparator />
                 {categories.map((cat) => (
                   <DropdownMenuCheckboxItem

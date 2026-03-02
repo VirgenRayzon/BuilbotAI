@@ -32,6 +32,7 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
         stock: part.stockCount,
         imageUrl: part.imageUrl || `https://picsum.photos/seed/${part.partName.replace(/\s+/g, '').toLowerCase()}/800/600?pc,component`,
         specifications: specificationsMap,
+        createdAt: new Date(),
         ...(resolvedWattage !== undefined && { wattage: resolvedWattage }),
         ...(part.performanceScore !== undefined && { performanceScore: part.performanceScore }),
         ...(part.dimensions !== undefined && { dimensions: part.dimensions })
@@ -67,7 +68,8 @@ export async function addPrebuiltSystem(firestore: Firestore, system: AddPrebuil
             psu,
             case: caseComponent,
             cooler
-        }
+        },
+        createdAt: new Date()
     };
 
     await addDoc(collection(firestore, 'prebuiltSystems'), systemData);

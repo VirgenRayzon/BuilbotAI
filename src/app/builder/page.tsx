@@ -33,7 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { PaginationControls } from "@/components/pagination-controls";
@@ -233,11 +233,12 @@ export default function BuilderPage() {
   };
 
   const [categories, setCategories] = useState(
-    componentCategories.map(c => ({ name: c.name, selected: true, icon: c.icon }))
+    componentCategories.map(c => ({ name: c.name, selected: true }))
   );
 
-  const [sortBy, setSortBy] = useState('Name');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('Date Added');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -258,13 +259,13 @@ export default function BuilderPage() {
     setCurrentPage(1);
     setCategories(prev => {
       if (categoryName === 'All') {
-        return prev.map(cat => ({ ...cat, selected: true }));
-      } else {
-        return prev.map(cat => ({
-          ...cat,
-          selected: cat.name === categoryName
-        }));
+        const anyUnselected = prev.some(cat => !cat.selected);
+        return prev.map(cat => ({ ...cat, selected: anyUnselected }));
       }
+      return prev.map(cat => ({
+        ...cat,
+        selected: cat.name === categoryName ? true : false
+      }));
     });
   };
 
@@ -499,11 +500,24 @@ export default function BuilderPage() {
 
   const sortedAndFilteredParts = useMemo(() => {
     const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
-    const parts = (allParts?.filter(part => selectedCategories.includes(part.category)) ?? [])
+    const searchLower = searchQuery.toLowerCase();
+
+    const parts = (allParts?.filter(part => {
+      const matchesCategory = selectedCategories.includes(part.category);
+      const matchesSearch = part.name.toLowerCase().includes(searchLower) ||
+        (part.brand?.toLowerCase() || '').includes(searchLower) ||
+        part.category.toLowerCase().includes(searchLower);
+      return matchesCategory && matchesSearch;
+    }) ?? [])
       .sort((a, b) => {
         let compare = 0;
         if (sortBy === 'Name') compare = (a.name || '').localeCompare(b.name || '');
         else if (sortBy === 'Price') compare = (a.price || 0) - (b.price || 0);
+        else if (sortBy === 'Date Added') {
+          const dateA = a.createdAt?.toDate?.() || a.createdAt || 0;
+          const dateB = b.createdAt?.toDate?.() || b.createdAt || 0;
+          compare = new Date(dateA).getTime() - new Date(dateB).getTime();
+        }
         return sortDirection === 'asc' ? compare : -compare;
       });
 
@@ -567,10 +581,12 @@ export default function BuilderPage() {
             onSortByChange={(val) => { setSortBy(val); setCurrentPage(1); }}
             sortDirection={sortDirection}
             onSortDirectionChange={(val) => { setSortDirection(val); setCurrentPage(1); }}
-            supportedSorts={['Name', 'Price']}
+            supportedSorts={['Date Added', 'Name', 'Price']}
             view={view}
             onViewChange={setView}
             showViewToggle={true}
+            searchQuery={searchQuery}
+            onSearchQueryChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
           />
 
           {loading ? (
@@ -623,12 +639,17 @@ export default function BuilderPage() {
                         ? (build['Storage'] as ComponentData[]).some(c => c.model === part.name)
                         : (build[part.category] as ComponentData)?.model === part.name;
                       return (
-                        <TableRow key={part.id} className={(part as any).effectiveStock === 0 && !isSelected ? "opacity-50 grayscale" : ""}>
+                        <TableRow key={part.id} className={cn(
+                          (part as any).effectiveStock === 0 && !isSelected && "opacity-50 grayscale",
+                          (part as any).compatibility && !(part as any).compatibility.compatible && "bg-destructive/[0.03] hover:bg-destructive/[0.06] border-l-2 border-l-destructive shadow-[inset_4px_0_0_-2px_rgba(239,68,68,0.5)]"
+                        )}>
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-3">
                               <Image src={part.imageUrl} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
                               <div>
-                                <p className="font-semibold">{part.name}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-semibold">{part.name}</p>
+                                </div>
                                 <p className="text-xs text-muted-foreground">{part.brand}</p>
                               </div>
                             </div>
@@ -640,14 +661,16 @@ export default function BuilderPage() {
                           </TableCell>
                           <TableCell className="text-right">{formatCurrency(part.price)}</TableCell>
                           <TableCell>
-                            <Button
-                              size="icon"
-                              onClick={() => handlePartToggle(part)}
-                              disabled={((part as any).effectiveStock === 0 && !isSelected) || ((part as any).compatibility && !(part as any).compatibility.compatible && !isSelected)}
-                              variant={isSelected ? 'destructive' : 'default'}
-                            >
-                              {isSelected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                            </Button>
+                            {(!((part as any).compatibility && !(part as any).compatibility.compatible) || isSelected) && (
+                              <Button
+                                size="icon"
+                                onClick={() => handlePartToggle(part)}
+                                disabled={(part as any).effectiveStock === 0 && !isSelected}
+                                variant={isSelected ? 'destructive' : 'default'}
+                              >
+                                {isSelected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                              </Button>
+                            )}
                           </TableCell>
                         </TableRow>
                       );
