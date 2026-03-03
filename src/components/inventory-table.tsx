@@ -12,6 +12,7 @@ import Image from "next/image";
 import { Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import type { Part } from "@/lib/types";
+import { AddPartDialog, type AddPartFormSchema } from "./add-part-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,9 +30,10 @@ interface InventoryTableProps {
   parts: Part[];
   onDelete: (partId: string, category: Part['category']) => void;
   onUpdateStock: (partId: string, category: Part['category'], newStock: number) => void;
+  onUpdatePart: (partId: string, category: Part['category'], data: AddPartFormSchema) => Promise<void>;
 }
 
-export function InventoryTable({ parts, onDelete, onUpdateStock }: InventoryTableProps) {
+export function InventoryTable({ parts, onDelete, onUpdateStock, onUpdatePart }: InventoryTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -56,13 +58,20 @@ export function InventoryTable({ parts, onDelete, onUpdateStock }: InventoryTabl
                   height={40}
                   className="rounded-sm object-cover"
                 />
-                <span>{part.name}</span>
+                <AddPartDialog
+                  initialData={part}
+                  onSave={(data) => onUpdatePart(part.id, part.category, data)}
+                >
+                  <span className="cursor-pointer hover:text-primary hover:underline underline-offset-4 decoration-primary/30 transition-all font-semibold italic">
+                    {part.name}
+                  </span>
+                </AddPartDialog>
               </div>
             </TableCell>
             <TableCell>{part.category}</TableCell>
             <TableCell>{part.brand}</TableCell>
             <TableCell className="w-[150px]">
-              <StockEditor 
+              <StockEditor
                 stock={part.stock}
                 onStockChange={(newStock) => onUpdateStock(part.id, part.category, newStock)}
               />

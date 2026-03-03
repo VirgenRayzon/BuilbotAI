@@ -3,7 +3,8 @@ import { Logo } from "./logo";
 
 export function Footer() {
   return (
-    <footer className="bg-card border-t mt-16">
+    <footer className="bg-slate-950 border-t border-primary/10 mt-16 font-body relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
       <div className="container mx-auto py-12 px-4 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2">

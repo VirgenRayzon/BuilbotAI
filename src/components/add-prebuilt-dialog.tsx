@@ -13,6 +13,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogDescription,
+    DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,7 +43,7 @@ import { ScrollArea } from "./ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Loader2, Sparkles, Info, Zap, Cpu, BrainCircuit, Search, Check, ChevronDown } from "lucide-react";
 import { getAiPrebuiltSuggestions } from "@/app/actions";
-import type { Part } from "@/lib/types";
+import type { Part, PrebuiltSystem } from "@/lib/types";
 
 const formSchema = z.object({
     name: z.string().min(1, "System name is required."),
@@ -64,8 +65,10 @@ export type AddPrebuiltFormSchema = z.infer<typeof formSchema>;
 
 interface AddPrebuiltDialogProps {
     children: React.ReactNode;
-    onAddPrebuilt: (data: AddPrebuiltFormSchema) => void;
+    onSave: (data: AddPrebuiltFormSchema) => void;
     parts: Part[];
+    initialData?: PrebuiltSystem;
+    title?: string;
 }
 
 /** Inline searchable part selector — sits inside a FormField */
@@ -190,7 +193,7 @@ const PART_SLOTS = [
     { key: "cooler", label: "Cooler" },
 ] as const;
 
-export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuiltDialogProps) {
+export function AddPrebuiltDialog({ children, onSave, parts, initialData, title }: AddPrebuiltDialogProps) {
     const [open, setOpen] = useState(false);
     const [isAiPending, startAiTransition] = useTransition();
     const [aiResult, setAiResult] = useState<{ wattage: string; summary: string } | null>(null);
@@ -215,10 +218,47 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
     const form = useForm<AddPrebuiltFormSchema>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            name: "", tier: "", description: "", price: 0, imageUrl: "",
-            cpu: "", gpu: "", motherboard: "", ram: "", storage: "", psu: "", case: "", cooler: "",
+            name: initialData?.name || "",
+            tier: initialData?.tier || "",
+            description: initialData?.description || "",
+            price: initialData?.price || 0,
+            imageUrl: initialData?.imageUrl || "",
+            cpu: initialData?.components.cpu || "",
+            gpu: initialData?.components.gpu || "",
+            motherboard: initialData?.components.motherboard || "",
+            ram: initialData?.components.ram || "",
+            storage: initialData?.components.storage || "",
+            psu: initialData?.components.psu || "",
+            case: initialData?.components.case || "",
+            cooler: initialData?.components.cooler || "",
         },
     });
+
+    // Re-reset form if initialData changes or dialog opens
+    useEffect(() => {
+        if (open && initialData) {
+            form.reset({
+                name: initialData.name,
+                tier: initialData.tier,
+                description: initialData.description,
+                price: initialData.price,
+                imageUrl: initialData.imageUrl,
+                cpu: initialData.components.cpu,
+                gpu: initialData.components.gpu,
+                motherboard: initialData.components.motherboard,
+                ram: initialData.components.ram,
+                storage: initialData.components.storage,
+                psu: initialData.components.psu,
+                case: initialData.components.case,
+                cooler: initialData.components.cooler,
+            });
+        } else if (open && !initialData) {
+            form.reset({
+                name: "", tier: "", description: "", price: 0, imageUrl: "",
+                cpu: "", gpu: "", motherboard: "", ram: "", storage: "", psu: "", case: "", cooler: "",
+            });
+        }
+    }, [open, initialData, form]);
 
     const handleAiAssist = () => {
         const selectedComponents = {
@@ -257,9 +297,9 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
     };
 
     const onSubmit = (values: AddPrebuiltFormSchema) => {
-        onAddPrebuilt(values);
-        toast({ title: "Prebuilt System Added!", description: `${values.name} has been added.` });
-        form.reset();
+        onSave(values);
+        toast({ title: initialData ? "Prebuilt Updated!" : "Prebuilt System Added!", description: `${values.name} has been ${initialData ? 'updated' : 'added'}.` });
+        if (!initialData) form.reset();
         setAiResult(null);
         setOpen(false);
     };
@@ -274,44 +314,39 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-4xl p-0 gap-0 overflow-hidden border-primary/20 bg-background shadow-2xl [&>button.absolute]:hidden">
 
-                <DialogHeader className="sr-only">
-                    <DialogTitle>Add New Prebuilt System</DialogTitle>
-                    <DialogDescription>
-                        Search and select components from inventory to create a new pre-built system.
-                    </DialogDescription>
-                </DialogHeader>
-
                 {/* ── Header ── */}
-                <div className="px-6 pt-6 pb-4 border-b border-border/60 bg-muted/30">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-                            <Cpu className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                            <h2 className="font-headline text-xl font-bold tracking-tight">Add New Prebuilt System</h2>
-                            <p className="text-xs text-muted-foreground mt-0.5">Configure the system details and select components from inventory.</p>
-                        </div>
-                        <div className="ml-auto">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={handleAiAssist}
-                                disabled={isAiPending}
-                                className="border-primary/30 hover:border-primary hover:bg-primary/10 text-primary gap-1.5"
-                            >
-                                {isAiPending ? <Loader2 className="animate-spin h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
-                                AI Assist
-                            </Button>
-                        </div>
+                <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60 bg-muted/30 flex-row items-center gap-3 space-y-0">
+                    <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+                        <Cpu className="h-5 w-5 text-primary" />
                     </div>
-                    {isAiPending && (
-                        <div className="flex items-center gap-2 mt-3 text-xs text-primary animate-pulse">
-                            <BrainCircuit className="h-3.5 w-3.5 shrink-0" />
-                            <span>Buildbot is Generating System Details…</span>
-                        </div>
-                    )}
-                </div>
+                    <div className="flex-1">
+                        <DialogTitle className="font-headline text-xl font-bold tracking-tight">
+                            {title || (initialData ? "Edit Prebuilt System" : "Add New Prebuilt System")}
+                        </DialogTitle>
+                        <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                            {initialData ? "Configure the system details below." : "Configure the system details and select components from inventory."}
+                        </DialogDescription>
+                    </div>
+                    <div className="ml-auto">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleAiAssist}
+                            disabled={isAiPending}
+                            className="border-primary/30 hover:border-primary hover:bg-primary/10 text-primary gap-1.5"
+                        >
+                            {isAiPending ? <Loader2 className="animate-spin h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+                            AI Assist
+                        </Button>
+                    </div>
+                </DialogHeader>
+                {isAiPending && (
+                    <div className="flex items-center gap-2 mt-3 text-xs text-primary animate-pulse">
+                        <BrainCircuit className="h-3.5 w-3.5 shrink-0" />
+                        <span>Buildbot is Generating System Details…</span>
+                    </div>
+                )}
 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col">
@@ -458,7 +493,7 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
                         </ScrollArea>
 
                         {/* ── Sticky Footer ── */}
-                        <div className="flex items-center justify-between px-6 py-4 border-t border-border/60 bg-muted/20">
+                        <DialogFooter className="flex items-center justify-between px-6 py-4 border-t border-border/60 bg-muted/20 sm:justify-between space-x-0">
                             <p className="text-xs text-muted-foreground">
                                 {PART_SLOTS.filter(({ key }) => !!form.watch(key as keyof AddPrebuiltFormSchema)).length} / {PART_SLOTS.length} components selected
                             </p>
@@ -467,14 +502,14 @@ export function AddPrebuiltDialog({ children, onAddPrebuilt, parts }: AddPrebuil
                                     <Button type="button" variant="ghost" size="sm">Cancel</Button>
                                 </DialogClose>
                                 <Button type="submit" size="sm" disabled={isAiPending} className="bg-primary hover:bg-primary/90 font-headline tracking-wide px-6">
-                                    Add Prebuilt System
+                                    {initialData ? "Save Changes" : "Add Prebuilt System"}
                                 </Button>
                             </div>
-                        </div>
+                        </DialogFooter>
 
                     </form>
                 </Form>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

@@ -220,28 +220,28 @@ export function BuilderSidebarLeft({ build, resolution, onResolutionChange, work
     return (
         <div className={`flex flex-col gap-4 ${className || ""}`}>
             {/* Analytics Dashboard */}
-            <Card className="flex-none border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)] overflow-hidden bg-background/80 backdrop-blur-md">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-cyan-500"></div>
-                <CardHeader className="py-3 px-4 bg-secondary/20 flex flex-row items-center justify-between gap-2 overflow-x-auto no-scrollbar">
-                    <CardTitle className="font-headline text-sm flex items-center gap-2 text-cyan-400 tracking-wider shrink-0">
+            <Card className="flex-none border-primary/20 shadow-[0_0_30px_rgba(34,211,238,0.1)] overflow-hidden bg-background/40 backdrop-blur-2xl relative">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse"></div>
+                <CardHeader className="py-4 px-5 bg-white/5 flex flex-row items-center justify-between gap-2 overflow-x-auto no-scrollbar border-b border-white/5">
+                    <CardTitle className="font-headline text-xs font-bold flex items-center gap-2 text-primary tracking-[0.2em] shrink-0">
                         <Activity className="w-4 h-4" /> ANALYTICS
                     </CardTitle>
                     <div className="flex items-center gap-2">
                         <Select value={resolution} onValueChange={(val: any) => onResolutionChange(val)}>
-                            <SelectTrigger className="h-6 text-[9px] w-[65px] bg-background/50 border-cyan-500/30 text-zinc-300">
+                            <SelectTrigger className="h-7 text-[10px] w-[70px] bg-white/5 border-primary/20 text-slate-300 hover:border-primary/40 transition-colors">
                                 <SelectValue placeholder="Res" />
                             </SelectTrigger>
-                            <SelectContent className="bg-background/95 border-cyan-500/30">
+                            <SelectContent className="bg-slate-900 border-primary/20">
                                 <SelectItem value="1080p" className="text-[10px]">1080p</SelectItem>
                                 <SelectItem value="1440p" className="text-[10px]">1440p</SelectItem>
                                 <SelectItem value="4K" className="text-[10px]">4K</SelectItem>
                             </SelectContent>
                         </Select>
                         <Select value={workload} onValueChange={(val: any) => onWorkloadChange(val)}>
-                            <SelectTrigger className="h-6 text-[9px] w-[80px] bg-background/50 border-cyan-500/30 text-zinc-300">
+                            <SelectTrigger className="h-7 text-[10px] w-[85px] bg-white/5 border-primary/20 text-slate-300 hover:border-primary/40 transition-colors">
                                 <SelectValue placeholder="Profile" />
                             </SelectTrigger>
-                            <SelectContent className="bg-background/95 border-cyan-500/30">
+                            <SelectContent className="bg-slate-900 border-primary/20">
                                 <SelectItem value="Balanced" className="text-[10px]">Balanced</SelectItem>
                                 <SelectItem value="Esports" className="text-[10px]">Esports</SelectItem>
                                 <SelectItem value="AAA" className="text-[10px]">AAA</SelectItem>

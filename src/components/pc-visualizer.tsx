@@ -279,7 +279,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
     return (
         <div className="w-full h-[450px] bg-[#0c0f14] rounded-xl border border-white/5 relative overflow-hidden flex items-center justify-center font-sans shadow-2xl">
             {/* Top Gradient Edge - Matched to Analytics height and colors */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-cyan-500" />
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20" />
 
             {/* HUD overlay */}
             <div className="absolute top-5 left-5 z-10 flex flex-col gap-1.5 pointer-events-none">

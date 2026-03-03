@@ -317,6 +317,15 @@ export default function AiBuildAdvisorPage() {
 
   return (
     <main className="flex-1 w-full max-w-[1800px] mx-auto p-4 md:p-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+        <div className="text-left">
+          <h1 className="text-4xl font-headline font-bold uppercase tracking-tight">AI Build Advisor</h1>
+          <p className="text-muted-foreground mt-2">
+            Get intelligent hardware recommendations and professional critiques for your custom build.
+          </p>
+        </div>
+      </div>
+
       {builderState ? (
         <Tabs defaultValue="critique" className="w-full h-full">
           <TabsList className="grid w-full grid-cols-2 mb-8 max-w-md mx-auto">

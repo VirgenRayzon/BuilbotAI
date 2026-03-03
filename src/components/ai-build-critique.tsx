@@ -96,7 +96,8 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
     };
 
     return (
-        <Card className="w-full mt-6 bg-gradient-to-br from-card to-secondary/10 border-primary/20">
+        <Card className="w-full mt-6 bg-gradient-to-br from-card to-secondary/10 border-primary/20 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-headline text-2xl">
                     <BrainCircuit className="h-6 w-6 text-primary" />

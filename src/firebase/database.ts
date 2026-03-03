@@ -79,6 +79,28 @@ export async function deletePrebuiltSystem(firestore: Firestore, systemId: strin
     await deleteDoc(doc(firestore, 'prebuiltSystems', systemId));
 }
 
+export async function updatePrebuiltSystem(firestore: Firestore, systemId: string, data: AddPrebuiltFormSchema) {
+    const { name, tier, description, price, imageUrl, cpu, gpu, motherboard, ram, storage, psu, case: caseComponent, cooler } = data;
+    const systemData: Partial<PrebuiltSystem> = {
+        name,
+        tier: tier as PrebuiltSystem['tier'],
+        description,
+        price,
+        imageUrl: imageUrl || `https://placehold.co/800x600/1a1a2e/e0e0e0?text=${encodeURIComponent(name)}`,
+        components: {
+            cpu,
+            gpu,
+            motherboard,
+            ram,
+            storage,
+            psu,
+            case: caseComponent,
+            cooler
+        }
+    };
+    await updateDoc(doc(firestore, 'prebuiltSystems', systemId), systemData);
+}
+
 // Users
 export async function createUserProfile(firestore: Firestore, userId: string, data: Omit<UserProfile, 'id'>) {
     await setDoc(doc(firestore, 'users', userId), data);

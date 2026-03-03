@@ -35,10 +35,11 @@ export function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-primary/20 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
       <div className="container flex h-14 max-w-screen-2xl items-center">
         <Link href={authUser ? "/builder" : "/"} className="mr-6 flex items-center space-x-2">
-            <Logo />
+          <Logo />
         </Link>
         <nav className="ml-10 hidden md:flex items-center space-x-6 text-sm font-medium">
           {authUser && navLinks.map((link) => (
@@ -46,9 +47,9 @@ export function Header() {
               key={link.href}
               href={link.href}
               className={cn(
-                "transition-colors hover:text-foreground/80",
+                "transition-all hover:text-primary",
                 pathname === link.href
-                  ? "text-foreground"
+                  ? "text-primary font-bold shadow-[0_0_15px_rgba(34,211,238,0.3)]"
                   : "text-foreground/60",
                 link.admin && "flex items-center gap-2"
               )}
@@ -68,12 +69,12 @@ export function Header() {
             </Button>
           ) : (
             (pathname === '/signin' || pathname === '/signup') && (
-                <Button asChild variant="ghost" size="sm">
-                    <Link href="/">Home</Link>
-                </Button>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/">Home</Link>
+              </Button>
             )
           )}
-           <ThemeToggle />
+          <ThemeToggle />
         </div>
       </div>
     </header>

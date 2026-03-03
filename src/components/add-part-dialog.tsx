@@ -1,14 +1,20 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { formatCurrency, formatToPHP } from "@/lib/utils";
+import type { Part } from "@/lib/types";
 import {
   Dialog,
   DialogContent,
   DialogTrigger,
   DialogClose,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -167,10 +173,12 @@ export type AddPartFormSchema = z.infer<typeof formSchema>;
 
 interface AddPartDialogProps {
   children: React.ReactNode;
-  onAddPart: (data: AddPartFormSchema) => Promise<void>;
+  onSave: (data: AddPartFormSchema) => Promise<void>;
+  initialData?: Part;
+  title?: string;
 }
 
-export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
+export function AddPartDialog({ children, onSave, initialData, title }: AddPartDialogProps) {
   const [open, setOpen] = useState(false);
   const [isAiPending, startAiTransition] = useTransition();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -182,18 +190,51 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
   const form = useForm<AddPartFormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      partName: "",
-      category: "",
-      brand: "",
-      price: 0,
-      stockCount: 0,
-      imageUrl: "",
-      wattage: undefined,
-      performanceScore: 50,
-      dimensions: { width: 0, height: 0, depth: 0 },
-      specifications: [],
+      partName: initialData?.name || "",
+      category: initialData?.category || "",
+      brand: initialData?.brand || "",
+      price: initialData?.price || 0,
+      stockCount: initialData?.stock || 0,
+      imageUrl: initialData?.imageUrl || "",
+      wattage: initialData?.wattage,
+      performanceScore: initialData?.performanceScore || 50,
+      dimensions: initialData?.dimensions || { width: 0, height: 0, depth: 0 },
+      specifications: initialData?.specifications
+        ? Object.entries(initialData.specifications).map(([key, value]) => ({ key, value: String(value) }))
+        : [],
     },
   });
+
+  // Re-reset form if initialData changes or dialog opens
+  useEffect(() => {
+    if (open && initialData) {
+      form.reset({
+        partName: initialData.name,
+        category: initialData.category,
+        brand: initialData.brand,
+        price: initialData.price,
+        stockCount: initialData.stock,
+        imageUrl: initialData.imageUrl,
+        wattage: initialData.wattage,
+        performanceScore: initialData.performanceScore,
+        dimensions: initialData.dimensions || { width: 0, height: 0, depth: 0 },
+        specifications: Object.entries(initialData.specifications || {}).map(([key, value]) => ({ key, value: String(value) })),
+      });
+    } else if (open && !initialData) {
+      form.reset({
+        partName: "",
+        category: "",
+        brand: "",
+        price: 0,
+        stockCount: 0,
+        imageUrl: "",
+        wattage: undefined,
+        performanceScore: 50,
+        dimensions: { width: 0, height: 0, depth: 0 },
+        specifications: [],
+      });
+    }
+  }, [open, initialData, form]);
 
   const specifications = form.watch("specifications");
   const selectedCategory = form.watch("category");
@@ -288,12 +329,12 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
   const onSubmit = async (values: AddPartFormSchema) => {
     setIsSubmitting(true);
     try {
-      await onAddPart(values);
-      toast({ title: "Part Added!", description: `${values.partName} has been added to the inventory.` });
-      form.reset();
+      await onSave(values);
+      toast({ title: initialData ? "Part Updated!" : "Part Added!", description: `${values.partName} has been ${initialData ? 'updated' : 'added to'} the inventory.` });
+      if (!initialData) form.reset();
       setOpen(false);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error adding part", description: error.message || "An unexpected error occurred." });
+      toast({ variant: "destructive", title: initialData ? "Error updating part" : "Error adding part", description: error.message || "An unexpected error occurred." });
     } finally {
       setIsSubmitting(false);
     }
@@ -305,36 +346,38 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
       <DialogContent className="sm:max-w-4xl p-0 gap-0 overflow-hidden border-primary/20 bg-background shadow-2xl [&>button.absolute]:hidden">
 
         {/* ── Header ── */}
-        <div className="px-6 pt-6 pb-4 border-b border-border/60 bg-muted/30">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-              <Plus className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-headline text-xl font-bold tracking-tight">Add New Component</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Fill in the details or use Buildbot AI to autofill.</p>
-            </div>
-            <div className="ml-auto">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleGetAiDetails}
-                disabled={isAiPending}
-                className="border-primary/30 hover:border-primary hover:bg-primary/10 text-primary gap-1.5"
-              >
-                {isAiPending ? <Loader2 className="animate-spin h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
-                AI Autofill
-              </Button>
-            </div>
+        <DialogHeader className="flex-row items-center gap-3 space-y-0">
+          <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+            <Plus className="h-5 w-5 text-primary" />
           </div>
-          {isAiPending && (
-            <div className="flex items-center gap-2 mt-3 text-xs text-primary animate-pulse">
-              <BrainCircuit className="h-3.5 w-3.5 shrink-0" />
-              <span>Buildbot is Prefilling the Specifications…</span>
-            </div>
-          )}
-        </div>
+          <div className="flex-1">
+            <DialogTitle className="font-headline text-xl font-bold tracking-tight">
+              {title || (initialData ? "Edit Component" : "Add New Component")}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+              {initialData ? "Modify the component details below." : "Fill in the details or use Buildbot AI to autofill."}
+            </DialogDescription>
+          </div>
+          <div className="ml-auto">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleGetAiDetails}
+              disabled={isAiPending}
+              className="border-primary/30 hover:border-primary hover:bg-primary/10 text-primary gap-1.5"
+            >
+              {isAiPending ? <Loader2 className="animate-spin h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+              AI Autofill
+            </Button>
+          </div>
+        </DialogHeader>
+        {isAiPending && (
+          <div className="flex items-center gap-2 mt-3 text-xs text-primary animate-pulse">
+            <BrainCircuit className="h-3.5 w-3.5 shrink-0" />
+            <span>Buildbot is Prefilling the Specifications…</span>
+          </div>
+        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col">
@@ -513,7 +556,7 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
             </ScrollArea>
 
             {/* ── Sticky Footer ── */}
-            <div className="flex items-center justify-between px-6 py-4 border-t border-border/60 bg-muted/20">
+            <DialogFooter className="flex items-center justify-between px-6 py-4 border-t border-border/60 bg-muted/20 sm:justify-between space-x-0">
               <p className="text-xs text-muted-foreground">
                 {selectedCategory ? (
                   <><span className="font-semibold text-primary">{CATEGORY_SPECS[selectedCategory]?.length ?? 0}</span> spec fields for <span className="font-semibold">{selectedCategory}</span></>
@@ -527,14 +570,14 @@ export function AddPartDialog({ children, onAddPart }: AddPartDialogProps) {
                 </DialogClose>
                 <Button type="submit" size="sm" disabled={isSubmitting} className="bg-primary hover:bg-primary/90 font-headline tracking-wide px-6">
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Add Part
+                  {initialData ? "Save Changes" : "Add Part"}
                 </Button>
               </div>
-            </div>
+            </DialogFooter>
 
           </form>
         </Form>
       </DialogContent>
-    </Dialog>
+    </Dialog >
   );
 }

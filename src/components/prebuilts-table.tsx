@@ -35,14 +35,18 @@ import {
 import { AlertCircle } from "lucide-react";
 import { PrebuiltDetailsModal } from "./prebuilt-details-modal";
 import { PrebuiltCardSpecs } from "./prebuilt-card-specs";
+import { AddPrebuiltDialog, type AddPrebuiltFormSchema } from "./add-prebuilt-dialog";
+import type { Part } from "@/lib/types";
 
 interface PrebuiltsTableProps {
   systems: PrebuiltSystem[];
   onDelete?: (systemId: string) => void;
+  onUpdate?: (systemId: string, data: AddPrebuiltFormSchema) => Promise<void>;
+  parts?: Part[];
   showActions?: boolean;
 }
 
-export function PrebuiltsTable({ systems, onDelete, showActions = true }: PrebuiltsTableProps) {
+export function PrebuiltsTable({ systems, onDelete, onUpdate, parts = [], showActions = true }: PrebuiltsTableProps) {
   const { toast } = useToast();
 
   const handleAddToCart = (systemName: string) => {
@@ -78,7 +82,19 @@ export function PrebuiltsTable({ systems, onDelete, showActions = true }: Prebui
                     />
                   </div>
                   <div className="flex-1">
-                    <p className="font-headline text-base group-hover:text-primary transition-colors">{system.name}</p>
+                    {onUpdate ? (
+                      <AddPrebuiltDialog
+                        initialData={system}
+                        parts={parts}
+                        onSave={(data) => onUpdate(system.id, data)}
+                      >
+                        <p className="font-headline text-base group-hover:text-primary transition-colors cursor-pointer hover:underline underline-offset-4 decoration-primary/30 italic">
+                          {system.name}
+                        </p>
+                      </AddPrebuiltDialog>
+                    ) : (
+                      <p className="font-headline text-base group-hover:text-primary transition-colors">{system.name}</p>
+                    )}
                     <p className="text-xs text-muted-foreground line-clamp-1 max-w-[400px]">
                       {system.description}
                     </p>

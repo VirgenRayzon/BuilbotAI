@@ -17,7 +17,7 @@ import type { Part, PrebuiltSystem } from '@/lib/types';
 import { InventoryTable } from '@/components/inventory-table';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { addPart, deletePart, addPrebuiltSystem, deletePrebuiltSystem, updatePart } from '@/firebase/database';
+import { addPart, deletePart, addPrebuiltSystem, deletePrebuiltSystem, updatePart, updatePrebuiltSystem } from '@/firebase/database';
 import { collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { TableSkeleton } from '@/components/table-skeleton';
@@ -170,6 +170,21 @@ export default function AdminPage() {
         await addPart(firestore, newPartData);
     };
 
+    const handleUpdatePart = async (partId: string, category: Part['category'], data: AddPartFormSchema) => {
+        if (!firestore) return;
+        await updatePart(firestore, category, partId, {
+            name: data.partName,
+            brand: data.brand,
+            price: data.price,
+            stock: data.stockCount,
+            imageUrl: data.imageUrl,
+            wattage: data.wattage,
+            performanceScore: data.performanceScore,
+            dimensions: data.dimensions,
+            specifications: Object.fromEntries(data.specifications.map(s => [s.key, s.value]))
+        });
+    };
+
     const handleUpdatePartStock = async (partId: string, category: Part['category'], newStock: number) => {
         if (!firestore) return;
         await updatePart(firestore, category, partId, { stock: newStock });
@@ -183,6 +198,14 @@ export default function AdminPage() {
     const handleAddPrebuilt = async (newPrebuiltData: AddPrebuiltFormSchema) => {
         if (!firestore) return;
         await addPrebuiltSystem(firestore, newPrebuiltData);
+    };
+
+    const handleUpdatePrebuilt = async (systemId: string, data: AddPrebuiltFormSchema) => {
+        if (!firestore) return;
+        // In a real app we might want a specific updatePrebuiltSystem function
+        // for now we can use the existing update logic if available or implement it
+        // and add it to firestore-utils
+        await updatePrebuiltSystem(firestore, systemId, data);
     };
 
     const handleDeletePrebuilt = async (systemId: string) => {
@@ -290,7 +313,7 @@ export default function AdminPage() {
                     <div>
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-2xl font-headline font-bold">INVENTORY OVERVIEW</h2>
-                            <AddPartDialog onAddPart={handleAddPart}>
+                            <AddPartDialog onSave={handleAddPart}>
                                 <Button>
                                     <Plus className="mr-2" />
                                     Add New Part
@@ -318,7 +341,7 @@ export default function AdminPage() {
                                     partView === 'list' ? (
                                         <>
                                             <Card className="mt-6">
-                                                <InventoryTable parts={paginatedParts} onDelete={handleDeletePart} onUpdateStock={handleUpdatePartStock} />
+                                                <InventoryTable parts={paginatedParts} onDelete={handleDeletePart} onUpdateStock={handleUpdatePartStock} onUpdatePart={handleUpdatePart} />
                                             </Card>
                                             <PaginationControls
                                                 currentPage={partCurrentPage}
@@ -332,7 +355,7 @@ export default function AdminPage() {
                                         <>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
                                                 {paginatedParts.map(part => (
-                                                    <AdminPartCard key={part.id} part={part} onDelete={handleDeletePart} onUpdateStock={handleUpdatePartStock} />
+                                                    <AdminPartCard key={part.id} part={part} onDelete={handleDeletePart} onUpdateStock={handleUpdatePartStock} onUpdatePart={handleUpdatePart} />
                                                 ))}
                                             </div>
                                             <PaginationControls
@@ -371,7 +394,7 @@ export default function AdminPage() {
                     <div>
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-2xl font-headline font-bold">PREBUILTS OVERVIEW</h2>
-                            <AddPrebuiltDialog onAddPrebuilt={handleAddPrebuilt} parts={parts ?? []}>
+                            <AddPrebuiltDialog onSave={handleAddPrebuilt} parts={parts ?? []}>
                                 <Button>
                                     <Plus className="mr-2" />
                                     Add New Prebuilt
@@ -398,7 +421,7 @@ export default function AdminPage() {
                                     prebuiltView === 'list' ? (
                                         <>
                                             <Card className="mt-6">
-                                                <PrebuiltsTable systems={paginatedPrebuilts} onDelete={handleDeletePrebuilt} />
+                                                <PrebuiltsTable systems={paginatedPrebuilts} onDelete={handleDeletePrebuilt} onUpdate={handleUpdatePrebuilt} parts={parts} />
                                             </Card>
                                             <PaginationControls
                                                 currentPage={prebuiltCurrentPage}
@@ -412,7 +435,7 @@ export default function AdminPage() {
                                         <>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
                                                 {paginatedPrebuilts.map(system => (
-                                                    <AdminPrebuiltCard key={system.id} system={system} onDelete={handleDeletePrebuilt} />
+                                                    <AdminPrebuiltCard key={system.id} system={system} parts={parts} onDelete={handleDeletePrebuilt} onUpdate={handleUpdatePrebuilt} />
                                                 ))}
                                             </div>
                                             <PaginationControls
