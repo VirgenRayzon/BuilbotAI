@@ -39,8 +39,6 @@ const ExtractPartDetailsOutputSchema = z.object({
   price: z.number().describe("Realistic estimated retail price in PHP. Multiply USD MSRP by 60."),
   wattage: z.number().optional().describe("Estimated power consumption (W) or rated output for PSU."),
   performanceScore: z.number().optional().describe("0-100 score relative to modern high-end standards."),
-  socket: z.string().optional().describe("Socket type for CPU/Mobo/Cooler (e.g., AM5, LGA1700)."),
-  ramType: z.string().optional().describe("Memory type for RAM/Mobo (e.g., DDR4, DDR5)."),
   dimensions: z.object({
     width: z.number(),
     height: z.number(),
@@ -86,26 +84,26 @@ ${groundedContext ? `GROUNDING CONTEXT FROM EXPERT SOURCE:\n${groundedContext}\n
 
 Given the part name, provide the full corrected part name, identify its category, brand, and a realistic estimate for its current retail price in Philippine Pesos (PHP). Base this on the component's actual MSRP or average street price in USD multiplied by 56.
 
-SPECIFICATION RULES:
-- Use neutral, universal keys where possible.
-- **CPU**: 'Cores', 'Threads', 'Socket' (MUST match LGA1700, AM5, etc.), 'Base Clock', 'Boost Clock'.
-- **GPU**: 'VRAM Capacity', 'Memory Type' (e.g. GDDR6X), 'Bus Width'. 
-  - For NVIDIA: Include 'CUDA Cores'.
-  - For AMD: Include 'Stream Processors'.
-  - For Intel Arc: Include 'Xe-cores'.
-- **Motherboard**: 'Socket', 'Chipset', 'Form Factor', 'Memory Type' (DDR4 or DDR5), 'Memory Slots'.
-- **RAM**: 'Capacity', 'Speed', 'Type' (DDR4 or DDR5), 'CAS Latency'.
-- **Storage**: 'Capacity', 'Type' (NVMe SSD, SATA SSD, HDD), 'Interface', 'Form Factor'.
-- **PSU**: 'Efficiency' (e.g. 80+ Gold), 'Form Factor', 'Modularity'.
-- **Case**: 'Type' (e.g. ATX Mid Tower), 'Motherboard Support', 'Max GPU Length'.
-- **Cooler**: 'Type' (Air, AIO Liquid), 'Socket Support'.
+SPECIFICATION RULES (MANDATORY KEYS FOR 'specifications' ARRAY):
+The following keys MUST be used in the 'specifications' array for each category to ensure they appear in the UI:
+
+- **CPU**: 'Architecture', 'Cores', 'Threads', 'Base Clock (GHz)', 'Boost Clock (GHz)', 'Socket' (e.g. AM5, LGA1700), 'TDP / Peak Power', 'L3 Cache', 'Memory Support' (e.g. DDR5), 'Integrated Graphics' (Yes/No).
+- **GPU**: 'Chipset', 'VRAM Capacity', 'Memory Type' (e.g. GDDR6X), 'TGP / Power Draw (W)', 'Length (Depth) (mm)', 'Slot Thickness', 'Interface', 'Bus Width', 'CUDA Cores' (for NVIDIA) or 'Stream Processors' (for AMD).
+- **Motherboard**: 'Chipset', 'Socket', 'Form Factor', 'RAM Type' (DDR4/DDR5), 'M.2 Slots', 'Back-Connect Support', 'Connectivity', 'Memory Slots', 'Memory Type'.
+- **RAM**: 'Generation', 'Capacity', 'Speed', 'CAS Latency', 'Height', 'Type' (DDR4/DDR5).
+- **Storage**: 'Interface', 'Capacity', 'Read Speed', 'Write Speed', 'TBW Rating', 'Form Factor' (e.g. M.2 2280), 'Type' (NVMe SSD, etc.).
+- **PSU**: 'Wattage (W)', 'Efficiency Rating', 'Modularity', '12VHPWR Support', 'Form Factor'.
+- **Case**: 'Max GPU Length', 'Max Cooler Height', 'Max Radiator Size (mm)', 'Mobo Support', 'Radiator Support', 'Back-Connect Cutout', 'Type', 'PSU Form Factor'.
+- **Cooler**: 'TDP Rating', 'Socket Support', 'Height', 'Radiator Size', 'Type'.
+- **Monitor**: 'Screen Size', 'Resolution', 'Refresh Rate', 'Panel Type', 'Response Time'.
+- **Keyboard**: 'Type', 'Switches', 'Layout', 'Backlighting'.
+- **Mouse**: 'Sensor', 'DPI', 'Connectivity', 'Weight'.
+- **Headset**: 'Type', 'Connectivity', 'Driver Size', 'Microphone'.
 
 ADDITIONAL FIELDS:
-- 'wattage': TDP for CPU/GPU, rated output for PSU.
-- 'performanceScore': 0-100 (e.g., i9-14900K = 98, RTX 4090 = 100, RTX 3060 = 65).
-- 'socket': Extract the socket type (e.g., "LGA1700", "AM5") into this top-level field if applicable.
-- 'ramType': Extract "DDR4" or "DDR5" into this top-level field for RAM and Motherboards.
-- 'dimensions': Extract {width, height, depth} in mm. Crucial for GPUs (length is width) and Cases.
+- 'wattage': TDP for CPU/GPU, rated output for PSU (number).
+- 'performanceScore': 0-100 (e.g., i9-14900K = 98, RTX 4090 = 100).
+- 'dimensions': {width, height, depth} in mm. For GPUs, 'depth' is the length.
 
 Part Name: ${input.partName}`;
 

@@ -54,8 +54,8 @@ export default function StartPage() {
               transition={{ duration: 0.8, ease: "easeOut" }}
               className="text-left"
             >
-              <div className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-medium text-primary mb-8 tracking-widest uppercase">
-                <Sparkles className="mr-2 h-4 w-4" />
+              <div className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-medium text-primary mb-8 tracking-widest uppercase animate-sparkle">
+                <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
                 THE FUTURE OF PC BUILDING
               </div>
 
@@ -73,9 +73,11 @@ export default function StartPage() {
                     Get Started <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="h-14 px-8 text-[12px] uppercase tracking-widest rounded-full font-bold bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white backdrop-blur-md">
-                  <Link href="/signin">
+                <Button asChild variant="outline" size="lg" className="h-14 px-8 text-[12px] uppercase tracking-widest rounded-full font-bold bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white backdrop-blur-md relative overflow-hidden group/advisor">
+                  <Link href="/signin" className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary animate-sparkle" />
                     AI Advisor
+                    <div className="absolute inset-0 animate-shimmer pointer-events-none opacity-0 group-hover/advisor:opacity-100 transition-opacity" />
                   </Link>
                 </Button>
               </div>

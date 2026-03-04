@@ -388,7 +388,7 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, resolu
                 )}
                 <div className="flex flex-col gap-3 w-full">
                     <Button
-                        className="w-full font-headline tracking-wide flex items-center gap-2 bg-primary hover:bg-primary/90"
+                        className="w-full font-headline tracking-wide flex items-center gap-2 bg-primary hover:bg-primary/90 relative overflow-hidden group/analyze"
                         size="lg"
                         disabled={selectedParts === 0}
                         onClick={() => {
@@ -399,7 +399,10 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, resolu
                             }
                         }}
                     >
-                        <BrainCircuit className="h-5 w-5" /> Analyze My Build
+                        <BrainCircuit className="h-5 w-5 animate-pulse" />
+                        <Sparkles className="absolute left-4 w-4 h-4 text-white/40 animate-sparkle" />
+                        Analyze My Build
+                        <div className="absolute inset-0 animate-shimmer pointer-events-none opacity-0 group-hover/analyze:opacity-100 transition-opacity" />
                     </Button>
 
                     <Button variant="ghost" className="w-full text-muted-foreground hover:text-destructive h-8 text-xs" onClick={onClearBuild} disabled={selectedParts === 0}>

@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import readline from 'node:readline';
 
-const MCP_COMMAND = 'C:\\Users\\User-4090\\.local\\bin\\notebooklm-mcp.exe';
+const MCP_COMMAND = 'C:\\Users\\Rayzon\\AppData\\Roaming\\Python\\Python314\\Scripts\\notebooklm-mcp.exe';
 const NOTEBOOK_ID = '6aecbdcd-26ae-4738-a773-c5bc05cd01c0';
 
 export async function callNotebookTool(toolName: string, args: any) {

@@ -334,10 +334,11 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                             size="sm"
                             onClick={handleAiAssist}
                             disabled={isAiPending}
-                            className="border-primary/30 hover:border-primary hover:bg-primary/10 text-primary gap-1.5"
+                            className="border-primary/30 hover:border-primary hover:bg-primary/10 text-primary gap-1.5 relative overflow-hidden group/ai-assist"
                         >
-                            {isAiPending ? <Loader2 className="animate-spin h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+                            {isAiPending ? <Loader2 className="animate-spin h-4 w-4" /> : <Sparkles className="h-4 w-4 animate-sparkle" />}
                             AI Assist
+                            <div className="absolute inset-0 animate-shimmer pointer-events-none opacity-0 group-hover/ai-assist:opacity-100 transition-opacity" />
                         </Button>
                     </div>
                 </DialogHeader>

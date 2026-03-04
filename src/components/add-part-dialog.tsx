@@ -285,16 +285,39 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
         form.setValue("dimensions", result.dimensions || { width: 0, height: 0, depth: 0 }, {
           shouldValidate: true,
         });
+
+        // Robust merging of specifications to ensure they appear in the UI fields
+        const finalSpecs = [...(form.getValues("specifications") || [])];
+        const updateSpec = (k: string, v: any) => {
+          if (v === undefined || v === null || v === "") return;
+          const valStr = String(v);
+          const i = finalSpecs.findIndex((s) => s.key === k);
+          if (i >= 0) finalSpecs[i] = { key: k, value: valStr };
+          else finalSpecs.push({ key: k, value: valStr });
+        };
+
+        // 1. Process explicit specifications array from AI (primary source)
         if (result.specifications?.length > 0) {
-          const current = form.getValues("specifications");
-          const merged = [...current];
           result.specifications.forEach((aiSpec: { key: string; value: string }) => {
-            const i = merged.findIndex((s) => s.key === aiSpec.key);
-            if (i >= 0) merged[i] = aiSpec;
-            else merged.push(aiSpec);
+            updateSpec(aiSpec.key, aiSpec.value);
           });
-          form.setValue("specifications", merged, { shouldValidate: true });
         }
+
+        // 2. Mirror top-level fields into category-specific specs if missing
+        if (result.wattage) {
+          if (result.category === "CPU") updateSpec("TDP / Peak Power", `${result.wattage} W`);
+          else if (result.category === "GPU") updateSpec("TGP / Power Draw (W)", `${result.wattage} W`);
+          else if (result.category === "PSU") updateSpec("Wattage (W)", `${result.wattage} W`);
+          else if (result.category === "Cooler") updateSpec("TDP Rating", `${result.wattage} W`);
+        }
+
+        if (result.dimensions) {
+          if (result.category === "GPU") updateSpec("Length (Depth) (mm)", `${result.dimensions.depth} mm`);
+          else if (result.category === "Case") updateSpec("Max GPU Length", `${result.dimensions.depth} mm`);
+        }
+
+        form.setValue("specifications", finalSpecs, { shouldValidate: true });
+
         if (!form.getValues("imageUrl")) {
           const seed = result.partName.replace(/\s+/g, "").toLowerCase();
           form.setValue("imageUrl", `https://picsum.photos/seed/${seed}/800/600`, {
