@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { InventoryToolbar } from '@/components/inventory-toolbar';
 import { PrebuiltSystemCard } from '@/components/prebuilt-system-card';
@@ -13,6 +13,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
 import { SearchX, MonitorOff } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useUserProfile } from '@/context/user-profile';
+import { useRouter } from 'next/navigation';
 
 const prebuiltCategories = [
     { name: "Entry", selected: true },
@@ -23,6 +25,9 @@ const prebuiltCategories = [
 
 export default function PreBuiltsPage() {
     const firestore = useFirestore();
+    const { authUser, profile, loading: authLoading } = useUserProfile();
+    const router = useRouter();
+
     const prebuiltSystemsQuery = useMemo(() => firestore ? collection(firestore, 'prebuiltSystems') : null, [firestore]);
     const { data: prebuiltSystems, loading } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);
 
@@ -32,13 +37,24 @@ export default function PreBuiltsPage() {
     const [view, setView] = useState<'grid' | 'list'>('grid');
     const [searchQuery, setSearchQuery] = useState('');
 
+    // Role-based redirection
+    useEffect(() => {
+        if (!authLoading) {
+            if (!authUser) {
+                router.push('/signin');
+            } else if (profile?.isAdmin) {
+                router.push('/admin');
+            }
+        }
+    }, [authUser, profile, authLoading, router]);
+
     const handleCategoryChange = (categoryName: string, selected: boolean) => {
         setCategories(prev => {
             if (categoryName === 'All') {
                 const anyUnselected = prev.some(cat => !cat.selected);
                 return prev.map(cat => ({ ...cat, selected: anyUnselected }));
             }
-            return prev.map(cat => ({
+            return prev.map((cat: any) => ({
                 ...cat,
                 selected: cat.name === categoryName ? true : false
             }));

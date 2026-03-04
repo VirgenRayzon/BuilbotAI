@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ChatForm, type FormSchema } from "@/components/chat-form";
 import { BuildSummary } from "@/components/build-summary";
@@ -9,12 +9,17 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { Build, AiRecommendation, ComponentData, Resolution, WorkloadType } from "@/lib/types";
 import { Cpu, Server, CircuitBoard, MemoryStick, Bot, Wallet, Database, Power, RectangleVertical, Wind } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FloatingInsights } from "@/components/floating-insights";
+import { LayoutPanelLeft } from "lucide-react";
 import { AIBuildCritique } from "@/components/ai-build-critique";
 import { YourBuild } from "@/components/your-build";
 import { PCVisualizer } from "@/components/pc-visualizer";
 import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
-import { useMemo } from "react";
+import { BuilderFloatingChat } from "@/components/builder-floating-chat";
+import { useUserProfile } from "@/context/user-profile";
+import { useRouter } from "next/navigation";
 
 const componentMetadata: { [key: string]: { icon: React.ComponentType<{ className?: string }>, image: any } } = {
   cpu: {
@@ -53,13 +58,27 @@ const componentMetadata: { [key: string]: { icon: React.ComponentType<{ classNam
 
 export default function AiBuildAdvisorPage() {
   const { toast } = useToast();
+  const { authUser, profile, loading: userLoading } = useUserProfile();
+  const router = useRouter();
+
+  // Redirect unauthenticated users to sign-in or admins to admin dashboard
+  useEffect(() => {
+    if (!userLoading) {
+      if (!authUser) {
+        router.push('/signin');
+      } else if (profile?.isAdmin) {
+        router.push('/admin');
+      }
+    }
+  }, [authUser, profile, userLoading, router]);
 
   const [build, setBuild] = useState<Build | null>(null);
   const [builderState, setBuilderState] = useState<Record<string, ComponentData | ComponentData[] | null> | null>(null);
   const [totalPrice, setTotalPrice] = useState(0);
   const [isPending, startTransition] = useTransition();
   const [resolution, setResolution] = useState<Resolution>('1440p');
-  const [workload, setWorkload] = useState<WorkloadType>('AAA');
+  const [workload, setWorkload] = useState<WorkloadType>('Balanced');
+  const [showInsights, setShowInsights] = useState(false);
 
   const [critiqueAnalysis, setCritiqueAnalysis] = useState<any>(null);
   const [critiqueLoading, setCritiqueLoading] = useState(false);
@@ -336,24 +355,8 @@ export default function AiBuildAdvisorPage() {
           <TabsContent value="critique" className="mt-0 h-full">
             <div className="grid lg:grid-cols-12 gap-6 h-full">
 
-              {/* Left Column: Visualizer & Analytics (Matches Builder's lg:col-span-3) */}
-              <div className="lg:col-span-3">
-                <div className="sticky top-20 flex flex-col gap-6 pb-4 pr-2">
-                  <div className="flex flex-col gap-6">
-                    <PCVisualizer build={builderState} />
-                    <BuilderSidebarLeft
-                      build={builderState}
-                      resolution={resolution}
-                      onResolutionChange={setResolution}
-                      workload={workload}
-                      onWorkloadChange={setWorkload}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Middle Column: AI Critique (Previously Right) */}
-              <div className="lg:col-span-6 border-x border-border/50 px-6">
+              {/* Middle Column: AI Critique (Now wider) */}
+              <div className="lg:col-span-9 border-r border-border/50 px-6">
                 <AIBuildCritique
                   build={builderState}
                   externalAnalysis={critiqueAnalysis}
@@ -390,6 +393,33 @@ export default function AiBuildAdvisorPage() {
           </TabsContent>
         </Tabs>
       ) : generativeContent}
+      <BuilderFloatingChat />
+
+      {/* Floating Insights Toggle & Panel */}
+      <div className="fixed bottom-6 left-6 z-50 flex flex-col-reverse items-start gap-4">
+        {builderState && !showInsights && (
+          <Button
+            size="lg"
+            onClick={() => setShowInsights(true)}
+            className="rounded-full shadow-2xl h-14 px-6 gap-3 bg-primary hover:bg-primary/90 text-white font-bold uppercase tracking-widest border border-white/10 ring-4 ring-primary/20 animate-in fade-in slide-in-from-bottom-4 duration-500"
+          >
+            <LayoutPanelLeft className="w-5 h-5" />
+            Build Insights
+          </Button>
+        )}
+      </div>
+
+      {builderState && (
+        <FloatingInsights
+          isOpen={showInsights}
+          onClose={() => setShowInsights(false)}
+          build={builderState}
+          resolution={resolution}
+          onResolutionChange={setResolution}
+          workload={workload}
+          onWorkloadChange={setWorkload}
+        />
+      )}
     </main>
   );
 }

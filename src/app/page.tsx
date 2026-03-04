@@ -1,5 +1,7 @@
-'use client';
+"use client";
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useUserProfile } from '@/context/user-profile';
 import Link from 'next/link';
@@ -11,11 +13,23 @@ import { VisualizerPreview } from '@/components/landing/visualizer-preview';
 import { PrebuiltShowcase } from '@/components/landing/prebuilt-showcase';
 
 export default function StartPage() {
-  const { authUser, loading } = useUserProfile();
+  const { authUser, profile, loading } = useUserProfile();
+  const router = useRouter();
 
-  if (loading) {
+  // Redirect based on role
+  useEffect(() => {
+    if (!loading && authUser) {
+      if (profile?.isAdmin) {
+        router.push('/admin');
+      } else {
+        router.push('/builder');
+      }
+    }
+  }, [authUser, profile, loading, router]);
+
+  if (loading || authUser) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+      <div className="flex items-center justify-center min-vh-screen bg-slate-950">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
       </div>
     );
@@ -23,7 +37,6 @@ export default function StartPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 overflow-x-hidden">
-
 
       {/* Hero Section */}
       <section className="relative min-h-[90vh] flex items-center justify-center py-20 overflow-hidden">
@@ -55,21 +68,13 @@ export default function StartPage() {
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-start gap-4">
-                {authUser ? (
-                  <Button asChild size="lg" className="h-14 px-8 text-lg rounded-full font-semibold shadow-[0_0_30px_-5px_var(--theme-primary)] hover:shadow-[0_0_40px_-5px_var(--theme-primary)] transition-all">
-                    <Link href="/builder">
-                      Continue Building <ArrowRight className="ml-2 h-5 w-5" />
-                    </Link>
-                  </Button>
-                ) : (
-                  <Button asChild size="lg" className="h-14 px-8 text-lg rounded-full font-semibold shadow-[0_0_30px_-5px_var(--theme-primary)] hover:shadow-[0_0_40px_-5px_var(--theme-primary)] transition-all">
-                    <Link href="/signin">
-                      Get Started <ArrowRight className="ml-2 h-5 w-5" />
-                    </Link>
-                  </Button>
-                )}
+                <Button asChild size="lg" className="h-14 px-8 text-lg rounded-full font-semibold shadow-[0_0_30px_-5px_var(--theme-primary)] hover:shadow-[0_0_40px_-5px_var(--theme-primary)] transition-all">
+                  <Link href="/signin">
+                    Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
                 <Button asChild variant="outline" size="lg" className="h-14 px-8 text-[12px] uppercase tracking-widest rounded-full font-bold bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white backdrop-blur-md">
-                  <Link href="/ai-build-advisor">
+                  <Link href="/signin">
                     AI Advisor
                   </Link>
                 </Button>

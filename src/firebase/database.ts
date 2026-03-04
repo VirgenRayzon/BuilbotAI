@@ -12,6 +12,37 @@ const WATTAGE_SPEC_KEY: Record<string, string> = {
     Cooler: 'TDP Rating',
 };
 
+// Helper to extract wattage from specifications
+function resolveWattage(category: string, wattage?: number, specifications?: Record<string, string | number>) {
+    if (wattage !== undefined) return wattage;
+    if (!specifications || !category) return undefined;
+
+    const key = WATTAGE_SPEC_KEY[category];
+    if (!key) return undefined;
+
+    const val = specifications[key];
+    if (!val) return undefined;
+
+    return parseFloat(String(val) || '0') || undefined;
+}
+
+// Helper to clean undefined values recursively
+function cleanData(obj: any): any {
+    if (Array.isArray(obj)) return obj.map(v => v);
+    if (obj !== null && typeof obj === 'object') {
+        const cleaned: any = {};
+        Object.entries(obj).forEach(([key, value]) => {
+            if (value !== undefined) {
+                cleaned[key] = (typeof value === 'object' && value !== null && !(value instanceof Date))
+                    ? cleanData(value)
+                    : value;
+            }
+        });
+        return cleaned;
+    }
+    return obj;
+}
+
 // Parts
 export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
     const specificationsMap = part.specifications.reduce((acc, spec) => {
@@ -19,11 +50,7 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
         return acc;
     }, {} as Record<string, string>);
 
-    // Auto-extract wattage from the category-specific spec field when not explicitly set
-    const specWattageRaw = WATTAGE_SPEC_KEY[part.category]
-        ? parseFloat(specificationsMap[WATTAGE_SPEC_KEY[part.category]] || '0') || undefined
-        : undefined;
-    const resolvedWattage = part.wattage ?? specWattageRaw;
+    const resolvedWattage = resolveWattage(part.category, part.wattage, specificationsMap);
 
     const partData = {
         name: part.partName,
@@ -33,16 +60,22 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
         imageUrl: part.imageUrl || `https://picsum.photos/seed/${part.partName.replace(/\s+/g, '').toLowerCase()}/800/600?pc,component`,
         specifications: specificationsMap,
         createdAt: new Date(),
-        ...(resolvedWattage !== undefined && { wattage: resolvedWattage }),
-        ...(part.performanceScore !== undefined && { performanceScore: part.performanceScore }),
-        ...(part.dimensions !== undefined && { dimensions: part.dimensions })
+        wattage: resolvedWattage,
+        performanceScore: part.performanceScore,
+        dimensions: part.dimensions
     };
-    await addDoc(collection(firestore, part.category), partData);
+
+    await addDoc(collection(firestore, part.category), cleanData(partData));
 }
 
 
 export async function updatePart(firestore: Firestore, category: Part['category'], partId: string, data: Partial<Omit<Part, 'id' | 'category'>>) {
-    await updateDoc(doc(firestore, category, partId), data);
+    // If specifications are being updated but not wattage, try to re-resolve wattage
+    if (data.specifications && data.wattage === undefined) {
+        data.wattage = resolveWattage(category, undefined, data.specifications);
+    }
+
+    await updateDoc(doc(firestore, category, partId), cleanData(data));
 }
 
 export async function deletePart(firestore: Firestore, partId: string, category: Part['category']) {
@@ -72,7 +105,7 @@ export async function addPrebuiltSystem(firestore: Firestore, system: AddPrebuil
         createdAt: new Date()
     };
 
-    await addDoc(collection(firestore, 'prebuiltSystems'), systemData);
+    await addDoc(collection(firestore, 'prebuiltSystems'), cleanData(systemData));
 }
 
 export async function deletePrebuiltSystem(firestore: Firestore, systemId: string) {
@@ -98,7 +131,7 @@ export async function updatePrebuiltSystem(firestore: Firestore, systemId: strin
             cooler
         }
     };
-    await updateDoc(doc(firestore, 'prebuiltSystems', systemId), systemData);
+    await updateDoc(doc(firestore, 'prebuiltSystems', systemId), cleanData(systemData));
 }
 
 // Users

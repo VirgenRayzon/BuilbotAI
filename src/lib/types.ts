@@ -87,6 +87,7 @@ export type PrebuiltSystem = {
 export type UserProfile = {
   id: string;
   email: string;
+  name?: string;
   isAdmin: boolean;
 };
 
@@ -103,6 +104,7 @@ export type Order = {
   userEmail: string;
   items: OrderItem[];
   totalPrice: number;
+  status: 'pending' | 'ongoing' | 'finished';
   createdAt: any; // Firestore Timestamp
 };
 

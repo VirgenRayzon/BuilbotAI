@@ -9,6 +9,7 @@ import { Plus, Package, PackageCheck, ServerCrash, Loader2, BarChart3, History, 
 import { Order } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { InventoryToolbar } from '@/components/inventory-toolbar';
 import { Card, CardContent } from '@/components/ui/card';
 import { AddPartDialog, type AddPartFormSchema } from '@/components/add-part-dialog';
@@ -20,8 +21,10 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { addPart, deletePart, addPrebuiltSystem, deletePrebuiltSystem, updatePart, updatePrebuiltSystem } from '@/firebase/database';
 import { collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 import { TableSkeleton } from '@/components/table-skeleton';
 import { useUserProfile } from '@/context/user-profile';
+import { useToast } from "@/hooks/use-toast";
 import { AdminPartCard } from '@/components/admin-part-card';
 import { AdminPrebuiltCard } from '@/components/admin-prebuilt-card';
 import { PrebuiltSystemCard } from '@/components/prebuilt-system-card';
@@ -55,11 +58,16 @@ export default function AdminPage() {
     const firestore = useFirestore();
     const router = useRouter();
     const { authUser, profile, loading: userLoading } = useUserProfile();
+    const { toast } = useToast();
 
     // Route protection
     useEffect(() => {
-        if (!userLoading && (!authUser || !profile?.isAdmin)) {
-            router.replace('/signin');
+        if (!userLoading) {
+            if (!authUser) {
+                router.replace('/signin');
+            } else if (!profile?.isAdmin) {
+                router.replace('/builder');
+            }
         }
     }, [authUser, profile, userLoading, router]);
 
@@ -211,6 +219,26 @@ export default function AdminPage() {
     const handleDeletePrebuilt = async (systemId: string) => {
         if (!firestore) return;
         await deletePrebuiltSystem(firestore, systemId);
+    };
+
+    const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
+        if (!firestore) return;
+        try {
+            await updateDoc(doc(firestore, "orders", orderId), {
+                status: newStatus
+            });
+            toast({
+                title: "Status Updated",
+                description: `Order ${orderId.substring(0, 8)} status changed to ${newStatus}.`,
+            });
+        } catch (error) {
+            console.error("Error updating order status:", error);
+            toast({
+                title: "Update Failed",
+                description: "Failed to update order status.",
+                variant: "destructive"
+            });
+        }
     };
 
     const filteredAndSortedParts = useMemo(() => {
@@ -517,7 +545,7 @@ export default function AdminPage() {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             <div>
                                 <h3 className="text-xl font-headline font-bold mb-4 flex items-center gap-2">
-                                    <History className="h-5 w-5" /> Recent Orders
+                                    <History className="h-5 w-5" /> Build Reservations
                                 </h3>
                                 <Card>
                                     <CardContent className="p-0">
@@ -525,22 +553,34 @@ export default function AdminPage() {
                                             orders && orders.length > 0 ? (
                                                 <div className="divide-y">
                                                     {[...orders].sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds).slice(0, 10).map(order => (
-                                                        <div key={order.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                                            <div>
-                                                                <p className="font-medium text-sm">{order.userEmail}</p>
+                                                        <div key={order.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                                            <div className="flex-1">
+                                                                <p className="font-bold text-sm mb-1">{order.userEmail}</p>
                                                                 <p className="text-xs text-muted-foreground">
-                                                                    {order.items.length} items • {order.createdAt?.toDate().toLocaleDateString()}
+                                                                    ID: {order.id.substring(0, 8)} • {order.items.length} items • {order.createdAt?.toDate().toLocaleDateString()}
                                                                 </p>
                                                             </div>
-                                                            <div className="text-right">
-                                                                <p className="font-bold text-emerald-500">{formatCurrency(order.totalPrice)}</p>
-                                                                <Badge variant="outline" className="text-[10px] h-4">Processed</Badge>
+                                                            <div className="flex flex-row items-center justify-end gap-3 shrink-0">
+                                                                <p className="font-bold text-emerald-500 mr-2">{formatCurrency(order.totalPrice)}</p>
+                                                                <Select
+                                                                    defaultValue={order.status || 'pending'}
+                                                                    onValueChange={(val) => handleUpdateOrderStatus(order.id, val)}
+                                                                >
+                                                                    <SelectTrigger className="w-[120px] h-8 text-xs">
+                                                                        <SelectValue placeholder="Status" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="pending">Pending</SelectItem>
+                                                                        <SelectItem value="ongoing">Ongoing</SelectItem>
+                                                                        <SelectItem value="finished">Finished</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
                                                             </div>
                                                         </div>
                                                     ))}
                                                 </div>
                                             ) : (
-                                                <div className="p-8 text-center text-muted-foreground">No orders yet.</div>
+                                                <div className="p-8 text-center text-muted-foreground">No reservations yet.</div>
                                             )
                                         )}
                                     </CardContent>

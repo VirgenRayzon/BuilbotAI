@@ -91,7 +91,7 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, resolu
         if (!user) {
             toast({
                 title: "Authentication Required",
-                description: "Please sign in to complete your purchase.",
+                description: "Please sign in to reserve your build.",
                 variant: "destructive"
             });
             return;
@@ -123,14 +123,14 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, resolu
 
         if (result.success) {
             toast({
-                title: "Order Placed Successfully!",
-                description: "Your build has been recorded and stock has been updated.",
+                title: "Build Reserved!",
+                description: "Your build reservation has been recorded and is now pending.",
             });
             setIsCheckoutDialogOpen(false);
             onClearBuild();
         } else {
             toast({
-                title: "Checkout Failed",
+                title: "Reservation Failed",
                 description: result.error,
                 variant: "destructive"
             });
@@ -413,17 +413,17 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, resolu
                                 size="lg"
                                 disabled={!isBuildComplete}
                             >
-                                <ShoppingCart className="h-5 w-5" /> Checkout Build
+                                <ShoppingCart className="h-5 w-5" /> Reserve Build
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-md">
                             <DialogHeader>
                                 <DialogTitle className="flex items-center gap-2">
                                     <ShoppingCart className="h-6 w-6 text-emerald-600" />
-                                    Confirm Order
+                                    Confirm Reservation
                                 </DialogTitle>
                                 <DialogDescription>
-                                    Review your components before completing the purchase.
+                                    Review your components before reserving this build.
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4 py-4">
@@ -447,14 +447,14 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, resolu
                                 </div>
                                 <div className="bg-muted/30 p-3 rounded-lg text-xs text-muted-foreground flex gap-2">
                                     <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                                    By confirming, your order will be processed and stock will be reserved for you.
+                                    By confirming, your reservation will be processed and stock will be held for you.
                                 </div>
                             </div>
                             <div className="flex gap-3">
                                 <Button variant="outline" className="flex-1" onClick={() => setIsCheckoutDialogOpen(false)}>Cancel</Button>
                                 <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={handleCheckout} disabled={isCheckingOut}>
                                     {isCheckingOut ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                                    Confirm Purchase
+                                    Confirm Reservation
                                 </Button>
                             </div>
                         </DialogContent>

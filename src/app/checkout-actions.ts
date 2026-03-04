@@ -40,6 +40,7 @@ export async function processCheckout(userId: string, userEmail: string, items: 
                 userEmail,
                 items,
                 totalPrice,
+                status: 'pending',
                 createdAt: Timestamp.now(),
             };
             transaction.set(orderRef, orderData);

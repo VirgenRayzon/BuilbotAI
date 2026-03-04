@@ -41,6 +41,8 @@ import { PCVisualizer } from "@/components/pc-visualizer";
 import { useUserProfile } from "@/context/user-profile";
 import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
+import { FloatingInsights } from "@/components/floating-insights";
+import { LayoutPanelLeft } from "lucide-react";
 import type { Resolution, WorkloadType } from "@/lib/types";
 
 type PartWithoutCategory = Omit<Part, 'category'>;
@@ -63,15 +65,19 @@ const componentCategories = [
 export default function BuilderPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { authUser, loading: authLoading } = useUserProfile();
+  const { authUser, profile, loading: authLoading } = useUserProfile();
   const router = useRouter();
 
-  // Redirect unauthenticated users to sign-in
+  // Redirect unauthenticated users to sign-in or admins to admin dashboard
   useEffect(() => {
-    if (!authLoading && !authUser) {
-      router.push('/signin');
+    if (!authLoading) {
+      if (!authUser) {
+        router.push('/signin');
+      } else if (profile?.isAdmin) {
+        router.push('/admin');
+      }
     }
-  }, [authUser, authLoading, router]);
+  }, [authUser, profile, authLoading, router]);
 
   // Fetch each category collection
   const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
@@ -123,6 +129,7 @@ export default function BuilderPage() {
   });
   const [resolution, setResolution] = useState<Resolution>('1440p');
   const [workload, setWorkload] = useState<WorkloadType>('Balanced');
+  const [showInsights, setShowInsights] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Handle AI suggestions from window-level
@@ -241,7 +248,7 @@ export default function BuilderPage() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
 
   const getCountInBuild = (partName: string) => {
     let count = 0;
@@ -556,22 +563,8 @@ export default function BuilderPage() {
       </div>
 
       <div className="grid lg:grid-cols-12 gap-6 xl:gap-8">
-        {/* Left Sidebar: 2D Preview & Analytics */}
-        <div className="lg:col-span-3 hidden lg:block">
-          <div className="sticky top-20 flex flex-col gap-6 pb-4 pr-1">
-            <PCVisualizer build={build} />
-            <BuilderSidebarLeft
-              build={build}
-              resolution={resolution}
-              onResolutionChange={setResolution}
-              workload={workload}
-              onWorkloadChange={setWorkload}
-            />
-          </div>
-        </div>
-
-        {/* Center: Parts Grid */}
-        <div className="lg:col-span-6">
+        {/* Center: Parts Grid (Now wider as left sidebar is floating) */}
+        <div className="lg:col-span-9">
 
           <InventoryToolbar
             categories={categories}
@@ -590,8 +583,8 @@ export default function BuilderPage() {
           />
 
           {loading ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-              {[...Array(6)].map((_, i) => (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+              {[...Array(8)].map((_, i) => (
                 <Card key={i}>
                   <CardContent className="p-4"><Skeleton className="aspect-video w-full mb-2" /></CardContent>
                   <CardContent className="p-4 pt-0 space-y-2"><Skeleton className="h-5 w-3/4" /><Skeleton className="h-4 w-1/2" /></CardContent>
@@ -602,7 +595,7 @@ export default function BuilderPage() {
           ) : sortedAndFilteredParts.length > 0 ? (
             view === 'grid' ? (
               <>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
                   {paginatedParts.map(part => (
                     <PartCard
                       key={part.id}
@@ -711,6 +704,31 @@ export default function BuilderPage() {
           </div>
         </div>
       </div>
+
+      {/* Floating Insights Toggle & Panel */}
+      <div className="fixed bottom-6 left-6 z-50 flex flex-col-reverse items-start gap-4">
+        {!showInsights && (
+          <Button
+            size="lg"
+            onClick={() => setShowInsights(true)}
+            className="rounded-full shadow-2xl h-14 px-6 gap-3 bg-primary hover:bg-primary/90 text-white font-bold uppercase tracking-widest border border-white/10 ring-4 ring-primary/20 animate-in fade-in slide-in-from-bottom-4 duration-500"
+          >
+            <LayoutPanelLeft className="w-5 h-5" />
+            Build Insights
+          </Button>
+        )}
+      </div>
+
+      <FloatingInsights
+        isOpen={showInsights}
+        onClose={() => setShowInsights(false)}
+        build={build}
+        resolution={resolution}
+        onResolutionChange={setResolution}
+        workload={workload}
+        onWorkloadChange={setWorkload}
+      />
+
       <BuilderFloatingChat />
     </main >
   );
