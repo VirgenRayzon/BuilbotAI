@@ -45,3 +45,4 @@ firebase-debug.log
 firestore-debug.log.firebase/  
 out/ 
 *.log
+/chrome_profile_notebooklm/
