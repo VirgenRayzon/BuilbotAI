@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Activity, Cpu } from "lucide-react";
+import { X, Activity, Cpu, Pin, PinOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PCVisualizer } from "@/components/pc-visualizer";
 import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
@@ -16,6 +16,8 @@ interface FloatingInsightsProps {
     onResolutionChange: (res: Resolution) => void;
     workload: WorkloadType;
     onWorkloadChange: (type: WorkloadType) => void;
+    isPinned?: boolean;
+    onTogglePin?: () => void;
 }
 
 export function FloatingInsights({
@@ -25,8 +27,59 @@ export function FloatingInsights({
     resolution,
     onResolutionChange,
     workload,
-    onWorkloadChange
+    onWorkloadChange,
+    isPinned = false,
+    onTogglePin
 }: FloatingInsightsProps) {
+
+    // If pinned, we just render the content without the floating container or backdrop
+    // The parent layout will wrap it appropriately
+    if (isPinned) {
+        return (
+            <div className="h-full flex flex-col bg-background/60 backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5">
+                    <div className="flex items-center gap-2">
+                        <Activity className="w-5 h-5 text-primary" />
+                        <h2 className="text-lg font-headline font-bold uppercase tracking-tight">Build Insights</h2>
+                    </div>
+                    {onTogglePin && (
+                        <Button variant="ghost" size="icon" onClick={onTogglePin} className="rounded-full hover:bg-white/10" title="Unpin panel">
+                            <PinOff className="w-4 h-4" />
+                        </Button>
+                    )}
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+                    <section>
+                        <div className="flex items-center gap-2 mb-4">
+                            <Cpu className="w-4 h-4 text-cyan-400" />
+                            <h3 className="text-sm font-bold tracking-widest text-cyan-400 uppercase">Clearance Preview</h3>
+                        </div>
+                        <div className="rounded-xl overflow-hidden border border-white/5 shadow-inner bg-black/20">
+                            <PCVisualizer build={build} />
+                        </div>
+                    </section>
+
+                    <section>
+                        <div className="flex items-center gap-2 mb-4">
+                            <Activity className="w-4 h-4 text-purple-400" />
+                            <h3 className="text-sm font-bold tracking-widest text-purple-400 uppercase">Analytics Engine</h3>
+                        </div>
+                        <BuilderSidebarLeft
+                            build={build}
+                            resolution={resolution}
+                            onResolutionChange={onResolutionChange}
+                            workload={workload}
+                            onWorkloadChange={onWorkloadChange}
+                        />
+                    </section>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -54,9 +107,16 @@ export function FloatingInsights({
                                 <Activity className="w-5 h-5 text-primary" />
                                 <h2 className="text-lg font-headline font-bold uppercase tracking-tight">Build Insights</h2>
                             </div>
-                            <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/10">
-                                <X className="w-5 h-5" />
-                            </Button>
+                            <div className="flex items-center gap-1">
+                                {onTogglePin && (
+                                    <Button variant="ghost" size="icon" onClick={onTogglePin} className="rounded-full hover:bg-white/10 hidden lg:flex" title="Pin to sidebar">
+                                        <Pin className="w-4 h-4" />
+                                    </Button>
+                                )}
+                                <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/10">
+                                    <X className="w-5 h-5" />
+                                </Button>
+                            </div>
                         </div>
 
                         {/* Content */}

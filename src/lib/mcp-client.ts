@@ -1,14 +1,31 @@
 import { spawn } from 'child_process';
 import readline from 'node:readline';
+import fs from 'fs';
 
-const MCP_COMMAND = 'C:\\Users\\Rayzon\\AppData\\Roaming\\Python\\Python314\\Scripts\\notebooklm-mcp.exe';
+const MCP_COMMAND = 'python';
+const MCP_SCRIPT = 'c:/Users/Rayzon/Anti Gravity/NotebookLM/mcp_server.py';
 const NOTEBOOK_ID = '6aecbdcd-26ae-4738-a773-c5bc05cd01c0';
+const DEBUG_LOG = 'grounding-debug.log';
 
 export async function callNotebookTool(toolName: string, args: any) {
     return new Promise((resolve, reject) => {
-        const child = spawn(MCP_COMMAND, [], {
-            stdio: ['pipe', 'pipe', 'inherit'],
-            env: { ...process.env, NOTEBOOKLM_MCP_TRANSPORT: 'stdio' }
+        const spawnArgs = [MCP_SCRIPT, 'server', '-n', NOTEBOOK_ID];
+
+        fs.appendFileSync(DEBUG_LOG, `[${new Date().toISOString()}] Spawning MCP: ${MCP_COMMAND} ${spawnArgs.join(' ')}\n`);
+
+        const child = spawn(MCP_COMMAND, spawnArgs, {
+            stdio: ['pipe', 'pipe', 'pipe'],
+            env: {
+                ...process.env,
+                NOTEBOOKLM_MCP_TRANSPORT: 'stdio',
+                PYTHONIOENCODING: 'utf-8',
+            }
+        });
+
+        child.stderr.on('data', (data) => {
+            const msg = data.toString();
+            fs.appendFileSync(DEBUG_LOG, `[${new Date().toISOString()}] [MCP STDERR] ${msg}`);
+            console.error(`[NotebookLM MCP] ${msg}`);
         });
 
         const rl = readline.createInterface({
@@ -84,6 +101,6 @@ export async function callNotebookTool(toolName: string, args: any) {
         setTimeout(() => {
             child.kill();
             reject(new Error('MCP request timed out'));
-        }, 60000);
+        }, 120000);
     });
 }

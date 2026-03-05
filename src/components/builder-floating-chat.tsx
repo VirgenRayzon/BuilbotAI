@@ -15,6 +15,7 @@ export function BuilderFloatingChat() {
         { role: 'bot', text: 'I am monitoring your component selection. Ask me anything or let me suggest parts for your current build.' }
     ]);
     const [input, setInput] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -30,6 +31,7 @@ export function BuilderFloatingChat() {
         setMessages(prev => [...prev, { role: 'user', text: input }]);
         const userMsg = input;
         setInput('');
+        setIsTyping(true);
 
         // Mock AI response
         setTimeout(() => {
@@ -44,6 +46,7 @@ export function BuilderFloatingChat() {
                     }
                 }, 1500);
             }
+            setIsTyping(false);
             setMessages(prev => [...prev, { role: 'bot', text: reply }]);
         }, 800);
     };
@@ -81,6 +84,18 @@ export function BuilderFloatingChat() {
                                                 </div>
                                             </div>
                                         ))}
+                                        {isTyping && (
+                                            <div className="flex gap-2 flex-row">
+                                                <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 bg-fuchsia-500/20 text-fuchsia-400">
+                                                    <Bot className="w-3 h-3" />
+                                                </div>
+                                                <div className="p-2.5 rounded-lg text-xs leading-relaxed max-w-[85%] bg-fuchsia-500/10 text-fuchsia-100 rounded-tl-none border border-fuchsia-500/20 flex items-center gap-1.5 h-[34px]">
+                                                    <span className="w-1.5 h-1.5 bg-fuchsia-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                                                    <span className="w-1.5 h-1.5 bg-fuchsia-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                                                    <span className="w-1.5 h-1.5 bg-fuchsia-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </ScrollArea>
                             </CardContent>

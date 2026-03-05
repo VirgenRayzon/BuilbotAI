@@ -61,6 +61,7 @@ Analyze performance based on the user's **Primary Task** using a weighted scorin
 
 ## 🏗 Operational Constraints
 
+* **Admin Key:** 00216764
 * **Port:** 9002 (`npm run dev`).
 * **Environment:** Use `VITE_` prefix for all Firebase and SQL connection strings.
 * **Data Hierarchy:** NotebookLM (Verified Corpus) > SQL Server (Local Index) > Heuristic Estimate.

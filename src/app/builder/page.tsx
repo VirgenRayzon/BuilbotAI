@@ -130,6 +130,7 @@ export default function BuilderPage() {
   const [resolution, setResolution] = useState<Resolution>('1440p');
   const [workload, setWorkload] = useState<WorkloadType>('Balanced');
   const [showInsights, setShowInsights] = useState(false);
+  const [isInsightsPinned, setIsInsightsPinned] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Handle AI suggestions from window-level
@@ -563,8 +564,25 @@ export default function BuilderPage() {
       </div>
 
       <div className="grid lg:grid-cols-12 gap-6 xl:gap-8">
-        {/* Center: Parts Grid (Now wider as left sidebar is floating) */}
-        <div className="lg:col-span-9">
+        {/* Left Sidebar: Build Insights (Pinned) */}
+        {isInsightsPinned && (
+          <div className="hidden lg:block lg:col-span-3 h-[calc(100vh-120px)] sticky top-20">
+            <FloatingInsights
+              isOpen={true}
+              onClose={() => setIsInsightsPinned(false)}
+              build={build}
+              resolution={resolution}
+              onResolutionChange={setResolution}
+              workload={workload}
+              onWorkloadChange={setWorkload}
+              isPinned={true}
+              onTogglePin={() => setIsInsightsPinned(false)}
+            />
+          </div>
+        )}
+
+        {/* Center: Parts Grid (Dynamic width based on pinned state) */}
+        <div className={cn("flex flex-col gap-6", isInsightsPinned ? "lg:col-span-6" : "lg:col-span-9")}>
 
           <InventoryToolbar
             categories={categories}
@@ -583,7 +601,7 @@ export default function BuilderPage() {
           />
 
           {loading ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-6">
               {[...Array(8)].map((_, i) => (
                 <Card key={i}>
                   <CardContent className="p-4"><Skeleton className="aspect-video w-full mb-2" /></CardContent>
@@ -595,7 +613,7 @@ export default function BuilderPage() {
           ) : sortedAndFilteredParts.length > 0 ? (
             view === 'grid' ? (
               <>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-6">
                   {paginatedParts.map(part => (
                     <PartCard
                       key={part.id}
@@ -705,8 +723,8 @@ export default function BuilderPage() {
         </div>
       </div>
 
-      {/* Floating Insights Toggle & Panel */}
-      <div className="fixed bottom-6 left-6 z-50 flex flex-col-reverse items-start gap-4">
+      {/* Floating Insights Toggle & Panel (Only shown if NOT pinned, or if on mobile) */}
+      <div className={cn("fixed bottom-6 left-6 z-50 flex flex-col-reverse items-start gap-4", isInsightsPinned ? "lg:hidden" : "")}>
         {!showInsights && (
           <Button
             size="lg"
@@ -719,15 +737,22 @@ export default function BuilderPage() {
         )}
       </div>
 
-      <FloatingInsights
-        isOpen={showInsights}
-        onClose={() => setShowInsights(false)}
-        build={build}
-        resolution={resolution}
-        onResolutionChange={setResolution}
-        workload={workload}
-        onWorkloadChange={setWorkload}
-      />
+      {(!isInsightsPinned || showInsights) && (
+        <FloatingInsights
+          isOpen={showInsights}
+          onClose={() => setShowInsights(false)}
+          build={build}
+          resolution={resolution}
+          onResolutionChange={setResolution}
+          workload={workload}
+          onWorkloadChange={setWorkload}
+          isPinned={false}
+          onTogglePin={() => {
+            setIsInsightsPinned(true);
+            setShowInsights(false);
+          }}
+        />
+      )}
 
       <BuilderFloatingChat />
     </main >

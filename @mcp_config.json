@@ -1,9 +1,0 @@
-{
-    "mcpServers": {
-        "notebooklm": {
-            "command": "C:\\Users\\Rayzon\\AppData\\Roaming\\Python\\Python314\\Scripts\\notebooklm-mcp.exe",
-            "args": [],
-            "env": {}
-        }
-    }
-}

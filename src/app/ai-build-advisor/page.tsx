@@ -8,7 +8,7 @@ import { getAiRecommendations, getAiBuildCritique } from "@/app/actions";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { Build, AiRecommendation, ComponentData, Resolution, WorkloadType } from "@/lib/types";
 import { Cpu, Server, CircuitBoard, MemoryStick, Bot, Wallet, Database, Power, RectangleVertical, Wind } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FloatingInsights } from "@/components/floating-insights";
@@ -79,6 +79,7 @@ export default function AiBuildAdvisorPage() {
   const [resolution, setResolution] = useState<Resolution>('1440p');
   const [workload, setWorkload] = useState<WorkloadType>('Balanced');
   const [showInsights, setShowInsights] = useState(false);
+  const [isInsightsPinned, setIsInsightsPinned] = useState(false);
 
   const [critiqueAnalysis, setCritiqueAnalysis] = useState<any>(null);
   const [critiqueLoading, setCritiqueLoading] = useState(false);
@@ -355,8 +356,24 @@ export default function AiBuildAdvisorPage() {
           <TabsContent value="critique" className="mt-0 h-full">
             <div className="grid lg:grid-cols-12 gap-6 h-full">
 
-              {/* Middle Column: AI Critique (Now wider) */}
-              <div className="lg:col-span-9 border-r border-border/50 px-6">
+              {isInsightsPinned && (
+                <div className="hidden lg:block lg:col-span-3 h-[calc(100vh-120px)] sticky top-20">
+                  <FloatingInsights
+                    isOpen={true}
+                    onClose={() => setIsInsightsPinned(false)}
+                    build={builderState}
+                    resolution={resolution}
+                    onResolutionChange={setResolution}
+                    workload={workload}
+                    onWorkloadChange={setWorkload}
+                    isPinned={true}
+                    onTogglePin={() => setIsInsightsPinned(false)}
+                  />
+                </div>
+              )}
+
+              {/* Middle Column: AI Critique (Now wider or narrower depending on pin) */}
+              <div className={cn("border-r border-border/50 px-6", isInsightsPinned ? "lg:col-span-6" : "lg:col-span-9")}>
                 <AIBuildCritique
                   build={builderState}
                   externalAnalysis={critiqueAnalysis}
@@ -366,7 +383,7 @@ export default function AiBuildAdvisorPage() {
                 />
               </div>
 
-              {/* Right Column: Your Build Specs (Previously Middle) */}
+              {/* Right Column: Your Build Specs */}
               <div className="lg:col-span-3 pl-2">
                 <div className="sticky top-20 flex flex-col gap-6 max-h-[calc(100vh-6rem)] overflow-y-auto pb-4 pr-2 custom-scrollbar">
                   <YourBuild
@@ -396,7 +413,7 @@ export default function AiBuildAdvisorPage() {
       <BuilderFloatingChat />
 
       {/* Floating Insights Toggle & Panel */}
-      <div className="fixed bottom-6 left-6 z-50 flex flex-col-reverse items-start gap-4">
+      <div className={cn("fixed bottom-6 left-6 z-50 flex flex-col-reverse items-start gap-4", isInsightsPinned ? "lg:hidden" : "")}>
         {builderState && !showInsights && (
           <Button
             size="lg"
@@ -409,7 +426,7 @@ export default function AiBuildAdvisorPage() {
         )}
       </div>
 
-      {builderState && (
+      {builderState && (!isInsightsPinned || showInsights) && (
         <FloatingInsights
           isOpen={showInsights}
           onClose={() => setShowInsights(false)}
@@ -418,6 +435,11 @@ export default function AiBuildAdvisorPage() {
           onResolutionChange={setResolution}
           workload={workload}
           onWorkloadChange={setWorkload}
+          isPinned={false}
+          onTogglePin={() => {
+            setIsInsightsPinned(true);
+            setShowInsights(false);
+          }}
         />
       )}
     </main>
