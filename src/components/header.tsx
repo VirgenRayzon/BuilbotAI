@@ -33,6 +33,7 @@ export function Header() {
 
   const adminLinks = [
     { href: "/admin", label: "Admin", admin: true },
+    { href: "/admin/builder", label: "Builder Admin", admin: true },
   ];
 
   const commonLinks = [

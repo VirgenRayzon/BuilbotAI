@@ -21,6 +21,8 @@ import { useToast } from "@/hooks/use-toast";
 import { OrderItem } from "@/lib/types";
 import { ShoppingCart, CheckCircle2, Gauge } from "lucide-react";
 import { calculateBottleneck } from "@/lib/bottleneck";
+import { AddPrebuiltDialog, type AddPrebuiltFormSchema } from "./add-prebuilt-dialog";
+import { Part, PrebuiltSystem } from "@/lib/types";
 
 interface YourBuildProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
@@ -33,6 +35,9 @@ interface YourBuildProps {
     onWorkloadChange: (workload: WorkloadType) => void;
     showSystemBalance?: boolean;
     className?: string;
+    isAdminMode?: boolean;
+    allParts?: Part[];
+    onAddPrebuilt?: (data: AddPrebuiltFormSchema) => void;
 }
 
 function BottleneckMeter({ build, resolution }: { build: Record<string, ComponentData | ComponentData[] | null>, resolution: Resolution }) {
@@ -70,7 +75,21 @@ const componentIcons: Record<string, React.ComponentType<{ className?: string }>
     headset: Headphones,
 };
 
-export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, resolution, onResolutionChange, workload, onWorkloadChange, showSystemBalance = true, className }: YourBuildProps) {
+export function YourBuild({
+    build,
+    onClearBuild,
+    onRemovePart,
+    onAnalyze,
+    resolution,
+    onResolutionChange,
+    workload,
+    onWorkloadChange,
+    showSystemBalance = true,
+    className,
+    isAdminMode = false,
+    allParts = [],
+    onAddPrebuilt
+}: YourBuildProps) {
     const [analysis, setAnalysis] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -409,59 +428,92 @@ export function YourBuild({ build, onClearBuild, onRemovePart, onAnalyze, resolu
                         Clear Build
                     </Button>
 
-                    <Dialog open={isCheckoutDialogOpen} onOpenChange={setIsCheckoutDialogOpen}>
-                        <DialogTrigger asChild>
+                    {isAdminMode ? (
+                        <AddPrebuiltDialog
+                            parts={allParts}
+                            onSave={(data) => onAddPrebuilt?.(data)}
+                            initialData={{
+                                id: "",
+                                name: "",
+                                tier: "Mid-Range",
+                                description: "",
+                                price: totalPrice,
+                                imageUrl: "",
+                                components: {
+                                    cpu: (build['CPU'] as ComponentData)?.id || "",
+                                    gpu: (build['GPU'] as ComponentData)?.id || "",
+                                    motherboard: (build['Motherboard'] as ComponentData)?.id || "",
+                                    ram: (build['RAM'] as ComponentData)?.id || "",
+                                    storage: (Array.isArray(build['Storage']) ? build['Storage'][0]?.id : (build['Storage'] as ComponentData)?.id) || "",
+                                    psu: (build['PSU'] as ComponentData)?.id || "",
+                                    case: (build['Case'] as ComponentData)?.id || "",
+                                    cooler: (build['Cooler'] as ComponentData)?.id || "",
+                                },
+                            } as PrebuiltSystem}
+                        >
                             <Button
-                                className="w-full font-headline tracking-wide flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                className="w-full font-headline tracking-wide flex items-center gap-2 bg-primary hover:bg-primary/90 text-white"
                                 size="lg"
                                 disabled={!isBuildComplete}
                             >
-                                <ShoppingCart className="h-5 w-5" /> Reserve Build
+                                <Plus className="h-5 w-5" /> Add New Prebuilt
                             </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-md">
-                            <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2">
-                                    <ShoppingCart className="h-6 w-6 text-emerald-600" />
-                                    Confirm Reservation
-                                </DialogTitle>
-                                <DialogDescription>
-                                    Review your components before reserving this build.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <ScrollArea className="max-h-[30vh]">
-                                    <div className="space-y-2">
-                                        {Object.entries(build).map(([category, val]) => {
-                                            const components = Array.isArray(val) ? val : (val ? [val] : []);
-                                            return components.map((c, idx) => (
-                                                <div key={`${category}-${idx}`} className="flex justify-between text-sm">
-                                                    <span className="text-muted-foreground">{category}: {c.model}</span>
-                                                    <span className="font-medium">{formatCurrency(c.price)}</span>
-                                                </div>
-                                            ));
-                                        })}
-                                    </div>
-                                </ScrollArea>
-                                <Separator />
-                                <div className="flex justify-between items-center font-bold text-lg">
-                                    <span>Total Price</span>
-                                    <span className="text-primary">{formatCurrency(totalPrice)}</span>
-                                </div>
-                                <div className="bg-muted/30 p-3 rounded-lg text-xs text-muted-foreground flex gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                                    By confirming, your reservation will be processed and stock will be held for you.
-                                </div>
-                            </div>
-                            <div className="flex gap-3">
-                                <Button variant="outline" className="flex-1" onClick={() => setIsCheckoutDialogOpen(false)}>Cancel</Button>
-                                <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={handleCheckout} disabled={isCheckingOut}>
-                                    {isCheckingOut ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                                    Confirm Reservation
+                        </AddPrebuiltDialog>
+                    ) : (
+                        <Dialog open={isCheckoutDialogOpen} onOpenChange={setIsCheckoutDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button
+                                    className="w-full font-headline tracking-wide flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    size="lg"
+                                    disabled={!isBuildComplete}
+                                >
+                                    <ShoppingCart className="h-5 w-5" /> Reserve Build
                                 </Button>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md">
+                                <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-2">
+                                        <ShoppingCart className="h-6 w-6 text-emerald-600" />
+                                        Confirm Reservation
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                        Review your components before reserving this build.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                    <ScrollArea className="max-h-[30vh]">
+                                        <div className="space-y-2">
+                                            {Object.entries(build).map(([category, val]) => {
+                                                const components = Array.isArray(val) ? val : (val ? [val] : []);
+                                                return components.map((c, idx) => (
+                                                    <div key={`${category}-${idx}`} className="flex justify-between text-sm">
+                                                        <span className="text-muted-foreground">{category}: {c.model}</span>
+                                                        <span className="font-medium">{formatCurrency(c.price)}</span>
+                                                    </div>
+                                                ));
+                                            })}
+                                        </div>
+                                    </ScrollArea>
+                                    <Separator />
+                                    <div className="flex justify-between items-center font-bold text-lg">
+                                        <span>Total Price</span>
+                                        <span className="text-primary">{formatCurrency(totalPrice)}</span>
+                                    </div>
+                                    <div className="bg-muted/30 p-3 rounded-lg text-xs text-muted-foreground flex gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                                        By confirming, your reservation will be processed and stock will be held for you.
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <Button variant="outline" className="flex-1" onClick={() => setIsCheckoutDialogOpen(false)}>Cancel</Button>
+                                    <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={handleCheckout} disabled={isCheckingOut}>
+                                        {isCheckingOut ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                        Confirm Reservation
+                                    </Button>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    )}
                 </div>
             </CardFooter>
         </Card >

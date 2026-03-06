@@ -41,7 +41,7 @@ export default function SignUpPage() {
     defaultValues: {
       email: '',
       password: '',
-      adminKey: '',
+      adminKey: ADMIN_KEY,
     },
   });
 
@@ -59,7 +59,7 @@ export default function SignUpPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
-      
+
       const isAdmin = values.adminKey === ADMIN_KEY;
       await createUserProfile(firestore, user.uid, {
         email: user.email!,

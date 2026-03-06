@@ -364,7 +364,13 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen && isAiPending) return;
+        setOpen(isOpen);
+      }}
+    >
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-4xl p-0 gap-0 overflow-hidden border-primary/20 bg-background shadow-2xl [&>button.absolute]:hidden">
 
@@ -396,9 +402,12 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
           </div>
         </DialogHeader>
         {isAiPending && (
-          <div className="flex items-center gap-2 mt-3 text-xs text-primary animate-pulse">
-            <BrainCircuit className="h-3.5 w-3.5 shrink-0" />
-            <span>Buildbot is Prefilling the Specifications…</span>
+          <div className="flex flex-col gap-2 mt-3 p-3 rounded-lg bg-primary/5 border border-primary/20 animate-pulse">
+            <div className="flex items-center gap-2 text-xs text-primary font-bold">
+              <BrainCircuit className="h-3.5 w-3.5 shrink-0" />
+              <span>Buildbot is Prefilling the Specifications…</span>
+            </div>
+            <p className="text-[10px] text-primary/70 font-medium">Please wait for AI to finish working before making changes or closing the dialog.</p>
           </div>
         )}
 
@@ -588,10 +597,34 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                 )}
               </p>
               <div className="flex gap-2">
-                <DialogClose asChild>
-                  <Button type="button" variant="ghost" size="sm" disabled={isSubmitting}>Cancel</Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    form.reset({
+                      partName: "",
+                      category: "",
+                      brand: "",
+                      price: 0,
+                      stockCount: 0,
+                      imageUrl: "",
+                      wattage: undefined,
+                      performanceScore: 50,
+                      dimensions: { width: 0, height: 0, depth: 0 },
+                      specifications: [],
+                    });
+                    toast({ title: "Form Cleared", description: "All fields have been reset." });
+                  }}
+                  disabled={isSubmitting || isAiPending}
+                  className="border-muted-foreground/30 text-muted-foreground hover:bg-muted/50"
+                >
+                  Clear Form
+                </Button>
+                <DialogClose asChild disabled={isAiPending}>
+                  <Button type="button" variant="ghost" size="sm" disabled={isSubmitting || isAiPending}>Cancel</Button>
                 </DialogClose>
-                <Button type="submit" size="sm" disabled={isSubmitting} className="bg-primary hover:bg-primary/90 font-headline tracking-wide px-6">
+                <Button type="submit" size="sm" disabled={isSubmitting || isAiPending} className="bg-primary hover:bg-primary/90 font-headline tracking-wide px-6">
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {initialData ? "Save Changes" : "Add Part"}
                 </Button>

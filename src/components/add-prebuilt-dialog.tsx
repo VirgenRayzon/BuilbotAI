@@ -261,15 +261,17 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
     }, [open, initialData, form]);
 
     const handleAiAssist = () => {
+        const getPartName = (id?: string) => parts.find(p => p.id === id)?.name || undefined;
+
         const selectedComponents = {
-            cpu: form.getValues("cpu") || undefined,
-            gpu: form.getValues("gpu") || undefined,
-            motherboard: form.getValues("motherboard") || undefined,
-            ram: form.getValues("ram") || undefined,
-            storage: form.getValues("storage") || undefined,
-            psu: form.getValues("psu") || undefined,
-            case: form.getValues("case") || undefined,
-            cooler: form.getValues("cooler") || undefined,
+            cpu: getPartName(form.getValues("cpu")),
+            gpu: getPartName(form.getValues("gpu")),
+            motherboard: getPartName(form.getValues("motherboard")),
+            ram: getPartName(form.getValues("ram")),
+            storage: getPartName(form.getValues("storage")),
+            psu: getPartName(form.getValues("psu")),
+            case: getPartName(form.getValues("case")),
+            cooler: getPartName(form.getValues("cooler")),
         };
 
         if (Object.values(selectedComponents).every((c) => !c)) {
@@ -305,6 +307,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
     };
 
     const handleOpenChange = (isOpen: boolean) => {
+        if (!isOpen && isAiPending) return;
         setOpen(isOpen);
         if (!isOpen) { form.reset(); setAiResult(null); }
     };
@@ -321,7 +324,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                     </div>
                     <div className="flex-1">
                         <DialogTitle className="font-headline text-xl font-bold tracking-tight">
-                            {title || (initialData ? "Edit Prebuilt System" : "Add New Prebuilt System")}
+                            {title || (initialData ? "Add New Prebuilt System" : "Add New Prebuilt System")}
                         </DialogTitle>
                         <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                             {initialData ? "Configure the system details below." : "Configure the system details and select components from inventory."}
@@ -343,9 +346,12 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                     </div>
                 </DialogHeader>
                 {isAiPending && (
-                    <div className="flex items-center gap-2 mt-3 text-xs text-primary animate-pulse">
-                        <BrainCircuit className="h-3.5 w-3.5 shrink-0" />
-                        <span>Buildbot is Generating System Details…</span>
+                    <div className="flex flex-col gap-2 mt-3 p-3 mx-6 rounded-lg bg-primary/5 border border-primary/20 animate-pulse">
+                        <div className="flex items-center gap-2 text-xs text-primary font-bold">
+                            <BrainCircuit className="h-3.5 w-3.5 shrink-0" />
+                            <span>Buildbot is Generating System Details…</span>
+                        </div>
+                        <p className="text-[10px] text-primary/70 font-medium">Please wait for AI to finish working before making changes or closing the dialog.</p>
                     </div>
                 )}
 
@@ -499,8 +505,25 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                 {PART_SLOTS.filter(({ key }) => !!form.watch(key as keyof AddPrebuiltFormSchema)).length} / {PART_SLOTS.length} components selected
                             </p>
                             <div className="flex gap-2">
-                                <DialogClose asChild>
-                                    <Button type="button" variant="ghost" size="sm">Cancel</Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        form.reset({
+                                            name: "", tier: "", description: "", price: 0, imageUrl: "",
+                                            cpu: "", gpu: "", motherboard: "", ram: "", storage: "", psu: "", case: "", cooler: "",
+                                        });
+                                        setAiResult(null);
+                                        toast({ title: "Form Cleared", description: "All fields and AI analysis have been reset." });
+                                    }}
+                                    disabled={isAiPending}
+                                    className="border-muted-foreground/30 text-muted-foreground hover:bg-muted/50"
+                                >
+                                    Clear Form
+                                </Button>
+                                <DialogClose asChild disabled={isAiPending}>
+                                    <Button type="button" variant="ghost" size="sm" disabled={isAiPending}>Cancel</Button>
                                 </DialogClose>
                                 <Button type="submit" size="sm" disabled={isAiPending} className="bg-primary hover:bg-primary/90 font-headline tracking-wide px-6">
                                     {initialData ? "Save Changes" : "Add Prebuilt System"}

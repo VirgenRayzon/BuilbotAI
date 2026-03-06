@@ -422,12 +422,6 @@ export default function AdminPage() {
                     <div>
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-2xl font-headline font-bold">PREBUILTS OVERVIEW</h2>
-                            <AddPrebuiltDialog onSave={handleAddPrebuilt} parts={parts ?? []}>
-                                <Button>
-                                    <Plus className="mr-2" />
-                                    Add New Prebuilt
-                                </Button>
-                            </AddPrebuiltDialog>
                         </div>
                         <InventoryToolbar
                             categories={prebuiltCategories}

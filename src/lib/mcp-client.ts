@@ -58,11 +58,12 @@ export async function callNotebookTool(toolName: string, args: any) {
         let initialized = false;
 
         rl.on('line', (line) => {
+            const trimmed = line.trim();
             // Ignore non-JSON lines (noise like ASCII art or logs)
-            if (!line.trim().startsWith('{')) return;
+            if (!trimmed.startsWith('{')) return;
 
             try {
-                const response = JSON.parse(line);
+                const response = JSON.parse(trimmed);
 
                 if (response.id === initializeRequest.id) {
                     initialized = true;
@@ -74,13 +75,21 @@ export async function callNotebookTool(toolName: string, args: any) {
                 } else if (response.id === toolRequest.id) {
                     child.kill();
                     if (response.error) {
-                        reject(new Error(`MCP Error: ${JSON.stringify(response.error)}`));
+                        const errorMsg = JSON.stringify(response.error);
+                        if (errorMsg.includes('Authentication expired')) {
+                            reject(new Error('NOTEBOOKLM_AUTH_EXPIRED'));
+                        } else {
+                            reject(new Error(`MCP Error: ${errorMsg}`));
+                        }
+                    } else if (response.result && response.result.status === 'error' && response.result.message?.includes('Authentication expired')) {
+                        reject(new Error('NOTEBOOKLM_AUTH_EXPIRED'));
                     } else {
                         resolve(response.result);
                     }
                 }
-            } catch (err) {
-                // Silently skip parse errors for noise lines
+            } catch (err: any) {
+                // Log the failure but keep going if it might be an interleaved log
+                fs.appendFileSync(DEBUG_LOG, `[${new Date().toISOString()}] Failed to parse JSON line: ${trimmed.substring(0, 100)}... Error: ${err.message}\n`);
             }
         });
 
