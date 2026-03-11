@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -11,11 +12,22 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatCurrency } from "@/lib/utils";
 import type { PrebuiltSystem, Part } from "@/lib/types";
 import { getMissingParts } from "@/lib/prebuilt-utils";
-import { BrainCircuit, ShoppingCart, Loader2, AlertCircle, ThumbsUp, ThumbsDown, MonitorPlay, Zap, ExternalLink, ShieldCheck } from "lucide-react";
+import { BrainCircuit, ShoppingCart, Loader2, AlertCircle, ThumbsUp, ThumbsDown, MonitorPlay, Zap, ExternalLink, ShieldCheck, Gamepad2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getAiBuildCritique } from "@/app/actions";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { useFirestore } from "@/firebase";
+import ReactMarkdown from 'react-markdown';
+
+const getPerformanceStyle = (fps: string) => {
+    const minFps = parseInt(fps.match(/\d+/)?.[0] || "0");
+    if (minFps >= 100) return { color: "bg-emerald-500", text: "text-emerald-500", percent: 100, label: "Legendary" };
+    if (minFps >= 75) return { color: "bg-green-500", text: "text-green-500", percent: 85, label: "Excellent" };
+    if (minFps >= 60) return { color: "bg-green-400", text: "text-green-400", percent: 70, label: "Smooth" };
+    if (minFps >= 45) return { color: "bg-yellow-500", text: "text-yellow-500", percent: 50, label: "Playable" };
+    if (minFps >= 30) return { color: "bg-orange-500", text: "text-orange-500", percent: 35, label: "Entry" };
+    return { color: "bg-red-500", text: "text-red-500", percent: 15, label: "Low" };
+};
 
 interface PrebuiltDetailsModalProps {
     system: PrebuiltSystem;
@@ -389,9 +401,9 @@ export function PrebuiltDetailsModal({ system, children }: PrebuiltDetailsModalP
                                                         </div>
                                                         System Bottleneck
                                                     </h4>
-                                                    <p className="text-base text-foreground/80 leading-relaxed max-w-4xl border-l-2 border-yellow-500/50 pl-4 py-1 italic">
-                                                        "{analysis.bottleneckAnalysis}"
-                                                    </p>
+                                                    <div className="text-base text-foreground/80 leading-relaxed max-w-4xl border-l-2 border-yellow-500/50 pl-4 py-1 prose prose-sm dark:prose-invert max-w-none">
+                                                        <ReactMarkdown>{analysis.bottleneckAnalysis}</ReactMarkdown>
+                                                    </div>
                                                 </div>
 
                                                 {/* FPS Estimates */}
@@ -403,13 +415,49 @@ export function PrebuiltDetailsModal({ system, children }: PrebuiltDetailsModalP
                                                         <span className="text-xs text-muted-foreground uppercase tracking-widest font-bold bg-muted px-2 py-1 rounded">Avg FPS</span>
                                                     </div>
 
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                                        {analysis.fpsEstimates.map((est: any, idx: number) => (
-                                                            <div key={idx} className="bg-card border-2 rounded-xl p-5 text-center shadow-sm hover:border-primary/40 hover:shadow-md transition-all group">
-                                                                <p className="text-[11px] text-muted-foreground uppercase font-black tracking-widest mb-3 line-clamp-1 group-hover:text-foreground transition-colors">{est.game}</p>
-                                                                <div className="flex flex-col items-center justify-center min-h-[5rem]">
-                                                                    <p className="text-4xl font-headline font-black text-primary mb-2 transform group-hover:scale-110 transition-transform origin-bottom">{est.estimatedFps}</p>
-                                                                    <Badge variant="outline" className="text-[10px] font-bold uppercase py-0 group-hover:bg-primary group-hover:text-primary-foreground">{est.resolution}</Badge>
+                                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                                        {analysis.fpsEstimates.map((group: any, idx: number) => (
+                                                            <div key={idx} className="bg-card border-2 rounded-xl overflow-hidden flex flex-col hover:border-primary/40 transition-all group/card shadow-sm">
+                                                                <div className="bg-muted/30 px-5 py-3 border-b flex items-center justify-between">
+                                                                    <p className="text-[11px] font-black uppercase tracking-widest text-foreground/70">{group.game}</p>
+                                                                    <Gamepad2 className="h-4 w-4 text-muted-foreground/40 group-hover/card:text-primary/50 transition-colors" />
+                                                                </div>
+                                                                <div className="p-5 space-y-5 flex-1 flex flex-col">
+                                                                    <div className="space-y-5">
+                                                                        {(group.resolutions || []).map((est: any, rIdx: number) => {
+                                                                            const perf = getPerformanceStyle(est.estimatedFps);
+                                                                            return (
+                                                                                <div key={rIdx} className="space-y-2.5 group/res">
+                                                                                    <div className="flex items-center justify-between">
+                                                                                        <Badge variant="outline" className="text-[10px] font-black px-2 py-0 h-5 border-primary/20">{est.resolution}</Badge>
+                                                                                        <div className="flex items-baseline gap-1.5">
+                                                                                            <span className="text-xl font-black font-headline text-primary">{est.estimatedFps}</span>
+                                                                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">FPS</span>
+                                                                                        </div>
+                                                                                    </div>
+
+                                                                                    <div className="space-y-1.5">
+                                                                                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden shadow-inner">
+                                                                                            <motion.div
+                                                                                                initial={{ width: 0 }}
+                                                                                                animate={{ width: `${perf.percent}%` }}
+                                                                                                transition={{ duration: 1, ease: "easeOut", delay: 0.1 * rIdx }}
+                                                                                                className={`h-full ${perf.color} shadow-sm`}
+                                                                                            />
+                                                                                        </div>
+                                                                                        <div className="flex justify-between items-center px-0.5">
+                                                                                            <span className={`text-[9px] font-black uppercase tracking-tighter ${perf.text}`}>{perf.label} TIER</span>
+                                                                                            {est.details && (
+                                                                                                <span className="text-[10px] italic text-muted-foreground/60 line-clamp-1 max-w-[200px] font-medium">
+                                                                                                    {est.details}
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         ))}

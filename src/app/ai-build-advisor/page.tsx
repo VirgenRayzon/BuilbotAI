@@ -399,6 +399,7 @@ export default function AiBuildAdvisorPage() {
                     workload={workload}
                     onWorkloadChange={setWorkload}
                     showSystemBalance={false}
+                    hasAnalysis={!!critiqueAnalysis}
                   />
                 </div>
               </div>

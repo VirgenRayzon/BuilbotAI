@@ -1,11 +1,23 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BrainCircuit, Loader2, ThumbsUp, ThumbsDown, AlertTriangle, MonitorPlay, Zap, Bot, Plus, Sparkles } from "lucide-react";
+import { BrainCircuit, Loader2, ThumbsUp, ThumbsDown, AlertTriangle, MonitorPlay, Zap, Bot, Plus, Sparkles, Gamepad2 } from "lucide-react";
 import { getAiBuildCritique } from "@/app/actions";
 import { ComponentData } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import ReactMarkdown from 'react-markdown';
+
+const getPerformanceStyle = (fps: string) => {
+    const minFps = parseInt(fps.match(/\d+/)?.[0] || "0");
+    if (minFps >= 100) return { color: "bg-emerald-500", text: "text-emerald-500", percent: 100, label: "Legendary" };
+    if (minFps >= 75) return { color: "bg-green-500", text: "text-green-500", percent: 85, label: "Excellent" };
+    if (minFps >= 60) return { color: "bg-green-400", text: "text-green-400", percent: 70, label: "Smooth" };
+    if (minFps >= 45) return { color: "bg-yellow-500", text: "text-yellow-500", percent: 50, label: "Playable" };
+    if (minFps >= 30) return { color: "bg-orange-500", text: "text-orange-500", percent: 35, label: "Entry" };
+    return { color: "bg-red-500", text: "text-red-500", percent: 15, label: "Low" };
+};
 
 interface AIBuildCritiqueProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
@@ -171,11 +183,13 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                         </div>
 
                         {/* Bottleneck Analysis */}
-                        <div className="bg-secondary/20 rounded-lg p-4">
-                            <h4 className="font-semibold flex items-center gap-2 mb-2">
+                        <div className="space-y-3">
+                            <h4 className="font-semibold flex items-center gap-2">
                                 <AlertTriangle className="h-5 w-5 text-yellow-500" /> Bottleneck Analysis
                             </h4>
-                            <p className="text-sm text-muted-foreground">{analysis.bottleneckAnalysis}</p>
+                            <div className="text-sm text-muted-foreground leading-relaxed bg-muted/30 p-4 rounded-lg border prose prose-sm dark:prose-invert max-w-none">
+                                <ReactMarkdown>{analysis.bottleneckAnalysis}</ReactMarkdown>
+                            </div>
                         </div>
 
                         {/* FPS Estimates */}
@@ -183,12 +197,46 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                             <h4 className="font-semibold flex items-center gap-2">
                                 <MonitorPlay className="h-5 w-5 text-primary" /> Estimated Performance
                             </h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                {analysis.fpsEstimates.map((est: any, idx: number) => (
-                                    <div key={idx} className="bg-card border rounded-md p-3 text-center">
-                                        <p className="text-xs text-muted-foreground uppercase tracking-wider">{est.game}</p>
-                                        <p className="text-2xl font-headline font-bold text-primary my-1">{est.estimatedFps}</p>
-                                        <Badge variant="secondary" className="text-xs">{est.resolution}</Badge>
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                {analysis.fpsEstimates.map((group: any, idx: number) => (
+                                    <div key={idx} className="bg-card border rounded-xl overflow-hidden flex flex-col hover:border-primary/30 transition-all shadow-sm">
+                                        <div className="bg-muted/30 px-4 py-2 border-b flex items-center justify-between">
+                                            <p className="text-xs font-black uppercase tracking-widest text-foreground/80">{group.game}</p>
+                                            <Gamepad2 className="h-3 w-3 text-muted-foreground opacity-50" />
+                                        </div>
+                                        <div className="p-4 space-y-4 flex-1 flex flex-col">
+                                            <div className="space-y-4">
+                                                {(group.resolutions || []).map((est: any, rIdx: number) => {
+                                                    const perf = getPerformanceStyle(est.estimatedFps);
+                                                    return (
+                                                        <div key={rIdx} className="space-y-2 group/res">
+                                                            <div className="flex items-center justify-between">
+                                                                <Badge variant="secondary" className="text-[10px] font-bold px-2 py-0 h-5 border-primary/10">{est.resolution}</Badge>
+                                                                <div className="flex items-baseline gap-1">
+                                                                    <span className="text-lg font-black font-headline text-foreground">{est.estimatedFps}</span>
+                                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase">FPS</span>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="space-y-1">
+                                                                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                                                    <motion.div
+                                                                        initial={{ width: 0 }}
+                                                                        animate={{ width: `${perf.percent}%` }}
+                                                                        transition={{ duration: 1, ease: "easeOut", delay: 0.1 * rIdx }}
+                                                                        className={`h-full ${perf.color}`}
+                                                                    />
+                                                                </div>
+                                                                <div className="flex justify-between items-center opacity-80">
+                                                                    <span className={`text-[9px] font-bold uppercase tracking-tighter ${perf.text}`}>{perf.label}</span>
+                                                                    {est.details && <span className="text-[9px] italic line-clamp-1 max-w-[150px] text-muted-foreground">{est.details}</span>}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>

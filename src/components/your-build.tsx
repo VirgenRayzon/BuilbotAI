@@ -28,7 +28,7 @@ interface YourBuildProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
     onClearBuild: () => void;
     onRemovePart: (category: string, index?: number) => void;
-    onAnalyze?: () => void;
+    onAnalyze?: (forceRefresh?: boolean) => void;
     resolution: Resolution;
     onResolutionChange: (res: Resolution) => void;
     workload: WorkloadType;
@@ -38,6 +38,7 @@ interface YourBuildProps {
     isAdminMode?: boolean;
     allParts?: Part[];
     onAddPrebuilt?: (data: AddPrebuiltFormSchema) => void;
+    hasAnalysis?: boolean;
 }
 
 function BottleneckMeter({ build, resolution }: { build: Record<string, ComponentData | ComponentData[] | null>, resolution: Resolution }) {
@@ -88,7 +89,8 @@ export function YourBuild({
     className,
     isAdminMode = false,
     allParts = [],
-    onAddPrebuilt
+    onAddPrebuilt,
+    hasAnalysis = false
 }: YourBuildProps) {
     const [analysis, setAnalysis] = useState<any>(null);
     const [loading, setLoading] = useState(false);
@@ -406,23 +408,42 @@ export function YourBuild({
                     </Alert>
                 )}
                 <div className="flex flex-col gap-3 w-full">
-                    <Button
-                        className="w-full font-headline tracking-wide flex items-center gap-2 bg-primary hover:bg-primary/90 relative overflow-hidden group/analyze"
-                        size="lg"
-                        disabled={selectedParts === 0}
-                        onClick={() => {
-                            if (onAnalyze) {
-                                onAnalyze();
-                            } else {
-                                router.push('/ai-build-advisor');
-                            }
-                        }}
-                    >
-                        <BrainCircuit className="h-5 w-5 animate-pulse" />
-                        <Sparkles className="absolute left-4 w-4 h-4 text-white/40 animate-sparkle" />
-                        Analyze My Build
-                        <div className="absolute inset-0 animate-shimmer pointer-events-none opacity-0 group-hover/analyze:opacity-100 transition-opacity" />
-                    </Button>
+                    {hasAnalysis ? (
+                        <Button
+                            variant="outline"
+                            className="w-full font-headline tracking-wide flex items-center gap-2 border-primary/50 hover:bg-primary/10 transition-colors group/analyze"
+                            size="lg"
+                            disabled={selectedParts === 0}
+                            onClick={() => {
+                                if (onAnalyze) {
+                                    onAnalyze(true);
+                                } else {
+                                    router.push('/ai-build-advisor');
+                                }
+                            }}
+                        >
+                            <BrainCircuit className="h-5 w-5 text-primary" />
+                            Refresh Analysis
+                        </Button>
+                    ) : (
+                        <Button
+                            className="w-full font-headline tracking-wide flex items-center gap-2 bg-primary hover:bg-primary/90 relative overflow-hidden group/analyze shadow-md transition-all"
+                            size="lg"
+                            disabled={selectedParts === 0}
+                            onClick={() => {
+                                if (onAnalyze) {
+                                    onAnalyze();
+                                } else {
+                                    router.push('/ai-build-advisor');
+                                }
+                            }}
+                        >
+                            <BrainCircuit className="h-5 w-5 animate-pulse" />
+                            <Sparkles className="absolute left-4 w-4 h-4 text-white/40 animate-sparkle" />
+                            Analyze My Build
+                            <div className="absolute inset-0 animate-shimmer pointer-events-none opacity-0 group-hover/analyze:opacity-100 transition-opacity" />
+                        </Button>
+                    )}
 
                     <Button variant="ghost" className="w-full text-muted-foreground hover:text-destructive h-8 text-xs" onClick={onClearBuild} disabled={selectedParts === 0}>
                         Clear Build

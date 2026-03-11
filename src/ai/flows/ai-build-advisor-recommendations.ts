@@ -100,9 +100,16 @@ export async function aiBuildAdvisorRecommendations(
 // Prompt Definition
 const aiBuildAdvisorRecommendationsPrompt = ai.definePrompt({
   name: 'aiBuildAdvisorRecommendationsPrompt',
-  input: { schema: AiBuildAdvisorRecommendationsInputSchema },
+  input: { schema: AiBuildAdvisorRecommendationsInputSchema.extend({ knowledgeContext: z.string().optional() }) },
   output: { schema: AiBuildAdvisorRecommendationsOutputSchema },
   prompt: `You are an expert PC building advisor specializing in the Philippine market. Your goal is to recommend a set of compatible core components (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, Cooler) for a user based on their specific needs.
+
+{{#if knowledgeContext}}
+EXPERT KNOWLEDGE BASE CONTEXT:
+{{{knowledgeContext}}}
+
+Base your recommendations strictly on the expert knowledge provided above if it relates to the user's request (e.g., use the provided tier lists, avoid known bottlenecks).
+{{/if}}
 
 CRITICAL RULES:
 1. CURRENCY: All price discussions and budget considerations MUST be in Philippine Peso (PHP). Use the ₱ symbol.
@@ -125,6 +132,8 @@ Please format your response as a JSON object strictly following the output schem
 });
 
 // Genkit Flow Definition
+import { retrieveLocalKnowledge } from '@/lib/knowledge-retriever';
+
 const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
   {
     name: 'aiBuildAdvisorRecommendationsFlow',
@@ -132,7 +141,16 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
     outputSchema: AiBuildAdvisorRecommendationsOutputSchema,
   },
   async (input) => {
-    const { output } = await aiBuildAdvisorRecommendationsPrompt(input);
+    // Fetch relevant local knowledge based on the user's intent and performance level
+    const query = `${input.intendedUse} ${input.performanceLevel} ${input.additionalNotes || ''}`;
+    const knowledgeResults = await retrieveLocalKnowledge(query);
+    const knowledgeContext = knowledgeResults.join('\n\n');
+
+    const { output } = await aiBuildAdvisorRecommendationsPrompt({
+      ...input,
+      knowledgeContext
+    });
+
     if (!output) {
       throw new Error('Failed to get recommendations from the AI.');
     }

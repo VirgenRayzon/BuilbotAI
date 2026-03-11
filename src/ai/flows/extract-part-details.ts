@@ -10,8 +10,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { callNotebookTool } from '@/lib/mcp-client';
 import fs from 'fs';
+import { searchLocalDatabase } from '@/lib/local-db';
 
 const DEBUG_LOG = 'grounding-debug.log';
 
@@ -54,35 +54,32 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
   }
 
   let groundedContext = "";
+
+  // 1. Try Local CSV Database (Highest Priority)
   try {
-    logDebug(`Querying NotebookLM for part: ${input.partName}...`);
-    const notebookResult: any = await callNotebookTool('notebook_query', {
-      query: `Provide detailed technical specifications for the PC component: ${input.partName}. Focus on socket, wattage, dimensions, and key performance metrics.`
-    });
+    logDebug(`Checking local database for: ${input.partName}...`);
+    const localResults = await searchLocalDatabase(input.partName);
 
-    const resultData = notebookResult?.structuredContent || (notebookResult?.content?.[0]?.text ? JSON.parse(notebookResult.content[0].text) : null);
-    logDebug(`NotebookLM Result Status: ${resultData?.status}`);
-
-    if (resultData?.status === 'success' && resultData?.answer) {
-      groundedContext = resultData.answer;
-      logDebug("Successfully retrieved grounded context from NotebookLM:");
-      logDebug("--------------------------------------------------");
-      logDebug(groundedContext);
-      logDebug("--------------------------------------------------");
+    if (localResults.length > 0) {
+      groundedContext = localResults.join('\n\n');
+      logDebug("Successfully retrieved grounded context from Local Database.");
     } else {
-      logDebug("NotebookLM returned success but no answer or different format.");
-      logDebug(JSON.stringify(notebookResult));
+      logDebug("Local database returned no matches.");
     }
   } catch (error: any) {
-    logDebug(`NotebookLM query failed: ${error.message}`);
-    console.warn("NotebookLM query failed, falling back to pure AI extraction:", error);
+    logDebug(`Local database search failed: ${error.message}`);
+  }
+
+  // 2. Fallback to general knowledge if grounded context is empty
+  if (!groundedContext) {
+    logDebug("No grounded context found. Falling back to general AI knowledge.");
   }
 
   const prompt = `You are an expert PC component database. Your task is to extract key details for a given PC part name.
   
-${groundedContext ? `GROUNDING CONTEXT FROM EXPERT SOURCE:\n${groundedContext}\n\nUSE THE ABOVE DATA AS THE PRIMARY SOURCE OF TRUTH.` : ""}
+${groundedContext ? `GROUNDING CONTEXT FROM EXPERT SOURCE:\n${groundedContext}\n\nUSE THE ABOVE DATA AS THE PRIMARY SOURCE OF TRUTH.` : "NO LOCAL DATA FOUND. You MUST use the 'googleSearch' tool to find accurate and up-to-date specifications and pricing for this part."}
 
-Given the part name, provide the full corrected part name, identify its category, brand, and a realistic estimate for its current retail price in Philippine Pesos (PHP). Base this on the component's actual MSRP or average street price in USD multiplied by 56.
+Given the part name, provide the full corrected part name, identify its category, brand, and a realistic estimate for its current retail price in Philippine Pesos (PHP). Base this on the component's actual MSRP or average street price in USD multiplied by 56. If you are unsure about any specification or the price, use the 'googleSearch' tool to verify.
 
 SPECIFICATION RULES (MANDATORY KEYS FOR 'specifications' ARRAY):
 The following keys MUST be used in the 'specifications' array for each category to ensure they appear in the UI:
@@ -108,21 +105,76 @@ ADDITIONAL FIELDS:
 Part Name: ${input.partName}`;
 
   try {
-    const response = await ai.generate({
-      prompt: prompt,
+    // Stage 1: Intelligence & Research (Conditional Search)
+    logDebug("Stage 1: Evaluating info and researching if needed...");
+    const researcherPrompt = `You are an expert PC hardware researcher.
+    
+GROUNDING CONTEXT FROM LOCAL DATABASE:
+${groundedContext || "NONE - Part not found in local database."}
+
+User is asking for details on: ${input.partName}
+
+LOGIC RULES:
+1. FIRST, check the GROUNDING CONTEXT above. If it is for the ${input.partName} and contains COMPLETE specifications (Brand, Category, Price, Wattage/TDP, Dimensions, and technical specs like Cores/Clock speeds), skip web search entirely.
+2. If the context is for the correct part but is missing specific fields (e.g. Dimensions or TDP is zero/null), use the 'googleSearch' tool ONLY to find those missing details.
+3. If the context is NONE or for the wrong part, use the 'googleSearch' tool to perform a full web search for the specs and current PHP price (MSRP/Street USD * 56).
+4. Be accurate. If you find data in the context, do not overwrite it with generic training data unless the web search finds newer/more accurate info.
+
+Output your final gathered findings clearly in plain text for the formatter. Mention clearly if the data came from the Local DB or the Web.`;
+
+    const searchResponse = await ai.generate({
+      prompt: researcherPrompt,
+      config: {
+        temperature: 0, // Lower temperature for more deterministic logic evaluation
+        googleSearchRetrieval: {},
+      },
+    });
+
+    const findings = searchResponse.text;
+    logDebug(`Stage 1 findings: ${findings.substring(0, 150)}...`);
+
+    // Stage 2: Format findings into structured JSON (without tools to avoid schema conflicts)
+    logDebug("Stage 2: Formatting findings into JSON...");
+    const formatPrompt = `Convert the following PC hardware findings into a structured JSON object.
+
+Findings:
+${findings}
+
+Part Name Requested: ${input.partName}
+
+SPECIFICATION RULES (Ensure these keys appear in the JSON 'specifications' array):
+- **CPU**: 'Architecture', 'Cores', 'Threads', 'Base Clock (GHz)', 'Boost Clock (GHz)', 'Socket', 'TDP / Peak Power', 'L3 Cache', 'Memory Support', 'Integrated Graphics'.
+- **GPU**: 'Chipset', 'VRAM Capacity', 'Memory Type', 'TGP / Power Draw (W)', 'Length (Depth) (mm)', 'Slot Thickness', 'Interface', 'Bus Width', 'CUDA Cores' (NVIDIA) or 'Stream Processors' (AMD).
+- **Motherboard**: 'Chipset', 'Socket', 'Form Factor', 'RAM Type', 'M.2 Slots', 'Back-Connect Support', 'Connectivity', 'Memory Slots', 'Memory Type'.
+- **RAM**: 'Generation', 'Capacity', 'Speed', 'CAS Latency', 'Height', 'Type'.
+- **Storage**: 'Interface', 'Capacity', 'Read Speed', 'Write Speed', 'TBW Rating', 'Form Factor', 'Type'.
+- **PSU**: 'Wattage (W)', 'Efficiency Rating', 'Modularity', '12VHPWR Support', 'Form Factor'.
+- **Case**: 'Max GPU Length', 'Max Cooler Height', 'Max Radiator Size (mm)', 'Mobo Support', 'Radiator Support', 'Back-Connect Cutout', 'Type', 'PSU Form Factor'.
+- **Cooler**: 'TDP Rating', 'Socket Support', 'Height', 'Radiator Size', 'Type'.
+
+ADDITIONAL FIELDS:
+- 'wattage': TDP for CPU/GPU, rated output for PSU (number).
+- 'performanceScore': 0-100.
+- 'dimensions': {width, height, depth} in mm. For GPUs, 'depth' is the length.
+- 'price': number in PHP.
+
+Output ONLY the JSON object.`;
+
+    const formatResponse = await ai.generate({
+      prompt: formatPrompt,
       output: {
         schema: ExtractPartDetailsOutputSchema,
       },
       config: {
-        temperature: 0.2,
+        temperature: 0,
       },
     });
 
-    if (!response.output) {
-      throw new Error("AI returned an empty response.");
+    if (!formatResponse.output) {
+      throw new Error("AI returned empty formatted output.");
     }
 
-    return response.output;
+    return formatResponse.output;
 
   } catch (error: any) {
     console.error("Extract Part Details failed:", error);
