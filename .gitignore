@@ -46,3 +46,5 @@ firestore-debug.log.firebase/
 out/ 
 *.log
 /chrome_profile_notebooklm/
+.tmp/
+tmp/

@@ -21,14 +21,14 @@ Confirm that the CPU cooler is compatible with the socket and fits within the ca
 Choose RAM that matches the type and speed supported by the motherboard.
 Verify the motherboard’s maximum supported capacity for RAM.
 5. Check GPU and Case Compatibility
-Measure the dimensions of the GPU and ensure the case has enough clearance.
-Ensure the motherboard has the correct PCIe slot for the GPU.
+- Measure the **length** and **height** of the GPU and ensure the case has enough horizontal and vertical clearance.
+- Ensure the motherboard has the correct PCIe slot (usually PCIe x16) for the GPU.
 6. Verify Power Supply Requirements
-Calculate the total power consumption of your components and ensure the PSU provides sufficient wattage.
-Check that the PSU has the necessary connectors for the CPU and GPU.
+- Calculate the total power consumption and ensure the PSU provides sufficient wattage (leave 20-30% overhead for safety).
+- **Connector Check:** Verify the PSU has the specific connectors for the GPU (e.g., the 12VHPWR connector for Nvidia 40-series/50-series cards).
 7. Evaluate Storage Options
-Ensure the motherboard supports your preferred storage type (SATA or M.2).
-Verify that the case has space for your storage drives.
+- Ensure the motherboard supports your preferred storage type (NVMe M.2 vs SATA).
+- Verify that the case has space for your storage drives (especially for 3.5" HDDs).
 8. Plan for Cooling
 Assess the cooling requirements for your build. Do you need additional fans or a liquid cooling system?
 Make sure the case supports the number and size of fans or radiators you plan to install.

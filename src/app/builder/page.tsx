@@ -754,7 +754,7 @@ export default function BuilderPage() {
         />
       )}
 
-      <BuilderFloatingChat />
+      <BuilderFloatingChat build={build} />
     </main >
   );
 }

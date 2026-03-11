@@ -20,6 +20,10 @@ export function Header() {
 
   const handleSignOut = async () => {
     if (auth) {
+      // Clear builder states from local storage on logout
+      localStorage.removeItem('pc_builder_state');
+      localStorage.removeItem('admin_pc_builder_state');
+      
       await signOut(auth);
       router.push("/");
     }
