@@ -53,10 +53,10 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                                 <AlertTriangle className="h-7 w-7 text-white scale-110 drop-shadow-lg" />
                             </div>
                             <h3 className="text-lg font-headline font-black text-white tracking-tighter mb-1.5 drop-shadow-md">
-                                WARNING: PART MISMATCH!
+                                {compatibility.message === 'ram slot is full' ? 'SLOTS FULL!' : 'WARNING: PART MISMATCH!'}
                             </h3>
                             <p className="text-xs font-semibold text-white/90 leading-tight max-w-[180px] drop-shadow-sm mb-4">
-                                {compatibility.message}
+                                {compatibility.message === 'ram slot is full' ? 'Your motherboard RAM slots are all populated.' : compatibility.message}
                             </p>
                             <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-white/60">
                                 Selection must be updated

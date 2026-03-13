@@ -124,7 +124,7 @@ export default function BuilderPage() {
   }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers, monitors, keyboards, mice, headsets]);
 
   const [build, setBuild] = useState<Record<string, ComponentData | ComponentData[] | null>>({
-    CPU: null, GPU: null, Motherboard: null, RAM: null, Storage: [], PSU: null, Case: null, Cooler: null,
+    CPU: null, GPU: null, Motherboard: null, RAM: [], Storage: [], PSU: null, Case: null, Cooler: null,
     Monitor: null, Keyboard: null, Mouse: null, Headset: null,
   });
   const [resolution, setResolution] = useState<Resolution>('1440p');
@@ -220,7 +220,7 @@ export default function BuilderPage() {
 
   const handleClearBuild = () => {
     setBuild({
-      CPU: null, GPU: null, Motherboard: null, RAM: null, Storage: [], PSU: null, Case: null, Cooler: null,
+      CPU: null, GPU: null, Motherboard: null, RAM: [], Storage: [], PSU: null, Case: null, Cooler: null,
       Monitor: null, Keyboard: null, Mouse: null, Headset: null,
     });
     toast({ title: 'Build Cleared', description: 'Your build has been reset.' });
@@ -229,10 +229,10 @@ export default function BuilderPage() {
   const handleRemovePart = (category: string, index?: number) => {
     setBuild(prev => {
       const next = { ...prev };
-      if (category === 'Storage' && typeof index === 'number') {
-        const currentStorage = [...(next['Storage'] as ComponentData[])];
-        currentStorage.splice(index, 1);
-        next['Storage'] = currentStorage;
+      if ((category === 'Storage' || category === 'RAM') && typeof index === 'number') {
+        const currentItems = [...(next[category] as ComponentData[])];
+        currentItems.splice(index, 1);
+        next[category] = currentItems;
       } else {
         next[category] = null;
       }
@@ -280,7 +280,28 @@ export default function BuilderPage() {
   const handlePartToggle = (part: Part) => {
     const category = part.category;
 
-    if (category === 'Storage') {
+    if (category === 'Storage' || category === 'RAM') {
+      const buildItems = Array.isArray(build[category]) ? (build[category] as ComponentData[]) : (build[category] ? [build[category] as ComponentData] : []);
+      const isCurrentlySelected = buildItems.some(c => c.id === part.id);
+      
+      if (isCurrentlySelected) {
+        // Find first occurrence and remove it (or remove all? User request says i can add multiple times)
+        // Usually, clicking "Added" button should remove one instance or toggle?
+        // Let's implement toggle for specific ID if we want, but for Storage/RAM it's better to allow multiple "Add"
+        // and have a dedicated "Remove" in the sidebar.
+        // However, the current UI uses PartCard which has an "Added" state.
+      }
+
+      const { compatible, message } = checkCompatibility(part, build);
+      if (!compatible) {
+        toast({
+          variant: 'destructive',
+          title: 'Compatibility Error',
+          description: message || `This ${category} is not compatible with your current build.`
+        });
+        return;
+      }
+
       const currentCount = getCountInBuild(part.name);
       if (currentCount >= part.stock) {
         toast({ variant: 'destructive', title: 'Out of Stock', description: `No more units of ${part.name} available.` });
@@ -304,10 +325,13 @@ export default function BuilderPage() {
         dimensions: part.dimensions,
       };
 
-      setBuild(prevBuild => ({
-        ...prevBuild,
-        Storage: [...(prevBuild['Storage'] as ComponentData[]), componentData]
-      }));
+      setBuild(prevBuild => {
+        const currentItems = Array.isArray(prevBuild[category]) ? (prevBuild[category] as ComponentData[]) : (prevBuild[category] ? [prevBuild[category] as ComponentData] : []);
+        return {
+          ...prevBuild,
+          [category]: [...currentItems, componentData]
+        };
+      });
       toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
       return;
     }
@@ -369,12 +393,13 @@ export default function BuilderPage() {
 
     const cpu = currentBuild['CPU'] as ComponentData | null;
     const mobo = currentBuild['Motherboard'] as ComponentData | null;
-    const ram = currentBuild['RAM'] as ComponentData | null;
+    const ramData = currentBuild['RAM'];
+    const currentRams = Array.isArray(ramData) ? ramData : (ramData ? [ramData as ComponentData] : []);
 
     const normalize = (s?: string | null) => s?.toString().trim().toLowerCase() || '';
 
     const partSocket = normalize(part.socket || part.specifications?.['Socket']?.toString() || part.specifications?.['socket']?.toString());
-    const partRamType = normalize(part.ramType || part.specifications?.['Memory Type']?.toString() || part.specifications?.['RAM Type']?.toString() || part.specifications?.['Memory']?.toString());
+    const partRamType = normalize(part.ramType || part.specifications?.['Memory Type']?.toString() || part.specifications?.['RAM Type']?.toString() || part.specifications?.['Memory']?.toString() || part.specifications?.['Generation']?.toString() || part.specifications?.['Type']?.toString());
 
     if (category === 'CPU') {
       if (mobo) {
@@ -392,11 +417,13 @@ export default function BuilderPage() {
           return { compatible: false, message: `This motherboard is ${partSocket.toUpperCase()}, but your CPU uses ${cpuSocket.toUpperCase()}.` };
         }
       }
-      if (ram) {
-        const currentRamType = normalize(ram.ramType || ram.specifications?.['Memory Type']?.toString() || ram.specifications?.['RAM Type']?.toString());
-        if (partRamType && currentRamType) {
-          if (!partRamType.includes(currentRamType) && !currentRamType.includes(partRamType)) {
-            return { compatible: false, message: `This motherboard supports ${partRamType.toUpperCase()}, but your RAM is ${currentRamType.toUpperCase()}.` };
+      if (currentRams.length > 0) {
+        for (const r of currentRams) {
+          const stickRamType = normalize(r.ramType || r.specifications?.['Memory Type']?.toString() || r.specifications?.['RAM Type']?.toString() || r.specifications?.['Memory']?.toString() || r.specifications?.['Generation']?.toString() || r.specifications?.['Type']?.toString());
+          if (partRamType && stickRamType) {
+            if (!partRamType.includes(stickRamType) && !stickRamType.includes(partRamType)) {
+              return { compatible: false, message: `This motherboard supports ${partRamType.toUpperCase()}, but your selected RAM (${r.model}) is ${stickRamType.toUpperCase()}.` };
+            }
           }
         }
       }
@@ -404,11 +431,20 @@ export default function BuilderPage() {
 
     if (category === 'RAM') {
       if (mobo) {
-        const moboRamType = normalize(mobo.ramType || mobo.specifications?.['Memory Type']?.toString() || mobo.specifications?.['RAM Type']?.toString());
+        const moboRamType = normalize(mobo.ramType || mobo.specifications?.['Memory Type']?.toString() || mobo.specifications?.['RAM Type']?.toString() || mobo.specifications?.['Memory']?.toString() || mobo.specifications?.['Generation']?.toString() || mobo.specifications?.['Type']?.toString());
         if (moboRamType && partRamType) {
           if (!moboRamType.includes(partRamType) && !partRamType.includes(moboRamType)) {
             return { compatible: false, message: `Your motherboard supports ${moboRamType.toUpperCase()}, but this RAM is ${partRamType.toUpperCase()}.` };
           }
+        }
+
+        // RAM Slot Check
+        const totalSlots = parseInt(mobo.specifications?.['Memory Slots']?.toString() || "4");
+        const usedSlots = currentRams.reduce((sum, r) => sum + parseInt(r.specifications?.['Stick Count']?.toString() || "1"), 0);
+        const partStickCount = parseInt(part.specifications?.['Stick Count']?.toString() || "1");
+
+        if (usedSlots + partStickCount > totalSlots) {
+          return { compatible: false, message: `ram slot is full` };
         }
       }
     }
@@ -480,30 +516,45 @@ export default function BuilderPage() {
     if (!moboFF) return true;
 
     const ffOrder: Record<string, number> = {
-      'E-ATX': 4, 'EATX': 4,
+      'E-ATX': 4, 'EATX': 4, 'EXTENDED ATX': 4,
       'ATX': 3,
-      'M-ATX': 2, 'MATX': 2, 'MICRO-ATX': 2,
-      'ITX': 1, 'MINI-ITX': 1
+      'M-ATX': 2, 'MATX': 2, 'MICRO-ATX': 2, 'MICRO ATX': 2,
+      'ITX': 1, 'MINI-ITX': 1, 'MINI ITX': 1
     };
 
     const targetSize = ffOrder[moboFF.toUpperCase()] || 0;
     if (targetSize === 0) return true; // Unknown mobo format, skip
 
-    // 1. Check explicit list
-    const supported = (caseSupport || '').toUpperCase().split(/[\s,]+/).filter(Boolean);
-    let isSupported = supported.some(ff => (ffOrder[ff] || 0) >= targetSize);
+    // Normalize support string into a set of clean tokens
+    // We split by non-alphanumeric characters but preserve hyphens for E-ATX, M-ATX etc.
+    const getTokens = (s: string) => {
+      return s.toUpperCase()
+        .replace(/MICRO-ATX/g, 'MATX')
+        .replace(/MICRO ATX/g, 'MATX')
+        .replace(/M-ATX/g, 'MATX')
+        .replace(/MINI-ITX/g, 'ITX')
+        .replace(/MINI ITX/g, 'ITX')
+        .split(/[\s,;|]+/)
+        .filter(Boolean);
+    };
 
-    // 2. Fallback to case type name (e.g. "ATX Mid Tower")
-    if (!isSupported && caseType) {
-      const typeUpper = caseType.toUpperCase();
-      Object.keys(ffOrder).forEach(ff => {
-        if (typeUpper.includes(ff) && ffOrder[ff] >= targetSize) {
-          isSupported = true;
-        }
-      });
-    }
+    const supportedTokens = getTokens(caseSupport);
+    const typeTokens = getTokens(caseType);
+    const allTokens = [...new Set([...supportedTokens, ...typeTokens])];
 
-    return isSupported;
+    // Check for exact matches and calculate max supported size
+    let maxSupported = 0;
+    allTokens.forEach(token => {
+      const size = ffOrder[token] || 0;
+      if (size > maxSupported) maxSupported = size;
+    });
+
+    // If we couldn't find ANY recognized form factor in the case data, 
+    // we default to allowing it to avoid over-blocking unknown data,
+    // but if we HAVE recognized sizes, we enforce the limit.
+    if (maxSupported === 0) return true;
+
+    return maxSupported >= targetSize;
   };
 
   const sortedAndFilteredParts = useMemo(() => {
@@ -537,7 +588,7 @@ export default function BuilderPage() {
         compatibility: checkCompatibility(part, build)
       };
     });
-  }, [allParts, categories, sortBy, sortDirection, build]);
+  }, [allParts, categories, sortBy, sortDirection, build, searchQuery]);
 
   const totalPages = Math.ceil(sortedAndFilteredParts.length / itemsPerPage);
   const paginatedParts = useMemo(() => {
@@ -546,9 +597,14 @@ export default function BuilderPage() {
   }, [sortedAndFilteredParts, currentPage, itemsPerPage]);
 
   const isSelected = (part: Part) => {
-    return part.category === 'Storage'
-      ? (build['Storage'] as ComponentData[]).some(c => c.model === part.name)
-      : (build[part.category] as ComponentData)?.model === part.name;
+    if (part.category === 'Storage' || part.category === 'RAM') {
+      const items = build[part.category];
+      if (Array.isArray(items)) {
+        return items.some(c => c.model === part.name);
+      }
+      return (items as ComponentData)?.model === part.name;
+    }
+    return (build[part.category] as ComponentData)?.model === part.name;
   };
 
   return (
@@ -646,12 +702,10 @@ export default function BuilderPage() {
                   </TableHeader>
                   <TableBody>
                     {paginatedParts.map(part => {
-                      const isSelected = part.category === 'Storage'
-                        ? (build['Storage'] as ComponentData[]).some(c => c.model === part.name)
-                        : (build[part.category] as ComponentData)?.model === part.name;
+                      const isPartSelected = isSelected(part);
                       return (
                         <TableRow key={part.id} className={cn(
-                          (part as any).effectiveStock === 0 && !isSelected && "opacity-50 grayscale",
+                          (part as any).effectiveStock === 0 && !isPartSelected && "opacity-50 grayscale",
                           (part as any).compatibility && !(part as any).compatibility.compatible && "bg-destructive/[0.03] hover:bg-destructive/[0.06] border-l-2 border-l-destructive shadow-[inset_4px_0_0_-2px_rgba(239,68,68,0.5)]"
                         )}>
                           <TableCell className="font-medium">
@@ -672,14 +726,14 @@ export default function BuilderPage() {
                           </TableCell>
                           <TableCell className="text-right">{formatCurrency(part.price)}</TableCell>
                           <TableCell>
-                            {(!((part as any).compatibility && !(part as any).compatibility.compatible) || isSelected) && (
+                            {(!((part as any).compatibility && !(part as any).compatibility.compatible) || isPartSelected) && (
                               <Button
                                 size="icon"
                                 onClick={() => handlePartToggle(part)}
-                                disabled={(part as any).effectiveStock === 0 && !isSelected}
-                                variant={isSelected ? 'destructive' : 'default'}
+                                disabled={(part as any).effectiveStock === 0 && !isPartSelected}
+                                variant={isPartSelected ? 'destructive' : 'default'}
                               >
-                                {isSelected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                                {isPartSelected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                               </Button>
                             )}
                           </TableCell>

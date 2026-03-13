@@ -306,7 +306,7 @@ export function YourBuild({
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-xs font-bold text-primary uppercase tracking-wider leading-none mb-1">
-                                                    {name === 'Storage' && components.length > 1 ? `${name} ${idx + 1}` : name}
+                                                    {(name === 'Storage' || name === 'RAM') && components.length > 1 ? `${name} ${idx + 1}` : name}
                                                 </p>
                                                 <p className="text-sm font-semibold truncate leading-tight tracking-tight">{c.model}</p>
                                             </div>
