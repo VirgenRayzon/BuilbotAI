@@ -419,18 +419,27 @@ export default function BuilderPage() {
         
         // Auto-add cooler if CPU is BOX and no cooler is selected
         if (category === 'CPU' && part.packageType === 'BOX' && !nextBuild['Cooler']) {
+          const isIntel = part.brand.toLowerCase().includes('intel');
+          const isAmd = part.brand.toLowerCase().includes('amd');
+          
+          const coolerModel = isIntel 
+            ? "Intel Laminar RM1 CPU Cooler" 
+            : isAmd 
+              ? "AMD Wraith MAX CPU Cooler" 
+              : `Stock Cooler (Included with ${part.name})`;
+
           nextBuild['Cooler'] = {
             id: 'included-stock-cooler',
-            model: `Stock Cooler (Included with ${part.name})`,
+            model: coolerModel,
             price: 0,
-            description: "Standard retail cooling solution bundled with this CPU.",
+            description: `Standard retail cooling solution bundled with this ${part.brand} CPU.`,
             image: "https://picsum.photos/seed/stockcooler/800/600",
             imageHint: "included cooler",
             icon: Wind,
             wattage: 0,
             specifications: { "Type": "Air (Stock)" }
           };
-          toast({ title: 'Cooler Included', description: 'Stock cooler has been added automatically.' });
+          toast({ title: 'Cooler Included', description: `${coolerModel} has been added automatically.` });
         }
         
         return nextBuild;
