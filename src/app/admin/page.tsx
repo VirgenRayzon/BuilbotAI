@@ -190,7 +190,8 @@ export default function AdminPage() {
             performanceScore: data.performanceScore,
             dimensions: data.dimensions,
             description: data.description,
-            specifications: Object.fromEntries(data.specifications.map(s => [s.key, s.value]))
+            specifications: Object.fromEntries(data.specifications.map(s => [s.key, s.value])),
+            packageType: data.packageType === "" ? undefined : data.packageType
         });
     };
 

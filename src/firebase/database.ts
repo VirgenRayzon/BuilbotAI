@@ -63,7 +63,8 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
         createdAt: new Date(),
         wattage: resolvedWattage,
         performanceScore: part.performanceScore,
-        dimensions: part.dimensions
+        dimensions: part.dimensions,
+        packageType: part.packageType
     };
 
     await addDoc(collection(firestore, part.category), cleanData(partData));
