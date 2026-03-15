@@ -417,29 +417,43 @@ export default function BuilderPage() {
       setBuild(prevBuild => {
         const nextBuild = { ...prevBuild, [category]: componentData };
         
-        // Auto-add cooler if CPU is BOX and no cooler is selected
-        if (category === 'CPU' && part.packageType === 'BOX' && !nextBuild['Cooler']) {
-          const isIntel = part.brand.toLowerCase().includes('intel');
-          const isAmd = part.brand.toLowerCase().includes('amd');
-          
-          const coolerModel = isIntel 
-            ? "Intel Laminar RM1 CPU Cooler" 
-            : isAmd 
-              ? "AMD Wraith MAX CPU Cooler" 
-              : `Stock Cooler (Included with ${part.name})`;
+        // Auto-add or update cooler if CPU category
+        if (category === 'CPU') {
+          const currentCooler = nextBuild['Cooler'] as ComponentData | null;
+          if (part.packageType === 'BOX') {
+            // If no cooler or currently a stock cooler, set/update to correct variant
+            if (!currentCooler || currentCooler.id === 'included-stock-cooler') {
+              const isIntel = part.brand.toLowerCase().includes('intel');
+              const isAmd = part.brand.toLowerCase().includes('amd');
+              const coolerModel = isIntel 
+                ? "Intel Laminar RM1 CPU Cooler" 
+                : isAmd 
+                  ? "AMD Wraith MAX CPU Cooler" 
+                  : `Stock Cooler (Included with ${part.name})`;
 
-          nextBuild['Cooler'] = {
-            id: 'included-stock-cooler',
-            model: coolerModel,
-            price: 0,
-            description: `Standard retail cooling solution bundled with this ${part.brand} CPU.`,
-            image: "https://picsum.photos/seed/stockcooler/800/600",
-            imageHint: "included cooler",
-            icon: Wind,
-            wattage: 0,
-            specifications: { "Type": "Air (Stock)" }
-          };
-          toast({ title: 'Cooler Included', description: `${coolerModel} has been added automatically.` });
+              if (currentCooler?.model !== coolerModel) {
+                nextBuild['Cooler'] = {
+                  id: 'included-stock-cooler',
+                  model: coolerModel,
+                  price: 0,
+                  description: `Standard retail cooling solution bundled with this ${part.brand} CPU.`,
+                  image: "https://picsum.photos/seed/stockcooler/800/600",
+                  imageHint: "included cooler",
+                  icon: Wind,
+                  wattage: 0,
+                  specifications: { "Type": "Air (Stock)" }
+                };
+                toast({ 
+                  title: 'Stock Cooler Sync', 
+                  description: `${coolerModel} has been ${currentCooler ? 'updated' : 'added'} for your ${part.brand} CPU.` 
+                });
+              }
+            }
+          } else if (part.packageType === 'TRAY' && currentCooler?.id === 'included-stock-cooler') {
+            // Remove stock cooler if switching to TRAY
+            nextBuild['Cooler'] = null;
+            toast({ title: 'Cooler Removed', description: 'Stock cooler removed as TRAY CPUs do not include one.' });
+          }
         }
         
         return nextBuild;
