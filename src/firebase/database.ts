@@ -59,6 +59,7 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
         stock: part.stockCount,
         imageUrl: part.imageUrl || `https://picsum.photos/seed/${part.partName.replace(/\s+/g, '').toLowerCase()}/800/600?pc,component`,
         specifications: specificationsMap,
+        description: part.description,
         createdAt: new Date(),
         wattage: resolvedWattage,
         performanceScore: part.performanceScore,

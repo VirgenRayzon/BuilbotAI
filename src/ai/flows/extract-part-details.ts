@@ -45,6 +45,7 @@ const ExtractPartDetailsOutputSchema = z.object({
     depth: z.number()
   }).optional().describe("Dimensions in mm. Vital for Case and GPU."),
   specifications: z.array(SpecificationSchema).describe('List of key-value specs.'),
+  description: z.string().optional().describe('Brief product highlights in Markdown format. MANDATORY: ALWAYS put each point on a "NEW LINE". Start the description with an asterisk (*). Use bold text for headers. Example: * **Feature**: Description.'),
 });
 export type ExtractPartDetailsOutput = z.infer<typeof ExtractPartDetailsOutputSchema>;
 
@@ -79,7 +80,7 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
   
 ${groundedContext ? `GROUNDING CONTEXT FROM EXPERT SOURCE:\n${groundedContext}\n\nUSE THE ABOVE DATA AS THE PRIMARY SOURCE OF TRUTH.` : "NO LOCAL DATA FOUND. You MUST use the 'googleSearch' tool to find accurate and up-to-date specifications and pricing for this part."}
 
-Given the part name, provide the full corrected part name, identify its category, brand, and a realistic estimate for its current retail price in Philippine Pesos (PHP). Base this on the component's actual MSRP or average street price in USD multiplied by 56. If you are unsure about any specification or the price, use the 'googleSearch' tool to verify.
+Given the part name, provide the full corrected part name, identify its category, brand, and a realistic estimate for its current retail price in Philippine Pesos (PHP). Base this on the component's actual MSRP or average street price in USD multiplied by 56. Generate a 'description' field containing brief product highlights in rich Markdown format. MANDATORY: Each highlight must be on its own NEW LINE starting with an asterisk (*). If you are unsure about any specification or the price, use the 'googleSearch' tool to verify.
 
 SPECIFICATION RULES (MANDATORY KEYS FOR 'specifications' ARRAY):
 The following keys MUST be used in the 'specifications' array for each category to ensure they appear in the UI:
@@ -157,6 +158,7 @@ ADDITIONAL FIELDS:
 - 'performanceScore': 0-100.
 - 'dimensions': {width, height, depth} in mm. For GPUs, 'depth' is the length.
 - 'price': number in PHP.
+- 'description': brief product highlights in Markdown. IMPORTANT: Use one bullet point per line (e.g., * **Title**: Detail).
 
 Output ONLY the JSON object.`;
 

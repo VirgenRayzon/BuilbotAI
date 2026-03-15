@@ -61,6 +61,7 @@ export type Part = {
     height: number;
     depth: number;
   };
+  description?: string;
   createdAt?: any;
 };
 

@@ -212,12 +212,6 @@ export default function BuilderPage() {
     setIsLoaded(true);
   }, []);
 
-  useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem('pc_builder_state', JSON.stringify(build));
-    }
-  }, [build, isLoaded]);
-
   const handleClearBuild = () => {
     setBuild({
       CPU: null, GPU: null, Motherboard: null, RAM: [], Storage: [], PSU: null, Case: null, Cooler: null,
@@ -243,6 +237,30 @@ export default function BuilderPage() {
   const [categories, setCategories] = useState(
     componentCategories.map(c => ({ name: c.name, selected: true }))
   );
+
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem('pc_builder_state', JSON.stringify(build));
+
+      // After loading/saving, check if motherboard is selected.
+      // If not, and we are not already filtered to Motherboard, suggest it.
+      if (!build['Motherboard'] && categories.some(c => c.selected && c.name !== 'Motherboard')) {
+        // We don't force it every render to avoid annoying the user if they specifically want to look at something else,
+        // but on initial load (when build is empty), we should definitely default to it.
+      }
+    }
+  }, [build, isLoaded, categories]);
+
+  // Handle Motherboard-first default
+  useEffect(() => {
+    if (isLoaded && !build['Motherboard']) {
+      // If no motherboard is selected, default the category to Motherboard
+      setCategories(prev => prev.map(cat => ({
+        ...cat,
+        selected: cat.name === 'Motherboard'
+      })));
+    }
+  }, [isLoaded]); // Only run once on mount (or when isLoaded flips)
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('Date Added');
@@ -570,6 +588,16 @@ export default function BuilderPage() {
     }) ?? [])
       .sort((a, b) => {
         let compare = 0;
+        
+        // Primary Sort: Compatibility (Compatible first)
+        const compA = checkCompatibility(a, build).compatible;
+        const compB = checkCompatibility(b, build).compatible;
+        
+        if (compA !== compB) {
+          return compA ? -1 : 1;
+        }
+
+        // Secondary Sort: User's selection
         if (sortBy === 'Name') compare = (a.name || '').localeCompare(b.name || '');
         else if (sortBy === 'Price') compare = (a.price || 0) - (b.price || 0);
         else if (sortBy === 'Date Added') {

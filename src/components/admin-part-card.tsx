@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import type { Part } from '@/lib/types';
-import { Trash2, Info } from 'lucide-react';
+import { Trash2, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -62,7 +63,7 @@ export function AdminPartCard({ part, onDelete, onUpdateStock, onUpdatePart }: A
                 onSave={(data) => onUpdatePart(part.id, part.category, data)}
             >
                 <Card className={cn(
-                    "flex flex-col justify-between h-full transform transition-all duration-300 ease-in-out hover:-translate-y-1 relative group overflow-hidden border-border/50 cursor-pointer",
+                    "flex flex-col justify-between h-full transform transition-all duration-500 ease-out hover:-translate-y-2 relative group overflow-hidden border-primary/10 hover:border-primary/40 bg-background/40 backdrop-blur-xl shadow-lg hover:shadow-primary/10 cursor-pointer",
                     part.stock === 0 && "grayscale opacity-60"
                 )}>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent transition-opacity duration-300 opacity-0 group-hover:opacity-100" />
@@ -107,13 +108,13 @@ export function AdminPartCard({ part, onDelete, onUpdateStock, onUpdatePart }: A
                             </AlertDialog>
                         </div>
 
-                        <div className="aspect-video relative w-full overflow-hidden rounded-lg bg-muted/30">
+                        <div className="aspect-square relative w-full overflow-hidden rounded-lg bg-muted/10 border border-white/5 p-2">
                             <Image
-                                src={part.imageUrl}
+                                src={part.imageUrl || '/placeholder-part.png'}
                                 alt={part.name}
                                 fill
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                className="object-contain transition-transform duration-500 group-hover:scale-105"
                             />
                         </div>
 
@@ -139,7 +140,7 @@ export function AdminPartCard({ part, onDelete, onUpdateStock, onUpdatePart }: A
                         </div>
                     </div>
 
-                    <div className="mt-auto p-3 pt-0 z-10" onClick={(e) => e.stopPropagation()}>
+                    <div className="mt-auto p-3 pt-0 z-20" onClick={(e) => e.stopPropagation()}>
                         <StockEditor
                             stock={part.stock}
                             onStockChange={(newStock) => onUpdateStock(part.id, part.category, newStock)}

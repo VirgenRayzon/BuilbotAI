@@ -189,6 +189,7 @@ export default function AdminPage() {
             wattage: data.wattage,
             performanceScore: data.performanceScore,
             dimensions: data.dimensions,
+            description: data.description,
             specifications: Object.fromEntries(data.specifications.map(s => [s.key, s.value]))
         });
     };

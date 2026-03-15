@@ -37,30 +37,38 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
         onToggleBuild(part);
     }
 
-    const specKeys = categorySpecsMap[part.category] || Object.keys(part.specifications || {}).slice(0, 4);
+    const specKeys = (categorySpecsMap[part.category] || Object.keys(part.specifications || {})).slice(0, 2);
 
     return (
         <TooltipProvider>
-            <PartDetailsDialog part={part}>
+            <PartDetailsDialog 
+                part={part} 
+                isAdded={isSelected} 
+                onToggle={() => {
+                    if (currentStock === 0 && !isSelected) return;
+                    onToggleBuild(part);
+                }}
+                isDisabled={(!compatibility || !compatibility.compatible) && !isSelected}
+            >
                 <Card className={cn(
                     "flex flex-col justify-between h-full transform transition-all duration-500 ease-out hover:-translate-y-2 relative group overflow-hidden border-primary/10 hover:border-primary/40 bg-background/40 backdrop-blur-xl shadow-lg hover:shadow-primary/10 cursor-pointer",
-                    currentStock === 0 && "grayscale opacity-60"
+                    (currentStock === 0 || (compatibility && !compatibility.compatible)) && "grayscale opacity-60"
                 )}>
                     {/* --- Incompatibility Overlay --- */}
                     {compatibility && !compatibility.compatible && (
-                        <div className="absolute inset-0 z-30 bg-destructive/85 backdrop-blur-[3px] flex flex-col items-center justify-center p-4 text-center animate-in fade-in zoom-in-95 duration-300">
-                            <div className="bg-white/10 p-2.5 rounded-full mb-3 border border-white/20">
-                                <AlertTriangle className="h-7 w-7 text-white scale-110 drop-shadow-lg" />
+                        <div className="absolute inset-0 z-30 bg-background/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in-95 duration-300 border-2 border-destructive/50 ring-2 ring-destructive/20 ring-inset">
+                            <div className="bg-destructive/20 p-4 rounded-full mb-4 border-2 border-destructive/50 shadow-[0_0_20px_rgba(239,68,68,0.3)]">
+                                <AlertTriangle className="h-10 w-10 text-destructive scale-110 drop-shadow-lg animate-pulse" />
                             </div>
-                            <h3 className="text-lg font-headline font-black text-white tracking-tighter mb-1.5 drop-shadow-md">
-                                {compatibility.message === 'ram slot is full' ? 'SLOTS FULL!' : 'WARNING: PART MISMATCH!'}
+                            <h3 className="text-2xl font-headline font-black text-destructive tracking-tighter mb-2 drop-shadow-md leading-none">
+                                {compatibility.message === 'ram slot is full' ? 'SLOTS FULL!' : 'INCOMPATIBLE'}
                             </h3>
-                            <p className="text-xs font-semibold text-white/90 leading-tight max-w-[180px] drop-shadow-sm mb-4">
+                            <p className="text-xs font-bold text-foreground/90 leading-relaxed max-w-[200px] drop-shadow-sm mb-4 uppercase tracking-tight">
                                 {compatibility.message === 'ram slot is full' ? 'Your motherboard RAM slots are all populated.' : compatibility.message}
                             </p>
-                            <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-white/60">
-                                Selection must be updated
-                            </p>
+                            <Badge variant="destructive" className="font-black animate-bounce px-4 py-1.5 shadow-lg">
+                                ACTION REQUIRED
+                            </Badge>
                         </div>
                     )}
 
@@ -69,19 +77,19 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                         isSelected && "opacity-100"
                     )} />
 
-                    <div className="p-3.5 pb-0 space-y-2.5 z-10 flex-grow flex flex-col">
+                    <div className="p-2.5 pb-0 space-y-2.5 z-10 flex-grow flex flex-col">
                         <div className="space-y-0.5">
                             <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{part.brand}</p>
                             <CardTitle className="text-base font-headline leading-snug line-clamp-2 h-10">{part.name}</CardTitle>
                         </div>
 
-                        <div className="aspect-video relative w-full overflow-hidden rounded-lg bg-muted/30 border border-white/5">
+                        <div className="aspect-square relative w-full overflow-hidden rounded-lg bg-muted/10 border border-white/5 p-2">
                             <Image
                                 src={part.imageUrl || '/placeholder-part.png'}
                                 alt={part.name}
                                 fill
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                className="object-contain transition-transform duration-500 group-hover:scale-105"
                             />
                         </div>
 
@@ -147,16 +155,16 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
 }
 
 const categorySpecsMap: Record<string, string[]> = {
-    CPU: ["Socket", "Cores", "Threads", "Wattage"],
-    GPU: ["VRAM Capacity", "Memory Type", "Bus Width", "CUDA Cores"],
-    Motherboard: ["Socket", "Form Factor", "Chipset", "Memory Type"],
-    RAM: ["Type", "Capacity", "Speed", "CAS Latency"],
-    Storage: ["Type", "Capacity", "Interface", "Form Factor"],
-    PSU: ["Wattage (W)", "Efficiency Rating", "Form Factor", "Modularity"],
-    Case: ["Type", "Mobo Support", "Max GPU Length", "Max Radiator Size (mm)"],
-    Cooler: ["Type", "Socket Support", "Radiator Size", "Fan Speed"],
-    Monitor: ["Size", "Resolution", "Refresh Rate", "Panel Type"],
-    Keyboard: ["Type", "Switches", "Layout", "Connectivity"],
-    Mouse: ["DPI", "Sensor", "Type", "Connectivity"],
-    Headset: ["Type", "Drivers", "Mic", "Connectivity"],
+    CPU: ["Socket", "Cores"],
+    GPU: ["VRAM Capacity", "Memory Type"],
+    Motherboard: ["Socket", "Form Factor"],
+    RAM: ["Type", "Capacity"],
+    Storage: ["Type", "Capacity"],
+    PSU: ["Wattage (W)", "Efficiency Rating"],
+    Case: ["Type", "Mobo Support"],
+    Cooler: ["Type", "Radiator Size"],
+    Monitor: ["Size", "Resolution"],
+    Keyboard: ["Type", "Switches"],
+    Mouse: ["DPI", "Sensor"],
+    Headset: ["Type", "Drivers"],
 };

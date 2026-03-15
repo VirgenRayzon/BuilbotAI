@@ -34,7 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Sparkles, X, BrainCircuit } from "lucide-react";
+import { Loader2, Plus, Sparkles, X, BrainCircuit, Bold, Italic, List, Heading1, Heading2, Code, Type } from "lucide-react";
 import { getAiPartDetails } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "./ui/scroll-area";
@@ -166,6 +166,7 @@ const formSchema = z.object({
     depth: z.coerce.number().min(0),
   }).optional(),
   specifications: z.array(specificationSchema),
+  description: z.string().optional(),
 });
 
 export type AddPartFormSchema = z.infer<typeof formSchema>;
@@ -201,8 +202,9 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
       specifications: initialData?.specifications
         ? Object.entries(initialData.specifications).map(([key, value]) => ({ key, value: String(value) }))
         : [],
+      description: initialData?.description || "",
     },
-  });
+});
 
   // Re-reset form if initialData changes or dialog opens
   useEffect(() => {
@@ -218,6 +220,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
         performanceScore: initialData.performanceScore,
         dimensions: initialData.dimensions || { width: 0, height: 0, depth: 0 },
         specifications: Object.entries(initialData.specifications || {}).map(([key, value]) => ({ key, value: String(value) })),
+        description: initialData.description || "",
       });
     } else if (open && !initialData) {
       form.reset({
@@ -231,6 +234,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
         performanceScore: 50,
         dimensions: { width: 0, height: 0, depth: 0 },
         specifications: [],
+        description: "",
       });
     }
   }, [open, initialData, form]);
@@ -274,6 +278,9 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
         form.setValue("partName", result.partName, { shouldValidate: true });
         form.setValue("category", result.category, { shouldValidate: true });
         form.setValue("brand", result.brand, { shouldValidate: true });
+        if (result.description) {
+          form.setValue("description", result.description, { shouldValidate: true });
+        }
         form.setValue("price", result.price, { shouldValidate: true });
         form.setValue("wattage", result.wattage, { shouldValidate: true });
         form.setValue(
@@ -371,7 +378,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
       }}
     >
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-4xl p-0 gap-0 overflow-hidden border-primary/20 bg-background shadow-2xl [&>button.absolute]:hidden">
+      <DialogContent className="sm:max-w-5xl p-0 gap-0 overflow-hidden border-primary/20 bg-background shadow-2xl [&>button.absolute]:hidden">
 
         {/* ── Header ── */}
         <DialogHeader className="flex-row items-center gap-3 space-y-0">
@@ -507,6 +514,113 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                           </FormLabel>
                           <FormControl>
                             <Input className="bg-muted/40 border-border/60 h-9" placeholder="https://..." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+
+                    {/* Description — spans all 3 cols */}
+                    <div className="col-span-3">
+                      <FormField control={form.control} name="description" render={({ field }) => (
+                        <FormItem>
+                          <div className="flex items-center justify-between mb-2">
+                            <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Description (Markdown Supported)</FormLabel>
+                            <div className="flex items-center gap-1 p-1 rounded-md bg-muted/60 border border-border/40">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                onClick={() => {
+                                  const val = field.value || "";
+                                  field.onChange(`**${val}**`);
+                                }}
+                                title="Bold"
+                              >
+                                <Bold className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                onClick={() => {
+                                  const val = field.value || "";
+                                  field.onChange(`*${val}*`);
+                                }}
+                                title="Italic"
+                              >
+                                <Italic className="h-3.5 w-3.5" />
+                              </Button>
+                              <div className="w-px h-4 bg-border/60 mx-1" />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                onClick={() => {
+                                  const val = field.value || "";
+                                  field.onChange(`# ${val}`);
+                                }}
+                                title="Heading 1"
+                              >
+                                <Heading1 className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                onClick={() => {
+                                  const val = field.value || "";
+                                  field.onChange(`## ${val}`);
+                                }}
+                                title="Heading 2"
+                              >
+                                <Heading2 className="h-3.5 w-3.5" />
+                              </Button>
+                              <div className="w-px h-4 bg-border/60 mx-1" />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                onClick={() => {
+                                  const val = field.value || "";
+                                  const lines = val.split('\n');
+                                  const listVal = lines.map(line => line.startsWith('- ') ? line : `- ${line}`).join('\n');
+                                  field.onChange(listVal);
+                                }}
+                                title="Bullet List"
+                              >
+                                <List className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                onClick={() => {
+                                  const val = field.value || "";
+                                  field.onChange(`\`${val}\``);
+                                }}
+                                title="Code"
+                              >
+                                <Code className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                          <FormControl>
+                            <textarea 
+                              className="flex min-h-[120px] w-full rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-mono text-[13px]"
+                              placeholder="Use Markdown for formatting...
+- Feature one
+- Feature two
+
+**Technical Note:** Supports bold, lists, and headers."
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
