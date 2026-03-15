@@ -62,6 +62,7 @@ export type Part = {
     depth: number;
   };
   description?: string;
+  packageType?: 'TRAY' | 'BOX';
   createdAt?: any;
 };
 

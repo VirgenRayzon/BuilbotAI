@@ -167,6 +167,7 @@ const formSchema = z.object({
   }).optional(),
   specifications: z.array(specificationSchema),
   description: z.string().optional(),
+  packageType: z.enum(['TRAY', 'BOX']).optional().or(z.literal("")),
 });
 
 export type AddPartFormSchema = z.infer<typeof formSchema>;
@@ -203,6 +204,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
         ? Object.entries(initialData.specifications).map(([key, value]) => ({ key, value: String(value) }))
         : [],
       description: initialData?.description || "",
+      packageType: initialData?.packageType || "",
     },
 });
 
@@ -221,6 +223,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
         dimensions: initialData.dimensions || { width: 0, height: 0, depth: 0 },
         specifications: Object.entries(initialData.specifications || {}).map(([key, value]) => ({ key, value: String(value) })),
         description: initialData.description || "",
+        packageType: initialData.packageType || "",
       });
     } else if (open && !initialData) {
       form.reset({
@@ -235,6 +238,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
         dimensions: { width: 0, height: 0, depth: 0 },
         specifications: [],
         description: "",
+        packageType: "",
       });
     }
   }, [open, initialData, form]);
@@ -278,6 +282,9 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
         form.setValue("partName", result.partName, { shouldValidate: true });
         form.setValue("category", result.category, { shouldValidate: true });
         form.setValue("brand", result.brand, { shouldValidate: true });
+        if (result.packageType) {
+          form.setValue("packageType", result.packageType, { shouldValidate: true });
+        }
         if (result.description && !form.getValues("description")) {
           form.setValue("description", result.description, { shouldValidate: true });
         }
@@ -474,6 +481,28 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                         <FormMessage />
                       </FormItem>
                     )} />
+
+                    {selectedCategory === "CPU" && (
+                      <FormField control={form.control} name="packageType" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                            Package Type <Badge variant="outline" className="text-[9px] py-0 px-1 border-primary/20 text-primary/80">CPU ONLY</Badge>
+                          </FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="bg-muted/40 border-border/60 h-9">
+                                <SelectValue placeholder="TRAY or BOX…" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="BOX">BOX (Retail)</SelectItem>
+                              <SelectItem value="TRAY">TRAY (OEM)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    )}
 
                     <FormField control={form.control} name="performanceScore" render={({ field }) => (
                       <FormItem>

@@ -228,7 +228,15 @@ export default function BuilderPage() {
         currentItems.splice(index, 1);
         next[category] = currentItems;
       } else {
+        const removedPart = next[category] as ComponentData | null;
         next[category] = null;
+
+        // Auto-remove stock cooler if CPU is removed
+        const currentCooler = next['Cooler'] as ComponentData | null;
+        if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
+          next['Cooler'] = null;
+          toast({ title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' });
+        }
       }
       return next;
     });
@@ -359,7 +367,18 @@ export default function BuilderPage() {
 
     if (isCurrentlySelected) {
       // Part is already selected, so remove it
-      setBuild(prevBuild => ({ ...prevBuild, [category]: null }));
+      setBuild(prevBuild => {
+        const nextBuild = { ...prevBuild, [category]: null };
+        
+        // Auto-remove stock cooler if it was the included one for this CPU
+        const currentCooler = nextBuild['Cooler'] as ComponentData | null;
+        if (category === 'CPU' && part.packageType === 'BOX' && currentCooler?.id === 'included-stock-cooler') {
+          nextBuild['Cooler'] = null;
+          toast({ title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' });
+        }
+        
+        return nextBuild;
+      });
       toast({ title: 'Part Removed', description: `${part.name} has been removed from your build.` });
     } else {
       if (!compatible) {
@@ -395,7 +414,27 @@ export default function BuilderPage() {
         dimensions: part.dimensions,
       };
 
-      setBuild(prevBuild => ({ ...prevBuild, [category]: componentData }));
+      setBuild(prevBuild => {
+        const nextBuild = { ...prevBuild, [category]: componentData };
+        
+        // Auto-add cooler if CPU is BOX and no cooler is selected
+        if (category === 'CPU' && part.packageType === 'BOX' && !nextBuild['Cooler']) {
+          nextBuild['Cooler'] = {
+            id: 'included-stock-cooler',
+            model: `Stock Cooler (Included with ${part.name})`,
+            price: 0,
+            description: "Standard retail cooling solution bundled with this CPU.",
+            image: "https://picsum.photos/seed/stockcooler/800/600",
+            imageHint: "included cooler",
+            icon: Wind,
+            wattage: 0,
+            specifications: { "Type": "Air (Stock)" }
+          };
+          toast({ title: 'Cooler Included', description: 'Stock cooler has been added automatically.' });
+        }
+        
+        return nextBuild;
+      });
       toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
     }
   };
