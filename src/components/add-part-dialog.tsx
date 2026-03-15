@@ -278,7 +278,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
         form.setValue("partName", result.partName, { shouldValidate: true });
         form.setValue("category", result.category, { shouldValidate: true });
         form.setValue("brand", result.brand, { shouldValidate: true });
-        if (result.description) {
+        if (result.description && !form.getValues("description")) {
           form.setValue("description", result.description, { shouldValidate: true });
         }
         form.setValue("price", result.price, { shouldValidate: true });
