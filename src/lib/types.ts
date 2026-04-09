@@ -77,8 +77,8 @@ export type PrebuiltSystem = {
     cpu?: string;
     gpu?: string;
     motherboard?: string;
-    ram?: string;
-    storage?: string;
+    ram?: string[];
+    storage?: string[];
     psu?: string;
     case?: string;
     cooler?: string;
@@ -106,7 +106,7 @@ export type Order = {
   userEmail: string;
   items: OrderItem[];
   totalPrice: number;
-  status: 'pending' | 'ongoing' | 'finished';
+  status: 'pending' | 'building' | 'finished building' | 'cancelled';
   createdAt: any; // Firestore Timestamp
 };
 
@@ -115,4 +115,14 @@ export type PopularityMetrics = {
   name: string;
   category: string;
   purchaseCount: number;
+};
+
+export type Notification = {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  orderId: string;
+  read: boolean;
+  createdAt: any; // Firestore Timestamp
 };

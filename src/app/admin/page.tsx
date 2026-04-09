@@ -5,7 +5,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Package, PackageCheck, ServerCrash, Loader2, BarChart3, History, TrendingUp, DollarSign, Cpu, Monitor, CircuitBoard, MemoryStick, HardDrive, PlugZap, Square, Wind, Mouse, Headset } from "lucide-react";
+import { Plus, Package, PackageCheck, ServerCrash, Loader2, BarChart3, History, TrendingUp, DollarSign, Cpu, Monitor, CircuitBoard, MemoryStick, HardDrive, PlugZap, Square, Wind, Mouse, Headset, ChevronRight } from "lucide-react";
 import { Order } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -27,8 +27,9 @@ import { useUserProfile } from '@/context/user-profile';
 import { useToast } from "@/hooks/use-toast";
 import { AdminPartCard } from '@/components/admin-part-card';
 import { AdminPrebuiltCard } from '@/components/admin-prebuilt-card';
-import { PrebuiltSystemCard } from '@/components/prebuilt-system-card';
+import { updateReservationStatus } from '@/app/checkout-actions';
 import { PaginationControls } from "@/components/pagination-controls";
+import { formatCurrency, cn } from "@/lib/utils";
 
 const componentCategories: { name: Part['category'], selected: boolean }[] = [
     { name: "CPU", selected: true },
@@ -87,6 +88,10 @@ export default function AdminPage() {
     const [prebuiltView, setPrebuiltView] = useState<'grid' | 'list'>('grid');
     const [prebuiltCurrentPage, setPrebuiltCurrentPage] = useState(1);
     const [prebuiltItemsPerPage, setPrebuiltItemsPerPage] = useState(10);
+    const [allPrebuiltsExpanded, setAllPrebuiltsExpanded] = useState(false);
+    const [orderCurrentPage, setOrderCurrentPage] = useState(1);
+    const [orderItemsPerPage, setOrderItemsPerPage] = useState(5);
+    const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
     // Fetch each category collection
     const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
@@ -223,21 +228,23 @@ export default function AdminPage() {
         await deletePrebuiltSystem(firestore, systemId);
     };
 
-    const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
+    const handleUpdateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
         if (!firestore) return;
         try {
-            await updateDoc(doc(firestore, "orders", orderId), {
-                status: newStatus
-            });
-            toast({
-                title: "Status Updated",
-                description: `Order ${orderId.substring(0, 8)} status changed to ${newStatus}.`,
-            });
+            const result = await updateReservationStatus(orderId, newStatus);
+            if (result.success) {
+                toast({
+                    title: "Status Updated",
+                    description: `Order ${orderId.substring(0, 8)} status changed to ${newStatus}.`,
+                });
+            } else {
+                throw new Error(result.error);
+            }
         } catch (error) {
             console.error("Error updating order status:", error);
             toast({
                 title: "Update Failed",
-                description: "Failed to update order status.",
+                description: error instanceof Error ? error.message : "Failed to update order status.",
                 variant: "destructive"
             });
         }
@@ -265,6 +272,15 @@ export default function AdminPage() {
                 return partSortDirection === 'asc' ? compare : -compare;
             });
     }, [parts, partCategories, partSortBy, partSortDirection, partSearchQuery]);
+
+    const paginatedOrders = useMemo(() => {
+        if (!orders) return [];
+        const sorted = [...orders].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        const startIndex = (orderCurrentPage - 1) * orderItemsPerPage;
+        return sorted.slice(startIndex, startIndex + orderItemsPerPage);
+    }, [orders, orderCurrentPage, orderItemsPerPage]);
+
+    const orderTotalPages = Math.ceil((orders?.length || 0) / orderItemsPerPage);
 
     const filteredAndSortedPrebuilts = useMemo(() => {
         const selectedCategories = prebuiltCategories.filter(c => c.selected).map(c => c.name);
@@ -296,13 +312,14 @@ export default function AdminPage() {
     }, [filteredAndSortedPrebuilts, prebuiltCurrentPage, prebuiltItemsPerPage]);
 
     const stats = useMemo(() => {
-        const totalSales = orders?.reduce((acc, order) => acc + order.totalPrice, 0) || 0;
-        const totalOrders = orders?.length || 0;
+        const totalSales = orders?.reduce((acc, order) => acc + (order.status !== 'cancelled' ? order.totalPrice : 0), 0) || 0;
+        const totalOrders = orders?.filter(o => o.status !== 'cancelled').length || 0;
+        const pendingOrdersCount = orders?.filter(o => o.status === 'pending').length || 0;
 
         // Calculate popular items from parts (assuming popularity field is updated on checkout)
         const popularItems = [...parts].sort((a, b) => ((b as any).popularity || 0) - ((a as any).popularity || 0)).slice(0, 5);
 
-        return { totalSales, totalOrders, popularItems };
+        return { totalSales, totalOrders, popularItems, pendingOrdersCount };
     }, [orders, parts]);
 
     const formatCurrency = (amount: number) => {
@@ -333,9 +350,14 @@ export default function AdminPage() {
                             <PackageCheck className="mr-2 h-4 w-4" />
                             Manage Prebuilts
                         </TabsTrigger>
-                        <TabsTrigger value="analytics">
+                        <TabsTrigger value="analytics" className="relative">
                             <BarChart3 className="mr-2 h-4 w-4" />
-                            Sales & Analytics
+                            Sales & Reservations
+                            {stats.pendingOrdersCount > 0 && (
+                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground animate-bounce">
+                                    {stats.pendingOrdersCount}
+                                </span>
+                            )}
                         </TabsTrigger>
                     </TabsList>
                 </div>
@@ -445,7 +467,14 @@ export default function AdminPage() {
                                     prebuiltView === 'list' ? (
                                         <>
                                             <Card className="mt-6">
-                                                <PrebuiltsTable systems={paginatedPrebuilts} onDelete={handleDeletePrebuilt} onUpdate={handleUpdatePrebuilt} parts={parts} />
+                                                <PrebuiltsTable 
+                                                    systems={paginatedPrebuilts} 
+                                                    onDelete={handleDeletePrebuilt} 
+                                                    onUpdate={handleUpdatePrebuilt} 
+                                                    parts={parts} 
+                                                    isExpanded={allPrebuiltsExpanded}
+                                                    onToggleExpand={() => setAllPrebuiltsExpanded(!allPrebuiltsExpanded)}
+                                                />
                                             </Card>
                                             <PaginationControls
                                                 currentPage={prebuiltCurrentPage}
@@ -457,9 +486,17 @@ export default function AdminPage() {
                                         </>
                                     ) : (
                                         <>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6 items-start">
                                                 {paginatedPrebuilts.map(system => (
-                                                    <AdminPrebuiltCard key={system.id} system={system} parts={parts} onDelete={handleDeletePrebuilt} onUpdate={handleUpdatePrebuilt} />
+                                                    <AdminPrebuiltCard 
+                                                        key={system.id} 
+                                                        system={system} 
+                                                        parts={parts} 
+                                                        onDelete={handleDeletePrebuilt} 
+                                                        onUpdate={handleUpdatePrebuilt} 
+                                                        isExpanded={allPrebuiltsExpanded}
+                                                        onToggleExpand={() => setAllPrebuiltsExpanded(!allPrebuiltsExpanded)}
+                                                    />
                                                 ))}
                                             </div>
                                             <PaginationControls
@@ -538,8 +575,8 @@ export default function AdminPage() {
                             </Card>
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <div>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-2">
                                 <h3 className="text-xl font-headline font-bold mb-4 flex items-center gap-2">
                                     <History className="h-5 w-5" /> Build Reservations
                                 </h3>
@@ -547,34 +584,100 @@ export default function AdminPage() {
                                     <CardContent className="p-0">
                                         {ordersLoading ? <TableSkeleton columns={3} /> : (
                                             orders && orders.length > 0 ? (
-                                                <div className="divide-y">
-                                                    {[...orders].sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds).slice(0, 10).map(order => (
-                                                        <div key={order.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                                            <div className="flex-1">
-                                                                <p className="font-bold text-sm mb-1">{order.userEmail}</p>
-                                                                <p className="text-xs text-muted-foreground">
-                                                                    ID: {order.id.substring(0, 8)} • {order.items.length} items • {order.createdAt?.toDate().toLocaleDateString()}
-                                                                </p>
-                                                            </div>
-                                                            <div className="flex flex-row items-center justify-end gap-3 shrink-0">
-                                                                <p className="font-bold text-emerald-500 mr-2">{formatCurrency(order.totalPrice)}</p>
-                                                                <Select
-                                                                    defaultValue={order.status || 'pending'}
-                                                                    onValueChange={(val) => handleUpdateOrderStatus(order.id, val)}
+                                                <>
+                                                    <div className="divide-y overflow-hidden rounded-md border border-white/5">
+                                                        {paginatedOrders.map(order => (
+                                                            <div 
+                                                                key={order.id} 
+                                                                className={cn(
+                                                                    "flex flex-col transition-all duration-300",
+                                                                    order.status === 'pending' 
+                                                                        ? "border-l-4 border-l-primary shadow-[0_0_20px_rgba(34,211,238,0.05)]" 
+                                                                        : "border-l-4 border-l-transparent",
+                                                                    order.status === 'cancelled' && "opacity-60 grayscale-[0.5]"
+                                                                )}
+                                                            >
+                                                                {/* Collapsible Header */}
+                                                                <div 
+                                                                    className={cn(
+                                                                        "p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-muted/20 transition-colors",
+                                                                        expandedOrderId === order.id ? "bg-muted/10" : ""
+                                                                    )}
+                                                                    onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
                                                                 >
-                                                                    <SelectTrigger className="w-[120px] h-8 text-xs">
-                                                                        <SelectValue placeholder="Status" />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        <SelectItem value="pending">Pending</SelectItem>
-                                                                        <SelectItem value="ongoing">Ongoing</SelectItem>
-                                                                        <SelectItem value="finished">Finished</SelectItem>
-                                                                    </SelectContent>
-                                                                </Select>
+                                                                    <div className="flex-1 flex items-start gap-3">
+                                                                        <div className={cn("mt-1 transition-transform duration-200", expandedOrderId === order.id ? "rotate-90" : "")}>
+                                                                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <div className="flex items-center gap-2 mb-1.5">
+                                                                                <p className="font-bold text-base tracking-tight">{order.userEmail}</p>
+                                                                                {order.status === 'pending' && <Badge className="bg-primary hover:bg-primary text-[10px] h-4 animate-pulse">NEW</Badge>}
+                                                                            </div>
+                                                                            <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest opacity-70">
+                                                                                ID: {order.id.substring(0, 12)} • {order.items.length} items • {order.createdAt?.toDate().toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex flex-row items-center justify-between md:justify-end gap-5 shrink-0" onClick={e => e.stopPropagation()}>
+                                                                        <div className="text-right">
+                                                                            <p className="text-[10px] text-muted-foreground uppercase tracking-tighter mb-0.5">Amount</p>
+                                                                            <p className="font-headline font-bold text-base text-emerald-500 tracking-tight">{formatCurrency(order.totalPrice)}</p>
+                                                                        </div>
+                                                                        <Select
+                                                                            defaultValue={order.status || 'pending'}
+                                                                            onValueChange={(val) => handleUpdateOrderStatus(order.id, val as Order['status'])}
+                                                                        >
+                                                                            <SelectTrigger className={cn(
+                                                                                "w-[140px] h-9 text-[10px] font-bold uppercase tracking-wider",
+                                                                                order.status === 'pending' && "border-primary/50 text-primary",
+                                                                                order.status === 'cancelled' && "text-destructive border-destructive/30"
+                                                                            )}>
+                                                                                <SelectValue placeholder="Status" />
+                                                                            </SelectTrigger>
+                                                                            <SelectContent>
+                                                                                <SelectItem value="pending" className="font-bold text-primary">Pending</SelectItem>
+                                                                                <SelectItem value="building" className="font-bold text-blue-400">Building</SelectItem>
+                                                                                <SelectItem value="finished building" className="font-bold text-emerald-400">Finished Building</SelectItem>
+                                                                                <SelectItem value="cancelled" className="text-destructive font-bold bg-destructive/5">Cancelled</SelectItem>
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                {/* Items Detail Section - Animated/Collapsible */}
+                                                                {expandedOrderId === order.id && (
+                                                                    <div className="px-5 pb-5 pt-0 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                                        <div className="grid grid-cols-1 gap-1.5 bg-background/40 rounded-xl p-4 border border-white/5 shadow-inner">
+                                                                            <div className="flex justify-between items-center mb-2 px-1 pb-1 border-b border-white/5">
+                                                                                <span className="text-[9px] uppercase tracking-[0.2em] font-bold text-muted-foreground/60">Full Component List</span>
+                                                                                <span className="text-[9px] uppercase tracking-[0.2em] font-bold text-muted-foreground/60">Price</span>
+                                                                            </div>
+                                                                            {order.items.map((item, idx) => (
+                                                                                <div key={idx} className="flex justify-between items-baseline group py-1 border-t border-white/[0.03] first:border-t-0">
+                                                                                    <div className="flex flex-col">
+                                                                                        <span className="text-[8px] uppercase font-bold text-primary/60 tracking-tighter">{item.category}</span>
+                                                                                        <span className="text-sm font-medium text-foreground/80 leading-tight group-hover:text-primary transition-colors pr-4">{item.name}</span>
+                                                                                    </div>
+                                                                                    <span className="font-mono text-xs text-primary/70 shrink-0">{formatCurrency(item.price)}</span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                                        ))}
+                                                    </div>
+                                                    <div className="mt-4">
+                                                        <PaginationControls
+                                                            currentPage={orderCurrentPage}
+                                                            totalPages={orderTotalPages}
+                                                            itemsPerPage={orderItemsPerPage}
+                                                            onPageChange={setOrderCurrentPage}
+                                                            onItemsPerPageChange={setOrderItemsPerPage}
+                                                        />
+                                                    </div>
+                                                </>
                                             ) : (
                                                 <div className="p-8 text-center text-muted-foreground">No reservations yet.</div>
                                             )
@@ -583,21 +686,21 @@ export default function AdminPage() {
                                 </Card>
                             </div>
 
-                            <div>
+                            <div className="lg:col-span-1">
                                 <h3 className="text-xl font-headline font-bold mb-4 flex items-center gap-2">
                                     <TrendingUp className="h-5 w-5" /> Popular Items
                                 </h3>
                                 <Card>
                                     <CardContent className="p-0">
-                                        <div className="divide-y">
-                                            {stats.popularItems.map((item, index) => (
-                                                <div key={item.id} className="p-4 flex items-center gap-4">
-                                                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0">
+                                        <div className="divide-y border border-white/5 rounded-md overflow-hidden">
+                                            {stats.popularItems.slice(0, 5).map((item, index) => (
+                                                <div key={item.id} className="p-3 flex items-center gap-3 hover:bg-muted/10 transition-colors">
+                                                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center font-bold text-[10px] text-primary shrink-0 border border-primary/20">
                                                         {index + 1}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="font-medium text-sm truncate">{item.name}</p>
-                                                        <p className="text-xs text-muted-foreground">{item.category}</p>
+                                                        <p className="font-medium text-[13px] truncate leading-tight">{item.name}</p>
+                                                        <p className="text-[9px] text-muted-foreground uppercase opacity-70 tracking-tight">{item.category}</p>
                                                     </div>
                                                     <div className="text-right shrink-0">
                                                         <p className="font-bold">{(item as any).popularity || 0}</p>

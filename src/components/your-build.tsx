@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { getAiBuildCritique } from "@/app/actions";
+import { getAiBuildCritique, getAiPrebuiltSuggestions } from "@/app/actions";
 import { Resolution, WorkloadType } from "@/lib/types";
 
 import Link from "next/link";
@@ -21,7 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { OrderItem } from "@/lib/types";
 import { ShoppingCart, CheckCircle2, Gauge } from "lucide-react";
 import { calculateBottleneck } from "@/lib/bottleneck";
-import { AddPrebuiltDialog, type AddPrebuiltFormSchema } from "./add-prebuilt-dialog";
+import { type BuilderAdminAddPrebuiltFormSchema } from "./builder-admin-add-prebuilt-dialog";
 import { Part, PrebuiltSystem } from "@/lib/types";
 
 interface YourBuildProps {
@@ -37,7 +37,7 @@ interface YourBuildProps {
     className?: string;
     isAdminMode?: boolean;
     allParts?: Part[];
-    onAddPrebuilt?: (data: AddPrebuiltFormSchema) => void;
+    onAddPrebuilt?: (data: BuilderAdminAddPrebuiltFormSchema) => void;
     hasAnalysis?: boolean;
 }
 
@@ -107,6 +107,79 @@ export function YourBuild({
         const val = build[cat];
         return Array.isArray(val) ? val.length > 0 : !!val;
     });
+
+    const [isAiPending, startAiTransition] = useTransition();
+
+    const handleAddPrebuiltWithAi = () => {
+        if (!onAddPrebuilt) return;
+
+        startAiTransition(async () => {
+            toast({
+                title: "Generating Identity...",
+                description: "Buildbot is creating a name, description, and image for this system.",
+            });
+            try {
+                // Prepare component names for AI context
+                const selectedComponents = {
+                    cpu: (build['CPU'] as ComponentData)?.model,
+                    gpu: (build['GPU'] as ComponentData)?.model,
+                    motherboard: (build['Motherboard'] as ComponentData)?.model,
+                    ram: Array.isArray(build['RAM']) 
+                        ? (build['RAM'] as ComponentData[]).map(r => r.model).join(", ") 
+                        : (build['RAM'] as ComponentData)?.model,
+                    storage: Array.isArray(build['Storage']) 
+                        ? (build['Storage'] as ComponentData[]).map(s => s.model).join(", ") 
+                        : (build['Storage'] as ComponentData)?.model,
+                    psu: (build['PSU'] as ComponentData)?.model,
+                    case: (build['Case'] as ComponentData)?.model,
+                    cooler: (build['Cooler'] as ComponentData)?.model,
+                };
+
+                // Trigger AI generation
+                const result = await getAiPrebuiltSuggestions({
+                    components: selectedComponents
+                });
+
+                if (result && "systemName" in result) {
+                    // Force a valid image path based on the system name
+                    const randomNum = Math.floor(Math.random() * 1000);
+                    const systemSlug = result.systemName.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+                    const finalImage = `https://picsum.photos/seed/${systemSlug}${randomNum}/800/600`;
+
+                    // Construct final data to save
+                    const finalData: BuilderAdminAddPrebuiltFormSchema = {
+                        name: result.systemName,
+                        description: result.description || "High-performance prebuilt system.",
+                        price: Math.round(totalPrice * 100) / 100,
+                        tier: result.tier || "Mid-Range",
+                        imageUrl: finalImage,
+                        cpu: (build['CPU'] as ComponentData)?.id || "",
+                        gpu: (build['GPU'] as ComponentData)?.id || "",
+                        motherboard: (build['Motherboard'] as ComponentData)?.id || "",
+                        ram: Array.isArray(build['RAM']) ? (build['RAM'] as ComponentData[]).map(r => r.id) : (build['RAM'] ? [(build['RAM'] as ComponentData).id] : []),
+                        storage: Array.isArray(build['Storage']) ? (build['Storage'] as ComponentData[]).map(s => s.id) : (build['Storage'] ? [(build['Storage'] as ComponentData).id] : []),
+                        psu: (build['PSU'] as ComponentData)?.id || "",
+                        case: (build['Case'] as ComponentData)?.id || "",
+                        cooler: (build['Cooler'] as ComponentData)?.id || "",
+                    };
+
+                    onAddPrebuilt(finalData);
+                } else {
+                    toast({
+                        variant: "destructive",
+                        title: "AI Generation Failed",
+                        description: "Could not generate name and description. Please try again or check API configuration."
+                    });
+                }
+            } catch (error: any) {
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: error.message || "An unexpected error occurred."
+                });
+            }
+        });
+    };
 
     const handleCheckout = async () => {
         if (!user) {
@@ -450,36 +523,25 @@ export function YourBuild({
                     </Button>
 
                     {isAdminMode ? (
-                        <AddPrebuiltDialog
-                            parts={allParts}
-                            onSave={(data) => onAddPrebuilt?.(data)}
-                            initialData={{
-                                id: "",
-                                name: "",
-                                tier: "Mid-Range",
-                                description: "",
-                                price: totalPrice,
-                                imageUrl: "",
-                                components: {
-                                    cpu: (build['CPU'] as ComponentData)?.id || "",
-                                    gpu: (build['GPU'] as ComponentData)?.id || "",
-                                    motherboard: (build['Motherboard'] as ComponentData)?.id || "",
-                                    ram: (build['RAM'] as ComponentData)?.id || "",
-                                    storage: (Array.isArray(build['Storage']) ? build['Storage'][0]?.id : (build['Storage'] as ComponentData)?.id) || "",
-                                    psu: (build['PSU'] as ComponentData)?.id || "",
-                                    case: (build['Case'] as ComponentData)?.id || "",
-                                    cooler: (build['Cooler'] as ComponentData)?.id || "",
-                                },
-                            } as PrebuiltSystem}
+                        <Button
+                            className="w-full font-headline tracking-wide flex items-center gap-2 bg-primary hover:bg-primary/90 text-white relative overflow-hidden group/add-prebuilt"
+                            size="lg"
+                            disabled={!isBuildComplete || isAiPending}
+                            onClick={handleAddPrebuiltWithAi}
                         >
-                            <Button
-                                className="w-full font-headline tracking-wide flex items-center gap-2 bg-primary hover:bg-primary/90 text-white"
-                                size="lg"
-                                disabled={!isBuildComplete}
-                            >
-                                <Plus className="h-5 w-5" /> Add New Prebuilt
-                            </Button>
-                        </AddPrebuiltDialog>
+                            {isAiPending ? (
+                                <>
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                    <span>Generating Identity...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Plus className="h-5 w-5" />
+                                    <span>Add New Prebuilt</span>
+                                </>
+                            )}
+                            <div className="absolute inset-0 animate-shimmer pointer-events-none opacity-0 group-hover/add-prebuilt:opacity-100 transition-opacity" />
+                        </Button>
                     ) : (
                         <Dialog open={isCheckoutDialogOpen} onOpenChange={setIsCheckoutDialogOpen}>
                             <DialogTrigger asChild>

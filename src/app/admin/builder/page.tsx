@@ -39,7 +39,7 @@ import { useUserProfile } from "@/context/user-profile";
 import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
 import { addPrebuiltSystem } from "@/firebase/database";
-import type { AddPrebuiltFormSchema } from "@/components/add-prebuilt-dialog";
+import type { BuilderAdminAddPrebuiltFormSchema } from "@/components/builder-admin-add-prebuilt-dialog";
 
 type PartWithoutCategory = Omit<Part, 'category'>;
 
@@ -119,7 +119,7 @@ export default function AdminBuilderPage() {
     }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers, monitors, keyboards, mice, headsets]);
 
     const [build, setBuild] = useState<Record<string, ComponentData | ComponentData[] | null>>({
-        CPU: null, GPU: null, Motherboard: null, RAM: null, Storage: [], PSU: null, Case: null, Cooler: null,
+        CPU: null, GPU: null, Motherboard: null, RAM: [], Storage: [], PSU: null, Case: null, Cooler: null,
         Monitor: null, Keyboard: null, Mouse: null, Headset: null,
     });
     const [resolution, setResolution] = useState<Resolution>('1440p');
@@ -148,7 +148,7 @@ export default function AdminBuilderPage() {
 
     const handleClearBuild = () => {
         setBuild({
-            CPU: null, GPU: null, Motherboard: null, RAM: null, Storage: [], PSU: null, Case: null, Cooler: null,
+            CPU: null, GPU: null, Motherboard: null, RAM: [], Storage: [], PSU: null, Case: null, Cooler: null,
             Monitor: null, Keyboard: null, Mouse: null, Headset: null,
         });
         toast({ title: 'Build Cleared', description: 'Builder has been reset.' });
@@ -157,10 +157,10 @@ export default function AdminBuilderPage() {
     const handleRemovePart = (category: string, index?: number) => {
         setBuild(prev => {
             const next = { ...prev };
-            if (category === 'Storage' && typeof index === 'number') {
-                const currentStorage = [...(next['Storage'] as ComponentData[])];
-                currentStorage.splice(index, 1);
-                next['Storage'] = currentStorage;
+            if ((category === 'Storage' || category === 'RAM') && typeof index === 'number') {
+                const currentItems = [...(next[category] as ComponentData[])];
+                currentItems.splice(index, 1);
+                next[category] = currentItems;
             } else {
                 next[category] = null;
             }
@@ -208,7 +208,19 @@ export default function AdminBuilderPage() {
     const handlePartToggle = (part: Part) => {
         const category = part.category;
 
-        if (category === 'Storage') {
+        if (category === 'Storage' || category === 'RAM') {
+            const buildItems = Array.isArray(build[category]) ? (build[category] as ComponentData[]) : (build[category] ? [build[category] as ComponentData] : []);
+            
+            const { compatible, message } = checkCompatibility(part, build);
+            if (!compatible) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Compatibility Error',
+                    description: message || `This ${category} is not compatible with your current build.`
+                });
+                return;
+            }
+
             const currentCount = getCountInBuild(part.name);
             if (currentCount >= part.stock) {
                 toast({ variant: 'destructive', title: 'Out of Stock', description: `No more units of ${part.name} available.` });
@@ -232,10 +244,13 @@ export default function AdminBuilderPage() {
                 dimensions: part.dimensions,
             };
 
-            setBuild(prevBuild => ({
-                ...prevBuild,
-                Storage: [...(prevBuild['Storage'] as ComponentData[]), componentData]
-            }));
+            setBuild(prevBuild => {
+                const currentItems = Array.isArray(prevBuild[category]) ? (prevBuild[category] as ComponentData[]) : (prevBuild[category] ? [prevBuild[category] as ComponentData] : []);
+                return {
+                    ...prevBuild,
+                    [category]: [...currentItems, componentData]
+                };
+            });
             toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
             return;
         }
@@ -295,7 +310,8 @@ export default function AdminBuilderPage() {
 
         const cpu = currentBuild['CPU'] as ComponentData | null;
         const mobo = currentBuild['Motherboard'] as ComponentData | null;
-        const ram = currentBuild['RAM'] as ComponentData | null;
+        const ramData = currentBuild['RAM'];
+        const currentRams = Array.isArray(ramData) ? ramData : (ramData ? [ramData as ComponentData] : []);
 
         const normalize = (s?: string | null) => s?.toString().trim().toLowerCase() || '';
 
@@ -318,8 +334,9 @@ export default function AdminBuilderPage() {
                     return { compatible: false, message: `This motherboard is ${partSocket.toUpperCase()}, but your CPU uses ${cpuSocket.toUpperCase()}.` };
                 }
             }
-            if (ram) {
-                const currentRamType = normalize(ram.ramType || ram.specifications?.['Memory Type']?.toString() || ram.specifications?.['RAM Type']?.toString());
+            if (currentRams.length > 0) {
+                const ramInstance = currentRams[0];
+                const currentRamType = normalize(ramInstance.ramType || ramInstance.specifications?.['Memory Type']?.toString() || ramInstance.specifications?.['RAM Type']?.toString());
                 if (partRamType && currentRamType) {
                     if (!partRamType.includes(currentRamType) && !currentRamType.includes(partRamType)) {
                         return { compatible: false, message: `This motherboard supports ${partRamType.toUpperCase()}, but your RAM is ${currentRamType.toUpperCase()}.` };
@@ -330,11 +347,20 @@ export default function AdminBuilderPage() {
 
         if (category === 'RAM') {
             if (mobo) {
-                const moboRamType = normalize(mobo.ramType || mobo.specifications?.['Memory Type']?.toString() || mobo.specifications?.['RAM Type']?.toString());
+                const moboRamType = normalize(mobo.ramType || mobo.specifications?.['Memory Type']?.toString() || mobo.specifications?.['RAM Type']?.toString() || mobo.specifications?.['Memory']?.toString() || mobo.specifications?.['Generation']?.toString() || mobo.specifications?.['Type']?.toString());
                 if (moboRamType && partRamType) {
                     if (!moboRamType.includes(partRamType) && !partRamType.includes(moboRamType)) {
                         return { compatible: false, message: `Your motherboard supports ${moboRamType.toUpperCase()}, but this RAM is ${partRamType.toUpperCase()}.` };
                     }
+                }
+
+                // RAM Slot Check
+                const totalSlots = parseInt(mobo.specifications?.['Memory Slots']?.toString() || "4");
+                const usedSlots = currentRams.reduce((sum, r) => sum + parseInt(r.specifications?.['Stick Count']?.toString() || "1"), 0);
+                const partStickCount = parseInt(part.specifications?.['Stick Count']?.toString() || "1");
+
+                if (usedSlots + partStickCount > totalSlots) {
+                    return { compatible: false, message: `Memory slots are full. Motherboard supports ${totalSlots} sticks.` };
                 }
             }
         }
@@ -472,16 +498,25 @@ export default function AdminBuilderPage() {
     }, [sortedAndFilteredParts, currentPage, itemsPerPage]);
 
     const isSelected = (part: Part) => {
-        return part.category === 'Storage'
-            ? (build['Storage'] as ComponentData[]).some(c => c.model === part.name)
-            : (build[part.category] as ComponentData)?.model === part.name;
+        if (part.category === 'Storage' || part.category === 'RAM') {
+            const items = build[part.category];
+            if (Array.isArray(items)) {
+                return items.some(c => c.model === part.name);
+            }
+            return (items as ComponentData)?.model === part.name;
+        }
+        return (build[part.category] as ComponentData)?.model === part.name;
     };
 
-    const handleAddPrebuilt = async (data: AddPrebuiltFormSchema) => {
+    const handleAddPrebuilt = async (data: BuilderAdminAddPrebuiltFormSchema) => {
         if (!firestore) return;
         try {
             await addPrebuiltSystem(firestore, data);
-            toast({ title: "Prebuilt Added!", description: `${data.name} has been added to the library.` });
+            toast({ 
+                title: "Prebuilt Added Successfully!", 
+                description: `${data.name} is now available in the Prebuilt Overview tab.`,
+                variant: "default"
+            });
             // Optional: clear build after adding? User didn't specify, I'll keep it for now.
         } catch (err: any) {
             toast({ variant: "destructive", title: "Add Failed", description: err.message });

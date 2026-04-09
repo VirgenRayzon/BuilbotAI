@@ -85,11 +85,7 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
             )}
           </AnimatePresence>
 
-          {!isExpanded && (
-            <div className="min-h-[50px] pt-1 transition-all duration-300">
-              <PrebuiltCardSpecs components={system.components} />
-            </div>
-          )}
+
         </CardHeader>
 
         <CardFooter className="p-3.5 pt-0 flex flex-col gap-2 mt-auto relative z-10">

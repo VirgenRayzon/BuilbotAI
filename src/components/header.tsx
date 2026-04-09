@@ -11,6 +11,7 @@ import { useUserProfile } from "@/context/user-profile";
 import { useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { ThemeToggle } from "./theme-toggle";
+import { UserNotifications } from "./user-notifications";
 
 export function Header() {
   const pathname = usePathname();
@@ -81,10 +82,13 @@ export function Header() {
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : authUser ? (
-              <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-foreground/60 hover:text-primary">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </Button>
+              <div className="flex items-center space-x-2">
+                {!profile?.isAdmin && <UserNotifications />}
+                <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-foreground/60 hover:text-primary">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </Button>
+              </div>
             ) : (
               (pathname === '/signin' || pathname === '/signup') && (
                 <Button asChild variant="ghost" size="sm">

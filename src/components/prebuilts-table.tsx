@@ -1,4 +1,5 @@
-
+import { useState } from "react";
+import { cn, formatCurrency } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -10,8 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
-import { Trash2, ShoppingCart } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { Trash2, ShoppingCart, ChevronDown, ChevronUp } from "lucide-react";
 import type { PrebuiltSystem } from "@/lib/types";
 import {
   AlertDialog,
@@ -44,9 +44,11 @@ interface PrebuiltsTableProps {
   onUpdate?: (systemId: string, data: AddPrebuiltFormSchema) => Promise<void>;
   parts?: Part[];
   showActions?: boolean;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
-export function PrebuiltsTable({ systems, onDelete, onUpdate, parts = [], showActions = true }: PrebuiltsTableProps) {
+export function PrebuiltsTable({ systems, onDelete, onUpdate, parts = [], showActions = true, isExpanded = false, onToggleExpand = () => {} }: PrebuiltsTableProps) {
   const { toast } = useToast();
 
   const handleAddToCart = (systemName: string) => {
@@ -60,6 +62,7 @@ export function PrebuiltsTable({ systems, onDelete, onUpdate, parts = [], showAc
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead className="w-[40px]"></TableHead>
           <TableHead>System Name</TableHead>
           <TableHead>Tier</TableHead>
           <TableHead className="text-right">Price</TableHead>
@@ -68,108 +71,168 @@ export function PrebuiltsTable({ systems, onDelete, onUpdate, parts = [], showAc
       </TableHeader>
       <TableBody>
         {systems.map((system) => (
-          <PrebuiltDetailsModal key={system.id} system={system}>
-            <TableRow className="group hover:bg-muted/50 transition-colors cursor-pointer">
-              <TableCell className="font-medium p-4">
-                <div className="flex items-center gap-4">
-                  <div className="relative w-16 h-12 rounded-md overflow-hidden bg-muted flex-shrink-0 border shadow-sm group-hover:border-primary/30 transition-colors">
-                    <Image
-                      src={system.imageUrl}
-                      alt={system.name}
-                      fill
-                      sizes="64px"
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    {onUpdate ? (
-                      <AddPrebuiltDialog
-                        initialData={system}
-                        parts={parts}
-                        onSave={(data) => onUpdate(system.id, data)}
-                      >
-                        <p className="font-headline text-base group-hover:text-primary transition-colors cursor-pointer hover:underline underline-offset-4 decoration-primary/30 italic">
-                          {system.name}
-                        </p>
-                      </AddPrebuiltDialog>
-                    ) : (
-                      <p className="font-headline text-base group-hover:text-primary transition-colors">{system.name}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground line-clamp-1 max-w-[400px]">
-                      {system.description}
-                    </p>
-                    <div className="hidden sm:block">
-                      <PrebuiltCardSpecs components={system.components} />
-                    </div>
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge variant="secondary" className="font-medium bg-secondary/50">{system.tier}</Badge>
-              </TableCell>
-              <TableCell className="text-right font-headline font-bold text-lg">
-                {formatCurrency(system.price)}
-              </TableCell>
-              <TableCell>
-                {showActions && onDelete ? (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete the prebuilt system.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => onDelete(system.id)}
-                          className="bg-destructive hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                ) : (() => {
-                  const missingParts = getMissingParts(system);
-                  const isComplete = missingParts.length === 0;
-
-                  if (!isComplete) {
-                    return (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="cursor-not-allowed">
-                              <Button size="icon" variant="outline" disabled className="opacity-50">
-                                <AlertCircle className="h-4 w-4 text-warning" />
-                              </Button>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Missing: {missingParts.join(', ')}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    );
-                  }
-
-                  return (
-                    <Button size="icon" variant="outline" onClick={() => handleAddToCart(system.name)}>
-                      <ShoppingCart className="h-4 w-4" />
-                    </Button>
-                  );
-                })()}
-              </TableCell>
-            </TableRow>
-          </PrebuiltDetailsModal>
+          <PrebuiltTableRow 
+            key={system.id} 
+            system={system} 
+            onDelete={onDelete} 
+            onUpdate={onUpdate} 
+            parts={parts} 
+            showActions={showActions}
+            isExpanded={isExpanded}
+            onToggleExpand={onToggleExpand}
+          />
         ))}
       </TableBody>
     </Table>
+  );
+}
+
+function PrebuiltTableRow({ 
+  system, 
+  onDelete, 
+  onUpdate, 
+  parts, 
+  showActions,
+  isExpanded,
+  onToggleExpand
+}: { 
+  system: PrebuiltSystem, 
+  onDelete?: (id: string) => void, 
+  onUpdate?: any, 
+  parts: Part[], 
+  showActions: boolean,
+  isExpanded: boolean,
+  onToggleExpand: () => void
+}) {
+  const { toast } = useToast();
+
+  const handleAddToCart = (systemName: string) => {
+    toast({
+      title: 'Added to Cart',
+      description: `${systemName} has been added to your cart.`,
+    });
+  }
+
+  return (
+    <>
+      <TableRow 
+        className={cn(
+          "group transition-colors cursor-pointer",
+          isExpanded ? "bg-muted/30" : "hover:bg-muted/50"
+        )}
+        onClick={() => onToggleExpand()}
+      >
+        <TableCell>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </TableCell>
+        <TableCell className="font-medium p-4">
+          <div className="flex items-center gap-4">
+            <div className="relative w-16 h-12 rounded-md overflow-hidden bg-muted flex-shrink-0 border shadow-sm group-hover:border-primary/30 transition-colors">
+              <Image
+                src={system.imageUrl}
+                alt={system.name}
+                fill
+                sizes="64px"
+                className="object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+            </div>
+            <div className="flex-1">
+              {onUpdate ? (
+                <div onClick={(e) => e.stopPropagation()}>
+                  <AddPrebuiltDialog
+                    initialData={system}
+                    parts={parts}
+                    onSave={(data) => onUpdate(system.id, data)}
+                  >
+                    <p className="font-headline text-base group-hover:text-primary transition-colors cursor-pointer hover:underline underline-offset-4 decoration-primary/30 italic">
+                      {system.name}
+                    </p>
+                  </AddPrebuiltDialog>
+                </div>
+              ) : (
+                <p className="font-headline text-base group-hover:text-primary transition-colors">{system.name}</p>
+              )}
+              <p className="text-xs text-muted-foreground line-clamp-1 max-w-[400px]">
+                {system.description}
+              </p>
+            </div>
+          </div>
+        </TableCell>
+        <TableCell>
+          <Badge variant="secondary" className="font-medium bg-secondary/50">{system.tier}</Badge>
+        </TableCell>
+        <TableCell className="text-right font-headline font-bold text-lg">
+          {formatCurrency(system.price)}
+        </TableCell>
+        <TableCell onClick={(e) => e.stopPropagation()}>
+          {showActions && onDelete ? (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the prebuilt system.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => onDelete(system.id)}
+                    className="bg-destructive hover:bg-destructive/90"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : (() => {
+            const missingParts = getMissingParts(system);
+            const isComplete = missingParts.length === 0;
+
+            if (!isComplete) {
+              return (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="cursor-not-allowed">
+                        <Button size="icon" variant="outline" disabled className="opacity-50">
+                          <AlertCircle className="h-4 w-4 text-warning" />
+                        </Button>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Missing: {missingParts.join(', ')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            }
+
+            return (
+              <Button size="icon" variant="outline" onClick={() => handleAddToCart(system.name)}>
+                <ShoppingCart className="h-4 w-4" />
+              </Button>
+            );
+          })()}
+        </TableCell>
+      </TableRow>
+      {isExpanded && (
+        <TableRow className="bg-muted/10">
+          <TableCell colSpan={5} className="p-4 pt-0">
+            <div className="bg-background/50 rounded-lg p-4 border border-border/40 mt-2">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Component Breakdown</p>
+              <PrebuiltCardSpecs components={system.components} expanded={true} />
+            </div>
+          </TableCell>
+        </TableRow>
+      )}
+    </>
   );
 }

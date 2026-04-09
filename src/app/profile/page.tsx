@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Package, CheckCircle2, Clock, Truck } from "lucide-react";
+import { Loader2, Package, CheckCircle2, Clock, Truck, ServerCrash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -105,8 +105,9 @@ export default function ProfilePage() {
     const getStatusIcon = (status: string) => {
         switch (status) {
             case 'pending': return <Clock className="h-4 w-4 text-orange-500" />;
-            case 'ongoing': return <Truck className="h-4 w-4 text-blue-500" />;
-            case 'finished': return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
+            case 'building': return <Truck className="h-4 w-4 text-blue-500" />;
+            case 'finished building': return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
+            case 'cancelled': return <ServerCrash className="h-4 w-4 text-destructive" />;
             default: return <Package className="h-4 w-4 text-muted-foreground" />;
         }
     };
@@ -119,8 +120,9 @@ export default function ProfilePage() {
     const getStatusBadgeVariant = (status: string) => {
         switch (status) {
             case 'pending': return "outline";
-            case 'ongoing': return "secondary";
-            case 'finished': return "default";
+            case 'building': return "secondary";
+            case 'finished building': return "default";
+            case 'cancelled': return "destructive";
             default: return "outline";
         }
     };

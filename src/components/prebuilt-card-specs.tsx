@@ -4,7 +4,16 @@ import { useEffect, useState } from "react";
 import { useFirestore } from "@/firebase";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import type { Part } from "@/lib/types";
-import { Cpu, HardDrive, MemoryStick, MonitorPlay } from "lucide-react";
+import { 
+    Cpu, 
+    MonitorPlay as Gpu, 
+    CircuitBoard, 
+    MemoryStick, 
+    HardDrive, 
+    Zap as Psu, 
+    RectangleVertical as Case, 
+    Wind as Cooler 
+} from "lucide-react";
 import { Skeleton } from "./ui/skeleton";
 
 interface PrebuiltCardSpecsProps {
@@ -12,12 +21,12 @@ interface PrebuiltCardSpecsProps {
         cpu?: string;
         gpu?: string;
         motherboard?: string;
-        ram?: string;
-        storage?: string;
+        ram?: string | string[];
+        storage?: string | string[];
         psu?: string;
         case?: string;
         cooler?: string;
-        [key: string]: string | undefined;
+        [key: string]: string | string[] | undefined;
     };
     expanded?: boolean;
 }
@@ -53,21 +62,33 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
         const fetchSpecs = async () => {
             setLoading(true);
             try {
-                const fetchPartName = async (collectionName: string, idOrName: string | undefined) => {
+                const fetchPartName = async (collectionName: string, idOrName: string | string[] | undefined) => {
                     if (!idOrName) return "N/A";
-                    // First try looking up by document ID
-                    const docRef = doc(firestore, collectionName, idOrName);
-                    const snap = await getDoc(docRef);
-                    if (snap.exists()) {
-                        return (snap.data() as Part).name;
+
+                    const lookupSingle = async (val: string) => {
+                        try {
+                            const docRef = doc(firestore, collectionName, val);
+                            const snap = await getDoc(docRef);
+                            if (snap.exists()) {
+                                return (snap.data() as Part).name;
+                            }
+                            const q = query(collection(firestore, collectionName), where("name", "==", val));
+                            const querySnap = await getDocs(q);
+                            if (!querySnap.empty) {
+                                return (querySnap.docs[0].data() as Part).name;
+                            }
+                            return "Unknown";
+                        } catch (e) {
+                            return "Unknown";
+                        }
+                    };
+
+                    if (Array.isArray(idOrName)) {
+                        const names = await Promise.all(idOrName.map(id => lookupSingle(id)));
+                        return names.filter(n => n !== "N/A" && n !== "Unknown").join(", ") || "Unknown";
                     }
-                    // Fall back: query by name field (for legacy data that stored names instead of IDs)
-                    const q = query(collection(firestore, collectionName), where("name", "==", idOrName));
-                    const querySnap = await getDocs(q);
-                    if (!querySnap.empty) {
-                        return (querySnap.docs[0].data() as Part).name;
-                    }
-                    return "Unknown";
+
+                    return lookupSingle(idOrName);
                 };
 
                 const [cpuName, gpuName, moboName, ramName, storageName, psuName, caseName, coolerName] = await Promise.all([
@@ -129,7 +150,7 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
                     <span className="truncate" title={specs.cpu || "No CPU listed"}>{specs.cpu || "No CPU listed"}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <MonitorPlay className="h-3.5 w-3.5 text-primary/70 shrink-0" />
+                    <Gpu className="h-3.5 w-3.5 text-primary/70 shrink-0" />
                     <span className="truncate" title={specs.gpu || "No GPU listed"}>{specs.gpu || "No GPU listed"}</span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground/80">
@@ -145,13 +166,13 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
 
     const allSpecs = [
         { label: 'CPU', value: specs.cpu, icon: Cpu },
-        { label: 'GPU', value: specs.gpu, icon: MonitorPlay },
-        { label: 'Mobo', value: specs.motherboard, icon: HardDrive },
+        { label: 'GPU', value: specs.gpu, icon: Gpu },
+        { label: 'Mobo', value: specs.motherboard, icon: CircuitBoard },
         { label: 'RAM', value: specs.ram, icon: MemoryStick },
         { label: 'Disk', value: specs.storage, icon: HardDrive },
-        { label: 'PSU', value: specs.psu, icon: HardDrive },
-        { label: 'Case', value: specs.case, icon: HardDrive },
-        { label: 'Fan', value: specs.cooler, icon: HardDrive },
+        { label: 'PSU', value: specs.psu, icon: Psu },
+        { label: 'Case', value: specs.case, icon: Case },
+        { label: 'Fan', value: specs.cooler, icon: Cooler },
     ].filter(s => s.value && s.value !== "N/A");
 
     return (

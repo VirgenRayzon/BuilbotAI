@@ -60,11 +60,11 @@ const formSchema = z.object({
     cooler: z.string().optional(),
 });
 
-export type AddPrebuiltFormSchema = z.infer<typeof formSchema>;
+export type BuilderAdminAddPrebuiltFormSchema = z.infer<typeof formSchema>;
 
-interface AddPrebuiltDialogProps {
+interface BuilderAdminAddPrebuiltDialogProps {
     children: React.ReactNode;
-    onSave: (data: AddPrebuiltFormSchema) => void;
+    onSave: (data: BuilderAdminAddPrebuiltFormSchema) => void;
     parts: Part[];
     initialData?: PrebuiltSystem;
     title?: string;
@@ -192,7 +192,7 @@ const PART_SLOTS = [
     { key: "cooler", label: "Cooler" },
 ] as const;
 
-export function AddPrebuiltDialog({ children, onSave, parts, initialData, title }: AddPrebuiltDialogProps) {
+export function BuilderAdminAddPrebuiltDialog({ children, onSave, parts, initialData, title }: BuilderAdminAddPrebuiltDialogProps) {
     const [open, setOpen] = useState(false);
     const [isAiPending, startAiTransition] = useTransition();
     // Track which PartSelector dropdown is open
@@ -213,7 +213,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
         return grouped;
     }, [parts]);
 
-    const form = useForm<AddPrebuiltFormSchema>({
+    const form = useForm<BuilderAdminAddPrebuiltFormSchema>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: initialData?.name || "",
@@ -358,7 +358,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
         });
     };
 
-    const onSubmit = (values: AddPrebuiltFormSchema) => {
+    const onSubmit = (values: BuilderAdminAddPrebuiltFormSchema) => {
         onSave(values);
         toast({ title: initialData ? "Prebuilt Updated!" : "Prebuilt System Added!", description: `${values.name} has been ${initialData ? 'updated' : 'added'}.` });
         if (!initialData) form.reset();

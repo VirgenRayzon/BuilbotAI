@@ -29,8 +29,8 @@ const AiPrebuiltAdvisorInputSchema = z.object({
 export type AiPrebuiltAdvisorInput = z.infer<typeof AiPrebuiltAdvisorInputSchema>;
 
 const AiPrebuiltAdvisorOutputSchema = z.object({
-  systemName: z.string().describe('A catchy and appropriate name for the pre-built system.'),
-  description: z.string().describe('A brief, engaging description of the pre-built system, highlighting its key strengths.'),
+  systemName: z.string().describe('An ultra-catchy, premium, and marketing-friendly name for the pre-built system (e.g., "Neon Vanguard", "Titan Elite V2").'),
+  description: z.string().describe('A high-conversion, punchy description (2-3 sentences) that makes the user want to buy it instantly. Focus on performance breakthroughs or aesthetic vibes.'),
   price: z.number().describe('An estimated total price for the system in Philippine Pesos (PHP), based on the provided components.'),
   estimatedWattage: z.string().describe('The estimated total wattage for the build, in the format "550W".'),
   compatibilitySummary: z.string().describe('A summary of the component compatibility. Note any potential issues or bottlenecks. If everything is compatible, confirm that.'),
@@ -58,8 +58,8 @@ EXPERT LOCAL KNOWLEDGE BASE:
 {{{knowledgeContext}}}
 
 Your task is to:
-1.  Generate a creative and suitable name for this build (e.g., "The 1080p Powerhouse", "4K Video Editing Beast").
-2.  Write a brief, appealing description for the system.
+1.  Generate a premium, ultra-catchy, and memorable name for this build (e.g., "The Midnight Apex", "Quantum Overlord"). Focus on energy and performance tiers.
+2.  Write a high-impact, marketing-ready description for the system. Sell the experience—mention specific gaming resolutions (1440p/4K) or productivity gains.
 3.  Analyze the provided components for compatibility. Point out any issues (e.g., CPU socket not matching motherboard, RAM type mismatch, insufficient PSU). If they are compatible, confirm this. Use the provided Expert Local Knowledge Base if it contains relevant compatibility rules.
 4.  Estimate the total power consumption in watts (e.g., "550W").
 5.  Estimate a reasonable market price for the entire build in Philippine Pesos (PHP). Ensure it accurately reflects current real-world pricing. If you are unsure of the price or if it's missing from your knowledge, MUST use the "googleSearch" tool to find the current price in PHP.

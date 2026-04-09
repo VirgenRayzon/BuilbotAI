@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
-import { Trash2, Info, ChevronUp, ChevronDown } from 'lucide-react';
+import { Trash2, Info, ChevronUp, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
     AlertDialog,
@@ -24,15 +24,17 @@ import React, { useState } from 'react';
 import { PrebuiltCardSpecs } from './prebuilt-card-specs';
 import { motion, AnimatePresence } from 'framer-motion';
 
+
 interface AdminPrebuiltCardProps {
     system: PrebuiltSystem;
     parts: Part[];
     onDelete: (systemId: string) => void;
     onUpdate: (systemId: string, data: AddPrebuiltFormSchema) => Promise<void>;
+    isExpanded: boolean;
+    onToggleExpand: () => void;
 }
 
-export function AdminPrebuiltCard({ system, parts, onDelete, onUpdate }: AdminPrebuiltCardProps) {
-    const [isExpanded, setIsExpanded] = useState(false);
+export function AdminPrebuiltCard({ system, parts, onDelete, onUpdate, isExpanded, onToggleExpand }: AdminPrebuiltCardProps) {
 
     return (
         <AddPrebuiltDialog
@@ -41,7 +43,8 @@ export function AdminPrebuiltCard({ system, parts, onDelete, onUpdate }: AdminPr
             onSave={(data) => onUpdate(system.id, data)}
         >
             <Card className={cn(
-                "flex flex-col h-full transform transition-all duration-300 ease-in-out hover:-translate-y-1 relative group overflow-hidden border-border/50 cursor-pointer",
+                "flex flex-col h-full transform transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] relative group overflow-hidden border-border/50 cursor-pointer bg-card/40 backdrop-blur-sm",
+                isExpanded ? "ring-2 ring-primary/40 shadow-[0_0_30px_rgba(var(--primary-rgb),0.15)] bg-card/60 -translate-y-1.5" : "hover:-translate-y-1 hover:shadow-xl hover:border-primary/30"
             )}>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent transition-opacity duration-300 opacity-0 group-hover:opacity-100" />
 
@@ -100,24 +103,36 @@ export function AdminPrebuiltCard({ system, parts, onDelete, onUpdate }: AdminPr
                         />
                     </div>
 
-                    <div className="flex justify-between items-center py-1">
-                        <p className="text-xl font-bold font-headline tracking-tight">{formatCurrency(system.price)}</p>
+                    <div className="flex justify-between items-center py-2 border-t border-border/10 mt-2">
+                        <div className="flex flex-col">
+                           <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Starting Price</p>
+                           <p className="text-2xl font-black font-headline tracking-tighter text-primary">{formatCurrency(system.price)}</p>
+                        </div>
                         <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground/60 hover:text-primary transition-colors"
+                            variant="secondary"
+                            size="sm"
+                            className={cn(
+                                "h-8 px-3 gap-2 text-[10px] uppercase font-bold tracking-widest transition-all duration-300",
+                                isExpanded ? "bg-primary text-white hover:bg-primary/90" : "hover:bg-primary/10 hover:text-primary"
+                            )}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setIsExpanded(!isExpanded);
+                                onToggleExpand();
                             }}
                         >
-                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            {isExpanded ? (
+                                <>Hide Specs <ChevronUp className="h-3 w-3" /></>
+                            ) : (
+                                <>View Specs <ChevronDown className="h-3 w-3" /></>
+                            )}
                         </Button>
                     </div>
 
-                    <CardDescription className="text-[11px] line-clamp-2 leading-relaxed h-8 text-muted-foreground/80">
-                        {system.description}
-                    </CardDescription>
+                    <div className="min-h-[40px]">
+                        <CardDescription className="text-[11px] line-clamp-2 leading-relaxed text-muted-foreground/80">
+                            {system.description}
+                        </CardDescription>
+                    </div>
 
                     <AnimatePresence initial={false}>
                         {isExpanded && (
@@ -125,35 +140,39 @@ export function AdminPrebuiltCard({ system, parts, onDelete, onUpdate }: AdminPr
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: 'auto', opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
                                 className="overflow-hidden"
                             >
-                                <div className="py-2 border-t border-border/40 mt-1">
-                                    <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Component Breakdown</p>
-                                    <PrebuiltCardSpecs components={system.components} expanded={true} />
+                                <div className="py-4 border-t border-primary/20 mt-3 bg-primary/[0.03] backdrop-blur-md -mx-3.5 px-3.5 rounded-b-xl border-dashed shadow-inner">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                                            <Info className="h-3 w-3 text-primary" />
+                                        </div>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/80">System Inventory List</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <PrebuiltCardSpecs components={system.components} expanded={true} />
+                                    </div>
                                 </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
 
-                    {!isExpanded && (
-                        <div className="min-h-[50px] transition-all duration-300">
-                            <PrebuiltCardSpecs components={system.components} />
-                        </div>
-                    )}
+
                 </div>
 
                 <div className="mt-auto p-3 pt-0 z-10 flex gap-2">
                     <Button
                         variant="outline"
                         size="sm"
-                        className="w-full text-[10px] uppercase font-bold tracking-widest h-8"
+                        className="w-full text-[10px] uppercase font-bold tracking-widest h-9 bg-background/50 border-white/10 hover:border-primary/50 hover:bg-primary/5 group"
                         onClick={(e) => e.stopPropagation()}
                         asChild
                     >
                         <a href={`/pre-builts/`} className="flex items-center justify-center">
-                            <Info className="mr-2 h-3 w-3" />
-                            View Page
+                            <Info className="mr-2 h-3.5 w-3.5 transition-transform group-hover:scale-110" />
+                            Launch Product Page
+                            <ChevronRight className="ml-2 h-3 w-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                         </a>
                     </Button>
                 </div>
