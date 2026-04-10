@@ -63,9 +63,8 @@ const CATEGORY_SPECS: Record<string, { key: string; placeholder: string }[]> = {
     { key: "Memory Type", placeholder: "e.g., GDDR6X" },
     { key: "TGP / Power Draw (W)", placeholder: "e.g., 200 W" },
     { key: "Length (Depth) (mm)", placeholder: "e.g., 336 mm" },
-    { key: "Slot Thickness", placeholder: "e.g., 2.5-slot" },
+    { key: "Slot Thickness", placeholder: "e.g., 2 Slot" },
     { key: "Interface", placeholder: "e.g., PCIe 4.0 x16" },
-    { key: "Bus Width", placeholder: "e.g., 192-bit" },
     { key: "CUDA Cores", placeholder: "e.g., 5888 (NVIDIA) / Stream Processors" },
   ],
   Motherboard: [
@@ -206,7 +205,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
       description: initialData?.description || "",
       packageType: initialData?.packageType || "",
     },
-});
+  });
 
   // Re-reset form if initialData changes or dialog opens
   useEffect(() => {
@@ -641,7 +640,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                             </div>
                           </div>
                           <FormControl>
-                            <textarea 
+                            <textarea
                               className="flex min-h-[120px] w-full rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-mono text-[13px]"
                               placeholder="Use Markdown for formatting...
 - Feature one

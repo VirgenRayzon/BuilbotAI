@@ -17,8 +17,8 @@ interface PCVisualizerProps {
 const MOBO_SIZES = {
     EATX: { width: 330, height: 305, slots: 2, topSlotOffset: 200, label: "E-ATX MOTHERBOARD" },
     ATX: { width: 244, height: 305, slots: 2, topSlotOffset: 200, label: "ATX MOTHERBOARD" },
-    MATX: { width: 244, height: 244, slots: 1, topSlotOffset: 100, label: "MICRO-ATX MOTHERBOARD" },
-    ITX: { width: 170, height: 170, slots: 1, topSlotOffset: 100, label: "MINI-ITX MOTHERBOARD" },
+    MATX: { width: 244, height: 244, slots: 1, topSlotOffset: 180, label: "MICRO-ATX MOTHERBOARD" },
+    ITX: { width: 170, height: 170, slots: 1, topSlotOffset: 150, label: "MINI-ITX MOTHERBOARD" },
 };
 
 const LAYOUT_CONFIGS = {
@@ -31,10 +31,10 @@ const LAYOUT_CONFIGS = {
         case: { width: 376, height: 292 },
 
         // Motherboard — top-left, Mini-ITX is 170x170mm
-        mobo: { x: 15, y: 20, width: 170, height: 170, label: "MINI-ITX BOARD" },
+        mobo: { x: 15, y: 10, width: 170, height: 170, label: "MINI-ITX BOARD" },
 
         // PSU — top-right vertical block
-        psu: { x: 270, y: 15, width: 90, height: 140, label: "PSU" },
+        psu: { x: 240, y: 15, width: 90, height: 140, label: "PSU" },
 
         // GPU — bottom horizontal bar, anchored at bottom-left
         // GPU — width is set here, position calculated dynamically
@@ -145,12 +145,6 @@ function extractDimension(val: any, index: number = 0): number | null {
 function getActualDimension(part: ComponentData | null, type: 'GPU' | 'Cooler' | 'PSU', aspect: 'primary' | 'secondary' = 'primary'): number {
     if (!part) return 0;
 
-    if (part.dimensions) {
-        if (type === 'Cooler') return part.dimensions.height;
-        if (aspect === 'primary') return Math.max(part.dimensions.depth || 0, part.dimensions.width || 0);
-        else return part.dimensions.height || 0;
-    }
-
     const specs = part.specifications || {};
     const keys = Object.keys(specs);
     const findValue = (synonyms: string[], targetIndex: number = 0) => {
@@ -160,23 +154,31 @@ function getActualDimension(part: ComponentData | null, type: 'GPU' | 'Cooler' |
 
     if (type === 'GPU') {
         if (aspect === 'primary') {
-            return findValue(['Length', 'Card Length', 'Max Length', 'GPU Length', 'Depth', 'GPU Depth', 'Length (mm)', 'Dimensions'], 0) || 0;
+            const rawLength = findValue(['Length (Depth) (mm)', 'Length', 'Card Length', 'Max Length', 'GPU Length', 'Depth', 'GPU Depth', 'Length (mm)', 'Dimensions'], 0);
+            if (rawLength !== null) return Math.round(rawLength);
+            return part.dimensions ? Math.round(Math.max(part.dimensions.depth || 0, part.dimensions.width || 0)) : 0;
         } else {
-            let slotCount = findValue(['Slot', 'Slot Size', 'Expansion Slots'], 0);
-            if (slotCount !== null && slotCount < 6) return slotCount * 22;
+            let slotCount = findValue(['Slot Thickness', 'Slot', 'Slot Size', 'Expansion Slots'], 0);
+            if (slotCount !== null && slotCount < 6) {
+                // Round up slot thickness explicitly e.g. 3.2 rounds to 4 slots
+                return Math.ceil(slotCount) * 22;
+            }
             let thickness = findValue(['Thickness', 'Width', 'Card Width', 'Height'], 0);
             if (thickness !== null) {
-                if (thickness > 100) return 66;
-                return thickness;
+                if (thickness > 100) return 66; // Fallback for very thick
+                return Math.round(thickness);
             }
-            let dim3 = findValue(['Dimensions'], 2);
-            if (dim3) return dim3;
-            return 50;
+            if (part.dimensions && part.dimensions.height && part.dimensions.height < 100) return Math.round(part.dimensions.height);
+            return 50; // Final safe fallback
         }
     } else if (type === 'Cooler') {
-        return findValue(['Height', 'Cooler Height', 'Max Height', 'CPU Cooler Height', 'Height (mm)'], 0) || 0;
+        const specHeight = findValue(['Height', 'Cooler Height', 'Max Height', 'CPU Cooler Height', 'Height (mm)'], 0);
+        if (specHeight !== null) return specHeight;
+        return part.dimensions?.height || 0;
     } else if (type === 'PSU') {
-        return findValue(['Length', 'PSU Length', 'Max Length', 'Max PSU Length', 'Depth', 'PSU Depth', 'PSU Dimensions'], 0) || 0;
+        const specLength = findValue(['Length', 'PSU Length', 'Max Length', 'Max PSU Length', 'Depth', 'PSU Depth', 'PSU Dimensions'], 0);
+        if (specLength !== null) return specLength;
+        return part.dimensions ? Math.max(part.dimensions.depth || 0, part.dimensions.width || 0) : 0;
     }
 
     return 0;
@@ -260,7 +262,12 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
 
     const psuDisplayWidth = (!cfg.psu.height || cfg.psu.height <= cfg.psu.width)
         ? (actualPsuLength || cfg.psu.width)
-        : cfg.psu.width; // Keep SFX block shape for ITX
+        : (actualPsuLength || 130); // Base ITX PSU size or use actual length
+
+    const psuDisplayHeight = (!cfg.psu.height || cfg.psu.height <= cfg.psu.width)
+        ? cfg.psu.height
+        : psuDisplayWidth; // Match width to force a square shape in ITX instead of fixed rectangle
+
 
     // Dynamic Radiator Dimensions
     const topRadDisplayWidth = (isAio && actualRadSize > 0) ? actualRadSize : (cfg.topRad?.width || 0);
@@ -743,28 +750,28 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                 >
                                     {/* Body */}
                                     <motion.rect
-                                        animate={{ width: psuDisplayWidth, height: cfg.psu.height }}
+                                        animate={{ width: psuDisplayWidth, height: psuDisplayHeight }}
                                         transition={springConfig}
                                         rx={6} fill="url(#psuGrad)"
                                         stroke="#f97316" strokeOpacity={0.4} strokeWidth={1}
                                     />
                                     {/* Ventilation Pattern */}
                                     <motion.rect
-                                        animate={{ width: psuDisplayWidth, height: cfg.psu.height }}
+                                        animate={{ width: psuDisplayWidth, height: psuDisplayHeight }}
                                         fill="url(#ventPattern)" opacity={0.4} rx={6}
                                     />
                                     {/* PSU Fan Grill */}
                                     <motion.circle
-                                        animate={{ cx: psuDisplayWidth * 0.5, cy: cfg.psu.height * 0.5 }}
-                                        r={cfg.psu.height * 0.4} fill="rgba(0,0,0,0.3)" stroke="rgba(249, 115, 22, 0.1)"
+                                        animate={{ cx: psuDisplayWidth * 0.5, cy: psuDisplayHeight * 0.5 }}
+                                        r={psuDisplayHeight * 0.4} fill="rgba(0,0,0,0.3)" stroke="rgba(249, 115, 22, 0.1)"
                                     />
                                     <motion.circle
-                                        animate={{ cx: psuDisplayWidth * 0.5, cy: cfg.psu.height * 0.5 }}
-                                        r={cfg.psu.height * 0.1} fill="rgba(249, 115, 22, 0.1)"
+                                        animate={{ cx: psuDisplayWidth * 0.5, cy: psuDisplayHeight * 0.5 }}
+                                        r={psuDisplayHeight * 0.1} fill="rgba(249, 115, 22, 0.1)"
                                     />
 
                                     <motion.text
-                                        animate={{ x: psuDisplayWidth / 2, y: cfg.psu.height / 2 - 4 }}
+                                        animate={{ x: psuDisplayWidth / 2, y: psuDisplayHeight / 2 - 4 }}
                                         transition={springConfig}
                                         fill="#22d3ee" fontSize="11" fontWeight="bold" textAnchor="middle" opacity={0.8}
                                         className="uppercase tracking-widest font-headline"
@@ -776,7 +783,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                             <motion.text
                                                 key="psu-length"
                                                 initial={{ opacity: 0 }}
-                                                animate={{ opacity: 0.6, x: psuDisplayWidth / 2, y: cfg.psu.height / 2 + 11 }}
+                                                animate={{ opacity: 0.6, x: psuDisplayWidth / 2, y: psuDisplayHeight / 2 + 11 }}
                                                 exit={{ opacity: 0 }}
                                                 transition={springConfig}
                                                 fill="#22d3ee" fontSize="10" textAnchor="middle"

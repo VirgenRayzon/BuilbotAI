@@ -40,7 +40,7 @@ interface AdminPartCardProps {
 
 const categorySpecsMap: Record<string, string[]> = {
     CPU: ["Socket", "Cores", "Threads", "Wattage"],
-    GPU: ["VRAM Capacity", "Memory Type", "Bus Width", "CUDA Cores"],
+    GPU: ["VRAM Capacity", "Memory Type", "CUDA Cores"],
     Motherboard: ["Socket", "Form Factor", "Chipset", "Memory Type"],
     RAM: ["Type", "Capacity", "Speed", "CAS Latency"],
     Storage: ["Type", "Capacity", "Interface", "Form Factor"],

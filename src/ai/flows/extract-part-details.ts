@@ -86,18 +86,18 @@ Given the part name, provide the full corrected part name, identify its category
 SPECIFICATION RULES (MANDATORY KEYS FOR 'specifications' ARRAY):
 The following keys MUST be used in the 'specifications' array for each category to ensure they appear in the UI:
 
-- **CPU**: 'Architecture', 'Cores', 'Threads', 'Base Clock (GHz)', 'Boost Clock (GHz)', 'Socket' (e.g. AM5, LGA1700), 'TDP / Peak Power', 'L3 Cache', 'Memory Support' (e.g. DDR5), 'Integrated Graphics' (Yes/No).
-- **GPU**: 'Chipset', 'VRAM Capacity', 'Memory Type' (e.g. GDDR6X), 'TGP / Power Draw (W)', 'Length (Depth) (mm)', 'Slot Thickness', 'Interface', 'Bus Width', 'CUDA Cores' (for NVIDIA) or 'Stream Processors' (for AMD).
-- **Motherboard**: 'Chipset', 'Socket', 'Form Factor', 'RAM Type' (DDR4/DDR5), 'M.2 Slots', 'Back-Connect Support', 'Connectivity', 'Memory Slots', 'Memory Type'.
-- **RAM**: 'Generation', 'Capacity', 'Speed', 'CAS Latency', 'Height', 'Type' (DDR4/DDR5).
-- **Storage**: 'Interface', 'Capacity', 'Read Speed', 'Write Speed', 'TBW Rating', 'Form Factor' (e.g. M.2 2280), 'Type' (NVMe SSD, etc.).
-- **PSU**: 'Wattage (W)', 'Efficiency Rating', 'Modularity', '12VHPWR Support', 'Form Factor'.
-- **Case**: 'Max GPU Length', 'Max Cooler Height', 'Max Radiator Size (mm)', 'Mobo Support', 'Radiator Support', 'Back-Connect Cutout', 'Type', 'PSU Form Factor'.
-- **Cooler**: 'TDP Rating', 'Socket Support', 'Height', 'Radiator Size', 'Type'.
-- **Monitor**: 'Screen Size', 'Resolution', 'Refresh Rate', 'Panel Type', 'Response Time'.
-- **Keyboard**: 'Type', 'Switches', 'Layout', 'Backlighting'.
-- **Mouse**: 'Sensor', 'DPI', 'Connectivity', 'Weight'.
-- **Headset**: 'Type', 'Connectivity', 'Driver Size', 'Microphone'.
+- **CPU**: 'Architecture' (e.g., "Zen 4"), 'Cores' (e.g., "8"), 'Threads' (e.g., "16"), 'Base Clock (GHz)' (e.g., "4.5 GHz"), 'Boost Clock (GHz)' (e.g., "5.4 GHz"), 'Socket' (e.g., "AM5"), 'TDP / Peak Power' (e.g., "105 W"), 'L3 Cache' (e.g., "32 MB"), 'Memory Support' (e.g., "DDR5"), 'Integrated Graphics' (e.g., "Yes" or "No").
+- **GPU**: 'Chipset' (e.g., "RTX 4070"), 'VRAM Capacity' (e.g., "12 GB"), 'Memory Type' (e.g., "GDDR6X"), 'TGP / Power Draw (W)' (e.g., "200 W"), 'Length (Depth) (mm)' (MUST be rounded UP to the nearest whole integer and formatted exactly as "X mm", e.g. "336 mm"), 'Slot Thickness' (MUST be rounded UP to the nearest whole integer and formatted exactly as "X slot", e.g. "2 slot"), 'Interface' (e.g., "PCIe 4.0 x16"), 'CUDA Cores' (e.g., "5888" for NVIDIA) or 'Stream Processors' (for AMD).
+- **Motherboard**: 'Chipset' (e.g., "B650"), 'Socket' (e.g., "AM5"), 'Form Factor' (e.g., "ATX"), 'RAM Type' (e.g., "DDR5"), 'M.2 Slots' (e.g., "3x Gen4"), 'Back-Connect Support' (e.g., "Yes" or "No"), 'Connectivity' (e.g., "Wi-Fi 6E, 2.5Gb Ethernet"), 'Memory Slots' (e.g., "4"), 'Memory Type' (e.g., "DDR5").
+- **RAM**: 'Generation' (e.g., "DDR5"), 'Capacity' (e.g., "32 GB"), 'Speed' (e.g., "6000 MT/s"), 'CAS Latency' (e.g., "CL30"), 'Stick Count' (e.g., "2").
+- **Storage**: 'Interface' (e.g., "NVMe M.2"), 'Capacity' (e.g., "1 TB"), 'Read Speed' (e.g., "7000 MB/s"), 'Write Speed' (e.g., "6500 MB/s"), 'TBW Rating' (e.g., "600 TBW"), 'Form Factor' (e.g., "M.2 2280"), 'Type' (e.g., "NVMe SSD").
+- **PSU**: 'Wattage (W)' (e.g., "850 W"), 'Efficiency Rating' (e.g., "80+ Gold"), 'Modularity' (e.g., "Fully Modular"), '12VHPWR Support' (e.g., "Native ATX 3.0 / ATX 3.1"), 'Form Factor' (e.g., "ATX / SFX").
+- **Case**: 'Max GPU Length' (e.g., "400 mm"), 'Max Cooler Height' (e.g., "170 mm"), 'Max Radiator Size (mm)' (e.g., "360"), 'Mobo Support' (e.g., "ATX, M-ATX, ITX"), 'Radiator Support' (e.g., "360mm Top, 240mm Front"), 'Back-Connect Cutout' (e.g., "Yes" or "No"), 'Type' (e.g., "ATX Mid Tower"), 'PSU Form Factor' (e.g., "ATX / SFX").
+- **Cooler**: 'TDP Rating' (e.g., "250 W"), 'Socket Support' (e.g., "AM4, AM5, LGA1700"), 'Height' (e.g., "165 mm"), 'Radiator Size' (e.g., "360 mm"), 'Type' (e.g., "Air" or "AIO Liquid").
+- **Monitor**: 'Screen Size' (e.g., "27 inch"), 'Resolution' (e.g., "2560 x 1440"), 'Refresh Rate' (e.g., "144 Hz"), 'Panel Type' (e.g., "IPS / VA / OLED"), 'Response Time' (e.g., "1ms GtG").
+- **Keyboard**: 'Type' (e.g., "Mechanical"), 'Switches' (e.g., "Cherry MX Red"), 'Layout' (e.g., "Full Size / TKL / 60%"), 'Backlighting' (e.g., "RGB").
+- **Mouse**: 'Sensor' (e.g., "Hero 25K"), 'DPI' (e.g., "25600"), 'Connectivity' (e.g., "Wireless"), 'Weight' (e.g., "63g").
+- **Headset**: 'Type' (e.g., "Over-Ear"), 'Connectivity' (e.g., "Wireless"), 'Driver Size' (e.g., "50mm"), 'Microphone' (e.g., "Detachable").
 
 ADDITIONAL FIELDS:
 - 'wattage': TDP for CPU/GPU, rated output for PSU (number).
@@ -145,14 +145,14 @@ ${findings}
 Part Name Requested: ${input.partName}
 
 SPECIFICATION RULES (Ensure these keys appear in the JSON 'specifications' array):
-- **CPU**: 'Architecture', 'Cores', 'Threads', 'Base Clock (GHz)', 'Boost Clock (GHz)', 'Socket', 'TDP / Peak Power', 'L3 Cache', 'Memory Support', 'Integrated Graphics'.
-- **GPU**: 'Chipset', 'VRAM Capacity', 'Memory Type', 'TGP / Power Draw (W)', 'Length (Depth) (mm)', 'Slot Thickness', 'Interface', 'Bus Width', 'CUDA Cores' (NVIDIA) or 'Stream Processors' (AMD).
-- **Motherboard**: 'Chipset', 'Socket', 'Form Factor', 'RAM Type', 'M.2 Slots', 'Back-Connect Support', 'Connectivity', 'Memory Slots', 'Memory Type'.
-- **RAM**: 'Generation', 'Capacity', 'Speed', 'CAS Latency', 'Height', 'Type'.
-- **Storage**: 'Interface', 'Capacity', 'Read Speed', 'Write Speed', 'TBW Rating', 'Form Factor', 'Type'.
-- **PSU**: 'Wattage (W)', 'Efficiency Rating', 'Modularity', '12VHPWR Support', 'Form Factor'.
-- **Case**: 'Max GPU Length', 'Max Cooler Height', 'Max Radiator Size (mm)', 'Mobo Support', 'Radiator Support', 'Back-Connect Cutout', 'Type', 'PSU Form Factor'.
-- **Cooler**: 'TDP Rating', 'Socket Support', 'Height', 'Radiator Size', 'Type'.
+- **CPU**: 'Architecture' (e.g., "Zen 4"), 'Cores' (e.g., "8"), 'Threads' (e.g., "16"), 'Base Clock (GHz)' (e.g., "4.5 GHz"), 'Boost Clock (GHz)' (e.g., "5.4 GHz"), 'Socket' (e.g., "AM5"), 'TDP / Peak Power' (e.g., "105 W"), 'L3 Cache' (e.g., "32 MB"), 'Memory Support' (e.g., "DDR5"), 'Integrated Graphics' (e.g., "Yes" or "No").
+- **GPU**: 'Chipset' (e.g., "RTX 4070"), 'VRAM Capacity' (e.g., "12 GB"), 'Memory Type' (e.g., "GDDR6X"), 'TGP / Power Draw (W)' (e.g., "200 W"), 'Length (Depth) (mm)' (Integer only), 'Slot Thickness' (Round UP to nearest whole number and format exactly as "X slot", e.g., "4 slot"), 'Interface' (e.g., "PCIe 4.0 x16"), 'CUDA Cores' (e.g., "5888" for NVIDIA) or 'Stream Processors' (for AMD).
+- **Motherboard**: 'Chipset' (e.g., "B650"), 'Socket' (e.g., "AM5"), 'Form Factor' (e.g., "ATX"), 'RAM Type' (e.g., "DDR5"), 'M.2 Slots' (e.g., "3x Gen4"), 'Back-Connect Support' (e.g., "Yes" or "No"), 'Connectivity' (e.g., "Wi-Fi 6E, 2.5Gb Ethernet"), 'Memory Slots' (e.g., "4"), 'Memory Type' (e.g., "DDR5").
+- **RAM**: 'Generation' (e.g., "DDR5"), 'Capacity' (e.g., "32 GB"), 'Speed' (e.g., "6000 MT/s"), 'CAS Latency' (e.g., "CL30"), 'Stick Count' (e.g., "2").
+- **Storage**: 'Interface' (e.g., "NVMe M.2"), 'Capacity' (e.g., "1 TB"), 'Read Speed' (e.g., "7000 MB/s"), 'Write Speed' (e.g., "6500 MB/s"), 'TBW Rating' (e.g., "600 TBW"), 'Form Factor' (e.g., "M.2 2280"), 'Type' (e.g., "NVMe SSD").
+- **PSU**: 'Wattage (W)' (e.g., "850 W"), 'Efficiency Rating' (e.g., "80+ Gold"), 'Modularity' (e.g., "Fully Modular"), '12VHPWR Support' (e.g., "Native ATX 3.0 / ATX 3.1"), 'Form Factor' (e.g., "ATX / SFX").
+- **Case**: 'Max GPU Length' (e.g., "400 mm"), 'Max Cooler Height' (e.g., "170 mm"), 'Max Radiator Size (mm)' (e.g., "360"), 'Mobo Support' (e.g., "ATX, M-ATX, ITX"), 'Radiator Support' (e.g., "360mm Top"), 'Back-Connect Cutout' (e.g., "Yes" or "No"), 'Type' (e.g., "ATX Mid Tower"), 'PSU Form Factor' (e.g., "ATX").
+- **Cooler**: 'TDP Rating' (e.g., "250 W"), 'Socket Support' (e.g., "AM4, AM5, LGA1700"), 'Height' (e.g., "165 mm"), 'Radiator Size' (e.g., "360 mm"), 'Type' (e.g., "Air" or "AIO Liquid").
 
 ADDITIONAL FIELDS:
 - 'wattage': TDP for CPU/GPU, rated output for PSU (number).
