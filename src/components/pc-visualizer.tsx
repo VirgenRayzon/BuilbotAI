@@ -15,10 +15,10 @@ interface PCVisualizerProps {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MOBO_SIZES = {
-    EATX: { width: 330, height: 305, label: "E-ATX MOTHERBOARD" },
-    ATX: { width: 244, height: 305, label: "ATX MOTHERBOARD" },
-    MATX: { width: 244, height: 244, label: "MICRO-ATX MOTHERBOARD" },
-    ITX: { width: 170, height: 170, label: "MINI-ITX MOTHERBOARD" },
+    EATX: { width: 330, height: 305, slots: 2, topSlotOffset: 200, label: "E-ATX MOTHERBOARD" },
+    ATX: { width: 244, height: 305, slots: 2, topSlotOffset: 200, label: "ATX MOTHERBOARD" },
+    MATX: { width: 244, height: 244, slots: 1, topSlotOffset: 100, label: "MICRO-ATX MOTHERBOARD" },
+    ITX: { width: 170, height: 170, slots: 1, topSlotOffset: 100, label: "MINI-ITX MOTHERBOARD" },
 };
 
 const LAYOUT_CONFIGS = {
@@ -31,13 +31,14 @@ const LAYOUT_CONFIGS = {
         case: { width: 376, height: 292 },
 
         // Motherboard — top-left, Mini-ITX is 170x170mm
-        mobo: { x: 15, y: 60, width: 170, height: 170, label: "MINI-ITX BOARD" },
+        mobo: { x: 15, y: 20, width: 170, height: 170, label: "MINI-ITX BOARD" },
 
         // PSU — top-right vertical block
         psu: { x: 270, y: 15, width: 90, height: 140, label: "PSU" },
 
         // GPU — bottom horizontal bar, anchored at bottom-left
-        gpu: { x: 15, y: 280, width: 200, height: 45, label: "GPU" },
+        // GPU — width is set here, position calculated dynamically
+        gpu: { x: 15, width: 200, height: 45, label: "GPU" },
 
         // Cooler — centered on CPU socket area on the mobo
         // Offset is relative to mobo origin (mobo.x, mobo.y)
@@ -62,7 +63,8 @@ const LAYOUT_CONFIGS = {
         psu: { x: 15, y: 80, width: 150, height: 150, label: "PSU" },
 
         // GPU — starts at rear, sits below the lower PCIe slot zone
-        gpu: { x: 15, y: 420, width: 260, height: 45, label: "GPU" },
+        // GPU — width is set here, position calculated dynamically
+        gpu: { x: 15, width: 260, height: 45, label: "GPU" },
 
         // Cooler — centered on CPU socket
         cooler: { relX: 85, relY: 35, size: 75, label: "AIR COOLER" },
@@ -86,7 +88,8 @@ const LAYOUT_CONFIGS = {
         psu: { x: 15, y: 80, width: 150, height: 150, label: "PSU" },
 
         // GPU — below lower PCIe slots
-        gpu: { x: 15, y: 450, width: 300, height: 50, label: "GPU" },
+        // GPU — width is set here, position calculated dynamically
+        gpu: { x: 15, width: 300, height: 50, label: "GPU" },
 
         // Cooler on mobo socket center
         cooler: { relX: 82, relY: 45, size: 80, label: "AIR COOLER" },
@@ -110,7 +113,8 @@ const LAYOUT_CONFIGS = {
         psu: { x: 15, y: 80, width: 150, height: 150, label: "E-ATX PSU" },
 
         // Multi-GPU capable long GPU bay
-        gpu: { x: 15, y: 395, width: 390, height: 55, label: "GPU / MULTI-GPU BAY" },
+        // GPU — width is set here, position calculated dynamically
+        gpu: { x: 15, width: 390, height: 55, label: "GPU / MULTI-GPU BAY" },
 
         // Cooler is massive on EATX
         cooler: { relX: 115, relY: 50, size: 100, label: "CPU COOLER" },
@@ -232,6 +236,10 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
         moboW = MOBO_SIZES.ATX.width; moboH = MOBO_SIZES.ATX.height; moboLabel = MOBO_SIZES.ATX.label;
     }
 
+    const currentMoboConfig = (moboFF.includes("E-ATX") || moboFF.includes("EATX")) ? MOBO_SIZES.EATX :
+        (moboFF.includes("MATX") || moboFF.includes("MICRO")) ? MOBO_SIZES.MATX :
+            (moboFF.includes("ITX")) ? MOBO_SIZES.ITX : MOBO_SIZES.ATX;
+
     // ── Get Layout Config ────────────────────────────────────────────────────
     const cfg = LAYOUT_CONFIGS[archetype];
 
@@ -257,6 +265,11 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
     // Dynamic Radiator Dimensions
     const topRadDisplayWidth = (isAio && actualRadSize > 0) ? actualRadSize : (cfg.topRad?.width || 0);
     const frontRadDisplayHeight = (isAio && actualRadSize > 0) ? actualRadSize : (cfg.frontRad?.height || 0);
+
+    // ── GPU Position (Anchored to Top PCIe Slot) ────────────────────────────
+    // The top slot is usually ~100mm from top for ATX/MATX, or ~140mm for ITX
+    const topSlotOffset = currentMoboConfig.topSlotOffset;
+    const gpuY = cfg.mobo.y + topSlotOffset;
 
     // ── Case dimensions (real data wins over config) ─────────────────────────
     const caseW = (caseData?.dimensions?.depth) || cfg.case.width;
@@ -560,19 +573,21 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                         transition={springConfig}
                                     />
 
-                                    {/* PCIe Slots - bottom area */}
+                                    {/* PCIe Slots - dynamic based on motherboard size */}
                                     <motion.rect
-                                        animate={{ x: 15, y: moboH - 80 }}
-                                        width={moboW - 60} height={15}
+                                        animate={{ x: 15, y: topSlotOffset }}
+                                        width={moboW - 60} height={10}
                                         fill="url(#pciePattern)"
                                         transition={springConfig}
                                     />
-                                    <motion.rect
-                                        animate={{ x: 15, y: moboH - 40 }}
-                                        width={moboW - 80} height={15}
-                                        fill="url(#pciePattern)"
-                                        transition={springConfig}
-                                    />
+                                    {currentMoboConfig.slots > 1 && (
+                                        <motion.rect
+                                            animate={{ x: 15, y: topSlotOffset + 40 }}
+                                            width={moboW - 80} height={10}
+                                            fill="url(#pciePattern)"
+                                            transition={springConfig}
+                                        />
+                                    )}
 
                                     <motion.text
                                         animate={{ x: moboW / 2, y: moboH - 12 }}
@@ -656,7 +671,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                     animate={{
                                         opacity: 1,
                                         x: cx(cfg.gpu.x),
-                                        y: cy(cfg.gpu.y - gpuDisplayHeight)
+                                        y: cy(gpuY)
                                     }}
                                     exit={{ opacity: 0, x: -50 }}
                                     transition={springConfig}

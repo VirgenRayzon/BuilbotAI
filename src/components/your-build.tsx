@@ -284,10 +284,9 @@ export function YourBuild({
     const totalParts = Object.keys(build).length;
 
     const totalWattage = Object.entries(build).reduce((acc, [key, component]) => {
-        // PSU wattage is its capacity (supply), not consumption (demand) — exclude it
-        // Accessories also don't count towards PC internal power draw
-        const internalParts = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler'];
-        if (!internalParts.includes(key) || key === 'PSU') return acc;
+        // Exclude PSU (supply) and passive/fan-only parts like Case and Cooler from power demand
+        const drawingParts = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage'];
+        if (!drawingParts.includes(key)) return acc;
 
         if (Array.isArray(component)) {
             return acc + component.reduce((sum, c) => sum + (c.wattage || 0), 0);
@@ -347,7 +346,7 @@ export function YourBuild({
                 <ScrollArea className="flex-1 pr-4 -mr-4">
                     <div className="space-y-3 py-1">
                         {/* Internal Parts Section */}
-                        {['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler'].map((name) => {
+                        {['Case', 'Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'].map((name) => {
                             const component = build[name];
                             const Icon = componentIcons[name.toLowerCase()] || Cpu;
                             const components = Array.isArray(component) ? component : (component ? [component] : []);

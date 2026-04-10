@@ -48,13 +48,13 @@ import type { Resolution, WorkloadType } from "@/lib/types";
 type PartWithoutCategory = Omit<Part, 'category'>;
 
 const componentCategories = [
+  { name: "Case", icon: RectangleVertical },
+  { name: "Motherboard", icon: CircuitBoard },
   { name: "CPU", icon: Cpu },
   { name: "GPU", icon: Server },
-  { name: "Motherboard", icon: CircuitBoard },
   { name: "RAM", icon: MemoryStick },
   { name: "Storage", icon: Database },
   { name: "PSU", icon: Power },
-  { name: "Case", icon: RectangleVertical },
   { name: "Cooler", icon: Wind },
   { name: "Monitor", icon: Monitor },
   { name: "Keyboard", icon: Keyboard },
@@ -228,10 +228,28 @@ export default function BuilderPage() {
         currentItems.splice(index, 1);
         next[category] = currentItems;
       } else {
-        const removedPart = next[category] as ComponentData | null;
         next[category] = null;
 
-        // Auto-remove stock cooler if CPU is removed
+        // CASCADING REMOVAL LOGIC
+        if (category === 'Case') {
+          // Remove Motherboard and everything else
+          Object.keys(next).forEach(key => {
+            if (key === 'RAM' || key === 'Storage') next[key] = [];
+            else next[key] = null;
+          });
+          toast({ title: 'Build Reset', description: 'Removing the case removes all other components.' });
+        } else if (category === 'Motherboard') {
+          // Remove everything except Case
+          Object.keys(next).forEach(key => {
+            if (key !== 'Case') {
+              if (key === 'RAM' || key === 'Storage') next[key] = [];
+              else next[key] = null;
+            }
+          });
+          toast({ title: 'Components Removed', description: 'Changing or removing the motherboard removes all dependent parts.' });
+        }
+
+        // Auto-remove stock cooler if CPU is removed (kept for specific logic)
         const currentCooler = next['Cooler'] as ComponentData | null;
         if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
           next['Cooler'] = null;
@@ -259,16 +277,24 @@ export default function BuilderPage() {
     }
   }, [build, isLoaded, categories]);
 
-  // Handle Motherboard-first default
+  // Handle Selection Order UI guidance
   useEffect(() => {
-    if (isLoaded && !build['Motherboard']) {
-      // If no motherboard is selected, default the category to Motherboard
-      setCategories(prev => prev.map(cat => ({
-        ...cat,
-        selected: cat.name === 'Motherboard'
-      })));
+    if (isLoaded) {
+      if (!build['Case']) {
+        // If no case is selected, default to Case category
+        setCategories(prev => prev.map(cat => ({
+          ...cat,
+          selected: cat.name === 'Case'
+        })));
+      } else if (!build['Motherboard']) {
+        // If case is selected but no motherboard, default to Motherboard
+        setCategories(prev => prev.map(cat => ({
+          ...cat,
+          selected: cat.name === 'Motherboard'
+        })));
+      }
     }
-  }, [isLoaded]); // Only run once on mount (or when isLoaded flips)
+  }, [isLoaded, build['Case'], build['Motherboard']]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('Date Added');
@@ -305,6 +331,29 @@ export default function BuilderPage() {
 
   const handlePartToggle = (part: Part) => {
     const category = part.category;
+
+    // SELECTION ORDER ENFORCEMENT
+    if (category !== 'Case' && !build['Case']) {
+      toast({
+        variant: 'destructive',
+        title: 'Selection Order',
+        description: 'Please select a Case first before adding other components.'
+      });
+      // Force switch to Case category
+      setCategories(prev => prev.map(cat => ({ ...cat, selected: cat.name === 'Case' })));
+      return;
+    }
+
+    if (category !== 'Case' && category !== 'Motherboard' && !build['Motherboard']) {
+      toast({
+        variant: 'destructive',
+        title: 'Selection Order',
+        description: 'Please select a Motherboard before adding other components.'
+      });
+      // Force switch to Motherboard category
+      setCategories(prev => prev.map(cat => ({ ...cat, selected: cat.name === 'Motherboard' })));
+      return;
+    }
 
     if (category === 'Storage' || category === 'RAM') {
       const buildItems = Array.isArray(build[category]) ? (build[category] as ComponentData[]) : (build[category] ? [build[category] as ComponentData] : []);
@@ -369,6 +418,25 @@ export default function BuilderPage() {
       // Part is already selected, so remove it
       setBuild(prevBuild => {
         const nextBuild = { ...prevBuild, [category]: null };
+
+        // CASCADING REMOVAL ON TOGGLE OFF
+        if (category === 'Case') {
+          // Remove Motherboard and everything else
+          Object.keys(nextBuild).forEach(key => {
+            if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
+            else nextBuild[key] = null;
+          });
+          toast({ title: 'Build Reset', description: 'Removing the case removes all other components.' });
+        } else if (category === 'Motherboard') {
+          // Remove everything except Case
+          Object.keys(nextBuild).forEach(key => {
+            if (key !== 'Case') {
+              if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
+              else nextBuild[key] = null;
+            }
+          });
+          toast({ title: 'Components Removed', description: 'Changing or removing the motherboard removes all dependent parts.' });
+        }
         
         // Auto-remove stock cooler if it was the included one for this CPU
         const currentCooler = nextBuild['Cooler'] as ComponentData | null;
@@ -416,6 +484,27 @@ export default function BuilderPage() {
 
       setBuild(prevBuild => {
         const nextBuild = { ...prevBuild, [category]: componentData };
+
+        // CASCADING REMOVAL ON CHANGE
+        if (category === 'Case' && prevBuild['Case'] && prevBuild['Case'].id !== componentData.id) {
+          // If changing case, remove everything else
+          Object.keys(nextBuild).forEach(key => {
+            if (key !== 'Case') {
+              if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
+              else nextBuild[key] = null;
+            }
+          });
+          toast({ title: 'Build Updated', description: 'Changing the case removed dependent components.' });
+        } else if (category === 'Motherboard' && prevBuild['Motherboard'] && prevBuild['Motherboard'].id !== componentData.id) {
+          // If changing motherboard, remove everything except Case
+          Object.keys(nextBuild).forEach(key => {
+            if (key !== 'Case' && key !== 'Motherboard') {
+              if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
+              else nextBuild[key] = null;
+            }
+          });
+          toast({ title: 'Build Updated', description: 'Changing the motherboard removed dependent components.' });
+        }
         
         // Auto-add or update cooler if CPU category
         if (category === 'CPU') {

@@ -94,7 +94,8 @@ export function checkCompatibility(build: Record<string, ComponentData | Compone
     if (psu) {
         let totalWattage = 0;
         Object.entries(build).forEach(([key, val]) => {
-            if (key === 'PSU' || !val) return; // Exclude PSU itself
+            // Exclude PSU (supply) and mechanical/passive parts like Case and Cooler from draw check
+            if (['PSU', 'Case', 'Cooler'].includes(key) || !val) return;
             const items = Array.isArray(val) ? val : [val];
             items.forEach(item => {
                 totalWattage += item.wattage || 0;

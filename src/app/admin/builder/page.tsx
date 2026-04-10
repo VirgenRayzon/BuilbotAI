@@ -44,13 +44,13 @@ import type { BuilderAdminAddPrebuiltFormSchema } from "@/components/builder-adm
 type PartWithoutCategory = Omit<Part, 'category'>;
 
 const componentCategories = [
+    { name: "Case", icon: RectangleVertical },
+    { name: "Motherboard", icon: CircuitBoard },
     { name: "CPU", icon: Cpu },
     { name: "GPU", icon: Server },
-    { name: "Motherboard", icon: CircuitBoard },
     { name: "RAM", icon: MemoryStick },
     { name: "Storage", icon: Database },
     { name: "PSU", icon: Power },
-    { name: "Case", icon: RectangleVertical },
     { name: "Cooler", icon: Wind },
     { name: "Monitor", icon: Monitor },
     { name: "Keyboard", icon: Keyboard },
@@ -163,6 +163,25 @@ export default function AdminBuilderPage() {
                 next[category] = currentItems;
             } else {
                 next[category] = null;
+
+                // CASCADING REMOVAL LOGIC
+                if (category === 'Case') {
+                    // Remove Motherboard and everything else
+                    Object.keys(next).forEach(key => {
+                        if (key === 'RAM' || key === 'Storage') next[key] = [];
+                        else next[key] = null;
+                    });
+                    toast({ title: 'Build Reset', description: 'Removing the case removes all other components.' });
+                } else if (category === 'Motherboard') {
+                    // Remove everything except Case
+                    Object.keys(next).forEach(key => {
+                        if (key !== 'Case') {
+                            if (key === 'RAM' || key === 'Storage') next[key] = [];
+                            else next[key] = null;
+                        }
+                    });
+                    toast({ title: 'Components Removed', description: 'Changing or removing the motherboard removes all dependent parts.' });
+                }
             }
             return next;
         });
@@ -171,6 +190,25 @@ export default function AdminBuilderPage() {
     const [categories, setCategories] = useState(
         componentCategories.map(c => ({ name: c.name, selected: true }))
     );
+
+    // Handle Selection Order UI guidance
+    useEffect(() => {
+        if (isLoaded) {
+            if (!build['Case']) {
+                // If no case is selected, default to Case category
+                setCategories(prev => prev.map(cat => ({
+                    ...cat,
+                    selected: cat.name === 'Case'
+                })));
+            } else if (!build['Motherboard']) {
+                // If case is selected but no motherboard, default to Motherboard
+                setCategories(prev => prev.map(cat => ({
+                    ...cat,
+                    selected: cat.name === 'Motherboard'
+                })));
+            }
+        }
+    }, [isLoaded, build['Case'], build['Motherboard']]);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState('Date Added');
@@ -207,6 +245,29 @@ export default function AdminBuilderPage() {
 
     const handlePartToggle = (part: Part) => {
         const category = part.category;
+
+        // SELECTION ORDER ENFORCEMENT
+        if (category !== 'Case' && !build['Case']) {
+            toast({
+                variant: 'destructive',
+                title: 'Selection Order',
+                description: 'Please select a Case first before adding other components.'
+            });
+            // Force switch to Case category
+            setCategories(prev => prev.map(cat => ({ ...cat, selected: cat.name === 'Case' })));
+            return;
+        }
+
+        if (category !== 'Case' && category !== 'Motherboard' && !build['Motherboard']) {
+            toast({
+                variant: 'destructive',
+                title: 'Selection Order',
+                description: 'Please select a Motherboard before adding other components.'
+            });
+            // Force switch to Motherboard category
+            setCategories(prev => prev.map(cat => ({ ...cat, selected: cat.name === 'Motherboard' })));
+            return;
+        }
 
         if (category === 'Storage' || category === 'RAM') {
             const buildItems = Array.isArray(build[category]) ? (build[category] as ComponentData[]) : (build[category] ? [build[category] as ComponentData] : []);
@@ -259,7 +320,30 @@ export default function AdminBuilderPage() {
         const isCurrentlySelected = (build[category] as ComponentData)?.model === part.name;
 
         if (isCurrentlySelected) {
-            setBuild(prevBuild => ({ ...prevBuild, [category]: null }));
+            setBuild(prevBuild => {
+                const nextBuild = { ...prevBuild, [category]: null };
+
+                // CASCADING REMOVAL ON TOGGLE OFF
+                if (category === 'Case') {
+                    // Remove Motherboard and everything else
+                    Object.keys(nextBuild).forEach(key => {
+                        if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
+                        else nextBuild[key] = null;
+                    });
+                    toast({ title: 'Build Reset', description: 'Removing the case removes all other components.' });
+                } else if (category === 'Motherboard') {
+                    // Remove everything except Case
+                    Object.keys(nextBuild).forEach(key => {
+                        if (key !== 'Case') {
+                            if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
+                            else nextBuild[key] = null;
+                        }
+                    });
+                    toast({ title: 'Components Removed', description: 'Changing or removing the motherboard removes all dependent parts.' });
+                }
+
+                return nextBuild;
+            });
             toast({ title: 'Part Removed', description: `${part.name} has been removed from your build.` });
         } else {
             if (!compatible) {
@@ -294,7 +378,32 @@ export default function AdminBuilderPage() {
                 dimensions: part.dimensions,
             };
 
-            setBuild(prevBuild => ({ ...prevBuild, [category]: componentData }));
+            setBuild(prevBuild => {
+                const nextBuild = { ...prevBuild, [category]: componentData };
+
+                // CASCADING REMOVAL ON CHANGE
+                if (category === 'Case' && prevBuild['Case'] && (prevBuild['Case'] as ComponentData).id !== componentData.id) {
+                    // If changing case, remove everything else
+                    Object.keys(nextBuild).forEach(key => {
+                        if (key !== 'Case') {
+                            if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
+                            else nextBuild[key] = null;
+                        }
+                    });
+                    toast({ title: 'Build Updated', description: 'Changing the case removed dependent components.' });
+                } else if (category === 'Motherboard' && prevBuild['Motherboard'] && (prevBuild['Motherboard'] as ComponentData).id !== componentData.id) {
+                    // If changing motherboard, remove everything except Case
+                    Object.keys(nextBuild).forEach(key => {
+                        if (key !== 'Case' && key !== 'Motherboard') {
+                            if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
+                            else nextBuild[key] = null;
+                        }
+                    });
+                    toast({ title: 'Build Updated', description: 'Changing the motherboard removed dependent components.' });
+                }
+
+                return nextBuild;
+            });
             toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
         }
     };
