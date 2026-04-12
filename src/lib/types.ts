@@ -90,7 +90,8 @@ export type UserProfile = {
   id: string;
   email: string;
   name?: string;
-  isAdmin: boolean;
+  isManager: boolean;
+  isSuperAdmin?: boolean;
 };
 
 export type OrderItem = {

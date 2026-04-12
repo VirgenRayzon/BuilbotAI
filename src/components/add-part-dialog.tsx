@@ -38,6 +38,8 @@ import { Loader2, Plus, Sparkles, X, BrainCircuit, Bold, Italic, List, Heading1,
 import { getAiPartDetails } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "./ui/scroll-area";
+import { ImageUpload } from "./image-upload";
+import Image from "next/image";
 
 const componentCategories = [
   "CPU", "GPU", "Motherboard", "RAM", "Storage", "PSU", "Case", "Cooler",
@@ -63,7 +65,7 @@ const CATEGORY_SPECS: Record<string, { key: string; placeholder: string }[]> = {
     { key: "Memory Type", placeholder: "e.g., GDDR6X" },
     { key: "TGP / Power Draw (W)", placeholder: "e.g., 200 W" },
     { key: "Length (Depth) (mm)", placeholder: "e.g., 336 mm" },
-    { key: "Slot Thickness", placeholder: "e.g., 2 Slot" },
+    { key: "Slot Thickness", placeholder: "e.g., 2 slot" },
     { key: "Interface", placeholder: "e.g., PCIe 4.0 x16" },
     { key: "CUDA Cores", placeholder: "e.g., 5888 (NVIDIA) / Stream Processors" },
   ],
@@ -156,7 +158,7 @@ const formSchema = z.object({
   brand: z.string().min(1, "Brand is required."),
   price: z.coerce.number().min(0, "Price must be a positive number."),
   stockCount: z.coerce.number().int().min(0, "Stock must be a positive integer."),
-  imageUrl: z.string().url("Must be a valid URL.").optional().or(z.literal("")),
+  imageUrl: z.string().optional().or(z.literal("")),
   wattage: z.coerce.number().min(0).optional(),
   performanceScore: z.coerce.number().min(0).max(100).optional(),
   dimensions: z.object({
@@ -330,12 +332,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
 
         form.setValue("specifications", finalSpecs, { shouldValidate: true });
 
-        if (!form.getValues("imageUrl")) {
-          const seed = result.partName.replace(/\s+/g, "").toLowerCase();
-          form.setValue("imageUrl", `https://picsum.photos/seed/${seed}/800/600`, {
-            shouldValidate: true,
-          });
-        }
+        // Image is now handled via file upload, no auto-fill needed
       } else {
         toast({
           variant: "destructive",
@@ -368,6 +365,11 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
       toast({ title: initialData ? "Part Updated!" : "Part Added!", description: `${values.partName} has been ${initialData ? 'updated' : 'added to'} the inventory.` });
       if (!initialData) form.reset();
       setOpen(false);
+      
+      // Refresh the UI to show the latest changes immediately
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error: any) {
       toast({ variant: "destructive", title: initialData ? "Error updating part" : "Error adding part", description: error.message || "An unexpected error occurred." });
     } finally {
@@ -534,19 +536,20 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                     )} />
 
                     {/* Image URL — spans all 3 cols */}
-                    <div className="col-span-3">
-                      <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                            Image URL <span className="normal-case font-normal text-muted-foreground/50">(auto-fills if blank)</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input className="bg-muted/40 border-border/60 h-9" placeholder="https://..." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                    </div>
+                                        <FormField control={form.control} name="imageUrl" render={({ field }) => (
+                      <FormItem className="col-span-3">
+                        <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                          Part Image <span className="normal-case font-normal text-muted-foreground/50">(New upload will overwrite previous image)</span>
+                        </FormLabel>
+                        <FormControl>
+                          <ImageUpload 
+                            value={field.value || ""} 
+                            onChange={field.onChange} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
 
                     {/* Description — spans all 3 cols */}
                     <div className="col-span-3">

@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Trash2 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
 import type { Part } from "@/lib/types";
 import { AddPartDialog, type AddPartFormSchema } from "./add-part-dialog";
 import {
@@ -52,10 +52,11 @@ export function InventoryTable({ parts, onDelete, onUpdateStock, onUpdatePart }:
             <TableCell className="font-medium">
               <div className="flex items-center gap-3">
                 <Image
-                  src={part.imageUrl}
+                  src={getOptimizedStorageUrl(part.imageUrl)}
                   alt={part.name}
                   width={40}
                   height={40}
+                  unoptimized
                   className="rounded-sm object-cover"
                 />
                 <AddPartDialog

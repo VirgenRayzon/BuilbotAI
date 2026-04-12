@@ -33,7 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency, cn, getOptimizedStorageUrl } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { PaginationControls } from "@/components/pagination-controls";
@@ -73,7 +73,7 @@ export default function BuilderPage() {
     if (!authLoading) {
       if (!authUser) {
         router.push('/signin');
-      } else if (profile?.isAdmin) {
+      } else if (profile?.isManager) {
         router.push('/admin');
       }
     }
@@ -889,7 +889,7 @@ export default function BuilderPage() {
                         )}>
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-3">
-                              <Image src={part.imageUrl} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
+                              <Image src={getOptimizedStorageUrl(part.imageUrl)} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
                               <div>
                                 <div className="flex items-center gap-2">
                                   <p className="font-semibold">{part.name}</p>

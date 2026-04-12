@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
 import type { PrebuiltSystem, Part } from "@/lib/types";
 import { getMissingParts } from "@/lib/prebuilt-utils";
 import { BrainCircuit, ShoppingCart, Loader2, AlertCircle, ThumbsUp, ThumbsDown, MonitorPlay, Zap, ExternalLink, ShieldCheck, Gamepad2 } from "lucide-react";
@@ -197,7 +197,7 @@ export function PrebuiltDetailsModal({ system, children }: PrebuiltDetailsModalP
                     <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent pointer-events-none" />
                     <div className="relative w-full sm:w-1/3 aspect-video shrink-0 rounded-lg overflow-hidden border shadow-sm group">
                         <Image
-                            src={system.imageUrl}
+                            src={getOptimizedStorageUrl(system.imageUrl)}
                             alt={system.name}
                             fill
                             sizes="(max-width: 768px) 100vw, 33vw"

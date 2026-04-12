@@ -21,7 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { OrderItem } from "@/lib/types";
 import { ShoppingCart, CheckCircle2, Gauge } from "lucide-react";
 import { calculateBottleneck } from "@/lib/bottleneck";
-import { type BuilderAdminAddPrebuiltFormSchema } from "./builder-admin-add-prebuilt-dialog";
+import { type PrebuiltBuilderAddFormSchema } from "./prebuilt-builder-add-dialog";
 import { Part, PrebuiltSystem } from "@/lib/types";
 
 interface YourBuildProps {
@@ -35,9 +35,9 @@ interface YourBuildProps {
     onWorkloadChange: (workload: WorkloadType) => void;
     showSystemBalance?: boolean;
     className?: string;
-    isAdminMode?: boolean;
+    isManagerMode?: boolean;
     allParts?: Part[];
-    onAddPrebuilt?: (data: BuilderAdminAddPrebuiltFormSchema) => void;
+    onAddPrebuilt?: (data: PrebuiltBuilderAddFormSchema) => void;
     hasAnalysis?: boolean;
 }
 
@@ -87,7 +87,7 @@ export function YourBuild({
     onWorkloadChange,
     showSystemBalance = true,
     className,
-    isAdminMode = false,
+    isManagerMode = false,
     allParts = [],
     onAddPrebuilt,
     hasAnalysis = false
@@ -147,7 +147,7 @@ export function YourBuild({
                     const finalImage = `https://picsum.photos/seed/${systemSlug}${randomNum}/800/600`;
 
                     // Construct final data to save
-                    const finalData: BuilderAdminAddPrebuiltFormSchema = {
+                    const finalData: PrebuiltBuilderAddFormSchema = {
                         name: result.systemName,
                         description: result.description || "High-performance prebuilt system.",
                         price: Math.round(totalPrice * 100) / 100,
@@ -521,7 +521,7 @@ export function YourBuild({
                         Clear Build
                     </Button>
 
-                    {isAdminMode ? (
+                    {isManagerMode ? (
                         <Button
                             className="w-full font-headline tracking-wide flex items-center gap-2 bg-primary hover:bg-primary/90 text-white relative overflow-hidden group/add-prebuilt"
                             size="lg"

@@ -42,6 +42,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "./ui/scroll-area";
 import { Loader2, Sparkles, Cpu, BrainCircuit, Search, Check, ChevronDown, Plus, X, Bold, Italic, Heading1, Heading2, List, Code } from "lucide-react";
 import { getAiPrebuiltSuggestions } from "@/app/actions";
+import { ImageUpload } from "./image-upload";
+import Image from "next/image";
 import type { Part, PrebuiltSystem } from "@/lib/types";
 
 const formSchema = z.object({
@@ -49,7 +51,7 @@ const formSchema = z.object({
     tier: z.string().min(1, "Please select a tier."),
     description: z.string().optional(),
     price: z.coerce.number().min(0, "Price must be a positive number."),
-    imageUrl: z.string().url("Must be a valid URL.").optional().or(z.literal("")),
+    imageUrl: z.string().optional().or(z.literal("")),
     cpu: z.string().optional(),
     gpu: z.string().optional(),
     motherboard: z.string().optional(),
@@ -60,11 +62,11 @@ const formSchema = z.object({
     cooler: z.string().optional(),
 });
 
-export type BuilderAdminAddPrebuiltFormSchema = z.infer<typeof formSchema>;
+export type PrebuiltBuilderAddFormSchema = z.infer<typeof formSchema>;
 
-interface BuilderAdminAddPrebuiltDialogProps {
+interface PrebuiltBuilderAddDialogProps {
     children: React.ReactNode;
-    onSave: (data: BuilderAdminAddPrebuiltFormSchema) => void;
+    onSave: (data: PrebuiltBuilderAddFormSchema) => void;
     parts: Part[];
     initialData?: PrebuiltSystem;
     title?: string;
@@ -192,7 +194,7 @@ const PART_SLOTS = [
     { key: "cooler", label: "Cooler" },
 ] as const;
 
-export function BuilderAdminAddPrebuiltDialog({ children, onSave, parts, initialData, title }: BuilderAdminAddPrebuiltDialogProps) {
+export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData, title }: PrebuiltBuilderAddDialogProps) {
     const [open, setOpen] = useState(false);
     const [isAiPending, startAiTransition] = useTransition();
     // Track which PartSelector dropdown is open
@@ -213,7 +215,7 @@ export function BuilderAdminAddPrebuiltDialog({ children, onSave, parts, initial
         return grouped;
     }, [parts]);
 
-    const form = useForm<BuilderAdminAddPrebuiltFormSchema>({
+    const form = useForm<PrebuiltBuilderAddFormSchema>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: initialData?.name || "",
@@ -329,13 +331,7 @@ export function BuilderAdminAddPrebuiltDialog({ children, onSave, parts, initial
                         fieldsUpdated.push("Tier");
                     }
 
-                    if (!form.getValues("imageUrl") && result.systemName) {
-                        const randomNum = Math.floor(Math.random() * 1000);
-                        const seed = result.systemName.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() + randomNum;
-                        form.setValue("imageUrl", `https://picsum.photos/seed/${seed}/800/600`, { shouldValidate: true, shouldDirty: true });
-                        fieldsUpdated.push("Image");
-                    }
-                    
+                    // Image is now handled via file upload, no auto-fill needed
                     if (fieldsUpdated.length > 0) {
                         toast({ title: "AI Suggestions Applied", description: `Successfully filled: ${fieldsUpdated.join(", ")}.` });
                     } else {
@@ -358,11 +354,16 @@ export function BuilderAdminAddPrebuiltDialog({ children, onSave, parts, initial
         });
     };
 
-    const onSubmit = (values: BuilderAdminAddPrebuiltFormSchema) => {
+    const onSubmit = (values: PrebuiltBuilderAddFormSchema) => {
         onSave(values);
         toast({ title: initialData ? "Prebuilt Updated!" : "Prebuilt System Added!", description: `${values.name} has been ${initialData ? 'updated' : 'added'}.` });
         if (!initialData) form.reset();
         setOpen(false);
+
+        // Refresh the UI to show the latest changes immediately
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
     };
 
     const handleOpenChange = (isOpen: boolean) => {
@@ -383,7 +384,7 @@ export function BuilderAdminAddPrebuiltDialog({ children, onSave, parts, initial
                     </div>
                     <div className="flex-1">
                         <DialogTitle className="font-headline text-xl font-bold tracking-tight">
-                            {title || (initialData ? "Add New Prebuilt System" : "Add New Prebuilt System")}
+                            {title || (initialData ? "Edit Prebuilt System" : "Add New Prebuilt System")}
                         </DialogTitle>
                         <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                             {initialData ? "Configure the system details below." : "Configure the system details and select components from inventory."}
@@ -474,12 +475,15 @@ export function BuilderAdminAddPrebuiltDialog({ children, onSave, parts, initial
                                         )} />
 
                                         <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                                            <FormItem>
+                                            <FormItem className="col-span-3">
                                                 <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                                                    Image URL <span className="normal-case font-normal text-muted-foreground/50">(optional)</span>
+                                                    System Image <span className="normal-case font-normal text-muted-foreground/50">(New upload will overwrite previous image)</span>
                                                 </FormLabel>
                                                 <FormControl>
-                                                    <Input className="bg-muted/40 border-border/60 h-9" placeholder="https://..." {...field} />
+                                                    <ImageUpload 
+                                                        value={field.value || ""} 
+                                                        onChange={field.onChange} 
+                                                    />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>

@@ -3,23 +3,28 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to check if a user is an admin by looking at the `isAdmin` flag in their user profile.
-    function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    function isManager() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isManager == true;
     }
 
-    // User profiles can be created by the user, and read/updated by the user. Admins have full access.
+    function isSuperAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true;
+    }
+
     match /users/{userId} {
-      allow read, update, delete: if request.auth.uid == userId || isAdmin();
+      allow read, update, delete: if request.auth.uid == userId || isManager();
       allow create: if request.auth.uid == userId;
     }
 
-    // Component and Prebuilt collections can be read by anyone, but only written by admins.
-    // This covers all our inventory collections.
+    match /authKeys/{keyId} {
+      allow get: if true;
+      allow list, write: if request.auth != null && isSuperAdmin();
+    }
+
     match /{category}/{partId} 
         where category in ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler', 'prebuiltSystems'] {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isManager();
     }
   }
 }

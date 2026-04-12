@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -9,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -18,19 +17,24 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, Terminal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { createUserProfile } from '@/firebase/database';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
-  adminKey: z.string().optional(),
+  roleKey: z.string().optional(),
 });
 
-const ADMIN_KEY = "00216764";
+const MANAGER_KEY = "00216764";
+const SUPER_ADMIN_KEY = "SUPER_ADMIN_123";
+
+type RoleTab = "user" | "manager" | "superadmin";
 
 export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<RoleTab>("user");
   const router = useRouter();
   const auth = useAuth();
   const firestore = useFirestore();
@@ -41,7 +45,7 @@ export default function SignUpPage() {
     defaultValues: {
       email: '',
       password: '',
-      adminKey: ADMIN_KEY,
+      roleKey: '',
     },
   });
 
@@ -50,20 +54,39 @@ export default function SignUpPage() {
     setError(null);
     if (!auth || !firestore) return;
 
-    if (values.adminKey && values.adminKey !== ADMIN_KEY) {
-      form.setError('adminKey', { message: 'Incorrect admin key.' });
-      setLoading(false);
-      return;
+    if (activeTab === "manager") {
+      const keyStr = values.roleKey || "none";
+      const keyDocSnap = await getDoc(doc(firestore, 'authKeys', keyStr)).catch(() => null);
+      const isDbKey = keyDocSnap?.exists() && keyDocSnap.data()?.role === "manager";
+      if (!isDbKey && keyStr !== "00216764") {
+        form.setError('roleKey', { message: 'Incorrect manager key.' });
+        setLoading(false);
+        return;
+      }
+    }
+
+    if (activeTab === "superadmin") {
+      const keyStr = values.roleKey || "none";
+      const keyDocSnap = await getDoc(doc(firestore, 'authKeys', keyStr)).catch(() => null);
+      const isDbKey = keyDocSnap?.exists() && keyDocSnap.data()?.role === "superadmin";
+      if (!isDbKey && keyStr !== "SUPER_ADMIN_123") {
+        form.setError('roleKey', { message: 'Incorrect super admin key.' });
+        setLoading(false);
+        return;
+      }
     }
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      const isAdmin = values.adminKey === ADMIN_KEY;
+      const isManager = activeTab === "manager" || activeTab === "superadmin";
+      const isSuperAdmin = activeTab === "superadmin";
+
       await createUserProfile(firestore, user.uid, {
         email: user.email!,
-        isAdmin: isAdmin,
+        isManager: isManager,
+        isSuperAdmin: isSuperAdmin,
       });
 
       toast({
@@ -78,6 +101,16 @@ export default function SignUpPage() {
     }
   };
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as RoleTab);
+    form.reset({
+      email: form.getValues('email'),
+      password: form.getValues('password'),
+      roleKey: '',
+    });
+    form.clearErrors('roleKey');
+  };
+
   return (
     <div className="flex items-center justify-center min-h-[80vh]">
       <Card className="w-full max-w-md mx-4">
@@ -86,6 +119,14 @@ export default function SignUpPage() {
           <CardDescription>Enter your details to get started.</CardDescription>
         </CardHeader>
         <CardContent>
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mb-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="user">User</TabsTrigger>
+              <TabsTrigger value="manager">Manager</TabsTrigger>
+              <TabsTrigger value="superadmin">Super Admin</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {error && (
@@ -121,19 +162,36 @@ export default function SignUpPage() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="adminKey"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Admin Key (Optional)</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="Enter admin key for admin rights" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {activeTab === "manager" && (
+                <FormField
+                  control={form.control}
+                  name="roleKey"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Manager Key</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Required manager key" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              {activeTab === "superadmin" && (
+                <FormField
+                  control={form.control}
+                  name="roleKey"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Super Admin Key</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Required super admin key" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sign Up

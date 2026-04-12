@@ -5,7 +5,7 @@ import type { Part, PrebuiltSystem } from '@/lib/types';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, getOptimizedStorageUrl } from '@/lib/utils';
 import { Trash2, Info, ChevronUp, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -25,7 +25,7 @@ import { PrebuiltCardSpecs } from './prebuilt-card-specs';
 import { motion, AnimatePresence } from 'framer-motion';
 
 
-interface AdminPrebuiltCardProps {
+interface InventoryPrebuiltCardProps {
     system: PrebuiltSystem;
     parts: Part[];
     onDelete: (systemId: string) => void;
@@ -34,7 +34,7 @@ interface AdminPrebuiltCardProps {
     onToggleExpand: () => void;
 }
 
-export function AdminPrebuiltCard({ system, parts, onDelete, onUpdate, isExpanded, onToggleExpand }: AdminPrebuiltCardProps) {
+export function InventoryPrebuiltCard({ system, parts, onDelete, onUpdate, isExpanded, onToggleExpand }: InventoryPrebuiltCardProps) {
 
     return (
         <AddPrebuiltDialog
@@ -95,9 +95,10 @@ export function AdminPrebuiltCard({ system, parts, onDelete, onUpdate, isExpande
 
                     <div className="aspect-video relative w-full overflow-hidden rounded-lg bg-muted/30">
                         <Image
-                            src={system.imageUrl}
+                            src={getOptimizedStorageUrl(system.imageUrl) || '/placeholder-system.png'}
                             alt={system.name}
                             fill
+                            unoptimized
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                             className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />

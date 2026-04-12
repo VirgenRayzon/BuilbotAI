@@ -19,7 +19,7 @@ export default function StartPage() {
   // Redirect based on role
   useEffect(() => {
     if (!loading && authUser) {
-      if (profile?.isAdmin) {
+      if (profile?.isManager) {
         router.push('/admin');
       } else {
         router.push('/builder');

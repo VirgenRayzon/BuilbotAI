@@ -37,8 +37,16 @@ export function Header() {
   ];
 
   const adminLinks = [
-    { href: "/admin", label: "Admin", admin: true },
-    { href: "/admin/builder", label: "Builder Admin", admin: true },
+    { 
+      href: "/admin", 
+      label: profile?.isSuperAdmin ? "Super Admin" : "Manager", 
+      admin: true 
+    },
+    { 
+      href: "/admin/prebuilt-builder", 
+      label: "Prebuilt Builder", 
+      admin: true 
+    },
   ];
 
   const commonLinks = [
@@ -46,7 +54,7 @@ export function Header() {
   ];
 
   // Logic to determine which links to show
-  const filteredLinks = !profile?.isAdmin
+  const filteredLinks = !profile?.isManager
     ? [...mainLinks, ...commonLinks]
     : [...adminLinks, ...commonLinks];
 
@@ -54,7 +62,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-primary/20 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
       <div className="container flex h-14 max-w-screen-2xl items-center">
-        <Link href={authUser ? (profile?.isAdmin ? "/admin" : "/builder") : "/"} className="mr-6 flex items-center space-x-2">
+        <Link href={authUser ? (profile?.isManager ? "/admin" : "/builder") : "/"} className="mr-6 flex items-center space-x-2">
           <Logo />
         </Link>
 
@@ -73,7 +81,7 @@ export function Header() {
                 )}
               >
                 {link.label}
-                {(link as any).admin && <Shield className="w-4 h-4" />}
+                {(link as any).admin && profile?.isSuperAdmin && <Shield className="w-4 h-4" />}
               </Link>
             ))}
           </nav>
@@ -83,7 +91,7 @@ export function Header() {
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : authUser ? (
               <div className="flex items-center space-x-2">
-                {!profile?.isAdmin && <UserNotifications />}
+                {!profile?.isManager && <UserNotifications />}
                 <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-foreground/60 hover:text-primary">
                   <LogOut className="mr-2 h-4 w-4" />
                   Sign Out

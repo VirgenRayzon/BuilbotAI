@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -131,9 +131,10 @@ function PrebuiltTableRow({
           <div className="flex items-center gap-4">
             <div className="relative w-16 h-12 rounded-md overflow-hidden bg-muted flex-shrink-0 border shadow-sm group-hover:border-primary/30 transition-colors">
               <Image
-                src={system.imageUrl}
+                src={getOptimizedStorageUrl(system.imageUrl) || "/placeholder-system.png"}
                 alt={system.name}
                 fill
+                unoptimized
                 sizes="64px"
                 className="object-cover group-hover:scale-110 transition-transform duration-500"
               />

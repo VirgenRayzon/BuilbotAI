@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, getOptimizedStorageUrl } from '@/lib/utils';
 import type { PrebuiltSystem } from '@/lib/types';
 import { ShoppingCart, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 import { Badge } from './ui/badge';
@@ -52,7 +52,7 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
         <CardHeader className="p-3.5 pb-0 relative z-10">
           <div className="aspect-video relative w-full overflow-hidden rounded-lg mb-2.5 shadow-sm group-hover:shadow-md transition-shadow bg-muted/30">
             <SmartImageMagnifier
-              src={system.imageUrl}
+              src={getOptimizedStorageUrl(system.imageUrl)}
               alt={system.name}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />

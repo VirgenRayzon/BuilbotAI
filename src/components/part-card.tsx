@@ -4,7 +4,7 @@
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { formatCurrency, formatToPHP } from '@/lib/utils';
+import { formatCurrency, formatToPHP, getOptimizedStorageUrl } from '@/lib/utils';
 import type { Part } from '@/lib/types';
 import { Plus, Info, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -85,9 +85,10 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
 
                         <div className="aspect-square relative w-full overflow-hidden rounded-lg bg-muted/10 border border-white/5 p-2">
                             <Image
-                                src={part.imageUrl || '/placeholder-part.png'}
+                                src={getOptimizedStorageUrl(part.imageUrl) || '/placeholder-part.png'}
                                 alt={part.name}
                                 fill
+                                unoptimized
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                 className="object-contain transition-transform duration-500 group-hover:scale-105"
                             />

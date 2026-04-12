@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import type { ComponentData } from "@/lib/types";
 import Image from "next/image";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
 
 interface ComponentCardProps {
   name: string;
@@ -30,9 +30,10 @@ export function ComponentCard({ name, component }: ComponentCardProps) {
       <CardContent className="flex-grow space-y-4">
         <div className="aspect-square relative w-full overflow-hidden rounded-md">
             <Image
-                src={component.image}
+                src={getOptimizedStorageUrl(component.image)}
                 alt={component.description}
                 fill
+                unoptimized
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className="object-cover"
                 data-ai-hint={component.imageHint}

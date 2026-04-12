@@ -66,7 +66,7 @@ export default function AiBuildAdvisorPage() {
     if (!userLoading) {
       if (!authUser) {
         router.push('/signin');
-      } else if (profile?.isAdmin) {
+      } else if (profile?.isManager) {
         router.push('/admin');
       }
     }

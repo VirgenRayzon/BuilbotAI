@@ -30,7 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency, cn, getOptimizedStorageUrl } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { PaginationControls } from "@/components/pagination-controls";
@@ -39,7 +39,7 @@ import { useUserProfile } from "@/context/user-profile";
 import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
 import { addPrebuiltSystem } from "@/firebase/database";
-import type { BuilderAdminAddPrebuiltFormSchema } from "@/components/builder-admin-add-prebuilt-dialog";
+import type { PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
 
 type PartWithoutCategory = Omit<Part, 'category'>;
 
@@ -58,7 +58,7 @@ const componentCategories = [
     { name: "Headset", icon: Headphones },
 ];
 
-export default function AdminBuilderPage() {
+export default function PrebuiltBuilderPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const { authUser, profile, loading: authLoading } = useUserProfile();
@@ -69,7 +69,7 @@ export default function AdminBuilderPage() {
         if (!authLoading) {
             if (!authUser) {
                 router.push('/signin');
-            } else if (!profile?.isAdmin) {
+            } else if (!profile?.isManager) {
                 router.push('/builder');
             }
         }
@@ -617,7 +617,7 @@ export default function AdminBuilderPage() {
         return (build[part.category] as ComponentData)?.model === part.name;
     };
 
-    const handleAddPrebuilt = async (data: BuilderAdminAddPrebuiltFormSchema) => {
+    const handleAddPrebuilt = async (data: PrebuiltBuilderAddFormSchema) => {
         if (!firestore) return;
         try {
             await addPrebuiltSystem(firestore, data);
@@ -634,7 +634,7 @@ export default function AdminBuilderPage() {
 
     const isBuilderLoading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading || monitorsLoading || keyboardsLoading || miceLoading || headsetsLoading || authLoading;
 
-    if (authLoading || !profile?.isAdmin) {
+    if (authLoading || !profile?.isManager) {
         return (
             <div className="flex items-center justify-center min-h-[80vh]">
                 <Loader2 className="w-12 h-12 animate-spin text-primary" />
@@ -649,7 +649,7 @@ export default function AdminBuilderPage() {
                     <div className="flex items-center gap-3 mb-2">
                         <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 uppercase tracking-widest text-[10px] py-0.5">Admin Interface</Badge>
                     </div>
-                    <h1 className="text-4xl font-headline font-bold uppercase">Builder Admin</h1>
+                    <h1 className="text-4xl font-headline font-bold uppercase">Prebuilt Builder</h1>
                     <p className="text-muted-foreground mt-2">
                         Configure new pre-built systems for the catalog using current inventory.
                     </p>
@@ -729,7 +729,7 @@ export default function AdminBuilderPage() {
                                                 )}>
                                                     <TableCell className="font-medium">
                                                         <div className="flex items-center gap-3">
-                                                            <Image src={part.imageUrl} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
+                                                            <Image src={getOptimizedStorageUrl(part.imageUrl)} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
                                                             <div>
                                                                 <p className="font-semibold">{part.name}</p>
                                                                 <p className="text-xs text-muted-foreground">{part.brand}</p>
@@ -788,7 +788,7 @@ export default function AdminBuilderPage() {
                             workload={workload}
                             onWorkloadChange={setWorkload}
                             showSystemBalance={true}
-                            isAdminMode={true}
+                            isManagerMode={true}
                             allParts={allParts}
                             onAddPrebuilt={handleAddPrebuilt}
                         />

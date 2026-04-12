@@ -5,7 +5,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Package, PackageCheck, ServerCrash, Loader2, BarChart3, History, TrendingUp, DollarSign, Cpu, Monitor, CircuitBoard, MemoryStick, HardDrive, PlugZap, Square, Wind, Mouse, Headset, ChevronRight } from "lucide-react";
+import { Plus, Package, PackageCheck, ServerCrash, Loader2, BarChart3, History, TrendingUp, DollarSign, Cpu, Monitor, CircuitBoard, MemoryStick, HardDrive, PlugZap, Square, Wind, Mouse, Headset, ChevronRight, Settings } from "lucide-react";
 import { Order } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -23,10 +23,11 @@ import { collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { TableSkeleton } from '@/components/table-skeleton';
+import { SuperAdminSettings } from '@/components/super-admin-settings';
 import { useUserProfile } from '@/context/user-profile';
 import { useToast } from "@/hooks/use-toast";
-import { AdminPartCard } from '@/components/admin-part-card';
-import { AdminPrebuiltCard } from '@/components/admin-prebuilt-card';
+import { InventoryPartCard } from '@/components/inventory-part-card';
+import { InventoryPrebuiltCard } from '@/components/inventory-prebuilt-card';
 import { updateReservationStatus } from '@/app/checkout-actions';
 import { PaginationControls } from "@/components/pagination-controls";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -66,7 +67,7 @@ export default function AdminPage() {
         if (!userLoading) {
             if (!authUser) {
                 router.replace('/signin');
-            } else if (!profile?.isAdmin) {
+            } else if (!profile?.isManager) {
                 router.replace('/builder');
             }
         }
@@ -329,7 +330,7 @@ export default function AdminPage() {
         }).format(amount);
     };
 
-    if (userLoading || !authUser || !profile?.isAdmin) {
+    if (userLoading || !authUser || !profile?.isManager) {
         return (
             <div className="flex items-center justify-center min-h-[80vh]">
                 <Loader2 className="w-12 h-12 animate-spin text-primary" />
@@ -339,6 +340,16 @@ export default function AdminPage() {
 
     return (
         <div className="container mx-auto p-4 md:p-8">
+            <div className="mb-8">
+                <h1 className="text-4xl font-headline font-bold uppercase tracking-tight text-foreground">
+                    {profile?.isSuperAdmin ? "Super Admin" : "Manager"} Dashboard
+                </h1>
+                <p className="text-muted-foreground mt-2">
+                    {profile?.isSuperAdmin 
+                        ? "Master control for system configurations, inventory, and analytics." 
+                        : "Manage stock inventory, prebuilt systems, and track sales performance."}
+                </p>
+            </div>
             <Tabs defaultValue="stock">
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
                     <TabsList>
@@ -359,6 +370,12 @@ export default function AdminPage() {
                                 </span>
                             )}
                         </TabsTrigger>
+                        {profile?.isSuperAdmin && (
+                            <TabsTrigger value="superadmin">
+                                <Settings className="mr-2 h-4 w-4" />
+                                Settings
+                            </TabsTrigger>
+                        )}
                     </TabsList>
                 </div>
                 <TabsContent value="stock">
@@ -407,7 +424,7 @@ export default function AdminPage() {
                                         <>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
                                                 {paginatedParts.map(part => (
-                                                    <AdminPartCard key={part.id} part={part} onDelete={handleDeletePart} onUpdateStock={handleUpdatePartStock} onUpdatePart={handleUpdatePart} />
+                                                    <InventoryPartCard key={part.id} part={part} onDelete={handleDeletePart} onUpdateStock={handleUpdatePartStock} onUpdatePart={handleUpdatePart} />
                                                 ))}
                                             </div>
                                             <PaginationControls
@@ -486,14 +503,14 @@ export default function AdminPage() {
                                         </>
                                     ) : (
                                         <>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6 items-start">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
                                                 {paginatedPrebuilts.map(system => (
-                                                    <AdminPrebuiltCard 
-                                                        key={system.id} 
-                                                        system={system} 
-                                                        parts={parts} 
-                                                        onDelete={handleDeletePrebuilt} 
-                                                        onUpdate={handleUpdatePrebuilt} 
+                                                    <InventoryPrebuiltCard
+                                                        key={system.id}
+                                                        system={system}
+                                                        parts={parts || []}
+                                                        onDelete={handleDeletePrebuilt}
+                                                        onUpdate={handleUpdatePrebuilt}
                                                         isExpanded={allPrebuiltsExpanded}
                                                         onToggleExpand={() => setAllPrebuiltsExpanded(!allPrebuiltsExpanded)}
                                                     />
@@ -718,6 +735,15 @@ export default function AdminPage() {
                         </div>
                     </div>
                 </TabsContent>
+                
+                {profile?.isSuperAdmin && (
+                    <TabsContent value="superadmin">
+                        <div className="mb-4">
+                            <h2 className="text-2xl font-headline font-bold">SUPER ADMIN SETTINGS</h2>
+                        </div>
+                        <SuperAdminSettings />
+                    </TabsContent>
+                )}
             </Tabs>
         </div>
     )

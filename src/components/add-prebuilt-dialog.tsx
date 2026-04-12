@@ -49,7 +49,7 @@ const formSchema = z.object({
     tier: z.string().min(1, "Please select a tier."),
     description: z.string().optional(),
     price: z.coerce.number().min(0, "Price must be a positive number."),
-    imageUrl: z.string().url("Must be a valid URL.").optional().or(z.literal("")),
+    imageUrl: z.string().optional().or(z.literal("")),
     cpu: z.string().optional(),
     gpu: z.string().optional(),
     motherboard: z.string().optional(),
@@ -329,12 +329,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                         fieldsUpdated.push("Tier");
                     }
 
-                    if (!form.getValues("imageUrl") && result.systemName) {
-                        const randomNum = Math.floor(Math.random() * 1000);
-                        const seed = result.systemName.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() + randomNum;
-                        form.setValue("imageUrl", `https://picsum.photos/seed/${seed}/800/600`, { shouldValidate: true, shouldDirty: true });
-                        fieldsUpdated.push("Image");
-                    }
+                    // Image is now handled via file upload, no auto-fill needed
                     
                     if (fieldsUpdated.length > 0) {
                         toast({ title: "AI Suggestions Applied", description: `Successfully filled: ${fieldsUpdated.join(", ")}.` });
@@ -474,12 +469,35 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                         )} />
 
                                         <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                                            <FormItem>
+                                            <FormItem className="col-span-1 md:col-span-2">
                                                 <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                                                    Image URL <span className="normal-case font-normal text-muted-foreground/50">(optional)</span>
+                                                    System Image <span className="normal-case font-normal text-muted-foreground/50">(Upload a File)</span>
                                                 </FormLabel>
                                                 <FormControl>
-                                                    <Input className="bg-muted/40 border-border/60 h-9" placeholder="https://..." {...field} />
+                                                    <div className="flex items-center gap-3">
+                                                      <Input 
+                                                        type="file" 
+                                                        accept="image/*" 
+                                                        className="bg-muted/40 border-border/60 h-10 file:mr-4 file:py-1 file:px-4 file:rounded-md file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer w-full text-foreground/70"
+                                                        onChange={(e) => {
+                                                          const file = e.target.files?.[0];
+                                                          if (file) {
+                                                            const reader = new FileReader();
+                                                            reader.onloadend = () => {
+                                                              field.onChange(reader.result as string);
+                                                            };
+                                                            reader.readAsDataURL(file);
+                                                          } else {
+                                                            field.onChange("");
+                                                          }
+                                                        }}
+                                                      />
+                                                      {(field.value && (field.value.startsWith('data:image') || field.value.startsWith('http'))) && (
+                                                        <div className="h-10 w-10 shrink-0 relative rounded-md border border-white/10 overflow-hidden bg-muted/60 flex items-center justify-center p-1">
+                                                            <img src={field.value} alt="Preview" className="max-w-full max-h-full object-contain" />
+                                                        </div>
+                                                      )}
+                                                    </div>
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>

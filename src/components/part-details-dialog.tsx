@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrency, formatToPHP } from "@/lib/utils";
+import { formatCurrency, formatToPHP, getOptimizedStorageUrl } from "@/lib/utils";
 import type { Part } from "@/lib/types";
 import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind, Monitor, Keyboard, Mouse, Headphones, Info, Plus, CheckCircle2 } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
@@ -50,9 +50,10 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
                     <div className="w-full md:w-[40%] flex flex-col bg-muted/30 relative">
                         <div className="flex-1 relative aspect-square md:aspect-auto">
                             <Image
-                                src={part.imageUrl || "/placeholder-part.png"}
+                                src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"}
                                 alt={part.name}
                                 fill
+                                unoptimized
                                 className="object-contain p-8"
                                 sizes="(max-width: 768px) 100vw, 40vw"
                             />
