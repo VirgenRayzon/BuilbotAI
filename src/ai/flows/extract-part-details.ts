@@ -77,38 +77,11 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
     logDebug("No grounded context found. Falling back to general AI knowledge.");
   }
 
-  const prompt = `You are an expert PC component database. Your task is to extract key details for a given PC part name.
-  
-${groundedContext ? `GROUNDING CONTEXT FROM EXPERT SOURCE:\n${groundedContext}\n\nUSE THE ABOVE DATA AS THE PRIMARY SOURCE OF TRUTH.` : "NO LOCAL DATA FOUND. You MUST use the 'googleSearch' tool to find accurate and up-to-date specifications and pricing for this part."}
-
-Given the part name, provide the full corrected part name, identify its category, brand, and a realistic estimate for its current retail price in Philippine Pesos (PHP). Base this on the component's actual MSRP or average street price in USD multiplied by 56. Identify the 'packageType' (TRAY or BOX) if it is a CPU. Generate a 'description' field containing brief product highlights in rich Markdown format. MANDATORY: Each highlight must be on its own NEW LINE starting with an asterisk (*). If you are unsure about any specification or the price, use the 'googleSearch' tool to verify.
-
-SPECIFICATION RULES (MANDATORY KEYS FOR 'specifications' ARRAY):
-The following keys MUST be used in the 'specifications' array for each category to ensure they appear in the UI:
-
-- **CPU**: 'Architecture' (e.g., "Zen 4"), 'Cores' (e.g., "8"), 'Threads' (e.g., "16"), 'Base Clock (GHz)' (e.g., "4.5 GHz"), 'Boost Clock (GHz)' (e.g., "5.4 GHz"), 'Socket' (e.g., "AM5"), 'TDP / Peak Power' (e.g., "105 W"), 'L3 Cache' (e.g., "32 MB"), 'Memory Support' (e.g., "DDR5"), 'Integrated Graphics' (e.g., "Yes" or "No").
-- **GPU**: 'Chipset' (e.g., "RTX 4070"), 'VRAM Capacity' (e.g., "12 GB"), 'Memory Type' (e.g., "GDDR6X"), 'TGP / Power Draw (W)' (e.g., "200 W"), 'Length (Depth) (mm)' (MUST be rounded UP to the nearest whole integer and formatted exactly as "X mm", e.g. "336 mm"), 'Slot Thickness' (MUST be rounded UP to the nearest whole integer and formatted exactly as "X slot", e.g. "2 slot"), 'Interface' (e.g., "PCIe 4.0 x16"), 'CUDA Cores' (e.g., "5888" for NVIDIA) or 'Stream Processors' (for AMD).
-- **Motherboard**: 'Chipset' (e.g., "B650"), 'Socket' (e.g., "AM5"), 'Form Factor' (e.g., "ATX"), 'RAM Type' (e.g., "DDR5"), 'M.2 Slots' (e.g., "3x Gen4"), 'Back-Connect Support' (e.g., "Yes" or "No"), 'Connectivity' (e.g., "Wi-Fi 6E, 2.5Gb Ethernet"), 'Memory Slots' (e.g., "4"), 'Memory Type' (e.g., "DDR5").
-- **RAM**: 'Generation' (e.g., "DDR5"), 'Capacity' (e.g., "32 GB"), 'Speed' (e.g., "6000 MT/s"), 'CAS Latency' (e.g., "CL30"), 'Stick Count' (e.g., "2").
-- **Storage**: 'Interface' (e.g., "NVMe M.2"), 'Capacity' (e.g., "1 TB"), 'Read Speed' (e.g., "7000 MB/s"), 'Write Speed' (e.g., "6500 MB/s"), 'TBW Rating' (e.g., "600 TBW"), 'Form Factor' (e.g., "M.2 2280"), 'Type' (e.g., "NVMe SSD").
-- **PSU**: 'Wattage (W)' (e.g., "850 W"), 'Efficiency Rating' (e.g., "80+ Gold"), 'Modularity' (e.g., "Fully Modular"), '12VHPWR Support' (e.g., "Native ATX 3.0 / ATX 3.1"), 'Form Factor' (e.g., "ATX / SFX").
-- **Case**: 'Max GPU Length' (e.g., "400 mm"), 'Max Cooler Height' (e.g., "170 mm"), 'Max Radiator Size (mm)' (e.g., "360"), 'Mobo Support' (e.g., "ATX, M-ATX, ITX"), 'Radiator Support' (e.g., "360mm Top, 240mm Front"), 'Back-Connect Cutout' (e.g., "Yes" or "No"), 'Type' (e.g., "ATX Mid Tower"), 'PSU Form Factor' (e.g., "ATX / SFX").
-- **Cooler**: 'TDP Rating' (e.g., "250 W"), 'Socket Support' (e.g., "AM4, AM5, LGA1700"), 'Height' (e.g., "165 mm"), 'Radiator Size' (e.g., "360 mm"), 'Type' (e.g., "Air" or "AIO Liquid").
-- **Monitor**: 'Screen Size' (e.g., "27 inch"), 'Resolution' (e.g., "2560 x 1440"), 'Refresh Rate' (e.g., "144 Hz"), 'Panel Type' (e.g., "IPS / VA / OLED"), 'Response Time' (e.g., "1ms GtG").
-- **Keyboard**: 'Type' (e.g., "Mechanical"), 'Switches' (e.g., "Cherry MX Red"), 'Layout' (e.g., "Full Size / TKL / 60%"), 'Backlighting' (e.g., "RGB").
-- **Mouse**: 'Sensor' (e.g., "Hero 25K"), 'DPI' (e.g., "25600"), 'Connectivity' (e.g., "Wireless"), 'Weight' (e.g., "63g").
-- **Headset**: 'Type' (e.g., "Over-Ear"), 'Connectivity' (e.g., "Wireless"), 'Driver Size' (e.g., "50mm"), 'Microphone' (e.g., "Detachable").
-
-ADDITIONAL FIELDS:
-- 'wattage': TDP for CPU/GPU, rated output for PSU (number).
-- 'performanceScore': 0-100 (e.g., i9-14900K = 98, RTX 4090 = 100).
-- 'dimensions': {width, height, depth} in mm. For GPUs, 'depth' is the length.
-
-Part Name: ${input.partName}`;
-
   try {
     // Stage 1: Intelligence & Research (Conditional Search)
     logDebug("Stage 1: Evaluating info and researching if needed...");
+    
+    // Determine if we need to research. If groundedContext is for the correct part, we might skip.
     const researcherPrompt = `You are an expert PC hardware researcher.
     
 GROUNDING CONTEXT FROM LOCAL DATABASE:
@@ -117,25 +90,26 @@ ${groundedContext || "NONE - Part not found in local database."}
 User is asking for details on: ${input.partName}
 
 LOGIC RULES:
-1. FIRST, check the GROUNDING CONTEXT above. If it is for the ${input.partName} and contains COMPLETE specifications (Brand, Category, Price, Wattage/TDP, Dimensions, and technical specs like Cores/Clock speeds), skip web search entirely.
-2. If the context is for the correct part but is missing specific fields (e.g. Dimensions or TDP is zero/null), use the 'googleSearch' tool ONLY to find those missing details.
-3. If the context is NONE or for the wrong part, use the 'googleSearch' tool to perform a full web search for the specs and current PHP price (MSRP/Street USD * 56).
-4. Be accurate. If you find data in the context, do not overwrite it with generic training data unless the web search finds newer/more accurate info.
+1. FIRST, check the GROUNDING CONTEXT above. If it is for the requested part (${input.partName}), summarize its details.
+2. If the context is NONE or for the wrong part, you MUST use the 'googleSearch' tool to find the accurate specs and current street price in USD.
+3. Be accurate. Do not use generic training data for specs if search/context provides specific numbers.
 
-Output your final gathered findings clearly in plain text for the formatter. Mention clearly if the data came from the Local DB or the Web.`;
+Output your final gathered findings clearly in plain text for the formatter.`;
+
+    const searchConfig = groundedContext ? {} : { googleSearchRetrieval: {} };
 
     const searchResponse = await ai.generate({
       prompt: researcherPrompt,
       config: {
-        temperature: 0, // Lower temperature for more deterministic logic evaluation
-        googleSearchRetrieval: {},
+        temperature: 0,
+        ...searchConfig
       },
     });
 
     const findings = searchResponse.text;
     logDebug(`Stage 1 findings: ${findings.substring(0, 150)}...`);
 
-    // Stage 2: Format findings into structured JSON (without tools to avoid schema conflicts)
+    // Stage 2: Format findings into structured JSON
     logDebug("Stage 2: Formatting findings into JSON...");
     const formatPrompt = `Convert the following PC hardware findings into a structured JSON object.
 
@@ -145,22 +119,22 @@ ${findings}
 Part Name Requested: ${input.partName}
 
 SPECIFICATION RULES (Ensure these keys appear in the JSON 'specifications' array):
-- **CPU**: 'Architecture' (e.g., "Zen 4"), 'Cores' (e.g., "8"), 'Threads' (e.g., "16"), 'Base Clock (GHz)' (e.g., "4.5 GHz"), 'Boost Clock (GHz)' (e.g., "5.4 GHz"), 'Socket' (e.g., "AM5"), 'TDP / Peak Power' (e.g., "105 W"), 'L3 Cache' (e.g., "32 MB"), 'Memory Support' (e.g., "DDR5"), 'Integrated Graphics' (e.g., "Yes" or "No").
-- **GPU**: 'Chipset' (e.g., "RTX 4070"), 'VRAM Capacity' (e.g., "12 GB"), 'Memory Type' (e.g., "GDDR6X"), 'TGP / Power Draw (W)' (e.g., "200 W"), 'Length (Depth) (mm)' (Integer only), 'Slot Thickness' (Round UP to nearest whole number and format exactly as "X slot", e.g., "4 slot"), 'Interface' (e.g., "PCIe 4.0 x16"), 'CUDA Cores' (e.g., "5888" for NVIDIA) or 'Stream Processors' (for AMD).
-- **Motherboard**: 'Chipset' (e.g., "B650"), 'Socket' (e.g., "AM5"), 'Form Factor' (e.g., "ATX"), 'RAM Type' (e.g., "DDR5"), 'M.2 Slots' (e.g., "3x Gen4"), 'Back-Connect Support' (e.g., "Yes" or "No"), 'Connectivity' (e.g., "Wi-Fi 6E, 2.5Gb Ethernet"), 'Memory Slots' (e.g., "4"), 'Memory Type' (e.g., "DDR5").
-- **RAM**: 'Generation' (e.g., "DDR5"), 'Capacity' (e.g., "32 GB"), 'Speed' (e.g., "6000 MT/s"), 'CAS Latency' (e.g., "CL30"), 'Stick Count' (e.g., "2").
-- **Storage**: 'Interface' (e.g., "NVMe M.2"), 'Capacity' (e.g., "1 TB"), 'Read Speed' (e.g., "7000 MB/s"), 'Write Speed' (e.g., "6500 MB/s"), 'TBW Rating' (e.g., "600 TBW"), 'Form Factor' (e.g., "M.2 2280"), 'Type' (e.g., "NVMe SSD").
-- **PSU**: 'Wattage (W)' (e.g., "850 W"), 'Efficiency Rating' (e.g., "80+ Gold"), 'Modularity' (e.g., "Fully Modular"), '12VHPWR Support' (e.g., "Native ATX 3.0 / ATX 3.1"), 'Form Factor' (e.g., "ATX / SFX").
-- **Case**: 'Max GPU Length' (e.g., "400 mm"), 'Max Cooler Height' (e.g., "170 mm"), 'Max Radiator Size (mm)' (e.g., "360"), 'Mobo Support' (e.g., "ATX, M-ATX, ITX"), 'Radiator Support' (e.g., "360mm Top"), 'Back-Connect Cutout' (e.g., "Yes" or "No"), 'Type' (e.g., "ATX Mid Tower"), 'PSU Form Factor' (e.g., "ATX").
-- **Cooler**: 'TDP Rating' (e.g., "250 W"), 'Socket Support' (e.g., "AM4, AM5, LGA1700"), 'Height' (e.g., "165 mm"), 'Radiator Size' (e.g., "360 mm"), 'Type' (e.g., "Air" or "AIO Liquid").
+- **CPU**: 'Architecture', 'Cores', 'Threads', 'Base Clock (GHz)', 'Boost Clock (GHz)', 'Socket', 'TDP / Peak Power', 'L3 Cache', 'Memory Support', 'Integrated Graphics'.
+- **GPU**: 'Chipset', 'VRAM Capacity', 'Memory Type', 'TGP / Power Draw (W)', 'Length (Depth) (mm)' (Integer), 'Slot Thickness' (e.g. "4 slot"), 'Interface', 'CUDA Cores' or 'Stream Processors'.
+- **Motherboard**: 'Chipset', 'Socket', 'Form Factor', 'RAM Type', 'M.2 Slots', 'Back-Connect Support', 'Connectivity', 'Memory Slots', 'Memory Type'.
+- **RAM**: 'Generation', 'Capacity', 'Speed', 'CAS Latency', 'Stick Count'.
+- **Storage**: 'Interface', 'Capacity', 'Read Speed', 'Write Speed', 'TBW Rating', 'Form Factor', 'Type'.
+- **PSU**: 'Wattage (W)', 'Efficiency Rating', 'Modularity', '12VHPWR Support', 'Form Factor'.
+- **Case**: 'Max GPU Length', 'Max Cooler Height', 'Max Radiator Size (mm)', 'Mobo Support', 'Radiator Support', 'Back-Connect Cutout', 'Type', 'PSU Form Factor'.
+- **Cooler**: 'TDP Rating', 'Socket Support', 'Height', 'Radiator Size', 'Type'.
 
 ADDITIONAL FIELDS:
-- 'wattage': TDP for CPU/GPU, rated output for PSU (number).
+- 'wattage': number.
 - 'performanceScore': 0-100.
 - 'dimensions': {width, height, depth} in mm. For GPUs, 'depth' is the length.
-- 'price': number in PHP.
+- 'price': number in PHP (USD * 56).
 - 'packageType': 'TRAY' or 'BOX' (for CPUs only).
-- 'description': brief product highlights in Markdown. IMPORTANT: Use one bullet point per line (e.g., * **Title**: Detail).
+- 'description': brief product highlights in Markdown.
 
 Output ONLY the JSON object.`;
 

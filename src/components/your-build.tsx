@@ -334,7 +334,7 @@ export function YourBuild({
     };
 
     return (
-        <Card className={`h-full flex flex-col border-primary/20 shadow-[0_0_40px_rgba(34,211,238,0.05)] overflow-hidden bg-background/40 backdrop-blur-2xl ring-1 ring-white/5 relative ${className || ""}`}>
+        <Card className={`flex flex-col border-primary/20 shadow-[0_0_40px_rgba(34,211,238,0.05)] overflow-hidden bg-background/40 backdrop-blur-2xl ring-1 ring-white/5 relative ${className || ""}`}>
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
             <CardHeader className="flex flex-row items-center justify-between py-5 bg-white/5 border-b border-white/5 flex-none">
                 <CardTitle className="font-headline text-xl font-bold tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">Your Build</CardTitle>
@@ -342,8 +342,8 @@ export function YourBuild({
                     <Badge variant="secondary" className="font-mono text-[10px] px-2 py-0.5 whitespace-nowrap bg-primary/20 text-primary border-primary/30">{selectedParts}/{totalParts} PARTS</Badge>
                 </div>
             </CardHeader>
-            <CardContent className="px-5 py-4 flex-1 flex flex-col min-h-0">
-                <ScrollArea className="flex-1 pr-4 -mr-4">
+            <CardContent className="px-5 py-4 flex flex-col">
+                <div className="flex-1 pr-4">
                     <div className="space-y-3 py-1">
                         {/* Internal Parts Section */}
                         {['Case', 'Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'].map((name) => {
@@ -380,7 +380,7 @@ export function YourBuild({
                                                 <p className="text-xs font-bold text-primary uppercase tracking-wider leading-none mb-1">
                                                     {(name === 'Storage' || name === 'RAM') && components.length > 1 ? `${name} ${idx + 1}` : name}
                                                 </p>
-                                                <p className="text-sm font-semibold truncate leading-tight tracking-tight">{c.model}</p>
+                                                <p className="text-sm font-semibold truncate leading-tight tracking-tight">{(c as any).name || c.model}</p>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 {typeof c.wattage === 'number' && (
@@ -443,7 +443,7 @@ export function YourBuild({
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-xs font-bold text-primary/80 uppercase tracking-wider leading-none mb-1">{name}</p>
-                                        <p className="text-sm font-semibold truncate leading-tight tracking-tight">{c.model}</p>
+                                        <p className="text-sm font-semibold truncate leading-tight tracking-tight">{(c as any).name || c.model}</p>
                                     </div>
                                     <Button
                                         variant="ghost"
@@ -457,7 +457,7 @@ export function YourBuild({
                             );
                         })}
                     </div>
-                </ScrollArea>
+                </div>
 
                 <div className="pt-4 flex-none">
                     <Separator className="mb-3 opacity-50" />
@@ -569,7 +569,7 @@ export function YourBuild({
                                                 const components = Array.isArray(val) ? val : (val ? [val] : []);
                                                 return components.map((c, idx) => (
                                                     <div key={`${category}-${idx}`} className="flex justify-between text-sm">
-                                                        <span className="text-muted-foreground">{category}: {c.model}</span>
+                                                        <span className="text-muted-foreground">{category}: {(c as any).name || c.model}</span>
                                                         <span className="font-medium">{formatCurrency(c.price)}</span>
                                                     </div>
                                                 ));

@@ -2,10 +2,10 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Package, PackageCheck, ServerCrash, Loader2, BarChart3, History, TrendingUp, DollarSign, Cpu, Monitor, CircuitBoard, MemoryStick, HardDrive, PlugZap, Square, Wind, Mouse, Headset, ChevronRight, Settings } from "lucide-react";
+import { Plus, Package, PackageCheck, ServerCrash, Loader2, BarChart3, History, TrendingUp, DollarSign, Cpu, Monitor, CircuitBoard, MemoryStick, HardDrive, PlugZap, Square, Wind, Mouse, Headset, ChevronRight, Settings, Trash2, ChevronDown } from "lucide-react";
 import { Order } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -19,7 +19,7 @@ import { InventoryTable } from '@/components/inventory-table';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { addPart, deletePart, addPrebuiltSystem, deletePrebuiltSystem, updatePart, updatePrebuiltSystem } from '@/firebase/database';
-import { collection } from 'firebase/firestore';
+import { collection, deleteDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { TableSkeleton } from '@/components/table-skeleton';
@@ -93,6 +93,19 @@ export default function AdminPage() {
     const [orderCurrentPage, setOrderCurrentPage] = useState(1);
     const [orderItemsPerPage, setOrderItemsPerPage] = useState(5);
     const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+
+    const searchParams = useSearchParams();
+    const [currentTab, setCurrentTab] = useState(searchParams.get('tab') || 'stock');
+
+    useEffect(() => {
+        const tab = searchParams.get('tab');
+        if (tab) setCurrentTab(tab);
+    }, [searchParams]);
+
+    const handleTabChange = (val: string) => {
+        setCurrentTab(val);
+        router.push(`/admin?tab=${val}`, { scroll: false });
+    };
 
     // Fetch each category collection
     const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
@@ -218,9 +231,6 @@ export default function AdminPage() {
 
     const handleUpdatePrebuilt = async (systemId: string, data: AddPrebuiltFormSchema) => {
         if (!firestore) return;
-        // In a real app we might want a specific updatePrebuiltSystem function
-        // for now we can use the existing update logic if available or implement it
-        // and add it to firestore-utils
         await updatePrebuiltSystem(firestore, systemId, data);
     };
 
@@ -229,7 +239,27 @@ export default function AdminPage() {
         await deletePrebuiltSystem(firestore, systemId);
     };
 
-    const handleUpdateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
+    const handleDeleteOrder = async (orderId: string) => {
+        if (!firestore) return;
+        if (!window.confirm("Are you sure you want to delete this reservation? This cannot be undone.")) return;
+
+        try {
+            await deleteDoc(doc(firestore, "orders", orderId));
+            toast({
+                title: "Reservation Deleted",
+                description: "The reservation has been permanently removed.",
+            });
+        } catch (error) {
+            console.error("Error deleting order:", error);
+            toast({
+                title: "Error",
+                description: "Failed to delete the reservation.",
+                variant: "destructive"
+            });
+        }
+    };
+
+    const handleUpdateOrder = async (orderId: string, newStatus: Order['status']) => {
         if (!firestore) return;
         try {
             const result = await updateReservationStatus(orderId, newStatus);
@@ -317,18 +347,10 @@ export default function AdminPage() {
         const totalOrders = orders?.filter(o => o.status !== 'cancelled').length || 0;
         const pendingOrdersCount = orders?.filter(o => o.status === 'pending').length || 0;
 
-        // Calculate popular items from parts (assuming popularity field is updated on checkout)
         const popularItems = [...parts].sort((a, b) => ((b as any).popularity || 0) - ((a as any).popularity || 0)).slice(0, 5);
 
         return { totalSales, totalOrders, popularItems, pendingOrdersCount };
     }, [orders, parts]);
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-PH', {
-            style: 'currency',
-            currency: 'PHP',
-        }).format(amount);
-    };
 
     if (userLoading || !authUser || !profile?.isManager) {
         return (
@@ -350,7 +372,7 @@ export default function AdminPage() {
                         : "Manage stock inventory, prebuilt systems, and track sales performance."}
                 </p>
             </div>
-            <Tabs defaultValue="stock">
+            <Tabs value={currentTab} onValueChange={handleTabChange}>
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
                     <TabsList>
                         <TabsTrigger value="stock">
@@ -361,9 +383,9 @@ export default function AdminPage() {
                             <PackageCheck className="mr-2 h-4 w-4" />
                             Manage Prebuilts
                         </TabsTrigger>
-                        <TabsTrigger value="analytics" className="relative">
-                            <BarChart3 className="mr-2 h-4 w-4" />
-                            Sales & Reservations
+                        <TabsTrigger value="reservations" className="relative">
+                            <History className="mr-2 h-4 w-4" />
+                            Reservations
                             {stats.pendingOrdersCount > 0 && (
                                 <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground animate-bounce">
                                     {stats.pendingOrdersCount}
@@ -371,9 +393,9 @@ export default function AdminPage() {
                             )}
                         </TabsTrigger>
                         {profile?.isSuperAdmin && (
-                            <TabsTrigger value="superadmin">
-                                <Settings className="mr-2 h-4 w-4" />
-                                Settings
+                            <TabsTrigger value="sales">
+                                <BarChart3 className="mr-2 h-4 w-4" />
+                                Sales
                             </TabsTrigger>
                         )}
                     </TabsList>
@@ -548,55 +570,13 @@ export default function AdminPage() {
                         )}
                     </div>
                 </TabsContent>
-                <TabsContent value="analytics">
+                <TabsContent value="reservations">
                     <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <Card>
-                                <CardContent className="pt-6">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-sm font-medium text-muted-foreground">Total Sales</p>
-                                            <h3 className="text-2xl font-bold">{formatCurrency(stats.totalSales)}</h3>
-                                        </div>
-                                        <div className="p-3 bg-emerald-500/10 rounded-full">
-                                            <DollarSign className="w-6 h-6 text-emerald-500" />
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardContent className="pt-6">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
-                                            <h3 className="text-2xl font-bold">{stats.totalOrders}</h3>
-                                        </div>
-                                        <div className="p-3 bg-blue-500/10 rounded-full">
-                                            <History className="w-6 h-6 text-blue-500" />
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardContent className="pt-6">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-sm font-medium text-muted-foreground">Top Item Popularity</p>
-                                            <h3 className="text-2xl font-bold">{(stats.popularItems[0] as any)?.popularity || 0}</h3>
-                                        </div>
-                                        <div className="p-3 bg-orange-500/10 rounded-full">
-                                            <TrendingUp className="w-6 h-6 text-orange-500" />
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-2">
-                                <h3 className="text-xl font-headline font-bold mb-4 flex items-center gap-2">
-                                    <History className="h-5 w-5" /> Build Reservations
-                                </h3>
+                        <div className="grid grid-cols-1 gap-8">
+                            <div>
+                                <h2 className="text-2xl font-headline font-bold mb-4 flex items-center gap-2 uppercase">
+                                    <Package className="h-6 w-6 text-primary" /> Current Reservations
+                                </h2>
                                 <Card>
                                     <CardContent className="p-0">
                                         {ordersLoading ? <TableSkeleton columns={3} /> : (
@@ -614,17 +594,16 @@ export default function AdminPage() {
                                                                     order.status === 'cancelled' && "opacity-60 grayscale-[0.5]"
                                                                 )}
                                                             >
-                                                                {/* Collapsible Header */}
                                                                 <div 
                                                                     className={cn(
                                                                         "p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-muted/20 transition-colors",
-                                                                        expandedOrderId === order.id ? "bg-muted/10" : ""
+                                                                        expandedOrderId === order.id && "bg-muted/30 pb-3"
                                                                     )}
                                                                     onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
                                                                 >
-                                                                    <div className="flex-1 flex items-start gap-3">
-                                                                        <div className={cn("mt-1 transition-transform duration-200", expandedOrderId === order.id ? "rotate-90" : "")}>
-                                                                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                                                    <div className="flex items-center gap-4">
+                                                                        <div className="p-2.5 rounded-xl bg-muted/50 border border-white/5 shadow-sm">
+                                                                            <Package className="h-4 w-4 text-muted-foreground" />
                                                                         </div>
                                                                         <div>
                                                                             <div className="flex items-center gap-2 mb-1.5">
@@ -643,7 +622,7 @@ export default function AdminPage() {
                                                                         </div>
                                                                         <Select
                                                                             defaultValue={order.status || 'pending'}
-                                                                            onValueChange={(val) => handleUpdateOrderStatus(order.id, val as Order['status'])}
+                                                                            onValueChange={(val) => handleUpdateOrder(order.id, val as Order['status'])}
                                                                         >
                                                                             <SelectTrigger className={cn(
                                                                                 "w-[140px] h-9 text-[10px] font-bold uppercase tracking-wider",
@@ -659,10 +638,15 @@ export default function AdminPage() {
                                                                                 <SelectItem value="cancelled" className="text-destructive font-bold bg-destructive/5">Cancelled</SelectItem>
                                                                             </SelectContent>
                                                                         </Select>
+                                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteOrder(order.id)}>
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </Button>
+                                                                        <Button variant="ghost" size="icon" className={cn("h-8 w-8 transition-transform", expandedOrderId === order.id && "rotate-180")}>
+                                                                            <ChevronRight className="h-4 w-4" />
+                                                                        </Button>
                                                                     </div>
                                                                 </div>
                                                                 
-                                                                {/* Items Detail Section - Animated/Collapsible */}
                                                                 {expandedOrderId === order.id && (
                                                                     <div className="px-5 pb-5 pt-0 animate-in fade-in slide-in-from-top-2 duration-300">
                                                                         <div className="grid grid-cols-1 gap-1.5 bg-background/40 rounded-xl p-4 border border-white/5 shadow-inner">
@@ -702,46 +686,87 @@ export default function AdminPage() {
                                     </CardContent>
                                 </Card>
                             </div>
+                        </div>
+                    </div>
+                </TabsContent>
 
-                            <div className="lg:col-span-1">
-                                <h3 className="text-xl font-headline font-bold mb-4 flex items-center gap-2">
-                                    <TrendingUp className="h-5 w-5" /> Popular Items
-                                </h3>
+                {profile?.isSuperAdmin && (
+                    <TabsContent value="sales">
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 <Card>
-                                    <CardContent className="p-0">
-                                        <div className="divide-y border border-white/5 rounded-md overflow-hidden">
-                                            {stats.popularItems.slice(0, 5).map((item, index) => (
-                                                <div key={item.id} className="p-3 flex items-center gap-3 hover:bg-muted/10 transition-colors">
-                                                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center font-bold text-[10px] text-primary shrink-0 border border-primary/20">
-                                                        {index + 1}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="font-medium text-[13px] truncate leading-tight">{item.name}</p>
-                                                        <p className="text-[9px] text-muted-foreground uppercase opacity-70 tracking-tight">{item.category}</p>
-                                                    </div>
-                                                    <div className="text-right shrink-0">
-                                                        <p className="font-bold">{(item as any).popularity || 0}</p>
-                                                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Purchases</p>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            {stats.popularItems.length === 0 && (
-                                                <div className="p-8 text-center text-muted-foreground">No purchase data yet.</div>
-                                            )}
+                                    <CardContent className="pt-6">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm font-medium text-muted-foreground">Total Sales</p>
+                                                <h3 className="text-2xl font-bold">{formatCurrency(stats.totalSales)}</h3>
+                                            </div>
+                                            <div className="p-3 bg-emerald-500/10 rounded-full">
+                                                <DollarSign className="w-6 h-6 text-emerald-500" />
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
+                                                <h3 className="text-2xl font-bold">{stats.totalOrders}</h3>
+                                            </div>
+                                            <div className="p-3 bg-blue-500/10 rounded-full">
+                                                <History className="w-6 h-6 text-blue-500" />
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm font-medium text-muted-foreground">Top Item Popularity</p>
+                                                <h3 className="text-2xl font-bold">{(stats.popularItems[0] as any)?.popularity || 0}</h3>
+                                            </div>
+                                            <div className="p-3 bg-orange-500/10 rounded-full">
+                                                <TrendingUp className="w-6 h-6 text-orange-500" />
+                                            </div>
                                         </div>
                                     </CardContent>
                                 </Card>
                             </div>
+
+                            <div className="grid grid-cols-1 gap-8">
+                                <div>
+                                    <h3 className="text-xl font-headline font-bold mb-4 flex items-center gap-2">
+                                        <TrendingUp className="h-5 w-5" /> Most Popular Components
+                                    </h3>
+                                    <Card>
+                                        <CardContent className="p-0">
+                                            <div className="divide-y border border-white/5 rounded-md overflow-hidden">
+                                                {stats.popularItems.slice(0, 5).map((item, index) => (
+                                                    <div key={item.id} className="p-3 flex items-center gap-3 hover:bg-muted/10 transition-colors">
+                                                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center font-bold text-[10px] text-primary shrink-0 border border-primary/20">
+                                                            {index + 1}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-medium text-[13px] truncate leading-tight">{item.name}</p>
+                                                            <p className="text-[9px] text-muted-foreground uppercase opacity-70 tracking-tight">{item.category}</p>
+                                                        </div>
+                                                        <div className="text-right shrink-0">
+                                                            <p className="font-bold">{(item as any).popularity || 0}</p>
+                                                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Purchases</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {stats.popularItems.length === 0 && (
+                                                    <div className="p-8 text-center text-muted-foreground">No purchase data yet.</div>
+                                                )}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </TabsContent>
-                
-                {profile?.isSuperAdmin && (
-                    <TabsContent value="superadmin">
-                        <div className="mb-4">
-                            <h2 className="text-2xl font-headline font-bold">SUPER ADMIN SETTINGS</h2>
-                        </div>
-                        <SuperAdminSettings />
                     </TabsContent>
                 )}
             </Tabs>

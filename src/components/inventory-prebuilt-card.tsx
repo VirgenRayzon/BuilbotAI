@@ -170,7 +170,7 @@ export function InventoryPrebuiltCard({ system, parts, onDelete, onUpdate, isExp
                         onClick={(e) => e.stopPropagation()}
                         asChild
                     >
-                        <a href={`/pre-builts/`} className="flex items-center justify-center">
+                        <a href={`/pre-builts/${system.id}`} className="flex items-center justify-center">
                             <Info className="mr-2 h-3.5 w-3.5 transition-transform group-hover:scale-110" />
                             Launch Product Page
                             <ChevronRight className="ml-2 h-3 w-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />

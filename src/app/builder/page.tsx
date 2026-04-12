@@ -44,6 +44,7 @@ import { BuilderFloatingChat } from "@/components/builder-floating-chat";
 import { FloatingInsights } from "@/components/floating-insights";
 import { LayoutPanelLeft } from "lucide-react";
 import type { Resolution, WorkloadType } from "@/lib/types";
+import { checkCompatibility } from "@/lib/compatibility";
 
 type PartWithoutCategory = Omit<Part, 'category'>;
 
@@ -135,7 +136,13 @@ export default function BuilderPage() {
 
   // Handle AI suggestions from window-level
   useEffect(() => {
-    const findPartRobustly = (suggestion: string) => {
+    const findPartRobustly = (suggestion: string, partId?: string) => {
+      // 0. ID Match (Highest Priority)
+      if (partId) {
+        const part = allParts.find(p => p.id === partId);
+        if (part) return part;
+      }
+
       // 1. Exact Match
       let part = allParts.find(p => p.name.toLowerCase() === suggestion.toLowerCase());
       if (part) return part;
@@ -173,7 +180,8 @@ export default function BuilderPage() {
 
     const handleAddSuggestion = (e: any) => {
       const modelName = e.detail.model;
-      const part = findPartRobustly(modelName);
+      const partId = e.detail.id;
+      const part = findPartRobustly(modelName, partId);
       if (part) {
         handlePartToggle(part);
       } else {
@@ -185,8 +193,8 @@ export default function BuilderPage() {
       }
     };
 
-    (window as any).__BOT_ADD_PART__ = (modelName: string) => {
-      const part = findPartRobustly(modelName);
+    (window as any).__BOT_ADD_PART__ = (modelName: string, partId?: string) => {
+      const part = findPartRobustly(modelName, partId);
       if (part) handlePartToggle(part);
     };
 
@@ -221,43 +229,47 @@ export default function BuilderPage() {
   };
 
   const handleRemovePart = (category: string, index?: number) => {
-    setBuild(prev => {
-      const next = { ...prev };
-      if ((category === 'Storage' || category === 'RAM') && typeof index === 'number') {
-        const currentItems = [...(next[category] as ComponentData[])];
-        currentItems.splice(index, 1);
-        next[category] = currentItems;
-      } else {
-        next[category] = null;
+    let next = { ...build };
+    let toastMsg: { title: string; description: string } | null = null;
 
-        // CASCADING REMOVAL LOGIC
-        if (category === 'Case') {
-          // Remove Motherboard and everything else
-          Object.keys(next).forEach(key => {
+    if ((category === 'Storage' || category === 'RAM') && typeof index === 'number') {
+      const currentItems = [...(next[category] as ComponentData[])];
+      currentItems.splice(index, 1);
+      next[category] = currentItems;
+    } else {
+      next[category] = null;
+
+      // CASCADING REMOVAL LOGIC
+      if (category === 'Case') {
+        // Remove Motherboard and everything else
+        Object.keys(next).forEach(key => {
+          if (key === 'RAM' || key === 'Storage') next[key] = [];
+          else next[key] = null;
+        });
+        toastMsg = { title: 'Build Reset', description: 'Removing the case removes all other components.' };
+      } else if (category === 'Motherboard') {
+        // Remove everything except Case
+        Object.keys(next).forEach(key => {
+          if (key !== 'Case') {
             if (key === 'RAM' || key === 'Storage') next[key] = [];
             else next[key] = null;
-          });
-          toast({ title: 'Build Reset', description: 'Removing the case removes all other components.' });
-        } else if (category === 'Motherboard') {
-          // Remove everything except Case
-          Object.keys(next).forEach(key => {
-            if (key !== 'Case') {
-              if (key === 'RAM' || key === 'Storage') next[key] = [];
-              else next[key] = null;
-            }
-          });
-          toast({ title: 'Components Removed', description: 'Changing or removing the motherboard removes all dependent parts.' });
-        }
-
-        // Auto-remove stock cooler if CPU is removed (kept for specific logic)
-        const currentCooler = next['Cooler'] as ComponentData | null;
-        if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
-          next['Cooler'] = null;
-          toast({ title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' });
-        }
+          }
+        });
+        toastMsg = { title: 'Components Removed', description: 'Changing or removing the motherboard removes all dependent parts.' };
       }
-      return next;
-    });
+
+      // Auto-remove stock cooler if CPU is removed
+      const currentCooler = next['Cooler'] as ComponentData | null;
+      if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
+        next['Cooler'] = null;
+        toastMsg = { title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' };
+      }
+    }
+
+    setBuild(next);
+    if (toastMsg) {
+      toast(toastMsg);
+    }
   };
 
   const [categories, setCategories] = useState(
@@ -331,6 +343,8 @@ export default function BuilderPage() {
 
   const handlePartToggle = (part: Part) => {
     const category = part.category;
+    let nextBuild = { ...build };
+    const toastsToShow: { title: string; description: string; variant?: "default" | "destructive" }[] = [];
 
     // SELECTION ORDER ENFORCEMENT
     if (category !== 'Case' && !build['Case']) {
@@ -355,19 +369,9 @@ export default function BuilderPage() {
       return;
     }
 
-    if (category === 'Storage' || category === 'RAM') {
-      const buildItems = Array.isArray(build[category]) ? (build[category] as ComponentData[]) : (build[category] ? [build[category] as ComponentData] : []);
-      const isCurrentlySelected = buildItems.some(c => c.id === part.id);
-      
-      if (isCurrentlySelected) {
-        // Find first occurrence and remove it (or remove all? User request says i can add multiple times)
-        // Usually, clicking "Added" button should remove one instance or toggle?
-        // Let's implement toggle for specific ID if we want, but for Storage/RAM it's better to allow multiple "Add"
-        // and have a dedicated "Remove" in the sidebar.
-        // However, the current UI uses PartCard which has an "Added" state.
-      }
+    const { compatible, message } = checkCompatibility(part, build);
 
-      const { compatible, message } = checkCompatibility(part, build);
+    if (category === 'Storage' || category === 'RAM') {
       if (!compatible) {
         toast({
           variant: 'destructive',
@@ -400,54 +404,47 @@ export default function BuilderPage() {
         dimensions: part.dimensions,
       };
 
-      setBuild(prevBuild => {
-        const currentItems = Array.isArray(prevBuild[category]) ? (prevBuild[category] as ComponentData[]) : (prevBuild[category] ? [prevBuild[category] as ComponentData] : []);
-        return {
-          ...prevBuild,
-          [category]: [...currentItems, componentData]
-        };
-      });
+      const currentItems = Array.isArray(nextBuild[category]) ? (nextBuild[category] as ComponentData[]) : (nextBuild[category] ? [nextBuild[category] as ComponentData] : []);
+      nextBuild[category] = [...currentItems, componentData];
+      
+      setBuild(nextBuild);
       toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
       return;
     }
 
-    const { compatible, message } = checkCompatibility(part, build);
     const isCurrentlySelected = (build[category] as ComponentData)?.model === part.name;
 
     if (isCurrentlySelected) {
       // Part is already selected, so remove it
-      setBuild(prevBuild => {
-        const nextBuild = { ...prevBuild, [category]: null };
+      nextBuild[category] = null;
 
-        // CASCADING REMOVAL ON TOGGLE OFF
-        if (category === 'Case') {
-          // Remove Motherboard and everything else
-          Object.keys(nextBuild).forEach(key => {
+      // CASCADING REMOVAL ON TOGGLE OFF
+      if (category === 'Case') {
+        // Remove Motherboard and everything else
+        Object.keys(nextBuild).forEach(key => {
+          if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
+          else nextBuild[key] = null;
+        });
+        toastsToShow.push({ title: 'Build Reset', description: 'Removing the case removes all other components.' });
+      } else if (category === 'Motherboard') {
+        // Remove everything except Case
+        Object.keys(nextBuild).forEach(key => {
+          if (key !== 'Case') {
             if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
             else nextBuild[key] = null;
-          });
-          toast({ title: 'Build Reset', description: 'Removing the case removes all other components.' });
-        } else if (category === 'Motherboard') {
-          // Remove everything except Case
-          Object.keys(nextBuild).forEach(key => {
-            if (key !== 'Case') {
-              if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
-              else nextBuild[key] = null;
-            }
-          });
-          toast({ title: 'Components Removed', description: 'Changing or removing the motherboard removes all dependent parts.' });
-        }
-        
-        // Auto-remove stock cooler if it was the included one for this CPU
-        const currentCooler = nextBuild['Cooler'] as ComponentData | null;
-        if (category === 'CPU' && part.packageType === 'BOX' && currentCooler?.id === 'included-stock-cooler') {
-          nextBuild['Cooler'] = null;
-          toast({ title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' });
-        }
-        
-        return nextBuild;
-      });
-      toast({ title: 'Part Removed', description: `${part.name} has been removed from your build.` });
+          }
+        });
+        toastsToShow.push({ title: 'Components Removed', description: 'Changing or removing the motherboard removes all dependent parts.' });
+      }
+      
+      // Auto-remove stock cooler if it was the included one for this CPU
+      const currentCooler = nextBuild['Cooler'] as ComponentData | null;
+      if (category === 'CPU' && part.packageType === 'BOX' && currentCooler?.id === 'included-stock-cooler') {
+        nextBuild['Cooler'] = null;
+        toastsToShow.push({ title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' });
+      }
+      
+      toastsToShow.push({ title: 'Part Removed', description: `${part.name} has been removed from your build.` });
     } else {
       if (!compatible) {
         toast({
@@ -482,249 +479,77 @@ export default function BuilderPage() {
         dimensions: part.dimensions,
       };
 
-      setBuild(prevBuild => {
-        const nextBuild = { ...prevBuild, [category]: componentData };
+      const prevBuildCopy = { ...nextBuild };
+      nextBuild[category] = componentData;
 
-        // CASCADING REMOVAL ON CHANGE
-        if (category === 'Case' && prevBuild['Case'] && prevBuild['Case'].id !== componentData.id) {
-          // If changing case, remove everything else
-          Object.keys(nextBuild).forEach(key => {
-            if (key !== 'Case') {
-              if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
-              else nextBuild[key] = null;
-            }
-          });
-          toast({ title: 'Build Updated', description: 'Changing the case removed dependent components.' });
-        } else if (category === 'Motherboard' && prevBuild['Motherboard'] && prevBuild['Motherboard'].id !== componentData.id) {
-          // If changing motherboard, remove everything except Case
-          Object.keys(nextBuild).forEach(key => {
-            if (key !== 'Case' && key !== 'Motherboard') {
-              if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
-              else nextBuild[key] = null;
-            }
-          });
-          toast({ title: 'Build Updated', description: 'Changing the motherboard removed dependent components.' });
-        }
-        
-        // Auto-add or update cooler if CPU category
-        if (category === 'CPU') {
-          const currentCooler = nextBuild['Cooler'] as ComponentData | null;
-          if (part.packageType === 'BOX') {
-            // If no cooler or currently a stock cooler, set/update to correct variant
-            if (!currentCooler || currentCooler.id === 'included-stock-cooler') {
-              const isIntel = part.brand.toLowerCase().includes('intel');
-              const isAmd = part.brand.toLowerCase().includes('amd');
-              const coolerModel = isIntel 
-                ? "Intel Laminar RM1 CPU Cooler" 
-                : isAmd 
-                  ? "AMD Wraith MAX CPU Cooler" 
-                  : `Stock Cooler (Included with ${part.name})`;
-
-              if (currentCooler?.model !== coolerModel) {
-                nextBuild['Cooler'] = {
-                  id: 'included-stock-cooler',
-                  model: coolerModel,
-                  price: 0,
-                  description: `Standard retail cooling solution bundled with this ${part.brand} CPU.`,
-                  image: "https://picsum.photos/seed/stockcooler/800/600",
-                  imageHint: "included cooler",
-                  icon: Wind,
-                  wattage: 0,
-                  specifications: { "Type": "Air (Stock)" }
-                };
-                toast({ 
-                  title: 'Stock Cooler Sync', 
-                  description: `${coolerModel} has been ${currentCooler ? 'updated' : 'added'} for your ${part.brand} CPU.` 
-                });
-              }
-            }
-          } else if (part.packageType === 'TRAY' && currentCooler?.id === 'included-stock-cooler') {
-            // Remove stock cooler if switching to TRAY
-            nextBuild['Cooler'] = null;
-            toast({ title: 'Cooler Removed', description: 'Stock cooler removed as TRAY CPUs do not include one.' });
+      // CASCADING REMOVAL ON CHANGE
+      if (category === 'Case' && prevBuildCopy['Case'] && prevBuildCopy['Case'].id !== componentData.id) {
+        // If changing case, remove everything else
+        Object.keys(nextBuild).forEach(key => {
+          if (key !== 'Case') {
+            if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
+            else nextBuild[key] = null;
           }
+        });
+        toastsToShow.push({ title: 'Build Updated', description: 'Changing the case removed dependent components.' });
+      } else if (category === 'Motherboard' && prevBuildCopy['Motherboard'] && prevBuildCopy['Motherboard'].id !== componentData.id) {
+        // If changing motherboard, remove everything except Case
+        Object.keys(nextBuild).forEach(key => {
+          if (key !== 'Case' && key !== 'Motherboard') {
+            if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
+            else nextBuild[key] = null;
+          }
+        });
+        toastsToShow.push({ title: 'Build Updated', description: 'Changing the motherboard removed dependent components.' });
+      }
+      
+      // Auto-add or update cooler if CPU category
+      if (category === 'CPU') {
+        const currentCooler = nextBuild['Cooler'] as ComponentData | null;
+        if (part.packageType === 'BOX') {
+          // If no cooler or currently a stock cooler, set/update to correct variant
+          if (!currentCooler || currentCooler.id === 'included-stock-cooler') {
+            const isIntel = part.brand.toLowerCase().includes('intel');
+            const isAmd = part.brand.toLowerCase().includes('amd');
+            const coolerModel = isIntel 
+              ? "Intel Laminar RM1 CPU Cooler" 
+              : isAmd 
+                ? "AMD Wraith MAX CPU Cooler" 
+                : `Stock Cooler (Included with ${part.name})`;
+
+            if (currentCooler?.model !== coolerModel) {
+              nextBuild['Cooler'] = {
+                id: 'included-stock-cooler',
+                model: coolerModel,
+                price: 0,
+                description: `Standard retail cooling solution bundled with this ${part.brand} CPU.`,
+                image: "https://picsum.photos/seed/stockcooler/800/600",
+                imageHint: "included cooler",
+                icon: Wind,
+                wattage: 0,
+                specifications: { "Type": "Air (Stock)" }
+              };
+              toastsToShow.push({ 
+                title: 'Stock Cooler Sync', 
+                description: `${coolerModel} has been ${currentCooler ? 'updated' : 'added'} for your ${part.brand} CPU.` 
+              });
+            }
+          }
+        } else if (part.packageType === 'TRAY' && currentCooler?.id === 'included-stock-cooler') {
+          // Remove stock cooler if switching to TRAY
+          nextBuild['Cooler'] = null;
+          toastsToShow.push({ title: 'Cooler Removed', description: 'Stock cooler removed as TRAY CPUs do not include one.' });
         }
-        
-        return nextBuild;
-      });
-      toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
+      }
+      
+      toastsToShow.push({ title: 'Part Added', description: `${part.name} has been added to your build.` });
     }
+
+    setBuild(nextBuild);
+    toastsToShow.forEach(t => toast(t));
   };
 
-  const checkCompatibility = (part: Part, currentBuild: any) => {
-    const category = part.category;
 
-    // Accessories are always compatible
-    const accessoryCategories = ['Monitor', 'Keyboard', 'Mouse', 'Headset'];
-    if (accessoryCategories.includes(category)) {
-      return { compatible: true, message: '' };
-    }
-
-    const cpu = currentBuild['CPU'] as ComponentData | null;
-    const mobo = currentBuild['Motherboard'] as ComponentData | null;
-    const ramData = currentBuild['RAM'];
-    const currentRams = Array.isArray(ramData) ? ramData : (ramData ? [ramData as ComponentData] : []);
-
-    const normalize = (s?: string | null) => s?.toString().trim().toLowerCase() || '';
-
-    const partSocket = normalize(part.socket || part.specifications?.['Socket']?.toString() || part.specifications?.['socket']?.toString());
-    const partRamType = normalize(part.ramType || part.specifications?.['Memory Type']?.toString() || part.specifications?.['RAM Type']?.toString() || part.specifications?.['Memory']?.toString() || part.specifications?.['Generation']?.toString() || part.specifications?.['Type']?.toString());
-
-    if (category === 'CPU') {
-      if (mobo) {
-        const moboSocket = normalize(mobo.socket || mobo.specifications?.['Socket']?.toString());
-        if (partSocket && moboSocket && moboSocket !== partSocket) {
-          return { compatible: false, message: `This CPU uses ${partSocket.toUpperCase()} socket, but your motherboard is ${moboSocket.toUpperCase()}.` };
-        }
-      }
-    }
-
-    if (category === 'Motherboard') {
-      if (cpu) {
-        const cpuSocket = normalize(cpu.socket || cpu.specifications?.['Socket']?.toString());
-        if (partSocket && cpuSocket && cpuSocket !== partSocket) {
-          return { compatible: false, message: `This motherboard is ${partSocket.toUpperCase()}, but your CPU uses ${cpuSocket.toUpperCase()}.` };
-        }
-      }
-      if (currentRams.length > 0) {
-        for (const r of currentRams) {
-          const stickRamType = normalize(r.ramType || r.specifications?.['Memory Type']?.toString() || r.specifications?.['RAM Type']?.toString() || r.specifications?.['Memory']?.toString() || r.specifications?.['Generation']?.toString() || r.specifications?.['Type']?.toString());
-          if (partRamType && stickRamType) {
-            if (!partRamType.includes(stickRamType) && !stickRamType.includes(partRamType)) {
-              return { compatible: false, message: `This motherboard supports ${partRamType.toUpperCase()}, but your selected RAM (${r.model}) is ${stickRamType.toUpperCase()}.` };
-            }
-          }
-        }
-      }
-    }
-
-    if (category === 'RAM') {
-      if (mobo) {
-        const moboRamType = normalize(mobo.ramType || mobo.specifications?.['Memory Type']?.toString() || mobo.specifications?.['RAM Type']?.toString() || mobo.specifications?.['Memory']?.toString() || mobo.specifications?.['Generation']?.toString() || mobo.specifications?.['Type']?.toString());
-        if (moboRamType && partRamType) {
-          if (!moboRamType.includes(partRamType) && !partRamType.includes(moboRamType)) {
-            return { compatible: false, message: `Your motherboard supports ${moboRamType.toUpperCase()}, but this RAM is ${partRamType.toUpperCase()}.` };
-          }
-        }
-
-        // RAM Slot Check
-        const totalSlots = parseInt(mobo.specifications?.['Memory Slots']?.toString() || "4");
-        const usedSlots = currentRams.reduce((sum, r) => sum + parseInt(r.specifications?.['Stick Count']?.toString() || "1"), 0);
-        const partStickCount = parseInt(part.specifications?.['Stick Count']?.toString() || "1");
-
-        if (usedSlots + partStickCount > totalSlots) {
-          return { compatible: false, message: `ram slot is full` };
-        }
-      }
-    }
-
-    if (category === 'Cooler') {
-      const case_ = (currentBuild['Case'] as ComponentData | null);
-      if (case_) {
-        const coolerModel = part.name.toLowerCase();
-        const radiatorSizeRaw = part.specifications?.["Radiator Size"] || "";
-        const radiatorSize = parseInt(String(radiatorSizeRaw).match(/(\d+)/)?.[0] || "0");
-        const isAio = coolerModel.includes("aio") || coolerModel.includes("liquid") || radiatorSize > 0;
-
-        if (isAio && radiatorSize > 0) {
-          const caseMaxRadRaw = case_.specifications?.["Max Radiator Size (mm)"] || 0;
-          const caseMaxRad = typeof caseMaxRadRaw === 'string' ? parseFloat(caseMaxRadRaw) : caseMaxRadRaw;
-
-          if (caseMaxRad > 0 && radiatorSize > caseMaxRad) {
-            return { compatible: false, message: `Radiator Mismatch: This ${radiatorSize}mm cooler exceeds the max radiator size (${caseMaxRad}mm) for your selected case.` };
-          }
-        }
-      }
-    }
-
-    if (category === 'Case') {
-      const cooler = (currentBuild['Cooler'] as ComponentData | null);
-      if (cooler) {
-        const caseMaxRadRaw = part.specifications?.["Max Radiator Size (mm)"] || 0;
-        const caseMaxRad = typeof caseMaxRadRaw === 'string' ? parseFloat(caseMaxRadRaw) : caseMaxRadRaw;
-
-        const coolerModel = cooler.model.toLowerCase();
-        const radiatorSizeRaw = cooler.specifications?.["Radiator Size"] || "";
-        const radiatorSize = parseInt(String(radiatorSizeRaw).match(/(\d+)/)?.[0] || "0");
-        const isAio = coolerModel.includes("aio") || coolerModel.includes("liquid") || radiatorSize > 0;
-
-        if (isAio && radiatorSize > 0 && caseMaxRad > 0 && radiatorSize > caseMaxRad) {
-          return { compatible: false, message: `Case Incompatible: This case supports up to ${caseMaxRad}mm radiators, but your selected cooler is ${radiatorSize}mm.` };
-        }
-      }
-
-      const mobo = (currentBuild['Motherboard'] as ComponentData | null);
-      if (mobo) {
-        const moboFF = normalize(mobo.specifications?.["Form Factor"]?.toString());
-        const caseSupport = normalize(part.specifications?.["Mobo Support"]?.toString());
-        const caseType = normalize(part.specifications?.["Type"]?.toString());
-
-        if (moboFF && caseFFMatch(caseSupport, moboFF, caseType) === false) {
-          return { compatible: false, message: `Case Incompatible: This case supports up to ${caseSupport.toUpperCase() || 'smaller'} boards, but your motherboard is ${moboFF.toUpperCase()}.` };
-        }
-      }
-    }
-
-    if (category === 'Motherboard') {
-      const case_ = (currentBuild['Case'] as ComponentData | null);
-      if (case_) {
-        const moboFF = normalize(part.specifications?.["Form Factor"]?.toString());
-        const caseSupport = normalize(case_.specifications?.["Mobo Support"]?.toString());
-        const caseType = normalize(case_.specifications?.["Type"]?.toString());
-
-        if (moboFF && caseFFMatch(caseSupport, moboFF, caseType) === false) {
-          return { compatible: false, message: `Motherboard Mismatch: This ${moboFF.toUpperCase()} board is too large for your selected case (Supports: ${caseSupport.toUpperCase() || 'smaller'}).` };
-        }
-      }
-    }
-
-    return { compatible: true, message: '' };
-  };
-
-  const caseFFMatch = (caseSupport: string, moboFF: string, caseType: string = '') => {
-    if (!moboFF) return true;
-
-    const ffOrder: Record<string, number> = {
-      'E-ATX': 4, 'EATX': 4, 'EXTENDED ATX': 4,
-      'ATX': 3,
-      'M-ATX': 2, 'MATX': 2, 'MICRO-ATX': 2, 'MICRO ATX': 2,
-      'ITX': 1, 'MINI-ITX': 1, 'MINI ITX': 1
-    };
-
-    const targetSize = ffOrder[moboFF.toUpperCase()] || 0;
-    if (targetSize === 0) return true; // Unknown mobo format, skip
-
-    // Normalize support string into a set of clean tokens
-    // We split by non-alphanumeric characters but preserve hyphens for E-ATX, M-ATX etc.
-    const getTokens = (s: string) => {
-      return s.toUpperCase()
-        .replace(/MICRO-ATX/g, 'MATX')
-        .replace(/MICRO ATX/g, 'MATX')
-        .replace(/M-ATX/g, 'MATX')
-        .replace(/MINI-ITX/g, 'ITX')
-        .replace(/MINI ITX/g, 'ITX')
-        .split(/[\s,;|]+/)
-        .filter(Boolean);
-    };
-
-    const supportedTokens = getTokens(caseSupport);
-    const typeTokens = getTokens(caseType);
-    const allTokens = [...new Set([...supportedTokens, ...typeTokens])];
-
-    // Check for exact matches and calculate max supported size
-    let maxSupported = 0;
-    allTokens.forEach(token => {
-      const size = ffOrder[token] || 0;
-      if (size > maxSupported) maxSupported = size;
-    });
-
-    // If we couldn't find ANY recognized form factor in the case data, 
-    // we default to allowing it to avoid over-blocking unknown data,
-    // but if we HAVE recognized sizes, we enforce the limit.
-    if (maxSupported === 0) return true;
-
-    return maxSupported >= targetSize;
-  };
 
   const sortedAndFilteredParts = useMemo(() => {
     const selectedCategories = categories.filter(c => c.selected).map(c => c.name);

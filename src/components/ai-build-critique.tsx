@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,14 @@ const getPerformanceStyle = (fps: string) => {
     return { color: "bg-red-500", text: "text-red-500", percent: 15, label: "Low" };
 };
 
+const LOADING_STEPS = [
+    { title: "Reviewing Components", sub: "Checking build compatibility..." },
+    { title: "Performing Analysis", sub: "Identifying potential bottlenecks..." },
+    { title: "Grounding Knowledge", sub: "Searching for real-world benchmarks..." },
+    { title: "Evaluating Value", sub: "Analyzing performance-to-value ratio..." },
+    { title: "Finalizing Critique", sub: "Generating expert suggestions..." }
+];
+
 interface AIBuildCritiqueProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
     externalAnalysis?: any;
@@ -31,6 +39,20 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
     const [internalAnalysis, setInternalAnalysis] = useState<any>(null);
     const [internalLoading, setInternalLoading] = useState(false);
     const [internalError, setInternalError] = useState<string | null>(null);
+    const [loadingStep, setLoadingStep] = useState(0);
+
+    // Dynamic loading message logic
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (internalLoading || externalLoading) {
+            interval = setInterval(() => {
+                setLoadingStep((prev) => (prev + 1) % LOADING_STEPS.length);
+            }, 3000);
+        } else {
+            setLoadingStep(0);
+        }
+        return () => clearInterval(interval);
+    }, [internalLoading, externalLoading]);
 
     const isControlled = externalAnalysis !== undefined || externalLoading !== undefined || externalError !== undefined;
     const analysis = isControlled ? externalAnalysis : internalAnalysis;
@@ -39,16 +61,21 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
 
     const { toast } = useToast();
 
-    const handleApplySuggestion = (modelName: string) => {
+    const handleApplySuggestion = (modelName: string, partId?: string) => {
         const parentWindow = window as any;
         if (parentWindow.__BOT_ADD_PART__) {
-            parentWindow.__BOT_ADD_PART__(modelName);
+            parentWindow.__BOT_ADD_PART__(modelName, partId);
             toast({
                 title: "Finding part...",
                 description: `Searching for ${modelName} in inventory.`,
             });
         } else {
-            const event = new CustomEvent('add-suggestion', { detail: { model: modelName } });
+            const event = new CustomEvent('add-suggestion', { 
+                detail: { 
+                    model: modelName,
+                    id: partId
+                } 
+            });
             window.dispatchEvent(event);
             toast({
                 title: "Applying Suggestion",
@@ -138,11 +165,29 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                 )}
 
                 {loading && (
-                    <div className="flex flex-col items-center justify-center py-10 space-y-4">
-                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                        <div className="text-center space-y-1">
-                            <p className="text-sm font-semibold text-primary animate-pulse">Buildbot is Reviewing Your Components…</p>
-                            <p className="text-xs text-muted-foreground">Analyzing compatibility, performance, and value.</p>
+                    <div className="flex flex-col items-center justify-center py-10 space-y-6">
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse" />
+                            <Loader2 className="h-12 w-12 animate-spin text-primary relative z-10" />
+                        </div>
+                        <div className="text-center h-12 flex flex-col items-center justify-center overflow-hidden">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={loadingStep}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="space-y-1"
+                                >
+                                    <p className="text-sm font-black font-headline text-primary uppercase tracking-[0.2em]">
+                                        {LOADING_STEPS[loadingStep].title}…
+                                    </p>
+                                    <p className="text-[11px] text-muted-foreground font-medium tracking-wide">
+                                        {LOADING_STEPS[loadingStep].sub}
+                                    </p>
+                                </motion.div>
+                            </AnimatePresence>
                         </div>
                     </div>
                 )}
@@ -165,17 +210,17 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                                     <ThumbsUp className="h-5 w-5" /> Pros
                                 </h4>
                                 <ul className="space-y-2 text-sm">
-                                    {analysis.prosCons.pros.map((pro: string, idx: number) => (
+                                    {(analysis.pros || analysis.prosCons?.pros || []).map((pro: string, idx: number) => (
                                         <li key={idx} className="flex gap-2"><span className="text-green-500">•</span> {pro}</li>
                                     ))}
                                 </ul>
                             </div>
                             <div className="bg-red-500/10 rounded-lg p-4 border border-red-500/20">
                                 <h4 className="font-semibold text-red-600 dark:text-red-400 flex items-center gap-2 mb-3">
-                                    <ThumbsDown className="h-5 w-5" /> Cons
+                                    <ThumbsDown className="h-5 w-5" /> Optimization Opportunities
                                 </h4>
                                 <ul className="space-y-2 text-sm">
-                                    {analysis.prosCons.cons.map((con: string, idx: number) => (
+                                    {(analysis.cons || analysis.prosCons?.cons || []).map((con: string, idx: number) => (
                                         <li key={idx} className="flex gap-2"><span className="text-red-500">•</span> {con}</li>
                                     ))}
                                 </ul>
@@ -188,7 +233,7 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                                 <AlertTriangle className="h-5 w-5 text-yellow-500" /> Bottleneck Analysis
                             </h4>
                             <div className="text-sm text-muted-foreground leading-relaxed bg-muted/30 p-4 rounded-lg border prose prose-sm dark:prose-invert max-w-none">
-                                <ReactMarkdown>{analysis.bottleneckAnalysis}</ReactMarkdown>
+                                <ReactMarkdown>{analysis.bottleneck?.analysis || analysis.bottleneckAnalysis || ""}</ReactMarkdown>
                             </div>
                         </div>
 
@@ -198,47 +243,41 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                                 <MonitorPlay className="h-5 w-5 text-primary" /> Estimated Performance
                             </h4>
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                {analysis.fpsEstimates.map((group: any, idx: number) => (
-                                    <div key={idx} className="bg-card border rounded-xl overflow-hidden flex flex-col hover:border-primary/30 transition-all shadow-sm">
-                                        <div className="bg-muted/30 px-4 py-2 border-b flex items-center justify-between">
-                                            <p className="text-xs font-black uppercase tracking-widest text-foreground/80">{group.game}</p>
-                                            <Gamepad2 className="h-3 w-3 text-muted-foreground opacity-50" />
-                                        </div>
-                                        <div className="p-4 space-y-4 flex-1 flex flex-col">
-                                            <div className="space-y-4">
-                                                {(group.resolutions || []).map((est: any, rIdx: number) => {
-                                                    const perf = getPerformanceStyle(est.estimatedFps);
-                                                    return (
-                                                        <div key={rIdx} className="space-y-2 group/res">
-                                                            <div className="flex items-center justify-between">
-                                                                <Badge variant="secondary" className="text-[10px] font-bold px-2 py-0 h-5 border-primary/10">{est.resolution}</Badge>
-                                                                <div className="flex items-baseline gap-1">
-                                                                    <span className="text-lg font-black font-headline text-foreground">{est.estimatedFps}</span>
-                                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase">FPS</span>
-                                                                </div>
-                                                            </div>
+                                {analysis.fpsEstimates && Array.isArray(analysis.fpsEstimates) && analysis.fpsEstimates.map((est: any, idx: number) => {
+                                    if (!est.fps) return null; // Skip old format
+                                    const perf = getPerformanceStyle(est.fps);
+                                    return (
+                                        <div key={idx} className="bg-card border rounded-xl overflow-hidden flex flex-col hover:border-primary/30 transition-all shadow-sm">
+                                            <div className="bg-muted/30 px-4 py-2 border-b flex items-center justify-between">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-foreground/80">{est.game}</p>
+                                                <Gamepad2 className="h-3 w-3 text-muted-foreground opacity-50" />
+                                            </div>
+                                            <div className="p-4 space-y-3 flex-1 flex flex-col">
+                                                <div className="flex items-center justify-between">
+                                                    <Badge variant="secondary" className="text-[9px] font-bold px-1.5 py-0 h-4 border-primary/10">{est.settings}</Badge>
+                                                    <div className="flex items-baseline gap-1">
+                                                        <span className="text-xl font-black font-headline text-foreground">{est.fps}</span>
+                                                        <span className="text-[10px] font-bold text-muted-foreground uppercase">FPS</span>
+                                                    </div>
+                                                </div>
 
-                                                            <div className="space-y-1">
-                                                                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                                                                    <motion.div
-                                                                        initial={{ width: 0 }}
-                                                                        animate={{ width: `${perf.percent}%` }}
-                                                                        transition={{ duration: 1, ease: "easeOut", delay: 0.1 * rIdx }}
-                                                                        className={`h-full ${perf.color}`}
-                                                                    />
-                                                                </div>
-                                                                <div className="flex justify-between items-center opacity-80">
-                                                                    <span className={`text-[9px] font-bold uppercase tracking-tighter ${perf.text}`}>{perf.label}</span>
-                                                                    {est.details && <span className="text-[9px] italic line-clamp-1 max-w-[150px] text-muted-foreground">{est.details}</span>}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
+                                                <div className="space-y-1">
+                                                    <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                                        <motion.div
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${perf.percent}%` }}
+                                                            transition={{ duration: 1, ease: "easeOut", delay: 0.1 * idx }}
+                                                            className={`h-full ${perf.color}`}
+                                                        />
+                                                    </div>
+                                                    <div className="flex justify-between items-center opacity-80">
+                                                        <span className={`text-[9px] font-bold uppercase tracking-tighter ${perf.text}`}>{perf.label}</span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
 
@@ -253,7 +292,7 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                                         <div
                                             key={idx}
                                             className="bg-card border rounded-xl p-4 shadow-sm hover:border-primary/50 transition-all group flex flex-col gap-3 relative cursor-pointer active:scale-[0.98]"
-                                            onClick={() => handleApplySuggestion(sug.suggestedComponent)}
+                                            onClick={() => handleApplySuggestion(sug.suggestedComponent, sug.suggestedPartId)}
                                         >
                                             <div className="flex flex-wrap items-center gap-2 mb-1">
                                                 <span className="line-through text-muted-foreground text-xs">{sug.originalComponent}</span>

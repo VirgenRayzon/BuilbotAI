@@ -83,6 +83,7 @@ export type PrebuiltSystem = {
     case?: string;
     cooler?: string;
   };
+  aiReport?: any;
   createdAt?: any;
 };
 

@@ -3,10 +3,10 @@
 import { ai } from "@/ai/genkit";
 import { z } from "genkit";
 
-
 import { calculateBottleneck } from "@/lib/bottleneck";
-import { checkCompatibility } from "@/lib/compatibility";
+import { checkFullBuildCompatibility } from "@/lib/compatibility";
 import { retrieveLocalKnowledge } from "@/lib/knowledge-retriever";
+import { getInventoryFromFirestore } from "@/lib/inventory-fetcher";
 
 const ComponentDataSchema = z.object({
     model: z.string(),
@@ -33,26 +33,41 @@ const AiBuildCritiqueInputSchema = z.record(
 
 export type AiBuildCritiqueInput = z.infer<typeof AiBuildCritiqueInputSchema>;
 
+const SuggestionSchema = z.object({
+    originalComponent: z.string(),
+    suggestedComponent: z.string(),
+    suggestedPartId: z.string().optional().describe("The exact ID from the [ID: ...] section in the menu"),
+    reason: z.string(),
+});
+
+/**
+ * Unified Output Schema for the AI Critique.
+ */
 const aiBuildCritiqueOutputSchema = z.object({
-    prosCons: z.object({
-        pros: z.array(z.string()),
-        cons: z.array(z.string()),
+    pros: z.array(z.string()),
+    cons: z.array(z.string()),
+    bottleneck: z.object({
+        analysis: z.string(),
     }),
-    bottleneckAnalysis: z.string(),
     fpsEstimates: z.array(z.object({
         game: z.string(),
-        resolutions: z.array(z.object({
-            resolution: z.string(),
-            estimatedFps: z.string(),
-            details: z.string().optional(),
-        })).optional(),
+        fps: z.string(),
+        settings: z.string()
     })),
-    suggestions: z.array(z.object({
-        originalComponent: z.string(),
-        suggestedComponent: z.string(),
-        reason: z.string(),
-    })),
+    suggestions: z.array(SuggestionSchema)
 });
+
+export const aiBuildCritique = ai.defineFlow(
+    {
+        name: "aiBuildCritique",
+        inputSchema: AiBuildCritiqueInputSchema,
+        outputSchema: aiBuildCritiqueOutputSchema,
+    },
+    async (input) => {
+        const result = await aiBuildCritiqueAction(input);
+        return result;
+    }
+);
 
 export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
     if (!process.env.GOOGLE_API_KEY) {
@@ -61,7 +76,7 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
 
     // 1. Perform deterministic analysis
     const bottleneck = calculateBottleneck(input as any);
-    const compatibilityIssues = checkCompatibility(input as any);
+    const compatibilityIssues = checkFullBuildCompatibility(input as any);
 
     const buildContext = Object.entries(input)
         .map(([category, partData]) => {
@@ -84,6 +99,13 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
     const knowledgeResults = await retrieveLocalKnowledge(`bottleneck compatibility ${componentNames}`);
     const knowledgeContext = knowledgeResults.join('\n\n');
 
+    // 3. Fetch store inventory exclusively from Live Firestore
+    const buildCategories = Object.keys(input);
+    const inventoryResults = await Promise.all(
+        buildCategories.map(cat => getInventoryFromFirestore(cat, 20))
+    );
+    const storeInventory = inventoryResults.flat().join('\n');
+
     const analysisContext = `
 DETERMINISTIC ANALYSIS RESULTS:
 - Bottleneck Status: ${bottleneck.status}
@@ -91,51 +113,68 @@ DETERMINISTIC ANALYSIS RESULTS:
 - Compatibility Issues: ${compatibilityIssues.length > 0 ? compatibilityIssues.map(i => `[${i.severity.toUpperCase()}] ${i.message}`).join('; ') : 'None detected'}
 
 ${knowledgeContext ? `EXPERT LOCAL KNOWLEDGE BASE:\n${knowledgeContext}` : ''}
+
+STORE_INVENTORY_MENU (MANDATORY SOURCE FOR SUGGESTIONS):
+The following parts are EXACTLY what is available in our store. 
+Use the text inside the quotes for 'Name' as your suggestedComponent and the text after 'ID:' as your suggestedPartId.
+${storeInventory || "No local inventory data found."}
 `;
 
     const prompt = `
-You are an expert PC building consultant. Analyze the following PC build and provide a detailed critique.
-Use the provided DETERMINISTIC ANALYSIS RESULTS and EXPERT LOCAL KNOWLEDGE BASE as the primary ground truth for technical compatibility, hardware balancing, and part tiering.
+You are an encouraging and expert PC building mentor. Analyze the PC build provided and give a detailed, balanced critique. 
+Since some users are beginners, your tone should be supportive and optimistic.
+
+PROS (EXPRESSED WITH EXPERTISE):
+- Highlight the synergy and longevity of the build.
+
+CONS & CONSIDERATIONS (CONSTRUCTIVE & SOFTENED):
+- Frame issues as "Optimization Opportunities."
 
 Current Build:
 ${buildContext}
 
 ${analysisContext}
 
-1. Pros and Cons: List the strong points and weak points of the build. Incorporate any deterministic compatibility issues here.
-2. Bottleneck Analysis: Expand on the provided bottleneck result. Explain what it means for the user's experience and how they might fix it. Use the provided Expert Local Knowledge Base on bottlenecks if available.
-3. FPS Estimates: Provide estimated frames per second for 3 popular, modern, demanding games based on the build's performance tier. If you are unsure about exact FPS, use the "googleSearch" tool to find recent benchmarks for this CPU/GPU combination.
-4. Suggestions: Suggest alternative parts that would improve the build's value, performance, or fix any severe bottlenecks/compatibility issues.
+1. Pros and Cons: Provide a detailed list.
+2. Bottleneck Analysis: Explain the bottleneck balance.
+3. FPS Estimates: Provide estimates for 3 modern games (1440p or 4K preferred).
+4. Suggestions: Recommend alternatives that provide better value or perfect the build.
+   MANDATORY RULE FOR SUGGESTIONS: 
+   - You MUST ONLY suggest parts that are listed in the STORE_INVENTORY_MENU provided above. 
+   - OPTIMIZATION RULE: If a component is already top-of-the-line (e.g., flagship CPUs/GPUs) or perfectly balanced for the build's budget/purpose, DO NOT provide a suggestion for that category. 
+   - EMPTY SUGGESTIONS: If the entire build is already well-optimized or enthusiasts-grade with no meaningful upgrades available in the menu, return an EMPTY suggestions array []. Do not suggest lateral moves (e.g., suggesting a different brand of the same spec) unless there is a clear price or compatibility advantage.
+   
+   For the 'suggestedComponent' field, you MUST use the EXACT string provided in the 'Name' field. 
+   For the 'suggestedPartId' field, you MUST provide the exact string found after 'ID: '.
 
-If you cannot find the answer in your general knowledge or the provided context, you MUST use the "googleSearch" tool to search the web for PC building advice, benchmark results, or component reviews to ensure your critique is accurate.
-
-If the build is completely empty, state that the user needs to select parts first.`;
+If the build is completely empty, kindly invite the user to start picking out parts.`;
 
     try {
-        // Stage 1: Analyze and Search (Text Output)
+        // Stage 1: Analyze and Search (Text Output) - Tools are allowed here
         const analysisPrompt = `${prompt}\n\nProvide your analysis in clear text including the pros/cons, bottleneck explanation, FPS estimates, and suggestions. Use Google Search if you need benchmarks or specific info.`;
 
         const analysisResponse = await ai.generate({
             prompt: analysisPrompt,
             config: {
-                temperature: 0.2,
+                temperature: 0.2, // Slightly higher for analysis
                 googleSearchRetrieval: {}
             },
         });
 
         const analysisText = analysisResponse.text;
 
-        // Stage 2: Format to JSON (Structured Output)
+        // Stage 2: Format to JSON (Structured Output) - Tools are NOT allowed here
         const formatPrompt = `Convert the following PC build analysis into a structured JSON object.
         
 Analysis:
 ${analysisText}
 
 Required Output Schema:
-- prosCons: { pros: string[], cons: string[] }
-- bottleneckAnalysis: string (IMPORTANT: Preserve and format using full Markdown. Use **bolding**, \`code\`, and - bullet points for readability. Add newlines/paragraphs where appropriate.)
-- fpsEstimates: { game: string, resolutions: { resolution: string, estimatedFps: string (IMPORTANT: STRICTLY ONLY numbers/range, e.g. "60-80" or "120+". NO sentences, NO "FPS" text, NO "around"), details: string (IMPORTANT: Put all context, DLSS info, and explanations here) }[] }[]
-- suggestions: { originalComponent: string, suggestedComponent: string, reason: string }[]
+- pros: string[]
+- cons: string[]
+- bottleneck: { analysis: string } (IMPORTANT: Preserve and format using full Markdown. Use **bolding**, \`code\`, and - bullet points for readability.)
+- fpsEstimates: { game: string, fps: string (numeric only, e.g. "95-110"), settings: string (e.g. "1440p Ultra") }[]
+- suggestions: { originalComponent: string, suggestedComponent: string, suggestedPartId: string, reason: string }[]
 
 Output ONLY the JSON.`;
 
@@ -145,7 +184,7 @@ Output ONLY the JSON.`;
                 schema: aiBuildCritiqueOutputSchema,
             },
             config: {
-                temperature: 0,
+                temperature: 0, // Deterministic for formatting
             }
         });
 

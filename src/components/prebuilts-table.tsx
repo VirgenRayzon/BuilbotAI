@@ -33,7 +33,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { AlertCircle } from "lucide-react";
-import { PrebuiltDetailsModal } from "./prebuilt-details-modal";
 import { PrebuiltCardSpecs } from "./prebuilt-card-specs";
 import { AddPrebuiltDialog, type AddPrebuiltFormSchema } from "./add-prebuilt-dialog";
 import type { Part } from "@/lib/types";

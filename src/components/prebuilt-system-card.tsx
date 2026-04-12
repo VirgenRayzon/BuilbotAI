@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, getOptimizedStorageUrl } from '@/lib/utils';
@@ -14,7 +15,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { PrebuiltDetailsModal } from './prebuilt-details-modal';
 import { PrebuiltCardSpecs } from './prebuilt-card-specs';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -32,7 +32,8 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
   const isComplete = missingParts.length === 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent modal from opening
+    e.preventDefault();
+    e.stopPropagation();
     if (!isComplete) return;
 
     toast({
@@ -42,12 +43,13 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
   };
 
   const toggleExpand = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent modal from opening
+    e.preventDefault();
+    e.stopPropagation();
     setIsExpanded(!isExpanded);
   };
 
   return (
-    <PrebuiltDetailsModal system={system}>
+    <Link href={`/pre-builts/${system.id}`} className="block h-full">
       <Card className="flex flex-col h-full overflow-hidden transform group hover:-translate-y-1.5 transition-all duration-300 ease-out hover:shadow-xl hover:border-primary/40 cursor-pointer relative bg-card/50 backdrop-blur-sm border-primary/10">
         <CardHeader className="p-3.5 pb-0 relative z-10">
           <div className="aspect-video relative w-full overflow-hidden rounded-lg mb-2.5 shadow-sm group-hover:shadow-md transition-shadow bg-muted/30">
@@ -127,6 +129,6 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
           </div>
         </CardFooter>
       </Card>
-    </PrebuiltDetailsModal>
+    </Link>
   );
 }

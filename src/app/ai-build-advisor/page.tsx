@@ -20,6 +20,13 @@ import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
 import { useUserProfile } from "@/context/user-profile";
 import { useRouter } from "next/navigation";
+import { useCollection } from "@/firebase/firestore/use-collection";
+import { useFirestore } from "@/firebase";
+import { collection } from "firebase/firestore";
+import type { Part } from "@/lib/types";
+import { checkCompatibility } from "@/lib/compatibility";
+
+type PartWithoutCategory = Omit<Part, 'category'>;
 
 const componentMetadata: { [key: string]: { icon: React.ComponentType<{ className?: string }>, image: any } } = {
   cpu: {
@@ -60,6 +67,51 @@ export default function AiBuildAdvisorPage() {
   const { toast } = useToast();
   const { authUser, profile, loading: userLoading } = useUserProfile();
   const router = useRouter();
+  const firestore = useFirestore();
+
+  // Fetch each category collection for Quick Add support
+  const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
+  const { data: cpus } = useCollection<PartWithoutCategory>(cpuQuery);
+  const gpuQuery = useMemo(() => firestore ? collection(firestore, 'GPU') : null, [firestore]);
+  const { data: gpus } = useCollection<PartWithoutCategory>(gpuQuery);
+  const motherboardQuery = useMemo(() => firestore ? collection(firestore, 'Motherboard') : null, [firestore]);
+  const { data: motherboards } = useCollection<PartWithoutCategory>(motherboardQuery);
+  const ramQuery = useMemo(() => firestore ? collection(firestore, 'RAM') : null, [firestore]);
+  const { data: rams } = useCollection<PartWithoutCategory>(ramQuery);
+  const storageQuery = useMemo(() => firestore ? collection(firestore, 'Storage') : null, [firestore]);
+  const { data: storages } = useCollection<PartWithoutCategory>(storageQuery);
+  const psuQuery = useMemo(() => firestore ? collection(firestore, 'PSU') : null, [firestore]);
+  const { data: psus } = useCollection<PartWithoutCategory>(psuQuery);
+  const caseQuery = useMemo(() => firestore ? collection(firestore, 'Case') : null, [firestore]);
+  const { data: cases } = useCollection<PartWithoutCategory>(caseQuery);
+  const coolerQuery = useMemo(() => firestore ? collection(firestore, 'Cooler') : null, [firestore]);
+  const { data: coolers } = useCollection<PartWithoutCategory>(coolerQuery);
+  const monitorQuery = useMemo(() => firestore ? collection(firestore, 'Monitor') : null, [firestore]);
+  const { data: monitors } = useCollection<PartWithoutCategory>(monitorQuery);
+  const keyboardQuery = useMemo(() => firestore ? collection(firestore, 'Keyboard') : null, [firestore]);
+  const { data: keyboards } = useCollection<PartWithoutCategory>(keyboardQuery);
+  const mouseQuery = useMemo(() => firestore ? collection(firestore, 'Mouse') : null, [firestore]);
+  const { data: mice } = useCollection<PartWithoutCategory>(mouseQuery);
+  const headsetQuery = useMemo(() => firestore ? collection(firestore, 'Headset') : null, [firestore]);
+  const { data: headsets } = useCollection<PartWithoutCategory>(headsetQuery);
+
+  // Combine all parts and add category back
+  const allParts = useMemo(() => {
+    const parts: Part[] = [];
+    cpus?.forEach(p => parts.push({ ...p, category: 'CPU' }));
+    gpus?.forEach(p => parts.push({ ...p, category: 'GPU' }));
+    motherboards?.forEach(p => parts.push({ ...p, category: 'Motherboard' }));
+    rams?.forEach(p => parts.push({ ...p, category: 'RAM' }));
+    storages?.forEach(p => parts.push({ ...p, category: 'Storage' }));
+    psus?.forEach(p => parts.push({ ...p, category: 'PSU' }));
+    cases?.forEach(p => parts.push({ ...p, category: 'Case' }));
+    coolers?.forEach(p => parts.push({ ...p, category: 'Cooler' }));
+    monitors?.forEach(p => parts.push({ ...p, category: 'Monitor' }));
+    keyboards?.forEach(p => parts.push({ ...p, category: 'Keyboard' }));
+    mice?.forEach(p => parts.push({ ...p, category: 'Mouse' }));
+    headsets?.forEach(p => parts.push({ ...p, category: 'Headset' }));
+    return parts;
+  }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers, monitors, keyboards, mice, headsets]);
 
   // Redirect unauthenticated users to sign-in or admins to admin dashboard
   useEffect(() => {
@@ -116,7 +168,14 @@ export default function AiBuildAdvisorPage() {
               const parsedCache = JSON.parse(cache);
               const buildKey = getBuildKey(parsed);
               if (parsedCache[buildKey]) {
-                setCritiqueAnalysis(parsedCache[buildKey]);
+                const analysis = parsedCache[buildKey];
+                // DETECT LEGACY SCHEMA: If 'pros' is missing but 'prosCons' exists, clear the cache to avoid crash
+                if (!analysis.pros && analysis.prosCons) {
+                    console.log("Legacy critique schema detected. Clearing cache.");
+                    localStorage.removeItem('pc_critique_cache');
+                } else {
+                    setCritiqueAnalysis(analysis);
+                }
               }
             } catch (e) {
               console.error("Failed to parse critique cache", e);
@@ -128,6 +187,113 @@ export default function AiBuildAdvisorPage() {
       }
     }
   }, []);
+
+  const handlePartToggle = (part: Part) => {
+    if (!builderState) {
+        // Initialize if empty
+        const initial = {
+            CPU: null, GPU: null, Motherboard: null, RAM: [], Storage: [], PSU: null, Case: null, Cooler: null,
+            Monitor: null, Keyboard: null, Mouse: null, Headset: null,
+        };
+        const next = { ...initial } as any;
+        if (part.category === 'RAM' || part.category === 'Storage') {
+            next[part.category] = [part];
+        } else {
+            next[part.category] = part;
+        }
+        setBuilderState(next);
+        localStorage.setItem('pc_builder_state', JSON.stringify(next));
+        return;
+    }
+
+    const next = { ...builderState } as any;
+    const category = part.category;
+
+    // Validate compatibility
+    const { compatible, message } = checkCompatibility(part, next);
+    
+    if (category === 'RAM' || category === 'Storage') {
+      const current = Array.isArray(next[category]) ? next[category] : [];
+      const index = current.findIndex((p: any) => p.id === part.id);
+      
+      if (index > -1) {
+        current.splice(index, 1);
+      } else {
+        if (!compatible) {
+            toast({
+              variant: 'destructive',
+              title: 'Compatibility Error',
+              description: message || `This ${category} is not compatible with your current build.`
+            });
+            return;
+        }
+        current.push(part);
+      }
+      next[category] = [...current];
+    } else {
+      const isAlreadySelected = next[category]?.id === part.id;
+      if (!isAlreadySelected && !compatible) {
+        toast({
+          variant: 'destructive',
+          title: 'Compatibility Error',
+          description: message || `This ${category} is not compatible with your current build.`
+        });
+        return;
+      }
+      next[category] = isAlreadySelected ? null : part;
+    }
+
+    setBuilderState(next);
+    localStorage.setItem('pc_builder_state', JSON.stringify(next));
+  };
+
+  // Handle AI suggestions for Quick Add
+  useEffect(() => {
+    const findPartRobustly = (suggestion: string, partId?: string) => {
+        // 0. ID Match (Highest Priority)
+        if (partId) {
+          const part = allParts.find(p => p.id === partId);
+          if (part) return part;
+        }
+  
+        // 1. Exact Match
+        let part = allParts.find(p => p.name.toLowerCase() === suggestion.toLowerCase());
+        if (part) return part;
+  
+        // 2. Remove parentheticals
+        const cleanSuggestion = suggestion.replace(/\s*\(.*?\)\s*/g, '').trim().toLowerCase();
+        part = allParts.find(p => p.name.toLowerCase() === cleanSuggestion);
+        if (part) return part;
+  
+        // 3. Substring match
+        part = allParts.find(p => p.name.toLowerCase().includes(cleanSuggestion) || cleanSuggestion.includes(p.name.toLowerCase()));
+        if (part) return part;
+  
+        return null;
+    };
+
+    const handleAddSuggestion = (e: any) => {
+      const modelName = e.detail.model;
+      const partId = e.detail.id;
+      const part = findPartRobustly(modelName, partId);
+      if (part) {
+        handlePartToggle(part);
+        toast({
+            title: "Part Added",
+            description: `Successfully added ${part.name} to your build.`
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Part Not Found",
+          description: `Could not find "${modelName}" in our live inventory.`
+        });
+      }
+    };
+
+    window.addEventListener('add-suggestion', handleAddSuggestion);
+    return () => window.removeEventListener('add-suggestion', handleAddSuggestion);
+  }, [allParts, builderState]);
 
   const handleGetRecommendations = (data: FormSchema) => {
     startTransition(async () => {
@@ -243,7 +409,7 @@ export default function AiBuildAdvisorPage() {
       if (val) {
         if (Array.isArray(val)) {
           inputData[key] = val.map((v: any) => ({
-            model: v.model,
+            model: v.name || v.model,
             price: v.price,
             brand: v.brand,
             wattage: v.wattage,
@@ -256,7 +422,7 @@ export default function AiBuildAdvisorPage() {
         } else {
           const singleVal = val as any;
           inputData[key] = {
-            model: singleVal.model,
+            model: singleVal.name || singleVal.model,
             price: singleVal.price,
             brand: singleVal.brand,
             wattage: singleVal.wattage,
@@ -384,8 +550,8 @@ export default function AiBuildAdvisorPage() {
               </div>
 
               {/* Right Column: Your Build Specs */}
-              <div className="lg:col-span-3 pl-2">
-                <div className="sticky top-20 flex flex-col gap-6 max-h-[calc(100vh-6rem)] overflow-y-auto pb-4 pr-2 custom-scrollbar">
+              <div className="lg:col-span-3">
+                <div className="sticky top-20 flex flex-col gap-6 pb-4">
                   <YourBuild
                     build={builderState}
                     onClearBuild={() => {

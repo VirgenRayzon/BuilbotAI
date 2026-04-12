@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ai } from "@/ai/genkit";
+import { z } from "genkit";
 import { retrieveLocalKnowledge } from "@/lib/knowledge-retriever";
+import { getInventoryFromFirestore } from "@/lib/inventory-fetcher";
 
 export const maxDuration = 60; // Set max duration for Vercel/Next.js to allow longer generation
 
@@ -28,13 +30,29 @@ export async function POST(req: NextRequest) {
                 .join('\n')}`
             : '';
 
-        // Retrieve background knowledge using the last message content and parts in the build context
-        const queryTerms = `${lastMessage.text} ${formattedContext.replace(/\n|CURRENT BUILD CONTEXT:|:|None selected/g, ' ')}`;
+        // Retrieve background knowledge using the last message content and only the specifically listed parts (optimizing context)
+        const queryTerms = `${lastMessage.text}`; 
         const localKnowledge = await retrieveLocalKnowledge(queryTerms);
         
         const knowledgeText = localKnowledge.length > 0
             ? `\n\nEXPERT KNOWLEDGE BASE:\n${localKnowledge.join('\n\n')}`
             : '';
+
+        // Define Tool
+        const searchInventoryTool = ai.defineTool(
+            {
+                name: "searchInventory",
+                description: "Search the live store database for PC parts by category to find exact matching parts to recommend to the user.",
+                inputSchema: z.object({
+                    category: z.enum(['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler', 'monitor', 'keyboard', 'mouse', 'headset']),
+                }),
+                outputSchema: z.array(z.string()),
+            },
+            async (input) => {
+                const inventory = await getInventoryFromFirestore(input.category);
+                return inventory;
+            }
+        );
 
         // Construct System Prompt
         const systemInstruction = `You are a helpful, expert PC building assistant named "Buildbot AI".
@@ -44,11 +62,13 @@ ${knowledgeText}
 
 INSTRUCTIONS:
 - Review the EXPERT KNOWLEDGE BASE for any specific info on parts or topics the user asks about (bottlenecks, tier lists, etc.).
-- Do not list off parts unless the user specifically asks for recommendations.
+- If the user asks for a recommendation or you want to suggest a part, you MUST use the \`searchInventory\` tool to fetch real parts from the store first. Do not make up parts.
+- The \`searchInventory\` tool returns the current Price of the items in Philippine Pesos (₱/PHP). Use this price to filter and provide accurate recommendations when the user mentions a specific budget (e.g., "around 20k" means ₱20,000).
 - Keep your answers concise, informative, and formatted clearly with Markdown (e.g., bolding part names).
-- CRITICAL: If you suggest a specific part for the user to add to their build, you MUST output an interactive markdown link with \`add-part:\` as the URL protocol. For example, to recommend the Corsair 4000D Airflow, write exactly this:
-  \`[Corsair 4000D Airflow](add-part:Corsair 4000D Airflow)\`
-- Do not use \`add-part:\` links for general topics or non-specific items, ONLY for exact part model names.
+- CRITICAL: If you suggest a specific part for the user to add to their build, you MUST output an interactive markdown link with \`add-part:\` followed by the Category, ID, Price, and Image URL, separated by pipes \`|\` (NO spaces anywhere in the URL).
+  For example, if the tool gives you \`[ID: xyz123] [GPU] Name: "Sapphire Pulse RX 7700 XT" - Price: ₱45,000 - Image: "https://example.com/img.png"\`, write exactly this:
+  \`[Sapphire Pulse RX 7700 XT](add-part:GPU|xyz123|₱45,000|https://example.com/img.png)\`
+- Do not use \`add-part:\` links for general topics or non-specific items, ONLY use it for exact parts retrieved from the inventory tool.
 `;
 
         // Format history for Genkit
@@ -62,6 +82,7 @@ INSTRUCTIONS:
             prompt: lastMessage.text,
             system: systemInstruction,
             messages: history,
+            tools: [searchInventoryTool],
             config: {
                 temperature: 0.7,
             }

@@ -14,11 +14,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Notification } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
+import { OrderDetailsModal } from "./order-details-modal";
 
 export function UserNotifications() {
     const { authUser, loading } = useUserProfile();
     const firestore = useFirestore();
     const [open, setOpen] = useState(false);
+    const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+    const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
     const notificationsQuery = useMemo(() => {
         if (!firestore || !authUser) return null;
@@ -51,6 +54,18 @@ export function UserNotifications() {
             });
         } catch (error) {
             console.error("Error marking notification as read:", error);
+        }
+    };
+
+    const handleNotificationClick = async (notification: Notification) => {
+        if (!notification.read) {
+            markAsRead(notification.id);
+        }
+        
+        if (notification.orderId) {
+            setSelectedOrderId(notification.orderId);
+            setDetailsModalOpen(true);
+            setOpen(false); // Close the notification popover
         }
     };
 
@@ -115,7 +130,7 @@ export function UserNotifications() {
                                 <div 
                                     key={notification.id} 
                                     className={`p-4 transition-colors hover:bg-white/5 relative group cursor-pointer ${!notification.read ? 'bg-primary/5 ring-1 ring-inset ring-primary/10' : ''}`}
-                                    onClick={() => !notification.read && markAsRead(notification.id)}
+                                    onClick={() => handleNotificationClick(notification)}
                                 >
                                     <div className="flex gap-3">
                                         <div className={`mt-0.5 h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${!notification.read ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
@@ -171,6 +186,12 @@ export function UserNotifications() {
                     </Button>
                 </div>
             </PopoverContent>
+
+            <OrderDetailsModal 
+                orderId={selectedOrderId}
+                open={detailsModalOpen}
+                onOpenChange={setDetailsModalOpen}
+            />
         </Popover>
     );
 }

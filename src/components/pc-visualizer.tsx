@@ -286,59 +286,72 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
     const gpuAbsX = cfg.gpu.x + gpuDisplayWidth;
     const gpuBlocked = gpuAbsX > caseW - 10;
 
-    const padding = 50;
-    const svgW = caseW + padding * 2;
-    const svgH = caseH + padding * 0;
+    const paddingX = 50;
+    const paddingTop = 130;  // extra room so the HTML HUD labels don't overlap the case frame
+    const paddingBottom = 50;
+    const svgW = caseW + paddingX * 2;
+    const svgH = caseH + paddingTop + paddingBottom;
+
+    // Dynamic aspect ratio — derived per archetype so the container always
+    // perfectly matches the viewBox and the HUD overlay stays correctly aligned
+    // at any screen resolution (ITX ≈ 1.63:1, MATX ≈ 1.16:1, ATX ≈ 1.12:1, EATX ≈ 1.08:1)
+    const containerAspectRatio = `${svgW} / ${svgH}`;
 
     // Helper: absolute SVG coordinate from case-relative coord
-    const cx = (relX: number) => padding + relX;
-    const cy = (relY: number) => padding + relY;
+    const cx = (relX: number) => paddingX + relX;
+    const cy = (relY: number) => paddingTop + relY;
 
     const springConfig = { type: "spring", stiffness: 300, damping: 30 };
 
     return (
-        <div className="w-full h-[450px] bg-[#0c0f14] rounded-xl border border-white/5 relative overflow-hidden flex items-center justify-center font-sans shadow-2xl">
+        <div
+            className="w-full bg-[#0c0f14] rounded-xl border border-white/5 relative overflow-hidden flex items-center justify-center font-sans shadow-2xl"
+            style={{ aspectRatio: containerAspectRatio }}
+        >
             {/* Top Gradient Edge - Matched to Analytics height and colors */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20" />
 
             {/* HUD overlay */}
-            <div className="absolute top-5 left-5 z-10 flex flex-col gap-1.5 pointer-events-none">
-                <div className="flex items-center gap-2 mb-1">
-                    <svg className="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    <motion.h3
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="text-[13px] font-headline font-bold text-cyan-400 tracking-[0.15em] uppercase"
-                    >
-                        Clearance Preview
-                    </motion.h3>
-                </div>
+            <div className="absolute top-[3%] left-[3%] z-10 flex flex-col gap-0.5 pointer-events-none">
+                {/* Archetype label — primary heading */}
+                <motion.span
+                    key={cfg.label}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="text-[13px] font-headline font-bold text-cyan-400 tracking-[0.15em] uppercase"
+                >
+                    {cfg.label}
+                </motion.span>
 
-                <div className="flex flex-col gap-1 ml-6">
-                    <motion.span
-                        key={cfg.label}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="text-[11px] text-white/70 tracking-wider font-medium uppercase"
-                    >
-                        {cfg.label}
-                    </motion.span>
-                    <AnimatePresence mode="wait">
-                        {caseData && (
-                            <motion.span
-                                key={caseData.id || caseData.model}
-                                initial={{ opacity: 0, y: -5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 5 }}
-                                className="text-[10px] text-white/40 font-medium tracking-tight"
-                            >
-                                {caseData.model}
-                            </motion.span>
-                        )}
-                    </AnimatePresence>
-                </div>
+                {/* Case model name */}
+                <AnimatePresence mode="wait">
+                    {caseData && (
+                        <motion.span
+                            key={caseData.id || caseData.model}
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 5 }}
+                            className="text-[10px] text-white/50 font-medium tracking-tight"
+                        >
+                            {caseData.model}
+                        </motion.span>
+                    )}
+                </AnimatePresence>
+
+                {/* Case dimensions */}
+                <AnimatePresence mode="wait">
+                    {hasCase && (
+                        <motion.span
+                            key={`${caseW}x${caseH}`}
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 4 }}
+                            className="text-[9px] text-white/30 font-mono tracking-widest"
+                        >
+                            {caseW}&thinsp;×&thinsp;{caseH}&thinsp;mm
+                        </motion.span>
+                    )}
+                </AnimatePresence>
             </div>
 
             <svg
@@ -445,8 +458,8 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                 scale: 1,
                                 width: caseW,
                                 height: caseH,
-                                x: padding,
-                                y: padding
+                                x: paddingX,
+                                y: paddingTop
                             }}
                             transition={springConfig}
                             rx={12}
@@ -457,17 +470,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                     )}
                 </AnimatePresence>
 
-                {/* Case size label */}
-                {hasCase && (
-                    <motion.text
-                        animate={{ x: padding + caseW - 8, y: padding + caseH - 8 }}
-                        transition={springConfig}
-                        fill="rgba(255,255,255,0.3)" fontSize="10" textAnchor="end" fontWeight="bold"
-                        className="uppercase tracking-widest font-mono"
-                    >
-                        {caseW}×{caseH}mm
-                    </motion.text>
-                )}
+                {/* Case size label moved to HUD overlay to avoid overlap */}
 
                 {hasCase && (
                     <>
