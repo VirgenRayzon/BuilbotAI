@@ -42,14 +42,15 @@ export async function POST(req: NextRequest) {
         const searchInventoryTool = ai.defineTool(
             {
                 name: "searchInventory",
-                description: "Search the live store database for PC parts by category to find exact matching parts to recommend to the user.",
+                description: "Search the live store database for PC parts by category to find exact matching parts to recommend to the user. Use searchTerm to filter for specific models.",
                 inputSchema: z.object({
                     category: z.enum(['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler', 'monitor', 'keyboard', 'mouse', 'headset']),
+                    searchTerm: z.string().optional().describe("The specific model name or keywords to filter by"),
                 }),
                 outputSchema: z.array(z.string()),
             },
             async (input) => {
-                const inventory = await getInventoryFromFirestore(input.category);
+                const inventory = await getInventoryFromFirestore(input.category, input.searchTerm);
                 return inventory;
             }
         );

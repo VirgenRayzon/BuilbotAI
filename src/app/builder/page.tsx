@@ -109,18 +109,18 @@ export default function BuilderPage() {
   // Combine all parts and add category back
   const allParts = useMemo(() => {
     const allParts: Part[] = [];
-    cpus?.forEach(p => allParts.push({ ...p, category: 'CPU' }));
-    gpus?.forEach(p => allParts.push({ ...p, category: 'GPU' }));
-    motherboards?.forEach(p => allParts.push({ ...p, category: 'Motherboard' }));
-    rams?.forEach(p => allParts.push({ ...p, category: 'RAM' }));
-    storages?.forEach(p => allParts.push({ ...p, category: 'Storage' }));
-    psus?.forEach(p => allParts.push({ ...p, category: 'PSU' }));
-    cases?.forEach(p => allParts.push({ ...p, category: 'Case' }));
-    coolers?.forEach(p => allParts.push({ ...p, category: 'Cooler' }));
-    monitors?.forEach(p => allParts.push({ ...p, category: 'Monitor' }));
-    keyboards?.forEach(p => allParts.push({ ...p, category: 'Keyboard' }));
-    mice?.forEach(p => allParts.push({ ...p, category: 'Mouse' }));
-    headsets?.forEach(p => allParts.push({ ...p, category: 'Headset' }));
+    cpus?.filter(p => !p.isArchived).forEach(p => allParts.push({ ...p, category: 'CPU' }));
+    gpus?.filter(p => !p.isArchived).forEach(p => allParts.push({ ...p, category: 'GPU' }));
+    motherboards?.filter(p => !p.isArchived).forEach(p => allParts.push({ ...p, category: 'Motherboard' }));
+    rams?.filter(p => !p.isArchived).forEach(p => allParts.push({ ...p, category: 'RAM' }));
+    storages?.filter(p => !p.isArchived).forEach(p => allParts.push({ ...p, category: 'Storage' }));
+    psus?.filter(p => !p.isArchived).forEach(p => allParts.push({ ...p, category: 'PSU' }));
+    cases?.filter(p => !p.isArchived).forEach(p => allParts.push({ ...p, category: 'Case' }));
+    coolers?.filter(p => !p.isArchived).forEach(p => allParts.push({ ...p, category: 'Cooler' }));
+    monitors?.filter(p => !p.isArchived).forEach(p => allParts.push({ ...p, category: 'Monitor' }));
+    keyboards?.filter(p => !p.isArchived).forEach(p => allParts.push({ ...p, category: 'Keyboard' }));
+    mice?.filter(p => !p.isArchived).forEach(p => allParts.push({ ...p, category: 'Mouse' }));
+    headsets?.filter(p => !p.isArchived).forEach(p => allParts.push({ ...p, category: 'Headset' }));
     return allParts;
   }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers, monitors, keyboards, mice, headsets]);
 

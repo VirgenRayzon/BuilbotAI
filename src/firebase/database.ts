@@ -1,10 +1,10 @@
 
-import { addDoc, collection, deleteDoc, doc, Firestore, setDoc, updateDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, Firestore, setDoc, updateDoc, writeBatch } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
 import type { AddPartFormSchema } from "@/components/add-part-dialog";
 import type { AddPrebuiltFormSchema } from "@/components/add-prebuilt-dialog";
-import type { Part, PrebuiltSystem, UserProfile } from "@/lib/types";
+import type { Part, PrebuiltSystem, UserProfile, SystemNotification } from "@/lib/types";
 import { fetchImageBase64, uploadBase64ToStorage } from "@/app/image-actions";
 
 // Uploads an image to Firebase Storage.
@@ -161,6 +161,28 @@ export async function deletePart(firestore: Firestore, partId: string, category:
     await deleteDoc(doc(firestore, category, partId));
 }
 
+export async function archivePart(firestore: Firestore, partId: string, category: Part['category'], isArchived: boolean = true) {
+    await updateDoc(doc(firestore, category, partId), { isArchived });
+}
+
+export async function bulkArchiveParts(firestore: Firestore, items: { id: string, category: Part['category'] }[], isArchived: boolean = true) {
+    const batch = writeBatch(firestore);
+    items.forEach(item => {
+        const partRef = doc(firestore, item.category, item.id);
+        batch.update(partRef, { isArchived });
+    });
+    await batch.commit();
+}
+
+export async function bulkDeleteParts(firestore: Firestore, items: { id: string, category: Part['category'] }[]) {
+    const batch = writeBatch(firestore);
+    items.forEach(item => {
+        const partRef = doc(firestore, item.category, item.id);
+        batch.delete(partRef);
+    });
+    await batch.commit();
+}
+
 // Prebuilt Systems
 export async function addPrebuiltSystem(firestore: Firestore, system: AddPrebuiltFormSchema) {
     const { name, tier, description, price, imageUrl, cpu, gpu, motherboard, ram, storage, psu, case: caseComponent, cooler } = system;
@@ -219,7 +241,39 @@ export async function updatePrebuiltSystem(firestore: Firestore, systemId: strin
     await updateDoc(doc(firestore, 'prebuiltSystems', systemId), cleanData(systemData));
 }
 
+export async function archivePrebuiltSystem(firestore: Firestore, systemId: string, isArchived: boolean = true) {
+    await updateDoc(doc(firestore, 'prebuiltSystems', systemId), { isArchived });
+}
+
+export async function bulkArchivePrebuilts(firestore: Firestore, systemIds: string[], isArchived: boolean = true) {
+    const batch = writeBatch(firestore);
+    systemIds.forEach(id => {
+        const systemRef = doc(firestore, 'prebuiltSystems', id);
+        batch.update(systemRef, { isArchived });
+    });
+    await batch.commit();
+}
+
+export async function bulkDeletePrebuilts(firestore: Firestore, systemIds: string[]) {
+    const batch = writeBatch(firestore);
+    systemIds.forEach(id => {
+        const systemRef = doc(firestore, 'prebuiltSystems', id);
+        batch.delete(systemRef);
+    });
+    await batch.commit();
+}
+
 // Users
 export async function createUserProfile(firestore: Firestore, userId: string, data: Omit<UserProfile, 'id'>) {
     await setDoc(doc(firestore, 'users', userId), data);
+}
+// System Notifications
+export async function createSystemNotification(firestore: Firestore, notification: Omit<SystemNotification, 'id' | 'createdAt' | 'readBy'>) {
+    const notificationRef = doc(collection(firestore, 'system_notifications'));
+    await setDoc(notificationRef, {
+        ...notification,
+        id: notificationRef.id,
+        readBy: [],
+        createdAt: new Date()
+    });
 }

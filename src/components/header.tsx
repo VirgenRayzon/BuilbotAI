@@ -12,6 +12,7 @@ import { useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { ThemeToggle } from "./theme-toggle";
 import { UserNotifications } from "./user-notifications";
+import { NotificationCenter } from "./notification-center";
 
 export function Header() {
   const pathname = usePathname();
@@ -92,6 +93,7 @@ export function Header() {
             ) : authUser ? (
               <div className="flex items-center space-x-2">
                 {!profile?.isManager && <UserNotifications />}
+                {profile?.isManager && <NotificationCenter />}
                 <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-foreground/60 hover:text-primary">
                   <LogOut className="mr-2 h-4 w-4" />
                   Sign Out

@@ -22,7 +22,7 @@ const CATEGORY_MAP: Record<string, string> = {
 /**
  * Fetches parts exclusively from the live Firestore database collections.
  */
-export async function getInventoryFromFirestore(category: string, limitCount: number = 20): Promise<string[]> {
+export async function getInventoryFromFirestore(category: string, searchTerm?: string, limitCount: number = 30): Promise<string[]> {
     const normalizedCat = category.toLowerCase();
     
     try {
@@ -31,7 +31,24 @@ export async function getInventoryFromFirestore(category: string, limitCount: nu
         const q = query(collection(db, collectionName), limit(limitCount));
         const snapshot = await getDocs(q);
         
-        return snapshot.docs.map(doc => {
+        let docs = snapshot.docs;
+
+        // Filter out archived items
+        docs = docs.filter(doc => !doc.data().isArchived);
+
+        // Manual filtering if searchTerm is provided
+        if (searchTerm) {
+            const term = searchTerm.toLowerCase();
+            docs = docs.filter(doc => {
+                const data = doc.data();
+                const name = (data.name || '').toLowerCase();
+                const brand = (data.brand || '').toLowerCase();
+                const series = (data.series || '').toLowerCase();
+                return name.includes(term) || brand.includes(term) || series.includes(term);
+            });
+        }
+        
+        return docs.map(doc => {
             const data = doc.data();
             const brand = data.brand || '';
             const name = data.name || 'Unknown Part';

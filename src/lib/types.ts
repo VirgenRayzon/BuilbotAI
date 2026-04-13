@@ -64,6 +64,7 @@ export type Part = {
   description?: string;
   packageType?: 'TRAY' | 'BOX';
   createdAt?: any;
+  isArchived?: boolean;
 };
 
 export type PrebuiltSystem = {
@@ -85,6 +86,7 @@ export type PrebuiltSystem = {
   };
   aiReport?: any;
   createdAt?: any;
+  isArchived?: boolean;
 };
 
 export type UserProfile = {
@@ -126,5 +128,16 @@ export type Notification = {
   message: string;
   orderId: string;
   read: boolean;
+  createdAt: any; // Firestore Timestamp
+};
+export type SystemNotification = {
+  id: string;
+  type: 'reservation_received' | 'item_archived' | 'status_changed';
+  actorId: string;
+  actorName: string;
+  title: string;
+  message: string;
+  targetId: string; // part ID or order ID
+  readBy: string[]; // List of user IDs who have seen it
   createdAt: any; // Firestore Timestamp
 };

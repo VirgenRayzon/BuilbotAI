@@ -102,7 +102,7 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
     // 3. Fetch store inventory exclusively from Live Firestore
     const buildCategories = Object.keys(input);
     const inventoryResults = await Promise.all(
-        buildCategories.map(cat => getInventoryFromFirestore(cat, 20))
+        buildCategories.map(cat => getInventoryFromFirestore(cat, undefined, 20))
     );
     const storeInventory = inventoryResults.flat().join('\n');
 

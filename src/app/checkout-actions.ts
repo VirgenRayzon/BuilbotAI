@@ -62,6 +62,20 @@ export async function processCheckout(userId: string, userEmail: string, items: 
                 read: false,
                 createdAt: Timestamp.now()
             });
+
+            // 5. Create system notification for admins/managers
+            const systemNotificationRef = doc(collection(firestore, "system_notifications"));
+            transaction.set(systemNotificationRef, {
+                id: systemNotificationRef.id,
+                type: 'reservation_received',
+                actorId: userId,
+                actorName: userEmail.split('@')[0],
+                title: "New Reservation",
+                message: `New build reserved by ${userEmail}`,
+                targetId: orderRef.id,
+                readBy: [],
+                createdAt: Timestamp.now()
+            });
         });
 
         return { success: true };
@@ -74,7 +88,11 @@ export async function processCheckout(userId: string, userEmail: string, items: 
     }
 }
 
-export async function updateReservationStatus(orderId: string, newStatus: Order['status']) {
+export async function updateReservationStatus(
+    orderId: string, 
+    newStatus: Order['status'], 
+    actor?: { id: string, name: string, isManager: boolean, isSuperAdmin?: boolean }
+) {
     const firestore = getAdminFirestore();
 
     try {
@@ -137,6 +155,22 @@ export async function updateReservationStatus(orderId: string, newStatus: Order[
                 read: false,
                 createdAt: Timestamp.now()
             });
+
+            // 5. Create system notification for Super Admin if triggered by a Manager
+            if (actor && actor.isManager && !actor.isSuperAdmin) {
+                const sysNotificationRef = doc(collection(firestore, "system_notifications"));
+                transaction.set(sysNotificationRef, {
+                    id: sysNotificationRef.id,
+                    type: 'status_changed',
+                    actorId: actor.id,
+                    actorName: actor.name,
+                    title: "Status Update (Manager)",
+                    message: `Manager ${actor.name} changed reservation ${orderId.substring(0, 8)} to ${newStatus}.`,
+                    targetId: orderId,
+                    readBy: [],
+                    createdAt: Timestamp.now()
+                });
+            }
         });
 
         return { success: true };

@@ -17,6 +17,44 @@ export const getComponentName = (comp?: any): string => {
     return comp.name || comp.model || '';
 };
 
+export const normalizeFF = (s: string) => s.toUpperCase().replace(/[\s-]/g, '');
+
+const ffOrder: Record<string, number> = {
+    'EATX': 4,
+    'EXTENDEDATX': 4,
+    'ATX': 3,
+    'MATX': 2, 
+    'MICROATX': 2,
+    'ITX': 1, 
+    'MINIITX': 1,
+    'THINMINIITX': 1
+};
+
+export const caseFFMatch = (caseSupport: string, moboFF: string, caseType: string = '') => {
+    if (!moboFF) return true;
+
+    const normalizedMobo = normalizeFF(moboFF);
+    const targetSize = ffOrder[normalizedMobo] || 0;
+    if (targetSize === 0) return true; // Unknown mobo format, skip
+
+    // 1. Check explicit list (split by comma first to preserve multi-word factors like "Micro ATX")
+    const supported = (caseSupport || '').split(',').map(s => normalizeFF(s.trim())).filter(Boolean);
+    let isSupported = supported.some(ff => (ffOrder[ff] || 0) >= targetSize);
+
+    // 2. Fallback to case type name (e.g. "ATX Mid Tower") if no explicit support list is found or if it's still false
+    if (!isSupported && caseType) {
+        const normalizedType = normalizeFF(caseType);
+        // Check if any known FF is in the type string and supports the target size
+        Object.keys(ffOrder).forEach(ff => {
+            if (normalizedType.includes(ff) && ffOrder[ff] >= targetSize) {
+                isSupported = true;
+            }
+        });
+    }
+
+    return isSupported;
+};
+
 export const checkCompatibility = (part: Part, currentBuild: Record<string, ComponentData | ComponentData[] | null>): CompatibilityResult => {
   const category = part.category;
 
@@ -60,6 +98,17 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
             return { compatible: false, message: `This motherboard supports ${partRamType.toUpperCase()}, but your selected RAM (${getComponentName(r)}) is ${stickRamType.toUpperCase()}.` };
           }
         }
+      }
+    }
+
+    const case_ = (currentBuild['Case'] as ComponentData | null);
+    if (case_) {
+      const moboFF = part.specifications?.['Form Factor']?.toString() || '';
+      const caseSupport = case_.specifications?.['Mobo Support']?.toString() || '';
+      const caseType = case_.specifications?.['Type']?.toString() || '';
+
+      if (moboFF && !caseFFMatch(caseSupport, moboFF, caseType)) {
+        return { compatible: false, message: `This ${moboFF.toUpperCase()} board is too large for your selected case (Supports: ${caseSupport || 'smaller boards'}).` };
       }
     }
   }
@@ -121,6 +170,17 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
         return { compatible: false, message: `Case Incompatible: This case supports up to ${caseMaxRad}mm radiators, but your selected cooler is ${radiatorSize}mm.` };
       }
     }
+
+    const mobo = (currentBuild['Motherboard'] as ComponentData | null);
+    if (mobo) {
+      const moboFF = mobo.specifications?.['Form Factor']?.toString() || '';
+      const caseSupport = part.specifications?.['Mobo Support']?.toString() || '';
+      const caseType = part.specifications?.['Type']?.toString() || '';
+
+      if (moboFF && !caseFFMatch(caseSupport, moboFF, caseType)) {
+        return { compatible: false, message: `Case Incompatible: This case is too small for your ${moboFF.toUpperCase()} motherboard.` };
+      }
+    }
   }
 
   return { compatible: true, message: '' };
@@ -174,6 +234,16 @@ export const checkFullBuildCompatibility = (build: Record<string, ComponentData 
             if (caseMaxRad > 0 && radiatorSize > caseMaxRad) {
                 issues.push({ severity: 'critical', message: `${radiatorSize}mm cooler exceeds the max radiator size (${caseMaxRad}mm) for your selected case.` });
             }
+        }
+    }
+
+    if (mobo && case_) {
+        const moboFF = mobo.specifications?.['Form Factor']?.toString() || '';
+        const caseSupport = case_.specifications?.['Mobo Support']?.toString() || '';
+        const caseType = case_.specifications?.['Type']?.toString() || '';
+
+        if (moboFF && !caseFFMatch(caseSupport, moboFF, caseType)) {
+            issues.push({ severity: 'critical', message: `Case Incompatible: Your ${moboFF.toUpperCase()} motherboard is too large for the selected case.` });
         }
     }
 

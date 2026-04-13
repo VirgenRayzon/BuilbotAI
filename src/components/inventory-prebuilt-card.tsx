@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, getOptimizedStorageUrl } from '@/lib/utils';
-import { Trash2, Info, ChevronUp, ChevronDown, ChevronRight } from 'lucide-react';
+import { Trash2, Info, ChevronUp, ChevronDown, ChevronRight, Archive, RotateCcw, Check, CheckSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
     AlertDialog,
@@ -23,74 +23,132 @@ import { Badge } from '@/components/ui/badge';
 import React, { useState } from 'react';
 import { PrebuiltCardSpecs } from './prebuilt-card-specs';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Checkbox } from "@/components/ui/checkbox";
 
 
 interface InventoryPrebuiltCardProps {
     system: PrebuiltSystem;
     parts: Part[];
     onDelete: (systemId: string) => void;
+    onArchive: (systemId: string, isArchived: boolean) => void;
     onUpdate: (systemId: string, data: AddPrebuiltFormSchema) => Promise<void>;
     isExpanded: boolean;
     onToggleExpand: () => void;
+    isSelected?: boolean;
+    onToggleSelection?: (id: string) => void;
+    isSelectionMode?: boolean;
+    isSuperAdmin?: boolean;
+    isArchiveView?: boolean;
 }
 
-export function InventoryPrebuiltCard({ system, parts, onDelete, onUpdate, isExpanded, onToggleExpand }: InventoryPrebuiltCardProps) {
+export function InventoryPrebuiltCard({ 
+    system, 
+    parts, 
+    onDelete, 
+    onArchive,
+    onUpdate, 
+    isExpanded, 
+    onToggleExpand,
+    isSelected = false,
+    onToggleSelection = () => {},
+    isSelectionMode = false,
+    isSuperAdmin = false,
+    isArchiveView = false
+}: InventoryPrebuiltCardProps) {
 
     return (
-        <AddPrebuiltDialog
-            initialData={system}
-            parts={parts}
-            onSave={(data) => onUpdate(system.id, data)}
-        >
-            <Card className={cn(
-                "flex flex-col h-full transform transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] relative group overflow-hidden border-border/50 cursor-pointer bg-card/40 backdrop-blur-sm",
-                isExpanded ? "ring-2 ring-primary/40 shadow-[0_0_30px_rgba(var(--primary-rgb),0.15)] bg-card/60 -translate-y-1.5" : "hover:-translate-y-1 hover:shadow-xl hover:border-primary/30"
-            )}>
+        <div className="relative group/card-wrapper h-full">
+            <Card 
+                className={cn(
+                    "flex flex-col h-full transform transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] relative group overflow-hidden border-border/50 cursor-pointer bg-card/40 backdrop-blur-sm",
+                    isExpanded ? "ring-2 ring-primary/40 shadow-[0_0_30px_rgba(var(--primary-rgb),0.15)] bg-card/60 -translate-y-1.5" : "hover:-translate-y-1 hover:shadow-xl hover:border-primary/30",
+                    isSelected && "border-primary border-2 shadow-primary/20 bg-primary/[0.05]"
+                )}
+                onClick={() => {
+                    if (isSelectionMode) {
+                        onToggleSelection(system.id);
+                    }
+                }}
+            >
                 <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent transition-opacity duration-300 opacity-0 group-hover:opacity-100" />
+                
+                {/* Multi-select Checkmark (shown only when selected) */}
+                {isSelected && (
+                    <div className="absolute top-3 left-3 z-30 p-1 rounded-md bg-primary text-primary-foreground shadow-lg animate-in zoom-in-50 duration-200">
+                        <Check className="h-4 w-4 stroke-[3px]" />
+                    </div>
+                )}
 
                 <div className="p-3.5 pb-0 space-y-2.5 z-10 flex-grow flex flex-col">
                     <div className="flex justify-between items-start gap-2">
-                        <div className="space-y-0.5 flex-grow">
+                        <div className={cn("space-y-0.5 flex-grow", isSelected ? "pl-5" : "")}>
                             <div className="flex items-center gap-2">
                                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">PREBUILT SYSTEM</p>
                                 <Badge variant="outline" className="h-4 px-1 text-[8px] uppercase tracking-tighter border-primary/20 text-primary/70">
                                     {system.tier}
                                 </Badge>
                             </div>
-                            <CardTitle className="text-base font-headline leading-snug line-clamp-2 h-10">{system.name}</CardTitle>
-                        </div>
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="h-8 w-8 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors -mt-1 -mr-1"
+                            {isSelectionMode ? (
+                                <CardTitle className="text-base font-headline leading-snug line-clamp-2 h-10 hover:text-primary transition-colors">{system.name}</CardTitle>
+                            ) : (
+                                <AddPrebuiltDialog
+                                    initialData={system}
+                                    parts={parts}
+                                    onSave={(data) => onUpdate(system.id, data)}
                                 >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This action cannot be undone. This will permanently delete the prebuilt system: {system.name}.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onDelete(system.id);
-                                        }}
-                                        className="bg-destructive hover:bg-destructive/90"
-                                    >
-                                        Delete
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
+                                    <CardTitle className="text-base font-headline leading-snug line-clamp-2 h-10 hover:text-primary transition-colors">{system.name}</CardTitle>
+                                </AddPrebuiltDialog>
+                            )}
+                        </div>
+                        <div className="flex items-start gap-1">
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors -mt-1"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onArchive(system.id, !isArchiveView);
+                                }}
+                                title={isArchiveView ? "Restore" : "Archive"}
+                            >
+                                {isArchiveView ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                            </Button>
+
+                            {isSuperAdmin && (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="h-8 w-8 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors -mt-1 -mr-1"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete the prebuilt system: {system.name}.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onDelete(system.id);
+                                                }}
+                                                className="bg-destructive hover:bg-destructive/90"
+                                            >
+                                                Delete
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
+                        </div>
                     </div>
 
                     <div className="aspect-video relative w-full overflow-hidden rounded-lg bg-muted/30">
@@ -178,6 +236,6 @@ export function InventoryPrebuiltCard({ system, parts, onDelete, onUpdate, isExp
                     </Button>
                 </div>
             </Card>
-        </AddPrebuiltDialog>
+        </div>
     );
 }

@@ -5,11 +5,24 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Package, PackageCheck, ServerCrash, Loader2, BarChart3, History, TrendingUp, DollarSign, Cpu, Monitor, CircuitBoard, MemoryStick, HardDrive, PlugZap, Square, Wind, Mouse, Headset, ChevronRight, Settings, Trash2, ChevronDown } from "lucide-react";
+import { 
+    Plus, Package, PackageCheck, ServerCrash, Loader2, BarChart3, 
+    History, TrendingUp, DollarSign, Cpu, Monitor, CircuitBoard, 
+    MemoryStick, HardDrive, PlugZap, Square, Wind, Mouse, Headset, 
+    ChevronRight, Settings, Trash2, ChevronDown, Search, Filter, 
+    Archive, LayoutGrid, Table as TableIcon, CheckSquare 
+} from "lucide-react";
 import { Order } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { 
+    DropdownMenu, 
+    DropdownMenuTrigger, 
+    DropdownMenuContent, 
+    DropdownMenuCheckboxItem 
+} from '@/components/ui/dropdown-menu';
 import { InventoryToolbar } from '@/components/inventory-toolbar';
 import { Card, CardContent } from '@/components/ui/card';
 import { AddPartDialog, type AddPartFormSchema } from '@/components/add-part-dialog';
@@ -18,7 +31,13 @@ import type { Part, PrebuiltSystem } from '@/lib/types';
 import { InventoryTable } from '@/components/inventory-table';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { addPart, deletePart, addPrebuiltSystem, deletePrebuiltSystem, updatePart, updatePrebuiltSystem } from '@/firebase/database';
+import { 
+    addPart, deletePart, archivePart, bulkArchiveParts, bulkDeleteParts,
+    addPrebuiltSystem, deletePrebuiltSystem, archivePrebuiltSystem, 
+    bulkArchivePrebuilts, bulkDeletePrebuilts,
+    updatePart, updatePrebuiltSystem,
+    createSystemNotification 
+} from '@/firebase/database';
 import { collection, deleteDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -31,6 +50,7 @@ import { InventoryPrebuiltCard } from '@/components/inventory-prebuilt-card';
 import { updateReservationStatus } from '@/app/checkout-actions';
 import { PaginationControls } from "@/components/pagination-controls";
 import { formatCurrency, cn } from "@/lib/utils";
+import { NotificationCenter } from '@/components/notification-center';
 
 const componentCategories: { name: Part['category'], selected: boolean }[] = [
     { name: "CPU", selected: true },
@@ -75,6 +95,7 @@ export default function AdminPage() {
 
     // Parts state
     const [partCategories, setPartCategories] = useState(componentCategories);
+    const [archivePartCategories, setArchivePartCategories] = useState(componentCategories);
     const [partSortBy, setPartSortBy] = useState('Date Added');
     const [partSortDirection, setPartSortDirection] = useState<'asc' | 'desc'>('desc');
     const [partView, setPartView] = useState<'grid' | 'list'>('grid');
@@ -89,10 +110,18 @@ export default function AdminPage() {
     const [prebuiltView, setPrebuiltView] = useState<'grid' | 'list'>('grid');
     const [prebuiltCurrentPage, setPrebuiltCurrentPage] = useState(1);
     const [prebuiltItemsPerPage, setPrebuiltItemsPerPage] = useState(10);
-    const [allPrebuiltsExpanded, setAllPrebuiltsExpanded] = useState(false);
+    const [expandedPrebuiltIds, setExpandedPrebuiltIds] = useState<string[]>([]);
     const [orderCurrentPage, setOrderCurrentPage] = useState(1);
     const [orderItemsPerPage, setOrderItemsPerPage] = useState(5);
     const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+    const [activeView, setActiveView] = useState<'grid' | 'table'>('grid');
+    
+    // Selection state
+    const [selectedPartIds, setSelectedPartIds] = useState<{ id: string, category: Part['category'] }[]>([]);
+    const [selectedPrebuiltIds, setSelectedPrebuiltIds] = useState<string[]>([]);
+    const [isPrebuiltSelectionMode, setIsPrebuiltSelectionMode] = useState(false);
+    const [isPartSelectionMode, setIsPartSelectionMode] = useState(false);
+
 
     const searchParams = useSearchParams();
     const [currentTab, setCurrentTab] = useState(searchParams.get('tab') || 'stock');
@@ -221,7 +250,34 @@ export default function AdminPage() {
 
     const handleDeletePart = async (partId: string, category: Part['category']) => {
         if (!firestore) return;
+        if (!profile?.isSuperAdmin) {
+            toast({ title: "Permission Denied", description: "Only Super Admins can delete items. Use Archive instead.", variant: "destructive" });
+            return;
+        }
         await deletePart(firestore, partId, category);
+    };
+
+    const handleArchivePart = async (partId: string, category: Part['category'], isArchived: boolean = true) => {
+        if (!firestore) return;
+        try {
+            await archivePart(firestore, partId, category, isArchived);
+            
+            // System Notification for Super Admin
+            if (profile?.isManager && !profile?.isSuperAdmin) {
+                await createSystemNotification(firestore, {
+                    type: 'item_archived',
+                    actorId: profile.id,
+                    actorName: profile.name || profile.email,
+                    title: isArchived ? "Item Archived" : "Item Restored",
+                    message: `Manager ${profile.name || profile.email} ${isArchived ? 'archived' : 'restored'} part: ${partId}`,
+                    targetId: partId
+                });
+            }
+
+            toast({ title: isArchived ? "Item Archived" : "Item Restored", description: `${isArchived ? "Moved to archive." : "Restored to stock."}` });
+        } catch (error) {
+            console.error("Archive error:", error);
+        }
     };
 
     const handleAddPrebuilt = async (newPrebuiltData: AddPrebuiltFormSchema) => {
@@ -236,7 +292,166 @@ export default function AdminPage() {
 
     const handleDeletePrebuilt = async (systemId: string) => {
         if (!firestore) return;
+        if (!profile?.isSuperAdmin) {
+            toast({ title: "Permission Denied", description: "Only Super Admins can delete items.", variant: "destructive" });
+            return;
+        }
         await deletePrebuiltSystem(firestore, systemId);
+    };
+
+    const handleArchivePrebuilt = async (systemId: string, isArchived: boolean = true) => {
+        if (!firestore) return;
+        try {
+            await archivePrebuiltSystem(firestore, systemId, isArchived);
+
+            // System Notification for Super Admin
+            if (profile?.isManager && !profile?.isSuperAdmin) {
+                await createSystemNotification(firestore, {
+                    type: 'item_archived',
+                    actorId: profile.id,
+                    actorName: profile.name || profile.email,
+                    title: isArchived ? "Prebuilt Archived" : "Prebuilt Restored",
+                    message: `Manager ${profile.name || profile.email} ${isArchived ? 'archived' : 'restored'} prebuilt: ${systemId}`,
+                    targetId: systemId
+                });
+            }
+
+            toast({ title: isArchived ? "Prebuilt Archived" : "Prebuilt Restored", description: `${isArchived ? "Moved to archive." : "Restored to systems."}` });
+        } catch (error) {
+            console.error("Archive error:", error);
+        }
+    };
+
+    const togglePartSelection = (id: string, category: Part['category']) => {
+        setSelectedPartIds(prev =>
+            prev.some(p => p.id === id)
+                ? prev.filter(p => p.id !== id)
+                : [...prev, { id, category }]
+        );
+    };
+
+    const toggleAllPartsSelection = (currentParts: Part[]) => {
+        const allVisibleSelected = currentParts.length > 0 && currentParts.every(p => selectedPartIds.some(s => s.id === p.id));
+        
+        if (allVisibleSelected) {
+            // Deselect ONLY the visible items
+            setSelectedPartIds(prev => prev.filter(p => !currentParts.some(cp => cp.id === p.id)));
+        } else {
+            // Select ALL visible items, keeping existing external selections
+            setSelectedPartIds(prev => {
+                const newSelections = [...prev];
+                currentParts.forEach(cp => {
+                    if (!newSelections.some(s => s.id === cp.id)) {
+                        newSelections.push({ id: cp.id, category: cp.category });
+                    }
+                });
+                return newSelections;
+            });
+        }
+    };
+
+    const togglePrebuiltSelection = (id: string) => {
+        setSelectedPrebuiltIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    const toggleAllPrebuiltsSelection = (currentSystems: PrebuiltSystem[]) => {
+        const allVisibleSelected = currentSystems.length > 0 && currentSystems.every(s => selectedPrebuiltIds.includes(s.id));
+
+        if (allVisibleSelected) {
+            // Deselect ONLY the visible items
+            setSelectedPrebuiltIds(prev => prev.filter(id => !currentSystems.some(cs => cs.id === id)));
+        } else {
+            // Select ALL visible items, keeping existing external selections
+            setSelectedPrebuiltIds(prev => {
+                const newSelections = [...prev];
+                currentSystems.forEach(cs => {
+                    if (!newSelections.includes(cs.id)) {
+                        newSelections.push(cs.id);
+                    }
+                });
+                return newSelections;
+            });
+        }
+    };
+
+    const handleBulkArchiveParts = async (isArchived: boolean = true) => {
+        if (!firestore || selectedPartIds.length === 0) return;
+        try {
+            await bulkArchiveParts(firestore, selectedPartIds, isArchived);
+
+            // System Notification for Super Admin
+            if (profile?.isManager && !profile?.isSuperAdmin) {
+                await createSystemNotification(firestore, {
+                    type: 'item_archived',
+                    actorId: profile.id,
+                    actorName: profile.name || profile.email,
+                    title: `Bulk ${isArchived ? 'Archive' : 'Restore'}`,
+                    message: `Manager ${profile.name || profile.email} ${isArchived ? 'archived' : 'restored'} ${selectedPartIds.length} parts.`,
+                    targetId: 'bulk'
+                });
+            }
+
+            toast({ title: "Bulk Action Complete", description: `Archived ${selectedPartIds.length} items.` });
+            setSelectedPartIds([]);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleBulkDeleteParts = async () => {
+        if (!firestore || selectedPartIds.length === 0 || !profile?.isSuperAdmin) return;
+        if (!window.confirm(`Are you sure you want to PERMANENTLY delete ${selectedPartIds.length} items?`)) return;
+        try {
+            await bulkDeleteParts(firestore, selectedPartIds);
+            toast({ title: "Bulk Delete Complete", description: `Deleted ${selectedPartIds.length} items.` });
+            setSelectedPartIds([]);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleBulkArchivePrebuilts = async (isArchived: boolean = true) => {
+        if (!firestore || selectedPrebuiltIds.length === 0) return;
+        try {
+            await bulkArchivePrebuilts(firestore, selectedPrebuiltIds, isArchived);
+
+            // System Notification for Super Admin
+            if (profile?.isManager && !profile?.isSuperAdmin) {
+                await createSystemNotification(firestore, {
+                    type: 'item_archived',
+                    actorId: profile.id,
+                    actorName: profile.name || profile.email,
+                    title: `Bulk ${isArchived ? 'Archive' : 'Restore'}`,
+                    message: `Manager ${profile.name || profile.email} ${isArchived ? 'archived' : 'restored'} ${selectedPrebuiltIds.length} systems.`,
+                    targetId: 'bulk'
+                });
+            }
+
+            toast({ title: "Bulk Action Complete", description: `Archived ${selectedPrebuiltIds.length} systems.` });
+            setSelectedPrebuiltIds([]);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleBulkDeletePrebuilts = async () => {
+        if (!firestore || selectedPrebuiltIds.length === 0 || !profile?.isSuperAdmin) return;
+        if (!window.confirm(`Are you sure you want to PERMANENTLY delete ${selectedPrebuiltIds.length} systems?`)) return;
+        try {
+            await bulkDeletePrebuilts(firestore, selectedPrebuiltIds);
+            toast({ title: "Bulk Delete Complete", description: `Deleted ${selectedPrebuiltIds.length} systems.` });
+            setSelectedPrebuiltIds([]);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const togglePrebuiltExpandAll = (id: string) => {
+        setExpandedPrebuiltIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
     };
 
     const handleDeleteOrder = async (orderId: string) => {
@@ -262,7 +477,14 @@ export default function AdminPage() {
     const handleUpdateOrder = async (orderId: string, newStatus: Order['status']) => {
         if (!firestore) return;
         try {
-            const result = await updateReservationStatus(orderId, newStatus);
+            const actorInfo = profile ? {
+                id: profile.id,
+                name: profile.name || profile.email,
+                isManager: profile.isManager,
+                isSuperAdmin: profile.isSuperAdmin
+            } : undefined;
+
+            const result = await updateReservationStatus(orderId, newStatus, actorInfo);
             if (result.success) {
                 toast({
                     title: "Status Updated",
@@ -287,7 +509,8 @@ export default function AdminPage() {
             const matchesCategory = selectedCategories.includes(part.category);
             const matchesSearch = part.name.toLowerCase().includes(partSearchQuery.toLowerCase()) ||
                 part.brand.toLowerCase().includes(partSearchQuery.toLowerCase());
-            return matchesCategory && matchesSearch;
+            const isNotArchived = !part.isArchived;
+            return matchesCategory && matchesSearch && isNotArchived;
         }) ?? [])
             .sort((a, b) => {
                 let compare = 0;
@@ -315,7 +538,7 @@ export default function AdminPage() {
 
     const filteredAndSortedPrebuilts = useMemo(() => {
         const selectedCategories = prebuiltCategories.filter(c => c.selected).map(c => c.name);
-        return (prebuiltSystems?.filter(system => selectedCategories.includes(system.tier)) ?? [])
+        return (prebuiltSystems?.filter(system => selectedCategories.includes(system.tier) && !system.isArchived) ?? [])
             .sort((a, b) => {
                 let compare = 0;
                 if (prebuiltSortBy === 'Name') compare = a.name.localeCompare(b.name);
@@ -331,13 +554,13 @@ export default function AdminPage() {
     }, [prebuiltSystems, prebuiltCategories, prebuiltSortBy, prebuiltSortDirection]);
 
     const partTotalPages = Math.ceil(filteredAndSortedParts.length / partItemsPerPage);
-    const paginatedParts = useMemo(() => {
+    const currentParts = useMemo(() => {
         const startIndex = (partCurrentPage - 1) * partItemsPerPage;
         return filteredAndSortedParts.slice(startIndex, startIndex + partItemsPerPage);
     }, [filteredAndSortedParts, partCurrentPage, partItemsPerPage]);
 
     const prebuiltTotalPages = Math.ceil(filteredAndSortedPrebuilts.length / prebuiltItemsPerPage);
-    const paginatedPrebuilts = useMemo(() => {
+    const currentPrebuilts = useMemo(() => {
         const startIndex = (prebuiltCurrentPage - 1) * prebuiltItemsPerPage;
         return filteredAndSortedPrebuilts.slice(startIndex, startIndex + prebuiltItemsPerPage);
     }, [filteredAndSortedPrebuilts, prebuiltCurrentPage, prebuiltItemsPerPage]);
@@ -361,16 +584,18 @@ export default function AdminPage() {
     }
 
     return (
-        <div className="container mx-auto p-4 md:p-8">
-            <div className="mb-8">
-                <h1 className="text-4xl font-headline font-bold uppercase tracking-tight text-foreground">
-                    {profile?.isSuperAdmin ? "Super Admin" : "Manager"} Dashboard
-                </h1>
-                <p className="text-muted-foreground mt-2">
-                    {profile?.isSuperAdmin 
-                        ? "Master control for system configurations, inventory, and analytics." 
-                        : "Manage stock inventory, prebuilt systems, and track sales performance."}
-                </p>
+        <div className="w-full px-4 md:px-10 lg:px-16 py-8">
+            <div className="mb-8 flex items-center justify-between">
+                <div>
+                    <h1 className="text-4xl font-headline font-bold uppercase tracking-tight text-foreground">
+                        {profile?.isSuperAdmin ? "Super Admin" : "Manager"} Dashboard
+                    </h1>
+                    <p className="text-muted-foreground mt-2">
+                        {profile?.isSuperAdmin 
+                            ? "Master control for system configurations, inventory, and analytics." 
+                            : "Manage stock inventory, prebuilt systems, and track sales performance."}
+                    </p>
+                </div>
             </div>
             <Tabs value={currentTab} onValueChange={handleTabChange}>
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
@@ -392,183 +617,340 @@ export default function AdminPage() {
                                 </span>
                             )}
                         </TabsTrigger>
-                        {profile?.isSuperAdmin && (
-                            <TabsTrigger value="sales">
-                                <BarChart3 className="mr-2 h-4 w-4" />
-                                Sales
-                            </TabsTrigger>
-                        )}
+                        <TabsTrigger value="sales">
+                            <BarChart3 className="mr-2 h-4 w-4" />
+                            Sales
+                        </TabsTrigger>
+                        <TabsTrigger value="archive">
+                            <Archive className="mr-2 h-4 w-4" />
+                            Archive
+                        </TabsTrigger>
                     </TabsList>
                 </div>
-                <TabsContent value="stock">
-                    <div>
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-2xl font-headline font-bold">INVENTORY OVERVIEW</h2>
+                <TabsContent value="stock" className="mt-6 space-y-6">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-muted/30 p-4 rounded-xl border border-white/5 backdrop-blur-md">
+                        <div className="flex items-center gap-4 w-full md:w-auto">
+                            <div className="relative flex-grow md:flex-grow-0 md:w-80 group">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                <Input
+                                    placeholder="Search parts by name or brand..."
+                                    value={partSearchQuery}
+                                    onChange={(e) => setPartSearchQuery(e.target.value)}
+                                    className="pl-10 h-11 bg-background/50 border-white/10 focus:border-primary/50 transition-all rounded-lg"
+                                />
+                            </div>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30">
+                                        <Filter className="h-4 w-4" />
+                                        Categories
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
+                                    <DropdownMenuCheckboxItem
+                                        checked={partCategories.every(c => c.selected)}
+                                        onCheckedChange={() => {
+                                            const anyUnselected = partCategories.some(cat => !cat.selected);
+                                            setPartCategories(prev => prev.map(c => ({ ...c, selected: anyUnselected })));
+                                        }}
+                                    >
+                                        All Categories
+                                    </DropdownMenuCheckboxItem>
+                                    <Separator className="my-1 opacity-50" />
+                                    {partCategories.map((category) => (
+                                        <DropdownMenuCheckboxItem
+                                            key={category.name}
+                                            checked={category.selected}
+                                            onCheckedChange={() => {
+                                                setPartCategories(prev => prev.map(c => ({
+                                                    ...c,
+                                                    selected: c.name === category.name ? true : false
+                                                })));
+                                            }}
+                                        >
+                                            {category.name}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                            <Button 
+                                variant={isPartSelectionMode ? "secondary" : "outline"}
+                                className={cn(
+                                    "h-11 gap-2 border-white/10 bg-background/50 transition-all",
+                                    isPartSelectionMode && "bg-primary/20 border-primary/50 text-white shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]"
+                                )}
+                                onClick={() => {
+                                    setIsPartSelectionMode(!isPartSelectionMode);
+                                    if (isPartSelectionMode) setSelectedPartIds([]);
+                                }}
+                            >
+                                <CheckSquare className="h-4 w-4" />
+                                {isPartSelectionMode ? "Finish Selection" : "Select"}
+                            </Button>
+
+                            {isPartSelectionMode && (
+                                <Button
+                                    variant="outline"
+                                    className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5"
+                                    onClick={() => toggleAllPartsSelection(currentParts)}
+                                >
+                                    <PackageCheck className="h-4 w-4" />
+                                    {currentParts.length > 0 && currentParts.every(p => selectedPartIds.some(s => s.id === p.id)) ? "Deselect All" : "Select All"}
+                                </Button>
+                            )}
+
+                            {selectedPartIds.length > 0 && (
+                                <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 animate-in fade-in slide-in-from-right-2">
+                                    <span className="text-xs font-bold text-primary">{selectedPartIds.length} Selected</span>
+                                    <Separator orientation="vertical" className="h-4 bg-primary/20" />
+                                    <Button 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        className="h-7 text-xs hover:bg-primary/20"
+                                        onClick={() => handleBulkArchiveParts(true)}
+                                    >
+                                        <Archive className="mr-1.5 h-3 w-3" /> Archive
+                                    </Button>
+                                    {profile?.isSuperAdmin && (
+                                        <Button 
+                                            size="sm" 
+                                            variant="ghost" 
+                                            className="h-7 text-xs text-destructive hover:bg-destructive/20"
+                                            onClick={handleBulkDeleteParts}
+                                        >
+                                            <Trash2 className="mr-1.5 h-3 w-3" /> Delete
+                                        </Button>
+                                    )}
+                                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPartIds([])}>
+                                        Cancel
+                                    </Button>
+                                </div>
+                            )}
+                            <div className="flex bg-muted/50 p-1 rounded-lg border border-white/10 shrink-0">
+                                <Button
+                                    variant={activeView === 'grid' ? 'secondary' : 'ghost'}
+                                    size="icon"
+                                    onClick={() => setActiveView('grid')}
+                                    className={cn("h-9 w-9", activeView === 'grid' && "bg-background shadow-sm")}
+                                >
+                                    <LayoutGrid className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant={activeView === 'table' ? 'secondary' : 'ghost'}
+                                    size="icon"
+                                    onClick={() => setActiveView('table')}
+                                    className={cn("h-9 w-9", activeView === 'table' && "bg-background shadow-sm")}
+                                >
+                                    <TableIcon className="h-4 w-4" />
+                                </Button>
+                            </div>
                             <AddPartDialog onSave={handleAddPart}>
-                                <Button>
-                                    <Plus className="mr-2" />
-                                    Add New Part
+                                <Button className="h-11 gap-2 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 px-6 shrink-0 transition-transform active:scale-95">
+                                    <Plus className="h-4 w-4" />
+                                    Add Part
                                 </Button>
                             </AddPartDialog>
                         </div>
-                        <InventoryToolbar
-                            categories={partCategories}
-                            onCategoryChange={handlePartCategoryChange}
-                            itemCount={filteredAndSortedParts.length}
-                            sortBy={partSortBy}
-                            onSortByChange={(val) => { setPartSortBy(val); setPartCurrentPage(1); }}
-                            sortDirection={partSortDirection}
-                            onSortDirectionChange={(val) => { setPartSortDirection(val); setPartCurrentPage(1); }}
-                            supportedSorts={['Date Added', 'Name', 'Price', 'Brand', 'Stock']}
-                            showViewToggle={true}
-                            view={partView}
-                            onViewChange={(v) => v && setPartView(v as 'grid' | 'list')}
-                            searchQuery={partSearchQuery}
-                            onSearchQueryChange={setPartSearchQuery}
-                        />
-                        {partsLoading ? <TableSkeleton columns={6} /> : (
-                            (parts?.length ?? 0) > 0 ? (
-                                filteredAndSortedParts.length > 0 ? (
-                                    partView === 'list' ? (
-                                        <>
-                                            <Card className="mt-6">
-                                                <InventoryTable parts={paginatedParts} onDelete={handleDeletePart} onUpdateStock={handleUpdatePartStock} onUpdatePart={handleUpdatePart} />
-                                            </Card>
-                                            <PaginationControls
-                                                currentPage={partCurrentPage}
-                                                totalPages={partTotalPages}
-                                                itemsPerPage={partItemsPerPage}
-                                                onPageChange={setPartCurrentPage}
-                                                onItemsPerPageChange={setPartItemsPerPage}
-                                            />
-                                        </>
-                                    ) : (
-                                        <>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
-                                                {paginatedParts.map(part => (
-                                                    <InventoryPartCard key={part.id} part={part} onDelete={handleDeletePart} onUpdateStock={handleUpdatePartStock} onUpdatePart={handleUpdatePart} />
-                                                ))}
-                                            </div>
-                                            <PaginationControls
-                                                currentPage={partCurrentPage}
-                                                totalPages={partTotalPages}
-                                                itemsPerPage={partItemsPerPage}
-                                                onPageChange={setPartCurrentPage}
-                                                onItemsPerPageChange={setPartItemsPerPage}
-                                            />
-                                        </>
-                                    )
-                                ) : (
-                                    <Card className="mt-6">
-                                        <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
-                                            <p>No items match the selected categories.</p>
-                                        </CardContent>
-                                    </Card>
-                                )
-                            ) : (
-                                <Card className="mt-6">
-                                    <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
-                                        <div className='text-center'>
-                                            <ServerCrash className="mx-auto h-12 w-12 text-muted-foreground" />
-                                            <h3 className="mt-4 text-lg font-medium">No items in inventory.</h3>
-                                            <p className="mt-1 text-sm text-muted-foreground">
-                                                Your inventory is currently empty.
-                                            </p>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )
-                        )}
                     </div>
-                </TabsContent>
-                <TabsContent value="prebuilts">
-                    <div>
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-2xl font-headline font-bold">PREBUILTS OVERVIEW</h2>
-                        </div>
-                        <InventoryToolbar
-                            categories={prebuiltCategories}
-                            onCategoryChange={handlePrebuiltCategoryChange}
-                            itemCount={filteredAndSortedPrebuilts.length}
-                            sortBy={prebuiltSortBy}
-                            onSortByChange={(val) => { setPrebuiltSortBy(val); setPrebuiltCurrentPage(1); }}
-                            sortDirection={prebuiltSortDirection}
-                            onSortDirectionChange={(val) => { setPrebuiltSortDirection(val); setPrebuiltCurrentPage(1); }}
-                            supportedSorts={['Date Added', 'Name', 'Price', 'Tier']}
-                            showViewToggle={true}
-                            view={prebuiltView}
-                            onViewChange={(v) => v && setPrebuiltView(v as 'grid' | 'list')}
-                        />
 
-                        {prebuiltsLoading ? <TableSkeleton columns={4} /> : (
-                            (prebuiltSystems?.length ?? 0) > 0 ? (
-                                filteredAndSortedPrebuilts.length > 0 ? (
-                                    prebuiltView === 'list' ? (
-                                        <>
-                                            <Card className="mt-6">
-                                                <PrebuiltsTable 
-                                                    systems={paginatedPrebuilts} 
-                                                    onDelete={handleDeletePrebuilt} 
-                                                    onUpdate={handleUpdatePrebuilt} 
-                                                    parts={parts} 
-                                                    isExpanded={allPrebuiltsExpanded}
-                                                    onToggleExpand={() => setAllPrebuiltsExpanded(!allPrebuiltsExpanded)}
-                                                />
-                                            </Card>
-                                            <PaginationControls
-                                                currentPage={prebuiltCurrentPage}
-                                                totalPages={prebuiltTotalPages}
-                                                itemsPerPage={prebuiltItemsPerPage}
-                                                onPageChange={setPrebuiltCurrentPage}
-                                                onItemsPerPageChange={setPrebuiltItemsPerPage}
-                                            />
-                                        </>
-                                    ) : (
-                                        <>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
-                                                {paginatedPrebuilts.map(system => (
-                                                    <InventoryPrebuiltCard
-                                                        key={system.id}
-                                                        system={system}
-                                                        parts={parts || []}
-                                                        onDelete={handleDeletePrebuilt}
-                                                        onUpdate={handleUpdatePrebuilt}
-                                                        isExpanded={allPrebuiltsExpanded}
-                                                        onToggleExpand={() => setAllPrebuiltsExpanded(!allPrebuiltsExpanded)}
-                                                    />
-                                                ))}
-                                            </div>
-                                            <PaginationControls
-                                                currentPage={prebuiltCurrentPage}
-                                                totalPages={prebuiltTotalPages}
-                                                itemsPerPage={prebuiltItemsPerPage}
-                                                onPageChange={setPrebuiltCurrentPage}
-                                                onItemsPerPageChange={setPrebuiltItemsPerPage}
-                                            />
-                                        </>
-                                    )
-                                ) : (
-                                    <Card className="mt-6">
-                                        <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
-                                            <p>No systems match the selected categories.</p>
-                                        </CardContent>
-                                    </Card>
-                                )
-                            ) : (
-                                <Card className="mt-6">
-                                    <CardContent className="min-h-[300px] flex items-center justify-center text-center text-muted-foreground p-6">
-                                        <div className='text-center'>
-                                            <ServerCrash className="mx-auto h-12 w-12 text-muted-foreground" />
-                                            <h3 className="mt-4 text-lg font-medium">No pre-built systems configured.</h3>
-                                            <p className="mt-1 text-sm text-muted-foreground">
-                                                Your pre-built systems inventory is currently empty.
-                                            </p>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )
-                        )}
+                    {activeView === 'grid' ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {currentParts.map((part) => (
+                                <InventoryPartCard
+                                    key={part.id}
+                                    part={part}
+                                    onDelete={handleDeletePart}
+                                    onArchive={handleArchivePart}
+                                    onUpdateStock={handleUpdatePartStock}
+                                    onUpdatePart={handleUpdatePart}
+                                    isSelected={selectedPartIds.some(p => p.id === part.id)}
+                                    onToggleSelection={togglePartSelection}
+                                    isSelectionMode={isPartSelectionMode}
+                                    isSuperAdmin={profile?.isSuperAdmin}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
+                            <InventoryTable
+                                parts={currentParts}
+                                onDelete={handleDeletePart}
+                                onArchive={handleArchivePart}
+                                onUpdateStock={handleUpdatePartStock}
+                                onUpdatePart={handleUpdatePart}
+                                selectedIds={selectedPartIds}
+                                onToggleSelection={togglePartSelection}
+                                onToggleSelectAll={() => toggleAllPartsSelection(currentParts)}
+                                isSuperAdmin={profile?.isSuperAdmin}
+                            />
+                        </div>
+                    )}
+                    <PaginationControls
+                        currentPage={partCurrentPage}
+                        totalPages={partTotalPages}
+                        itemsPerPage={partItemsPerPage}
+                        onPageChange={setPartCurrentPage}
+                        onItemsPerPageChange={setPartItemsPerPage}
+                    />
+                </TabsContent>
+                <TabsContent value="prebuilts" className="mt-6 space-y-6">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-muted/30 p-4 rounded-xl border border-white/5 backdrop-blur-md">
+                        <div className="flex items-center gap-4 w-full md:w-auto">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30">
+                                        <Filter className="h-4 w-4" />
+                                        Filter Tiers
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
+                                    {prebuiltCategories.map((category) => (
+                                        <DropdownMenuCheckboxItem
+                                            key={category.name}
+                                            checked={category.selected}
+                                            onCheckedChange={() => {
+                                                setPrebuiltCategories(prev => prev.map(c =>
+                                                    c.name === category.name ? { ...c, selected: !c.selected } : c
+                                                ));
+                                            }}
+                                        >
+                                            {category.name}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                            <Button 
+                                variant={isPrebuiltSelectionMode ? "secondary" : "outline"}
+                                className={cn(
+                                    "h-11 gap-2 border-white/10 bg-background/50 transition-all",
+                                    isPrebuiltSelectionMode && "bg-primary/20 border-primary/50 text-white shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]"
+                                )}
+                                onClick={() => {
+                                    setIsPrebuiltSelectionMode(!isPrebuiltSelectionMode);
+                                    if (isPrebuiltSelectionMode) setSelectedPrebuiltIds([]);
+                                }}
+                            >
+                                <CheckSquare className="h-4 w-4" />
+                                {isPrebuiltSelectionMode ? "Finish Selection" : "Select"}
+                            </Button>
+
+                            {isPrebuiltSelectionMode && (
+                                <Button
+                                    variant="outline"
+                                    className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5"
+                                    onClick={() => toggleAllPrebuiltsSelection(currentPrebuilts)}
+                                >
+                                    <PackageCheck className="h-4 w-4" />
+                                    {currentPrebuilts.length > 0 && currentPrebuilts.every(s => selectedPrebuiltIds.includes(s.id)) ? "Deselect All" : "Select All"}
+                                </Button>
+                            )}
+
+                            {selectedPrebuiltIds.length > 0 && (
+                                <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 animate-in fade-in slide-in-from-right-2">
+                                    <span className="text-xs font-bold text-primary">{selectedPrebuiltIds.length} Selected</span>
+                                    <Separator orientation="vertical" className="h-4 bg-primary/20" />
+                                    <Button 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        className="h-7 text-xs hover:bg-primary/20"
+                                        onClick={() => handleBulkArchivePrebuilts(true)}
+                                    >
+                                        <Archive className="mr-1.5 h-3 w-3" /> Archive
+                                    </Button>
+                                    {profile?.isSuperAdmin && (
+                                        <Button 
+                                            size="sm" 
+                                            variant="ghost" 
+                                            className="h-7 text-xs text-destructive hover:bg-destructive/20"
+                                            onClick={handleBulkDeletePrebuilts}
+                                        >
+                                            <Trash2 className="mr-1.5 h-3 w-3" /> Delete
+                                        </Button>
+                                    )}
+                                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPrebuiltIds([])}>
+                                        Cancel
+                                    </Button>
+                                </div>
+                            )}
+                            <div className="flex bg-muted/50 p-1 rounded-lg border border-white/10 shrink-0">
+                                <Button
+                                    variant={activeView === 'grid' ? 'secondary' : 'ghost'}
+                                    size="icon"
+                                    onClick={() => setActiveView('grid')}
+                                    className={cn("h-9 w-9", activeView === 'grid' && "bg-background shadow-sm")}
+                                >
+                                    <LayoutGrid className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant={activeView === 'table' ? 'secondary' : 'ghost'}
+                                    size="icon"
+                                    onClick={() => setActiveView('table')}
+                                    className={cn("h-9 w-9", activeView === 'table' && "bg-background shadow-sm")}
+                                >
+                                    <TableIcon className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            <AddPrebuiltDialog
+                                parts={parts || []}
+                                onSave={handleAddPrebuilt}
+                            >
+                                <Button className="h-11 gap-2 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 px-6 shrink-0 transition-transform active:scale-95">
+                                    <Plus className="h-4 w-4" />
+                                    Add System
+                                </Button>
+                            </AddPrebuiltDialog>
+                        </div>
                     </div>
+
+                    {activeView === 'grid' ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                            {currentPrebuilts.map((system) => (
+                                <InventoryPrebuiltCard
+                                    key={system.id}
+                                    system={system}
+                                    parts={parts || []}
+                                    onDelete={handleDeletePrebuilt}
+                                    onArchive={handleArchivePrebuilt}
+                                    onUpdate={handleUpdatePrebuilt}
+                                    isExpanded={expandedPrebuiltIds.includes(system.id)}
+                                    onToggleExpand={() => togglePrebuiltExpandAll(system.id)}
+                                    isSelected={selectedPrebuiltIds.includes(system.id)}
+                                    onToggleSelection={togglePrebuiltSelection}
+                                    isSelectionMode={isPrebuiltSelectionMode}
+                                    isSuperAdmin={profile?.isSuperAdmin}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
+                            <PrebuiltsTable
+                                systems={currentPrebuilts}
+                                parts={parts || []}
+                                onDelete={handleDeletePrebuilt}
+                                onArchive={handleArchivePrebuilt}
+                                onUpdate={handleUpdatePrebuilt}
+                                isExpanded={expandedPrebuiltIds.length > 0}
+                                onToggleExpand={() => togglePrebuiltExpandAll(currentPrebuilts[0]?.id || '')}
+                                selectedIds={selectedPrebuiltIds}
+                                onToggleSelection={togglePrebuiltSelection}
+                                onToggleSelectAll={() => toggleAllPrebuiltsSelection(currentPrebuilts)}
+                                isSuperAdmin={profile?.isSuperAdmin}
+                            />
+                        </div>
+                    )}
+                    <PaginationControls
+                        currentPage={prebuiltCurrentPage}
+                        totalPages={prebuiltTotalPages}
+                        itemsPerPage={prebuiltItemsPerPage}
+                        onPageChange={setPrebuiltCurrentPage}
+                        onItemsPerPageChange={setPrebuiltItemsPerPage}
+                    />
                 </TabsContent>
                 <TabsContent value="reservations">
                     <div className="space-y-6">
@@ -690,85 +1072,164 @@ export default function AdminPage() {
                     </div>
                 </TabsContent>
 
-                {profile?.isSuperAdmin && (
-                    <TabsContent value="sales">
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <Card>
-                                    <CardContent className="pt-6">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-sm font-medium text-muted-foreground">Total Sales</p>
-                                                <h3 className="text-2xl font-bold">{formatCurrency(stats.totalSales)}</h3>
-                                            </div>
-                                            <div className="p-3 bg-emerald-500/10 rounded-full">
-                                                <DollarSign className="w-6 h-6 text-emerald-500" />
-                                            </div>
+                <TabsContent value="sales">
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <Card>
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm font-medium text-muted-foreground">Total Sales</p>
+                                            <h3 className="text-2xl font-bold">{formatCurrency(stats.totalSales)}</h3>
                                         </div>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardContent className="pt-6">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
-                                                <h3 className="text-2xl font-bold">{stats.totalOrders}</h3>
-                                            </div>
-                                            <div className="p-3 bg-blue-500/10 rounded-full">
-                                                <History className="w-6 h-6 text-blue-500" />
-                                            </div>
+                                        <div className="p-3 bg-emerald-500/10 rounded-full">
+                                            <DollarSign className="w-6 h-6 text-emerald-500" />
                                         </div>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardContent className="pt-6">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-sm font-medium text-muted-foreground">Top Item Popularity</p>
-                                                <h3 className="text-2xl font-bold">{(stats.popularItems[0] as any)?.popularity || 0}</h3>
-                                            </div>
-                                            <div className="p-3 bg-orange-500/10 rounded-full">
-                                                <TrendingUp className="w-6 h-6 text-orange-500" />
-                                            </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
+                                            <h3 className="text-2xl font-bold">{stats.totalOrders}</h3>
                                         </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
+                                        <div className="p-3 bg-blue-500/10 rounded-full">
+                                            <History className="w-6 h-6 text-blue-500" />
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm font-medium text-muted-foreground">Top Item Popularity</p>
+                                            <h3 className="text-2xl font-bold">{(stats.popularItems[0] as any)?.popularity || 0}</h3>
+                                        </div>
+                                        <div className="p-3 bg-orange-500/10 rounded-full">
+                                            <TrendingUp className="w-6 h-6 text-orange-500" />
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
 
-                            <div className="grid grid-cols-1 gap-8">
-                                <div>
-                                    <h3 className="text-xl font-headline font-bold mb-4 flex items-center gap-2">
-                                        <TrendingUp className="h-5 w-5" /> Most Popular Components
-                                    </h3>
-                                    <Card>
-                                        <CardContent className="p-0">
-                                            <div className="divide-y border border-white/5 rounded-md overflow-hidden">
-                                                {stats.popularItems.slice(0, 5).map((item, index) => (
-                                                    <div key={item.id} className="p-3 flex items-center gap-3 hover:bg-muted/10 transition-colors">
-                                                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center font-bold text-[10px] text-primary shrink-0 border border-primary/20">
-                                                            {index + 1}
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="font-medium text-[13px] truncate leading-tight">{item.name}</p>
-                                                            <p className="text-[9px] text-muted-foreground uppercase opacity-70 tracking-tight">{item.category}</p>
-                                                        </div>
-                                                        <div className="text-right shrink-0">
-                                                            <p className="font-bold">{(item as any).popularity || 0}</p>
-                                                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Purchases</p>
-                                                        </div>
+                        <div className="grid grid-cols-1 gap-8">
+                            <div>
+                                <h3 className="text-xl font-headline font-bold mb-4 flex items-center gap-2">
+                                    <TrendingUp className="h-5 w-5" /> Most Popular Components
+                                </h3>
+                                <Card>
+                                    <CardContent className="p-0">
+                                        <div className="divide-y border border-white/5 rounded-md overflow-hidden">
+                                            {stats.popularItems.slice(0, 5).map((item, index) => (
+                                                <div key={item.id} className="p-3 flex items-center gap-3 hover:bg-muted/10 transition-colors">
+                                                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center font-bold text-[10px] text-primary shrink-0 border border-primary/20">
+                                                        {index + 1}
                                                     </div>
-                                                ))}
-                                                {stats.popularItems.length === 0 && (
-                                                    <div className="p-8 text-center text-muted-foreground">No purchase data yet.</div>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-medium text-[13px] truncate leading-tight">{item.name}</p>
+                                                        <p className="text-[9px] text-muted-foreground uppercase opacity-70 tracking-tight">{item.category}</p>
+                                                    </div>
+                                                    <div className="text-right shrink-0">
+                                                        <p className="font-bold">{(item as any).popularity || 0}</p>
+                                                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Purchases</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {stats.popularItems.length === 0 && (
+                                                <div className="p-8 text-center text-muted-foreground">No purchase data yet.</div>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             </div>
                         </div>
-                    </TabsContent>
-                )}
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="archive" className="mt-6 space-y-8">
+                    <div className="space-y-4">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <h2 className="text-xl font-headline font-bold flex items-center gap-2">
+                                <Archive className="h-5 w-5 text-primary" />
+                                Archived Parts
+                            </h2>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="h-9 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30 text-xs">
+                                        <Filter className="h-3 w-3" />
+                                        Categories
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
+                                    <DropdownMenuCheckboxItem
+                                        checked={archivePartCategories.every(c => c.selected)}
+                                        onCheckedChange={() => {
+                                            const anyUnselected = archivePartCategories.some(cat => !cat.selected);
+                                            setArchivePartCategories(prev => prev.map(c => ({ ...c, selected: anyUnselected })));
+                                        }}
+                                    >
+                                        All Categories
+                                    </DropdownMenuCheckboxItem>
+                                    <Separator className="my-1 opacity-50" />
+                                    {archivePartCategories.map((category) => (
+                                        <DropdownMenuCheckboxItem
+                                            key={category.name}
+                                            checked={category.selected}
+                                            onCheckedChange={() => {
+                                                setArchivePartCategories(prev => prev.map(c => ({
+                                                    ...c,
+                                                    selected: c.name === category.name ? true : false
+                                                })));
+                                            }}
+                                        >
+                                            {category.name}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                        <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
+                            <InventoryTable
+                                parts={parts?.filter(p => p.isArchived && archivePartCategories.find(c => c.name === p.category)?.selected) || []}
+                                onDelete={handleDeletePart}
+                                onArchive={handleArchivePart}
+                                onUpdateStock={handleUpdatePartStock}
+                                onUpdatePart={handleUpdatePart}
+                                selectedIds={selectedPartIds}
+                                onToggleSelection={togglePartSelection}
+                                onToggleSelectAll={() => toggleAllPartsSelection(parts?.filter(p => p.isArchived) || [])}
+                                isSuperAdmin={profile?.isSuperAdmin}
+                                isArchiveView={true}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <h2 className="text-xl font-headline font-bold flex items-center gap-2">
+                            <Archive className="h-5 w-5 text-primary" />
+                            Archived Prebuilts
+                        </h2>
+                        <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
+                            <PrebuiltsTable
+                                systems={prebuiltSystems?.filter(s => s.isArchived) || []}
+                                parts={parts || []}
+                                onDelete={handleDeletePrebuilt}
+                                onArchive={handleArchivePrebuilt}
+                                onUpdate={handleUpdatePrebuilt}
+                                isExpanded={false}
+                                selectedIds={selectedPrebuiltIds}
+                                onToggleSelection={togglePrebuiltSelection}
+                                onToggleSelectAll={() => toggleAllPrebuiltsSelection(prebuiltSystems?.filter(s => s.isArchived) || [])}
+                                isSuperAdmin={profile?.isSuperAdmin}
+                                isArchiveView={true}
+                            />
+                        </div>
+                    </div>
+                </TabsContent>
             </Tabs>
         </div>
     )

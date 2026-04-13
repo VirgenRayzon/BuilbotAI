@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Trash2 } from "lucide-react";
+import { Trash2, Archive, RotateCcw } from "lucide-react";
 import { formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
 import type { Part } from "@/lib/types";
 import { AddPartDialog, type AddPartFormSchema } from "./add-part-dialog";
@@ -25,30 +25,62 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { StockEditor } from "./stock-editor";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface InventoryTableProps {
   parts: Part[];
   onDelete: (partId: string, category: Part['category']) => void;
+  onArchive: (partId: string, category: Part['category'], isArchived?: boolean) => void;
   onUpdateStock: (partId: string, category: Part['category'], newStock: number) => void;
   onUpdatePart: (partId: string, category: Part['category'], data: AddPartFormSchema) => Promise<void>;
+  selectedIds: { id: string, category: Part['category'] }[];
+  onToggleSelection: (id: string, category: Part['category']) => void;
+  onToggleSelectAll: () => void;
+  isSuperAdmin?: boolean;
+  isArchiveView?: boolean;
 }
 
-export function InventoryTable({ parts, onDelete, onUpdateStock, onUpdatePart }: InventoryTableProps) {
+export function InventoryTable({ 
+  parts, 
+  onDelete, 
+  onArchive,
+  onUpdateStock, 
+  onUpdatePart,
+  selectedIds,
+  onToggleSelection,
+  onToggleSelectAll,
+  isSuperAdmin,
+  isArchiveView
+}: InventoryTableProps) {
+  const allSelected = parts.length > 0 && parts.every(p => selectedIds.some(s => s.id === p.id));
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead className="w-[40px]">
+            <Checkbox 
+                checked={allSelected}
+                onCheckedChange={() => onToggleSelectAll()}
+            />
+          </TableHead>
           <TableHead>Item</TableHead>
           <TableHead>Category</TableHead>
           <TableHead>Brand</TableHead>
           <TableHead className="text-center">Stock</TableHead>
           <TableHead className="text-right">Price</TableHead>
-          <TableHead className="w-[50px]"></TableHead>
+          <TableHead className="w-[100px]"></TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {parts.map((part) => (
-          <TableRow key={part.id}>
+          <TableRow key={part.id} className={selectedIds.some(s => s.id === part.id) ? "bg-muted/50" : ""}>
+            <TableCell>
+              <Checkbox 
+                checked={selectedIds.some(s => s.id === part.id)}
+                onCheckedChange={() => onToggleSelection(part.id, part.category)}
+              />
+            </TableCell>
             <TableCell className="font-medium">
               <div className="flex items-center gap-3">
                 <Image
@@ -81,30 +113,44 @@ export function InventoryTable({ parts, onDelete, onUpdateStock, onUpdatePart }:
               {formatCurrency(part.price)}
             </TableCell>
             <TableCell>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete the part from your inventory.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => onDelete(part.id, part.category)}
-                      className="bg-destructive hover:bg-destructive/90"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <div className="flex items-center gap-2">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                    onClick={() => onArchive(part.id, part.category, !isArchiveView)}
+                    title={isArchiveView ? "Restore" : "Archive"}
+                >
+                  {isArchiveView ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                </Button>
+
+                {isSuperAdmin && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete the part from your inventory.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => onDelete(part.id, part.category)}
+                          className="bg-destructive hover:bg-destructive/90"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
             </TableCell>
           </TableRow>
         ))}

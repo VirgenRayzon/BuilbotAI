@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
-import { Trash2, ShoppingCart, ChevronDown, ChevronUp } from "lucide-react";
+import { Trash2, ShoppingCart, ChevronDown, ChevronUp, Archive, RotateCcw } from "lucide-react";
 import type { PrebuiltSystem } from "@/lib/types";
 import {
   AlertDialog,
@@ -36,36 +36,59 @@ import { AlertCircle } from "lucide-react";
 import { PrebuiltCardSpecs } from "./prebuilt-card-specs";
 import { AddPrebuiltDialog, type AddPrebuiltFormSchema } from "./add-prebuilt-dialog";
 import type { Part } from "@/lib/types";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface PrebuiltsTableProps {
   systems: PrebuiltSystem[];
   onDelete?: (systemId: string) => void;
+  onArchive?: (systemId: string, isArchived: boolean) => void;
   onUpdate?: (systemId: string, data: AddPrebuiltFormSchema) => Promise<void>;
   parts?: Part[];
   showActions?: boolean;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
+  selectedIds?: string[];
+  onToggleSelection?: (id: string) => void;
+  onToggleSelectAll?: () => void;
+  isSuperAdmin?: boolean;
+  isArchiveView?: boolean;
 }
 
-export function PrebuiltsTable({ systems, onDelete, onUpdate, parts = [], showActions = true, isExpanded = false, onToggleExpand = () => {} }: PrebuiltsTableProps) {
+export function PrebuiltsTable({ 
+  systems, 
+  onDelete, 
+  onArchive,
+  onUpdate, 
+  parts = [], 
+  showActions = true, 
+  isExpanded = false, 
+  onToggleExpand = () => {},
+  selectedIds = [],
+  onToggleSelection = () => {},
+  onToggleSelectAll = () => {},
+  isSuperAdmin = false,
+  isArchiveView = false
+}: PrebuiltsTableProps) {
   const { toast } = useToast();
-
-  const handleAddToCart = (systemName: string) => {
-    toast({
-      title: 'Added to Cart',
-      description: `${systemName} has been added to your cart.`,
-    });
-  }
+  const allSelected = systems.length > 0 && systems.every(s => selectedIds.includes(s.id));
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead className="w-[40px]">
+            {showActions && (
+              <Checkbox 
+                checked={allSelected}
+                onCheckedChange={() => onToggleSelectAll()}
+              />
+            )}
+          </TableHead>
           <TableHead className="w-[40px]"></TableHead>
           <TableHead>System Name</TableHead>
           <TableHead>Tier</TableHead>
           <TableHead className="text-right">Price</TableHead>
-          <TableHead className="w-[50px]"></TableHead>
+          <TableHead className="w-[100px]"></TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -74,11 +97,16 @@ export function PrebuiltsTable({ systems, onDelete, onUpdate, parts = [], showAc
             key={system.id} 
             system={system} 
             onDelete={onDelete} 
+            onArchive={onArchive}
             onUpdate={onUpdate} 
             parts={parts} 
             showActions={showActions}
             isExpanded={isExpanded}
             onToggleExpand={onToggleExpand}
+            isSelected={selectedIds.includes(system.id)}
+            onToggleSelection={onToggleSelection}
+            isSuperAdmin={isSuperAdmin}
+            isArchiveView={isArchiveView}
           />
         ))}
       </TableBody>
@@ -89,19 +117,29 @@ export function PrebuiltsTable({ systems, onDelete, onUpdate, parts = [], showAc
 function PrebuiltTableRow({ 
   system, 
   onDelete, 
+  onArchive,
   onUpdate, 
   parts, 
   showActions,
   isExpanded,
-  onToggleExpand
+  onToggleExpand,
+  isSelected,
+  onToggleSelection,
+  isSuperAdmin,
+  isArchiveView
 }: { 
   system: PrebuiltSystem, 
   onDelete?: (id: string) => void, 
+  onArchive?: (id: string, isArchived: boolean) => void,
   onUpdate?: any, 
   parts: Part[], 
   showActions: boolean,
   isExpanded: boolean,
-  onToggleExpand: () => void
+  onToggleExpand: () => void,
+  isSelected: boolean,
+  onToggleSelection: (id: string) => void,
+  isSuperAdmin: boolean,
+  isArchiveView: boolean
 }) {
   const { toast } = useToast();
 
@@ -117,10 +155,19 @@ function PrebuiltTableRow({
       <TableRow 
         className={cn(
           "group transition-colors cursor-pointer",
-          isExpanded ? "bg-muted/30" : "hover:bg-muted/50"
+          isExpanded ? "bg-muted/30" : "hover:bg-muted/50",
+          isSelected && "bg-muted/50"
         )}
         onClick={() => onToggleExpand()}
       >
+        <TableCell onClick={(e) => e.stopPropagation()}>
+          {showActions && (
+            <Checkbox 
+              checked={isSelected}
+              onCheckedChange={() => onToggleSelection(system.id)}
+            />
+          )}
+        </TableCell>
         <TableCell>
           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -167,65 +214,81 @@ function PrebuiltTableRow({
           {formatCurrency(system.price)}
         </TableCell>
         <TableCell onClick={(e) => e.stopPropagation()}>
-          {showActions && onDelete ? (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the prebuilt system.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => onDelete(system.id)}
-                    className="bg-destructive hover:bg-destructive/90"
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          ) : (() => {
-            const missingParts = getMissingParts(system);
-            const isComplete = missingParts.length === 0;
-
-            if (!isComplete) {
-              return (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="cursor-not-allowed">
-                        <Button size="icon" variant="outline" disabled className="opacity-50">
-                          <AlertCircle className="h-4 w-4 text-warning" />
-                        </Button>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Missing: {missingParts.join(', ')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              );
-            }
-
-            return (
-              <Button size="icon" variant="outline" onClick={() => handleAddToCart(system.name)}>
-                <ShoppingCart className="h-4 w-4" />
+          <div className="flex items-center gap-2">
+            {showActions && onArchive && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                onClick={() => onArchive(system.id, !isArchiveView)}
+                title={isArchiveView ? "Restore" : "Archive"}
+              >
+                {isArchiveView ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
               </Button>
-            );
-          })()}
+            )}
+
+            {showActions && onDelete && isSuperAdmin ? (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete the prebuilt system.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => onDelete(system.id)}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : !showActions && (
+              (() => {
+                const missingParts = getMissingParts(system);
+                const isComplete = missingParts.length === 0;
+
+                if (!isComplete) {
+                  return (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="cursor-not-allowed">
+                            <Button size="icon" variant="outline" disabled className="opacity-50">
+                              <AlertCircle className="h-4 w-4 text-warning" />
+                            </Button>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Missing: {missingParts.join(', ')}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                }
+
+                return (
+                  <Button size="icon" variant="outline" onClick={() => handleAddToCart(system.name)}>
+                    <ShoppingCart className="h-4 w-4" />
+                  </Button>
+                );
+              })()
+            )}
+          </div>
         </TableCell>
       </TableRow>
       {isExpanded && (
         <TableRow className="bg-muted/10">
-          <TableCell colSpan={5} className="p-4 pt-0">
+          <TableCell colSpan={6} className="p-4 pt-0">
             <div className="bg-background/50 rounded-lg p-4 border border-border/40 mt-2">
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Component Breakdown</p>
               <PrebuiltCardSpecs components={system.components} expanded={true} />
