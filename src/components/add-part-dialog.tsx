@@ -360,8 +360,6 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
         }
 
         form.setValue("specifications", finalSpecs, { shouldValidate: true });
-
-        // Image is now handled via file upload, no auto-fill needed
       } else {
         toast({
           variant: "destructive",
@@ -415,42 +413,60 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
       }}
     >
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[80vw] p-0 gap-0 overflow-hidden border-primary/20 bg-background shadow-2xl [&>button.absolute]:hidden">
+      <DialogContent className="sm:max-w-[70vw] p-0 gap-0 overflow-hidden border-primary/20 bg-background/95 backdrop-blur-xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] rounded-3xl [&>button.absolute]:hidden">
 
         {/* ── Header ── */}
-        <DialogHeader className="flex-row items-center gap-3 space-y-0">
-          <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-            <Plus className="h-5 w-5 text-primary" />
+        <DialogHeader className="px-8 pt-8 pb-6 border-b border-border/40 bg-muted/20 flex-row items-center gap-4 space-y-0">
+          <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
+            <Plus className="h-6 w-6 text-primary" />
           </div>
           <div className="flex-1">
-            <DialogTitle className="font-headline text-xl font-bold tracking-tight">
+            <DialogTitle className="font-headline text-2xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
               {title || (initialData ? "Edit Component" : "Add New Component")}
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-              {initialData ? "Modify the component details below." : "Fill in the details or use Buildbot AI to autofill."}
+            <DialogDescription className="text-sm text-muted-foreground font-medium mt-1">
+              {initialData ? "Refine component details and performance metrics." : "Configure new inventory with AI-assisted specification pre-filling."}
             </DialogDescription>
           </div>
           <div className="ml-auto">
             <Button
               type="button"
               variant="outline"
-              size="sm"
+              size="lg"
               onClick={handleGetAiDetails}
               disabled={isAiPending}
-              className="border-primary/30 hover:border-primary hover:bg-primary/10 text-primary gap-1.5"
+              className="relative overflow-hidden group border-primary/30 hover:border-primary hover:bg-primary/10 text-primary gap-2 h-11 px-6 font-bold uppercase tracking-wider text-xs shadow-lg shadow-primary/5 transition-all duration-300"
             >
-              {isAiPending ? <Loader2 className="animate-spin h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/10 to-primary/0 opacity-0 group-hover:opacity-100 animate-shimmer pointer-events-none" />
+              {isAiPending ? (
+                <Loader2 className="animate-spin h-4 w-4" />
+              ) : (
+                <Sparkles className="h-4 w-4 transition-transform group-hover:scale-125 group-hover:rotate-12 duration-300" />
+              )}
               AI Autofill
             </Button>
           </div>
         </DialogHeader>
+
         {isAiPending && (
-          <div className="flex flex-col gap-2 mt-3 p-3 rounded-lg bg-primary/5 border border-primary/20 animate-pulse">
-            <div className="flex items-center gap-2 text-xs text-primary font-bold">
-              <BrainCircuit className="h-3.5 w-3.5 shrink-0" />
-              <span>Buildbot is Prefilling the Specifications…</span>
+          <div className="relative overflow-hidden bg-primary/5 border-b border-primary/10">
+            <div className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/20">
+              <div className="h-full bg-primary animate-progress-glow w-[30%]" />
             </div>
-            <p className="text-[10px] text-primary/70 font-medium">Please wait for AI to finish working before making changes or closing the dialog.</p>
+            <div className="px-8 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 border border-primary/20">
+                  <BrainCircuit className="h-4 w-4 text-primary animate-pulse" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-primary uppercase tracking-widest">Buildbot Intelligence Active</span>
+                  <span className="text-[10px] text-primary/60 font-medium">Researching real-world specs, pricing, and compatibility metrics...</span>
+                </div>
+              </div>
+              <Badge variant="outline" className="animate-pulse bg-primary/10 text-primary border-primary/20 text-[10px] uppercase font-bold px-3 py-1">
+                Processing
+              </Badge>
+            </div>
           </div>
         )}
 
@@ -458,194 +474,206 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col">
 
             {/* ── Scrollable Body ── */}
-            <ScrollArea className="h-[75vh]">
-              <div className="px-6 py-5 space-y-7">
+            <ScrollArea className="h-[70vh]">
+              <div className="px-10 py-8 space-y-10">
 
                 {/* Section: Identity */}
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mb-3 flex items-center gap-2">
-                    <span className="inline-block w-5 h-px bg-primary/40" />
-                    Component Identity
-                    <span className="inline-block flex-1 h-px bg-primary/10" />
-                  </p>
-                  <div className="grid grid-cols-3 gap-4">
-
-                    {/* Part Name — spans all 3 cols */}
-                    <div className="col-span-3">
-                      <FormField control={form.control} name="partName" render={({ field }) => (
+                <div className="grid grid-cols-12 gap-8 items-start">
+                  
+                  {/* Left Column: Image Preview */}
+                  <div className="col-span-12 md:col-span-4 sticky top-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mb-4 flex items-center gap-3">
+                      <span className="inline-block w-4 h-px bg-primary/40" />
+                      Visual Identity
+                    </p>
+                    <div className="p-2 rounded-3xl border border-primary/10 bg-primary/5 shadow-inner">
+                      <FormField control={form.control} name="imageUrl" render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Part Name</FormLabel>
                           <FormControl>
-                            <Input className="bg-muted/40 border-border/60 h-9" placeholder="e.g., AMD Ryzen 7 7700X" {...field} />
+                            <ImageUpload 
+                              value={field.value || ""} 
+                              onChange={field.onChange} 
+                              variant="large"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )} />
                     </div>
+                  </div>
 
-                    <FormField control={form.control} name="category" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Category</FormLabel>
-                        <Select onValueChange={handleCategoryChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="bg-muted/40 border-border/60 h-9">
-                              <SelectValue placeholder="Select…" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {componentCategories.map((cat) => (
-                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-
-                    <FormField control={form.control} name="brand" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Brand</FormLabel>
-                        <FormControl>
-                          <Input className="bg-muted/40 border-border/60 h-9" placeholder="e.g., AMD" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-
-                    {selectedCategory === "CPU" && (
-                      <FormField control={form.control} name="packageType" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                            Package Type <Badge variant="outline" className="text-[9px] py-0 px-1 border-primary/20 text-primary/80">CPU ONLY</Badge>
-                          </FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                  {/* Right Column: Fields */}
+                  <div className="col-span-12 md:col-span-8 space-y-6">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mb-4 flex items-center gap-3">
+                      <span className="inline-block w-4 h-px bg-primary/40" />
+                      Core Details
+                    </p>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Full width row */}
+                      <div className="col-span-2">
+                        <FormField control={form.control} name="partName" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Part Name</FormLabel>
                             <FormControl>
-                              <SelectTrigger className="bg-muted/40 border-border/60 h-9">
-                                <SelectValue placeholder="TRAY or BOX…" />
+                              <Input className="bg-muted/30 border-border/40 h-10 rounded-xl focus:bg-background transition-colors shadow-sm" placeholder="e.g., AMD Ryzen 7 7700X" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </div>
+
+                      <FormField control={form.control} name="category" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Category</FormLabel>
+                          <Select onValueChange={handleCategoryChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="bg-muted/30 border-border/40 h-10 rounded-xl">
+                                <SelectValue placeholder="Select…" />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
-                              <SelectItem value="BOX">BOX (Retail)</SelectItem>
-                              <SelectItem value="TRAY">TRAY (OEM)</SelectItem>
+                            <SelectContent className="rounded-xl">
+                              {componentCategories.map((cat) => (
+                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
                         </FormItem>
                       )} />
-                    )}
 
-                    <FormField control={form.control} name="performanceScore" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Perf. Score (0–100)</FormLabel>
-                        <FormControl>
-                          <Input type="number" className="bg-muted/40 border-border/60 h-9" placeholder="e.g., 75" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
+                      <FormField control={form.control} name="brand" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Brand</FormLabel>
+                          <FormControl>
+                            <Input className="bg-muted/30 border-border/40 h-10 rounded-xl" placeholder="e.g., AMD" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
 
-                    <FormField control={form.control} name="price" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Price (PHP ₱)</FormLabel>
-                        <FormControl>
-                          <Input type="number" className="bg-muted/40 border-border/60 h-9" placeholder="e.g., 17500" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
+                      <FormField control={form.control} name="price" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Price (PHP ₱)</FormLabel>
+                          <FormControl>
+                            <Input type="number" className="bg-muted/30 border-border/40 h-10 rounded-xl" placeholder="e.g., 17500" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
 
-                    <FormField control={form.control} name="stockCount" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Stock Count</FormLabel>
-                        <FormControl>
-                          <Input type="number" className="bg-muted/40 border-border/60 h-9" placeholder="e.g., 10" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
+                      <FormField control={form.control} name="stockCount" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Inventory Stock</FormLabel>
+                          <FormControl>
+                            <Input type="number" className="bg-muted/30 border-border/40 h-10 rounded-xl font-mono" placeholder="e.g., 10" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
 
-                    {/* Image URL — spans all 3 cols */}
-                                        <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                      <FormItem className="col-span-3">
-                        <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                          Part Image <span className="normal-case font-normal text-muted-foreground/50">(New upload will overwrite previous image)</span>
-                        </FormLabel>
-                        <FormControl>
-                          <ImageUpload 
-                            value={field.value || ""} 
-                            onChange={field.onChange} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
+                      <FormField control={form.control} name="performanceScore" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Performance Rank (0–100)</FormLabel>
+                          <FormControl>
+                            <Input type="number" className="bg-muted/30 border-border/40 h-10 rounded-xl" placeholder="e.g., 75" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
 
-                    {/* Description — spans all 3 cols */}
-                    <div className="col-span-3">
+                      {selectedCategory === "CPU" && (
+                        <FormField control={form.control} name="packageType" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 flex items-center gap-1.5">
+                              Package 
+                              <Badge variant="outline" className="text-[8px] py-0 px-1 border-primary/30 text-primary uppercase font-bold tracking-tight">CPU</Badge>
+                            </FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="bg-muted/30 border-border/40 h-10 rounded-xl">
+                                  <SelectValue placeholder="BOX / TRAY" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="rounded-xl">
+                                <SelectItem value="BOX">BOX (Retail)</SelectItem>
+                                <SelectItem value="TRAY">TRAY (OEM)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      )}
+                    </div>
+                    
+                    {/* Description — Part of Right Column */}
+                    <div className="pt-4">
                       <FormField control={form.control} name="description" render={({ field }) => (
                         <FormItem>
-                          <div className="flex items-center justify-between mb-2">
-                            <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Description (Markdown Supported)</FormLabel>
-                            <div className="flex items-center gap-1 p-1 rounded-md bg-muted/60 border border-border/40">
+                          <div className="flex items-center justify-between mb-3">
+                            <FormLabel className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 flex items-center gap-2">
+                               <Type className="h-3 w-3" /> Description
+                            </FormLabel>
+                            <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60 border border-border/40 shadow-sm">
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
                                 onClick={() => {
                                   const val = field.value || "";
                                   field.onChange(`**${val}**`);
                                 }}
                                 title="Bold"
                               >
-                                <Bold className="h-3.5 w-3.5" />
+                                <Bold className="h-4 w-4" />
                               </Button>
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
                                 onClick={() => {
                                   const val = field.value || "";
                                   field.onChange(`*${val}*`);
                                 }}
                                 title="Italic"
                               >
-                                <Italic className="h-3.5 w-3.5" />
+                                <Italic className="h-4 w-4" />
                               </Button>
-                              <div className="w-px h-4 bg-border/60 mx-1" />
+                              <div className="w-px h-5 bg-border/60 mx-1" />
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
                                 onClick={() => {
                                   const val = field.value || "";
                                   field.onChange(`# ${val}`);
                                 }}
                                 title="Heading 1"
                               >
-                                <Heading1 className="h-3.5 w-3.5" />
+                                <Heading1 className="h-4 w-4" />
                               </Button>
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
                                 onClick={() => {
                                   const val = field.value || "";
                                   field.onChange(`## ${val}`);
                                 }}
                                 title="Heading 2"
                               >
-                                <Heading2 className="h-3.5 w-3.5" />
+                                <Heading2 className="h-4 w-4" />
                               </Button>
-                              <div className="w-px h-4 bg-border/60 mx-1" />
+                              <div className="w-px h-5 bg-border/60 mx-1" />
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
                                 onClick={() => {
                                   const val = field.value || "";
                                   const lines = val.split('\n');
@@ -654,31 +682,30 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                                 }}
                                 title="Bullet List"
                               >
-                                <List className="h-3.5 w-3.5" />
+                                <List className="h-4 w-4" />
                               </Button>
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
                                 onClick={() => {
                                   const val = field.value || "";
                                   field.onChange(`\`${val}\``);
                                 }}
                                 title="Code"
                               >
-                                <Code className="h-3.5 w-3.5" />
+                                <Code className="h-4 w-4" />
                               </Button>
                             </div>
                           </div>
                           <FormControl>
                             <textarea
-                              className="flex min-h-[120px] w-full rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-mono text-[13px]"
-                              placeholder="Use Markdown for formatting...
-- Feature one
-- Feature two
-
-**Technical Note:** Supports bold, lists, and headers."
+                              className="flex min-h-[140px] w-full rounded-2xl border border-border/40 bg-muted/20 px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus:bg-background focus:border-primary/40 focus:ring-1 focus:ring-primary/20 focus-visible:outline-none transition-all duration-300 font-mono leading-relaxed"
+                              placeholder="Supports Markdown...
+- High-performance architecture
+- Real-world verified metrics
+"
                               {...field}
                             />
                           </FormControl>
@@ -687,7 +714,9 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                       )} />
                     </div>
                   </div>
-                </div>
+
+                  </div>
+
 
                 {/* Section: Category Specs */}
                 {selectedCategory && CATEGORY_SPECS[selectedCategory] && (
@@ -853,49 +882,23 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
             </ScrollArea>
 
             {/* ── Sticky Footer ── */}
-            <DialogFooter className="flex items-center justify-between px-6 py-4 border-t border-border/60 bg-muted/20 sm:justify-between space-x-0">
-              <p className="text-xs text-muted-foreground">
-                {selectedCategory ? (
-                  <><span className="font-semibold text-primary">{CATEGORY_SPECS[selectedCategory]?.length ?? 0}</span> spec fields for <span className="font-semibold">{selectedCategory}</span></>
-                ) : (
-                  "Select a category to see spec fields."
-                )}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    form.reset({
-                      partName: "",
-                      category: "",
-                      brand: "",
-                      price: 0,
-                      stockCount: 0,
-                      imageUrl: "",
-                      wattage: undefined,
-                      performanceScore: 50,
-                      dimensions: { width: 0, height: 0, depth: 0 },
-                      specifications: [],
-                    });
-                    toast({ title: "Form Cleared", description: "All fields have been reset." });
-                  }}
-                  disabled={isSubmitting || isAiPending}
-                  className="border-muted-foreground/30 text-muted-foreground hover:bg-muted/50"
-                >
-                  Clear Form
+            <DialogFooter className="px-8 py-6 border-t border-border/40 bg-muted/20 flex-row justify-between items-center sm:justify-between">
+              <DialogClose asChild>
+                <Button type="button" variant="ghost" size="lg" className="rounded-xl px-6 font-bold uppercase tracking-wider text-xs hover:bg-destructive/10 hover:text-destructive">
+                  Cancel
                 </Button>
-                <DialogClose asChild disabled={isAiPending}>
-                  <Button type="button" variant="ghost" size="sm" disabled={isSubmitting || isAiPending}>Cancel</Button>
-                </DialogClose>
-                <Button type="submit" size="sm" disabled={isSubmitting || isAiPending} className="bg-primary hover:bg-primary/90 font-headline tracking-wide px-6">
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {initialData ? "Save Changes" : "Add Part"}
-                </Button>
-              </div>
+              </DialogClose>
+              <Button
+                type="submit"
+                size="lg"
+                disabled={isSubmitting}
+                onClick={form.handleSubmit(onSubmit)}
+                className="rounded-xl px-10 font-bold uppercase tracking-[0.15em] text-xs h-12 shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all duration-200"
+              >
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {initialData ? "Update Component" : "Save to Inventory"}
+              </Button>
             </DialogFooter>
-
           </form>
         </Form>
       </DialogContent>

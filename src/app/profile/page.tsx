@@ -180,7 +180,7 @@ export default function ProfilePage() {
 
     if (!authUser) {
         return (
-            <div className="container mx-auto p-4 md:p-8 flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="container mx-auto py-8 flex flex-col items-center justify-center min-h-[60vh]">
                 <div className="p-12 text-center space-y-4 max-w-md">
                     <User className="h-16 w-16 mx-auto opacity-20" />
                     <h1 className="text-3xl font-headline font-bold">Sign in Required</h1>
@@ -197,7 +197,7 @@ export default function ProfilePage() {
         <div className="min-h-screen bg-background/50">
             {/* Profile Hero Section */}
             <div className="w-full bg-muted/30 border-b border-white/5 py-12 mb-8">
-                <div className="container mx-auto px-4 md:px-8 max-w-6xl">
+                <div className="container mx-auto max-w-6xl">
                     <div className="flex flex-col md:flex-row items-center gap-8">
                         <div className="relative">
                             <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-primary via-purple-500 to-indigo-600 flex items-center justify-center text-3xl font-bold text-white shadow-xl shadow-primary/20">
@@ -244,7 +244,7 @@ export default function ProfilePage() {
                 </div>
             </div>
 
-            <main className="container mx-auto px-4 md:px-8 max-w-6xl pb-24">
+            <main className="container mx-auto max-w-6xl pb-24">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {/* Sidebar: Profile Info */}
                     <div className="lg:col-span-4 space-y-6">

@@ -93,7 +93,12 @@ export default function SignUpPage() {
         title: 'Account Created',
         description: "You've been successfully signed up!",
       });
-      router.push('/builder');
+
+      if (isManager || isSuperAdmin) {
+        router.push('/admin');
+      } else {
+        router.push('/builder');
+      }
     } catch (err: any) {
       setError(err.message || 'An error occurred during sign-up.');
     } finally {

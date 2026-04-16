@@ -19,7 +19,7 @@ export default function StartPage() {
   // Redirect based on role
   useEffect(() => {
     if (!loading && authUser) {
-      if (profile?.isManager) {
+      if (profile?.isSuperAdmin || profile?.isManager) {
         router.push('/admin');
       } else {
         router.push('/builder');
@@ -136,7 +136,7 @@ export default function StartPage() {
 
       {/* Feature Showcase Section */}
       <section className="py-24 relative">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto">
           <SectionHeader
             badge="Advanced Engineering"
             title="Smarter Than Your Average Builder"
@@ -212,7 +212,7 @@ export default function StartPage() {
 
       {/* New: Pre-builts & Accessories */}
       <section className="py-24 bg-white/5 relative border-y border-white/5">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto">
           <SectionHeader
             badge="Curated Experiences"
             title="Beyond Just Parts"

@@ -61,8 +61,11 @@ export default function SignInPage() {
       const userDocRef = doc(firestore, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
 
+      let effectiveProfile: any = null;
+
       if (userDoc.exists()) {
         const userData = userDoc.data();
+        effectiveProfile = userData;
         
         // Tab Validation
         if (activeTab === "manager") {
@@ -77,6 +80,7 @@ export default function SignInPage() {
            // Migration: If user was an old Admin but doesn't have the isManager flag, add it now
            if (userData.isAdmin && !userData.isManager) {
              await updateDoc(userDocRef, { isManager: true });
+             effectiveProfile.isManager = true;
            }
            const keyStr = values.roleKey || "none";
            const keyDocSnap = await getDoc(doc(firestore, 'authKeys', keyStr)).catch(() => null);
@@ -106,20 +110,27 @@ export default function SignInPage() {
         }
       } else {
         // If profile is missing in Firestore but user exists in Auth, create a basic profile
-        // This handles cases where auth succeeded but firestore write failed previously
-        await setDoc(userDocRef, {
+        const newProfile = {
           email: user.email,
           isManager: activeTab === "manager" || activeTab === "superadmin",
           isSuperAdmin: activeTab === "superadmin",
           createdAt: new Date().toISOString()
-        });
+        };
+        await setDoc(userDocRef, newProfile);
+        effectiveProfile = newProfile;
       }
 
       toast({
         title: 'Signed In',
         description: 'Welcome back!',
       });
-      router.push('/builder');
+
+      // Redirect based on role
+      if (effectiveProfile?.isSuperAdmin || effectiveProfile?.isManager) {
+        router.push('/admin');
+      } else {
+        router.push('/builder');
+      }
     } catch (err: any) {
       setError(err.message || 'An error occurred during sign-in.');
     } finally {

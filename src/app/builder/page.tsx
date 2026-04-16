@@ -74,7 +74,7 @@ export default function BuilderPage() {
     if (!authLoading) {
       if (!authUser) {
         router.push('/signin');
-      } else if (profile?.isManager) {
+      } else if (profile?.isManager || profile?.isSuperAdmin) {
         router.push('/admin');
       }
     }
@@ -289,24 +289,6 @@ export default function BuilderPage() {
     }
   }, [build, isLoaded, categories]);
 
-  // Handle Selection Order UI guidance
-  useEffect(() => {
-    if (isLoaded) {
-      if (!build['Case']) {
-        // If no case is selected, default to Case category
-        setCategories(prev => prev.map(cat => ({
-          ...cat,
-          selected: cat.name === 'Case'
-        })));
-      } else if (!build['Motherboard']) {
-        // If case is selected but no motherboard, default to Motherboard
-        setCategories(prev => prev.map(cat => ({
-          ...cat,
-          selected: cat.name === 'Motherboard'
-        })));
-      }
-    }
-  }, [isLoaded, build['Case'], build['Motherboard']]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('Date Added');
@@ -353,8 +335,6 @@ export default function BuilderPage() {
         title: 'Selection Order',
         description: 'Please select a Case first before adding other components.'
       });
-      // Force switch to Case category
-      setCategories(prev => prev.map(cat => ({ ...cat, selected: cat.name === 'Case' })));
       return;
     }
 
@@ -364,8 +344,6 @@ export default function BuilderPage() {
         title: 'Selection Order',
         description: 'Please select a Motherboard before adding other components.'
       });
-      // Force switch to Motherboard category
-      setCategories(prev => prev.map(cat => ({ ...cat, selected: cat.name === 'Motherboard' })));
       return;
     }
 
@@ -613,7 +591,7 @@ export default function BuilderPage() {
   };
 
   return (
-    <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-4 md:py-8">
+      <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-4 md:py-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div className="text-left">
           <h1 className="text-4xl font-headline font-bold">Build Your Masterpiece</h1>

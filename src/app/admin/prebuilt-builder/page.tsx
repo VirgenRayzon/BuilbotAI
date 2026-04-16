@@ -192,24 +192,6 @@ export default function PrebuiltBuilderPage() {
         componentCategories.map(c => ({ name: c.name, selected: true }))
     );
 
-    // Handle Selection Order UI guidance
-    useEffect(() => {
-        if (isLoaded) {
-            if (!build['Case']) {
-                // If no case is selected, default to Case category
-                setCategories(prev => prev.map(cat => ({
-                    ...cat,
-                    selected: cat.name === 'Case'
-                })));
-            } else if (!build['Motherboard']) {
-                // If case is selected but no motherboard, default to Motherboard
-                setCategories(prev => prev.map(cat => ({
-                    ...cat,
-                    selected: cat.name === 'Motherboard'
-                })));
-            }
-        }
-    }, [isLoaded, build['Case'], build['Motherboard']]);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState('Date Added');
@@ -254,8 +236,6 @@ export default function PrebuiltBuilderPage() {
                 title: 'Selection Order',
                 description: 'Please select a Case first before adding other components.'
             });
-            // Force switch to Case category
-            setCategories(prev => prev.map(cat => ({ ...cat, selected: cat.name === 'Case' })));
             return;
         }
 
@@ -265,8 +245,6 @@ export default function PrebuiltBuilderPage() {
                 title: 'Selection Order',
                 description: 'Please select a Motherboard before adding other components.'
             });
-            // Force switch to Motherboard category
-            setCategories(prev => prev.map(cat => ({ ...cat, selected: cat.name === 'Motherboard' })));
             return;
         }
 

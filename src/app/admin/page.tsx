@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -23,6 +22,17 @@ import {
     DropdownMenuContent, 
     DropdownMenuCheckboxItem 
 } from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 import { InventoryToolbar } from '@/components/inventory-toolbar';
 import { Card, CardContent } from '@/components/ui/card';
 import { AddPartDialog, type AddPartFormSchema } from '@/components/add-part-dialog';
@@ -87,7 +97,7 @@ export default function AdminPage() {
         if (!userLoading) {
             if (!authUser) {
                 router.replace('/signin');
-            } else if (!profile?.isManager) {
+            } else if (!(profile?.isManager || profile?.isSuperAdmin)) {
                 router.replace('/builder');
             }
         }
@@ -121,6 +131,11 @@ export default function AdminPage() {
     const [selectedPrebuiltIds, setSelectedPrebuiltIds] = useState<string[]>([]);
     const [isPrebuiltSelectionMode, setIsPrebuiltSelectionMode] = useState(false);
     const [isPartSelectionMode, setIsPartSelectionMode] = useState(false);
+    const [confirmAction, setConfirmAction] = useState<{
+        isOpen: boolean;
+        type: 'archive' | 'restore' | 'delete';
+        target: 'parts' | 'prebuilts';
+    }>({ isOpen: false, type: 'archive', target: 'parts' });
 
 
     const searchParams = useSearchParams();
@@ -393,7 +408,7 @@ export default function AdminPage() {
                 });
             }
 
-            toast({ title: "Bulk Action Complete", description: `Archived ${selectedPartIds.length} items.` });
+            toast({ title: "Bulk Action Complete", description: `${isArchived ? 'Archived' : 'Restored'} ${selectedPartIds.length} items.` });
             setSelectedPartIds([]);
         } catch (error) {
             console.error(error);
@@ -402,7 +417,6 @@ export default function AdminPage() {
 
     const handleBulkDeleteParts = async () => {
         if (!firestore || selectedPartIds.length === 0 || !profile?.isSuperAdmin) return;
-        if (!window.confirm(`Are you sure you want to PERMANENTLY delete ${selectedPartIds.length} items?`)) return;
         try {
             await bulkDeleteParts(firestore, selectedPartIds);
             toast({ title: "Bulk Delete Complete", description: `Deleted ${selectedPartIds.length} items.` });
@@ -429,7 +443,7 @@ export default function AdminPage() {
                 });
             }
 
-            toast({ title: "Bulk Action Complete", description: `Archived ${selectedPrebuiltIds.length} systems.` });
+            toast({ title: "Bulk Action Complete", description: `${isArchived ? 'Archived' : 'Restored'} ${selectedPrebuiltIds.length} systems.` });
             setSelectedPrebuiltIds([]);
         } catch (error) {
             console.error(error);
@@ -438,7 +452,6 @@ export default function AdminPage() {
 
     const handleBulkDeletePrebuilts = async () => {
         if (!firestore || selectedPrebuiltIds.length === 0 || !profile?.isSuperAdmin) return;
-        if (!window.confirm(`Are you sure you want to PERMANENTLY delete ${selectedPrebuiltIds.length} systems?`)) return;
         try {
             await bulkDeletePrebuilts(firestore, selectedPrebuiltIds);
             toast({ title: "Bulk Delete Complete", description: `Deleted ${selectedPrebuiltIds.length} systems.` });
@@ -575,6 +588,20 @@ export default function AdminPage() {
         return { totalSales, totalOrders, popularItems, pendingOrdersCount };
     }, [orders, parts]);
 
+    const executeBulkAction = async () => {
+        const { type, target } = confirmAction;
+        if (target === 'parts') {
+            if (type === 'archive') await handleBulkArchiveParts(true);
+            else if (type === 'restore') await handleBulkArchiveParts(false);
+            else if (type === 'delete') await handleBulkDeleteParts();
+        } else {
+            if (type === 'archive') await handleBulkArchivePrebuilts(true);
+            else if (type === 'restore') await handleBulkArchivePrebuilts(false);
+            else if (type === 'delete') await handleBulkDeletePrebuilts();
+        }
+        setConfirmAction(prev => ({ ...prev, isOpen: false }));
+    };
+
     if (userLoading || !authUser || !profile?.isManager) {
         return (
             <div className="flex items-center justify-center min-h-[80vh]">
@@ -584,7 +611,7 @@ export default function AdminPage() {
     }
 
     return (
-        <div className="w-full px-4 md:px-10 lg:px-16 py-8">
+        <div className="w-full px-4 md:px-8 py-8">
             <div className="mb-8 flex items-center justify-between">
                 <div>
                     <h1 className="text-4xl font-headline font-bold uppercase tracking-tight text-foreground">
@@ -597,6 +624,7 @@ export default function AdminPage() {
                     </p>
                 </div>
             </div>
+            
             <Tabs value={currentTab} onValueChange={handleTabChange}>
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
                     <TabsList>
@@ -627,6 +655,7 @@ export default function AdminPage() {
                         </TabsTrigger>
                     </TabsList>
                 </div>
+
                 <TabsContent value="stock" className="mt-6 space-y-6">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-muted/30 p-4 rounded-xl border border-white/5 backdrop-blur-md">
                         <div className="flex items-center gap-4 w-full md:w-auto">
@@ -710,7 +739,7 @@ export default function AdminPage() {
                                         size="sm" 
                                         variant="ghost" 
                                         className="h-7 text-xs hover:bg-primary/20"
-                                        onClick={() => handleBulkArchiveParts(true)}
+                                        onClick={() => setConfirmAction({ isOpen: true, type: 'archive', target: 'parts' })}
                                     >
                                         <Archive className="mr-1.5 h-3 w-3" /> Archive
                                     </Button>
@@ -719,7 +748,7 @@ export default function AdminPage() {
                                             size="sm" 
                                             variant="ghost" 
                                             className="h-7 text-xs text-destructive hover:bg-destructive/20"
-                                            onClick={handleBulkDeleteParts}
+                                            onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'parts' })}
                                         >
                                             <Trash2 className="mr-1.5 h-3 w-3" /> Delete
                                         </Button>
@@ -796,6 +825,7 @@ export default function AdminPage() {
                         onItemsPerPageChange={setPartItemsPerPage}
                     />
                 </TabsContent>
+
                 <TabsContent value="prebuilts" className="mt-6 space-y-6">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-muted/30 p-4 rounded-xl border border-white/5 backdrop-blur-md">
                         <div className="flex items-center gap-4 w-full md:w-auto">
@@ -859,7 +889,7 @@ export default function AdminPage() {
                                         size="sm" 
                                         variant="ghost" 
                                         className="h-7 text-xs hover:bg-primary/20"
-                                        onClick={() => handleBulkArchivePrebuilts(true)}
+                                        onClick={() => setConfirmAction({ isOpen: true, type: 'archive', target: 'prebuilts' })}
                                     >
                                         <Archive className="mr-1.5 h-3 w-3" /> Archive
                                     </Button>
@@ -868,7 +898,7 @@ export default function AdminPage() {
                                             size="sm" 
                                             variant="ghost" 
                                             className="h-7 text-xs text-destructive hover:bg-destructive/20"
-                                            onClick={handleBulkDeletePrebuilts}
+                                            onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'prebuilts' })}
                                         >
                                             <Trash2 className="mr-1.5 h-3 w-3" /> Delete
                                         </Button>
@@ -952,6 +982,7 @@ export default function AdminPage() {
                         onItemsPerPageChange={setPrebuiltItemsPerPage}
                     />
                 </TabsContent>
+
                 <TabsContent value="reservations">
                     <div className="space-y-6">
                         <div className="grid grid-cols-1 gap-8">
@@ -1157,40 +1188,69 @@ export default function AdminPage() {
                                 <Archive className="h-5 w-5 text-primary" />
                                 Archived Parts
                             </h2>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="h-9 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30 text-xs">
-                                        <Filter className="h-3 w-3" />
-                                        Categories
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
-                                    <DropdownMenuCheckboxItem
-                                        checked={archivePartCategories.every(c => c.selected)}
-                                        onCheckedChange={() => {
-                                            const anyUnselected = archivePartCategories.some(cat => !cat.selected);
-                                            setArchivePartCategories(prev => prev.map(c => ({ ...c, selected: anyUnselected })));
-                                        }}
-                                    >
-                                        All Categories
-                                    </DropdownMenuCheckboxItem>
-                                    <Separator className="my-1 opacity-50" />
-                                    {archivePartCategories.map((category) => (
+                            <div className="flex items-center gap-3">
+                                {selectedPartIds.length > 0 && (
+                                    <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 animate-in fade-in slide-in-from-right-2">
+                                        <span className="text-xs font-bold text-primary">{selectedPartIds.length} Selected</span>
+                                        <Separator orientation="vertical" className="h-4 bg-primary/20" />
+                                        <Button 
+                                            size="sm" 
+                                            variant="ghost" 
+                                            className="h-7 text-xs hover:bg-primary/20 text-emerald-400"
+                                            onClick={() => setConfirmAction({ isOpen: true, type: 'restore', target: 'parts' })}
+                                        >
+                                            <PackageCheck className="mr-1.5 h-3 w-3" /> Restore
+                                        </Button>
+                                        {profile?.isSuperAdmin && (
+                                            <Button 
+                                                size="sm" 
+                                                variant="ghost" 
+                                                className="h-7 text-xs text-destructive hover:bg-destructive/20"
+                                                onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'parts' })}
+                                            >
+                                                <Trash2 className="mr-1.5 h-3 w-3" /> Delete
+                                            </Button>
+                                        )}
+                                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPartIds([])}>
+                                            Cancel
+                                        </Button>
+                                    </div>
+                                )}
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" className="h-9 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30 text-xs">
+                                            <Filter className="h-3 w-3" />
+                                            Categories
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
                                         <DropdownMenuCheckboxItem
-                                            key={category.name}
-                                            checked={category.selected}
+                                            checked={archivePartCategories.every(c => c.selected)}
                                             onCheckedChange={() => {
-                                                setArchivePartCategories(prev => prev.map(c => ({
-                                                    ...c,
-                                                    selected: c.name === category.name ? true : false
-                                                })));
+                                                const anyUnselected = archivePartCategories.some(cat => !cat.selected);
+                                                setArchivePartCategories(prev => prev.map(c => ({ ...c, selected: anyUnselected })));
                                             }}
                                         >
-                                            {category.name}
+                                            All Categories
                                         </DropdownMenuCheckboxItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                        <Separator className="my-1 opacity-50" />
+                                        {archivePartCategories.map((category) => (
+                                            <DropdownMenuCheckboxItem
+                                                key={category.name}
+                                                checked={category.selected}
+                                                onCheckedChange={() => {
+                                                    setArchivePartCategories(prev => prev.map(c => ({
+                                                        ...c,
+                                                        selected: c.name === category.name ? true : false
+                                                    })));
+                                                }}
+                                            >
+                                                {category.name}
+                                            </DropdownMenuCheckboxItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
                         </div>
                         <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
                             <InventoryTable
@@ -1209,10 +1269,39 @@ export default function AdminPage() {
                     </div>
 
                     <div className="space-y-4">
-                        <h2 className="text-xl font-headline font-bold flex items-center gap-2">
-                            <Archive className="h-5 w-5 text-primary" />
-                            Archived Prebuilts
-                        </h2>
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <h2 className="text-xl font-headline font-bold flex items-center gap-2">
+                                <Archive className="h-5 w-5 text-primary" />
+                                Archived Prebuilts
+                            </h2>
+                            {selectedPrebuiltIds.length > 0 && (
+                                <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 animate-in fade-in slide-in-from-right-2">
+                                    <span className="text-xs font-bold text-primary">{selectedPrebuiltIds.length} Selected</span>
+                                    <Separator orientation="vertical" className="h-4 bg-primary/20" />
+                                    <Button 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        className="h-7 text-xs hover:bg-primary/20 text-emerald-400"
+                                        onClick={() => setConfirmAction({ isOpen: true, type: 'restore', target: 'prebuilts' })}
+                                    >
+                                        <PackageCheck className="mr-1.5 h-3 w-3" /> Restore
+                                    </Button>
+                                    {profile?.isSuperAdmin && (
+                                        <Button 
+                                            size="sm" 
+                                            variant="ghost" 
+                                            className="h-7 text-xs text-destructive hover:bg-destructive/20"
+                                            onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'prebuilts' })}
+                                        >
+                                            <Trash2 className="mr-1.5 h-3 w-3" /> Delete
+                                        </Button>
+                                    )}
+                                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPrebuiltIds([])}>
+                                        Cancel
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
                         <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
                             <PrebuiltsTable
                                 systems={prebuiltSystems?.filter(s => s.isArchived) || []}
@@ -1231,6 +1320,37 @@ export default function AdminPage() {
                     </div>
                 </TabsContent>
             </Tabs>
+
+            {/* Global Bulk Action Confirmation Dialog */}
+            <AlertDialog open={confirmAction.isOpen} onOpenChange={(open) => setConfirmAction(prev => ({ ...prev, isOpen: open }))}>
+                <AlertDialogContent className="bg-background/95 backdrop-blur-2xl border-white/10 max-w-[400px]">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2 text-xl font-headline font-bold">
+                            {confirmAction.type === 'delete' ? <Trash2 className="h-5 w-5 text-destructive" /> : <Archive className="h-5 w-5 text-primary" />}
+                            Confirm {confirmAction.type.charAt(0).toUpperCase() + confirmAction.type.slice(1)} Action
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground pt-2">
+                            {confirmAction.type === 'delete' 
+                                ? "This action is PERMANENT and cannot be undone. All selected items will be removed forever."
+                                : confirmAction.type === 'archive'
+                                    ? "Are you sure you want to move the selected items to the archive?"
+                                    : "Are you sure you want to restore the selected items to the main inventory?"}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="pt-6">
+                        <AlertDialogCancel className="bg-transparent border-white/10 hover:bg-white/5">Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                            className={cn(
+                                "text-white font-bold",
+                                confirmAction.type === 'delete' ? "bg-destructive hover:bg-destructive/90" : "bg-primary hover:bg-primary/90"
+                            )}
+                            onClick={executeBulkAction}
+                        >
+                            Confirm {confirmAction.type.charAt(0).toUpperCase() + confirmAction.type.slice(1)}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }
