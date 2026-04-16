@@ -39,6 +39,8 @@ import { getAiPartDetails } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "./ui/scroll-area";
 import { ImageUpload } from "./image-upload";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import Image from "next/image";
 
 const componentCategories = [
@@ -103,13 +105,10 @@ const CATEGORY_SPECS: Record<string, { key: string; placeholder: string }[]> = {
     { key: "Form Factor", placeholder: "e.g., ATX / SFX" },
   ],
   Case: [
-    { key: "Max GPU Length", placeholder: "e.g., 400 mm" },
-    { key: "Max Cooler Height", placeholder: "e.g., 170 mm" },
-    { key: "Max Radiator Size (mm)", placeholder: "e.g., 360" },
-    { key: "Mobo Support", placeholder: "e.g., ATX, M-ATX, ITX" },
-    { key: "Radiator Support", placeholder: "e.g., 360mm Top, 240mm Front" },
-    { key: "Back-Connect Cutout", placeholder: "e.g., Yes / No" },
-    { key: "Type", placeholder: "e.g., ATX Mid Tower" },
+    { key: "Mobo Support", placeholder: "Motherboard compatibility" },
+    { key: "Radiator Support (mm)", placeholder: "Radiator size support" },
+    { key: "Type", placeholder: "Case form factor type" },
+    { key: "Back-Connect Cutout", placeholder: "Yes / No" },
     { key: "PSU Form Factor", placeholder: "e.g., ATX / SFX" },
   ],
   Cooler: [
@@ -305,13 +304,27 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
           if (v === undefined || v === null || v === "") return;
           let valStr = String(v);
 
-          // Normalize values for specific dropdowns (e.g. Form Factor)
+          // Normalize values for specific dropdowns (e.g. Form Factor, Case Type, Cutout)
           if (k === "Form Factor" && (result.category === "Motherboard" || result.category === "PSU")) {
             const lower = valStr.toLowerCase();
             if (lower.includes("eatx") || lower.includes("e-atx")) valStr = "eatx";
             else if (lower.includes("matx") || lower.includes("m-atx") || lower.includes("micro")) valStr = "matx";
             else if (lower.includes("itx") || lower.includes("mini")) valStr = "itx";
             else if (lower.includes("atx")) valStr = "atx";
+          } else if (result.category === "Case") {
+            const lower = valStr.toLowerCase();
+            if (k === "Type") {
+              if (lower.includes("full")) valStr = "full tower";
+              else if (lower.includes("mid")) valStr = "mid tower";
+              else if (lower.includes("mini")) valStr = "mini tower";
+              else if (lower.includes("sff") || lower.includes("small")) valStr = "sff";
+            } else if (k === "Back-Connect Cutout") {
+              valStr = lower.includes("yes") ? "yes" : "no";
+            } else if (k === "Mobo Support") {
+              valStr = valStr.split(",").map(s => s.trim().toLowerCase()).filter(s => ["eatx", "atx", "matx", "itx"].includes(s)).join(",");
+            } else if (k === "Radiator Support (mm)") {
+              valStr = valStr.split(",").map(s => s.trim()).filter(s => ["120", "140", "240", "280", "360", "480"].includes(s)).join(",");
+            }
           }
 
           const i = finalSpecs.findIndex((s) => s.key === k);
@@ -680,9 +693,64 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                     </p>
                     <div className="grid grid-cols-3 gap-3 p-4 rounded-xl border border-primary/10 bg-primary/5">
                       {CATEGORY_SPECS[selectedCategory].map(({ key, placeholder }) => (
-                        <div key={key} className="space-y-1.5">
-                          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{key}</label>
-                          {key === "Form Factor" && selectedCategory === "Motherboard" ? (
+                        <div key={key} className={
+                          (selectedCategory === "Case" && (key === "Mobo Support" || key === "Radiator Support (mm)")) 
+                          ? "col-span-3 space-y-2 py-2" 
+                          : "space-y-1.5"
+                        }>
+                          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest block mb-1">{key}</label>
+                          
+                          {/* Case: Mobo Support (Checkboxes) */}
+                          {selectedCategory === "Case" && key === "Mobo Support" ? (
+                            <div className="flex flex-wrap gap-4 p-3 rounded-xl border border-primary/20 bg-primary/5 shadow-inner">
+                              {["eatx", "atx", "matx", "itx"].map((val) => {
+                                const checked = getSpecValue(key).split(",").filter(Boolean).includes(val);
+                                return (
+                                  <div key={val} className="flex items-center gap-2 group cursor-pointer">
+                                    <Checkbox 
+                                      id={`mobo-${val}`}
+                                      checked={checked}
+                                      onCheckedChange={(checked) => {
+                                        const current = getSpecValue(key).split(",").filter(Boolean);
+                                        if (checked) setSpecValue(key, [...current, val].join(","));
+                                        else setSpecValue(key, current.filter(v => v !== val).join(","));
+                                      }}
+                                      className="border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                    />
+                                    <Label htmlFor={`mobo-${val}`} className="text-[10px] font-bold uppercase tracking-wider cursor-pointer group-hover:text-primary transition-colors">
+                                      {val}
+                                    </Label>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : /* Case: Radiator Support (Checkboxes) */
+                          selectedCategory === "Case" && key === "Radiator Support (mm)" ? (
+                            <div className="flex flex-wrap gap-4 p-3 rounded-xl border border-primary/20 bg-primary/5 shadow-inner">
+                              {["120", "140", "240", "280", "360", "480"].map((val) => {
+                                const checked = getSpecValue(key).split(",").filter(Boolean).includes(val);
+                                return (
+                                  <div key={val} className="flex items-center gap-2 group cursor-pointer">
+                                    <Checkbox 
+                                      id={`rad-${val}`}
+                                      checked={checked}
+                                      onCheckedChange={(checked) => {
+                                        const current = getSpecValue(key).split(",").filter(Boolean);
+                                        if (checked) setSpecValue(key, [...current, val].join(","));
+                                        else setSpecValue(key, current.filter(v => v !== val).join(","));
+                                      }}
+                                      className="border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                    />
+                                    <Label htmlFor={`rad-${val}`} className="text-[10px] font-bold uppercase tracking-wider cursor-pointer group-hover:text-primary transition-colors">
+                                      {val}mm
+                                    </Label>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : /* Case/Mobo: Dropdowns */
+                          ((selectedCategory === "Case" && (key === "Type" || key === "Back-Connect Cutout")) || 
+                           (selectedCategory === "Motherboard" && key === "Form Factor")) ? (
                             <Select 
                               value={getSpecValue(key)} 
                               onValueChange={(v) => setSpecValue(key, v)}
@@ -691,9 +759,13 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                                 <SelectValue placeholder="Select..." />
                               </SelectTrigger>
                               <SelectContent>
-                                {["eatx", "atx", "matx", "itx"].map((val) => (
-                                  <SelectItem key={val} value={val}>{val.toUpperCase()}</SelectItem>
-                                ))}
+                                {key === "Back-Connect Cutout" ? (
+                                  ["yes", "no"].map(v => <SelectItem key={v} value={v}>{v.toUpperCase()}</SelectItem>)
+                                ) : key === "Type" && selectedCategory === "Case" ? (
+                                  ["full tower", "mid tower", "mini tower", "sff"].map(v => <SelectItem key={v} value={v}>{v.toUpperCase()}</SelectItem>)
+                                ) : (
+                                  ["eatx", "atx", "matx", "itx"].map(v => <SelectItem key={v} value={v}>{v.toUpperCase()}</SelectItem>)
+                                )}
                               </SelectContent>
                             </Select>
                           ) : (

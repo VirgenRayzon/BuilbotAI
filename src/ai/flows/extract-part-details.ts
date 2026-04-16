@@ -124,7 +124,7 @@ SPECIFICATION RULES (Ensure these keys appear in the JSON 'specifications' array
 - **RAM**: 'Generation', 'Capacity', 'Speed', 'CAS Latency', 'Stick Count'.
 - **Storage**: 'Interface', 'Capacity', 'Read Speed', 'Write Speed', 'TBW Rating', 'Form Factor', 'Type'.
 - **PSU**: 'Wattage (W)', 'Efficiency Rating', 'Modularity', '12VHPWR Support', 'Form Factor'.
-- **Case**: 'Max GPU Length', 'Max Cooler Height', 'Max Radiator Size (mm)', 'Mobo Support', 'Radiator Support', 'Back-Connect Cutout', 'Type', 'PSU Form Factor'.
+- **Case**: 'Mobo Support' (MANDATORY: comma-separated list of: eatx, atx, matx, itx), 'Radiator Support (mm)' (MANDATORY: comma-separated list of: 120, 140, 240, 280, 360, 480), 'Type' (MANDATORY: exactly one of: full tower, mid tower, mini tower, sff), 'Back-Connect Cutout' (MANDATORY: exactly one of: yes, no), 'PSU Form Factor'.
 - **Cooler**: 'TDP Rating', 'Socket Support', 'Height', 'Radiator Size', 'Type'.
 
 ADDITIONAL FIELDS:
