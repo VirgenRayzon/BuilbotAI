@@ -4,11 +4,13 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     function isManager() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isManager == true;
+      return request.auth != null && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isManager == true;
     }
 
     function isSuperAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true;
+      return request.auth != null && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true;
     }
 
     match /users/{userId} {
@@ -21,10 +23,10 @@ service cloud.firestore {
       allow list, write: if request.auth != null && isSuperAdmin();
     }
 
-    match /{category}/{partId} 
-        where category in ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler', 'prebuiltSystems'] {
+    match /{category}/{partId} {
       allow read: if true;
-      allow write: if isManager();
+      allow write: if isManager() && 
+                    category in ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler', 'prebuiltSystems'];
     }
   }
 }

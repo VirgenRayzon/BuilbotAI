@@ -74,10 +74,9 @@ const CATEGORY_SPECS: Record<string, { key: string; placeholder: string }[]> = {
     { key: "Socket", placeholder: "e.g., AM5" },
     { key: "Form Factor", placeholder: "e.g., ATX" },
     { key: "RAM Type", placeholder: "e.g., DDR5" },
-    { key: "M.2 Slots", placeholder: "e.g., 3x Gen4" },
-    { key: "Back-Connect Support", placeholder: "e.g., Yes / No (BTF, Project Stealth)" },
-    { key: "Connectivity", placeholder: "e.g., Wi-Fi 6E, 2.5Gb Ethernet" },
-    { key: "Memory Slots", placeholder: "e.g., 2, 4" },
+    { key: "SATA Slots", placeholder: "e.g., 6" },
+    { key: "NVMe Slots", placeholder: "e.g., 3" },
+    { key: "Memory Slots", placeholder: "e.g., 4" },
     { key: "Memory Type", placeholder: "e.g., DDR5" },
   ],
   RAM: [
@@ -304,7 +303,17 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
         const finalSpecs = [...(form.getValues("specifications") || [])];
         const updateSpec = (k: string, v: any) => {
           if (v === undefined || v === null || v === "") return;
-          const valStr = String(v);
+          let valStr = String(v);
+
+          // Normalize values for specific dropdowns (e.g. Form Factor)
+          if (k === "Form Factor" && (result.category === "Motherboard" || result.category === "PSU")) {
+            const lower = valStr.toLowerCase();
+            if (lower.includes("eatx") || lower.includes("e-atx")) valStr = "eatx";
+            else if (lower.includes("matx") || lower.includes("m-atx") || lower.includes("micro")) valStr = "matx";
+            else if (lower.includes("itx") || lower.includes("mini")) valStr = "itx";
+            else if (lower.includes("atx")) valStr = "atx";
+          }
+
           const i = finalSpecs.findIndex((s) => s.key === k);
           if (i >= 0) finalSpecs[i] = { key: k, value: valStr };
           else finalSpecs.push({ key: k, value: valStr });
@@ -386,7 +395,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
       }}
     >
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-5xl p-0 gap-0 overflow-hidden border-primary/20 bg-background shadow-2xl [&>button.absolute]:hidden">
+      <DialogContent className="sm:max-w-[80vw] p-0 gap-0 overflow-hidden border-primary/20 bg-background shadow-2xl [&>button.absolute]:hidden">
 
         {/* ── Header ── */}
         <DialogHeader className="flex-row items-center gap-3 space-y-0">
@@ -429,7 +438,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col">
 
             {/* ── Scrollable Body ── */}
-            <ScrollArea className="h-[62vh]">
+            <ScrollArea className="h-[75vh]">
               <div className="px-6 py-5 space-y-7">
 
                 {/* Section: Identity */}
@@ -673,12 +682,29 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                       {CATEGORY_SPECS[selectedCategory].map(({ key, placeholder }) => (
                         <div key={key} className="space-y-1.5">
                           <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{key}</label>
-                          <Input
-                            placeholder={placeholder}
-                            value={getSpecValue(key)}
-                            onChange={(e) => setSpecValue(key, e.target.value)}
-                            className="h-8 text-sm bg-background/60 border-border/50 focus:border-primary/50"
-                          />
+                          {key === "Form Factor" && selectedCategory === "Motherboard" ? (
+                            <Select 
+                              value={getSpecValue(key)} 
+                              onValueChange={(v) => setSpecValue(key, v)}
+                            >
+                              <SelectTrigger className="h-8 text-sm bg-background/60 border-border/50 focus:border-primary/50">
+                                <SelectValue placeholder="Select..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {["eatx", "atx", "matx", "itx"].map((val) => (
+                                  <SelectItem key={val} value={val}>{val.toUpperCase()}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input
+                              placeholder={placeholder}
+                              value={getSpecValue(key)}
+                              onChange={(e) => setSpecValue(key, e.target.value)}
+                              type={key.includes("Slots") || key.includes("Count") ? "number" : "text"}
+                              className="h-8 text-sm bg-background/60 border-border/50 focus:border-primary/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                          )}
                         </div>
                       ))}
                     </div>

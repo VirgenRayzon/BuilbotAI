@@ -34,6 +34,7 @@ const AiPrebuiltAdvisorOutputSchema = z.object({
   price: z.number().describe('An estimated total price for the system in Philippine Pesos (PHP), based on the provided components.'),
   estimatedWattage: z.string().describe('The estimated total wattage for the build, in the format "550W".'),
   compatibilitySummary: z.string().describe('A summary of the component compatibility. Note any potential issues or bottlenecks. If everything is compatible, confirm that.'),
+  tier: z.enum(['Entry', 'Mid-Range', 'High-End', 'Workstation']).describe('The tier this system falls into based on components (Entry, Mid-Range, High-End, or Workstation).'),
 });
 export type AiPrebuiltAdvisorOutput = z.infer<typeof AiPrebuiltAdvisorOutputSchema>;
 
@@ -63,6 +64,7 @@ Your task is to:
 3.  Analyze the provided components for compatibility. Point out any issues (e.g., CPU socket not matching motherboard, RAM type mismatch, insufficient PSU). If they are compatible, confirm this. Use the provided Expert Local Knowledge Base if it contains relevant compatibility rules.
 4.  Estimate the total power consumption in watts (e.g., "550W").
 5.  Estimate a reasonable market price for the entire build in Philippine Pesos (PHP). Ensure it accurately reflects current real-world pricing. If you are unsure of the price or if it's missing from your knowledge, MUST use the "googleSearch" tool to find the current price in PHP.
+6.  Identify the appropriate performance tier ('Entry', 'Mid-Range', 'High-End', or 'Workstation') for this configuration.
 
 The user has specified the build tier as: {{{tier}}}.
 

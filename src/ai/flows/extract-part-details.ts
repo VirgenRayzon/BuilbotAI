@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A Genkit flow for extracting PC part details using AI.
@@ -80,7 +79,7 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
   try {
     // Stage 1: Intelligence & Research (Conditional Search)
     logDebug("Stage 1: Evaluating info and researching if needed...");
-    
+
     // Determine if we need to research. If groundedContext is for the correct part, we might skip.
     const researcherPrompt = `You are an expert PC hardware researcher.
     
@@ -121,7 +120,7 @@ Part Name Requested: ${input.partName}
 SPECIFICATION RULES (Ensure these keys appear in the JSON 'specifications' array):
 - **CPU**: 'Architecture', 'Cores', 'Threads', 'Base Clock (GHz)', 'Boost Clock (GHz)', 'Socket', 'TDP / Peak Power', 'L3 Cache', 'Memory Support', 'Integrated Graphics'.
 - **GPU**: 'Chipset', 'VRAM Capacity', 'Memory Type', 'TGP / Power Draw (W)', 'Length (Depth) (mm)' (Integer), 'Slot Thickness' (e.g. "4 slot"), 'Interface', 'CUDA Cores' or 'Stream Processors'.
-- **Motherboard**: 'Chipset', 'Socket', 'Form Factor', 'RAM Type', 'M.2 Slots', 'Back-Connect Support', 'Connectivity', 'Memory Slots', 'Memory Type'.
+- **Motherboard**: 'Chipset', 'Socket', 'Form Factor' (MANDATORY: MUST be exactly one of: eatx, atx, matx, itx), 'RAM Type', 'SATA Slots' (Integer), 'NVMe Slots' (Integer), 'Back-Connect Support', 'Connectivity', 'Memory Slots', 'Memory Type'.
 - **RAM**: 'Generation', 'Capacity', 'Speed', 'CAS Latency', 'Stick Count'.
 - **Storage**: 'Interface', 'Capacity', 'Read Speed', 'Write Speed', 'TBW Rating', 'Form Factor', 'Type'.
 - **PSU**: 'Wattage (W)', 'Efficiency Rating', 'Modularity', '12VHPWR Support', 'Form Factor'.

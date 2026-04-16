@@ -369,7 +369,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent className="sm:max-w-4xl p-0 gap-0 overflow-hidden border-primary/20 bg-background shadow-2xl [&>button.absolute]:hidden">
+            <DialogContent className="sm:max-w-[80vw] p-0 gap-0 overflow-hidden border-primary/20 bg-background shadow-2xl [&>button.absolute]:hidden">
 
                 {/* ── Header ── */}
                 <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60 bg-muted/30 flex-row items-center gap-3 space-y-0">
@@ -413,7 +413,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col">
 
                         {/* ── Scrollable Body ── */}
-                        <ScrollArea className="h-[62vh]">
+                        <ScrollArea className="h-[75vh]">
                             <div className="px-6 py-5 space-y-7">
 
                                 {/* Section: System Identity */}
