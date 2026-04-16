@@ -119,7 +119,7 @@ Part Name Requested: ${input.partName}
 
 SPECIFICATION RULES (Ensure these keys appear in the JSON 'specifications' array):
 - **CPU**: 'Architecture', 'Cores', 'Threads', 'Base Clock (GHz)', 'Boost Clock (GHz)', 'Socket', 'TDP / Peak Power', 'L3 Cache', 'Memory Support', 'Integrated Graphics'.
-- **GPU**: 'Chipset', 'VRAM Capacity', 'Memory Type', 'TGP / Power Draw (W)', 'Length (Depth) (mm)' (Integer), 'Slot Thickness' (e.g. "4 slot"), 'Interface', 'CUDA Cores' or 'Stream Processors'.
+- **GPU**: 'Chipset', 'VRAM Capacity', 'Memory Type', 'TGP / Power Draw (W)', 'Length (Depth) (mm)' (Integer), 'Slot Thickness' (Integer), 'Interface', 'CUDA Cores' or 'Stream Processors'.
 - **Motherboard**: 'Chipset', 'Socket', 'Form Factor' (MANDATORY: MUST be exactly one of: eatx, atx, matx, itx), 'RAM Type', 'SATA Slots' (Integer), 'NVMe Slots' (Integer), 'Back-Connect Support', 'Connectivity', 'Memory Slots', 'Memory Type'.
 - **RAM**: 'Generation', 'Capacity', 'Speed', 'CAS Latency', 'Stick Count'.
 - **Storage**: 'Interface', 'Capacity', 'Read Speed', 'Write Speed', 'TBW Rating', 'Form Factor', 'Type'.

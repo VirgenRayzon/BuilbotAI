@@ -67,7 +67,7 @@ const CATEGORY_SPECS: Record<string, { key: string; placeholder: string }[]> = {
     { key: "Memory Type", placeholder: "e.g., GDDR6X" },
     { key: "TGP / Power Draw (W)", placeholder: "e.g., 200 W" },
     { key: "Length (Depth) (mm)", placeholder: "e.g., 336 mm" },
-    { key: "Slot Thickness", placeholder: "e.g., 2 slot" },
+    { key: "Slot Thickness", placeholder: "e.g., 3" },
     { key: "Interface", placeholder: "e.g., PCIe 4.0 x16" },
     { key: "CUDA Cores", placeholder: "e.g., 5888 (NVIDIA) / Stream Processors" },
   ],
@@ -324,6 +324,9 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
               valStr = valStr.split(",").map(s => s.trim().toLowerCase()).filter(s => ["eatx", "atx", "matx", "itx"].includes(s)).join(",");
             } else if (k === "Radiator Support (mm)") {
               valStr = valStr.split(",").map(s => s.trim()).filter(s => ["120", "140", "240", "280", "360", "480"].includes(s)).join(",");
+            } else if (k === "Slot Thickness") {
+              const num = valStr.match(/\d+/)?.[0];
+              if (num) valStr = `${num} Slot`;
             }
           }
 
@@ -771,9 +774,22 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                           ) : (
                             <Input
                               placeholder={placeholder}
-                              value={getSpecValue(key)}
-                              onChange={(e) => setSpecValue(key, e.target.value)}
-                              type={key.includes("Slots") || key.includes("Count") ? "number" : "text"}
+                              value={key === "Slot Thickness" ? getSpecValue(key).replace(/\s*slot\s*/gi, "") : getSpecValue(key)}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (key === "Slot Thickness") {
+                                  setSpecValue(key, val ? `${val} Slot` : "");
+                                } else {
+                                  setSpecValue(key, val);
+                                }
+                              }}
+                              type={
+                                key.includes("Slots") || 
+                                key.includes("Count") || 
+                                key === "Slot Thickness" || 
+                                key.includes("(mm)") 
+                                ? "number" : "text"
+                              }
                               className="h-8 text-sm bg-background/60 border-border/50 focus:border-primary/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />
                           )}
