@@ -514,12 +514,12 @@ export default function BuilderPage() {
             const coolerModel = isIntel 
               ? "Intel Laminar RM1 CPU Cooler" 
               : isAmd 
-                ? "AMD Wraith MAX CPU Cooler" 
+                ? "AMD Wraith MAX CPU Cooler with RGB LED" 
                 : `Stock Cooler (Included with ${part.name})`;
 
             if (currentCooler?.model !== coolerModel) {
               nextBuild['Cooler'] = {
-                id: 'included-stock-cooler',
+                id: isAmd ? 'uGiAh2JerLwnDe5VW431' : 'included-stock-cooler',
                 model: coolerModel,
                 price: 0,
                 description: `Standard retail cooling solution bundled with this ${part.brand} CPU.`,
@@ -714,7 +714,7 @@ export default function BuilderPage() {
                         )}>
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-3">
-                              <Image src={getOptimizedStorageUrl(part.imageUrl)} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
+                              <Image src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
                               <div>
                                 <div className="flex items-center gap-2">
                                   <p className="font-semibold">{part.name}</p>

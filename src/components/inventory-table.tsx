@@ -84,7 +84,7 @@ export function InventoryTable({
             <TableCell className="font-medium">
               <div className="flex items-center gap-3">
                 <Image
-                  src={getOptimizedStorageUrl(part.imageUrl)}
+                  src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"}
                   alt={part.name}
                   width={40}
                   height={40}
@@ -103,11 +103,15 @@ export function InventoryTable({
             </TableCell>
             <TableCell>{part.category}</TableCell>
             <TableCell>{part.brand}</TableCell>
-            <TableCell className="w-[150px]">
-              <StockEditor
-                stock={part.stock}
-                onStockChange={(newStock) => onUpdateStock(part.id, part.category, newStock)}
-              />
+            <TableCell className="w-[150px] text-center">
+              {isArchiveView ? (
+                <span className="font-mono text-muted-foreground">{part.stock}</span>
+              ) : (
+                <StockEditor
+                  stock={part.stock}
+                  onStockChange={(newStock) => onUpdateStock(part.id, part.category, newStock)}
+                />
+              )}
             </TableCell>
             <TableCell className="text-right">
               {formatCurrency(part.price)}

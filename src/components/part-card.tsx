@@ -61,10 +61,10 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                                 <AlertTriangle className="h-10 w-10 text-destructive scale-110 drop-shadow-lg animate-pulse" />
                             </div>
                             <h3 className="text-2xl font-headline font-black text-destructive tracking-tighter mb-2 drop-shadow-md leading-none">
-                                {compatibility.message === 'ram slot is full' ? 'SLOTS FULL!' : 'INCOMPATIBLE'}
+                                {compatibility.message.toLowerCase().includes('slot is full') ? 'SLOTS FULL!' : 'INCOMPATIBLE'}
                             </h3>
                             <p className="text-xs font-bold text-foreground/90 leading-relaxed max-w-[200px] drop-shadow-sm mb-4 uppercase tracking-tight">
-                                {compatibility.message === 'ram slot is full' ? 'Your motherboard RAM slots are all populated.' : compatibility.message}
+                                {compatibility.message}
                             </p>
                             <Badge variant="destructive" className="font-black animate-bounce px-4 py-1.5 shadow-lg">
                                 ACTION REQUIRED

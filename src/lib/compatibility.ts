@@ -101,6 +101,22 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
       }
     }
 
+    const storageData = currentBuild['Storage'];
+    const currentStorages = Array.isArray(storageData) ? storageData : (storageData ? [storageData as ComponentData] : []);
+    if (currentStorages.length > 0) {
+      const nvmeSlots = parseInt(part.specifications?.['NVMe Slots']?.toString() || "0");
+      const sataSlots = parseInt(part.specifications?.['SATA Slots']?.toString() || "0");
+      const usedNvme = currentStorages.filter(s => normalize(s.specifications?.['Type']).includes('nvme')).length;
+      const usedSata = currentStorages.filter(s => normalize(s.specifications?.['Type']).includes('sata')).length;
+
+      if (usedNvme > nvmeSlots) {
+        return { compatible: false, message: `This motherboard only has ${nvmeSlots} NVMe slots, but you have ${usedNvme} NVMe drives.` };
+      }
+      if (usedSata > sataSlots) {
+        return { compatible: false, message: `This motherboard only has ${sataSlots} SATA slots, but you have ${usedSata} SATA drives.` };
+      }
+    }
+
     const case_ = (currentBuild['Case'] as ComponentData | null);
     if (case_) {
       const moboFF = part.specifications?.['Form Factor']?.toString() || '';
@@ -130,6 +146,29 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
 
       if (usedSlots + partStickCount > totalSlots) {
         return { compatible: false, message: `RAM slot is full (${usedSlots}/${totalSlots} slots used).` };
+      }
+    }
+  }
+
+  // Storage Validation
+  if (category === 'Storage') {
+    if (mobo) {
+      const storageType = normalize(part.specifications?.['Type']);
+      const storageData = currentBuild['Storage'];
+      const currentStorages = Array.isArray(storageData) ? storageData : (storageData ? [storageData as ComponentData] : []);
+
+      if (storageType.includes('nvme')) {
+        const totalSlots = parseInt(mobo.specifications?.['NVMe Slots']?.toString() || "0");
+        const usedSlots = currentStorages.filter(s => normalize(s.specifications?.['Type']).includes('nvme')).length;
+        if (usedSlots >= totalSlots) {
+          return { compatible: false, message: `NVMe slot is full (${usedSlots}/${totalSlots} slots used).` };
+        }
+      } else if (storageType.includes('sata')) {
+        const totalSlots = parseInt(mobo.specifications?.['SATA Slots']?.toString() || "0");
+        const usedSlots = currentStorages.filter(s => normalize(s.specifications?.['Type']).includes('sata')).length;
+        if (usedSlots >= totalSlots) {
+          return { compatible: false, message: `SATA slot is full (${usedSlots}/${totalSlots} slots used).` };
+        }
       }
     }
   }
@@ -219,6 +258,22 @@ export const checkFullBuildCompatibility = (build: Record<string, ComponentData 
         const usedSlots = rams.reduce((sum, r) => sum + parseInt(r.specifications?.['Stick Count']?.toString() || "1"), 0);
         if (usedSlots > totalSlots) {
             issues.push({ severity: 'critical', message: `Too much RAM: This motherboard only has ${totalSlots} slots, but you're using ${usedSlots}.` });
+        }
+
+        // Storage Slot Check
+        const storageData = build['Storage'];
+        const storagesList = Array.isArray(storageData) ? storageData : (storageData ? [storageData as ComponentData] : []);
+        
+        const totalNvme = parseInt(mobo.specifications?.['NVMe Slots']?.toString() || "0");
+        const usedNvme = storagesList.filter(s => normalize(s.specifications?.['Type']).includes('nvme')).length;
+        if (usedNvme > totalNvme) {
+            issues.push({ severity: 'critical', message: `Too many NVMe drives: This motherboard only has ${totalNvme} NVMe slots, but you're using ${usedNvme}.` });
+        }
+
+        const totalSata = parseInt(mobo.specifications?.['SATA Slots']?.toString() || "0");
+        const usedSata = storagesList.filter(s => normalize(s.specifications?.['Type']).includes('sata')).length;
+        if (usedSata > totalSata) {
+            issues.push({ severity: 'critical', message: `Too many SATA drives: This motherboard only has ${totalSata} SATA slots, but you're using ${usedSata}.` });
         }
     }
 

@@ -572,7 +572,7 @@ export default function PrebuiltBuilderPage() {
                                                 )}>
                                                     <TableCell className="font-medium">
                                                         <div className="flex items-center gap-3">
-                                                            <Image src={getOptimizedStorageUrl(part.imageUrl)} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
+                                                            <Image src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
                                                             <div>
                                                                 <p className="font-semibold">{part.name}</p>
                                                                 <p className="text-xs text-muted-foreground">{part.brand}</p>

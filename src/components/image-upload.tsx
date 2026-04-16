@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Image as ImageIcon, Upload, X, FileText } from "lucide-react";
@@ -37,6 +37,35 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
         }
     };
 
+    const displayName = useMemo(() => {
+        if (fileName) return fileName;
+        if (!value) return "No file chosen";
+        
+        if (value.startsWith("data:")) return "Uploaded Image File";
+        
+        try {
+            // Check if it's a URL
+            if (value.startsWith("http")) {
+                const url = new URL(value);
+                const pathParts = url.pathname.split('/');
+                const lastPart = decodeURIComponent(pathParts[pathParts.length - 1]);
+                
+                // Firebase storage format: .../o/folder%2Ffilename?alt=...
+                if (lastPart.includes('/')) {
+                    const fileNameFromPath = lastPart.split('/').pop();
+                    return fileNameFromPath || "Stored Image";
+                }
+                
+                // Decode possible %2F in filename
+                const decodedFileName = lastPart.split('%2F').pop();
+                return decodedFileName || "Stored Image";
+            }
+            return "Stored Image";
+        } catch (e) {
+            return "Stored Image";
+        }
+    }, [fileName, value]);
+
     const isPreviewReady = value && (value.startsWith("data:image") || value.startsWith("http"));
 
     return (
@@ -47,7 +76,7 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
                         onClick={() => fileInputRef.current?.click()}
                         className={cn(
                             "flex items-center gap-3 px-3 h-10 rounded-md border border-border/60 bg-muted/40 hover:bg-muted/60 hover:border-primary/50 cursor-pointer transition-all overflow-hidden",
-                            fileName ? "ring-1 ring-primary/20" : ""
+                            (fileName || (value && !fileName)) ? "ring-1 ring-primary/20" : ""
                         )}
                     >
                         <div className="p-1.5 rounded bg-primary/10 border border-primary/20">
@@ -55,11 +84,11 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
                         </div>
                         <span className={cn(
                             "text-xs truncate flex-1",
-                            fileName ? "text-foreground font-medium" : "text-muted-foreground"
+                            (fileName || value) ? "text-foreground font-medium" : "text-muted-foreground"
                         )}>
-                            {fileName || "No file chosen"}
+                            {displayName}
                         </span>
-                        {fileName && (
+                        {(fileName || value) && (
                             <Button 
                                 type="button" 
                                 variant="ghost" 

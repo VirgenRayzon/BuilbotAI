@@ -1,18 +1,20 @@
 
-import { getApps, initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
-import { firebaseConfig } from './config';
+import * as admin from 'firebase-admin';
 
 export function getAdminFirestore() {
-    const apps = getApps();
-    const app = apps.length ? apps[0] : initializeApp(firebaseConfig);
-    const firestore = getFirestore(app);
-    return firestore;
+    if (admin.apps.length === 0) {
+        admin.initializeApp({
+            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        });
+    }
+    return admin.firestore();
 }
 
 export function getAdminStorage() {
-    const apps = getApps();
-    const app = apps.length ? apps[0] : initializeApp(firebaseConfig);
-    return getStorage(app);
+    if (admin.apps.length === 0) {
+        admin.initializeApp({
+            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        });
+    }
+    return admin.storage();
 }

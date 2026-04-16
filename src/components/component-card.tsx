@@ -30,7 +30,7 @@ export function ComponentCard({ name, component }: ComponentCardProps) {
       <CardContent className="flex-grow space-y-4">
         <div className="aspect-square relative w-full overflow-hidden rounded-md">
             <Image
-                src={getOptimizedStorageUrl(component.image)}
+                src={getOptimizedStorageUrl(component.image) || "/placeholder-part.png"}
                 alt={component.description}
                 fill
                 unoptimized

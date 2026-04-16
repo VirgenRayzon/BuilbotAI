@@ -54,7 +54,7 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
         <CardHeader className="p-3.5 pb-0 relative z-10">
           <div className="aspect-video relative w-full overflow-hidden rounded-lg mb-2.5 shadow-sm group-hover:shadow-md transition-shadow bg-muted/30">
             <SmartImageMagnifier
-              src={getOptimizedStorageUrl(system.imageUrl)}
+              src={getOptimizedStorageUrl(system.imageUrl) || "/placeholder-system.png"}
               alt={system.name}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />

@@ -10,7 +10,6 @@
 
 * **Next.js & Turbopack Orchestration:** Expert in managing the development environment on port `9002`.
 * **Firebase & SQL Integration:** Specialized in configuring Firebase using `VITE_` variables and interfacing with **SQL Server** for hardware data storage.
-* **NotebookLM RAG Integration:** Expert in retrieving high-fidelity hardware specifications from curated research notebooks.
 
 ## 💻 Hardware Domain Expertise (PC Compatibility & Pricing Logic)
 
@@ -18,12 +17,9 @@
 * **Baseline:** Use Official Launch SRP (MSRP) in USD.
 * **Currency Conversion:** Convert USD to PHP using a fixed safety rate of **1 USD = 60 PHP**.
 
-
 * **DDR Generation Matching (Critical):** Match RAM DDR generation (DDR4 vs. DDR5) strictly to both CPU and Motherboard. **(Highest Priority Validation)**.
 * **Physical Dimension Validation:** * **GPU Clearance:** `GPU_Length` < `Case_Max_GPU - 25mm` (Fan Buffer).
 * **Cooler Clearance:** Air cooler height (mm) vs. Case Width; Radiator size vs. Case Mounts.
-
-
 
 ## ✨ The Sparkle Protocol (NotebookLM Data Enrichment)
 

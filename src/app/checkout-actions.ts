@@ -2,7 +2,7 @@
 "use server";
 
 import { getAdminFirestore } from "@/firebase/server-init";
-import { collection, doc, runTransaction, Timestamp, increment } from "firebase/firestore";
+import * as admin from 'firebase-admin';
 import { Order, OrderItem } from "@/lib/types";
 
 export async function processCheckout(userId: string, userEmail: string, items: OrderItem[]) {
@@ -10,48 +10,50 @@ export async function processCheckout(userId: string, userEmail: string, items: 
     const totalPrice = items.reduce((acc, item) => acc + item.price, 0);
 
     try {
-        await runTransaction(firestore, async (transaction) => {
+        await firestore.runTransaction(async (transaction) => {
             // 1. Read all item data first
-            const itemDataList: { doc: any, snap: any, item: OrderItem }[] = [];
+            const itemDataList: { ref: admin.firestore.DocumentReference, snap: admin.firestore.DocumentSnapshot, item: OrderItem }[] = [];
             for (const item of items) {
-                const itemDoc = doc(firestore, item.category, item.id);
-                const itemSnap = await transaction.get(itemDoc);
+                if (item.id === "included-stock-cooler") continue;
                 
-                if (!itemSnap.exists()) {
+                const itemRef = firestore.collection(item.category).doc(item.id);
+                const itemSnap = await transaction.get(itemRef);
+                
+                if (!itemSnap.exists) {
                     throw new Error(`Item ${item.name} not found.`);
                 }
                 
-                const currentStock = itemSnap.data().stock;
+                const currentStock = itemSnap.data()?.stock || 0;
                 if (currentStock <= 0) {
                     throw new Error(`Item ${item.name} is out of stock.`);
                 }
                 
-                itemDataList.push({ doc: itemDoc, snap: itemSnap, item });
+                itemDataList.push({ ref: itemRef, snap: itemSnap, item });
             }
 
             // 2. Perform all writes after all reads are complete
-            for (const { doc, snap, item } of itemDataList) {
-                transaction.update(doc, {
-                    stock: increment(-1),
-                    popularity: increment(1)
+            for (const { ref, snap, item } of itemDataList) {
+                transaction.update(ref, {
+                    stock: admin.firestore.FieldValue.increment(-1),
+                    popularity: admin.firestore.FieldValue.increment(1)
                 });
             }
 
             // 3. Create the order
-            const orderRef = doc(collection(firestore, "orders"));
-            const orderData: Order = {
+            const orderRef = firestore.collection("orders").doc();
+            const orderData = {
                 id: orderRef.id,
                 userId,
                 userEmail,
                 items,
                 totalPrice,
                 status: 'pending',
-                createdAt: Timestamp.now(),
+                createdAt: admin.firestore.Timestamp.now(),
             };
             transaction.set(orderRef, orderData);
 
             // 4. Create initial notification
-            const notificationRef = doc(collection(firestore, "notifications"));
+            const notificationRef = firestore.collection("notifications").doc();
             transaction.set(notificationRef, {
                 id: notificationRef.id,
                 userId: userId,
@@ -60,11 +62,11 @@ export async function processCheckout(userId: string, userEmail: string, items: 
                 message: "Your build reservation has been recorded and is currently pending approval.",
                 status: "pending",
                 read: false,
-                createdAt: Timestamp.now()
+                createdAt: admin.firestore.Timestamp.now()
             });
 
             // 5. Create system notification for admins/managers
-            const systemNotificationRef = doc(collection(firestore, "system_notifications"));
+            const systemNotificationRef = firestore.collection("system_notifications").doc();
             transaction.set(systemNotificationRef, {
                 id: systemNotificationRef.id,
                 type: 'reservation_received',
@@ -74,7 +76,7 @@ export async function processCheckout(userId: string, userEmail: string, items: 
                 message: `New build reserved by ${userEmail}`,
                 targetId: orderRef.id,
                 readBy: [],
-                createdAt: Timestamp.now()
+                createdAt: admin.firestore.Timestamp.now()
             });
         });
 
@@ -96,11 +98,11 @@ export async function updateReservationStatus(
     const firestore = getAdminFirestore();
 
     try {
-        await runTransaction(firestore, async (transaction) => {
-            const orderRef = doc(firestore, "orders", orderId);
+        await firestore.runTransaction(async (transaction) => {
+            const orderRef = firestore.collection("orders").doc(orderId);
             const orderSnap = await transaction.get(orderRef);
 
-            if (!orderSnap.exists()) {
+            if (!orderSnap.exists) {
                 throw new Error("Order not found.");
             }
 
@@ -115,10 +117,10 @@ export async function updateReservationStatus(
             // Logic for Stock Reversion: If moving to 'cancelled' status from any non-cancelled status
             if (newStatus === 'cancelled' && currentStatus !== 'cancelled') {
                 for (const item of orderData.items) {
-                    const itemDoc = doc(firestore, item.category, item.id);
-                    // Use increment(1) to return the stock
-                    transaction.update(itemDoc, {
-                        stock: increment(1)
+                    if (item.id === "included-stock-cooler") continue;
+                    const itemRef = firestore.collection(item.category).doc(item.id);
+                    transaction.update(itemRef, {
+                        stock: admin.firestore.FieldValue.increment(1)
                     });
                 }
             }
@@ -126,11 +128,11 @@ export async function updateReservationStatus(
             // Update the order status
             transaction.update(orderRef, {
                 status: newStatus,
-                updatedAt: Timestamp.now()
+                updatedAt: admin.firestore.Timestamp.now()
             });
 
             // Create notification for the user
-            const notificationRef = doc(collection(firestore, "notifications"));
+            const notificationRef = firestore.collection("notifications").doc();
             let title = "Order Update";
             let message = `Your order status has been updated to ${newStatus}.`;
 
@@ -153,12 +155,12 @@ export async function updateReservationStatus(
                 message,
                 status: newStatus,
                 read: false,
-                createdAt: Timestamp.now()
+                createdAt: admin.firestore.Timestamp.now()
             });
 
             // 5. Create system notification for Super Admin if triggered by a Manager
             if (actor && actor.isManager && !actor.isSuperAdmin) {
-                const sysNotificationRef = doc(collection(firestore, "system_notifications"));
+                const sysNotificationRef = firestore.collection("system_notifications").doc();
                 transaction.set(sysNotificationRef, {
                     id: sysNotificationRef.id,
                     type: 'status_changed',
@@ -168,7 +170,7 @@ export async function updateReservationStatus(
                     message: `Manager ${actor.name} changed reservation ${orderId.substring(0, 8)} to ${newStatus}.`,
                     targetId: orderId,
                     readBy: [],
-                    createdAt: Timestamp.now()
+                    createdAt: admin.firestore.Timestamp.now()
                 });
             }
         });

@@ -272,7 +272,7 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                     <div className="aspect-square relative w-full overflow-hidden rounded-2xl shadow-xl border bg-card/50 backdrop-blur-sm group">
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none z-10" />
                         <SmartImageMagnifier
-                            src={getOptimizedStorageUrl(system.imageUrl)}
+                            src={getOptimizedStorageUrl(system.imageUrl) || "/placeholder-system.png"}
                             alt={system.name}
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />

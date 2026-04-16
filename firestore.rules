@@ -23,10 +23,27 @@ service cloud.firestore {
       allow list, write: if request.auth != null && isSuperAdmin();
     }
 
+    match /orders/{orderId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isManager());
+      allow update: if isManager();
+    }
+
+    match /notifications/{notifId} {
+      allow create: if request.auth != null;
+      allow read, update: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    match /system_notifications/{notifId} {
+      allow read, write: if isManager();
+    }
+
     match /{category}/{partId} {
       allow read: if true;
-      allow write: if isManager() && 
-                    category in ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler', 'prebuiltSystems'];
+      allow update: if request.auth != null && 
+                    category in ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler'] &&
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock', 'popularity']);
+      allow write: if isManager();
     }
   }
 }

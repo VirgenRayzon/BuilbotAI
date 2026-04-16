@@ -328,6 +328,10 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
               const num = valStr.match(/\d+/)?.[0];
               if (num) valStr = `${num} Slot`;
             }
+          } else if (result.category === "Storage" && k === "Type") {
+            const lower = valStr.toLowerCase();
+            if (lower.includes("nvme")) valStr = "NVME";
+            else if (lower.includes("sata")) valStr = "SATA";
           }
 
           const i = finalSpecs.findIndex((s) => s.key === k);
@@ -753,7 +757,8 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                             </div>
                           ) : /* Case/Mobo: Dropdowns */
                           ((selectedCategory === "Case" && (key === "Type" || key === "Back-Connect Cutout")) || 
-                           (selectedCategory === "Motherboard" && key === "Form Factor")) ? (
+                           (selectedCategory === "Motherboard" && key === "Form Factor") ||
+                           (selectedCategory === "Storage" && key === "Type")) ? (
                             <Select 
                               value={getSpecValue(key)} 
                               onValueChange={(v) => setSpecValue(key, v)}
@@ -766,6 +771,8 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                                   ["yes", "no"].map(v => <SelectItem key={v} value={v}>{v.toUpperCase()}</SelectItem>)
                                 ) : key === "Type" && selectedCategory === "Case" ? (
                                   ["full tower", "mid tower", "mini tower", "sff"].map(v => <SelectItem key={v} value={v}>{v.toUpperCase()}</SelectItem>)
+                                ) : key === "Type" && selectedCategory === "Storage" ? (
+                                  ["NVME", "SATA"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)
                                 ) : (
                                   ["eatx", "atx", "matx", "itx"].map(v => <SelectItem key={v} value={v}>{v.toUpperCase()}</SelectItem>)
                                 )}
@@ -790,7 +797,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                                 key.includes("(mm)") 
                                 ? "number" : "text"
                               }
-                              className="h-8 text-sm bg-background/60 border-border/50 focus:border-primary/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              className="h-8 text-sm bg-background/60 border-border/50 focus:border-primary/50"
                             />
                           )}
                         </div>
