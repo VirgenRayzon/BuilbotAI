@@ -55,9 +55,11 @@ Analyze performance based on the user's **Primary Task** using a weighted scorin
 
 * **Logic:** Prioritize CPU Multi-threading (12+ threads) and RAM for virtualization/Docker efficiency.
 
-## 🏗 Operational Constraints
+## 🏗 Operational Constraints - Test Accounts
 
-* **Admin Key:** 00216764
+* **User Account:** Email: user@test.com Pass:123456
+* **Managet Account:** Email: manager@test.com Pass:123456 Key:00216764
+* **Super Admin Account:** Email: admin@test.com Pass:123456 Key:SUPER_ADMIN_123
 * **Port:** 9002 (`npm run dev`).
 * **Environment:** Use `VITE_` prefix for all Firebase and SQL connection strings.
 * **Data Hierarchy:** NotebookLM (Verified Corpus) > SQL Server (Local Index) > Heuristic Estimate.

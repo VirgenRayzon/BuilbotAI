@@ -483,7 +483,8 @@ export default function BuilderPage() {
       nextBuild[category] = componentData;
 
       // CASCADING REMOVAL ON CHANGE
-      if (category === 'Case' && prevBuildCopy['Case'] && prevBuildCopy['Case'].id !== componentData.id) {
+      const prevValue = prevBuildCopy[category];
+      if (category === 'Case' && prevValue && !Array.isArray(prevValue) && prevValue.id !== componentData.id) {
         // If changing case, remove everything else
         Object.keys(nextBuild).forEach(key => {
           if (key !== 'Case') {
@@ -492,7 +493,7 @@ export default function BuilderPage() {
           }
         });
         toastsToShow.push({ title: 'Build Updated', description: 'Changing the case removed dependent components.' });
-      } else if (category === 'Motherboard' && prevBuildCopy['Motherboard'] && prevBuildCopy['Motherboard'].id !== componentData.id) {
+      } else if (category === 'Motherboard' && prevValue && !Array.isArray(prevValue) && prevValue.id !== componentData.id) {
         // If changing motherboard, remove everything except Case
         Object.keys(nextBuild).forEach(key => {
           if (key !== 'Case' && key !== 'Motherboard') {
