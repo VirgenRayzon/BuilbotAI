@@ -40,6 +40,8 @@ import {
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "./ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { ImageUpload } from "./image-upload";
 import { Loader2, Sparkles, Cpu, BrainCircuit, Search, Check, ChevronDown, Plus, X, Bold, Italic, Heading1, Heading2, List, Code } from "lucide-react";
 import { getAiPrebuiltSuggestions } from "@/app/actions";
 import type { Part, PrebuiltSystem } from "@/lib/types";
@@ -369,43 +371,59 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent className="sm:max-w-[80vw] p-0 gap-0 overflow-hidden border-primary/20 bg-background shadow-2xl [&>button.absolute]:hidden">
+            <DialogContent className="sm:max-w-[75vw] p-0 gap-0 overflow-hidden border-primary/20 bg-background/95 backdrop-blur-xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] rounded-3xl [&>button.absolute]:hidden">
 
                 {/* ── Header ── */}
-                <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/60 bg-muted/30 flex-row items-center gap-3 space-y-0">
-                    <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-                        <Cpu className="h-5 w-5 text-primary" />
+                <DialogHeader className="px-8 pt-8 pb-6 border-b border-border/40 bg-muted/20 flex-row items-center gap-4 space-y-0">
+                    <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
+                        <Cpu className="h-6 w-6 text-primary" />
                     </div>
                     <div className="flex-1">
-                        <DialogTitle className="font-headline text-xl font-bold tracking-tight">
-                            {title || (initialData ? "Add New Prebuilt System" : "Add New Prebuilt System")}
+                        <DialogTitle className="font-headline text-2xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                            {title || (initialData ? "Edit Prebuilt System" : "Add New Prebuilt System")}
                         </DialogTitle>
-                        <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                            {initialData ? "Configure the system details below." : "Configure the system details and select components from inventory."}
+                        <DialogDescription className="text-sm text-muted-foreground font-medium mt-1">
+                            {initialData ? "Refine system details, pricing, and component configuration." : "Configure new system inventory with AI-assisted identity generation."}
                         </DialogDescription>
                     </div>
                     <div className="ml-auto">
                         <Button
                             type="button"
                             variant="outline"
-                            size="sm"
+                            size="lg"
                             onClick={handleAiAssist}
                             disabled={isAiPending}
-                            className="border-primary/30 hover:border-primary hover:bg-primary/10 text-primary gap-1.5 relative overflow-hidden group/ai-assist"
+                            className="relative overflow-hidden group border-primary/30 hover:border-primary hover:bg-primary/10 text-primary gap-2 h-11 px-6 font-bold uppercase tracking-wider text-xs shadow-lg shadow-primary/5 transition-all duration-300"
                         >
-                            {isAiPending ? <Loader2 className="animate-spin h-4 w-4" /> : <Sparkles className="h-4 w-4 animate-sparkle" />}
+                            <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/10 to-primary/0 opacity-0 group-hover:opacity-100 animate-shimmer pointer-events-none" />
+                            {isAiPending ? (
+                                <Loader2 className="animate-spin h-4 w-4" />
+                            ) : (
+                                <Sparkles className="h-4 w-4 transition-transform group-hover:scale-125 group-hover:rotate-12 duration-300" />
+                            )}
                             AI Assist
-                            <div className="absolute inset-0 animate-shimmer pointer-events-none opacity-0 group-hover/ai-assist:opacity-100 transition-opacity" />
                         </Button>
                     </div>
                 </DialogHeader>
                 {isAiPending && (
-                    <div className="flex flex-col gap-2 mt-3 p-3 mx-6 rounded-lg bg-primary/5 border border-primary/20 animate-pulse">
-                        <div className="flex items-center gap-2 text-xs text-primary font-bold">
-                            <BrainCircuit className="h-3.5 w-3.5 shrink-0" />
-                            <span>Buildbot is Generating System Details…</span>
+                    <div className="relative overflow-hidden bg-primary/5 border-b border-primary/10">
+                        <div className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/20">
+                            <div className="h-full bg-primary animate-progress-glow w-[30%]" />
                         </div>
-                        <p className="text-[10px] text-primary/70 font-medium">Please wait for AI to finish working before making changes or closing the dialog.</p>
+                        <div className="px-8 py-3 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 border border-primary/20">
+                                    <BrainCircuit className="h-4 w-4 text-primary animate-pulse" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-xs font-bold text-primary uppercase tracking-widest">Buildbot Intelligence Active</span>
+                                    <span className="text-[10px] text-primary/60 font-medium">Researching market tiers, pricing benchmarks, and system identities...</span>
+                                </div>
+                            </div>
+                            <Badge variant="outline" className="animate-pulse bg-primary/10 text-primary border-primary/20 text-[10px] uppercase font-bold px-3 py-1">
+                                Processing
+                            </Badge>
+                        </div>
                     </div>
                 )}
 
@@ -413,162 +431,153 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col">
 
                         {/* ── Scrollable Body ── */}
-                        <ScrollArea className="h-[75vh]">
-                            <div className="px-6 py-5 space-y-7">
+                        <ScrollArea className="h-[70vh]">
+                            <div className="px-10 py-8 space-y-10">
 
                                 {/* Section: System Identity */}
-                                <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mb-3 flex items-center gap-2">
-                                        <span className="inline-block w-5 h-px bg-primary/40" />
-                                        System Identity
-                                        <span className="inline-block flex-1 h-px bg-primary/10" />
-                                    </p>
-                                    <div className="grid grid-cols-3 gap-4">
-
-                                        {/* System Name — full width */}
-                                        <div className="col-span-3">
-                                            <FormField control={form.control} name="name" render={({ field }) => (
+                                <div className="grid grid-cols-12 gap-8 items-start">
+                                    
+                                    {/* Left Column: Image Preview */}
+                                    <div className="col-span-12 md:col-span-4 sticky top-0">
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mb-4 flex items-center gap-3">
+                                            <span className="inline-block w-4 h-px bg-primary/40" />
+                                            Visual Identity
+                                        </p>
+                                        <div className="p-2 rounded-3xl border border-primary/10 bg-primary/5 shadow-inner">
+                                            <FormField control={form.control} name="imageUrl" render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">System Name</FormLabel>
                                                     <FormControl>
-                                                        <Input className="bg-muted/40 border-border/60 h-9" placeholder="e.g., Ultimate Gamer V1" {...field} />
+                                                        <ImageUpload 
+                                                            value={field.value || ""} 
+                                                            onChange={field.onChange} 
+                                                            variant="large"
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )} />
+                                        </div>
+                                    </div>
+
+                                    {/* Right Column: Identity Fields */}
+                                    <div className="col-span-12 md:col-span-8 space-y-6">
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mb-4 flex items-center gap-3">
+                                            <span className="inline-block w-4 h-px bg-primary/40" />
+                                            System Details
+                                        </p>
+                                        
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="col-span-2">
+                                                <FormField control={form.control} name="name" render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">System Name</FormLabel>
+                                                        <FormControl>
+                                                            <Input className="bg-muted/30 border-border/40 h-10 rounded-xl focus:bg-background transition-colors shadow-sm" placeholder="e.g., Ultimate Gamer V1" {...field} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )} />
+                                            </div>
+
+                                            <FormField control={form.control} name="tier" render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Tier</FormLabel>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl>
+                                                            <SelectTrigger className="bg-muted/30 border-border/40 h-10 rounded-xl">
+                                                                <SelectValue placeholder="Select tier…" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent className="rounded-xl">
+                                                            <SelectItem value="Entry">Entry</SelectItem>
+                                                            <SelectItem value="Mid-Range">Mid-Range</SelectItem>
+                                                            <SelectItem value="High-End">High-End</SelectItem>
+                                                            <SelectItem value="Workstation">Workstation</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )} />
+
+                                            <FormField control={form.control} name="price" render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Price (PHP ₱)</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="number" className="bg-muted/30 border-border/40 h-10 rounded-xl" placeholder="e.g., 125000" {...field} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />
                                         </div>
 
-                                        <FormField control={form.control} name="tier" render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Tier</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger className="bg-muted/40 border-border/60 h-9">
-                                                            <SelectValue placeholder="Select tier…" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="Entry">Entry</SelectItem>
-                                                        <SelectItem value="Mid-Range">Mid-Range</SelectItem>
-                                                        <SelectItem value="High-End">High-End</SelectItem>
-                                                        <SelectItem value="Workstation">Workstation</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )} />
-
-                                        <FormField control={form.control} name="price" render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Price (PHP ₱)</FormLabel>
-                                                <FormControl>
-                                                    <Input type="number" className="bg-muted/40 border-border/60 h-9" placeholder="e.g., 125000" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )} />
-
-                                        <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                                            <FormItem className="col-span-1 md:col-span-2">
-                                                <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                                                    System Image <span className="normal-case font-normal text-muted-foreground/50">(Upload a File)</span>
-                                                </FormLabel>
-                                                <FormControl>
-                                                    <div className="flex items-center gap-3">
-                                                      <Input 
-                                                        type="file" 
-                                                        accept="image/*" 
-                                                        className="bg-muted/40 border-border/60 h-10 file:mr-4 file:py-1 file:px-4 file:rounded-md file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer w-full text-foreground/70"
-                                                        onChange={(e) => {
-                                                          const file = e.target.files?.[0];
-                                                          if (file) {
-                                                            const reader = new FileReader();
-                                                            reader.onloadend = () => {
-                                                              field.onChange(reader.result as string);
-                                                            };
-                                                            reader.readAsDataURL(file);
-                                                          } else {
-                                                            field.onChange("");
-                                                          }
-                                                        }}
-                                                      />
-                                                      {(field.value && (field.value.startsWith('data:image') || field.value.startsWith('http'))) && (
-                                                        <div className="h-10 w-10 shrink-0 relative rounded-md border border-white/10 overflow-hidden bg-muted/60 flex items-center justify-center p-1">
-                                                            <img src={field.value} alt="Preview" className="max-w-full max-h-full object-contain" />
-                                                        </div>
-                                                      )}
-                                                    </div>
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )} />
-
-                                        {/* Description — full width */}
-                                        <div className="col-span-3">
+                                        {/* Description */}
+                                        <div className="pt-4">
                                             <FormField control={form.control} name="description" render={({ field }) => (
                                                 <FormItem>
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Description (Markdown Supported)</FormLabel>
-                                                        <div className="flex items-center gap-1 p-1 rounded-md bg-muted/60 border border-border/40">
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <FormLabel className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 flex items-center gap-2">
+                                                            Description
+                                                        </FormLabel>
+                                                        <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60 border border-border/40 shadow-sm">
                                                             <Button
                                                                 type="button"
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
                                                                 onClick={() => {
                                                                     const val = field.value || "";
                                                                     field.onChange(`**${val}**`);
                                                                 }}
                                                                 title="Bold"
                                                             >
-                                                                <Bold className="h-3.5 w-3.5" />
+                                                                <Bold className="h-4 w-4" />
                                                             </Button>
                                                             <Button
                                                                 type="button"
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
                                                                 onClick={() => {
                                                                     const val = field.value || "";
                                                                     field.onChange(`*${val}*`);
                                                                 }}
                                                                 title="Italic"
                                                             >
-                                                                <Italic className="h-3.5 w-3.5" />
+                                                                <Italic className="h-4 w-4" />
                                                             </Button>
-                                                            <div className="w-px h-4 bg-border/60 mx-1" />
+                                                            <div className="w-px h-5 bg-border/60 mx-1" />
                                                             <Button
                                                                 type="button"
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
                                                                 onClick={() => {
                                                                     const val = field.value || "";
                                                                     field.onChange(`# ${val}`);
                                                                 }}
                                                                 title="Heading 1"
                                                             >
-                                                                <Heading1 className="h-3.5 w-3.5" />
+                                                                <Heading1 className="h-4 w-4" />
                                                             </Button>
                                                             <Button
                                                                 type="button"
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
                                                                 onClick={() => {
                                                                     const val = field.value || "";
                                                                     field.onChange(`## ${val}`);
                                                                 }}
                                                                 title="Heading 2"
                                                             >
-                                                                <Heading2 className="h-3.5 w-3.5" />
+                                                                <Heading2 className="h-4 w-4" />
                                                             </Button>
-                                                            <div className="w-px h-4 bg-border/60 mx-1" />
+                                                            <div className="w-px h-5 bg-border/60 mx-1" />
                                                             <Button
                                                                 type="button"
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
                                                                 onClick={() => {
                                                                     const val = field.value || "";
                                                                     const lines = val.split('\n');
@@ -577,26 +586,26 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                                 }}
                                                                 title="Bullet List"
                                                             >
-                                                                <List className="h-3.5 w-3.5" />
+                                                                <List className="h-4 w-4" />
                                                             </Button>
                                                             <Button
                                                                 type="button"
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
                                                                 onClick={() => {
                                                                     const val = field.value || "";
                                                                     field.onChange(`\`${val}\``);
                                                                 }}
                                                                 title="Code"
                                                             >
-                                                                <Code className="h-3.5 w-3.5" />
+                                                                <Code className="h-4 w-4" />
                                                             </Button>
                                                         </div>
                                                     </div>
                                                     <FormControl>
                                                         <textarea 
-                                                            className="flex min-h-[120px] w-full rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-mono text-[13px]"
+                                                            className="flex min-h-[140px] w-full rounded-2xl border border-border/40 bg-muted/20 px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus:bg-background focus:border-primary/40 focus:ring-1 focus:ring-primary/20 focus-visible:outline-none transition-all duration-300 font-mono leading-relaxed"
                                                             placeholder="Use Markdown for formatting...
 - The Midnight Apex
 - 4K Gaming Beast
@@ -614,20 +623,18 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
 
                                 {/* Section: Components */}
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mb-3 flex items-center gap-2">
-                                        <span className="inline-block w-5 h-px bg-primary/40" />
-                                        <Cpu className="h-3 w-3 text-primary" />
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mb-4 flex items-center gap-3">
+                                        <span className="inline-block w-4 h-px bg-primary/40" />
                                         Component Selection
                                         <span className="text-muted-foreground/40 normal-case font-normal tracking-normal ml-1">(sorted A–Z · type to search)</span>
                                         <span className="inline-block flex-1 h-px bg-primary/10" />
                                     </p>
-                                    <div className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 rounded-xl border border-primary/10 bg-primary/5">
-                                        {/* Row 1: CPU & GPU */}
-                                        <div className="space-y-4">
-                                            {/* CPU */}
+                                    <div className="grid grid-cols-2 gap-x-8 gap-y-6 p-6 rounded-3xl border border-primary/10 bg-primary/5">
+                                        {/* Row 1: CPU & Motherboard */}
+                                        <div className="space-y-5">
                                             <FormField control={form.control} name="cpu" render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">CPU</FormLabel>
+                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">CPU</FormLabel>
                                                     <PartSelector
                                                         category="CPU"
                                                         items={inventory["CPU"] || []}
@@ -639,10 +646,9 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />
-                                            {/* Motherboard */}
                                             <FormField control={form.control} name="motherboard" render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Motherboard</FormLabel>
+                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Motherboard</FormLabel>
                                                     <PartSelector
                                                         category="Motherboard"
                                                         items={inventory["Motherboard"] || []}
@@ -655,11 +661,12 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                 </FormItem>
                                             )} />
                                         </div>
-                                        <div className="space-y-4">
-                                            {/* GPU */}
+                                        
+                                        {/* Row 1b: GPU & Cooler */}
+                                        <div className="space-y-5">
                                             <FormField control={form.control} name="gpu" render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">GPU</FormLabel>
+                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">GPU</FormLabel>
                                                     <PartSelector
                                                         category="GPU"
                                                         items={inventory["GPU"] || []}
@@ -671,10 +678,9 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />
-                                            {/* Cooler */}
                                             <FormField control={form.control} name="cooler" render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Cooler</FormLabel>
+                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Cooler</FormLabel>
                                                     <PartSelector
                                                         category="Cooler"
                                                         items={inventory["Cooler"] || []}
@@ -688,25 +694,59 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                             )} />
                                         </div>
 
-                                        <div className="col-span-2 space-y-4 pt-2">
+                                        {/* Row 2: PSU & Case */}
+                                        <div className="space-y-5">
+                                            <FormField control={form.control} name="psu" render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Power Supply</FormLabel>
+                                                    <PartSelector
+                                                        category="PSU"
+                                                        items={inventory["PSU"] || []}
+                                                        value={field.value || ""}
+                                                        onChange={field.onChange}
+                                                        isOpen={openSlot === "psu"}
+                                                        onOpenChange={(o) => setOpenSlot(o ? "psu" : null)}
+                                                    />
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )} />
+                                        </div>
+                                        <div className="space-y-5">
+                                            <FormField control={form.control} name="case" render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Chassis / Case</FormLabel>
+                                                    <PartSelector
+                                                        category="Case"
+                                                        items={inventory["Case"] || []}
+                                                        value={field.value || ""}
+                                                        onChange={field.onChange}
+                                                        isOpen={openSlot === "case"}
+                                                        onOpenChange={(o) => setOpenSlot(o ? "case" : null)}
+                                                    />
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )} />
+                                        </div>
+
+                                        <div className="col-span-2 space-y-6 pt-4 border-t border-primary/10">
                                             {/* RAM (Multi) */}
-                                            <FormItem>
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">RAM Modules</FormLabel>
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">RAM Configuration</FormLabel>
                                                     <Button 
                                                         type="button" 
                                                         variant="ghost" 
                                                         size="sm" 
-                                                        className="h-6 text-[9px] uppercase tracking-wider text-primary hover:text-primary hover:bg-primary/10"
+                                                        className="h-7 rounded-lg text-[10px] uppercase tracking-widest text-primary hover:bg-primary/10 font-bold"
                                                         onClick={() => {
                                                             const current = form.getValues("ram");
                                                             form.setValue("ram", [...current, ""]);
                                                         }}
                                                     >
-                                                        <Plus className="h-3 w-3 mr-1" /> Add Stick
+                                                        <Plus className="h-3 w-3 mr-1.5" /> Add Module
                                                     </Button>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-3">
+                                                <div className="grid grid-cols-2 gap-4">
                                                     {form.watch("ram").map((_, index) => (
                                                         <FormField
                                                             key={`ram-${index}`}
@@ -715,7 +755,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                             render={({ field }) => (
                                                                 <div className="relative group">
                                                                     <PartSelector
-                                                                        category={`RAM Stick ${index + 1}`}
+                                                                        category={`RAM Module ${index + 1}`}
                                                                         items={inventory["RAM"] || []}
                                                                         value={field.value || ""}
                                                                         onChange={field.onChange}
@@ -731,9 +771,9 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                                                 next.splice(index, 1);
                                                                                 form.setValue("ram", next);
                                                                             }}
-                                                                            className="absolute -right-2 -top-2 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20 flex items-center justify-center"
+                                                                            className="absolute -right-2 -top-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-20"
                                                                         >
-                                                                            <X className="h-2.5 w-2.5" />
+                                                                            <X className="h-3 w-3" />
                                                                         </button>
                                                                     )}
                                                                 </div>
@@ -741,26 +781,26 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                         />
                                                     ))}
                                                 </div>
-                                            </FormItem>
+                                            </div>
 
                                             {/* Storage (Multi) */}
-                                            <FormItem>
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Storage Drives</FormLabel>
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Storage Array</FormLabel>
                                                     <Button 
                                                         type="button" 
                                                         variant="ghost" 
                                                         size="sm" 
-                                                        className="h-6 text-[9px] uppercase tracking-wider text-primary hover:text-primary hover:bg-primary/10"
+                                                        className="h-7 rounded-lg text-[10px] uppercase tracking-widest text-primary hover:bg-primary/10 font-bold"
                                                         onClick={() => {
                                                             const current = form.getValues("storage");
                                                             form.setValue("storage", [...current, ""]);
                                                         }}
                                                     >
-                                                        <Plus className="h-3 w-3 mr-1" /> Add Drive
+                                                        <Plus className="h-3 w-3 mr-1.5" /> Add Drive
                                                     </Button>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-3">
+                                                <div className="grid grid-cols-2 gap-4">
                                                     {form.watch("storage").map((_, index) => (
                                                         <FormField
                                                             key={`storage-${index}`}
@@ -769,7 +809,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                             render={({ field }) => (
                                                                 <div className="relative group">
                                                                     <PartSelector
-                                                                        category={`Storage ${index + 1}`}
+                                                                        category={`Drive ${index + 1}`}
                                                                         items={inventory["Storage"] || []}
                                                                         value={field.value || ""}
                                                                         onChange={field.onChange}
@@ -785,9 +825,9 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                                                 next.splice(index, 1);
                                                                                 form.setValue("storage", next);
                                                                             }}
-                                                                            className="absolute -right-2 -top-2 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20 flex items-center justify-center"
+                                                                            className="absolute -right-2 -top-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-20"
                                                                         >
-                                                                            <X className="h-2.5 w-2.5" />
+                                                                            <X className="h-3 w-3" />
                                                                         </button>
                                                                     )}
                                                                 </div>
@@ -795,40 +835,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                         />
                                                     ))}
                                                 </div>
-                                            </FormItem>
-                                        </div>
-
-                                        <div className="col-span-2 grid grid-cols-3 gap-4 pt-2 border-t border-primary/10 mt-2">
-                                            {/* PSU */}
-                                            <FormField control={form.control} name="psu" render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">PSU</FormLabel>
-                                                    <PartSelector
-                                                        category="PSU"
-                                                        items={inventory["PSU"] || []}
-                                                        value={field.value || ""}
-                                                        onChange={field.onChange}
-                                                        isOpen={openSlot === "psu"}
-                                                        onOpenChange={(o) => setOpenSlot(o ? "psu" : null)}
-                                                    />
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )} />
-                                            {/* Case */}
-                                            <FormField control={form.control} name="case" render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Case</FormLabel>
-                                                    <PartSelector
-                                                        category="Case"
-                                                        items={inventory["Case"] || []}
-                                                        value={field.value || ""}
-                                                        onChange={field.onChange}
-                                                        isOpen={openSlot === "case"}
-                                                        onOpenChange={(o) => setOpenSlot(o ? "case" : null)}
-                                                    />
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )} />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -837,43 +844,22 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                         </ScrollArea>
 
                         {/* ── Sticky Footer ── */}
-                        <DialogFooter className="flex items-center justify-between px-6 py-4 border-t border-border/60 bg-muted/20 sm:justify-between space-x-0">
-                            <p className="text-xs text-muted-foreground">
-                                {(() => {
-                                    const vals = form.watch();
-                                    const baseKeys = ['cpu', 'gpu', 'motherboard', 'psu', 'case', 'cooler'];
-                                    const filledBase = baseKeys.filter(k => !!(vals as any)[k]).length;
-                                    const filledRam = (vals.ram || []).filter(r => !!r).length;
-                                    const filledStorage = (vals.storage || []).filter(s => !!s).length;
-                                    return filledBase + filledRam + filledStorage;
-                                })()} components selected
-                            </p>
-                            <div className="flex gap-2">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                        form.reset({
-                                            name: "", tier: "", description: "", price: 0, imageUrl: "",
-                                            cpu: "", gpu: "", motherboard: "", ram: [], storage: [], psu: "", case: "", cooler: "",
-                                        });
-                                        toast({ title: "Form Cleared", description: "All fields have been reset." });
-                                    }}
-                                    disabled={isAiPending}
-                                    className="border-muted-foreground/30 text-muted-foreground hover:bg-muted/50"
-                                >
-                                    Clear Form
+                        <DialogFooter className="px-8 py-6 border-t border-border/40 bg-muted/20 flex-row justify-between items-center sm:justify-between">
+                            <DialogClose asChild>
+                                <Button type="button" variant="ghost" size="lg" className="rounded-xl px-6 font-bold uppercase tracking-wider text-xs hover:bg-destructive/10 hover:text-destructive">
+                                    Cancel
                                 </Button>
-                                <DialogClose asChild disabled={isAiPending}>
-                                    <Button type="button" variant="ghost" size="sm" disabled={isAiPending}>Cancel</Button>
-                                </DialogClose>
-                                <Button type="submit" size="sm" disabled={isAiPending} className="bg-primary hover:bg-primary/90 font-headline tracking-wide px-6">
-                                    {initialData ? "Save Changes" : "Add Prebuilt System"}
-                                </Button>
-                            </div>
+                            </DialogClose>
+                            <Button
+                                type="submit"
+                                size="lg"
+                                disabled={isAiPending}
+                                className="rounded-xl px-10 font-bold uppercase tracking-[0.15em] text-xs h-12 shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all duration-200"
+                            >
+                                {isAiPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {initialData ? "Update Prebuilt" : "Deploy System"}
+                            </Button>
                         </DialogFooter>
-
                     </form>
                 </Form>
             </DialogContent>

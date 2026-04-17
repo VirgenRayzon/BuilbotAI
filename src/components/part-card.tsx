@@ -55,22 +55,44 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                     (currentStock === 0 || (compatibility && !compatibility.compatible)) && "grayscale opacity-60"
                 )}>
                     {/* --- Incompatibility Overlay --- */}
-                    {compatibility && !compatibility.compatible && (
-                        <div className="absolute inset-0 z-30 bg-background/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in-95 duration-300 border-2 border-destructive/50 ring-2 ring-destructive/20 ring-inset">
-                            <div className="bg-destructive/20 p-4 rounded-full mb-4 border-2 border-destructive/50 shadow-[0_0_20px_rgba(239,68,68,0.3)]">
-                                <AlertTriangle className="h-10 w-10 text-destructive scale-110 drop-shadow-lg animate-pulse" />
+                    {compatibility && !compatibility.compatible && (() => {
+                        const isSlotFull = compatibility.message.toLowerCase().includes('slot is full');
+                        const theme = isSlotFull 
+                            ? { 
+                                bg: "bg-amber-500/20", 
+                                border: "border-amber-500/50", 
+                                text: "text-amber-500", 
+                                shadow: "shadow-[0_0_30px_rgba(245,158,11,0.2)]",
+                                ring: "ring-amber-500/20",
+                                title: "SLOTS FULL!"
+                              }
+                            : { 
+                                bg: "bg-destructive/20", 
+                                border: "border-destructive/50", 
+                                text: "text-destructive", 
+                                shadow: "shadow-[0_0_30px_rgba(239,68,68,0.2)]",
+                                ring: "ring-destructive/20",
+                                title: "INCOMPATIBLE"
+                              };
+
+                        return (
+                            <div className={cn(
+                                "absolute inset-0 z-30 bg-background/90 backdrop-blur-xl flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in-95 duration-300 border-2 ring-4 ring-inset",
+                                theme.border,
+                                theme.ring
+                            )}>
+                                <div className={cn("p-5 rounded-full mb-5 border-2 shadow-2xl transition-transform duration-700 animate-pulse", theme.bg, theme.border, theme.shadow)}>
+                                    <AlertTriangle className={cn("h-12 w-12 scale-110 drop-shadow-2xl", theme.text)} />
+                                </div>
+                                <h3 className={cn("text-3xl font-headline font-black tracking-tighter mb-3 drop-shadow-md leading-none uppercase", theme.text)}>
+                                    {theme.title}
+                                </h3>
+                                <p className="text-sm font-bold text-foreground leading-relaxed max-w-[220px] drop-shadow-sm uppercase tracking-tight">
+                                    {compatibility.message}
+                                </p>
                             </div>
-                            <h3 className="text-2xl font-headline font-black text-destructive tracking-tighter mb-2 drop-shadow-md leading-none">
-                                {compatibility.message.toLowerCase().includes('slot is full') ? 'SLOTS FULL!' : 'INCOMPATIBLE'}
-                            </h3>
-                            <p className="text-xs font-bold text-foreground/90 leading-relaxed max-w-[200px] drop-shadow-sm mb-4 uppercase tracking-tight">
-                                {compatibility.message}
-                            </p>
-                            <Badge variant="destructive" className="font-black animate-bounce px-4 py-1.5 shadow-lg">
-                                ACTION REQUIRED
-                            </Badge>
-                        </div>
-                    )}
+                        );
+                    })()}
 
                     <div className={cn(
                         "absolute inset-0 bg-gradient-to-t from-black/5 to-transparent transition-opacity duration-300 opacity-0 group-hover:opacity-100",

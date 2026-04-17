@@ -139,14 +139,33 @@ export default function AdminPage() {
 
 
     const searchParams = useSearchParams();
-    const [currentTab, setCurrentTab] = useState(searchParams.get('tab') || 'stock');
+    const initialTab = searchParams.get('tab') || 'stock';
+    const [currentTab, setCurrentTab] = useState(
+        (initialTab === 'sales' && !profile?.isSuperAdmin) ? 'stock' : initialTab
+    );
 
     useEffect(() => {
         const tab = searchParams.get('tab');
-        if (tab) setCurrentTab(tab);
-    }, [searchParams]);
+        if (tab) {
+            if (tab === 'sales' && !profile?.isSuperAdmin) {
+                setCurrentTab('stock');
+                router.replace('/admin?tab=stock');
+            } else {
+                setCurrentTab(tab);
+            }
+        }
+    }, [searchParams, profile, router]);
 
     const handleTabChange = (val: string) => {
+        // Restrict Sales tab to Super Admin only
+        if (val === 'sales' && !profile?.isSuperAdmin) {
+            toast({
+                title: "Access Restricted",
+                description: "The Sales performance page is reserved for Super Admins.",
+                variant: "destructive"
+            });
+            return;
+        }
         setCurrentTab(val);
         router.push(`/admin?tab=${val}`, { scroll: false });
     };
@@ -651,10 +670,12 @@ export default function AdminPage() {
                                 </span>
                             )}
                         </TabsTrigger>
-                        <TabsTrigger value="sales">
-                            <BarChart3 className="mr-2 h-4 w-4" />
-                            Sales
-                        </TabsTrigger>
+                        {profile?.isSuperAdmin && (
+                            <TabsTrigger value="sales">
+                                <BarChart3 className="mr-2 h-4 w-4" />
+                                Sales
+                            </TabsTrigger>
+                        )}
                         <TabsTrigger value="archive">
                             <Archive className="mr-2 h-4 w-4" />
                             Archive
@@ -1109,83 +1130,85 @@ export default function AdminPage() {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="sales">
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <Card>
-                                <CardContent className="pt-6">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-sm font-medium text-muted-foreground">Total Sales</p>
-                                            <h3 className="text-2xl font-bold">{formatCurrency(stats.totalSales)}</h3>
-                                        </div>
-                                        <div className="p-3 bg-emerald-500/10 rounded-full">
-                                            <DollarSign className="w-6 h-6 text-emerald-500" />
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardContent className="pt-6">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
-                                            <h3 className="text-2xl font-bold">{stats.totalOrders}</h3>
-                                        </div>
-                                        <div className="p-3 bg-blue-500/10 rounded-full">
-                                            <History className="w-6 h-6 text-blue-500" />
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardContent className="pt-6">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-sm font-medium text-muted-foreground">Top Item Popularity</p>
-                                            <h3 className="text-2xl font-bold">{(stats.popularItems[0] as any)?.popularity || 0}</h3>
-                                        </div>
-                                        <div className="p-3 bg-orange-500/10 rounded-full">
-                                            <TrendingUp className="w-6 h-6 text-orange-500" />
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-8">
-                            <div>
-                                <h3 className="text-xl font-headline font-bold mb-4 flex items-center gap-2">
-                                    <TrendingUp className="h-5 w-5" /> Most Popular Components
-                                </h3>
+                {profile?.isSuperAdmin && (
+                    <TabsContent value="sales">
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 <Card>
-                                    <CardContent className="p-0">
-                                        <div className="divide-y border border-white/5 rounded-md overflow-hidden">
-                                            {stats.popularItems.slice(0, 5).map((item, index) => (
-                                                <div key={item.id} className="p-3 flex items-center gap-3 hover:bg-muted/10 transition-colors">
-                                                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center font-bold text-[10px] text-primary shrink-0 border border-primary/20">
-                                                        {index + 1}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="font-medium text-[13px] truncate leading-tight">{item.name}</p>
-                                                        <p className="text-[9px] text-muted-foreground uppercase opacity-70 tracking-tight">{item.category}</p>
-                                                    </div>
-                                                    <div className="text-right shrink-0">
-                                                        <p className="font-bold">{(item as any).popularity || 0}</p>
-                                                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Purchases</p>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            {stats.popularItems.length === 0 && (
-                                                <div className="p-8 text-center text-muted-foreground">No purchase data yet.</div>
-                                            )}
+                                    <CardContent className="pt-6">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm font-medium text-muted-foreground">Total Sales</p>
+                                                <h3 className="text-2xl font-bold">{formatCurrency(stats.totalSales)}</h3>
+                                            </div>
+                                            <div className="p-3 bg-emerald-500/10 rounded-full">
+                                                <DollarSign className="w-6 h-6 text-emerald-500" />
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
+                                                <h3 className="text-2xl font-bold">{stats.totalOrders}</h3>
+                                            </div>
+                                            <div className="p-3 bg-blue-500/10 rounded-full">
+                                                <History className="w-6 h-6 text-blue-500" />
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm font-medium text-muted-foreground">Top Item Popularity</p>
+                                                <h3 className="text-2xl font-bold">{(stats.popularItems[0] as any)?.popularity || 0}</h3>
+                                            </div>
+                                            <div className="p-3 bg-orange-500/10 rounded-full">
+                                                <TrendingUp className="w-6 h-6 text-orange-500" />
+                                            </div>
                                         </div>
                                     </CardContent>
                                 </Card>
                             </div>
+
+                            <div className="grid grid-cols-1 gap-8">
+                                <div>
+                                    <h3 className="text-xl font-headline font-bold mb-4 flex items-center gap-2">
+                                        <TrendingUp className="h-5 w-5" /> Most Popular Components
+                                    </h3>
+                                    <Card>
+                                        <CardContent className="p-0">
+                                            <div className="divide-y border border-white/5 rounded-md overflow-hidden">
+                                                {stats.popularItems.slice(0, 5).map((item, index) => (
+                                                    <div key={item.id} className="p-3 flex items-center gap-3 hover:bg-muted/10 transition-colors">
+                                                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center font-bold text-[10px] text-primary shrink-0 border border-primary/20">
+                                                            {index + 1}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-medium text-[13px] truncate leading-tight">{item.name}</p>
+                                                            <p className="text-[9px] text-muted-foreground uppercase opacity-70 tracking-tight">{item.category}</p>
+                                                        </div>
+                                                        <div className="text-right shrink-0">
+                                                            <p className="font-bold">{(item as any).popularity || 0}</p>
+                                                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Purchases</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {stats.popularItems.length === 0 && (
+                                                    <div className="p-8 text-center text-muted-foreground">No purchase data yet.</div>
+                                                )}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </TabsContent>
+                    </TabsContent>
+                )}
 
                 <TabsContent value="archive" className="mt-6 space-y-8">
                     <div className="space-y-4">

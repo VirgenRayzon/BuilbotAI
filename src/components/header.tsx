@@ -13,6 +13,7 @@ import { signOut } from "firebase/auth";
 import { ThemeToggle } from "./theme-toggle";
 import { UserNotifications } from "./user-notifications";
 import { NotificationCenter } from "./notification-center";
+import { motion } from "framer-motion";
 
 export function Header() {
   const pathname = usePathname();
@@ -22,10 +23,8 @@ export function Header() {
 
   const handleSignOut = async () => {
     if (auth) {
-      // Clear builder states from local storage on logout
       localStorage.removeItem('pc_builder_state');
       localStorage.removeItem('admin_pc_builder_state');
-      
       await signOut(auth);
       router.push("/");
     }
@@ -54,60 +53,106 @@ export function Header() {
     { href: "/profile", label: "Profile" },
   ];
 
-  // Logic to determine which links to show
   const filteredLinks = !profile?.isManager
     ? [...mainLinks, ...commonLinks]
     : [...adminLinks, ...commonLinks];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-primary/20 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
-      <div className="flex h-14 max-w-[1800px] w-full mx-auto items-center px-4 md:px-8">
-        <Link href={authUser ? (profile?.isManager ? "/admin" : "/builder") : "/"} className="mr-6 flex items-center space-x-2">
-          <Logo />
-        </Link>
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/40">
+      <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent z-20 opacity-50"></div>
+      
+      <div className="flex h-16 max-w-[1800px] w-full mx-auto items-center px-4 md:px-12">
+        {/* Left: Logo */}
+        <div className="flex-none">
+          <Link href={authUser ? (profile?.isManager ? "/admin" : "/builder") : "/"} className="flex items-center">
+            <Logo />
+          </Link>
+        </div>
 
-        <div className="flex flex-1 items-center justify-end space-x-6">
-          <nav className="hidden md:flex items-center space-x-6 text-sm font-medium mr-2">
-            {authUser && filteredLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "transition-all hover:text-primary",
-                  pathname === link.href
-                    ? "text-primary font-bold shadow-[0_0_15px_rgba(34,211,238,0.3)]"
-                    : "text-foreground/60",
-                  (link as any).admin && "flex items-center gap-2"
-                )}
-              >
-                {link.label}
-                {(link as any).admin && profile?.isSuperAdmin && <Shield className="w-4 h-4" />}
-              </Link>
-            ))}
+        {/* Center: Animated Navigation */}
+        <div className="flex-1 flex justify-center">
+          <nav className="hidden md:flex items-center gap-2 p-1 bg-muted/30 rounded-2xl border border-border/20 backdrop-blur-md">
+            {authUser && filteredLinks.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "relative px-4 py-1.5 text-xs font-bold uppercase tracking-widest transition-colors duration-200 rounded-xl",
+                    isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <span className="relative z-10 flex items-center gap-2">
+                    {link.label}
+                    {(link as any).admin && profile?.isSuperAdmin && <Shield className="w-3 h-3" />}
+                  </span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="nav-underline"
+                      className="absolute inset-0 bg-background border border-primary/20 shadow-[0_0_15px_rgba(var(--primary-rgb),0.1)] rounded-xl z-0"
+                      initial={false}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 30,
+                      }}
+                    />
+                  )}
+                  {isActive && (
+                    <motion.div
+                      layoutId="nav-glow"
+                      className="absolute -bottom-[6px] left-1/4 right-1/4 h-[2px] bg-primary rounded-full blur-[2px] z-20"
+                      initial={false}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 30,
+                      }}
+                    />
+                  )}
+                </Link>
+              );
+            })}
           </nav>
+        </div>
 
-          <div className="flex items-center space-x-2">
-            {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : authUser ? (
-              <div className="flex items-center space-x-2">
+        {/* Right: Actions */}
+        <div className="flex-none flex items-center gap-3">
+          {loading ? (
+            <Loader2 className="w-5 h-5 animate-spin text-primary/50" />
+          ) : authUser ? (
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 p-1 bg-muted/40 rounded-xl border border-border/20">
                 {!profile?.isManager && <UserNotifications />}
                 {profile?.isManager && <NotificationCenter />}
-                <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-foreground/60 hover:text-primary">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
-                </Button>
+                <ThemeToggle />
               </div>
-            ) : (
-              (pathname === '/signin' || pathname === '/signup') && (
-                <Button asChild variant="ghost" size="sm">
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleSignOut} 
+                className="rounded-xl h-9 px-4 text-[10px] font-bold uppercase tracking-widest border border-destructive/20 hover:bg-destructive/10 hover:text-destructive transition-all duration-300 group"
+              >
+                <LogOut className="mr-2 h-3.5 w-3.5 transition-transform group-hover:-translate-x-1" />
+                Sign Out
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              {(pathname === '/signin' || pathname === '/signup') ? (
+                <Button asChild variant="ghost" size="sm" className="rounded-xl text-[10px] font-bold uppercase tracking-widest px-6 h-9">
                   <Link href="/">Home</Link>
                 </Button>
-              )
-            )}
-            <ThemeToggle />
-          </div>
+              ) : (
+                <Button asChild size="sm" className="rounded-xl text-[10px] font-bold uppercase tracking-widest px-8 h-9 shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all">
+                  <Link href="/signin">Sign In</Link>
+                </Button>
+              )}
+              <ThemeToggle />
+            </div>
+          )}
         </div>
       </div>
     </header>
