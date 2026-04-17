@@ -19,6 +19,17 @@ import { formatCurrency, cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { SuperAdminSettings } from "@/components/super-admin-settings";
 import { Separator } from "@/components/ui/separator";
+import { updateReservationStatus } from "@/app/checkout-actions";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function ProfilePage() {
     const { authUser, profile, loading: userLoading } = useUserProfile();
@@ -32,6 +43,15 @@ export default function ProfilePage() {
 
     const [reservations, setReservations] = useState<Order[]>([]);
     const [reservationsLoading, setReservationsLoading] = useState(true);
+
+    const [confirmAction, setConfirmAction] = useState<{ id: string, type: 'cancel' | 'delete' } | null>(null);
+
+    useEffect(() => {
+        // Force unlock scroll on mount in case of stale state from other pages/modals
+        document.body.classList.remove('antigravity-scroll-lock');
+        document.body.style.pointerEvents = 'auto';
+        document.body.style.overflow = 'auto';
+    }, []);
 
     useEffect(() => {
         if (profile) {
@@ -109,17 +129,18 @@ export default function ProfilePage() {
 
     const handleCancelReservation = async (reservationId: string) => {
         if (!firestore) return;
-        if (!window.confirm("Are you sure you want to cancel this reservation?")) return;
 
         try {
-            await updateDoc(doc(firestore, "orders", reservationId), {
-                status: 'cancelled'
-            });
-            setReservations(prev => prev.map(r => r.id === reservationId ? { ...r, status: 'cancelled' } : r));
-            toast({
-                title: "Reservation Cancelled",
-                description: "Your reservation has been cancelled successfully.",
-            });
+            const result = await updateReservationStatus(reservationId, 'cancelled');
+            if (result.success) {
+                setReservations(prev => prev.map(r => r.id === reservationId ? { ...r, status: 'cancelled' } : r));
+                toast({
+                    title: "Reservation Cancelled",
+                    description: "Your reservation has been cancelled successfully.",
+                });
+            } else {
+                throw new Error(result.error);
+            }
         } catch (error) {
             console.error("Error cancelling reservation:", error);
             toast({
@@ -132,7 +153,6 @@ export default function ProfilePage() {
 
     const handleDeleteReservation = async (reservationId: string) => {
         if (!firestore) return;
-        if (!window.confirm("Are you sure you want to delete this reservation? This cannot be undone.")) return;
 
         try {
             await deleteDoc(doc(firestore, "orders", reservationId));
@@ -197,7 +217,7 @@ export default function ProfilePage() {
         <div className="min-h-screen bg-background/50">
             {/* Profile Hero Section */}
             <div className="w-full bg-muted/30 border-b border-white/5 py-12 mb-8">
-                <div className="container mx-auto max-w-6xl">
+                <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8">
                     <div className="flex flex-col md:flex-row items-center gap-8">
                         <div className="relative">
                             <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-primary via-purple-500 to-indigo-600 flex items-center justify-center text-3xl font-bold text-white shadow-xl shadow-primary/20">
@@ -244,7 +264,7 @@ export default function ProfilePage() {
                 </div>
             </div>
 
-            <main className="container mx-auto max-w-6xl pb-24">
+            <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 pb-24">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {/* Sidebar: Profile Info */}
                     <div className="lg:col-span-4 space-y-6">
@@ -258,8 +278,11 @@ export default function ProfilePage() {
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
-                                        onClick={() => setIsEditing(!isEditing)}
-                                        className={cn(isEditing ? "text-primary" : "text-muted-foreground")}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsEditing(!isEditing);
+                                        }}
+                                        className={cn("relative z-30", isEditing ? "text-primary" : "text-muted-foreground")}
                                     >
                                         {isEditing ? "Cancel" : "Edit"}
                                     </Button>
@@ -297,7 +320,7 @@ export default function ProfilePage() {
                                 </div>
 
                                 {isEditing && (
-                                    <Button className="w-full mt-2 shadow-lg shadow-primary/20" onClick={handleSaveProfile} disabled={isSaving}>
+                                    <Button className="relative z-30 w-full mt-2 shadow-lg shadow-primary/20" onClick={handleSaveProfile} disabled={isSaving}>
                                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ArrowUpRight className="h-4 w-4 mr-2" />}
                                         Update Profile
                                     </Button>
@@ -381,8 +404,11 @@ export default function ProfilePage() {
                                                                         <Button 
                                                                             variant="outline" 
                                                                             size="sm" 
-                                                                            className="h-8 text-[10px] font-bold uppercase tracking-wider text-rose-500 border-rose-500/20 hover:bg-rose-500/10"
-                                                                            onClick={() => handleCancelReservation(reservation.id)}
+                                                                            className="relative z-30 h-8 text-[10px] font-bold uppercase tracking-wider text-rose-500 border-rose-500/20 hover:bg-rose-500/10"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setConfirmAction({ id: reservation.id, type: 'cancel' });
+                                                                            }}
                                                                         >
                                                                             Cancel Order
                                                                         </Button>
@@ -390,9 +416,25 @@ export default function ProfilePage() {
                                                                     <Button 
                                                                         variant="ghost" 
                                                                         size="icon" 
-                                                                        className="h-9 w-9 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
-                                                                        onClick={() => handleDeleteReservation(reservation.id)}
-                                                                        title="Delete Reservation"
+                                                                        className={cn(
+                                                                            "relative z-30 h-9 w-9 transition-colors",
+                                                                            reservation.status === 'cancelled' 
+                                                                                ? "text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10" 
+                                                                                : "text-muted-foreground/20 cursor-not-allowed"
+                                                                        )}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            if (reservation.status === 'cancelled') {
+                                                                                setConfirmAction({ id: reservation.id, type: 'delete' });
+                                                                            } else {
+                                                                                toast({
+                                                                                    title: "Action Restricted",
+                                                                                    description: "Please cancel the order first before deleting the reservation.",
+                                                                                    variant: "destructive"
+                                                                                });
+                                                                            }
+                                                                        }}
+                                                                        title={reservation.status === 'cancelled' ? "Delete Reservation" : "Cancel order first to delete"}
                                                                     >
                                                                         <Trash2 className="h-4 w-4" />
                                                                     </Button>
@@ -438,7 +480,7 @@ export default function ProfilePage() {
                                                 <h3 className="text-xl font-bold">No active builds</h3>
                                                 <p className="text-sm text-muted-foreground">Your reservation list is empty. Start building your custom PC today and reserve it here.</p>
                                             </div>
-                                            <Button className="mt-4 shadow-xl shadow-primary/20 group" asChild>
+                                            <Button className="relative z-30 mt-4 shadow-xl shadow-primary/20 group" asChild>
                                                 <a href="/builder">
                                                     Start a New Build 
                                                     <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
@@ -465,6 +507,36 @@ export default function ProfilePage() {
                     </div>
                 </div>
             </main>
+
+            <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {confirmAction?.type === 'cancel' ? "Cancel Reservation?" : "Delete Reservation?"}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {confirmAction?.type === 'cancel' 
+                                ? "This will mark your order as cancelled. You can still see it in your history."
+                                : "This will permanently remove this build from your history. This action cannot be undone."}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={() => {
+                                if (confirmAction) {
+                                    if (confirmAction.type === 'cancel') handleCancelReservation(confirmAction.id);
+                                    else handleDeleteReservation(confirmAction.id);
+                                    setConfirmAction(null);
+                                }
+                            }}
+                            className={confirmAction?.type === 'delete' ? "bg-rose-600 hover:bg-rose-700" : ""}
+                        >
+                            Confirm
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

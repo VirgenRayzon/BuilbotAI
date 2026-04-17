@@ -62,7 +62,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-primary/20 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
-      <div className="container flex h-14 max-w-screen-2xl items-center">
+      <div className="flex h-14 max-w-[1800px] w-full mx-auto items-center px-4 md:px-8">
         <Link href={authUser ? (profile?.isManager ? "/admin" : "/builder") : "/"} className="mr-6 flex items-center space-x-2">
           <Logo />
         </Link>

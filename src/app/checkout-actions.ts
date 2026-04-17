@@ -173,6 +173,22 @@ export async function updateReservationStatus(
                     createdAt: admin.firestore.Timestamp.now()
                 });
             }
+
+            // 6. Create system notification for Admins if User cancels their own reservation
+            if (newStatus === 'cancelled' && (!actor || !actor.isManager)) {
+                const sysNotificationRef = firestore.collection("system_notifications").doc();
+                transaction.set(sysNotificationRef, {
+                    id: sysNotificationRef.id,
+                    type: 'user_cancelled',
+                    actorId: orderData.userId,
+                    actorName: orderData.userEmail.split('@')[0],
+                    title: "User Cancellation",
+                    message: `${orderData.userEmail} cancelled their build.`,
+                    targetId: orderId,
+                    readBy: [],
+                    createdAt: admin.firestore.Timestamp.now()
+                });
+            }
         });
 
         return { success: true };

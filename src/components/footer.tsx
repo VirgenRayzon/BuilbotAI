@@ -1,45 +1,113 @@
+"use client";
+
 import Link from "next/link";
 import { Logo } from "./logo";
+import { motion } from "framer-motion";
 
 export function Footer() {
+  const currentYear = new Date().getFullYear();
+
   return (
-    <footer className="bg-slate-950 border-t border-primary/10 mt-16 font-body relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
-      <div className="container mx-auto py-12 px-4 md:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="col-span-1 md:col-span-2">
+    <footer className="bg-background border-t border-border mt-32 font-body relative overflow-hidden">
+      {/* Decorative top bar */}
+      <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent z-20"></div>
+      
+      <div className="max-w-[1800px] w-full mx-auto pt-24 pb-12 px-4 md:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-24">
+          {/* Brand Column */}
+          <div className="col-span-1 md:col-span-5 space-y-6">
             <Logo />
-            <p className="mt-4 text-muted-foreground max-w-sm">
-              The ultimate platform for PC enthusiasts. Build and optimize
-              your custom rigs with the power of AI.
+            <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
+              Forging the future of PC building with artificial intelligence. 
+              Premium components, expert advice, and immersive 3D visualization.
             </p>
+            <div className="flex gap-4">
+               {/* Social placeholders could go here */}
+               <div className="w-8 h-8 rounded-full bg-muted/50 border border-border flex items-center justify-center hover:bg-primary/10 hover:border-primary/30 transition-all cursor-pointer">
+                  <span className="text-[10px] font-bold">TW</span>
+               </div>
+               <div className="w-8 h-8 rounded-full bg-muted/50 border border-border flex items-center justify-center hover:bg-primary/10 hover:border-primary/30 transition-all cursor-pointer">
+                  <span className="text-[10px] font-bold">IG</span>
+               </div>
+               <div className="w-8 h-8 rounded-full bg-muted/50 border border-border flex items-center justify-center hover:bg-primary/10 hover:border-primary/30 transition-all cursor-pointer">
+                  <span className="text-[10px] font-bold">DC</span>
+               </div>
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold font-headline text-foreground">Product</h3>
-            <nav className="mt-4 space-y-2">
-              <Link href="/builder" className="block text-muted-foreground hover:text-foreground">Builder</Link>
-              <Link href="/pre-builts" className="block text-muted-foreground hover:text-foreground">Pre-builts</Link>
-              <Link href="/builder" className="block text-muted-foreground hover:text-foreground">Components</Link>
-              <Link href="#" className="block text-muted-foreground hover:text-foreground">Pricing</Link>
+
+          {/* Links Columns */}
+          <div className="col-span-1 md:col-span-2 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground/50">Platform</h3>
+            <nav className="flex flex-col gap-2">
+              <Link href="/builder" className="text-sm text-muted-foreground hover:text-primary transition-colors">Builder</Link>
+              <Link href="/pre-builts" className="text-sm text-muted-foreground hover:text-primary transition-colors">Pre-builts</Link>
+              <Link href="/ai-build-advisor" className="text-sm text-muted-foreground hover:text-primary transition-colors">AI Advisor</Link>
+              <Link href="/admin" className="text-sm text-muted-foreground hover:text-primary transition-colors">Inventory</Link>
             </nav>
           </div>
-          <div>
-            <h3 className="font-semibold font-headline text-foreground">Support</h3>
-            <nav className="mt-4 space-y-2">
-              <Link href="#" className="block text-muted-foreground hover:text-foreground">Help Center</Link>
-              <Link href="#" className="block text-muted-foreground hover:text-foreground">Compatibility Guide</Link>
-              <Link href="#" className="block text-muted-foreground hover:text-foreground">Contact Us</Link>
+
+          <div className="col-span-1 md:col-span-2 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground/50">Support</h3>
+            <nav className="flex flex-col gap-2">
+              <Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Help Center</Link>
+              <Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Guides</Link>
+              <Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">API Docs</Link>
+              <Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Contact</Link>
             </nav>
+          </div>
+
+          <div className="col-span-1 md:col-span-3 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground/50">Newsletter</h3>
+            <p className="text-xs text-muted-foreground">Get the latest hardware drops and AI updates.</p>
+            <div className="flex gap-2">
+               <input 
+                  type="email" 
+                  placeholder="Email address" 
+                  className="bg-muted/50 border border-border rounded-lg px-3 py-2 text-xs w-full focus:outline-none focus:border-primary/50 transition-colors"
+               />
+               <button className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-xs font-bold hover:bg-primary/90 transition-all shrink-0">
+                  Join
+               </button>
+            </div>
           </div>
         </div>
-        <div className="mt-12 pt-8 border-t flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Buildbot AI. All rights reserved.</p>
-          <div className="flex gap-4 mt-4 sm:mt-0">
-            <Link href="#" className="hover:text-foreground">Privacy Policy</Link>
-            <Link href="#" className="hover:text-foreground">Terms of Service</Link>
+
+        {/* Big Text Section */}
+        <div className="relative pt-12 pb-24 overflow-hidden select-none pointer-events-none">
+          <motion.h1 
+            initial={{ y: 100, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            transition={{ duration: 1, ease: [0.23, 1, 0.32, 1] }}
+            className="text-[12vw] md:text-[14vw] font-black font-headline text-center leading-none tracking-tighter text-foreground/[0.03] dark:text-white/[0.03] uppercase italic"
+          >
+            BuildbotAI
+          </motion.h1>
+          <div className="absolute inset-0 flex items-center justify-center">
+             <motion.p 
+               initial={{ opacity: 0 }}
+               whileInView={{ opacity: 1 }}
+               transition={{ delay: 0.5, duration: 1 }}
+               className="text-[2vw] md:text-[1.5vw] font-bold uppercase tracking-[0.5em] text-primary/40 text-center"
+             >
+               Next-Gen PC Synthesis
+             </motion.p>
+          </div>
+        </div>
+
+        {/* Bottom Legal Section */}
+        <div className="pt-8 border-t border-border/50 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
+          <p>&copy; {currentYear} Buildbot AI. All systems operational.</p>
+          <div className="flex gap-8">
+            <Link href="#" className="hover:text-primary transition-colors">Privacy Policy</Link>
+            <Link href="#" className="hover:text-foreground transition-colors">Terms of Service</Link>
+            <Link href="#" className="hover:text-foreground transition-colors">Cookie Policy</Link>
           </div>
         </div>
       </div>
+
+      {/* Background Decorative Element */}
+      <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-purple-500/5 rounded-full blur-[100px] pointer-events-none"></div>
     </footer>
   );
 }

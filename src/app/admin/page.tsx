@@ -277,6 +277,9 @@ export default function AdminPage() {
         try {
             await archivePart(firestore, partId, category, isArchived);
             
+            // Resolve part name for notification
+            const partName = parts.find(p => p.id === partId)?.name || partId;
+
             // System Notification for Super Admin
             if (profile?.isManager && !profile?.isSuperAdmin) {
                 await createSystemNotification(firestore, {
@@ -284,7 +287,7 @@ export default function AdminPage() {
                     actorId: profile.id,
                     actorName: profile.name || profile.email,
                     title: isArchived ? "Item Archived" : "Item Restored",
-                    message: `Manager ${profile.name || profile.email} ${isArchived ? 'archived' : 'restored'} part: ${partId}`,
+                    message: `Manager ${profile.name || profile.email} ${isArchived ? 'archived' : 'restored'} part: ${partName}`,
                     targetId: partId
                 });
             }
@@ -319,6 +322,9 @@ export default function AdminPage() {
         try {
             await archivePrebuiltSystem(firestore, systemId, isArchived);
 
+            // Resolve system name for notification
+            const systemName = prebuiltSystems?.find(s => s.id === systemId)?.name || systemId;
+
             // System Notification for Super Admin
             if (profile?.isManager && !profile?.isSuperAdmin) {
                 await createSystemNotification(firestore, {
@@ -326,7 +332,7 @@ export default function AdminPage() {
                     actorId: profile.id,
                     actorName: profile.name || profile.email,
                     title: isArchived ? "Prebuilt Archived" : "Prebuilt Restored",
-                    message: `Manager ${profile.name || profile.email} ${isArchived ? 'archived' : 'restored'} prebuilt: ${systemId}`,
+                    message: `Manager ${profile.name || profile.email} ${isArchived ? 'archived' : 'restored'} prebuilt: ${systemName}`,
                     targetId: systemId
                 });
             }
@@ -611,7 +617,7 @@ export default function AdminPage() {
     }
 
     return (
-        <div className="w-full px-4 md:px-8 py-8">
+        <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8">
             <div className="mb-8 flex items-center justify-between">
                 <div>
                     <h1 className="text-4xl font-headline font-bold uppercase tracking-tight text-foreground">

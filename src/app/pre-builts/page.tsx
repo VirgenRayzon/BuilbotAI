@@ -86,7 +86,7 @@ export default function PreBuiltsPage() {
     }, [prebuiltSystems, categories, sortBy, sortDirection, searchQuery]);
 
     return (
-        <main className="container mx-auto py-4 md:py-8">
+        <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-4 md:py-8">
             <div className="text-left mb-8">
                 <h1 className="text-4xl font-headline font-bold">Pre-built Rigs</h1>
                 <p className="text-muted-foreground mt-2">

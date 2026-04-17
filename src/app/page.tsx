@@ -45,7 +45,7 @@ export default function StartPage() {
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] -z-10 animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-[150px] -z-10 animate-pulse delay-1000" />
 
-        <div className="container relative z-10 mx-auto px-4">
+        <div className="max-w-[1800px] w-full relative z-10 mx-auto px-4 md:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
             <motion.div
@@ -136,7 +136,7 @@ export default function StartPage() {
 
       {/* Feature Showcase Section */}
       <section className="py-24 relative">
-        <div className="container mx-auto">
+        <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8">
           <SectionHeader
             badge="Advanced Engineering"
             title="Smarter Than Your Average Builder"
@@ -212,7 +212,7 @@ export default function StartPage() {
 
       {/* New: Pre-builts & Accessories */}
       <section className="py-24 bg-white/5 relative border-y border-white/5">
-        <div className="container mx-auto">
+        <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8">
           <SectionHeader
             badge="Curated Experiences"
             title="Beyond Just Parts"
@@ -264,7 +264,7 @@ export default function StartPage() {
       {/* CTA Footer Section */}
       <section className="py-32 relative overflow-hidden">
         <div className="absolute inset-0 bg-primary/5 -z-10" />
-        <div className="container mx-auto px-4 text-center">
+        <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8 text-center">
           <h2 className="text-4xl md:text-6xl font-bold font-headline mb-8">Ready to Build Your <span className="text-gradient">Endgame</span>?</h2>
           <p className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto">Start using BuildbotAI and craft a perfectly optimized, high-performance machines.</p>
           <div className="flex flex-wrap justify-center gap-6">
