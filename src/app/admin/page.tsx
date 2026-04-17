@@ -61,6 +61,8 @@ import { updateReservationStatus } from '@/app/checkout-actions';
 import { PaginationControls } from "@/components/pagination-controls";
 import { formatCurrency, cn } from "@/lib/utils";
 import { NotificationCenter } from '@/components/notification-center';
+import { SalesAnalytics } from '@/components/sales-analytics';
+import { SalesVisualizer } from '@/components/sales-visualizer';
 
 const componentCategories: { name: Part['category'], selected: boolean }[] = [
     { name: "CPU", selected: true },
@@ -1131,75 +1133,61 @@ export default function AdminPage() {
                 </TabsContent>
 
                 {profile?.isSuperAdmin && (
-                    <TabsContent value="sales">
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <Card>
-                                    <CardContent className="pt-6">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-sm font-medium text-muted-foreground">Total Sales</p>
-                                                <h3 className="text-2xl font-bold">{formatCurrency(stats.totalSales)}</h3>
-                                            </div>
-                                            <div className="p-3 bg-emerald-500/10 rounded-full">
-                                                <DollarSign className="w-6 h-6 text-emerald-500" />
-                                            </div>
+                    <TabsContent value="sales" className="mt-6">
+                        <div className="space-y-8">
+                            <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 items-start">
+                                {/* 3D Visualizer Section */}
+                                <div className="xl:col-span-1">
+                                    <div className="space-y-4 sticky top-8">
+                                        <div className="flex flex-col">
+                                            <h3 className="text-2xl font-headline font-bold uppercase tracking-tight text-foreground">
+                                                Business Pulse
+                                            </h3>
+                                            <p className="text-xs text-muted-foreground uppercase tracking-widest opacity-60 mt-1">
+                                                Neural data synchronization
+                                            </p>
                                         </div>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardContent className="pt-6">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
-                                                <h3 className="text-2xl font-bold">{stats.totalOrders}</h3>
-                                            </div>
-                                            <div className="p-3 bg-blue-500/10 rounded-full">
-                                                <History className="w-6 h-6 text-blue-500" />
-                                            </div>
+                                        <SalesVisualizer orderCount={stats.totalOrders} />
+                                        <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10">
+                                            <p className="text-xs text-primary/80 font-medium leading-relaxed">
+                                                The Neural Core reflects real-time reservation intensity. Higher pulse rates indicate increased customer engagement cycles.
+                                            </p>
                                         </div>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardContent className="pt-6">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-sm font-medium text-muted-foreground">Top Item Popularity</p>
-                                                <h3 className="text-2xl font-bold">{(stats.popularItems[0] as any)?.popularity || 0}</h3>
-                                            </div>
-                                            <div className="p-3 bg-orange-500/10 rounded-full">
-                                                <TrendingUp className="w-6 h-6 text-orange-500" />
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                    </div>
+                                </div>
+
+                                {/* Analytics Dashboard Section */}
+                                <div className="xl:col-span-3">
+                                    <SalesAnalytics orders={orders || []} parts={parts || []} />
+                                </div>
                             </div>
 
+                            {/* Most Popular Components Section (Retained but restyled) */}
                             <div className="grid grid-cols-1 gap-8">
                                 <div>
-                                    <h3 className="text-xl font-headline font-bold mb-4 flex items-center gap-2">
-                                        <TrendingUp className="h-5 w-5" /> Most Popular Components
+                                    <h3 className="text-xl font-headline font-bold mb-4 flex items-center gap-2 uppercase tracking-tight">
+                                        <TrendingUp className="h-5 w-5 text-primary" /> Most Popular Components
                                     </h3>
-                                    <Card>
+                                    <Card className="bg-background/40 backdrop-blur-xl border-border/50 shadow-2xl">
                                         <CardContent className="p-0">
                                             <div className="divide-y border border-white/5 rounded-md overflow-hidden">
                                                 {stats.popularItems.slice(0, 5).map((item, index) => (
-                                                    <div key={item.id} className="p-3 flex items-center gap-3 hover:bg-muted/10 transition-colors">
-                                                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center font-bold text-[10px] text-primary shrink-0 border border-primary/20">
+                                                    <div key={item.id} className="p-4 flex items-center gap-4 hover:bg-muted/10 transition-colors group">
+                                                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary shrink-0 border border-primary/20 group-hover:scale-110 transition-transform">
                                                             {index + 1}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <p className="font-medium text-[13px] truncate leading-tight">{item.name}</p>
-                                                            <p className="text-[9px] text-muted-foreground uppercase opacity-70 tracking-tight">{item.category}</p>
+                                                            <p className="font-bold text-base truncate leading-tight group-hover:text-primary transition-colors">{item.name}</p>
+                                                            <p className="text-[10px] text-muted-foreground uppercase opacity-70 tracking-[0.2em] mt-0.5">{item.category}</p>
                                                         </div>
                                                         <div className="text-right shrink-0">
-                                                            <p className="font-bold">{(item as any).popularity || 0}</p>
-                                                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Purchases</p>
+                                                            <p className="font-mono font-bold text-lg">{(item as any).popularity || 0}</p>
+                                                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest opacity-60">Purchases</p>
                                                         </div>
                                                     </div>
                                                 ))}
                                                 {stats.popularItems.length === 0 && (
-                                                    <div className="p-8 text-center text-muted-foreground">No purchase data yet.</div>
+                                                    <div className="p-8 text-center text-muted-foreground italic">No purchase data synchronized yet.</div>
                                                 )}
                                             </div>
                                         </CardContent>

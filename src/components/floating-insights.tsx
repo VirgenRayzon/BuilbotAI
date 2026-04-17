@@ -57,7 +57,7 @@ export function FloatingInsights({
                             <Cpu className="w-4 h-4 text-cyan-400" />
                             <h3 className="text-sm font-bold tracking-widest text-cyan-400 uppercase">Clearance Preview</h3>
                         </div>
-                        <div className="rounded-xl overflow-hidden border border-white/5 shadow-inner bg-black/20">
+                        <div className="rounded-xl overflow-hidden border border-border shadow-inner bg-muted/20">
                             <PCVisualizer build={build} />
                         </div>
                     </section>
@@ -126,9 +126,9 @@ export function FloatingInsights({
                                     <Cpu className="w-4 h-4 text-cyan-400" />
                                     <h3 className="text-sm font-bold tracking-widest text-cyan-400 uppercase">Clearance Preview</h3>
                                 </div>
-                                <div className="rounded-xl overflow-hidden border border-white/5 shadow-inner bg-black/20">
-                                    <PCVisualizer build={build} />
-                                </div>
+                        <div className="rounded-xl overflow-hidden border border-border shadow-inner bg-muted/20">
+                            <PCVisualizer build={build} />
+                        </div>
                             </section>
 
                             <section>

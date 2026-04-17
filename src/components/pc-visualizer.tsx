@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
-import { ComponentData } from "@/lib/types";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "@/context/theme-provider";
+import { cn } from "@/lib/utils";
+import { ComponentData } from "@/lib/types";
 
 interface PCVisualizerProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
@@ -10,8 +12,6 @@ interface PCVisualizerProps {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LAYOUT CONFIGS — Edit positions and sizes here per archetype.
-// All values are in SVG user-units (roughly 1mm = 1 unit).
-// "x" and "y" are relative to the TOP-LEFT corner of the case frame.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MOBO_SIZES = {
@@ -22,106 +22,44 @@ const MOBO_SIZES = {
 };
 
 const LAYOUT_CONFIGS = {
-
-    // ── MINI-ITX TOWER ──────────────────────────────────────────────────────
     ITX: {
         label: "MINI-ITX TOWER",
-
-        // Case frame size (the visible outer box)
         case: { width: 376, height: 292 },
-
-        // Motherboard — top-left, Mini-ITX is 170x170mm
         mobo: { x: 15, y: 10, width: 170, height: 170, label: "MINI-ITX BOARD" },
-
-        // PSU — top-right vertical block
         psu: { x: 240, y: 15, width: 90, height: 140, label: "PSU" },
-
-        // GPU — bottom horizontal bar, anchored at bottom-left
-        // GPU — width is set here, position calculated dynamically
         gpu: { x: 15, width: 200, height: 45, label: "GPU" },
-
-        // Cooler — centered on CPU socket area on the mobo
-        // Offset is relative to mobo origin (mobo.x, mobo.y)
         cooler: { relX: 55, relY: 30, size: 55, label: "CPU COOLER" },
-
-        // Bottom radiator — only visible when AIO is installed
-        // x/y relative to case frame
         topRad: { x: 15, y: 10, width: 200, height: 40, label: "AIO RADIATOR" },
-        frontRad: null, // No front radiator for ITX
+        frontRad: null,
     },
-
-    // ── MICRO-ATX MID-TOWER ──────────────────────────────────────────────────
     MATX: {
         label: "MICRO-ATX MID-TOWER",
-
         case: { width: 400, height: 430 },
-
-        // mATX board is 244x244mm
         mobo: { x: 15, y: 80, width: 244, height: 244, label: "mATX BOARD" },
-
-        // ATX PSU — bottom-left inside shroud
         psu: { x: 15, y: 80, width: 150, height: 150, label: "PSU" },
-
-        // GPU — starts at rear, sits below the lower PCIe slot zone
-        // GPU — width is set here, position calculated dynamically
         gpu: { x: 15, width: 260, height: 45, label: "GPU" },
-
-        // Cooler — centered on CPU socket
         cooler: { relX: 85, relY: 35, size: 75, label: "AIR COOLER" },
-
-        // Top radiator (240mm)
-        topRad: { x: 20, y: 8, width: 240, height: 38, label: "TOP RADIATOR" },
-        // Right side panel front radiator (240mm)
-        frontRad: { x: 345, y: 80, width: 38, height: 240, label: "FRONT RADIATOR" },
+        topRad: { x: 8, y: 8, width: 240, height: 38, label: "TOP RADIATOR" },
+        frontRad: { x: 330, y: 40, width: 38, height: 240, label: "FRONT RADIATOR" },
     },
-
-    // ── ATX MID-TOWER ────────────────────────────────────────────────────────
     ATX: {
         label: "ATX MID-TOWER",
-
         case: { width: 460, height: 500 },
-
-        // Standard ATX board 244x305mm
         mobo: { x: 15, y: 75, width: 244, height: 305, label: "MOTHERBOARD" },
-
-        // ATX PSU — sits in bottom shroud
         psu: { x: 15, y: 80, width: 150, height: 150, label: "PSU" },
-
-        // GPU — below lower PCIe slots
-        // GPU — width is set here, position calculated dynamically
         gpu: { x: 15, width: 300, height: 50, label: "GPU" },
-
-        // Cooler on mobo socket center
         cooler: { relX: 82, relY: 45, size: 80, label: "AIR COOLER" },
-
-        // Top radiator (280mm)
         topRad: { x: 20, y: 8, width: 280, height: 40, label: "TOP RADIATOR" },
-        // Front panel radiator (140mm)
         frontRad: { x: 400, y: 70, width: 38, height: 140, label: "FRONT RADIATOR" },
     },
-
-    // ── E-ATX FULL-TOWER ─────────────────────────────────────────────────────
     EATX: {
         label: "E-ATX FULL-TOWER",
-
         case: { width: 560, height: 610 },
-
-        // E-ATX board 330x305mm
         mobo: { x: 15, y: 75, width: 330, height: 305, label: "E-ATX BOARD" },
-
-        // Large ATX/E-ATX PSU at bottom
         psu: { x: 15, y: 80, width: 150, height: 150, label: "E-ATX PSU" },
-
-        // Multi-GPU capable long GPU bay
-        // GPU — width is set here, position calculated dynamically
         gpu: { x: 15, width: 390, height: 55, label: "GPU / MULTI-GPU BAY" },
-
-        // Cooler is massive on EATX
         cooler: { relX: 115, relY: 50, size: 100, label: "CPU COOLER" },
-
-        // Top radiator (360-420mm)
         topRad: { x: 15, y: 10, width: 420, height: 45, label: "TOP RADIATOR" },
-        // Front panel radiator (280-420mm)
         frontRad: { x: 420, y: 90, width: 42, height: 420, label: "FRONT RADIATOR" },
     },
 };
@@ -160,16 +98,15 @@ function getActualDimension(part: ComponentData | null, type: 'GPU' | 'Cooler' |
         } else {
             let slotCount = findValue(['Slot Thickness', 'Slot', 'Slot Size', 'Expansion Slots'], 0);
             if (slotCount !== null && slotCount < 6) {
-                // Round up slot thickness explicitly e.g. 3.2 rounds to 4 slots
                 return Math.ceil(slotCount) * 22;
             }
             let thickness = findValue(['Thickness', 'Width', 'Card Width', 'Height'], 0);
             if (thickness !== null) {
-                if (thickness > 100) return 66; // Fallback for very thick
+                if (thickness > 100) return 66;
                 return Math.round(thickness);
             }
             if (part.dimensions && part.dimensions.height && part.dimensions.height < 100) return Math.round(part.dimensions.height);
-            return 50; // Final safe fallback
+            return 50;
         }
     } else if (type === 'Cooler') {
         const specHeight = findValue(['Height', 'Cooler Height', 'Max Height', 'CPU Cooler Height', 'Height (mm)'], 0);
@@ -185,6 +122,9 @@ function getActualDimension(part: ComponentData | null, type: 'GPU' | 'Cooler' |
 }
 
 export function PCVisualizer({ build }: PCVisualizerProps) {
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
+
     const caseData = build["Case"] as ComponentData | null;
     const moboData = build["Motherboard"] as ComponentData | null;
     const gpuData = build["GPU"] as ComponentData | null;
@@ -205,17 +145,14 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
 
     let archetype: keyof typeof LAYOUT_CONFIGS = 'ATX';
 
-    // 1. Check Case support first to define the chassis frame and layout
     if (caseFF.includes("E-ATX") || caseFF.includes("EATX")) archetype = 'EATX';
     else if (caseFF.includes("MATX") || caseFF.includes("MICRO")) archetype = 'MATX';
     else if (caseFF.includes("ITX")) archetype = 'ITX';
     else if (caseFF.includes("ATX")) archetype = 'ATX';
-    // 2. Fallback to Case Type (e.g. "ATX Mid Tower")
     else if (caseType.includes("E-ATX") || caseType.includes("EATX")) archetype = 'EATX';
     else if (caseType.includes("MATX") || caseType.includes("MICRO")) archetype = 'MATX';
     else if (caseType.includes("ITX") || caseType.includes("SFF")) archetype = 'ITX';
     else if (caseType.includes("ATX")) archetype = 'ATX';
-    // 3. Fallback to motherboard size only if Case has no data
     else if (!hasCase || (!caseFF && !caseType)) {
         if (moboFF.includes("E-ATX") || moboFF.includes("EATX")) archetype = 'EATX';
         else if (moboFF.includes("MATX") || moboFF.includes("MICRO")) archetype = 'MATX';
@@ -242,19 +179,16 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
         (moboFF.includes("MATX") || moboFF.includes("MICRO")) ? MOBO_SIZES.MATX :
             (moboFF.includes("ITX")) ? MOBO_SIZES.ITX : MOBO_SIZES.ATX;
 
-    // ── Get Layout Config ────────────────────────────────────────────────────
     const cfg = LAYOUT_CONFIGS[archetype];
 
-    // ── Dynamic CPU Cooler Position (Upper Middle of Board) ──────────────────
+    // ── Dynamic CPU Cooler Position ──────────────────
     const coolerRelX = (moboW - cfg.cooler.size) / 2;
     const coolerRelY = moboH * 0.12;
 
-    // ── Real part dimensions (override config defaults if data available) ───
     const actualGpuLength = getActualDimension(gpuData, 'GPU', 'primary') || 0;
     const actualPsuLength = getActualDimension(psuData, 'PSU') || 0;
-
-    // Extract actual radiator size (e.g., 240 from "240mm")
-    const actualRadSize = parseInt(String(radiatorSize || coolerData?.model || "").match(/(\d+)/)?.[0] || "0");
+    const radiatorSizeVal = String(radiatorSize || coolerData?.model || "");
+    const actualRadSize = parseInt(radiatorSizeVal.match(/(\d+)/)?.[0] || "0");
 
     const gpuDisplayWidth = actualGpuLength || cfg.gpu.width;
     const actualGpuThickness = getActualDimension(gpuData, 'GPU', 'secondary') || 0;
@@ -262,68 +196,97 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
 
     const psuDisplayWidth = (!cfg.psu.height || cfg.psu.height <= cfg.psu.width)
         ? (actualPsuLength || cfg.psu.width)
-        : (actualPsuLength || 130); // Base ITX PSU size or use actual length
+        : (actualPsuLength || 130);
 
     const psuDisplayHeight = (!cfg.psu.height || cfg.psu.height <= cfg.psu.width)
         ? cfg.psu.height
-        : psuDisplayWidth; // Match width to force a square shape in ITX instead of fixed rectangle
+        : psuDisplayWidth;
 
-
-    // Dynamic Radiator Dimensions
     const topRadDisplayWidth = (isAio && actualRadSize > 0) ? actualRadSize : (cfg.topRad?.width || 0);
     const frontRadDisplayHeight = (isAio && actualRadSize > 0) ? actualRadSize : (cfg.frontRad?.height || 0);
 
-    // ── GPU Position (Anchored to Top PCIe Slot) ────────────────────────────
-    // The top slot is usually ~100mm from top for ATX/MATX, or ~140mm for ITX
     const topSlotOffset = currentMoboConfig.topSlotOffset;
     const gpuY = cfg.mobo.y + topSlotOffset;
 
-    // ── Case dimensions (real data wins over config) ─────────────────────────
     const caseW = (caseData?.dimensions?.depth) || cfg.case.width;
     const caseH = (caseData?.dimensions?.height) || cfg.case.height;
 
-    // ── Clearance check: does GPU exceed case depth? ─────────────────────────
     const gpuAbsX = cfg.gpu.x + gpuDisplayWidth;
     const gpuBlocked = gpuAbsX > caseW - 10;
 
     const paddingX = 50;
-    const paddingTop = 130;  // extra room so the HTML HUD labels don't overlap the case frame
+    const paddingTop = 130;
     const paddingBottom = 50;
     const svgW = caseW + paddingX * 2;
     const svgH = caseH + paddingTop + paddingBottom;
 
-    // Dynamic aspect ratio — derived per archetype so the container always
-    // perfectly matches the viewBox and the HUD overlay stays correctly aligned
-    // at any screen resolution (ITX ≈ 1.63:1, MATX ≈ 1.16:1, ATX ≈ 1.12:1, EATX ≈ 1.08:1)
     const containerAspectRatio = `${svgW} / ${svgH}`;
 
-    // Helper: absolute SVG coordinate from case-relative coord
     const cx = (relX: number) => paddingX + relX;
     const cy = (relY: number) => paddingTop + relY;
 
     const springConfig = { type: "spring", stiffness: 300, damping: 30 };
 
+    // Theme Palettes
+    const colors = {
+        bg: isDark ? "#0c0f14" : "#f8fafc",
+        case: isDark ? "#141417" : "#ffffff",
+        caseStroke: isDark ? "#3a3a3a" : "#e2e8f0",
+        mobo: isDark ? "#22d3ee" : "#0ea5e9",
+        gpu: isDark ? "#a855f7" : "#8b5cf6",
+        psu: isDark ? "#3b82f6" : "#2563eb",
+        cooler: isDark ? "#22d3ee" : "#0ea5e9",
+        text: isDark ? "rgba(255,255,255,0.5)" : "rgba(15, 23, 42, 0.6)",
+        textStrong: isDark ? "#ffffff" : "#0f172a",
+        grid: isDark ? "rgba(255,255,255,0.02)" : "rgba(15, 23, 42, 0.04)",
+        tech: isDark ? "rgba(255,255,255,0.04)" : "rgba(15, 23, 42, 0.06)",
+        glass: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.2)",
+        reflection: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.4)"
+    };
+
     return (
         <div
-            className="w-full bg-[#0c0f14] rounded-xl border border-white/5 relative overflow-hidden flex items-center justify-center font-sans shadow-2xl"
+            className={cn(
+                "w-full rounded-2xl border relative overflow-hidden flex items-center justify-center font-sans shadow-2xl transition-all duration-500",
+                isDark ? "bg-[#0c0f14] border-white/5 shadow-black/40" : "bg-slate-50 border-slate-200 shadow-slate-200/50"
+            )}
             style={{ aspectRatio: containerAspectRatio }}
         >
-            {/* Top Gradient Edge - Matched to Analytics height and colors */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20" />
+            {/* Top Gradient Edge */}
+            <div className={cn(
+                "absolute top-0 left-0 right-0 h-1 bg-gradient-to-r via-purple-500 animate-pulse z-20",
+                isDark ? "from-primary to-primary" : "from-blue-500 to-blue-500"
+            )} />
 
-            {/* HUD overlay */}
+            {/* Neural Scan Beam */}
+            <motion.div
+                className={cn(
+                    "absolute inset-x-0 h-[2px] z-30 pointer-events-none opacity-40",
+                    isDark ? "bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.8)]" : "bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                )}
+                animate={{
+                    top: ["0%", "100%", "0%"],
+                }}
+                transition={{
+                    duration: 6,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                }}
+            />
+
             <div className="absolute top-[3%] left-[3%] z-10 flex flex-col gap-0.5 pointer-events-none">
-                {/* Archetype label — primary heading */}
                 <motion.span
                     key={cfg.label}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="text-[13px] font-headline font-bold text-cyan-400 tracking-[0.15em] uppercase"
+                    className={cn(
+                        "text-[10px] md:text-[13px] font-headline font-bold tracking-[0.15em] uppercase",
+                        isDark ? "text-cyan-400" : "text-blue-600"
+                    )}
                 >
                     {cfg.label}
                 </motion.span>
 
-                {/* Case model name */}
                 <AnimatePresence mode="wait">
                     {caseData && (
                         <motion.span
@@ -331,14 +294,16 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                             initial={{ opacity: 0, y: -5 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 5 }}
-                            className="text-[10px] text-white/50 font-medium tracking-tight"
+                            className={cn(
+                                "text-[8px] md:text-[10px] font-medium tracking-tight",
+                                isDark ? "text-white/50" : "text-slate-500"
+                            )}
                         >
                             {caseData.model}
                         </motion.span>
                     )}
                 </AnimatePresence>
 
-                {/* Case dimensions */}
                 <AnimatePresence mode="wait">
                     {hasCase && (
                         <motion.span
@@ -346,7 +311,10 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                             initial={{ opacity: 0, y: -4 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 4 }}
-                            className="text-[9px] text-white/30 font-mono tracking-widest"
+                            className={cn(
+                                "text-[7px] md:text-[9px] font-mono tracking-widest",
+                                isDark ? "text-white/30" : "text-slate-400"
+                            )}
                         >
                             {caseW}&thinsp;×&thinsp;{caseH}&thinsp;mm
                         </motion.span>
@@ -359,13 +327,15 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                 height="100%"
                 viewBox={`0 0 ${svgW} ${svgH}`}
                 preserveAspectRatio="xMidYMid meet"
-                className="drop-shadow-[0_0_30px_rgba(34,211,238,0.05)]"
+                className={cn(
+                    "transition-all duration-700",
+                    isDark ? "drop-shadow-[0_0_30px_rgba(34,211,238,0.05)]" : "drop-shadow-[0_0_20px_rgba(59,130,246,0.05)]"
+                )}
             >
                 <defs>
-                    {/* --- Advanced Filters --- */}
                     <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
                         <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
-                        <feColorMatrix in="blur" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.8 0" result="glow" />
+                        <feColorMatrix in="blur" type="matrix" values={`0 0 0 0 ${isDark ? 0.13 : 0.23}  0 0 0 0 ${isDark ? 0.82 : 0.64}  0 0 0 0 ${isDark ? 0.93 : 0.96}  0 0 0 0.8 0`} result="glow" />
                         <feMerge>
                             <feMergeNode in="glow" />
                             <feMergeNode in="SourceGraphic" />
@@ -376,79 +346,76 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                         <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" />
                     </filter>
 
-                    {/* --- Patterns --- */}
-                    {/* HUD / Background Grid */}
                     <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.02)" strokeWidth="0.5" />
+                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke={colors.grid} strokeWidth="0.5" />
                     </pattern>
 
-                    {/* Radiator / Fan pattern */}
                     <pattern id="fanPattern" width="20" height="20" patternUnits="userSpaceOnUse">
-                        <circle cx="10" cy="10" r="8" fill="none" stroke="#a855f7" strokeOpacity="0.1" strokeWidth="0.5" />
-                        <path d="M 10 2 L 10 18 M 2 10 L 18 10" stroke="#a855f7" strokeOpacity="0.05" strokeWidth="0.5" />
-                        <circle cx="10" cy="10" r="2" fill="#a855f7" fillOpacity="0.05" />
+                        <circle cx="10" cy="10" r="8" fill="none" stroke={colors.gpu} strokeOpacity="0.1" strokeWidth="0.5" />
+                        <path d="M 10 2 L 10 18 M 2 10 L 18 10" stroke={colors.gpu} strokeOpacity="0.05" strokeWidth="0.5" />
+                        <circle cx="10" cy="10" r="2" fill={colors.gpu} fillOpacity="0.05" />
                     </pattern>
 
-                    {/* Circuitry / Tech pattern for GPU/Mobo */}
                     <pattern id="techPattern" width="30" height="30" patternUnits="userSpaceOnUse">
-                        <path d="M 0 5 L 10 5 L 15 10 L 15 20 M 20 0 L 20 10 L 25 15" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" fill="none" />
-                        <rect x="5" y="15" width="2" height="2" fill="rgba(255,255,255,0.06)" rx="0.5" />
-                        <rect x="22" y="5" width="3" height="3" fill="rgba(34, 211, 238, 0.05)" rx="0.5" />
+                        <path d="M 0 5 L 10 5 L 15 10 L 15 20 M 20 0 L 20 10 L 25 15" stroke={colors.tech} strokeWidth="0.5" fill="none" />
+                        <rect x="5" y="15" width="2" height="2" fill={colors.tech} rx="0.5" />
+                        <rect x="22" y="5" width="3" height="3" fill={colors.tech} rx="0.5" />
                     </pattern>
 
-                    {/* PSU / Chassis Ventilation pattern */}
                     <pattern id="ventPattern" width="8" height="8" patternUnits="userSpaceOnUse">
-                        <circle cx="2" cy="2" r="1.2" fill="rgba(255,255,255,0.08)" />
-                        <circle cx="6" cy="6" r="1.2" fill="rgba(255,255,255,0.08)" />
+                        <circle cx="2" cy="2" r="1.2" fill={colors.tech} />
+                        <circle cx="6" cy="6" r="1.2" fill={colors.tech} />
                     </pattern>
 
-                    {/* RAM Slots Pattern */}
                     <pattern id="ramPattern" width="12" height="60" patternUnits="userSpaceOnUse">
-                        <rect x="2" y="0" width="3" height="60" rx="1" fill="rgba(255,255,255,0.05)" />
-                        <rect x="7" y="0" width="3" height="60" rx="1" fill="rgba(255,255,255,0.05)" />
+                        <rect x="2" y="0" width="3" height="60" rx="1" fill={colors.tech} />
+                        <rect x="7" y="0" width="3" height="60" rx="1" fill={colors.tech} />
                     </pattern>
 
-                    {/* PCIe Slot Pattern */}
                     <pattern id="pciePattern" width="180" height="15" patternUnits="userSpaceOnUse">
-                        <rect x="0" y="2" width="180" height="4" rx="1" fill="rgba(255,255,255,0.1)" />
-                        <rect x="0" y="8" width="100" height="4" rx="1" fill="rgba(255,255,255,0.05)" />
+                        <rect x="0" y="2" width="180" height="4" rx="1" fill={colors.tech} />
+                        <rect x="0" y="8" width="100" height="4" rx="1" fill={colors.tech} />
                     </pattern>
 
-                    {/* Component Gradients */}
                     <linearGradient id="moboGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.15} />
-                        <stop offset="100%" stopColor="#0891b2" stopOpacity={0.05} />
+                        <stop offset="0%" stopColor={colors.mobo} stopOpacity={0.15} />
+                        <stop offset="100%" stopColor={colors.mobo} stopOpacity={0.05} />
                     </linearGradient>
 
                     <linearGradient id="gpuGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#a855f7" stopOpacity={0.25} />
-                        <stop offset="100%" stopColor="#6b21a8" stopOpacity={0.1} />
+                        <stop offset="0%" stopColor={colors.gpu} stopOpacity={0.25} />
+                        <stop offset="100%" stopColor={colors.gpu} stopOpacity={0.1} />
                     </linearGradient>
 
                     <linearGradient id="psuGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.2} />
-                        <stop offset="100%" stopColor="#1e3a8a" stopOpacity={0.05} />
+                        <stop offset="0%" stopColor={colors.psu} stopOpacity={0.2} />
+                        <stop offset="100%" stopColor={colors.psu} stopOpacity={0.05} />
                     </linearGradient>
 
                     <linearGradient id="coolerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.2} />
-                        <stop offset="100%" stopColor="#0891b2" stopOpacity={0.05} />
+                        <stop offset="0%" stopColor={colors.cooler} stopOpacity={0.2} />
+                        <stop offset="100%" stopColor={colors.cooler} stopOpacity={0.05} />
                     </linearGradient>
 
                     <linearGradient id="radGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#a855f7" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="#6b21a8" stopOpacity={0.15} />
+                        <stop offset="0%" stopColor={colors.gpu} stopOpacity={0.3} />
+                        <stop offset="100%" stopColor={colors.gpu} stopOpacity={0.15} />
                     </linearGradient>
 
                     <pattern id="diagonalHatch" width="10" height="10" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
                         <line x1="0" y1="0" x2="0" y2="10" stroke="#ef4444" strokeWidth="2" opacity="0.4" />
                     </pattern>
+
+                    <linearGradient id="reflectionGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor={colors.reflection} stopOpacity={1} />
+                        <stop offset="30%" stopColor={colors.reflection} stopOpacity={0} />
+                        <stop offset="70%" stopColor={colors.reflection} stopOpacity={0} />
+                        <stop offset="100%" stopColor={colors.reflection} stopOpacity={0.5} />
+                    </linearGradient>
                 </defs>
 
-                {/* BACKGROUND GRID */}
                 <rect x="0" y="0" width={svgW} height={svgH} fill="url(#grid)" />
 
-                {/* ── CASE FRAME ─────────────────────────────────────────── */}
                 <AnimatePresence>
                     {hasCase && (
                         <motion.rect
@@ -463,18 +430,15 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                             }}
                             transition={springConfig}
                             rx={12}
-                            fill="#141417"
-                            stroke="#3a3a3a"
+                            fill={colors.case}
+                            stroke={colors.caseStroke}
                             strokeWidth={2}
                         />
                     )}
                 </AnimatePresence>
 
-                {/* Case size label moved to HUD overlay to avoid overlap */}
-
                 {hasCase && (
                     <>
-                        {/* ── TOP RADIATOR (Purple) ── */}
                         <AnimatePresence>
                             {cfg.topRad && isAio && (
                                 <motion.g
@@ -488,7 +452,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                         transition={springConfig}
                                         height={cfg.topRad.height}
                                         rx={4} fill="url(#radGrad)"
-                                        stroke="#a855f7" strokeOpacity={0.3} strokeWidth={1}
+                                        stroke={colors.gpu} strokeOpacity={0.3} strokeWidth={1}
                                     />
                                     <motion.rect
                                         animate={{ width: topRadDisplayWidth }}
@@ -501,16 +465,15 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                         animate={{ x: topRadDisplayWidth / 2 }}
                                         transition={springConfig}
                                         y={cfg.topRad.height / 2 + 4}
-                                        fill="#a855f7" fontSize="11" fontWeight="bold" textAnchor="middle" opacity={0.8}
+                                        fill={colors.gpu} fontSize="11" fontWeight="bold" textAnchor="middle" opacity={0.8}
                                         className="uppercase tracking-widest font-headline"
                                     >
-                                        {actualRadSize > 0 ? `${actualRadSize}mm RADIATOR` : cfg.topRad.label}
+                                        {actualRadSize > 0 ? `${actualRadSize}mm` : cfg.topRad.label}
                                     </motion.text>
                                 </motion.g>
                             )}
                         </AnimatePresence>
 
-                        {/* ── FRONT / SIDE RADIATOR (Purple) ─────────────────────── */}
                         <AnimatePresence>
                             {cfg.frontRad && isAio && (
                                 <motion.g
@@ -524,7 +487,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                         transition={springConfig}
                                         width={cfg.frontRad.width}
                                         rx={4} fill="url(#radGrad)"
-                                        stroke="#a855f7" strokeOpacity={0.3} strokeWidth={1}
+                                        stroke={colors.gpu} strokeOpacity={0.3} strokeWidth={1}
                                     />
                                     <motion.rect
                                         animate={{ height: frontRadDisplayHeight }}
@@ -537,17 +500,16 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                         animate={{ y: frontRadDisplayHeight / 2 }}
                                         transition={springConfig}
                                         x={cfg.frontRad.width / 2}
-                                        fill="#a855f7" fontSize="11" fontWeight="bold" textAnchor="middle" opacity={0.8}
+                                        fill={colors.gpu} fontSize="11" fontWeight="bold" textAnchor="middle" opacity={0.8}
                                         className="uppercase tracking-widest font-headline"
                                         transform={`rotate(90, ${cfg.frontRad.width / 2}, ${frontRadDisplayHeight / 2})`}
                                     >
-                                        {actualRadSize > 0 ? `${actualRadSize}mm RADIATOR` : cfg.frontRad.label}
+                                        {actualRadSize > 0 ? `${actualRadSize}mm` : cfg.frontRad.label}
                                     </motion.text>
                                 </motion.g>
                             )}
                         </AnimatePresence>
 
-                        {/* ── MOTHERBOARD (Blue) ─────────────────────────────────── */}
                         <AnimatePresence>
                             {moboData && (
                                 <motion.g
@@ -556,26 +518,22 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                     exit={{ opacity: 0, scale: 0.9 }}
                                     transition={springConfig}
                                 >
-                                    {/* Main PCB */}
                                     <motion.rect
                                         animate={{ width: moboW, height: moboH }}
                                         transition={springConfig}
                                         rx={4} fill="url(#moboGrad)"
-                                        stroke="#3b82f6" strokeOpacity={0.4} strokeWidth={1}
+                                        stroke={colors.mobo} strokeOpacity={0.4} strokeWidth={1}
                                     />
-                                    {/* Subtle Tech Overlay */}
                                     <motion.rect
                                         animate={{ width: moboW, height: moboH }}
                                         transition={springConfig}
                                         fill="url(#techPattern)" opacity={0.3} rx={4}
                                     />
-                                    {/* Chipset Area Detail */}
                                     <motion.rect
                                         animate={{ x: moboW * 0.6, y: moboH * 0.5, width: moboW * 0.15, height: moboW * 0.15 }}
-                                        fill="rgba(0,0,0,0.3)" stroke="#22d3ee" strokeOpacity={0.1} rx={2}
+                                        fill="rgba(0,0,0,0.2)" stroke={colors.mobo} strokeOpacity={0.1} rx={2}
                                     />
 
-                                    {/* RAM Slots - placed to the right of cooler area */}
                                     <motion.rect
                                         animate={{ x: coolerRelX + cfg.cooler.size + 10, y: coolerRelY - 10 }}
                                         width={12} height={60}
@@ -583,7 +541,6 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                         transition={springConfig}
                                     />
 
-                                    {/* PCIe Slots - dynamic based on motherboard size */}
                                     <motion.rect
                                         animate={{ x: 15, y: topSlotOffset }}
                                         width={moboW - 60} height={10}
@@ -602,7 +559,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                     <motion.text
                                         animate={{ x: moboW / 2, y: moboH - 12 }}
                                         transition={springConfig}
-                                        fill="#22d3ee" fontSize="11" fontWeight="bold" textAnchor="middle" opacity={0.8}
+                                        fill={colors.mobo} fontSize="11" fontWeight="bold" textAnchor="middle" opacity={0.8}
                                         className="uppercase tracking-widest font-headline"
                                     >
                                         {moboLabel}
@@ -610,13 +567,12 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                     <motion.text
                                         animate={{ x: moboW / 2, y: moboH - 24 }}
                                         transition={springConfig}
-                                        fill="#22d3ee" fontSize="9" textAnchor="middle" opacity={0.5}
+                                        fill={colors.mobo} fontSize="9" textAnchor="middle" opacity={0.5}
                                         className="font-mono tracking-tight"
                                     >
                                         {moboW}×{moboH}mm
                                     </motion.text>
 
-                                    {/* ── CPU COOLER (Green) ── */}
                                     <AnimatePresence>
                                         {coolerData && (
                                             <motion.g
@@ -631,11 +587,10 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                                             animate={{ r: cfg.cooler.size / 2 }}
                                                             transition={springConfig}
                                                             fill="url(#coolerGrad)"
-                                                            stroke="#22d3ee" strokeOpacity={0.3} strokeWidth={1}
+                                                            stroke={colors.mobo} strokeOpacity={0.3} strokeWidth={1}
                                                         />
-                                                        {/* Pump Center Detail */}
-                                                        <motion.circle r={cfg.cooler.size * 0.25} fill="rgba(0,0,0,0.4)" stroke="#22d3ee" strokeOpacity={0.2} />
-                                                        <motion.circle r={cfg.cooler.size * 0.08} fill="#22d3ee" opacity={0.3} />
+                                                        <motion.circle r={cfg.cooler.size * 0.25} fill="rgba(0,0,0,0.4)" stroke={colors.mobo} strokeOpacity={0.2} />
+                                                        <motion.circle r={cfg.cooler.size * 0.08} fill={colors.mobo} opacity={0.3} />
                                                     </motion.g>
                                                 ) : (
                                                     <motion.g>
@@ -643,28 +598,20 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                                             animate={{ width: cfg.cooler.size, height: cfg.cooler.size }}
                                                             transition={springConfig}
                                                             rx={4} fill="url(#coolerGrad)"
-                                                            stroke="#22d3ee" strokeOpacity={0.3} strokeWidth={1}
+                                                            stroke={colors.mobo} strokeOpacity={0.3} strokeWidth={1}
                                                         />
-                                                        {/* Fan Hub Detail */}
                                                         <motion.circle
                                                             animate={{ cx: cfg.cooler.size / 2, cy: cfg.cooler.size / 2 }}
-                                                            r={cfg.cooler.size * 0.2} fill="rgba(0,0,0,0.4)" stroke="#22d3ee" strokeOpacity={0.15}
+                                                            r={cfg.cooler.size * 0.2} fill="rgba(0,0,0,0.4)" stroke={colors.mobo} strokeOpacity={0.15}
                                                         />
                                                     </motion.g>
                                                 )}
                                                 <text
-                                                    x={cfg.cooler.size / 2} y={cfg.cooler.size / 2 - 4}
-                                                    fill="#22d3ee" fontSize="11" fontWeight="bold" textAnchor="middle" opacity={0.8}
+                                                    x={cfg.cooler.size / 2} y={cfg.cooler.size / 2 + 3}
+                                                    fill={colors.mobo} fontSize="11" fontWeight="bold" textAnchor="middle" opacity={0.8}
                                                     className="uppercase tracking-widest font-headline"
                                                 >
                                                     {isAio ? "AIO" : "AIR"}
-                                                </text>
-                                                <text
-                                                    x={cfg.cooler.size / 2} y={cfg.cooler.size / 2 + 10}
-                                                    fill="#22d3ee" fontSize="9" textAnchor="middle" opacity={0.6}
-                                                    className="uppercase tracking-widest font-mono"
-                                                >
-                                                    {cfg.cooler.label}
                                                 </text>
                                             </motion.g>
                                         )}
@@ -673,7 +620,6 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                             )}
                         </AnimatePresence>
 
-                        {/* ── GPU (Yellow) ─────────────────────────────────────────── */}
                         <AnimatePresence>
                             {gpuData && (
                                 <motion.g
@@ -686,63 +632,59 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                     exit={{ opacity: 0, x: -50 }}
                                     transition={springConfig}
                                 >
-                                    {/* Shroud */}
                                     <motion.rect
                                         animate={{ width: gpuDisplayWidth, height: gpuDisplayHeight }}
                                         transition={springConfig}
                                         rx={6}
                                         fill={gpuBlocked ? "url(#diagonalHatch)" : "url(#gpuGrad)"}
-                                        stroke={gpuBlocked ? "#ef4444" : "#eab308"}
+                                        stroke={gpuBlocked ? "#ef4444" : colors.gpu}
                                         strokeWidth={1}
                                     />
 
                                     {!gpuBlocked && (
                                         <>
-                                            {/* GPU Fans - 3 fans for long cards, 2 for short */}
                                             <motion.circle
                                                 animate={{ cx: gpuDisplayWidth * 0.2, cy: gpuDisplayHeight * 0.5 }}
-                                                r={gpuDisplayHeight * 0.35} fill="rgba(0,0,0,0.2)" stroke="rgba(234, 179, 8, 0.1)"
+                                                r={gpuDisplayHeight * 0.35} fill="rgba(0,0,0,0.15)" stroke={colors.gpu} strokeOpacity={0.1}
                                             />
                                             <motion.circle
                                                 animate={{ cx: gpuDisplayWidth * 0.5, cy: gpuDisplayHeight * 0.5 }}
-                                                r={gpuDisplayHeight * 0.35} fill="rgba(0,0,0,0.2)" stroke="rgba(234, 179, 8, 0.1)"
+                                                r={gpuDisplayHeight * 0.35} fill="rgba(0,0,0,0.15)" stroke={colors.gpu} strokeOpacity={0.1}
                                             />
                                             {gpuDisplayWidth > 200 && (
                                                 <motion.circle
                                                     animate={{ cx: gpuDisplayWidth * 0.8, cy: gpuDisplayHeight * 0.5 }}
-                                                    r={gpuDisplayHeight * 0.35} fill="rgba(0,0,0,0.2)" stroke="rgba(234, 179, 8, 0.1)"
+                                                    r={gpuDisplayHeight * 0.35} fill="rgba(0,0,0,0.15)" stroke={colors.gpu} strokeOpacity={0.1}
                                                 />
                                             )}
                                         </>
                                     )}
 
                                     <motion.text
-                                        animate={{ y: gpuDisplayHeight / 2 - 4 }}
+                                        animate={{ y: gpuDisplayHeight / 2 - 2 }}
                                         transition={springConfig}
                                         x={14}
-                                        fill={gpuBlocked ? "#ef4444" : "#a855f7"}
+                                        fill={gpuBlocked ? "#ef4444" : colors.gpu}
                                         fontSize="11" fontWeight="bold" opacity={0.9}
                                         className="uppercase tracking-widest font-headline"
                                     >
-                                        {archetype === 'EATX' ? "GPU / MULTI-GPU BAY" : cfg.gpu.label}
+                                        GPU
                                     </motion.text>
                                     <motion.text
-                                        animate={{ y: gpuDisplayHeight / 2 + 11 }}
+                                        animate={{ y: gpuDisplayHeight / 2 + 10 }}
                                         transition={springConfig}
                                         x={14}
-                                        fill={gpuBlocked ? "#ef4444" : "#a855f7"}
-                                        fontSize="9" opacity={0.7}
-                                        className="font-mono"
+                                        fill={gpuBlocked ? "#ef4444" : colors.gpu}
+                                        fontSize="8" opacity={0.7}
+                                        className="font-mono tracking-tighter"
                                     >
-                                        {actualGpuLength > 0
-                                            ? `${actualGpuLength}mm × ${actualGpuThickness || gpuDisplayHeight}mm${gpuBlocked ? " — BLOCKED ⚠" : ""}`
-                                            : `DEFAULT ${gpuDisplayWidth}mm`}
+                                        {actualGpuLength > 0 ? `${actualGpuLength}mm` : `${gpuDisplayWidth}mm`}
+                                        {gpuBlocked && " ⚠"}
                                     </motion.text>
                                 </motion.g>
                             )}
                         </AnimatePresence>
 
-                        {/* ── PSU (Orange) ─────────────────────────────────────────── */}
                         <AnimatePresence>
                             {psuData && (
                                 <motion.g
@@ -751,45 +693,38 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                     exit={{ opacity: 0, y: 50 }}
                                     transition={springConfig}
                                 >
-                                    {/* Body */}
                                     <motion.rect
                                         animate={{ width: psuDisplayWidth, height: psuDisplayHeight }}
                                         transition={springConfig}
                                         rx={6} fill="url(#psuGrad)"
-                                        stroke="#f97316" strokeOpacity={0.4} strokeWidth={1}
+                                        stroke={colors.psu} strokeOpacity={0.4} strokeWidth={1}
                                     />
-                                    {/* Ventilation Pattern */}
                                     <motion.rect
                                         animate={{ width: psuDisplayWidth, height: psuDisplayHeight }}
                                         fill="url(#ventPattern)" opacity={0.4} rx={6}
                                     />
-                                    {/* PSU Fan Grill */}
                                     <motion.circle
                                         animate={{ cx: psuDisplayWidth * 0.5, cy: psuDisplayHeight * 0.5 }}
-                                        r={psuDisplayHeight * 0.4} fill="rgba(0,0,0,0.3)" stroke="rgba(249, 115, 22, 0.1)"
-                                    />
-                                    <motion.circle
-                                        animate={{ cx: psuDisplayWidth * 0.5, cy: psuDisplayHeight * 0.5 }}
-                                        r={psuDisplayHeight * 0.1} fill="rgba(249, 115, 22, 0.1)"
+                                        r={psuDisplayHeight * 0.4} fill="rgba(0,0,0,0.2)" stroke={colors.psu} strokeOpacity={0.1}
                                     />
 
                                     <motion.text
-                                        animate={{ x: psuDisplayWidth / 2, y: psuDisplayHeight / 2 - 4 }}
+                                        animate={{ x: psuDisplayWidth / 2, y: psuDisplayHeight / 2 + 4 }}
                                         transition={springConfig}
-                                        fill="#22d3ee" fontSize="11" fontWeight="bold" textAnchor="middle" opacity={0.8}
+                                        fill={colors.psu} fontSize="11" fontWeight="bold" textAnchor="middle" opacity={0.8}
                                         className="uppercase tracking-widest font-headline"
                                     >
-                                        {cfg.psu.label}
+                                        PSU
                                     </motion.text>
                                     <AnimatePresence>
                                         {actualPsuLength > 0 && (
                                             <motion.text
                                                 key="psu-length"
                                                 initial={{ opacity: 0 }}
-                                                animate={{ opacity: 0.6, x: psuDisplayWidth / 2, y: psuDisplayHeight / 2 + 11 }}
+                                                animate={{ opacity: 0.6, x: psuDisplayWidth / 2, y: psuDisplayHeight / 2 + 15 }}
                                                 exit={{ opacity: 0 }}
                                                 transition={springConfig}
-                                                fill="#22d3ee" fontSize="10" textAnchor="middle"
+                                                fill={colors.psu} fontSize="9" textAnchor="middle"
                                                 className="font-mono"
                                             >
                                                 {actualPsuLength}mm
@@ -822,6 +757,21 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                 fill="#444" rx={0.5} transition={springConfig}
                             />
                         </motion.g>
+
+                        {/* ── CASE GLASS & REFLECTIONS ── */}
+                        <motion.rect
+                            animate={{
+                                width: caseW - 10,
+                                height: caseH - 10,
+                                x: paddingX + 5,
+                                y: paddingTop + 5
+                            }}
+                            rx={10}
+                            fill="url(#reflectionGrad)"
+                            stroke="rgba(255,255,255,0.05)"
+                            strokeWidth={0.5}
+                            className="pointer-events-none"
+                        />
                     </>
                 )}
             </svg>

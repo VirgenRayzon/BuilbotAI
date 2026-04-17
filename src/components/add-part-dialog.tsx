@@ -105,6 +105,9 @@ const CATEGORY_SPECS: Record<string, { key: string; placeholder: string }[]> = {
     { key: "Form Factor", placeholder: "e.g., ATX / SFX" },
   ],
   Case: [
+    { key: "Width (mm)", placeholder: "e.g., 210" },
+    { key: "Depth (mm)", placeholder: "e.g., 450" },
+    { key: "Height (mm)", placeholder: "e.g., 480" },
     { key: "Mobo Support", placeholder: "Motherboard compatibility" },
     { key: "Radiator Support (mm)", placeholder: "Radiator size support" },
     { key: "Type", placeholder: "Case form factor type" },
@@ -356,7 +359,12 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
 
         if (result.dimensions) {
           if (result.category === "GPU") updateSpec("Length (Depth) (mm)", `${result.dimensions.depth} mm`);
-          else if (result.category === "Case") updateSpec("Max GPU Length", `${result.dimensions.depth} mm`);
+          else if (result.category === "Case") {
+            updateSpec("Width (mm)", `${result.dimensions.width} mm`);
+            updateSpec("Depth (mm)", `${result.dimensions.depth} mm`);
+            updateSpec("Height (mm)", `${result.dimensions.height} mm`);
+            updateSpec("Max GPU Length", `${result.dimensions.depth} mm`);
+          }
         }
 
         form.setValue("specifications", finalSpecs, { shouldValidate: true });
@@ -810,11 +818,19 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                           ) : (
                             <Input
                               placeholder={placeholder}
-                              value={key === "Slot Thickness" ? getSpecValue(key).replace(/\s*slot\s*/gi, "") : getSpecValue(key)}
+                              value={
+                                key === "Slot Thickness" ? getSpecValue(key).replace(/\s*slot\s*/gi, "") :
+                                (key === "Height (mm)" || key === "Width (mm)" || key === "Depth (mm)") ? getSpecValue(key).replace(/\s*mm\s*/gi, "") :
+                                getSpecValue(key)
+                              }
                               onChange={(e) => {
                                 const val = e.target.value;
                                 if (key === "Slot Thickness") {
                                   setSpecValue(key, val ? `${val} Slot` : "");
+                                } else if (key === "Height (mm)" || key === "Width (mm)" || key === "Depth (mm)") {
+                                  // Ensure only integer input
+                                  const intVal = val.replace(/\D/g, '');
+                                  setSpecValue(key, intVal ? `${intVal} mm` : "");
                                 } else {
                                   setSpecValue(key, val);
                                 }
