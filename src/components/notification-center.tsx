@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { Bell, check, Check, CheckCheck, Archive, ShoppingCart, History, Info, X } from 'lucide-react';
+import { Bell, Check, Archive, ShoppingCart, History, Info, X } from 'lucide-react';
 import {
     Popover,
     PopoverContent,
@@ -108,9 +108,9 @@ export function NotificationCenter() {
                     <div className="flex items-center justify-between p-4 border-b border-white/5">
                         <h3 className="font-headline font-bold text-sm">System Alerts</h3>
                         {unreadCount > 0 && (
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 className="text-[10px] h-7 font-bold uppercase tracking-wider text-primary hover:text-primary hover:bg-primary/5"
                                 onClick={handleMarkAllAsRead}
                             >
@@ -126,8 +126,8 @@ export function NotificationCenter() {
                         ) : notifications && notifications.length > 0 ? (
                             <div className="divide-y divide-white/5">
                                 {notifications.map((notification) => (
-                                    <div 
-                                        key={notification.id} 
+                                    <div
+                                        key={notification.id}
                                         onClick={() => handleNotificationClick(notification)}
                                         className={cn(
                                             "p-4 transition-colors relative group cursor-pointer",
@@ -153,9 +153,9 @@ export function NotificationCenter() {
                                                         {notification.createdAt ? formatDistanceToNow(notification.createdAt instanceof Date ? notification.createdAt : notification.createdAt.toDate(), { addSuffix: true }) : 'just now'}
                                                     </span>
                                                     {!notification.readBy.includes(profile?.id || '') && (
-                                                        <Button 
-                                                            variant="ghost" 
-                                                            size="icon" 
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
                                                             className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
