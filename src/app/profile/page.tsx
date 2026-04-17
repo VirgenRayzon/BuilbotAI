@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useUserProfile } from "@/context/user-profile";
+import { useTheme } from "@/context/theme-provider";
 import { useFirestore } from "@/firebase";
 import { collection, query, where, getDocs, updateDoc, doc, deleteDoc } from "firebase/firestore";
 import { Order } from "@/lib/types";
@@ -33,6 +34,8 @@ import {
 
 export default function ProfilePage() {
     const { authUser, profile, loading: userLoading } = useUserProfile();
+    const { theme } = useTheme();
+    const isDark = theme === "dark";
     const firestore = useFirestore();
     const { toast } = useToast();
 
@@ -214,7 +217,17 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-background/50">
+        <div className={cn(
+            "min-h-screen transition-colors duration-500 overflow-x-hidden",
+            isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
+        )}>
+            {/* Circuit Pattern Background */}
+            <div className={cn(
+                "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
+                isDark ? "invert" : ""
+            )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+
+            <div className="relative z-10">
             {/* Profile Hero Section */}
             <div className="w-full bg-muted/30 border-b border-white/5 py-12 mb-8">
                 <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8">
@@ -537,6 +550,7 @@ export default function ProfilePage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+        </div>
         </div>
     );
 }

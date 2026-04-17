@@ -1,5 +1,8 @@
 "use client";
+
 import React, { useState, useMemo, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "@/context/theme-provider";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { YourBuild } from "@/components/your-build";
@@ -64,6 +67,8 @@ const componentCategories = [
 ];
 
 export default function BuilderPage() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const firestore = useFirestore();
   const { toast } = useToast();
   const { authUser, profile, loading: authLoading } = useUserProfile();
@@ -591,15 +596,37 @@ export default function BuilderPage() {
   };
 
   return (
-      <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-4 md:py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
-        <div className="text-left">
-          <h1 className="text-4xl font-headline font-bold">Build Your Masterpiece</h1>
-          <p className="text-muted-foreground mt-2">
-            Select high-performance components and let our AI ensure everything fits
-            perfectly together.
+    <div className={cn(
+      "min-h-screen transition-colors duration-500 overflow-x-hidden",
+      isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
+    )}>
+      {/* Circuit Pattern Background */}
+      <div className={cn(
+        "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
+        isDark ? "invert" : ""
+      )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+
+      <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pt-24 md:pt-32 relative z-10">
+      <div className="relative mb-12">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="relative z-10"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-px w-8 bg-primary" />
+            <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary italic">Forge Your Machine</span>
+          </div>
+          <h1 className="text-5xl md:text-7xl font-headline font-black uppercase tracking-tighter leading-none mb-6">
+            Masterpiece <span className="text-primary italic">Architect</span>
+          </h1>
+          <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed font-medium">
+            Select high-performance components and let our AI ensure everything fits perfectly together through real-time compatibility diagnostics.
           </p>
-        </div>
+        </motion.div>
+        
+        {/* Background Accent */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
       </div>
 
       <div className="grid lg:grid-cols-12 gap-6 xl:gap-8">
@@ -621,127 +648,149 @@ export default function BuilderPage() {
         )}
 
         {/* Center: Parts Grid (Dynamic width based on pinned state) */}
-        <div className={cn("flex flex-col gap-6", isInsightsPinned ? "lg:col-span-6" : "lg:col-span-9")}>
-
-          <InventoryToolbar
-            categories={categories}
-            onCategoryChange={handleCategoryChange}
-            itemCount={sortedAndFilteredParts.length}
-            sortBy={sortBy}
-            onSortByChange={(val) => { setSortBy(val); setCurrentPage(1); }}
-            sortDirection={sortDirection}
-            onSortDirectionChange={(val) => { setSortDirection(val); setCurrentPage(1); }}
-            supportedSorts={['Date Added', 'Name', 'Price']}
-            view={view}
-            onViewChange={setView}
-            showViewToggle={true}
-            searchQuery={searchQuery}
-            onSearchQueryChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
-          />
-
-          {loading ? (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-6">
-              {[...Array(8)].map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-4"><Skeleton className="aspect-video w-full mb-2" /></CardContent>
-                  <CardContent className="p-4 pt-0 space-y-2"><Skeleton className="h-5 w-3/4" /><Skeleton className="h-4 w-1/2" /></CardContent>
-                  <CardFooter className="p-4 pt-0 flex justify-between items-center"><Skeleton className="h-6 w-1/3" /><Skeleton className="h-9 w-20" /></CardFooter>
-                </Card>
-              ))}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={cn(
+              "p-6 rounded-3xl border backdrop-blur-xl shadow-2xl transition-all duration-500",
+              isInsightsPinned ? "lg:col-span-6" : "lg:col-span-9",
+              isDark ? "bg-slate-900/40 border-white/5 shadow-black/40" : "bg-white/60 border-slate-200 shadow-slate-200/50"
+            )}
+          >
+            <div className="mb-8">
+              <InventoryToolbar
+                categories={categories}
+                onCategoryChange={handleCategoryChange}
+                itemCount={sortedAndFilteredParts.length}
+                sortBy={sortBy}
+                onSortByChange={(val) => { setSortBy(val); setCurrentPage(1); }}
+                sortDirection={sortDirection}
+                onSortDirectionChange={(val) => { setSortDirection(val); setCurrentPage(1); }}
+                supportedSorts={['Date Added', 'Name', 'Price']}
+                view={view}
+                onViewChange={setView}
+                showViewToggle={true}
+                searchQuery={searchQuery}
+                onSearchQueryChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
+              />
             </div>
-          ) : sortedAndFilteredParts.length > 0 ? (
-            view === 'grid' ? (
-              <>
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-6">
-                  {paginatedParts.map(part => (
-                    <PartCard
-                      key={part.id}
-                      part={part}
-                      effectiveStock={(part as any).effectiveStock}
-                      onToggleBuild={handlePartToggle}
-                      isSelected={isSelected(part)}
-                      compatibility={(part as any).compatibility}
+
+            {loading ? (
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-6">
+                {[...Array(8)].map((_, i) => (
+                  <Card key={i} className="rounded-2xl border-white/5 bg-white/5">
+                    <CardContent className="p-4"><Skeleton className="aspect-video w-full mb-2 rounded-xl" /></CardContent>
+                    <CardContent className="p-4 pt-0 space-y-2"><Skeleton className="h-5 w-3/4" /><Skeleton className="h-4 w-1/2" /></CardContent>
+                    <CardFooter className="p-4 pt-0 flex justify-between items-center"><Skeleton className="h-6 w-1/3" /><Skeleton className="h-9 w-20" /></CardFooter>
+                  </Card>
+                ))}
+              </div>
+            ) : sortedAndFilteredParts.length > 0 ? (
+              view === 'grid' ? (
+                <>
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6">
+                    {paginatedParts.map(part => (
+                      <PartCard
+                        key={part.id}
+                        part={part}
+                        effectiveStock={(part as any).effectiveStock}
+                        onToggleBuild={handlePartToggle}
+                        isSelected={isSelected(part)}
+                        compatibility={(part as any).compatibility}
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-12">
+                    <PaginationControls
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                      onItemsPerPageChange={setItemsPerPage}
                     />
-                  ))}
-                </div>
-                <PaginationControls
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  itemsPerPage={itemsPerPage}
-                  onPageChange={setCurrentPage}
-                  onItemsPerPageChange={setItemsPerPage}
-                />
-              </>
-            ) : (
-              <Card className="mt-6">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Item</TableHead>
-                      <TableHead>Stock</TableHead>
-                      <TableHead className="text-right">Price</TableHead>
-                      <TableHead className="w-[50px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedParts.map(part => {
-                      const isPartSelected = isSelected(part);
-                      return (
-                        <TableRow key={part.id} className={cn(
-                          (part as any).effectiveStock === 0 && !isPartSelected && "opacity-50 grayscale",
-                          (part as any).compatibility && !(part as any).compatibility.compatible && "bg-destructive/[0.03] hover:bg-destructive/[0.06] border-l-2 border-l-destructive shadow-[inset_4px_0_0_-2px_rgba(239,68,68,0.5)]"
-                        )}>
-                          <TableCell className="font-medium">
-                            <div className="flex items-center gap-3">
-                              <Image src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <p className="font-semibold">{part.name}</p>
+                  </div>
+                </>
+              ) : (
+                <div className="overflow-hidden rounded-2xl border border-border/50 bg-background/20">
+                  <Table>
+                    <TableHeader className="bg-muted/30">
+                      <TableRow>
+                        <TableHead className="uppercase text-[10px] font-bold tracking-widest">Component Identity</TableHead>
+                        <TableHead className="uppercase text-[10px] font-bold tracking-widest">Inventory State</TableHead>
+                        <TableHead className="text-right uppercase text-[10px] font-bold tracking-widest">Value (PHP)</TableHead>
+                        <TableHead className="w-[80px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedParts.map(part => {
+                        const isPartSelected = isSelected(part);
+                        return (
+                          <TableRow key={part.id} className={cn(
+                            "transition-all duration-300",
+                            (part as any).effectiveStock === 0 && !isPartSelected && "opacity-50 grayscale",
+                            (part as any).compatibility && !(part as any).compatibility.compatible && "bg-destructive/[0.03] hover:bg-destructive/[0.06] border-l-2 border-l-destructive shadow-[inset_4px_0_0_-2px_rgba(239,68,68,0.5)]"
+                          )}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-4">
+                                <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-border/50">
+                                  <Image src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"} alt={part.name} fill className="object-cover" />
                                 </div>
-                                <p className="text-xs text-muted-foreground">{part.brand}</p>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-bold text-sm">{part.name}</p>
+                                  </div>
+                                  <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">{part.brand}</p>
+                                </div>
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={(part as any).effectiveStock > 5 ? "secondary" : (part as any).effectiveStock > 0 ? "destructive" : "outline"}>
-                              {(part as any).effectiveStock > 0 ? `${(part as any).effectiveStock} in stock` : "Out of stock"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">{formatCurrency(part.price)}</TableCell>
-                          <TableCell>
-                            {(!((part as any).compatibility && !(part as any).compatibility.compatible) || isPartSelected) && (
-                              <Button
-                                size="icon"
-                                onClick={() => handlePartToggle(part)}
-                                disabled={(part as any).effectiveStock === 0 && !isPartSelected}
-                                variant={isPartSelected ? 'destructive' : 'default'}
-                              >
-                                {isPartSelected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-                <PaginationControls
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  itemsPerPage={itemsPerPage}
-                  onPageChange={setCurrentPage}
-                  onItemsPerPageChange={setItemsPerPage}
-                />
-              </Card>
-            )
-          ) : (
-            <Card className="mt-6 min-h-[400px] flex items-center justify-center">
-              <CardContent className="text-center text-muted-foreground p-6">
-                <p>No components found for the selected categories.</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={(part as any).effectiveStock > 5 ? "secondary" : (part as any).effectiveStock > 0 ? "destructive" : "outline"} className="rounded-md uppercase text-[9px] font-bold">
+                                {(part as any).effectiveStock > 0 ? `${(part as any).effectiveStock} UNITS` : "DEPLETED"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-mono font-bold">{formatCurrency(part.price)}</TableCell>
+                            <TableCell>
+                              <div className="flex justify-end">
+                                {(!((part as any).compatibility && !(part as any).compatibility.compatible) || isPartSelected) && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handlePartToggle(part)}
+                                    disabled={(part as any).effectiveStock === 0 && !isPartSelected}
+                                    variant={isPartSelected ? 'destructive' : 'default'}
+                                    className="rounded-lg gap-2"
+                                  >
+                                    {isPartSelected ? <Trash2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                                    <span className="hidden sm:inline text-[10px] font-bold uppercase">{isPartSelected ? 'Remove' : 'Add'}</span>
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                  <div className="p-4 border-t border-border/50">
+                    <PaginationControls
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                      onItemsPerPageChange={setItemsPerPage}
+                    />
+                  </div>
+                </div>
+              )
+            ) : (
+              <div className="min-h-[400px] flex flex-col items-center justify-center text-center p-12">
+                <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                  <Database className="w-8 h-8 text-muted-foreground opacity-20" />
+                </div>
+                <h3 className="text-lg font-bold mb-1 italic">Query Returned No Results</h3>
+                <p className="text-muted-foreground text-sm max-w-xs">Adjust your diagnostic filters to explore alternative component configurations.</p>
+              </div>
+            )}
+          </motion.div>
 
         {/* Right Sidebar: Your Build */}
         <div className="lg:col-span-3">
@@ -792,6 +841,7 @@ export default function BuilderPage() {
       )}
 
       <BuilderFloatingChat build={build} />
-    </main >
+    </main>
+    </div>
   );
 }

@@ -24,43 +24,43 @@ const MOBO_SIZES = {
 const LAYOUT_CONFIGS = {
     ITX: {
         label: "MINI-ITX TOWER",
-        case: { width: 376, height: 292 },
-        mobo: { x: 15, y: 10, width: 170, height: 170, label: "MINI-ITX BOARD" },
-        psu: { x: 240, y: 15, width: 90, height: 140, label: "PSU" },
-        gpu: { x: 15, width: 200, height: 45, label: "GPU" },
-        cooler: { relX: 55, relY: 30, size: 55, label: "CPU COOLER" },
-        topRad: { x: 15, y: 10, width: 200, height: 40, label: "AIO RADIATOR" },
+        case: { width: 380, height: 320 },
+        mobo: { x: 20, y: 20, width: 170, height: 170, label: "MINI-ITX BOARD" },
+        psu: { x: 250, y: 20, width: 100, height: 130, label: "SFX PSU" },
+        gpu: { x: 20, width: 220, height: 50, label: "GPU" },
+        cooler: { relX: 55, relY: 30, size: 60, label: "CPU COOLER" },
+        topRad: { x: 20, y: 10, width: 240, height: 35, label: "TOP RADIATOR" },
         frontRad: null,
     },
     MATX: {
         label: "MICRO-ATX MID-TOWER",
-        case: { width: 400, height: 430 },
-        mobo: { x: 15, y: 80, width: 244, height: 244, label: "mATX BOARD" },
-        psu: { x: 15, y: 80, width: 150, height: 150, label: "PSU" },
-        gpu: { x: 15, width: 260, height: 45, label: "GPU" },
-        cooler: { relX: 85, relY: 35, size: 75, label: "AIR COOLER" },
-        topRad: { x: 8, y: 8, width: 240, height: 38, label: "TOP RADIATOR" },
-        frontRad: { x: 330, y: 40, width: 38, height: 240, label: "FRONT RADIATOR" },
+        case: { width: 420, height: 460 },
+        mobo: { x: 20, y: 60, width: 244, height: 244, label: "mATX BOARD" },
+        psu: { x: 20, y: 370, width: 150, height: 80, label: "PSU" },
+        gpu: { x: 20, width: 280, height: 55, label: "GPU" },
+        cooler: { relX: 85, relY: 35, size: 80, label: "AIR COOLER" },
+        topRad: { x: 20, y: 10, width: 240, height: 38, label: "TOP RADIATOR" },
+        frontRad: { x: 360, y: 60, width: 38, height: 240, label: "FRONT RADIATOR" },
     },
     ATX: {
         label: "ATX MID-TOWER",
-        case: { width: 460, height: 500 },
-        mobo: { x: 15, y: 75, width: 244, height: 305, label: "MOTHERBOARD" },
-        psu: { x: 15, y: 80, width: 150, height: 150, label: "PSU" },
-        gpu: { x: 15, width: 300, height: 50, label: "GPU" },
-        cooler: { relX: 82, relY: 45, size: 80, label: "AIR COOLER" },
-        topRad: { x: 20, y: 8, width: 280, height: 40, label: "TOP RADIATOR" },
-        frontRad: { x: 400, y: 70, width: 38, height: 140, label: "FRONT RADIATOR" },
+        case: { width: 480, height: 540 },
+        mobo: { x: 20, y: 60, width: 244, height: 305, label: "MOTHERBOARD" },
+        psu: { x: 20, y: 440, width: 160, height: 86, label: "PSU" },
+        gpu: { x: 20, width: 320, height: 60, label: "GPU" },
+        cooler: { relX: 82, relY: 45, size: 90, label: "AIR COOLER" },
+        topRad: { x: 20, y: 10, width: 280, height: 40, label: "TOP RADIATOR" },
+        frontRad: { x: 420, y: 80, width: 40, height: 280, label: "FRONT RADIATOR" },
     },
     EATX: {
         label: "E-ATX FULL-TOWER",
-        case: { width: 560, height: 610 },
-        mobo: { x: 15, y: 75, width: 330, height: 305, label: "E-ATX BOARD" },
-        psu: { x: 15, y: 80, width: 150, height: 150, label: "E-ATX PSU" },
-        gpu: { x: 15, width: 390, height: 55, label: "GPU / MULTI-GPU BAY" },
-        cooler: { relX: 115, relY: 50, size: 100, label: "CPU COOLER" },
-        topRad: { x: 15, y: 10, width: 420, height: 45, label: "TOP RADIATOR" },
-        frontRad: { x: 420, y: 90, width: 42, height: 420, label: "FRONT RADIATOR" },
+        case: { width: 580, height: 660 },
+        mobo: { x: 20, y: 60, width: 330, height: 305, label: "E-ATX BOARD" },
+        psu: { x: 20, y: 540, width: 180, height: 100, label: "E-ATX PSU" },
+        gpu: { x: 20, width: 420, height: 65, label: "GPU / WORKSTATION" },
+        cooler: { relX: 115, relY: 50, size: 110, label: "CPU COOLER" },
+        topRad: { x: 20, y: 10, width: 420, height: 45, label: "TOP RADIATOR" },
+        frontRad: { x: 500, y: 100, width: 45, height: 420, label: "FRONT RADIATOR" },
     },
 };
 
@@ -118,6 +118,21 @@ function getActualDimension(part: ComponentData | null, type: 'GPU' | 'Cooler' |
         return part.dimensions ? Math.max(part.dimensions.depth || 0, part.dimensions.width || 0) : 0;
     }
 
+    return 0;
+}
+
+function getGpuSlotCount(part: ComponentData | null): number {
+    if (!part) return 0;
+    const specs = part.specifications || {};
+    const keys = Object.keys(specs);
+    const foundKey = keys.find(k => ['Slot Thickness', 'Slot', 'Slot Size', 'Expansion Slots'].some(s => k.toLowerCase() === s.toLowerCase()));
+    if (!foundKey) return 0;
+    const val = specs[foundKey];
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string') {
+        const num = parseFloat(val.match(/(\d+(\.\d+)?)/)?.[0] || "");
+        return isNaN(num) ? 0 : num;
+    }
     return 0;
 }
 
@@ -208,11 +223,48 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
     const topSlotOffset = currentMoboConfig.topSlotOffset;
     const gpuY = cfg.mobo.y + topSlotOffset;
 
-    const caseW = (caseData?.dimensions?.depth) || cfg.case.width;
-    const caseH = (caseData?.dimensions?.height) || cfg.case.height;
+    const getNumSpec = (data: any, key: string) => {
+        const val = data?.specifications?.[key];
+        if (!val) return null;
+        const parsed = parseInt(String(val).replace(/[^\d]/g, ""));
+        return isNaN(parsed) ? null : parsed;
+    };
+
+    const specWidth = getNumSpec(caseData, "Width (mm)");
+    const specDepth = getNumSpec(caseData, "Depth (mm)");
+    const specHeight = getNumSpec(caseData, "Height (mm)");
+
+    const caseW = specDepth || (caseData?.dimensions?.depth) || cfg.case.width;
+    const caseH = specHeight || (caseData?.dimensions?.height) || cfg.case.height;
+
+    // ── Content-Aware Component Positioning ────────────────────────
+    // We calculate the actual X/Y by maintaining the relative distance from the 
+    // case edges defined in the baseline LAYOUT_CONFIGS.
+
+    // Front-anchored parts move with case depth (caseW)
+    const getFrontX = (baselineX: number) => {
+        const distFromFront = cfg.case.width - baselineX;
+        return caseW - distFromFront;
+    };
+
+    // Bottom-anchored parts move with case height (caseH)
+    const getBottomY = (baselineY: number) => {
+        const distFromBottom = cfg.case.height - baselineY;
+        return caseH - distFromBottom;
+    };
+
+    // Determine anchors per archetype
+    const isFrontPsu = archetype === 'ITX';
+    const actualPsuX = isFrontPsu ? getFrontX(cfg.psu.x) : cfg.psu.x;
+    const actualPsuY = isFrontPsu ? cfg.psu.y : getBottomY(cfg.case.height - 80); // Anchor to bottom for ATX/MATX
+
+    const actualFrontRadX = cfg.frontRad ? getFrontX(cfg.frontRad.x) : 0;
+    const actualFrontRadY = cfg.frontRad ? cfg.frontRad.y : 0;
 
     const gpuAbsX = cfg.gpu.x + gpuDisplayWidth;
-    const gpuBlocked = gpuAbsX > caseW - 10;
+    const gpuSlotCount = getGpuSlotCount(gpuData);
+    const isSlotBlocked = archetype === 'ITX' && gpuSlotCount > 2;
+    const gpuBlocked = (gpuAbsX > caseW - 10) || isSlotBlocked;
 
     const paddingX = 50;
     const paddingTop = 130;
@@ -239,9 +291,10 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
         text: isDark ? "rgba(255,255,255,0.5)" : "rgba(15, 23, 42, 0.6)",
         textStrong: isDark ? "#ffffff" : "#0f172a",
         grid: isDark ? "rgba(255,255,255,0.02)" : "rgba(15, 23, 42, 0.04)",
-        tech: isDark ? "rgba(255,255,255,0.04)" : "rgba(15, 23, 42, 0.06)",
+        tech: isDark ? "rgba(34,211,238,0.08)" : "rgba(15, 23, 42, 0.08)",
         glass: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.2)",
-        reflection: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.4)"
+        reflection: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.4)",
+        accent: isDark ? "#22d3ee" : "#3b82f6"
     };
 
     return (
@@ -307,7 +360,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                 <AnimatePresence mode="wait">
                     {hasCase && (
                         <motion.span
-                            key={`${caseW}x${caseH}`}
+                            key={`${specWidth}x${caseW}x${caseH}`}
                             initial={{ opacity: 0, y: -4 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 4 }}
@@ -316,7 +369,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                 isDark ? "text-white/30" : "text-slate-400"
                             )}
                         >
-                            {caseW}&thinsp;×&thinsp;{caseH}&thinsp;mm
+                            {specWidth ? `${specWidth} × ` : ""}{caseW} × {caseH}&thinsp;mm
                         </motion.span>
                     )}
                 </AnimatePresence>
@@ -407,10 +460,16 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                     </pattern>
 
                     <linearGradient id="reflectionGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor={colors.reflection} stopOpacity={1} />
-                        <stop offset="30%" stopColor={colors.reflection} stopOpacity={0} />
-                        <stop offset="70%" stopColor={colors.reflection} stopOpacity={0} />
-                        <stop offset="100%" stopColor={colors.reflection} stopOpacity={0.5} />
+                        <stop offset="0%" stopColor={colors.reflection} stopOpacity={0.8} />
+                        <stop offset="25%" stopColor={colors.reflection} stopOpacity={0} />
+                        <stop offset="75%" stopColor={colors.reflection} stopOpacity={0} />
+                        <stop offset="100%" stopColor={colors.reflection} stopOpacity={0.3} />
+                    </linearGradient>
+
+                    <linearGradient id="diagnosticLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor={colors.accent} stopOpacity={0} />
+                        <stop offset="50%" stopColor={colors.accent} stopOpacity={0.5} />
+                        <stop offset="100%" stopColor={colors.accent} stopOpacity={0} />
                     </linearGradient>
                 </defs>
 
@@ -418,22 +477,36 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
 
                 <AnimatePresence>
                     {hasCase && (
-                        <motion.rect
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{
-                                opacity: 1,
-                                scale: 1,
-                                width: caseW,
-                                height: caseH,
-                                x: paddingX,
-                                y: paddingTop
-                            }}
-                            transition={springConfig}
-                            rx={12}
-                            fill={colors.case}
-                            stroke={colors.caseStroke}
-                            strokeWidth={2}
-                        />
+                        <>
+                            <motion.rect
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{
+                                    opacity: 1,
+                                    scale: 1,
+                                    width: caseW,
+                                    height: caseH,
+                                    x: paddingX,
+                                    y: paddingTop
+                                }}
+                                transition={springConfig}
+                                rx={12}
+                                fill={colors.case}
+                                stroke={colors.caseStroke}
+                                strokeWidth={2}
+                            />
+
+                            {/* Tech Lines Decoration */}
+                            <motion.g initial={{ opacity: 0 }} animate={{ opacity: 0.4 }} transition={{ delay: 1 }}>
+                                <path 
+                                    d={`M ${paddingX + 20} ${paddingTop + 20} L ${paddingX + 60} ${paddingTop + 20} L ${paddingX + 80} ${paddingTop + 40}`} 
+                                    fill="none" stroke={colors.accent} strokeWidth="1" strokeDasharray="4 4"
+                                />
+                                <path 
+                                    d={`M ${paddingX + caseW - 20} ${paddingTop + caseH - 20} L ${paddingX + caseW - 60} ${paddingTop + caseH - 20} L ${paddingX + caseW - 80} ${paddingTop + caseH - 40}`} 
+                                    fill="none" stroke={colors.accent} strokeWidth="1" strokeDasharray="4 4"
+                                />
+                            </motion.g>
+                        </>
                     )}
                 </AnimatePresence>
 
@@ -478,7 +551,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                             {cfg.frontRad && isAio && (
                                 <motion.g
                                     initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: cx(cfg.frontRad.x), y: cy(cfg.frontRad.y) }}
+                                    animate={{ opacity: 1, x: cx(actualFrontRadX), y: cy(actualFrontRadY) }}
                                     exit={{ opacity: 0, x: 20 }}
                                     transition={springConfig}
                                 >
@@ -679,6 +752,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                         className="font-mono tracking-tighter"
                                     >
                                         {actualGpuLength > 0 ? `${actualGpuLength}mm` : `${gpuDisplayWidth}mm`}
+                                        {gpuSlotCount > 0 && ` (${gpuSlotCount} Slot)`}
                                         {gpuBlocked && " ⚠"}
                                     </motion.text>
                                 </motion.g>
@@ -689,7 +763,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                             {psuData && (
                                 <motion.g
                                     initial={{ opacity: 0, y: 50 }}
-                                    animate={{ opacity: 1, x: cx(cfg.psu.x), y: cy(cfg.psu.y) }}
+                                    animate={{ opacity: 1, x: cx(actualPsuX), y: cy(actualPsuY) }}
                                     exit={{ opacity: 0, y: 50 }}
                                     transition={springConfig}
                                 >

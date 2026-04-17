@@ -51,7 +51,7 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                 isDisabled={(!compatibility || !compatibility.compatible) && !isSelected}
             >
                 <Card className={cn(
-                    "flex flex-col justify-between h-full transform transition-all duration-500 ease-out hover:-translate-y-2 relative group overflow-hidden border-primary/10 hover:border-primary/40 bg-background/40 backdrop-blur-xl shadow-lg hover:shadow-primary/10 cursor-pointer",
+                    "flex flex-col justify-between h-full transform transition-all duration-500 ease-out hover:-translate-y-2 relative group overflow-hidden border-primary/10 hover:border-primary/40 bg-background/40 backdrop-blur-xl shadow-lg hover:shadow-primary/20 cursor-pointer rounded-3xl",
                     (currentStock === 0 || (compatibility && !compatibility.compatible)) && "grayscale opacity-60"
                 )}>
                     {/* --- Incompatibility Overlay --- */}
@@ -100,34 +100,38 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                     )} />
 
                     <div className="p-2.5 pb-0 space-y-2.5 z-10 flex-grow flex flex-col">
-                        <div className="space-y-0.5">
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{part.brand}</p>
-                            <CardTitle className="text-base font-headline leading-snug line-clamp-2 h-10">{part.name}</CardTitle>
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <div className="h-px w-3 bg-primary/40" />
+                                <p className="text-[9px] text-muted-foreground uppercase tracking-[0.2em] font-black">{part.brand}</p>
+                            </div>
+                            <CardTitle className="text-lg font-headline font-black uppercase tracking-tight leading-[1.1] line-clamp-2 h-10 group-hover:text-primary transition-colors">{part.name}</CardTitle>
                         </div>
 
-                        <div className="aspect-square relative w-full overflow-hidden rounded-lg bg-muted/10 border border-white/5 p-2">
+                        <div className="aspect-square relative w-full overflow-hidden rounded-2xl bg-slate-900/5 dark:bg-white/5 border border-white/5 p-4 group-hover:bg-primary/[0.03] transition-colors duration-500">
                             <Image
                                 src={getOptimizedStorageUrl(part.imageUrl) || '/placeholder-part.png'}
                                 alt={part.name}
                                 fill
                                 unoptimized
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                className="object-contain transition-transform duration-500 group-hover:scale-105"
+                                className="object-contain transition-transform duration-700 group-hover:scale-110"
                             />
                         </div>
 
-                        <div className="flex justify-between items-center py-1">
+                        <div className="flex justify-between items-end py-1">
                             <div className="flex flex-col">
-                                <p className="text-xl font-bold font-headline tracking-tight">{formatCurrency(part.price)}</p>
+                                <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mb-1">MSRP VALUE</p>
+                                <p className="text-2xl font-black font-headline tracking-tighter text-primary leading-none">{formatCurrency(part.price)}</p>
                                 {part.usdSrp && (
-                                    <p className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">
-                                        ~{formatToPHP(part.usdSrp)} local est.
+                                    <p className="text-[9px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-tight mt-1 opacity-70">
+                                        EST. {formatToPHP(part.usdSrp)}
                                     </p>
                                 )}
                             </div>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground/60 hover:text-primary transition-colors">
-                                <Info className="h-4 w-4" />
-                            </Button>
+                            <div className="h-8 w-8 rounded-full bg-primary/5 flex items-center justify-center border border-primary/10 group-hover:border-primary/30 transition-colors">
+                                <Info className="h-4 w-4 text-primary" />
+                            </div>
                         </div>
 
                         <Separator className="bg-border/40" />
@@ -136,9 +140,9 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                             {specKeys.map((key) => {
                                 const value = part.specifications?.[key] || (key === 'Wattage' ? part.wattage : null);
                                 return (
-                                    <div key={key} className="min-w-0">
-                                        <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-tight mb-0.5">{key}</p>
-                                        <p className="font-bold text-[11px] truncate leading-none uppercase" title={String(value || 'N/A')}>{String(value || 'N/A')}</p>
+                                    <div key={key} className="min-w-0 group/spec">
+                                        <p className="text-[8px] text-muted-foreground uppercase font-black tracking-[0.1em] mb-1 group-hover/spec:text-primary transition-colors">{key}</p>
+                                        <p className="font-bold text-[11px] truncate leading-none uppercase tracking-tight" title={String(value || 'N/A')}>{String(value || 'N/A')}</p>
                                     </div>
                                 );
                             })}
@@ -151,22 +155,22 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                             onClick={handleToggle}
                             disabled={(currentStock === 0 && !isSelected)}
                             className={cn(
-                                "w-full rounded-none h-10 mt-auto z-[41] transition-all duration-300 font-bold text-xs uppercase tracking-widest border-t",
+                                "w-full rounded-none h-12 mt-auto z-[41] transition-all duration-300 font-headline uppercase tracking-[0.2em] border-t text-[11px]",
                                 isSelected
-                                    ? "bg-green-600 hover:bg-green-700 text-white border-green-700/50"
-                                    : "bg-primary/5 hover:bg-primary/10 text-primary border-border/50 hover:border-primary/20"
+                                    ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
+                                    : "bg-primary/5 hover:bg-primary/10 text-primary border-border/50 hover:border-primary/30"
                             )}
                             variant="ghost"
                         >
                             {isSelected ? (
                                 <div className="flex items-center gap-2">
-                                    <CheckCircle2 className="h-4 w-4" />
-                                    <span>Added</span>
+                                    <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                                    <span>Added to System</span>
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2">
                                     <Plus className="h-4 w-4" />
-                                    <span>Add to Build</span>
+                                    <span>Sync Component</span>
                                 </div>
                             )}
                         </Button>

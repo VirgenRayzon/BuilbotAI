@@ -54,6 +54,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { TableSkeleton } from '@/components/table-skeleton';
 import { SuperAdminSettings } from '@/components/super-admin-settings';
 import { useUserProfile } from '@/context/user-profile';
+import { useTheme } from '@/context/theme-provider';
 import { useToast } from "@/hooks/use-toast";
 import { InventoryPartCard } from '@/components/inventory-part-card';
 import { InventoryPrebuiltCard } from '@/components/inventory-prebuilt-card';
@@ -92,6 +93,8 @@ export default function AdminPage() {
     const firestore = useFirestore();
     const router = useRouter();
     const { authUser, profile, loading: userLoading } = useUserProfile();
+    const { theme } = useTheme();
+    const isDark = theme === "dark";
     const { toast } = useToast();
 
     // Route protection
@@ -638,7 +641,17 @@ export default function AdminPage() {
     }
 
     return (
-        <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8">
+        <div className={cn(
+            "min-h-screen transition-colors duration-500 overflow-x-hidden",
+            isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
+        )}>
+            {/* Circuit Pattern Background */}
+            <div className={cn(
+                "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
+                isDark ? "invert" : ""
+            )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+
+            <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 relative z-10">
             <div className="mb-8 flex items-center justify-between">
                 <div>
                     <h1 className="text-4xl font-headline font-bold uppercase tracking-tight text-foreground">
@@ -1368,6 +1381,7 @@ export default function AdminPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+        </div>
         </div>
     )
 }

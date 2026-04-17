@@ -2,6 +2,8 @@
 
 import { useState, useTransition, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "@/context/theme-provider";
 import { ChatForm, type FormSchema } from "@/components/chat-form";
 import { BuildSummary } from "@/components/build-summary";
 import { getAiRecommendations, getAiBuildCritique } from "@/app/actions";
@@ -64,6 +66,8 @@ const componentMetadata: { [key: string]: { icon: React.ComponentType<{ classNam
 };
 
 export default function AiBuildAdvisorPage() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const { toast } = useToast();
   const { authUser, profile, loading: userLoading } = useUserProfile();
   const router = useRouter();
@@ -464,94 +468,251 @@ export default function AiBuildAdvisorPage() {
   };
 
   const generativeContent = (
-    <div className="grid lg:grid-cols-12 gap-8 h-full">
-      <aside className="lg:col-span-4 lg:sticky lg:top-20 self-start">
-        <div className="p-6 rounded-xl border bg-card text-card-foreground shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <Bot className="w-8 h-8 text-primary" />
-            <h2 className="text-2xl font-headline font-semibold">
-              Buildbot Advisor
-            </h2>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="grid lg:grid-cols-12 gap-8 h-full"
+    >
+      <aside className="lg:col-span-4 lg:sticky lg:top-24 self-start">
+        <div className={cn(
+          "p-8 rounded-3xl border backdrop-blur-xl shadow-2xl transition-all duration-500",
+          isDark 
+            ? "bg-slate-900/40 border-white/5 shadow-black/40" 
+            : "bg-white/60 border-slate-200 shadow-slate-200/50"
+        )}>
+          <div className="flex items-center gap-4 mb-8">
+            <div className={cn(
+              "p-3 rounded-2xl",
+              isDark ? "bg-primary/10" : "bg-primary/5"
+            )}>
+              <Bot className="w-8 h-8 text-primary animate-pulse" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-headline font-bold tracking-tight">
+                Buildbot Advisor
+              </h2>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Neural Engine Active</span>
+              </div>
+            </div>
           </div>
-          <p className="text-muted-foreground mb-6">
-            Describe your dream PC, and Buildbot will suggest a compatible set
-            of core components to get you started.
+          
+          <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
+            Describe your hardware requirements, budget, or preferred games. Our neural engine will architect the perfect build for you.
           </p>
+
           <ChatForm
             getRecommendations={handleGetRecommendations}
             isPending={isPending}
           />
-        </div>
-      </aside>
-      <div className="lg:col-span-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <Wallet className="w-8 h-8 text-primary" />
-            <div>
-              <h3 className="text-muted-foreground text-sm">Estimated Cost (PHP)</h3>
-              <p className="text-3xl font-bold font-headline">
-                ₱{totalPrice.toLocaleString()}
-              </p>
+
+          <div className="mt-8 pt-8 border-t border-border/50">
+            <div className="flex items-center gap-4 text-xs text-muted-foreground font-mono">
+              <div className="flex items-center gap-1.5">
+                <CircuitBoard className="w-3 h-3" />
+                V2.4.0-CORE
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Database className="w-3 h-3" />
+                LIVE INVENTORY
+              </div>
             </div>
           </div>
         </div>
+      </aside>
 
-        <BuildSummary build={build} isPending={isPending} />
+      <div className="lg:col-span-8">
+        <AnimatePresence mode="wait">
+          {build ? (
+            <motion.div
+              key="build-result"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="space-y-8"
+            >
+              <div className={cn(
+                "p-8 rounded-3xl border backdrop-blur-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6",
+                isDark ? "bg-slate-900/40 border-white/5" : "bg-white/60 border-slate-200"
+              )}>
+                <div className="flex items-center gap-4">
+                  <div className="p-4 rounded-2xl bg-primary/10">
+                    <Wallet className="w-10 h-10 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-widest mb-1">Total Configuration Value</h3>
+                    <p className={cn(
+                      "text-4xl font-black font-headline tracking-tighter",
+                      isDark ? "text-white" : "text-slate-900"
+                    )}>
+                      ₱{totalPrice.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end gap-1">
+                  <div className="px-3 py-1 rounded-full bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/30">
+                    Optimal Efficiency
+                  </div>
+                  <span className="text-[10px] font-mono text-muted-foreground">REFRESH RATE: 144Hz+ TARGET</span>
+                </div>
+              </div>
+
+              <BuildSummary build={build} isPending={isPending} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="placeholder"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className={cn(
+                "h-full min-h-[500px] rounded-3xl border-2 border-dashed flex flex-col items-center justify-center p-12 text-center transition-colors duration-500",
+                isDark ? "bg-slate-900/20 border-white/5" : "bg-slate-50/50 border-slate-200"
+              )}
+            >
+              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                <Bot className="w-10 h-10 text-primary opacity-20" />
+              </div>
+              <h3 className="text-xl font-headline font-bold mb-2">Awaiting Parameters</h3>
+              <p className="text-muted-foreground max-w-sm">
+                Submit your requirements on the left to initialize the build generation process.
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   );
 
   return (
-    <main className="flex-1 w-full max-w-[1800px] mx-auto p-4 md:p-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
-        <div className="text-left">
-          <h1 className="text-4xl font-headline font-bold uppercase tracking-tight">AI Build Advisor</h1>
-          <p className="text-muted-foreground mt-2">
-            Get intelligent hardware recommendations and professional critiques for your custom build.
+    <div className={cn(
+      "min-h-screen transition-colors duration-500 overflow-x-hidden",
+      isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
+    )}>
+      {/* Circuit Pattern Background */}
+      <div className={cn(
+        "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
+        isDark ? "invert" : ""
+      )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+
+      <main className="flex-1 w-full max-w-[1800px] mx-auto p-4 md:p-8 pt-24 md:pt-32 relative z-10">
+      <div className="relative mb-12">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="relative z-10"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-px w-8 bg-primary" />
+            <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary">System Advisor V2</span>
+          </div>
+          <h1 className="text-5xl md:text-6xl font-headline font-black uppercase tracking-tighter leading-none">
+            AI Build <span className="text-primary italic">Advisor</span>
+          </h1>
+          <p className="text-muted-foreground mt-4 max-w-2xl text-lg leading-relaxed">
+            Get intelligent hardware recommendations and professional critiques for your custom build through our neural-trained AI model.
           </p>
-        </div>
+        </motion.div>
+        
+        {/* Background Accent */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
       </div>
 
       {builderState ? (
         <Tabs defaultValue="critique" className="w-full h-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8 max-w-md mx-auto">
-            <TabsTrigger value="critique">Review Current Build</TabsTrigger>
-            <TabsTrigger value="generate">Generate New Build</TabsTrigger>
-          </TabsList>
+          <div className="flex justify-center mb-12">
+            <TabsList className={cn(
+              "p-1 h-14 rounded-2xl border backdrop-blur-md",
+              isDark ? "bg-slate-900/60 border-white/5" : "bg-white/60 border-slate-200"
+            )}>
+              <TabsTrigger 
+                value="critique" 
+                className="rounded-xl px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300 font-bold uppercase tracking-widest text-[10px]"
+              >
+                Review Current Build
+              </TabsTrigger>
+              <TabsTrigger 
+                value="generate"
+                className="rounded-xl px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300 font-bold uppercase tracking-widest text-[10px]"
+              >
+                Generate New Build
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="critique" className="mt-0 h-full">
-            <div className="grid lg:grid-cols-12 gap-6 h-full">
+            <div className="grid lg:grid-cols-12 gap-8 h-full">
 
               {isInsightsPinned && (
-                <div className="hidden lg:block lg:col-span-3 h-[calc(100vh-120px)] sticky top-20">
-                  <FloatingInsights
-                    isOpen={true}
-                    onClose={() => setIsInsightsPinned(false)}
-                    build={builderState}
-                    resolution={resolution}
-                    onResolutionChange={setResolution}
-                    workload={workload}
-                    onWorkloadChange={setWorkload}
-                    isPinned={true}
-                    onTogglePin={() => setIsInsightsPinned(false)}
-                  />
+                <div className="hidden lg:block lg:col-span-3 h-[calc(100vh-140px)] sticky top-24">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="h-full"
+                  >
+                    <FloatingInsights
+                      isOpen={true}
+                      onClose={() => setIsInsightsPinned(false)}
+                      build={builderState}
+                      resolution={resolution}
+                      onResolutionChange={setResolution}
+                      workload={workload}
+                      onWorkloadChange={setWorkload}
+                      isPinned={true}
+                      onTogglePin={() => setIsInsightsPinned(false)}
+                    />
+                  </motion.div>
                 </div>
               )}
 
-              {/* Middle Column: AI Critique (Now wider or narrower depending on pin) */}
-              <div className={cn("border-r border-border/50 px-6", isInsightsPinned ? "lg:col-span-6" : "lg:col-span-9")}>
-                <AIBuildCritique
-                  build={builderState}
-                  externalAnalysis={critiqueAnalysis}
-                  externalLoading={critiqueLoading}
-                  externalError={critiqueError}
-                  onRefresh={() => handleCritique(true)}
-                />
+              {/* Middle Column: AI Critique */}
+              <div className={cn(
+                "transition-all duration-500",
+                isInsightsPinned ? "lg:col-span-6" : "lg:col-span-9"
+              )}>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className={cn(
+                    "rounded-3xl border backdrop-blur-xl h-full min-h-[600px] overflow-hidden shadow-2xl",
+                    isDark ? "bg-slate-900/40 border-white/5 shadow-black/40" : "bg-white/60 border-slate-200 shadow-slate-200/50"
+                  )}
+                >
+                  <div className="p-8 border-b border-border/50 bg-background/20">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <LayoutPanelLeft className="w-6 h-6 text-primary" />
+                        <h2 className="text-xl font-headline font-bold uppercase tracking-tight">Performance Diagnostics</h2>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg bg-primary/10 border border-primary/20 text-[10px] font-bold text-primary uppercase tracking-widest">
+                          <CircuitBoard className="w-3 h-3" />
+                          Live Analysis
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-2 md:p-6">
+                    <AIBuildCritique
+                      build={builderState}
+                      externalAnalysis={critiqueAnalysis}
+                      externalLoading={critiqueLoading}
+                      externalError={critiqueError}
+                      onRefresh={() => handleCritique(true)}
+                    />
+                  </div>
+                </motion.div>
               </div>
 
               {/* Right Column: Your Build Specs */}
               <div className="lg:col-span-3">
-                <div className="sticky top-20 flex flex-col gap-6 pb-4">
+                <motion.div 
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="sticky top-24 flex flex-col gap-6 pb-4"
+                >
                   <YourBuild
                     build={builderState}
                     onClearBuild={() => {
@@ -567,7 +728,7 @@ export default function AiBuildAdvisorPage() {
                     showSystemBalance={false}
                     hasAnalysis={!!critiqueAnalysis}
                   />
-                </div>
+                </motion.div>
               </div>
 
             </div>
@@ -577,6 +738,7 @@ export default function AiBuildAdvisorPage() {
           </TabsContent>
         </Tabs>
       ) : generativeContent}
+      
       <BuilderFloatingChat />
 
       {/* Floating Insights Toggle & Panel */}
@@ -610,5 +772,6 @@ export default function AiBuildAdvisorPage() {
         />
       )}
     </main>
+    </div>
   );
 }

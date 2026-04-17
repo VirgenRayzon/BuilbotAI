@@ -4,12 +4,13 @@ import { useState, useEffect, use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useTheme } from "@/context/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
+import { formatCurrency, getOptimizedStorageUrl, cn } from "@/lib/utils";
 import type { PrebuiltSystem, Part } from "@/lib/types";
 import { getMissingParts } from "@/lib/prebuilt-utils";
-import { BrainCircuit, ShoppingCart, Loader2, AlertCircle, ThumbsUp, ThumbsDown, MonitorPlay, Zap, ExternalLink, ShieldCheck, Gamepad2, ArrowLeft, ChevronLeft } from "lucide-react";
+import { BrainCircuit, ShoppingCart, Loader2, AlertCircle, ThumbsUp, ThumbsDown, MonitorPlay, Zap, ExternalLink, ShieldCheck, Gamepad2, ArrowLeft, ChevronLeft, CircuitBoard, Database, Box } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getAiPrebuiltPerformance } from "@/app/actions";
 import { doc, getDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
@@ -31,6 +32,8 @@ const getPerformanceStyle = (fps: string) => {
 };
 
 export default function PrebuiltProductPage({ params }: { params: Promise<{ id: string }> }) {
+    const { theme } = useTheme();
+    const isDark = theme === "dark";
     const { id: systemId } = use(params);
     const [system, setSystem] = useState<PrebuiltSystem | null>(null);
     const [loadingSystem, setLoadingSystem] = useState(true);
@@ -255,15 +258,30 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
     }
 
     return (
-        <main className="container mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
+        <div className={cn(
+            "min-h-screen transition-colors duration-500 overflow-x-hidden",
+            isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
+        )}>
+            {/* Circuit Pattern Background */}
+            <div className={cn(
+                "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
+                isDark ? "invert" : ""
+            )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+
+            <main className="w-full max-w-[1800px] mx-auto p-4 md:p-8 pt-24 md:pt-32 animate-in fade-in duration-700 relative z-10">
             {/* Top Navigation */}
-            <div>
-                <Button variant="ghost" asChild className="mb-6 -ml-4 text-muted-foreground hover:text-foreground">
+            <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="mb-12"
+            >
+                <Button variant="ghost" asChild className="group text-muted-foreground hover:text-primary transition-colors">
                     <Link href={backLink} className="flex items-center gap-2">
-                        <ChevronLeft className="h-4 w-4" /> {backText}
+                        <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                        <span className="text-[10px] uppercase font-bold tracking-[0.2em]">{backText}</span>
                     </Link>
                 </Button>
-            </div>
+            </motion.div>
 
             {/* Product Split Section */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 relative items-start">
@@ -280,128 +298,181 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                 </div>
 
                 {/* Right side: Details & Specs */}
-                <div className="lg:col-span-7 space-y-8">
+                <div className="lg:col-span-7 space-y-12">
                     {/* Header Details */}
-                    <div>
-                        <div className="flex items-center gap-3 mb-3">
-                            <Badge variant="secondary" className="px-3 py-1 font-bold tracking-wide uppercase text-xs text-primary/90 bg-primary/10 border-primary/20">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                    >
+                        <div className="flex items-center gap-4 mb-6">
+                            <Badge className="px-4 py-1.5 font-black tracking-[0.2em] uppercase text-[10px] bg-primary text-white border-none shadow-lg shadow-primary/20">
                                 {system.tier}
                             </Badge>
                             {isComplete && (
-                                <Badge variant="outline" className="px-3 py-1 text-emerald-500 border-emerald-200/50 bg-emerald-500/10">
-                                    <ShieldCheck className="h-3.5 w-3.5 mr-1.5" /> Ready to Build
-                                </Badge>
+                                <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
+                                    <ShieldCheck className="h-3 w-3" />
+                                    Diagnostics Validated
+                                </div>
                             )}
                         </div>
-                        <h1 className="text-4xl md:text-5xl font-headline font-bold leading-tight mb-4 tracking-tight">
+                        <h1 className="text-5xl md:text-7xl font-headline font-black uppercase tracking-tighter leading-none mb-6">
                             {system.name}
                         </h1>
-                        <p className="text-lg text-muted-foreground/90 max-w-2xl leading-relaxed">
+                        <p className="text-xl text-muted-foreground max-w-2xl leading-relaxed font-medium">
                             {system.description}
                         </p>
-                    </div>
+                    </motion.div>
 
                     {/* Price and Action Card */}
-                    <Card className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-lg overflow-hidden relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-transparent pointer-events-none" />
-                        <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className={cn(
+                          "rounded-3xl border backdrop-blur-xl shadow-2xl overflow-hidden group",
+                          isDark ? "bg-slate-900/40 border-white/5 shadow-black/40" : "bg-white/60 border-slate-200 shadow-slate-200/50"
+                        )}
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+                        <CardContent className="p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
                             <div>
-                                <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-1">Total System Cost</p>
-                                <p className="text-4xl font-bold font-headline text-primary">{formatCurrency(system.price)}</p>
+                                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground font-black mb-2">Architected Configuration Value</p>
+                                <p className="text-5xl md:text-6xl font-black font-headline text-primary tracking-tighter">{formatCurrency(system.price)}</p>
                             </div>
                             <div className="flex-shrink-0 w-full md:w-auto">
                                 <Button
                                     size="lg"
-                                    className="font-headline tracking-wide h-14 px-8 shadow-md w-full md:w-auto text-lg transition-transform hover:-translate-y-0.5"
+                                    className="rounded-2xl font-headline uppercase tracking-widest h-16 px-12 shadow-2xl w-full md:w-auto text-lg transition-all hover:scale-[1.02] active:scale-[0.98] bg-primary hover:bg-primary/90 text-white border-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                     disabled={!isComplete}
                                     onClick={handleAddToCart}
                                 >
-                                    <ShoppingCart className="mr-2 h-5 w-5" /> Buy this Rig
+                                    <ShoppingCart className="mr-3 h-6 w-6" /> Deploy This Rig
                                 </Button>
                                 {!isComplete && (
-                                    <p className="text-xs text-destructive text-center md:text-right mt-2 flex items-center justify-center md:justify-end gap-1 font-medium">
-                                        <AlertCircle className="h-3 w-3" /> Missing {missingParts.length} Parts
-                                    </p>
+                                    <div className="mt-4 flex items-center justify-center md:justify-end gap-2 text-destructive">
+                                        <AlertCircle className="h-4 w-4" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">Critical: Missing {missingParts.length} Components</span>
+                                    </div>
                                 )}
                             </div>
                         </CardContent>
-                    </Card>
+                    </motion.div>
 
                     {/* Component Breakdown */}
-                    <div className="pt-4">
-                        <h3 className="text-2xl font-headline font-bold mb-6 flex items-center gap-2">
-                            Component Breakdown
-                        </h3>
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="space-y-6 pt-6"
+                    >
+                        <div className="flex items-center gap-4">
+                            <Box className="w-6 h-6 text-primary" />
+                            <h3 className="text-2xl font-headline font-black uppercase tracking-tight">
+                                Integrated Architecture
+                            </h3>
+                        </div>
 
                         {loadingParts ? (
-                            <div className="flex flex-col items-center justify-center py-12 space-y-4 rounded-xl border border-dashed">
-                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                <p className="text-muted-foreground animate-pulse text-sm">Validating component compatibility...</p>
+                            <div className={cn(
+                                "flex flex-col items-center justify-center py-20 gap-4 rounded-3xl border border-dashed backdrop-blur-md",
+                                isDark ? "bg-slate-900/20 border-white/5" : "bg-white/40 border-slate-200"
+                            )}>
+                                <Loader2 className="h-10 w-10 animate-spin text-primary opacity-50" />
+                                <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground animate-pulse">Running Component Validation...</p>
                             </div>
                         ) : (
                             <div className="grid gap-4">
-                                {Object.entries(components).map(([category, part]) => (
-                                    <div key={category} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl border bg-card/40 hover:bg-card hover:border-primary/30 transition-all shadow-sm">
-                                        <div className="w-full sm:w-32 text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                                {Object.entries(components).map(([category, part], idx) => (
+                                    <motion.div 
+                                        key={category}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.1 * idx }}
+                                        className={cn(
+                                            "flex flex-col sm:flex-row sm:items-center gap-4 p-5 rounded-2xl border transition-all duration-300 group",
+                                            isDark 
+                                                ? "bg-slate-900/40 border-white/5 hover:border-primary/40 hover:bg-slate-900/60" 
+                                                : "bg-white/60 border-slate-200 hover:border-primary/30 hover:bg-white/80"
+                                        )}
+                                    >
+                                        <div className="w-full sm:w-28 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] shrink-0">
                                             {category}
                                         </div>
                                         <div className="flex-1">
                                             {part ? (
-                                                <div className="flex items-center justify-between gap-4">
+                                                <div className="flex items-center justify-between gap-6">
                                                     <div>
-                                                        <p className="font-semibold text-base leading-tight">{part.name}</p>
-                                                        <p className="text-xs text-muted-foreground max-w-md line-clamp-1 mt-0.5">{part.brand}</p>
+                                                        <p className="font-bold text-lg leading-none mb-1 group-hover:text-primary transition-colors">{part.name}</p>
+                                                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">{part.brand}</p>
                                                     </div>
                                                     <div className="text-right shrink-0 hidden sm:block">
-                                                        <p className="font-medium text-sm">{formatCurrency(part.price)}</p>
+                                                        <p className="font-mono font-bold text-sm mb-1">{formatCurrency(part.price)}</p>
                                                         {part.stock > 0 ? (
-                                                            <p className="text-[10px] uppercase tracking-wider text-emerald-500 font-bold mt-0.5">In Stock</p>
+                                                            <div className="flex items-center justify-end gap-1.5 text-emerald-500">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                                <span className="text-[9px] font-black uppercase tracking-widest">In Stock</span>
+                                                            </div>
                                                         ) : (
-                                                            <p className="text-[10px] uppercase tracking-wider text-destructive font-bold mt-0.5">Out of Stock</p>
+                                                            <div className="flex items-center justify-end gap-1.5 text-destructive">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-destructive" />
+                                                                <span className="text-[9px] font-black uppercase tracking-widest">Depleted</span>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center gap-2 text-warning/80 italic text-sm py-1.5 font-medium">
-                                                    <AlertCircle className="h-4 w-4" /> Part missing from build
+                                                <div className="flex items-center gap-3 text-destructive/80 font-bold uppercase tracking-widest text-[10px] py-1">
+                                                    <AlertCircle className="h-4 w-4" /> Component Missing From Configuration
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 ))}
                             </div>
                         )}
-                    </div>
+                    </motion.div>
                 </div>
             </div>
 
             {/* AI Performance Section */}
-            <div className="mt-16 pt-16 border-t border-border/50">
-                <div className="text-center mb-10">
-                    <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-2xl mb-4">
-                        <BrainCircuit className="h-8 w-8 text-primary" />
+            <div className="mt-24 pt-24 border-t border-border/50">
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="text-center mb-16"
+                >
+                    <div className="inline-flex items-center justify-center p-4 bg-primary/10 rounded-3xl mb-6">
+                        <BrainCircuit className="h-10 w-10 text-primary animate-pulse" />
                     </div>
-                    <h2 className="text-3xl md:text-4xl font-headline font-bold mb-4">AI Performance Analysis</h2>
-                    <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-                        Our advanced AI engine analyzes the synergy of these specific components to highlight the system's absolute strengths and performance capabilities.
+                    <h2 className="text-4xl md:text-5xl font-headline font-black uppercase tracking-tighter mb-6">Synergy Diagnostics</h2>
+                    <p className="text-muted-foreground max-w-3xl mx-auto text-xl leading-relaxed font-medium">
+                        Our neural engine calculates the intersection of component capability to determine the absolute performance ceiling for this specific machine architecture.
                     </p>
-                </div>
+                </motion.div>
 
-                <div className="w-[100%] mx-auto relative">
+                <div className="w-full mx-auto relative">
                     {!analysis && !loadingAnalysis && !analysisError && (
                         <Card className="border-dashed shadow-none bg-transparent">
-                            <CardContent className="flex flex-col items-center justify-center py-20 text-center relative overflow-hidden">
-                                <div className="absolute inset-0 bg-primary/5 blur-3xl rounded-full w-[400px] h-[400px] -z-10 m-auto opacity-50" />
+                            <CardContent className="flex flex-col items-center justify-center py-24 text-center relative overflow-hidden">
+                                <div className="absolute inset-0 bg-primary/5 blur-[120px] rounded-full w-[500px] h-[500px] -z-10 m-auto opacity-30 animate-pulse" />
                                 {canGenerateReport ? (
-                                    <Button size="lg" onClick={handleAnalyze} className="font-headline px-10 h-14 text-lg shadow-xl hover:shadow-primary/30 transition-all hover:-translate-y-1 rounded-full group">
-                                        <BrainCircuit className="mr-2 h-6 w-6 group-hover:rotate-12 transition-transform" />
-                                        Generate Comprehensive Report
+                                    <Button 
+                                        size="lg" 
+                                        onClick={handleAnalyze} 
+                                        className="rounded-full font-headline uppercase tracking-[0.2em] px-12 h-16 text-lg shadow-2xl hover:shadow-primary/40 transition-all hover:scale-105 group border-none bg-primary text-white"
+                                    >
+                                        <BrainCircuit className="mr-3 h-7 w-7 group-hover:rotate-12 transition-transform" />
+                                        Initialize Neural Analysis
                                     </Button>
                                 ) : (
                                     <div className="flex flex-col items-center">
-                                        <BrainCircuit className="h-12 w-12 text-muted-foreground/40 mb-4" />
-                                        <h3 className="text-xl font-headline font-semibold text-foreground mb-2">Report Not Yet Available</h3>
-                                        <p className="text-muted-foreground">The AI Performance Report for this system has not been generated by an administrator yet.</p>
+                                        <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-6">
+                                            <BrainCircuit className="h-10 w-10 text-muted-foreground/30" />
+                                        </div>
+                                        <h3 className="text-2xl font-headline font-bold uppercase tracking-tight mb-2">Diagnostic Data Unavailable</h3>
+                                        <p className="text-muted-foreground max-w-md">The performance architectural report for this system has not been authorized yet.</p>
                                     </div>
                                 )}
                             </CardContent>
@@ -409,58 +480,89 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                     )}
 
                     {loadingAnalysis && (
-                        <div className="flex flex-col items-center justify-center py-28 space-y-6">
+                        <div className="flex flex-col items-center justify-center py-32 gap-8">
                             <div className="relative">
-                                <div className="absolute inset-0 bg-primary/20 animate-ping rounded-full" />
-                                <BrainCircuit className="h-20 w-20 text-primary relative z-10 animate-pulse" />
+                                <div className="absolute inset-0 bg-primary/20 animate-ping rounded-full scale-150" />
+                                <div className="w-24 h-24 rounded-3xl bg-primary/10 flex items-center justify-center border border-primary/30 relative z-10 backdrop-blur-md">
+                                    <BrainCircuit className="h-12 w-12 text-primary animate-pulse" />
+                                </div>
                             </div>
-                            <p className="text-xl font-headline font-medium animate-pulse text-muted-foreground">Diagnosing system synergy...</p>
+                            <div className="text-center space-y-2">
+                                <p className="text-2xl font-headline font-black uppercase tracking-widest text-primary animate-pulse">Running Diagnostics</p>
+                                <p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.3em]">Processing Hardware Synergy Vectors...</p>
+                            </div>
                         </div>
                     )}
 
                     {analysisError && (
-                        <div className="bg-destructive/5 border border-destructive/20 text-destructive p-8 rounded-xl max-w-lg mx-auto text-center shadow-inner">
-                            <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-80 text-destructive" />
-                            <h3 className="text-xl font-bold mb-2">Analysis Failed</h3>
-                            <p className="mb-6 opacity-90">{analysisError}</p>
+                        <div className="bg-destructive/10 border border-destructive/20 text-destructive p-12 rounded-3xl max-w-2xl mx-auto text-center shadow-2xl backdrop-blur-md">
+                            <AlertCircle className="h-16 w-16 mx-auto mb-6 opacity-80" />
+                            <h3 className="text-2xl font-headline font-black uppercase tracking-tight mb-3">Diagnostic Failure</h3>
+                            <p className="mb-8 text-lg font-medium">{analysisError}</p>
                             {canGenerateReport && (
-                                <Button variant="outline" onClick={handleAnalyze}>Try Again</Button>
+                                <Button variant="outline" onClick={handleAnalyze} className="rounded-xl px-10 h-12 uppercase tracking-widest font-bold text-xs">Re-Attempt Sync</Button>
                             )}
                         </div>
                     )}
 
                     {analysis && !loadingAnalysis && (
-                        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-12 duration-700">
+                        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-12 duration-1000">
                             {/* Pros / Strengths */}
                             <div className="w-full mx-auto">
-                                <Card className="bg-green-500/5 border-green-500/10 shadow-sm relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-48 h-48 bg-green-500/10 rounded-full blur-[60px] -mr-10 -mt-10 pointer-events-none" />
-                                    <CardContent className="p-8 lg:p-12">
-                                        <h4 className="font-bold font-headline text-green-600 dark:text-green-400 flex items-center justify-center gap-3 mb-8 text-2xl">
-                                            <div className="bg-green-500/10 p-2.5 rounded-xl">
-                                                <ThumbsUp className="h-6 w-6" />
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.98 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className={cn(
+                                        "rounded-[2.5rem] border backdrop-blur-xl shadow-2xl relative overflow-hidden",
+                                        isDark ? "bg-slate-900/40 border-white/5" : "bg-white/60 border-slate-200"
+                                    )}
+                                >
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
+                                    <div className="p-8 md:p-16">
+                                        <div className="flex flex-col items-center text-center mb-12">
+                                            <div className="bg-emerald-500/10 p-5 rounded-[2rem] mb-6">
+                                                <ThumbsUp className="h-10 w-10 text-emerald-500" />
                                             </div>
-                                            System Strengths
-                                        </h4>
-                                        <ul className="space-y-6">
+                                            <h4 className="text-3xl md:text-4xl font-headline font-black uppercase tracking-tight text-emerald-500">
+                                                Architecture Strengths
+                                            </h4>
+                                        </div>
+                                        
+                                        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
                                             {(analysis?.pros || []).map((pro: string, idx: number) => (
-                                                <li key={idx} className="flex gap-4 leading-relaxed text-base md:text-lg">
-                                                    <div className="mt-2.5 flex-shrink-0 w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
-                                                    <span className="text-foreground/90">{pro}</span>
-                                                </li>
+                                                <motion.div 
+                                                    key={idx}
+                                                    initial={{ opacity: 0, x: -10 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    transition={{ delay: 0.1 * idx }}
+                                                    className={cn(
+                                                        "p-6 rounded-3xl border flex gap-5 group transition-all duration-300",
+                                                        isDark ? "bg-slate-900/30 border-white/5 hover:border-emerald-500/40" : "bg-white/40 border-slate-100 hover:border-emerald-500/30"
+                                                    )}
+                                                >
+                                                    <div className="mt-1 flex-shrink-0 w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                                                    </div>
+                                                    <span className="text-lg font-medium leading-relaxed group-hover:text-foreground transition-colors">{pro}</span>
+                                                </motion.div>
                                             ))}
                                             {(!analysis?.pros || analysis?.pros?.length === 0) && (
-                                                <li className="text-center text-muted-foreground/50 italic">No specific strengths identified.</li>
+                                                <div className="col-span-2 py-12 text-center text-muted-foreground/50 italic text-xl">No specific architectural strengths identified for this configuration.</div>
                                             )}
-                                        </ul>
-                                    </CardContent>
-                                </Card>
+                                        </div>
+                                    </div>
+                                </motion.div>
                             </div>
 
                             {canGenerateReport && (
-                                <div className="py-4 mt-8 flex justify-center">
-                                    <Button variant="outline" onClick={handleAnalyze} disabled={loadingAnalysis} className="rounded-full px-8 gap-2 bg-background hover:bg-muted">
-                                        <ArrowLeft className="h-4 w-4" /> Reset Analysis
+                                <div className="py-8 flex justify-center">
+                                    <Button 
+                                        variant="ghost" 
+                                        onClick={handleAnalyze} 
+                                        disabled={loadingAnalysis} 
+                                        className="rounded-full px-10 gap-3 text-muted-foreground hover:text-primary uppercase tracking-[0.3em] font-black text-[10px]"
+                                    >
+                                        <ArrowLeft className="h-4 w-4" /> Reset Diagnostic Matrix
                                     </Button>
                                 </div>
                             )}
@@ -469,5 +571,6 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                 </div>
             </div>
         </main>
+        </div>
     );
 }
