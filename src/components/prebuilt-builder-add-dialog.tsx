@@ -205,6 +205,9 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
     const inventory = useMemo(() => {
         const grouped: Record<string, Part[]> = {};
         for (const part of parts || []) {
+            // Only include non-archived parts in the selection list
+            if (part.isArchived) continue;
+            
             if (!grouped[part.category]) grouped[part.category] = [];
             grouped[part.category].push(part);
         }

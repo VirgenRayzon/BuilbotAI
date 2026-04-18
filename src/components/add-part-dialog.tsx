@@ -818,19 +818,54 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                           ) : (
                             <Input
                               placeholder={placeholder}
-                              value={
-                                key === "Slot Thickness" ? getSpecValue(key).replace(/\s*slot\s*/gi, "") :
-                                (key === "Height (mm)" || key === "Width (mm)" || key === "Depth (mm)") ? getSpecValue(key).replace(/\s*mm\s*/gi, "") :
-                                getSpecValue(key)
-                              }
+                              value={(() => {
+                                const currentVal = getSpecValue(key);
+                                if (key === "Slot Thickness") return currentVal.replace(/\s*slot\s*/gi, "");
+                                if (key.includes("(mm)") || key === "Height" || key === "Radiator Size" || key === "Driver Size") return currentVal.replace(/\s*mm\s*/gi, "");
+                                if (key.includes("(W)") || key.includes("Power") || key === "TDP Rating") return currentVal.replace(/\s*w\s*/gi, "");
+                                if (key.includes("(GHz)") || key === "Screen Size" || key.includes("Speed") || key === "L3 Cache" || key === "TBW Rating" || key === "DPI" || key === "Refresh Rate" || key === "Weight") {
+                                  return currentVal.replace(/[^\d.]/g, '');
+                                }
+                                if (key === "Cores" || key === "Threads" || key === "CUDA Cores") return currentVal.replace(/\D/g, '');
+                                return currentVal;
+                              })()}
                               onChange={(e) => {
                                 const val = e.target.value;
                                 if (key === "Slot Thickness") {
                                   setSpecValue(key, val ? `${val} Slot` : "");
-                                } else if (key === "Height (mm)" || key === "Width (mm)" || key === "Depth (mm)") {
-                                  // Ensure only integer input
+                                } else if (key.includes("(mm)") || key === "Height" || key === "Radiator Size" || key === "Driver Size") {
                                   const intVal = val.replace(/\D/g, '');
                                   setSpecValue(key, intVal ? `${intVal} mm` : "");
+                                } else if (key.includes("(W)") || key.includes("Power") || key === "TDP Rating") {
+                                  const intVal = val.replace(/\D/g, '');
+                                  setSpecValue(key, intVal ? `${intVal} W` : "");
+                                } else if (key.includes("(GHz)")) {
+                                  const floatVal = val.replace(/[^\d.]/g, '');
+                                  setSpecValue(key, floatVal ? `${floatVal} GHz` : "");
+                                } else if (key === "Screen Size") {
+                                  const floatVal = val.replace(/[^\d.]/g, '');
+                                  setSpecValue(key, floatVal ? `${floatVal} inch` : "");
+                                } else if (key === "Read Speed" || key === "Write Speed") {
+                                  const intVal = val.replace(/\D/g, '');
+                                  setSpecValue(key, intVal ? `${intVal} MB/s` : "");
+                                } else if (key === "L3 Cache") {
+                                  const intVal = val.replace(/\D/g, '');
+                                  setSpecValue(key, intVal ? `${intVal} MB` : "");
+                                } else if (key === "TBW Rating") {
+                                  const intVal = val.replace(/\D/g, '');
+                                  setSpecValue(key, intVal ? `${intVal} TBW` : "");
+                                } else if (key === "Refresh Rate") {
+                                  const intVal = val.replace(/\D/g, '');
+                                  setSpecValue(key, intVal ? `${intVal} Hz` : "");
+                                } else if (key === "Weight") {
+                                  const intVal = val.replace(/\D/g, '');
+                                  setSpecValue(key, intVal ? `${intVal}g` : "");
+                                } else if (key === "DPI") {
+                                  const intVal = val.replace(/\D/g, '');
+                                  setSpecValue(key, intVal);
+                                } else if (key === "Cores" || key === "Threads" || key === "CUDA Cores") {
+                                  const intVal = val.replace(/\D/g, '');
+                                  setSpecValue(key, intVal);
                                 } else {
                                   setSpecValue(key, val);
                                 }
@@ -839,9 +874,27 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                                 key.includes("Slots") || 
                                 key.includes("Count") || 
                                 key === "Slot Thickness" || 
-                                key.includes("(mm)") 
+                                key.includes("(mm)") ||
+                                key === "Height" ||
+                                key === "Radiator Size" ||
+                                key === "Driver Size" ||
+                                key.includes("(W)") ||
+                                key.includes("Power") ||
+                                key === "TDP Rating" ||
+                                key === "Cores" ||
+                                key === "Threads" ||
+                                key === "CUDA Cores" ||
+                                key === "DPI" ||
+                                key === "Refresh Rate" ||
+                                key === "Read Speed" ||
+                                key === "Write Speed" ||
+                                key === "L3 Cache" ||
+                                key === "TBW Rating" ||
+                                key.includes("(GHz)") ||
+                                key === "Screen Size"
                                 ? "number" : "text"
                               }
+                              step="any"
                               className="h-8 text-sm bg-background/60 border-border/50 focus:border-primary/50"
                             />
                           )}

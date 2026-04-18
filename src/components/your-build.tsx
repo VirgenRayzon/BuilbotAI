@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { ComponentData } from "@/lib/types";
-import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical as CaseIcon, Wind, AlertCircle, X as CloseIcon, BrainCircuit, Loader2, ThumbsUp, ThumbsDown, MonitorPlay, Zap, Plus, Sparkles, Monitor, Keyboard, Mouse, Headphones } from "lucide-react";
+import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical as CaseIcon, Wind, AlertCircle, X as CloseIcon, BrainCircuit, Loader2, ThumbsUp, ThumbsDown, MonitorPlay, Zap, Plus, Sparkles, Monitor, Keyboard, Mouse, Headphones, ShieldCheck, CheckCircle2, Gauge } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
@@ -19,7 +19,6 @@ import { processCheckout } from "@/app/checkout-actions";
 import { useUser } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { OrderItem } from "@/lib/types";
-import { ShoppingCart, CheckCircle2, Gauge } from "lucide-react";
 import { calculateBottleneck } from "@/lib/bottleneck";
 import { type PrebuiltBuilderAddFormSchema } from "./prebuilt-builder-add-dialog";
 import { Part, PrebuiltSystem } from "@/lib/types";
@@ -95,7 +94,6 @@ export function YourBuild({
     const [analysis, setAnalysis] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    // resolution and workload are now passed as props
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isCheckoutDialogOpen, setIsCheckoutDialogOpen] = useState(false);
     const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -119,7 +117,6 @@ export function YourBuild({
                 description: "Buildbot is creating a name, description, and image for this system.",
             });
             try {
-                // Prepare component names for AI context
                 const selectedComponents = {
                     cpu: (build['CPU'] as ComponentData)?.model,
                     gpu: (build['GPU'] as ComponentData)?.model,
@@ -135,18 +132,15 @@ export function YourBuild({
                     cooler: (build['Cooler'] as ComponentData)?.model,
                 };
 
-                // Trigger AI generation
                 const result = await getAiPrebuiltSuggestions({
                     components: selectedComponents
                 });
 
                 if (result && "systemName" in result) {
-                    // Force a valid image path based on the system name
                     const randomNum = Math.floor(Math.random() * 1000);
                     const systemSlug = result.systemName.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
                     const finalImage = `https://picsum.photos/seed/${systemSlug}${randomNum}/800/600`;
 
-                    // Construct final data to save
                     const finalData: PrebuiltBuilderAddFormSchema = {
                         name: result.systemName,
                         description: result.description || "High-performance prebuilt system.",
@@ -249,7 +243,7 @@ export function YourBuild({
                         model: v.model,
                         price: v.price,
                         category: key,
-                        brand: v.model.split(' ')[0] // Basic heuristic for brand
+                        brand: v.model.split(' ')[0]
                     }));
                 } else {
                     const singleVal = val as any;
@@ -284,7 +278,6 @@ export function YourBuild({
     const totalParts = Object.keys(build).length;
 
     const totalWattage = Object.entries(build).reduce((acc, [key, component]) => {
-        // Exclude PSU (supply) and passive/fan-only parts like Case and Cooler from power demand
         const drawingParts = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage'];
         if (!drawingParts.includes(key)) return acc;
 
@@ -310,29 +303,6 @@ export function YourBuild({
 
     const router = useRouter();
 
-    const handleApplySuggestion = (modelName: string) => {
-        // This relies on the parent having access to the full part catalog or being able to trigger a selection
-        // Since we are in YourBuild, we communicate back via event or if global parts available
-        // For now, we'll try to find the part in the actual inventory if passed down, 
-        // but often we just need to trigger the parent's toggle function.
-        const parentWindow = window as any;
-        if (parentWindow.__BOT_ADD_PART__) {
-            parentWindow.__BOT_ADD_PART__(modelName);
-            toast({
-                title: "Finding part...",
-                description: `Searching for ${modelName} in inventory.`,
-            });
-        } else {
-            // Alternative: Dispatch a custom event
-            const event = new CustomEvent('add-suggestion', { detail: { model: modelName } });
-            window.dispatchEvent(event);
-            toast({
-                title: "Applying Suggestion",
-                description: `Adding ${modelName} to your build...`,
-            });
-        }
-    };
-
     return (
         <Card className={`flex flex-col border-primary/20 shadow-[0_0_40px_rgba(34,211,238,0.05)] overflow-hidden bg-background/40 backdrop-blur-2xl ring-1 ring-white/5 relative ${className || ""}`}>
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
@@ -345,7 +315,6 @@ export function YourBuild({
             <CardContent className="px-5 py-4 flex flex-col">
                 <div className="flex-1 pr-4">
                     <div className="space-y-3 py-1">
-                        {/* Internal Parts Section */}
                         {['Case', 'Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'].map((name) => {
                             const component = build[name];
                             const Icon = componentIcons[name.toLowerCase()] || Cpu;
@@ -403,7 +372,6 @@ export function YourBuild({
                             );
                         })}
 
-                        {/* Accessories Section Divider */}
                         <div className="pt-4 pb-2">
                             <div className="flex items-center gap-2">
                                 <Separator className="flex-1 opacity-30" />
@@ -412,7 +380,6 @@ export function YourBuild({
                             </div>
                         </div>
 
-                        {/* Accessories Slots */}
                         {['Monitor', 'Keyboard', 'Mouse', 'Headset'].map((name) => {
                             const component = build[name];
                             const Icon = componentIcons[name.toLowerCase()] || Monitor;
@@ -549,13 +516,13 @@ export function YourBuild({
                                     size="lg"
                                     disabled={!isBuildComplete}
                                 >
-                                    <ShoppingCart className="h-5 w-5" /> Reserve Build
+                                    <ShieldCheck className="h-5 w-5" /> Reserve Build
                                 </Button>
                             </DialogTrigger>
                             <DialogContent className="max-w-md">
                                 <DialogHeader>
                                     <DialogTitle className="flex items-center gap-2">
-                                        <ShoppingCart className="h-6 w-6 text-emerald-600" />
+                                        <ShieldCheck className="h-6 w-6 text-emerald-600" />
                                         Confirm Reservation
                                     </DialogTitle>
                                     <DialogDescription>

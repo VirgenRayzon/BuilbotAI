@@ -104,18 +104,18 @@ export default function PrebuiltBuilderPage() {
 
     const allParts = useMemo(() => {
         const parts: Part[] = [];
-        cpus?.forEach(p => parts.push({ ...p, category: 'CPU' }));
-        gpus?.forEach(p => parts.push({ ...p, category: 'GPU' }));
-        motherboards?.forEach(p => parts.push({ ...p, category: 'Motherboard' }));
-        rams?.forEach(p => parts.push({ ...p, category: 'RAM' }));
-        storages?.forEach(p => parts.push({ ...p, category: 'Storage' }));
-        psus?.forEach(p => parts.push({ ...p, category: 'PSU' }));
-        cases?.forEach(p => parts.push({ ...p, category: 'Case' }));
-        coolers?.forEach(p => parts.push({ ...p, category: 'Cooler' }));
-        monitors?.forEach(p => parts.push({ ...p, category: 'Monitor' }));
-        keyboards?.forEach(p => parts.push({ ...p, category: 'Keyboard' }));
-        mice?.forEach(p => parts.push({ ...p, category: 'Mouse' }));
-        headsets?.forEach(p => parts.push({ ...p, category: 'Headset' }));
+        cpus?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'CPU' }));
+        gpus?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'GPU' }));
+        motherboards?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'Motherboard' }));
+        rams?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'RAM' }));
+        storages?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'Storage' }));
+        psus?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'PSU' }));
+        cases?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'Case' }));
+        coolers?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'Cooler' }));
+        monitors?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'Monitor' }));
+        keyboards?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'Keyboard' }));
+        mice?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'Mouse' }));
+        headsets?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'Headset' }));
         return parts;
     }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers, monitors, keyboards, mice, headsets]);
 
@@ -499,7 +499,7 @@ export default function PrebuiltBuilderPage() {
                         <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-6">
                             {[...Array(8)].map((_, i) => (
                                 <Card key={i} className="animate-pulse">
-                                    <CardContent className="p-4"><Skeleton className="aspect-video w-full mb-2" /></CardContent>
+                                    <CardContent className="p-4"><Skeleton className="aspect-square w-full mb-2" /></CardContent>
                                     <CardContent className="p-4 pt-0 space-y-2"><Skeleton className="h-5 w-3/4" /><Skeleton className="h-4 w-1/2" /></CardContent>
                                     <CardFooter className="p-4 pt-0 flex justify-between items-center"><Skeleton className="h-6 w-1/3" /><Skeleton className="h-9 w-20" /></CardFooter>
                                 </Card>

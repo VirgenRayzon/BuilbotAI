@@ -20,12 +20,16 @@ export function PrebuiltShowcase() {
     const prebuiltSystemsQuery = useMemo(() => {
         if (!firestore) return null;
         return query(
-            collection(firestore, 'prebuiltSystems'),
-            limit(4)
+            collection(firestore, 'prebuiltSystems')
         );
     }, [firestore]);
 
     const { data: systems, loading } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);
+
+    const filteredSystems = useMemo(() => {
+        if (!systems) return [];
+        return systems.filter(s => !s.isArchived).slice(0, 4);
+    }, [systems]);
 
     return (
         <section className={cn(
@@ -48,9 +52,9 @@ export function PrebuiltShowcase() {
                             )} />
                         ))}
                     </div>
-                ) : systems && systems.length > 0 ? (
+                ) : filteredSystems.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mt-16">
-                        {systems.map((system, index) => (
+                        {filteredSystems.map((system, index) => (
                             <motion.div
                                 key={system.id}
                                 initial={{ opacity: 0, y: 30 }}

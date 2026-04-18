@@ -10,7 +10,7 @@ import { PrebuiltSystemCard } from '@/components/prebuilt-system-card';
 import type { PrebuiltSystem } from '@/lib/types';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useFirestore } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
 import { SearchX, MonitorOff, ShieldCheck, Zap, Cpu } from 'lucide-react';
@@ -33,7 +33,12 @@ export default function PreBuiltsPage() {
     const { authUser, profile, loading: authLoading } = useUserProfile();
     const router = useRouter();
 
-    const prebuiltSystemsQuery = useMemo(() => firestore ? collection(firestore, 'prebuiltSystems') : null, [firestore]);
+    const prebuiltSystemsQuery = useMemo(() => {
+        if (!firestore) return null;
+        return query(
+            collection(firestore, 'prebuiltSystems')
+        );
+    }, [firestore]);
     const { data: prebuiltSystems, loading } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);
 
     const [categories, setCategories] = useState(prebuiltCategories);
@@ -67,15 +72,17 @@ export default function PreBuiltsPage() {
     };
 
     const filteredAndSortedSystems = useMemo(() => {
+        if (!prebuiltSystems) return [];
         const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
         const searchLower = searchQuery.toLowerCase();
 
-        return (prebuiltSystems?.filter(system => {
+        return prebuiltSystems.filter(system => {
+            const isNotArchived = !system.isArchived;
             const matchesCategory = selectedCategories.includes(system.tier);
             const matchesSearch = system.name.toLowerCase().includes(searchLower) ||
                 (system.description?.toLowerCase() || '').includes(searchLower);
-            return matchesCategory && matchesSearch;
-        }) ?? [])
+            return isNotArchived && matchesCategory && matchesSearch;
+        })
             .sort((a, b) => {
                 let compare = 0;
                 if (sortBy === 'Name') compare = a.name.localeCompare(b.name);
@@ -156,7 +163,7 @@ export default function PreBuiltsPage() {
                             {[...Array(8)].map((_, i) => (
                                 <Card key={i} className="overflow-hidden rounded-2xl border-white/5 bg-white/5">
                                     <CardContent className="p-0">
-                                        <Skeleton className="aspect-video w-full rounded-none" />
+                                        <Skeleton className="aspect-square w-full rounded-none" />
                                     </CardContent>
                                     <CardContent className="p-4 space-y-3 mt-2">
                                         <Skeleton className="h-6 w-3/4" />

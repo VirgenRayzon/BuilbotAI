@@ -152,7 +152,7 @@ export function InventoryPrebuiltCard({
                     </div>
 
                     {isSelectionMode ? (
-                        <div className="aspect-video relative w-full overflow-hidden rounded-lg bg-muted/30">
+                        <div className="aspect-square relative w-full overflow-hidden rounded-lg bg-muted/30">
                             <Image
                                 src={getOptimizedStorageUrl(system.imageUrl) || '/placeholder-system.png'}
                                 alt={system.name}
@@ -168,7 +168,7 @@ export function InventoryPrebuiltCard({
                             parts={parts}
                             onSave={(data) => onUpdate(system.id, data)}
                         >
-                            <div className="aspect-video relative w-full overflow-hidden rounded-lg bg-muted/30 cursor-pointer">
+                            <div className="aspect-square relative w-full overflow-hidden rounded-lg bg-muted/30 cursor-pointer">
                                 <Image
                                     src={getOptimizedStorageUrl(system.imageUrl) || '/placeholder-system.png'}
                                     alt={system.name}

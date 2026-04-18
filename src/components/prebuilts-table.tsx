@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
-import { Trash2, ShoppingCart, ChevronDown, ChevronUp, Archive, RotateCcw } from "lucide-react";
+import { Trash2, ShieldCheck, ChevronDown, ChevronUp, Archive, RotateCcw } from "lucide-react";
 import type { PrebuiltSystem } from "@/lib/types";
 import {
   AlertDialog,
@@ -37,6 +37,9 @@ import { PrebuiltCardSpecs } from "./prebuilt-card-specs";
 import { AddPrebuiltDialog, type AddPrebuiltFormSchema } from "./add-prebuilt-dialog";
 import type { Part } from "@/lib/types";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useFirestore } from "@/firebase";
+import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { checkSystemStock } from "@/lib/prebuilt-utils";
 
 interface PrebuiltsTableProps {
   systems: PrebuiltSystem[];
@@ -142,11 +145,60 @@ function PrebuiltTableRow({
   isArchiveView: boolean
 }) {
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const [stockStatus, setStockStatus] = useState<'loading' | 'in-stock' | 'out-of-stock'>('loading');
+  
+  const missingParts = getMissingParts(system);
+  const isComplete = missingParts.length === 0;
 
-  const handleAddToCart = (systemName: string) => {
+  useState(() => {
+    if (!firestore || !isComplete) {
+      setStockStatus('out-of-stock');
+      return;
+    }
+
+    const fetchStock = async () => {
+      try {
+        const components: Record<string, { stock: number } | null> = {};
+        const promises = Object.entries(system.components).map(async ([category, id]) => {
+          const collectionMap: Record<string, string> = {
+            cpu: 'CPU', gpu: 'GPU', motherboard: 'Motherboard',
+            ram: 'RAM', storage: 'Storage', psu: 'PSU',
+            case: 'Case', cooler: 'Cooler',
+          };
+          const collectionName = collectionMap[category] || category;
+          const partId = Array.isArray(id) ? id[0] : id;
+
+          if (!partId) return;
+
+          const partRef = doc(firestore, collectionName, partId as string);
+          const snap = await getDoc(partRef);
+          if (snap.exists()) {
+            components[category] = { stock: (snap.data() as any).stock || 0 };
+          } else {
+            const q = query(collection(firestore, collectionName), where("name", "==", partId));
+            const querySnap = await getDocs(q);
+            if (!querySnap.empty) {
+              components[category] = { stock: (querySnap.docs[0].data() as any).stock || 0 };
+            }
+          }
+        });
+        await Promise.all(promises);
+        const inStock = checkSystemStock(components);
+        setStockStatus(inStock ? 'in-stock' : 'out-of-stock');
+      } catch (e) {
+        console.error("Stock check error:", e);
+        setStockStatus('out-of-stock');
+      }
+    };
+
+    fetchStock();
+  }, [firestore, isComplete, system.components]);
+
+  const handleReserve = (systemName: string) => {
     toast({
-      title: 'Added to Cart',
-      description: `${systemName} has been added to your cart.`,
+      title: 'Reservation Initiated',
+      description: `${systemName} has been reserved.`,
     });
   }
 
@@ -175,7 +227,7 @@ function PrebuiltTableRow({
         </TableCell>
         <TableCell className="font-medium p-4">
           <div className="flex items-center gap-4">
-            <div className="relative w-16 h-12 rounded-md overflow-hidden bg-muted flex-shrink-0 border shadow-sm group-hover:border-primary/30 transition-colors">
+            <div className="relative w-14 h-14 rounded-md overflow-hidden bg-muted flex-shrink-0 border shadow-sm group-hover:border-primary/30 transition-colors">
               <Image
                 src={getOptimizedStorageUrl(system.imageUrl) || "/placeholder-system.png"}
                 alt={system.name}
@@ -254,9 +306,6 @@ function PrebuiltTableRow({
               </AlertDialog>
             ) : !showActions && (
               (() => {
-                const missingParts = getMissingParts(system);
-                const isComplete = missingParts.length === 0;
-
                 if (!isComplete) {
                   return (
                     <TooltipProvider>
@@ -264,12 +313,39 @@ function PrebuiltTableRow({
                         <TooltipTrigger asChild>
                           <div className="cursor-not-allowed">
                             <Button size="icon" variant="outline" disabled className="opacity-50">
-                              <AlertCircle className="h-4 w-4 text-warning" />
+                              <AlertCircle className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Missing: {missingParts.join(', ')}</p>
+                          <p>Incomplete: {missingParts.join(', ')}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                }
+
+                if (stockStatus === 'loading') {
+                  return (
+                    <Button size="icon" variant="outline" disabled>
+                      <ShieldCheck className="h-4 w-4 animate-pulse" />
+                    </Button>
+                  );
+                }
+
+                if (stockStatus === 'out-of-stock') {
+                  return (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="cursor-not-allowed">
+                            <Button size="icon" variant="outline" disabled className="opacity-50">
+                              <AlertCircle className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Out of Stock: One or more components are unavailable.</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -277,8 +353,8 @@ function PrebuiltTableRow({
                 }
 
                 return (
-                  <Button size="icon" variant="outline" onClick={() => handleAddToCart(system.name)}>
-                    <ShoppingCart className="h-4 w-4" />
+                  <Button size="icon" variant="outline" onClick={() => handleReserve(system.name)} title="Reserve this Prebuilt">
+                    <ShieldCheck className="h-4 w-4" />
                   </Button>
                 );
               })()

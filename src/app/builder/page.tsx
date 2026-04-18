@@ -679,7 +679,7 @@ export default function BuilderPage() {
               <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-6">
                 {[...Array(8)].map((_, i) => (
                   <Card key={i} className="rounded-2xl border-white/5 bg-white/5">
-                    <CardContent className="p-4"><Skeleton className="aspect-video w-full mb-2 rounded-xl" /></CardContent>
+                    <CardContent className="p-4"><Skeleton className="aspect-square w-full mb-2 rounded-xl" /></CardContent>
                     <CardContent className="p-4 pt-0 space-y-2"><Skeleton className="h-5 w-3/4" /><Skeleton className="h-4 w-1/2" /></CardContent>
                     <CardFooter className="p-4 pt-0 flex justify-between items-center"><Skeleton className="h-6 w-1/3" /><Skeleton className="h-9 w-20" /></CardFooter>
                   </Card>

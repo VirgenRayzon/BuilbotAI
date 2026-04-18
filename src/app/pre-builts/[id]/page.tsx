@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency, getOptimizedStorageUrl, cn } from "@/lib/utils";
 import type { PrebuiltSystem, Part } from "@/lib/types";
 import { getMissingParts } from "@/lib/prebuilt-utils";
-import { BrainCircuit, ShoppingCart, Loader2, AlertCircle, ThumbsUp, ThumbsDown, MonitorPlay, Zap, ExternalLink, ShieldCheck, Gamepad2, ArrowLeft, ChevronLeft, CircuitBoard, Database, Box } from "lucide-react";
+import { BrainCircuit, ShieldCheck, Loader2, AlertCircle, ThumbsUp, ThumbsDown, MonitorPlay, Zap, ExternalLink, Gamepad2, ArrowLeft, ChevronLeft, CircuitBoard, Database, Box } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getAiPrebuiltPerformance } from "@/app/actions";
 import { doc, getDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
@@ -20,6 +20,8 @@ import { SmartImageMagnifier } from "@/components/smart-image-magnifier";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { useUserProfile } from "@/context/user-profile";
+import { reservePrebuiltSystem } from "@/app/prebuilt-reservation-actions";
+import { checkSystemStock } from "@/lib/prebuilt-utils";
 
 const getPerformanceStyle = (fps: string) => {
     const minFps = parseInt(fps.match(/\d+/)?.[0] || "0");
@@ -43,9 +45,10 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
 
     const [localAnalysis, setLocalAnalysis] = useState<any>(null);
     const [loadingAnalysis, setLoadingAnalysis] = useState(false);
+    const [isReserving, setIsReserving] = useState(false);
     const [analysisError, setAnalysisError] = useState<string | null>(null);
 
-    const { profile } = useUserProfile();
+    const { profile, authUser } = useUserProfile();
     const canGenerateReport = profile?.isManager || profile?.isSuperAdmin;
     const analysis = system?.aiReport || localAnalysis;
 
@@ -67,7 +70,18 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                 const docRef = doc(firestore, 'prebuiltSystems', systemId);
                 const snap = await getDoc(docRef);
                 if (snap.exists()) {
-                    setSystem({ id: snap.id, ...snap.data() } as PrebuiltSystem);
+                    const data = snap.data() as PrebuiltSystem;
+                    // Protect archived systems from non-admin users
+                    if (data.isArchived && !(profile?.isManager || profile?.isSuperAdmin)) {
+                        toast({
+                            title: "Access Denied",
+                            description: "This system is no longer available.",
+                            variant: "destructive"
+                        });
+                        router.push('/pre-builts');
+                        return;
+                    }
+                    setSystem({ id: snap.id, ...data });
                 } else {
                     toast({
                         title: "System Not Found",
@@ -145,53 +159,57 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
         }
     }, [firestore, system, toast, components]);
 
-    const handleAddToCart = () => {
-        if (!isComplete || !system) return;
+    const isInStock = checkSystemStock(components);
 
-        // Convert resolved parts into a builder-compatible build state
-        const categoryMap: Record<string, string> = {
-            cpu: 'CPU', gpu: 'GPU', motherboard: 'Motherboard',
-            ram: 'RAM', storage: 'Storage', psu: 'PSU',
-            case: 'Case', cooler: 'Cooler',
-        };
+    const handleReserve = async () => {
+        if (!isComplete || !system || !profile || !authUser || !isInStock || isReserving) return;
 
-        const buildState: Record<string, any> = {
-            CPU: null, GPU: null, Motherboard: null, RAM: null,
-            Storage: [], PSU: null, Case: null, Cooler: null,
-        };
+        setIsReserving(true);
+        try {
+            // Prepare component map for the reservation action
+            const componentsMap: Record<string, { id: string, name: string, price: number, category: string }> = {};
+            Object.entries(components).forEach(([category, part]) => {
+                if (part) {
+                    componentsMap[category] = {
+                        id: part.id,
+                        name: part.name,
+                        price: part.price,
+                        category: category
+                    };
+                }
+            });
 
-        Object.entries(components).forEach(([category, part]) => {
-            if (!part) return;
-            const buildCategory = categoryMap[category] || category;
-            const componentData = {
-                id: part.id,
-                model: part.name,
-                price: part.price,
-                description: Object.entries(part.specifications || {}).slice(0, 2).map(([k, v]) => `${k}: ${v}`).join(' | '),
-                image: part.imageUrl,
-                imageHint: part.name.toLowerCase().split(' ').slice(0, 2).join(' '),
-                wattage: part.wattage,
-                socket: part.socket || part.specifications?.['Socket']?.toString(),
-                ramType: part.ramType || part.specifications?.['Memory Type']?.toString(),
-                performanceScore: part.performanceScore,
-                specifications: part.specifications,
-                dimensions: part.dimensions,
-            };
+            const result = await reservePrebuiltSystem(
+                authUser.uid,
+                profile.email,
+                profile.name || profile.email.split('@')[0],
+                system,
+                componentsMap
+            );
 
-            if (buildCategory === 'Storage') {
-                buildState['Storage'] = [componentData];
+            if (result.success) {
+                toast({
+                    title: 'Reservation Successful',
+                    description: `Your reservation for ${system.name} has been recorded.`,
+                });
+                router.push('/profile');
             } else {
-                buildState[buildCategory] = componentData;
+                toast({
+                    title: 'Reservation Failed',
+                    description: result.error || 'An error occurred during reservation.',
+                    variant: 'destructive'
+                });
             }
-        });
-
-        localStorage.setItem('pc_builder_state', JSON.stringify(buildState));
-
-        toast({
-            title: 'Build Loaded',
-            description: `${system.name} components have been loaded into the builder. Proceed to checkout!`,
-        });
-        router.push('/builder');
+        } catch (error) {
+            console.error("Reservation error:", error);
+            toast({
+                title: 'Error',
+                description: 'An unexpected error occurred.',
+                variant: 'destructive'
+            });
+        } finally {
+            setIsReserving(false);
+        }
     };
 
     const handleAnalyze = async () => {
@@ -343,16 +361,27 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                             <div className="flex-shrink-0 w-full md:w-auto">
                                 <Button
                                     size="lg"
-                                    className="rounded-2xl font-headline uppercase tracking-widest h-16 px-12 shadow-2xl w-full md:w-auto text-lg transition-all hover:scale-[1.02] active:scale-[0.98] bg-primary hover:bg-primary/90 text-white border-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                                    disabled={!isComplete}
-                                    onClick={handleAddToCart}
+                                    className="rounded-2xl font-headline uppercase tracking-widest h-16 px-12 shadow-2xl w-full md:w-auto text-lg transition-all hover:scale-[1.02] active:scale-[0.98] bg-primary hover:bg-primary/90 text-white border-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 group/reserve"
+                                    disabled={!isComplete || loadingParts || !isInStock || isReserving}
+                                    onClick={handleReserve}
                                 >
-                                    <ShoppingCart className="mr-3 h-6 w-6" /> Deploy This Rig
+                                    {isReserving ? (
+                                        <Loader2 className="mr-3 h-6 w-6 animate-spin" />
+                                    ) : (
+                                        <ShieldCheck className="mr-3 h-6 w-6 transition-transform group-hover/reserve:-translate-y-1" />
+                                    )}
+                                    {loadingParts ? "Validating Stock..." : isReserving ? "Processing..." : !isInStock ? "Diagnostics Failed" : "Reserve this Prebuilt"}
                                 </Button>
                                 {!isComplete && (
                                     <div className="mt-4 flex items-center justify-center md:justify-end gap-2 text-destructive">
                                         <AlertCircle className="h-4 w-4" />
                                         <span className="text-[10px] font-black uppercase tracking-widest">Critical: Missing {missingParts.length} Components</span>
+                                    </div>
+                                )}
+                                {isComplete && !loadingParts && !isInStock && (
+                                    <div className="mt-4 flex items-center justify-center md:justify-end gap-2 text-destructive">
+                                        <AlertCircle className="h-4 w-4" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">One or more components are out of stock</span>
                                     </div>
                                 )}
                             </div>
