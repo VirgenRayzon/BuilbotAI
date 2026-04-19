@@ -98,24 +98,24 @@ export function InventoryPartCard({
                         </div>
                     )}
 
-                    <div className="p-3.5 pb-0 space-y-2.5 z-10 flex-grow flex flex-col">
+                    <div className="p-2 md:p-3.5 pb-0 space-y-1.5 md:space-y-2.5 z-10 flex-grow flex flex-col">
                         <div className="flex justify-between items-start gap-2">
                             <div className={cn("space-y-0.5 flex-grow", isSelected && "pl-5")}>
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{part.brand}</p>
-                                <CardTitle className="text-base font-headline leading-snug line-clamp-2 h-10">{part.name}</CardTitle>
+                                <p className="text-[8px] md:text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{part.brand}</p>
+                                <CardTitle className="text-xs md:text-base font-headline leading-snug line-clamp-2 h-8 md:h-10">{part.name}</CardTitle>
                             </div>
                             <div className="flex items-start gap-1">
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-8 w-8 text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors -mt-1"
-                                            onClick={(e) => e.stopPropagation()}
-                                            title={isArchiveView ? "Restore" : "Archive"}
-                                        >
-                                            {isArchiveView ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
-                                        </Button>
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors -mt-1"
+                                                onClick={(e) => e.stopPropagation()}
+                                                title={isArchiveView ? "Restore" : "Archive"}
+                                            >
+                                                {isArchiveView ? <RotateCcw className="h-3 w-3 md:h-4 md:w-4" /> : <Archive className="h-3 w-3 md:h-4 md:w-4" />}
+                                            </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                                         <AlertDialogHeader>
@@ -151,7 +151,7 @@ export function InventoryPartCard({
                                                 onClick={(e) => e.stopPropagation()}
                                                 className="h-8 w-8 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors -mt-1 -mr-1"
                                             >
-                                                <Trash2 className="h-4 w-4" />
+                                                <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
                                             </Button>
                                         </AlertDialogTrigger>
                                         <AlertDialogContent onClick={(e) => e.stopPropagation()}>
@@ -208,32 +208,33 @@ export function InventoryPartCard({
                             </AddPartDialog>
                         )}
 
-                        <div className="flex justify-between items-center py-1">
-                            <p className="text-xl font-bold font-headline tracking-tight">{formatCurrency(part.price)}</p>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground/60 hover:text-primary transition-colors">
-                                <Info className="h-4 w-4" />
+                        <div className="flex justify-between items-center py-0.5 md:py-1">
+                            <p className="text-sm md:text-xl font-bold font-headline tracking-tight">{formatCurrency(part.price)}</p>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 md:h-7 md:w-7 text-muted-foreground/60 hover:text-primary transition-colors">
+                                <Info className="h-3 w-3 md:h-4 md:w-4" />
                             </Button>
                         </div>
 
                         <Separator className="bg-border/40" />
 
-                        <div className="grid grid-cols-2 gap-x-3 gap-y-2.5 py-1">
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 md:gap-x-3 md:gap-y-2.5 py-0.5 md:py-1">
                             {specKeys.map((key) => {
                                 const value = part.specifications?.[key] || (key === 'Wattage' ? part.wattage : null);
                                 return (
                                     <div key={key} className="min-w-0">
-                                        <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-tight mb-0.5">{key}</p>
-                                        <p className="font-bold text-[11px] truncate leading-none uppercase" title={String(value || 'N/A')}>{String(value || 'N/A')}</p>
+                                        <p className="text-[7px] md:text-[9px] text-muted-foreground uppercase font-bold tracking-tight mb-0">{key}</p>
+                                        <p className="font-bold text-[9px] md:text-[11px] truncate leading-none uppercase" title={String(value || 'N/A')}>{String(value || 'N/A')}</p>
                                     </div>
                                 );
                             })}
                         </div>
                     </div>
 
-                    <div className="mt-auto p-3 pt-0 z-20" onClick={(e) => e.stopPropagation()}>
+                    <div className="mt-auto p-2 md:p-3 pt-0 z-20" onClick={(e) => e.stopPropagation()}>
                         <StockEditor
                             stock={part.stock}
                             onStockChange={(newStock) => onUpdateStock(part.id, part.category, newStock)}
+                            className="h-7 md:h-9"
                         />
                     </div>
                 </Card>

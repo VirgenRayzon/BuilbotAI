@@ -5,16 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { BrainCircuit, Send, Bot, User, MessageSquare, X, PlusCircle, Cpu, Sparkles, Eraser, RotateCcw } from "lucide-react";
+import { BrainCircuit, Send, Bot, User, MessageSquare, X, PlusCircle, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import type { ComponentData } from "@/lib/types";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-
-interface Message {
-    role: 'bot' | 'user';
-    text: string;
-}
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, UIMessage } from "ai";
 
 interface BuilderFloatingChatProps {
     build?: Record<string, ComponentData | ComponentData[] | null>;
@@ -22,91 +19,84 @@ interface BuilderFloatingChatProps {
 
 export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const defaultMessages: Message[] = [
-        { role: 'bot', text: 'Initialize sequence... Hello Architect. I am your Buildbot AI Assistant.' },
-        { role: 'bot', text: 'I am monitoring your component selection. Ask me anything or let me suggest parts for your current build.' }
-    ];
-    
-    const [messages, setMessages] = useState<Message[]>(defaultMessages);
-    const [isLoaded, setIsLoaded] = useState(false);
-    const [input, setInput] = useState('');
-    const [isTyping, setIsTyping] = useState(false);
-    const scrollRef = useRef<HTMLDivElement>(null);
+    const [input, setInput] = useState("");
+    const { 
+        messages, 
+        status, 
+        setMessages, 
+        sendMessage 
+    } = useChat({
+        transport: new DefaultChatTransport({ 
+            api: "/api/chat",
+            body: {
+                buildContext: build
+            }
+        }),
+        onFinish: ({ messages: updatedMessages }) => {
+            console.log("Chat finished, saving history...");
+            localStorage.setItem('pc_chat_history_v2', JSON.stringify(updatedMessages));
+        },
+        onError: (err) => {
+            console.error("Chat error:", err);
+        }
+    });
+
+    const isLoading = status === 'streaming' || status === 'submitted';
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Auto-scroll to bottom
+    useEffect(() => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+    }, [messages, status]);
 
     useEffect(() => {
-        const saved = localStorage.getItem('pc_chat_history');
+        const DEFAULT_MESSAGES: UIMessage[] = [
+            { id: '1', role: 'assistant', parts: [{ type: 'text', text: 'Initialize sequence... Hello Architect. I am your Buildbot AI Assistant.' }] },
+            { id: '2', role: 'assistant', parts: [{ type: 'text', text: 'I am monitoring your component selection. Ask me anything or let me suggest parts for your current build.' }] }
+        ];
+
+        const saved = localStorage.getItem('pc_chat_history_v2');
         if (saved) {
             try {
-                setMessages(JSON.parse(saved));
+                const parsed = JSON.parse(saved);
+                // Migrate old message formats to the new 'parts' format
+                const migrated = parsed.map((m: any) => {
+                    if (!m.parts && (m.content || m.text)) {
+                        return {
+                            ...m,
+                            parts: [{ type: 'text', text: m.content || m.text }]
+                        };
+                    }
+                    return m;
+                });
+                setMessages(migrated);
             } catch (e) {
                 console.error("Failed to parse chat history");
+                setMessages(DEFAULT_MESSAGES);
             }
+        } else {
+            // First time open or cleared history
+            setMessages(DEFAULT_MESSAGES);
         }
-        setIsLoaded(true);
-    }, []);
+    }, [setMessages]);
 
-    useEffect(() => {
-        if (isLoaded) {
-            localStorage.setItem('pc_chat_history', JSON.stringify(messages));
-        }
-    }, [messages, isLoaded]);
+    const handleClearChat = () => {
+        const DEFAULT_MESSAGES: UIMessage[] = [
+            { id: '1', role: 'assistant', parts: [{ type: 'text', text: 'Initialize sequence... Hello Architect. I am your Buildbot AI Assistant.' }] },
+            { id: '2', role: 'assistant', parts: [{ type: 'text', text: 'I am monitoring your component selection. Ask me anything or let me suggest parts for your current build.' }] }
+        ];
+        setMessages(DEFAULT_MESSAGES);
+        localStorage.removeItem('pc_chat_history_v2');
+    };
 
-
-
-    const handleSendMessage = async (e: React.FormEvent) => {
+    const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!input.trim()) return;
-
-        const userMsg = input;
-        setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
-        setInput('');
-        setIsTyping(true);
-
-        try {
-            const response = await fetch("/api/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    messages: [...messages, { role: 'user', text: userMsg }],
-                    buildContext: build
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to communicate with AI.");
-            }
-
-            if (!response.body) return;
-
-            // Prepare for streaming response
-            setMessages(prev => [...prev, { role: 'bot', text: '' }]);
-            setIsTyping(false); // Hide typing indicator because streaming starts
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let aiText = '';
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                
-                const chunk = decoder.decode(value, { stream: true });
-                aiText += chunk;
-                
-                // Update the last message progressively
-                setMessages(prev => {
-                    const newMsgs = [...prev];
-                    newMsgs[newMsgs.length - 1] = { role: 'bot', text: aiText };
-                    return newMsgs;
-                });
-            }
-
-        } catch (error) {
-            console.error(error);
-            setMessages(prev => [...prev, { role: 'bot', text: "Error connecting to AI Assistant." }]);
-        } finally {
-            setIsTyping(false);
-        }
+        if (!input.trim() || isLoading) return;
+        
+        sendMessage({ text: input });
+        setInput("");
     };
 
     return (
@@ -131,10 +121,7 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                     <BrainCircuit className="w-5 h-5 text-blue-400" /> Buildbot AI Interface
                                 </CardTitle>
                                 <div className="flex items-center gap-1">
-                                    <Button variant="ghost" size="sm" onClick={() => {
-                                        setMessages(defaultMessages);
-                                        localStorage.removeItem('pc_chat_history');
-                                    }} className="h-8 px-2 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-all rounded-lg flex items-center gap-1.5 group/clear" title="Clear Chat History">
+                                    <Button variant="ghost" size="sm" onClick={handleClearChat} className="h-8 px-2 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-all rounded-lg flex items-center gap-1.5 group/clear" title="Clear Chat History">
                                         <RotateCcw className="w-3.5 h-3.5 transition-transform group-hover/clear:rotate-[-45deg]" />
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Clear</span>
                                     </Button>
@@ -145,90 +132,111 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                             </CardHeader>
 
                             <CardContent className="flex-1 p-0 min-h-0 relative z-0 flex flex-col overflow-hidden bg-gradient-to-b from-transparent to-black/20">
-                                <ScrollArea className="flex-1 p-5" ref={scrollRef}>
-                                    <div className="space-y-5 pb-6">
+                                <ScrollArea className="flex-1 px-4">
+                                    <div className="flex flex-col gap-6 py-4 pt-4">
                                         {messages.map((msg, i) => (
                                             <motion.div 
-                                                key={i} 
+                                                key={msg.id || i} 
                                                 initial={{ opacity: 0, scale: 0.95, y: 15 }}
                                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                                 transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                                                className={`flex gap-3 relative px-1 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+                                                className={`flex gap-3 relative ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
                                             >
                                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-lg ${msg.role === 'user' ? 'bg-gradient-to-br from-cyan-400 to-blue-600 text-white shadow-cyan-500/30 ring-2 ring-cyan-500/20' : 'bg-gradient-to-br from-blue-500 to-cyan-700 text-white shadow-blue-500/30 ring-2 ring-blue-500/20'}`}>
                                                     {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                                                 </div>
-                                                <div className={`p-4 rounded-2xl text-sm leading-relaxed max-w-[85%] shadow-lg relative overflow-hidden group hover:shadow-xl transition-all duration-300 ${
-                                                    msg.role === 'user' 
-                                                    ? 'bg-gradient-to-br from-cyan-900/40 to-blue-900/20 text-cyan-50 rounded-tr-sm border border-cyan-500/40 backdrop-blur-md' 
-                                                    : 'bg-gradient-to-br from-blue-900/20 to-cyan-900/10 backdrop-blur-xl text-blue-50 rounded-tl-sm border border-blue-500/30'
-                                                }`}>
-                                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 -translate-x-full group-hover:translate-x-full transition-all duration-1000 ease-in-out pointer-events-none"></div>
-                                                    {msg.role === 'user' ? (
-                                                        <p>{msg.text}</p>
-                                                    ) : (
-                                                        <div className="prose prose-invert prose-p:leading-snug prose-sm max-w-none prose-a:text-cyan-400 prose-strong:text-blue-300">
-                                                            <ReactMarkdown 
-                                                                urlTransform={(url) => url}
-                                                                components={{
-                                                                p: ({ children }) => {
-                                                                    return <div className="mb-4 last:mb-0 leading-relaxed">{children}</div>;
-                                                                },
-                                                                a: ({ href, children }) => {
-                                                                    if (href?.startsWith('add-part:')) {
-                                                                        const rawData = decodeURIComponent(href.replace('add-part:', ''));
-                                                                        const parts = rawData.split('|');
-                                                                        const category = parts[0] || '';
-                                                                        const partId = parts[1] || undefined;
-                                                                        const partPrice = parts[2] || '';
-                                                                        const partImageUrl = parts[3] || undefined;
-                                                                        const partName = children;
-                                                                        
-                                                                        const placeholderImage = PlaceHolderImages.find(p => p.id.toLowerCase() === category.toLowerCase())?.imageUrl || PlaceHolderImages.find(p => p.id === 'case')?.imageUrl;
-                                                                        const finalImage = partImageUrl || placeholderImage;
-
-                                                                         return (
-                                                                            <div className="my-5 bg-black/40 border border-blue-500/20 rounded-2xl overflow-hidden shadow-2xl group/card transition-all hover:border-blue-500/40 hover:shadow-blue-500/20 hover:scale-[1.01] relative aspect-square max-w-[400px] mx-auto">
-                                                                                <img src={finalImage} alt={category} className="w-full h-full object-cover opacity-90 transition-transform duration-1000 group-hover/card:scale-110" />
-                                                                                
-                                                                                {/* Content Overlay */}
-                                                                                <div className="absolute inset-x-0 bottom-0 p-4 pt-10 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-3">
-                                                                                    <div className="flex flex-col gap-0.5">
-                                                                                        <div className="text-sm font-bold text-white leading-tight line-clamp-2 drop-shadow-lg">{partName || children}</div>
-                                                                                        {partPrice && (
-                                                                                            <div className="text-[13px] font-black text-cyan-400 drop-shadow-md tracking-tight">{partPrice}</div>
-                                                                                        )}
-                                                                                    </div>
+                                                <div className={`flex flex-col gap-3 max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                                                    {msg.parts?.map((part, partIdx) => {
+                                                        if (part.type === 'text') {
+                                                            return (
+                                                                <div 
+                                                                    key={partIdx}
+                                                                    className={`p-4 rounded-2xl text-sm leading-relaxed shadow-lg relative overflow-hidden group hover:shadow-xl transition-all duration-300 ${
+                                                                        msg.role === 'user' 
+                                                                        ? 'bg-gradient-to-br from-cyan-900/40 to-blue-900/20 text-cyan-50 rounded-tr-sm border border-cyan-500/40 backdrop-blur-md' 
+                                                                        : 'bg-gradient-to-br from-blue-900/20 to-cyan-900/10 backdrop-blur-xl text-blue-50 rounded-tl-sm border border-blue-500/30'
+                                                                    }`}
+                                                                >
+                                                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 -translate-x-full group-hover:translate-x-full transition-all duration-1000 ease-in-out pointer-events-none"></div>
+                                                                    
+                                                                    <div className="prose prose-invert prose-p:leading-snug prose-sm max-w-none prose-a:text-cyan-400 prose-strong:text-blue-300">
+                                                                        <ReactMarkdown 
+                                                                            urlTransform={(url) => url}
+                                                                            components={{
+                                                                            p: ({ children }) => {
+                                                                                return <div className="mb-4 last:mb-0 leading-relaxed">{children}</div>;
+                                                                            },
+                                                                            a: ({ href, children }) => {
+                                                                                if (href?.startsWith('add-part:')) {
+                                                                                    const rawData = decodeURIComponent(href.replace('add-part:', ''));
+                                                                                    const parts = rawData.split('|');
+                                                                                    const category = parts[0] || '';
+                                                                                    const partId = parts[1] || undefined;
+                                                                                    const partPrice = parts[2] || '';
+                                                                                    let partImageUrl = parts[3]?.trim().replace(/^["']|["']$/g, '') || undefined;
+                                                     
+                                                     // Fix for Firebase Storage URLs that the AI might have decoded (slashes must be %2F)
+                                                     if (partImageUrl && partImageUrl.includes('firebasestorage.googleapis.com') && partImageUrl.includes('/o/') && partImageUrl.includes('?')) {
+                                                         const parts = partImageUrl.split('/o/');
+                                                         const afterO = parts[1].split('?');
+                                                         const path = afterO[0];
+                                                         const query = afterO[1];
+                                                         
+                                                         if (path.includes('/')) {
+                                                             const encodedPath = path.split('/').join('%2F');
+                                                             partImageUrl = `${parts[0]}/o/${encodedPath}?${query}`;
+                                                         }
+                                                     }
+                                                                                    const partName = children;
                                                                                     
-                                                                                    <Button 
-                                                                                        variant="secondary" 
-                                                                                        size="sm" 
-                                                                                        className="h-9 px-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white border-none rounded-xl shadow-lg shadow-blue-500/40 text-[11px] font-black uppercase tracking-wider flex items-center gap-2 transition-all group-hover/card:scale-105 active:scale-95 w-full justify-center"
-                                                                                        onClick={(e) => {
-                                                                                            e.preventDefault();
-                                                                                            const event = new CustomEvent('add-suggestion', { detail: { model: partName?.toString(), id: partId } });
-                                                                                            window.dispatchEvent(event);
-                                                                                        }}
-                                                                                    >
-                                                                                        <PlusCircle className="w-4 h-4" />
-                                                                                        Quick Add to Build
-                                                                                    </Button>
-                                                                                </div>
-                                                                            </div>
-                                                                        );
-                                                                    }
-                                                                    return <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
-                                                                }
-                                                            }}>
-                                                                {msg.text}
-                                                            </ReactMarkdown>
-                                                        </div>
-                                                    )}
+                                                                                    const placeholderImage = PlaceHolderImages.find(p => p.id.toLowerCase() === category.toLowerCase())?.imageUrl || PlaceHolderImages.find(p => p.id === 'case')?.imageUrl;
+                                                                                    const finalImage = partImageUrl && partImageUrl.startsWith('http') ? partImageUrl : placeholderImage;
+                                                                                    
+                                                                                    return (
+                                                                                        <div className="my-5 bg-black/40 border border-blue-500/20 rounded-2xl overflow-hidden shadow-2xl group/card transition-all hover:border-blue-500/40 hover:shadow-blue-500/20 hover:scale-[1.01] relative aspect-square max-w-[400px] mx-auto">
+                                                                                            <img src={finalImage} alt={category} className="w-full h-full object-cover opacity-90 transition-transform duration-1000 group-hover/card:scale-110" />
+                                                                                            
+                                                                                            <div className="absolute inset-x-0 bottom-0 p-4 pt-10 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-3">
+                                                                                                <div className="flex flex-col gap-0.5">
+                                                                                                    <div className="text-sm font-bold text-white leading-tight line-clamp-2 drop-shadow-lg">{partName || children}</div>
+                                                                                                    {partPrice && (
+                                                                                                        <div className="text-[13px] font-black text-cyan-400 drop-shadow-md tracking-tight">{partPrice}</div>
+                                                                                                    )}
+                                                                                                </div>
+                                                                                                
+                                                                                                <Button 
+                                                                                                    variant="secondary" 
+                                                                                                    size="sm" 
+                                                                                                    className="h-9 px-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white border-none rounded-xl shadow-lg shadow-blue-500/40 text-[11px] font-black uppercase tracking-wider flex items-center gap-2 transition-all group-hover/card:scale-105 active:scale-95 w-full justify-center"
+                                                                                                    onClick={(e) => {
+                                                                                                        e.preventDefault();
+                                                                                                        const event = new CustomEvent('add-suggestion', { detail: { model: partName?.toString(), id: partId } });
+                                                                                                        window.dispatchEvent(event);
+                                                                                                    }}
+                                                                                                >
+                                                                                                    <PlusCircle className="w-4 h-4" />
+                                                                                                    Quick Add to Build
+                                                                                                </Button>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    );
+                                                                                }
+                                                                                return <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
+                                                                            }
+                                                                        }}>
+                                                                            {part.text}
+                                                                        </ReactMarkdown>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return null;
+                                                    })}
                                                 </div>
                                             </motion.div>
                                         ))}
 
-                                        {isTyping && (
+                                         {isLoading && (
                                             <motion.div 
                                                 initial={{ opacity: 0, scale: 0.9, y: 10 }}
                                                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -239,13 +247,21 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                                     <div className="absolute inset-0 rounded-full bg-cyan-400/50 blur-md animate-ping"></div>
                                                     <Bot className="w-4 h-4 relative z-10" />
                                                 </div>
-                                                <div className="p-4 rounded-2xl bg-white/5 backdrop-blur-md rounded-tl-sm border border-cyan-500/30 flex items-center gap-1.5 h-[42px] shadow-[0_0_20px_rgba(6,182,212,0.1)]">
-                                                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce shadow-[0_0_10px_rgba(6,182,212,0.8)]" style={{ animationDelay: '0ms' }}></span>
-                                                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce shadow-[0_0_10px_rgba(6,182,212,0.8)]" style={{ animationDelay: '150ms' }}></span>
-                                                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce shadow-[0_0_10px_rgba(6,182,212,0.8)]" style={{ animationDelay: '300ms' }}></span>
+                                                <div className="flex flex-col gap-1.5">
+                                                    <div className="p-4 rounded-2xl bg-white/5 backdrop-blur-md rounded-tl-sm border border-cyan-500/30 flex items-center gap-1.5 h-[42px] shadow-[0_0_20px_rgba(6,182,212,0.1)]">
+                                                        <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce shadow-[0_0_10px_rgba(6,182,212,0.8)]" style={{ animationDelay: '0ms' }}></span>
+                                                        <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce shadow-[0_0_10px_rgba(6,182,212,0.8)]" style={{ animationDelay: '150ms' }}></span>
+                                                        <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce shadow-[0_0_10px_rgba(6,182,212,0.8)]" style={{ animationDelay: '300ms' }}></span>
+                                                    </div>
+                                                    <div className="px-1">
+                                                        <span className="text-[10px] uppercase tracking-[0.2em] font-black text-cyan-400/60 animate-pulse">
+                                                            {messages[messages.length - 1]?.role === 'assistant' ? 'Researching...' : 'Thinking...'}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </motion.div>
                                         )}
+                                        <div ref={messagesEndRef} />
                                     </div>
                                 </ScrollArea>
                             </CardContent>
@@ -262,7 +278,7 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                         type="submit" 
                                         size="icon" 
                                         className="absolute right-1 top-1 h-10 w-10 bg-gradient-to-br from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-lg transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:shadow-[0_0_20px_rgba(6,182,212,0.6)] active:scale-95" 
-                                        disabled={!input.trim()}
+                                        disabled={!input.trim() || isLoading}
                                     >
                                         <Send className="w-4 h-4 ml-0.5" />
                                     </Button>
@@ -274,18 +290,18 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
             </AnimatePresence>
 
             <motion.div
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="relative"
-                            >
-                                <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-600 to-cyan-600 blur opacity-60 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-                                <Button
-                                    onClick={() => setIsOpen(!isOpen)}
-                                    className="relative h-16 w-16 rounded-full shadow-[0_0_30px_rgba(6,182,212,0.4)] bg-gradient-to-tr from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 p-0 border border-white/20 z-10"
-                                >
-                                    <MessageSquare className="w-7 h-7 text-white" />
-                                </Button>
-                            </motion.div>
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="relative"
+            >
+                <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-600 to-cyan-600 blur opacity-60 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
+                <Button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="relative h-16 w-16 rounded-full shadow-[0_0_30px_rgba(6,182,212,0.4)] bg-gradient-to-tr from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 p-0 border border-white/20 z-10"
+                >
+                    <MessageSquare className="w-7 h-7 text-white" />
+                </Button>
+            </motion.div>
         </div>
     );
 }

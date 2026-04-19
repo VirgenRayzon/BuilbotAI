@@ -178,7 +178,7 @@ export default function PreBuiltsPage() {
 
                 {loading ? (
                     view === 'grid' ? (
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
                             {[...Array(8)].map((_, i) => (
                                 <Card key={i} className="overflow-hidden rounded-2xl border-white/5 bg-white/5">
                                     <CardContent className="p-0">
@@ -230,7 +230,7 @@ export default function PreBuiltsPage() {
                     )
                 ) : filteredAndSortedSystems.length > 0 ? (
                     view === 'grid' ? (
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
                             {filteredAndSortedSystems.map(system => (
                                 <PrebuiltSystemCard key={system.id} system={system} />
                             ))}

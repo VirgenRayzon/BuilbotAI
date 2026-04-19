@@ -99,13 +99,13 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                         isSelected && "opacity-100"
                     )} />
 
-                    <div className="p-2.5 pb-0 space-y-2.5 z-10 flex-grow flex flex-col">
-                        <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                                <div className="h-px w-3 bg-primary/40" />
-                                <p className="text-[9px] text-muted-foreground uppercase tracking-[0.2em] font-black">{part.brand}</p>
+                    <div className="p-2 md:p-2.5 pb-0 space-y-1.5 md:space-y-2.5 z-10 flex-grow flex flex-col">
+                        <div className="space-y-0.5 md:space-y-1">
+                            <div className="flex items-center gap-1.5 md:gap-2">
+                                <div className="h-px w-2 md:w-3 bg-primary/40" />
+                                <p className="text-[7px] md:text-[9px] text-muted-foreground uppercase tracking-[0.2em] font-black">{part.brand}</p>
                             </div>
-                            <CardTitle className="text-lg font-headline font-black uppercase tracking-tight leading-[1.1] line-clamp-2 h-10 group-hover:text-primary transition-colors">{part.name}</CardTitle>
+                            <CardTitle className="text-xs md:text-lg font-headline font-black uppercase tracking-tight leading-[1.1] line-clamp-2 h-8 md:h-10 group-hover:text-primary transition-colors">{part.name}</CardTitle>
                         </div>
 
                         <div className="aspect-square relative w-full overflow-hidden rounded-2xl bg-slate-900/5 dark:bg-white/5 border border-white/5 p-4 group-hover:bg-primary/[0.03] transition-colors duration-500">
@@ -119,30 +119,30 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                             />
                         </div>
 
-                        <div className="flex justify-between items-end py-1">
+                        <div className="flex justify-between items-end py-0.5 md:py-1">
                             <div className="flex flex-col">
-                                <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mb-1">MSRP VALUE</p>
-                                <p className="text-2xl font-black font-headline tracking-tighter text-primary leading-none">{formatCurrency(part.price)}</p>
+                                <p className="text-[7px] md:text-[9px] text-muted-foreground uppercase font-black tracking-widest mb-0.5 md:mb-1">MSRP VALUE</p>
+                                <p className="text-sm md:text-2xl font-black font-headline tracking-tighter text-primary leading-none">{formatCurrency(part.price)}</p>
                                 {part.usdSrp && (
                                     <p className="text-[9px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-tight mt-1 opacity-70">
                                         EST. {formatToPHP(part.usdSrp)}
                                     </p>
                                 )}
                             </div>
-                            <div className="h-8 w-8 rounded-full bg-primary/5 flex items-center justify-center border border-primary/10 group-hover:border-primary/30 transition-colors">
-                                <Info className="h-4 w-4 text-primary" />
+                            <div className="h-6 w-6 md:h-8 md:w-8 rounded-full bg-primary/5 flex items-center justify-center border border-primary/10 group-hover:border-primary/30 transition-colors">
+                                <Info className="h-3 w-3 md:h-4 md:w-4 text-primary" />
                             </div>
                         </div>
 
                         <Separator className="bg-border/40" />
 
-                        <div className="grid grid-cols-2 gap-x-3 gap-y-2.5 py-1">
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 md:gap-x-3 md:gap-y-2.5 py-0.5 md:py-1">
                             {specKeys.map((key) => {
                                 const value = part.specifications?.[key] || (key === 'Wattage' ? part.wattage : null);
                                 return (
                                     <div key={key} className="min-w-0 group/spec">
-                                        <p className="text-[8px] text-muted-foreground uppercase font-black tracking-[0.1em] mb-1 group-hover/spec:text-primary transition-colors">{key}</p>
-                                        <p className="font-bold text-[11px] truncate leading-none uppercase tracking-tight" title={String(value || 'N/A')}>{String(value || 'N/A')}</p>
+                                        <p className="text-[6px] md:text-[8px] text-muted-foreground uppercase font-black tracking-[0.1em] mb-0.5 group-hover/spec:text-primary transition-colors">{key}</p>
+                                        <p className="font-bold text-[8px] md:text-[11px] truncate leading-none uppercase tracking-tight" title={String(value || 'N/A')}>{String(value || 'N/A')}</p>
                                     </div>
                                 );
                             })}
@@ -155,7 +155,7 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                             onClick={handleToggle}
                             disabled={(currentStock === 0 && !isSelected)}
                             className={cn(
-                                "w-full rounded-none h-12 mt-auto z-[41] transition-all duration-300 font-headline uppercase tracking-[0.2em] border-t text-[11px]",
+                                "w-full rounded-none h-9 md:h-12 mt-auto z-[41] transition-all duration-300 font-headline uppercase tracking-[0.2em] border-t text-[8px] md:text-[11px]",
                                 isSelected
                                     ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
                                     : "bg-primary/5 hover:bg-primary/10 text-primary border-border/50 hover:border-primary/30"
@@ -163,14 +163,14 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                             variant="ghost"
                         >
                             {isSelected ? (
-                                <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                                    <span>Added to System</span>
+                                <div className="flex items-center gap-1.5 md:gap-2">
+                                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white animate-pulse" />
+                                    <span>Added</span>
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-2">
-                                    <Plus className="h-4 w-4" />
-                                    <span>Sync Component</span>
+                                <div className="flex items-center gap-1.5 md:gap-2">
+                                    <Plus className="h-3 w-3 md:h-4 md:w-4" />
+                                    <span>Sync Rig</span>
                                 </div>
                             )}
                         </Button>

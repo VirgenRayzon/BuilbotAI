@@ -79,12 +79,12 @@ export function InventoryPrebuiltCard({
                     </div>
                 )}
 
-                <div className="p-3.5 pb-0 space-y-2.5 z-10 flex-grow flex flex-col">
+                <div className="p-2 md:p-3.5 pb-0 space-y-1.5 md:space-y-2.5 z-10 flex-grow flex flex-col">
                     <div className="flex justify-between items-start gap-2">
                         <div className={cn("space-y-0.5 flex-grow", isSelected ? "pl-5" : "")}>
                             <div className="flex items-center gap-2">
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">PREBUILT SYSTEM</p>
-                                <Badge variant="outline" className="h-4 px-1 text-[8px] uppercase tracking-tighter border-primary/20 text-primary/70">
+                                <p className="text-[8px] md:text-[10px] text-muted-foreground uppercase tracking-widest font-bold">PREBUILT</p>
+                                <Badge variant="outline" className="h-3 md:h-4 px-1 text-[7px] md:text-[8px] uppercase tracking-tighter border-primary/20 text-primary/70">
                                     {system.tier}
                                 </Badge>
                             </div>
@@ -96,22 +96,22 @@ export function InventoryPrebuiltCard({
                                     parts={parts}
                                     onSave={(data) => onUpdate(system.id, data)}
                                 >
-                                    <CardTitle className="text-base font-headline leading-snug line-clamp-2 h-10 hover:text-primary transition-colors">{system.name}</CardTitle>
+                                    <CardTitle className="text-xs md:text-base font-headline leading-snug line-clamp-2 h-8 md:h-10 hover:text-primary transition-colors">{system.name}</CardTitle>
                                 </AddPrebuiltDialog>
                             )}
                         </div>
                         <div className="flex items-start gap-1">
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-8 w-8 text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors -mt-1"
-                                        onClick={(e) => e.stopPropagation()}
-                                        title={isArchiveView ? "Restore" : "Archive"}
-                                    >
-                                        {isArchiveView ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
-                                    </Button>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors -mt-1"
+                                            onClick={(e) => e.stopPropagation()}
+                                            title={isArchiveView ? "Restore" : "Archive"}
+                                        >
+                                            {isArchiveView ? <RotateCcw className="h-3 w-3 md:h-4 md:w-4" /> : <Archive className="h-3 w-3 md:h-4 md:w-4" />}
+                                        </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                                     <AlertDialogHeader>
@@ -145,9 +145,9 @@ export function InventoryPrebuiltCard({
                                             variant="ghost"
                                             size="icon"
                                             onClick={(e) => e.stopPropagation()}
-                                            className="h-8 w-8 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors -mt-1 -mr-1"
+                                            className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors -mt-1 -mr-1"
                                         >
-                                            <Trash2 className="h-4 w-4" />
+                                            <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
                                         </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent onClick={(e) => e.stopPropagation()}>
@@ -205,16 +205,16 @@ export function InventoryPrebuiltCard({
                         </AddPrebuiltDialog>
                     )}
 
-                    <div className="flex justify-between items-center py-2 border-t border-border/10 mt-2">
+                     <div className="flex justify-between items-center py-1 md:py-2 border-t border-border/10 mt-1 md:mt-2">
                         <div className="flex flex-col">
-                           <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Starting Price</p>
-                           <p className="text-2xl font-black font-headline tracking-tighter text-primary">{formatCurrency(system.price)}</p>
+                           <p className="text-[7px] md:text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Starting Price</p>
+                           <p className="text-sm md:text-2xl font-black font-headline tracking-tighter text-primary">{formatCurrency(system.price)}</p>
                         </div>
                         <Button
                             variant="secondary"
                             size="sm"
                             className={cn(
-                                "h-8 px-3 gap-2 text-[10px] uppercase font-bold tracking-widest transition-all duration-300",
+                                "h-6 md:h-8 px-2 md:px-3 gap-1 md:gap-2 text-[7px] md:text-[10px] uppercase font-bold tracking-widest transition-all duration-300",
                                 isExpanded ? "bg-primary text-white hover:bg-primary/90" : "hover:bg-primary/10 hover:text-primary"
                             )}
                             onClick={(e) => {
@@ -223,15 +223,15 @@ export function InventoryPrebuiltCard({
                             }}
                         >
                             {isExpanded ? (
-                                <>Hide Specs <ChevronUp className="h-3 w-3" /></>
+                                <>Hide <ChevronUp className="h-2 w-2 md:h-3 md:w-3" /></>
                             ) : (
-                                <>View Specs <ChevronDown className="h-3 w-3" /></>
+                                <>Specs <ChevronDown className="h-2 w-2 md:h-3 md:w-3" /></>
                             )}
                         </Button>
                     </div>
 
-                    <div className="min-h-[40px]">
-                        <CardDescription className="text-[11px] line-clamp-2 leading-relaxed text-muted-foreground/80">
+                    <div className="min-h-[30px] md:min-h-[40px]">
+                        <CardDescription className="text-[9px] md:text-[11px] line-clamp-2 leading-tight md:leading-relaxed text-muted-foreground/80">
                             {system.description}
                         </CardDescription>
                     </div>
@@ -263,18 +263,18 @@ export function InventoryPrebuiltCard({
 
                 </div>
 
-                <div className="mt-auto p-3 pt-0 z-10 flex gap-2">
+                <div className="mt-auto p-2 md:p-3 pt-0 z-10 flex gap-2">
                     <Button
                         variant="outline"
                         size="sm"
-                        className="w-full text-[10px] uppercase font-bold tracking-widest h-9 bg-background/50 border-white/10 hover:border-primary/50 hover:bg-primary/5 group"
+                        className="w-full text-[8px] md:text-[10px] uppercase font-bold tracking-widest h-7 md:h-9 bg-background/50 border-white/10 hover:border-primary/50 hover:bg-primary/5 group"
                         onClick={(e) => e.stopPropagation()}
                         asChild
                     >
                         <a href={`/pre-builts/${system.id}`} className="flex items-center justify-center">
-                            <Info className="mr-2 h-3.5 w-3.5 transition-transform group-hover:scale-110" />
-                            Launch Product Page
-                            <ChevronRight className="ml-2 h-3 w-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                            <Info className="mr-1 md:mr-2 h-3 md:h-3.5 w-3 md:w-3.5 transition-transform group-hover:scale-110" />
+                            Launch Page
+                            <ChevronRight className="ml-1 md:ml-2 h-2.5 md:h-3 w-2.5 md:w-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                         </a>
                     </Button>
                 </div>

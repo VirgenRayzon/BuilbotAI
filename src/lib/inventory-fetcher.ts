@@ -1,5 +1,4 @@
 import { getAdminFirestore } from "@/firebase/server-init";
-import { collection, getDocs, limit, query } from "firebase/firestore";
 
 /**
  * Maps frontend category keys to Firestore collection names.
@@ -22,14 +21,16 @@ const CATEGORY_MAP: Record<string, string> = {
 /**
  * Fetches parts exclusively from the live Firestore database collections.
  */
-export async function getInventoryFromFirestore(category: string, searchTerm?: string, limitCount: number = 30): Promise<string[]> {
+export async function getInventoryFromFirestore(category: string, searchTerm?: string, limitCount: number = 50): Promise<string[]> {
     const normalizedCat = category.toLowerCase();
     
     try {
         const db = getAdminFirestore();
         const collectionName = CATEGORY_MAP[normalizedCat] || category;
-        const q = query(collection(db, collectionName), limit(limitCount));
-        const snapshot = await getDocs(q);
+        
+        // Use Admin SDK query syntax
+        let query = db.collection(collectionName).limit(limitCount);
+        const snapshot = await query.get();
         
         let docs = snapshot.docs;
 
@@ -44,24 +45,36 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
                 const name = (data.name || '').toLowerCase();
                 const brand = (data.brand || '').toLowerCase();
                 const series = (data.series || '').toLowerCase();
-                return name.includes(term) || brand.includes(term) || series.includes(term);
+                const model = (data.model || '').toLowerCase();
+                // Check all relevant fields for the search term
+                return name.includes(term) || 
+                       brand.includes(term) || 
+                       series.includes(term) ||
+                       model.includes(term);
             });
         }
         
+        if (docs.length === 0) {
+            console.log(`[Inventory] No results found for category: ${category}, searchTerm: ${searchTerm}`);
+        }
+
         return docs.map(doc => {
             const data = doc.data();
             const brand = data.brand || '';
             const name = data.name || 'Unknown Part';
+            const model = data.model || '';
             
             let displayName = name;
-            if (brand && name.toLowerCase().startsWith(brand.toLowerCase())) {
-                // Already prefixed
-            } else if (brand) {
-                displayName = `${brand} ${name}`;
+            // Ensure brand and model are part of the name if not already there
+            if (brand && !displayName.toLowerCase().includes(brand.toLowerCase())) {
+                displayName = `${brand} ${displayName}`;
+            }
+            if (model && !displayName.toLowerCase().includes(model.toLowerCase())) {
+                displayName = `${displayName} ${model}`;
             }
             
             const price = typeof data.price === 'number' ? ` - Price: ₱${data.price.toLocaleString()}` : '';
-            const imageUrl = data.image ? ` - Image: "${data.image}"` : '';
+            const imageUrl = data.imageUrl ? ` - Image: ${data.imageUrl}` : '';
             return `[ID: ${doc.id}] [${category.toUpperCase()}] Name: "${displayName}"${price}${imageUrl}`;
         });
     } catch (error) {

@@ -697,36 +697,38 @@ export default function AdminPage() {
             </div>
             
             <Tabs value={currentTab} onValueChange={handleTabChange}>
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-                    <TabsList>
-                        <TabsTrigger value="stock">
-                            <Package className="mr-2" />
-                            Manage Stock
-                        </TabsTrigger>
-                        <TabsTrigger value="prebuilts">
-                            <PackageCheck className="mr-2 h-4 w-4" />
-                            Manage Prebuilts
-                        </TabsTrigger>
-                        <TabsTrigger value="reservations" className="relative">
-                            <History className="mr-2 h-4 w-4" />
-                            Reservations
-                            {stats.pendingOrdersCount > 0 && (
-                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground animate-bounce">
-                                    {stats.pendingOrdersCount}
-                                </span>
-                            )}
-                        </TabsTrigger>
-                        {profile?.isSuperAdmin && (
-                            <TabsTrigger value="sales">
-                                <BarChart3 className="mr-2 h-4 w-4" />
-                                Sales
+                <div className="flex flex-col gap-4 mb-8">
+                    <div className="overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+                        <TabsList className="inline-flex w-auto min-w-full md:min-w-0">
+                            <TabsTrigger value="stock" className="whitespace-nowrap">
+                                <Package className="mr-2" />
+                                Manage Stock
                             </TabsTrigger>
-                        )}
-                        <TabsTrigger value="archive">
-                            <Archive className="mr-2 h-4 w-4" />
-                            Archive
-                        </TabsTrigger>
-                    </TabsList>
+                            <TabsTrigger value="prebuilts" className="whitespace-nowrap">
+                                <PackageCheck className="mr-2 h-4 w-4" />
+                                Manage Prebuilts
+                            </TabsTrigger>
+                            <TabsTrigger value="reservations" className="relative whitespace-nowrap">
+                                <History className="mr-2 h-4 w-4" />
+                                Reservations
+                                {stats.pendingOrdersCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground animate-bounce">
+                                        {stats.pendingOrdersCount}
+                                    </span>
+                                )}
+                            </TabsTrigger>
+                            {profile?.isSuperAdmin && (
+                                <TabsTrigger value="sales" className="whitespace-nowrap">
+                                    <BarChart3 className="mr-2 h-4 w-4" />
+                                    Sales
+                                </TabsTrigger>
+                            )}
+                            <TabsTrigger value="archive" className="whitespace-nowrap">
+                                <Archive className="mr-2 h-4 w-4" />
+                                Archive
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
                 </div>
 
                 <TabsContent value="stock" className="mt-6 space-y-6">
@@ -859,7 +861,7 @@ export default function AdminPage() {
                     </div>
 
                     {activeView === 'grid' ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
                             {currentParts.map((part) => (
                                 <InventoryPartCard
                                     key={part.id}
@@ -1012,7 +1014,7 @@ export default function AdminPage() {
                     </div>
 
                     {activeView === 'grid' ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-6">
                             {currentPrebuilts.map((system) => (
                                 <InventoryPrebuiltCard
                                     key={system.id}

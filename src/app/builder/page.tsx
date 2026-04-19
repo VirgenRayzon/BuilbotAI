@@ -708,7 +708,7 @@ export default function BuilderPage() {
             ) : sortedAndFilteredParts.length > 0 ? (
               view === 'grid' ? (
                 <>
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 md:gap-6">
                     {paginatedParts.map(part => (
                       <PartCard
                         key={part.id}

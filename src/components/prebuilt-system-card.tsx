@@ -177,22 +177,22 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
         "flex flex-col h-full overflow-hidden transform group hover:-translate-y-1.5 transition-all duration-300 ease-out hover:shadow-xl hover:border-primary/40 cursor-pointer relative bg-card/50 backdrop-blur-sm border-primary/10",
         (!isComplete || (!loadingStock && !isInStock)) && "grayscale-[0.8] opacity-80 border-destructive/20"
       )}>
-        <CardHeader className="p-3.5 pb-0 relative z-10">
-          <div className="aspect-square relative w-full overflow-hidden rounded-lg mb-2.5 shadow-sm group-hover:shadow-md transition-shadow bg-muted/30">
+        <CardHeader className="p-2 md:p-3.5 pb-0 relative z-10">
+          <div className="aspect-square relative w-full overflow-hidden rounded-lg mb-1.5 md:mb-2.5 shadow-sm group-hover:shadow-md transition-shadow bg-muted/30">
             <SmartImageMagnifier
               src={getOptimizedStorageUrl(system.imageUrl) || "/placeholder-system.png"}
               alt={system.name}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           </div>
-          <div className="flex justify-between items-start gap-2 h-10 mb-1">
-            <CardTitle className="text-base font-headline leading-tight line-clamp-2 group-hover:text-primary transition-colors flex-grow">{system.name}</CardTitle>
-            <Badge variant="outline" className="h-4 px-1 text-[8px] uppercase tracking-tighter border-primary/20 text-primary/70 shrink-0">
+          <div className="flex justify-between items-start gap-2 h-8 md:h-10 mb-1">
+            <CardTitle className="text-xs md:text-base font-headline leading-tight line-clamp-2 group-hover:text-primary transition-colors flex-grow">{system.name}</CardTitle>
+            <Badge variant="outline" className="h-3 md:h-4 px-1 text-[7px] md:text-[8px] uppercase tracking-tighter border-primary/20 text-primary/70 shrink-0">
               {system.tier}
             </Badge>
           </div>
 
-          <CardDescription className={`text-[11px] leading-relaxed text-muted-foreground/80 ${isExpanded ? '' : 'line-clamp-2 h-8'}`}>
+          <CardDescription className={`text-[9px] md:text-[11px] leading-tight md:leading-relaxed text-muted-foreground/80 ${isExpanded ? '' : 'line-clamp-2 h-6 md:h-8'}`}>
             {system.description}
           </CardDescription>
 
@@ -216,27 +216,27 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
 
         </CardHeader>
 
-        <CardFooter className="p-3.5 pt-0 flex flex-col gap-2 mt-auto relative z-10">
-          <div className="flex justify-between items-center w-full py-1">
-            <p className="text-xl font-bold font-headline text-primary tracking-tight">{formatCurrency(system.price)}</p>
+        <CardFooter className="p-2 md:p-3.5 pt-0 flex flex-col gap-1.5 md:gap-2 mt-auto relative z-10">
+          <div className="flex justify-between items-center w-full py-0.5 md:py-1">
+            <p className="text-sm md:text-xl font-bold font-headline text-primary tracking-tight">{formatCurrency(system.price)}</p>
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+              className="h-6 w-6 md:h-7 md:w-7 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
               onClick={toggleExpand}
             >
-              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {isExpanded ? <ChevronUp className="h-3 w-3 md:h-4 md:w-4" /> : <ChevronDown className="h-3 w-3 md:h-4 md:w-4" />}
             </Button>
           </div>
 
-          <div className="w-full h-9">
+          <div className="w-full h-8 md:h-9">
             {!isComplete ? (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="cursor-not-allowed">
-                      <Button size="sm" variant="outline" disabled className="w-full h-full opacity-50 bg-secondary/20 border-red-500/20 text-red-500 text-[10px] uppercase font-bold tracking-widest">
-                        <AlertCircle className="mr-2 h-3.5 w-3.5" />
+                      <Button size="sm" variant="outline" disabled className="w-full h-full opacity-50 bg-secondary/20 border-red-500/20 text-red-500 text-[8px] md:text-[10px] uppercase font-bold tracking-widest">
+                        <AlertCircle className="mr-1 md:mr-2 h-3 md:h-3.5 w-3 md:w-3.5" />
                         Incomplete
                       </Button>
                     </div>
@@ -251,8 +251,8 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="cursor-not-allowed">
-                      <Button size="sm" variant="outline" disabled className="w-full h-full opacity-50 bg-destructive/10 border-destructive/20 text-destructive text-[10px] uppercase font-bold tracking-widest">
-                        <AlertCircle className="mr-2 h-3.5 w-3.5" />
+                      <Button size="sm" variant="outline" disabled className="w-full h-full opacity-50 bg-destructive/10 border-destructive/20 text-destructive text-[8px] md:text-[10px] uppercase font-bold tracking-widest">
+                        <AlertCircle className="mr-1 md:mr-2 h-3 md:h-3.5 w-3 md:w-3.5" />
                         Diagnostics Failed
                       </Button>
                     </div>
@@ -267,14 +267,14 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
                 size="sm" 
                 onClick={handleReserve} 
                 disabled={loadingStock || isReserving} 
-                className="w-full h-full group/btn text-[10px] uppercase font-bold tracking-widest"
+                className="w-full h-full group/btn text-[8px] md:text-[10px] uppercase font-bold tracking-widest"
               >
                 {isReserving ? (
-                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="mr-1 md:mr-2 h-3 md:h-3.5 w-3 md:w-3.5 animate-spin" />
                 ) : (
-                  <ShieldCheck className="mr-2 h-3.5 w-3.5 transition-transform group-hover/btn:-translate-y-0.5" />
+                  <ShieldCheck className="mr-1 md:mr-2 h-3 md:h-3.5 w-3 md:w-3.5 transition-transform group-hover/btn:-translate-y-0.5" />
                 )}
-                {isReserving ? "Processing..." : "Reserve this Prebuilt"}
+                {isReserving ? "Processing..." : "Reserve Rig"}
               </Button>
             )}
           </div>

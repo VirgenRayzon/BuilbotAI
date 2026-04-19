@@ -14,6 +14,15 @@ import { ThemeToggle } from "./theme-toggle";
 import { UserNotifications } from "./user-notifications";
 import { NotificationCenter } from "./notification-center";
 import { motion } from "framer-motion";
+import { Menu } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export function Header() {
   const pathname = usePathname();
@@ -123,7 +132,7 @@ export function Header() {
             <Loader2 className="w-5 h-5 animate-spin text-primary/50" />
           ) : authUser ? (
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 p-1 bg-muted/40 rounded-xl border border-border/20">
+              <div className="hidden sm:flex items-center gap-1.5 p-1 bg-muted/40 rounded-xl border border-border/20">
                 {!profile?.isManager && <UserNotifications />}
                 {profile?.isManager && <NotificationCenter />}
                 <ThemeToggle />
@@ -133,11 +142,74 @@ export function Header() {
                 variant="ghost" 
                 size="sm" 
                 onClick={handleSignOut} 
-                className="rounded-xl h-9 px-4 text-[10px] font-bold uppercase tracking-widest border border-destructive/20 hover:bg-destructive/10 hover:text-destructive transition-all duration-300 group"
+                className="hidden sm:flex rounded-xl h-9 px-4 text-[10px] font-bold uppercase tracking-widest border border-destructive/20 hover:bg-destructive/10 hover:text-destructive transition-all duration-300 group"
               >
                 <LogOut className="mr-2 h-3.5 w-3.5 transition-transform group-hover:-translate-x-1" />
                 Sign Out
               </Button>
+
+              {/* Mobile Menu Trigger */}
+              <div className="md:hidden">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl border border-border/20 bg-muted/40">
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="bg-background/95 backdrop-blur-xl border-border/40 w-[280px]">
+                    <SheetHeader className="sr-only">
+                      <SheetTitle>Navigation Menu</SheetTitle>
+                      <SheetDescription>
+                        Access application pages and user settings.
+                      </SheetDescription>
+                    </SheetHeader>
+                    <div className="flex flex-col gap-6 mt-8">
+                      <div className="flex items-center justify-between">
+                        <Logo />
+                        <ThemeToggle />
+                      </div>
+                      <nav className="flex flex-col gap-2">
+                        {filteredLinks.map((link) => {
+                          const isActive = pathname === link.href;
+                          return (
+                            <Link
+                              key={link.href}
+                              href={link.href}
+                              className={cn(
+                                "flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-widest transition-all",
+                                isActive 
+                                  ? "bg-primary/10 text-primary border border-primary/20" 
+                                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground border border-transparent"
+                              )}
+                            >
+                              <span className="flex items-center gap-2">
+                                {link.label}
+                                {(link as any).admin && profile?.isSuperAdmin && <Shield className="w-4 h-4" />}
+                              </span>
+                              {isActive && <div className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                            </Link>
+                          );
+                        })}
+                      </nav>
+                      <div className="mt-auto space-y-4">
+                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/40 border border-border/20">
+                           {!profile?.isManager && <UserNotifications />}
+                           {profile?.isManager && <NotificationCenter />}
+                           <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Notifications</span>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          onClick={handleSignOut} 
+                          className="w-full justify-start rounded-xl h-12 px-4 text-xs font-bold uppercase tracking-widest border border-destructive/20 text-destructive hover:bg-destructive/10"
+                        >
+                          <LogOut className="mr-3 h-4 w-4" />
+                          Sign Out
+                        </Button>
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
             </div>
           ) : (
             <div className="flex items-center gap-2">
