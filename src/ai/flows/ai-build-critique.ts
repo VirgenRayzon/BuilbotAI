@@ -102,7 +102,7 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
     // 3. Fetch store inventory exclusively from Live Firestore
     const buildCategories = Object.keys(input);
     const inventoryResults = await Promise.all(
-        buildCategories.map(cat => getInventoryFromFirestore(cat, undefined, 20))
+        buildCategories.map(cat => getInventoryFromFirestore(cat, undefined, 5))
     );
     const storeInventory = inventoryResults.flat().join('\n');
 
@@ -154,9 +154,10 @@ If the build is completely empty, kindly invite the user to start picking out pa
         const analysisPrompt = `${prompt}\n\nProvide your analysis in clear text including the pros/cons, bottleneck explanation, FPS estimates, and suggestions. Use Google Search if you need benchmarks or specific info.`;
 
         const analysisResponse = await ai.generate({
+            model: 'googleai/gemini-3-flash-preview',
             prompt: analysisPrompt,
             config: {
-                temperature: 0.2, // Slightly higher for analysis
+                temperature: 0.2,
                 googleSearchRetrieval: {}
             },
         });
@@ -179,6 +180,7 @@ Required Output Schema:
 Output ONLY the JSON.`;
 
         const formatResponse = await ai.generate({
+            model: 'googleai/gemini-3-flash-preview',
             prompt: formatPrompt,
             output: {
                 schema: aiBuildCritiqueOutputSchema,

@@ -20,6 +20,9 @@ interface BuilderFloatingChatProps {
 export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState("");
+    const [elapsedTime, setElapsedTime] = useState(0);
+    const [timerActive, setTimerActive] = useState(false);
+
     const { 
         messages, 
         status, 
@@ -35,13 +38,31 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
         onFinish: ({ messages: updatedMessages }) => {
             console.log("Chat finished, saving history...");
             localStorage.setItem('pc_chat_history_v2', JSON.stringify(updatedMessages));
+            setTimerActive(false);
         },
         onError: (err) => {
             console.error("Chat error:", err);
+            setTimerActive(false);
         }
     });
 
     const isLoading = status === 'streaming' || status === 'submitted';
+    
+    // Timer logic
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (timerActive) {
+            const start = Date.now();
+            interval = setInterval(() => {
+                setElapsedTime(Math.round((Date.now() - start) / 1000));
+            }, 100);
+        } else if (!isLoading) {
+            // Keep the last time visible for a moment if needed, 
+            // but for now we just reset when not active.
+        }
+        return () => clearInterval(interval);
+    }, [timerActive, isLoading]);
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Auto-scroll to bottom
@@ -95,6 +116,8 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
         e.preventDefault();
         if (!input.trim() || isLoading) return;
         
+        setElapsedTime(0);
+        setTimerActive(true);
         sendMessage({ text: input });
         setInput("");
     };
@@ -253,10 +276,15 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                                         <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce shadow-[0_0_10px_rgba(6,182,212,0.8)]" style={{ animationDelay: '150ms' }}></span>
                                                         <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce shadow-[0_0_10px_rgba(6,182,212,0.8)]" style={{ animationDelay: '300ms' }}></span>
                                                     </div>
-                                                    <div className="px-1">
+                                                    <div className="px-1 flex items-center gap-2">
                                                         <span className="text-[10px] uppercase tracking-[0.2em] font-black text-cyan-400/60 animate-pulse">
                                                             {messages[messages.length - 1]?.role === 'assistant' ? 'Researching...' : 'Thinking...'}
                                                         </span>
+                                                        {timerActive && (
+                                                            <span className="text-[9px] font-mono text-cyan-500/80 font-bold bg-cyan-500/5 px-1.5 py-0.5 rounded border border-cyan-500/10">
+                                                                {elapsedTime}s
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </motion.div>

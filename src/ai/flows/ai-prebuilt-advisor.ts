@@ -51,6 +51,7 @@ const prompt = ai.definePrompt({
   },
   output: { schema: AiPrebuiltAdvisorOutputSchema },
   config: {
+    model: 'googleai/gemini-3-flash-preview',
     temperature: 0.2,
   },
   prompt: `You are an expert PC Builder. A user has selected a list of components for a pre-built system.
@@ -121,6 +122,7 @@ Tasks:
 Provide details in clear text.`;
 
     const analysisResponse = await ai.generate({
+      model: 'googleai/gemini-3-flash-preview',
       prompt: analysisPrompt,
       config: {
         temperature: 0.2,

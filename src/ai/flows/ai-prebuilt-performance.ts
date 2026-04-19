@@ -84,6 +84,7 @@ ${buildContext}
         const analysisPrompt = `${prompt}\n\nProvide your analysis in clear text focusing exclusively on the pros/strengths. Use Google Search if you need specific component capabilities to boast about.`;
 
         const analysisResponse = await ai.generate({
+            model: 'googleai/gemini-3-flash-preview',
             prompt: analysisPrompt,
             config: {
                 temperature: 0.3, // Slightly creative for marketing
@@ -105,6 +106,7 @@ Required Output Schema:
 Output ONLY the JSON.`;
 
         const formatResponse = await ai.generate({
+            model: 'googleai/gemini-3-flash-preview',
             prompt: formatPrompt,
             output: {
                 schema: aiPrebuiltPerformanceOutputSchema,

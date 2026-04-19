@@ -32,6 +32,10 @@ const AiBuildAdvisorRecommendationsInputSchema = z.object({
     .string()
     .optional()
     .describe('Any additional specific requirements or preferences from the user.'),
+  allowFlexibleBudget: z
+    .boolean()
+    .optional()
+    .describe('Whether the AI is allowed to exceed the budget by up to 30% for significantly better value/performance.'),
 });
 export type AiBuildAdvisorRecommendationsInput = z.infer<
   typeof AiBuildAdvisorRecommendationsInputSchema
@@ -102,6 +106,7 @@ const aiBuildAdvisorRecommendationsPrompt = ai.definePrompt({
   name: 'aiBuildAdvisorRecommendationsPrompt',
   input: { schema: AiBuildAdvisorRecommendationsInputSchema.extend({ knowledgeContext: z.string().optional() }) },
   output: { schema: AiBuildAdvisorRecommendationsOutputSchema },
+  model: 'googleai/gemini-3-flash-preview',
   config: { temperature: 0.1 },
   prompt: `You are an expert PC building advisor specializing in the Philippine market. Your goal is to recommend a set of compatible core components (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, Cooler) for a user based on their specific needs.
 
@@ -117,7 +122,12 @@ CRITICAL RULES:
 2. LOCAL PRICING: Provide estimated prices that reflect the current PC component market in the Philippines (e.g., shops like Dynaquest, PCHub, Gilmore prices).
 3. INVENTORY AVAILABILITY: Only recommend parts that are commonly available in standard PC parts inventories. If the user provides a specific inventory, prioritize items from that list.
 4. COMPATIBILITY: Ensure all recommended components are 100% compatible.
-5. BUDGET ADHERENCE: Strictly follow the PHP budget provided by the user.
+5. BUDGET ADHERENCE: 
+   {{#if allowFlexibleBudget}}
+   - The user has enabled "Flexible Budget". You are ALLOWED to exceed the budget by up to 30% if it results in a massive performance jump (e.g., stepping up to a much better GPU).
+   {{else}}
+   - Strictly follow the PHP budget provided by the user. DO NOT exceed it.
+   {{/if}}
 
 Provide a brief summary of the overall build strategy in the context of the Philippine market, and then detail the recommendations for each component, including the model name, estimated PHP price, and a concise reason for its selection (mentioning why it's a good value in PHP where applicable). Also provide an estimated total wattage for the build.
 
@@ -125,6 +135,11 @@ User's PC building goals:
 Intended Use: {{{intendedUse}}}
 Budget: {{{budget}}} (PHP)
 Desired Performance Level: {{{performanceLevel}}}
+{{#if allowFlexibleBudget}}
+BUDGET MODE: FLEXIBLE (Max 30% Overstep Allowed)
+{{else}}
+BUDGET MODE: STRICT (DO NOT EXCEED)
+{{/if}}
 {{#if additionalNotes}}
 Additional Notes: {{{additionalNotes}}}
 {{/if}}

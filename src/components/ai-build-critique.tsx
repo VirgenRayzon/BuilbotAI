@@ -41,17 +41,36 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
     const [internalError, setInternalError] = useState<string | null>(null);
     const [loadingStep, setLoadingStep] = useState(0);
 
-    // Dynamic loading message logic
+    const [elapsedTime, setElapsedTime] = useState(0);
+    const [finalResponseTime, setFinalResponseTime] = useState<number | null>(null);
+
+    // Dynamic loading message and timer logic
     useEffect(() => {
         let interval: NodeJS.Timeout;
+        let timerInterval: NodeJS.Timeout;
+
         if (internalLoading || externalLoading) {
+            setFinalResponseTime(null);
+            // Steps interval
             interval = setInterval(() => {
                 setLoadingStep((prev) => (prev + 1) % LOADING_STEPS.length);
             }, 3000);
+
+            // Timer interval
+            const start = Date.now();
+            timerInterval = setInterval(() => {
+                setElapsedTime(Math.round((Date.now() - start) / 1000));
+            }, 100);
         } else {
             setLoadingStep(0);
+            if (elapsedTime > 0) {
+                setFinalResponseTime(elapsedTime);
+            }
         }
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            clearInterval(timerInterval);
+        };
     }, [internalLoading, externalLoading]);
 
     const isControlled = externalAnalysis !== undefined || externalLoading !== undefined || externalError !== undefined;
@@ -138,9 +157,17 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
         <Card className="w-full mt-6 bg-gradient-to-br from-card to-secondary/10 border-primary/20 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-headline text-2xl">
-                    <BrainCircuit className="h-6 w-6 text-primary" />
-                    Buildbot Build Critique
+                <CardTitle className="flex items-center justify-between font-headline text-2xl">
+                    <div className="flex items-center gap-2">
+                        <BrainCircuit className="h-6 w-6 text-primary" />
+                        Buildbot Build Critique
+                    </div>
+                    {finalResponseTime && !loading && (
+                        <div className="flex items-center gap-1.5 opacity-40 hover:opacity-100 transition-opacity">
+                            <Bot className="h-3.5 w-3.5 text-primary" />
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Analyzed in {finalResponseTime}s</span>
+                        </div>
+                    )}
                 </CardTitle>
                 <CardDescription>
                     Get an expert AI analysis of your current parts selection.
@@ -180,9 +207,14 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                                     transition={{ duration: 0.3 }}
                                     className="space-y-1"
                                 >
-                                    <p className="text-sm font-black font-headline text-primary uppercase tracking-[0.2em]">
-                                        {LOADING_STEPS[loadingStep].title}…
-                                    </p>
+                                    <div className="flex items-center justify-center gap-3">
+                                        <p className="text-sm font-black font-headline text-primary uppercase tracking-[0.2em]">
+                                            {LOADING_STEPS[loadingStep].title}…
+                                        </p>
+                                        <span className="text-[10px] font-mono text-primary/80 font-bold bg-primary/5 px-1.5 py-0.5 rounded border border-primary/10">
+                                            {elapsedTime}s
+                                        </span>
+                                    </div>
                                     <p className="text-[11px] text-muted-foreground font-medium tracking-wide">
                                         {LOADING_STEPS[loadingStep].sub}
                                     </p>
@@ -203,25 +235,25 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                 {analysis && !loading && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
-                        {/* Pros and Cons */}
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/20">
-                                <h4 className="font-semibold text-green-600 dark:text-green-400 flex items-center gap-2 mb-3">
-                                    <ThumbsUp className="h-5 w-5" /> Pros
+                        {/* Strengths and Opportunities */}
+                        <div className="space-y-4">
+                            <div className="bg-emerald-500/10 rounded-lg p-5 border border-emerald-500/20">
+                                <h4 className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-2 mb-3">
+                                    <ThumbsUp className="h-5 w-5" /> Strengths
                                 </h4>
                                 <ul className="space-y-2 text-sm">
                                     {(analysis.pros || analysis.prosCons?.pros || []).map((pro: string, idx: number) => (
-                                        <li key={idx} className="flex gap-2"><span className="text-green-500">•</span> {pro}</li>
+                                        <li key={idx} className="flex gap-2"><span className="text-emerald-500">•</span> {pro}</li>
                                     ))}
                                 </ul>
                             </div>
-                            <div className="bg-red-500/10 rounded-lg p-4 border border-red-500/20">
-                                <h4 className="font-semibold text-red-600 dark:text-red-400 flex items-center gap-2 mb-3">
-                                    <ThumbsDown className="h-5 w-5" /> Optimization Opportunities
+                            <div className="bg-blue-500/10 rounded-lg p-5 border border-blue-500/20">
+                                <h4 className="font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-2 mb-3">
+                                    <Sparkles className="h-5 w-5" /> Optimization Opportunities
                                 </h4>
                                 <ul className="space-y-2 text-sm">
                                     {(analysis.cons || analysis.prosCons?.cons || []).map((con: string, idx: number) => (
-                                        <li key={idx} className="flex gap-2"><span className="text-red-500">•</span> {con}</li>
+                                        <li key={idx} className="flex gap-2"><span className="text-blue-500">•</span> {con}</li>
                                     ))}
                                 </ul>
                             </div>

@@ -74,9 +74,12 @@ INSTRUCTIONS:
             apiKey: apiKey,
         });
 
+        const recentMessages = messages.slice(-10);
+
         const result = await streamText({
-            model: googleProvider('gemini-2.5-pro'),
-            messages: await convertToModelMessages(messages),
+            model: googleProvider('gemini-3-flash-preview'),
+            maxOutputTokens: 1000,
+            messages: await convertToModelMessages(recentMessages),
             system: systemInstruction,
             tools: {
                 searchInventory: tool({

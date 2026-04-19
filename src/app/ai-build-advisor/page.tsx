@@ -92,14 +92,7 @@ export default function AiBuildAdvisorPage() {
   const { data: cases } = useCollection<PartWithoutCategory>(caseQuery);
   const coolerQuery = useMemo(() => firestore ? collection(firestore, 'Cooler') : null, [firestore]);
   const { data: coolers } = useCollection<PartWithoutCategory>(coolerQuery);
-  const monitorQuery = useMemo(() => firestore ? collection(firestore, 'Monitor') : null, [firestore]);
-  const { data: monitors } = useCollection<PartWithoutCategory>(monitorQuery);
-  const keyboardQuery = useMemo(() => firestore ? collection(firestore, 'Keyboard') : null, [firestore]);
-  const { data: keyboards } = useCollection<PartWithoutCategory>(keyboardQuery);
-  const mouseQuery = useMemo(() => firestore ? collection(firestore, 'Mouse') : null, [firestore]);
-  const { data: mice } = useCollection<PartWithoutCategory>(mouseQuery);
-  const headsetQuery = useMemo(() => firestore ? collection(firestore, 'Headset') : null, [firestore]);
-  const { data: headsets } = useCollection<PartWithoutCategory>(headsetQuery);
+
 
   // Combine all parts and add category back
   const allParts = useMemo(() => {
@@ -112,12 +105,8 @@ export default function AiBuildAdvisorPage() {
     psus?.forEach(p => parts.push({ ...p, category: 'PSU' }));
     cases?.forEach(p => parts.push({ ...p, category: 'Case' }));
     coolers?.forEach(p => parts.push({ ...p, category: 'Cooler' }));
-    monitors?.forEach(p => parts.push({ ...p, category: 'Monitor' }));
-    keyboards?.forEach(p => parts.push({ ...p, category: 'Keyboard' }));
-    mice?.forEach(p => parts.push({ ...p, category: 'Mouse' }));
-    headsets?.forEach(p => parts.push({ ...p, category: 'Headset' }));
     return parts;
-  }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers, monitors, keyboards, mice, headsets]);
+  }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers]);
 
   // Redirect unauthenticated users to sign-in or admins to admin dashboard
   useEffect(() => {
@@ -137,10 +126,6 @@ export default function AiBuildAdvisorPage() {
     return () => setIsPageLoading(false);
   }, [userLoading, setIsPageLoading]);
 
-  if (userLoading) {
-    return null;
-  }
-
   const [build, setBuild] = useState<Build | null>(null);
   const [builderState, setBuilderState] = useState<Record<string, ComponentData | ComponentData[] | null> | null>(null);
   const [totalPrice, setTotalPrice] = useState(0);
@@ -153,6 +138,7 @@ export default function AiBuildAdvisorPage() {
   const [critiqueAnalysis, setCritiqueAnalysis] = useState<any>(null);
   const [critiqueLoading, setCritiqueLoading] = useState(false);
   const [critiqueError, setCritiqueError] = useState<string | null>(null);
+
 
   const getBuildKey = (state: Record<string, ComponentData | ComponentData[] | null> | null) => {
     if (!state) return "";
@@ -188,10 +174,10 @@ export default function AiBuildAdvisorPage() {
                 const analysis = parsedCache[buildKey];
                 // DETECT LEGACY SCHEMA: If 'pros' is missing but 'prosCons' exists, clear the cache to avoid crash
                 if (!analysis.pros && analysis.prosCons) {
-                    console.log("Legacy critique schema detected. Clearing cache.");
-                    localStorage.removeItem('pc_critique_cache');
+                  console.log("Legacy critique schema detected. Clearing cache.");
+                  localStorage.removeItem('pc_critique_cache');
                 } else {
-                    setCritiqueAnalysis(analysis);
+                  setCritiqueAnalysis(analysis);
                 }
               }
             } catch (e) {
@@ -203,24 +189,46 @@ export default function AiBuildAdvisorPage() {
         console.error("Failed to parse saved build", e);
       }
     }
+
+    // Load saved AI build recommendation
+    const savedAiBuild = localStorage.getItem('pc_ai_build_recommendation');
+    if (savedAiBuild) {
+        try {
+            const parsed = JSON.parse(savedAiBuild);
+            setBuild(parsed);
+            // Calculate total price for saved build
+            const total = 
+                (parsed.cpu.price || 0) +
+                (parsed.gpu.price || 0) +
+                (parsed.motherboard.price || 0) +
+                (parsed.ram.price || 0) +
+                (parsed.storage.price || 0) +
+                (parsed.psu.price || 0) +
+                (parsed.case.price || 0) +
+                (parsed.cooler.price || 0);
+            setTotalPrice(total);
+        } catch (e) {
+            console.error("Failed to parse saved AI build", e);
+        }
+    }
   }, []);
 
   const handlePartToggle = (part: Part) => {
     if (!builderState) {
-        // Initialize if empty
-        const initial = {
-            CPU: null, GPU: null, Motherboard: null, RAM: [], Storage: [], PSU: null, Case: null, Cooler: null,
-            Monitor: null, Keyboard: null, Mouse: null, Headset: null,
-        };
-        const next = { ...initial } as any;
-        if (part.category === 'RAM' || part.category === 'Storage') {
-            next[part.category] = [part];
-        } else {
-            next[part.category] = part;
-        }
-        setBuilderState(next);
-        localStorage.setItem('pc_builder_state', JSON.stringify(next));
-        return;
+      // Initialize if empty
+      const initial = {
+        CPU: null, GPU: null, Motherboard: null, RAM: [], Storage: [], PSU: null, Case: null, Cooler: null,
+        Monitor: null, Keyboard: null, Mouse: null, Headset: null,
+      };
+      const next = { ...initial } as any;
+      if (part.category === 'RAM' || part.category === 'Storage') {
+        next[part.category] = [part];
+      } else {
+        next[part.category] = part;
+      }
+      setBuilderState(next);
+      localStorage.setItem('pc_builder_state', JSON.stringify(next));
+      return;
     }
 
     const next = { ...builderState } as any;
@@ -228,21 +236,21 @@ export default function AiBuildAdvisorPage() {
 
     // Validate compatibility
     const { compatible, message } = checkCompatibility(part, next);
-    
+
     if (category === 'RAM' || category === 'Storage') {
       const current = Array.isArray(next[category]) ? next[category] : [];
       const index = current.findIndex((p: any) => p.id === part.id);
-      
+
       if (index > -1) {
         current.splice(index, 1);
       } else {
         if (!compatible) {
-            toast({
-              variant: 'destructive',
-              title: 'Compatibility Error',
-              description: message || `This ${category} is not compatible with your current build.`
-            });
-            return;
+          toast({
+            variant: 'destructive',
+            title: 'Compatibility Error',
+            description: message || `This ${category} is not compatible with your current build.`
+          });
+          return;
         }
         current.push(part);
       }
@@ -267,26 +275,26 @@ export default function AiBuildAdvisorPage() {
   // Handle AI suggestions for Quick Add
   useEffect(() => {
     const findPartRobustly = (suggestion: string, partId?: string) => {
-        // 0. ID Match (Highest Priority)
-        if (partId) {
-          const part = allParts.find(p => p.id === partId);
-          if (part) return part;
-        }
-  
-        // 1. Exact Match
-        let part = allParts.find(p => p.name.toLowerCase() === suggestion.toLowerCase());
+      // 0. ID Match (Highest Priority)
+      if (partId) {
+        const part = allParts.find(p => p.id === partId);
         if (part) return part;
-  
-        // 2. Remove parentheticals
-        const cleanSuggestion = suggestion.replace(/\s*\(.*?\)\s*/g, '').trim().toLowerCase();
-        part = allParts.find(p => p.name.toLowerCase() === cleanSuggestion);
-        if (part) return part;
-  
-        // 3. Substring match
-        part = allParts.find(p => p.name.toLowerCase().includes(cleanSuggestion) || cleanSuggestion.includes(p.name.toLowerCase()));
-        if (part) return part;
-  
-        return null;
+      }
+
+      // 1. Exact Match
+      let part = allParts.find(p => p.name.toLowerCase() === suggestion.toLowerCase());
+      if (part) return part;
+
+      // 2. Remove parentheticals
+      const cleanSuggestion = suggestion.replace(/\s*\(.*?\)\s*/g, '').trim().toLowerCase();
+      part = allParts.find(p => p.name.toLowerCase() === cleanSuggestion);
+      if (part) return part;
+
+      // 3. Substring match
+      part = allParts.find(p => p.name.toLowerCase().includes(cleanSuggestion) || cleanSuggestion.includes(p.name.toLowerCase()));
+      if (part) return part;
+
+      return null;
     };
 
     const handleAddSuggestion = (e: any) => {
@@ -296,8 +304,8 @@ export default function AiBuildAdvisorPage() {
       if (part) {
         handlePartToggle(part);
         toast({
-            title: "Part Added",
-            description: `Successfully added ${part.name} to your build.`
+          title: "Part Added",
+          description: `Successfully added ${part.name} to your build.`
         });
       } else {
         toast({
@@ -311,6 +319,29 @@ export default function AiBuildAdvisorPage() {
     window.addEventListener('add-suggestion', handleAddSuggestion);
     return () => window.removeEventListener('add-suggestion', handleAddSuggestion);
   }, [allParts, builderState]);
+
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [finalResponseTime, setFinalResponseTime] = useState<number | null>(null);
+
+  // Timer logic for build generation
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPending) {
+      setFinalResponseTime(null);
+      const start = Date.now();
+      interval = setInterval(() => {
+        setElapsedTime(Math.round((Date.now() - start) / 1000));
+      }, 100);
+    } else if (elapsedTime > 0) {
+      setFinalResponseTime(elapsedTime);
+    }
+    return () => clearInterval(interval);
+  }, [isPending]);
+
+  if (userLoading) {
+    return null;
+  }
+
 
   const handleGetRecommendations = (data: FormSchema) => {
     startTransition(async () => {
@@ -331,13 +362,55 @@ export default function AiBuildAdvisorPage() {
         type: keyof typeof componentMetadata
       ) => {
         const metadata = componentMetadata[type];
-        const price = (component as any).estimatedPrice || 0;
+        let price = (component as any).estimatedPrice || 0;
+        let modelName = (component as any).model || "";
+        let description = (component as any).description || "";
+
+        // Try to find real image and accurate price from database collections
+        let realImageUrl = metadata.image.imageUrl;
+        let realPartId = `ai-suggested-${type}`;
+        let realModel = modelName;
+
+        const normalizedModelName = modelName.toLowerCase();
+        let collection: any[] = [];
+
+        if (type === 'cpu') collection = cpus || [];
+        else if (type === 'gpu') collection = gpus || [];
+        else if (type === 'motherboard') collection = motherboards || [];
+        else if (type === 'ram') collection = rams || [];
+        else if (type === 'storage') collection = storages || [];
+        else if (type === 'psu') collection = psus || [];
+        else if (type === 'case') collection = cases || [];
+        else if (type === 'cooler') collection = coolers || [];
+
+        // Robust matching: Check model field, name field, and substrings
+        const match = collection.find(p => {
+          const pModel = (p.model || "").toLowerCase();
+          const pName = (p.name || "").toLowerCase();
+          return (
+            (pModel && (normalizedModelName.includes(pModel) || pModel.includes(normalizedModelName))) ||
+            (pName && (normalizedModelName.includes(pName) || pName.includes(normalizedModelName)))
+          );
+        });
+
+        if (match) {
+          realImageUrl = match.imageUrl;
+          realPartId = match.id;
+          realModel = match.model || match.name;
+          // Use real database price if AI estimate is 0 or significantly different?
+          // Actually, prioritize AI price if it exists and is non-zero, else database
+          if (price === 0 && match.price) {
+            price = match.price;
+          }
+        }
+
         return {
-          ...component,
-          id: `ai-suggested-${type}`,
+          model: realModel,
+          description: description,
+          id: realPartId,
           price,
           icon: metadata.icon,
-          image: metadata.image.imageUrl,
+          image: realImageUrl,
           imageHint: metadata.image.imageHint,
         };
       };
@@ -356,6 +429,9 @@ export default function AiBuildAdvisorPage() {
       };
 
       setBuild(newBuild);
+      localStorage.setItem('pc_ai_build_recommendation', JSON.stringify(newBuild));
+      
+      // Explicitly calculate total from processed components to ensure accuracy
       const total =
         newBuild.cpu.price +
         newBuild.gpu.price +
@@ -365,6 +441,7 @@ export default function AiBuildAdvisorPage() {
         newBuild.psu.price +
         newBuild.case.price +
         newBuild.cooler.price;
+      
       setTotalPrice(total);
     });
   };
@@ -481,7 +558,7 @@ export default function AiBuildAdvisorPage() {
   };
 
   const generativeContent = (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="grid lg:grid-cols-12 gap-8 h-full"
@@ -489,8 +566,8 @@ export default function AiBuildAdvisorPage() {
       <aside className="lg:col-span-4 lg:sticky lg:top-24 self-start">
         <div className={cn(
           "p-8 rounded-3xl border backdrop-blur-xl shadow-2xl transition-all duration-500",
-          isDark 
-            ? "bg-slate-900/40 border-white/5 shadow-black/40" 
+          isDark
+            ? "bg-slate-900/40 border-white/5 shadow-black/40"
             : "bg-white/60 border-slate-200 shadow-slate-200/50"
         )}>
           <div className="flex items-center gap-4 mb-8">
@@ -510,7 +587,7 @@ export default function AiBuildAdvisorPage() {
               </div>
             </div>
           </div>
-          
+
           <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
             Describe your hardware requirements, budget, or preferred games. Our neural engine will architect the perfect build for you.
           </p>
@@ -572,7 +649,7 @@ export default function AiBuildAdvisorPage() {
                 </div>
               </div>
 
-              <BuildSummary build={build} isPending={isPending} />
+              <BuildSummary build={build} isPending={isPending} elapsedTime={elapsedTime} finalResponseTime={finalResponseTime} totalPrice={totalPrice} />
             </motion.div>
           ) : (
             <motion.div
@@ -610,181 +687,181 @@ export default function AiBuildAdvisorPage() {
       )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
       <main className="flex-1 w-full max-w-[1800px] mx-auto p-4 md:p-8 pt-24 md:pt-32 relative z-10">
-      <div className="relative mb-12">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="relative z-10"
-        >
-          <div className="flex items-center gap-3 mb-4">
-            <div className="h-px w-8 bg-primary" />
-            <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary">System Advisor V2</span>
-          </div>
-          <h1 className="text-5xl md:text-6xl font-headline font-black uppercase tracking-tighter leading-none">
-            AI Build <span className="text-primary italic">Advisor</span>
-          </h1>
-          <p className="text-muted-foreground mt-4 max-w-2xl text-lg leading-relaxed">
-            Get intelligent hardware recommendations and professional critiques for your custom build through our neural-trained AI model.
-          </p>
-        </motion.div>
-        
-        {/* Background Accent */}
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-      </div>
+        <div className="relative mb-12">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="relative z-10"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-px w-8 bg-primary" />
+              <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary">System Advisor V2</span>
+            </div>
+            <h1 className="text-5xl md:text-6xl font-headline font-black uppercase tracking-tighter leading-none">
+              AI Build <span className="text-primary italic">Advisor</span>
+            </h1>
+            <p className="text-muted-foreground mt-4 max-w-2xl text-lg leading-relaxed">
+              Get intelligent hardware recommendations and professional critiques for your custom build through our neural-trained AI model.
+            </p>
+          </motion.div>
 
-      {builderState ? (
-        <Tabs defaultValue="critique" className="w-full h-full">
-          <div className="flex justify-center mb-12">
-            <TabsList className={cn(
-              "p-1 h-14 rounded-2xl border backdrop-blur-md",
-              isDark ? "bg-slate-900/60 border-white/5" : "bg-white/60 border-slate-200"
-            )}>
-              <TabsTrigger 
-                value="critique" 
-                className="rounded-xl px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300 font-bold uppercase tracking-widest text-[10px]"
-              >
-                Review Current Build
-              </TabsTrigger>
-              <TabsTrigger 
-                value="generate"
-                className="rounded-xl px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300 font-bold uppercase tracking-widest text-[10px]"
-              >
-                Generate New Build
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          {/* Background Accent */}
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+        </div>
 
-          <TabsContent value="critique" className="mt-0 h-full">
-            <div className="grid lg:grid-cols-12 gap-8 h-full">
+        {builderState ? (
+          <Tabs defaultValue="critique" className="w-full h-full">
+            <div className="flex justify-center mb-12">
+              <TabsList className={cn(
+                "p-1 h-14 rounded-2xl border backdrop-blur-md",
+                isDark ? "bg-slate-900/60 border-white/5" : "bg-white/60 border-slate-200"
+              )}>
+                <TabsTrigger
+                  value="critique"
+                  className="rounded-xl px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300 font-bold uppercase tracking-widest text-[10px]"
+                >
+                  Review Current Build
+                </TabsTrigger>
+                <TabsTrigger
+                  value="generate"
+                  className="rounded-xl px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300 font-bold uppercase tracking-widest text-[10px]"
+                >
+                  Generate New Build
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-              {isInsightsPinned && (
-                <div className="hidden lg:block lg:col-span-3 h-[calc(100vh-140px)] sticky top-24">
+            <TabsContent value="critique" className="mt-0 h-full">
+              <div className="grid lg:grid-cols-12 gap-8 h-full">
+
+                {isInsightsPinned && (
+                  <div className="hidden lg:block lg:col-span-3 h-[calc(100vh-140px)] sticky top-24">
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="h-full"
+                    >
+                      <FloatingInsights
+                        isOpen={true}
+                        onClose={() => setIsInsightsPinned(false)}
+                        build={builderState}
+                        resolution={resolution}
+                        onResolutionChange={setResolution}
+                        workload={workload}
+                        onWorkloadChange={setWorkload}
+                        isPinned={true}
+                        onTogglePin={() => setIsInsightsPinned(false)}
+                      />
+                    </motion.div>
+                  </div>
+                )}
+
+                {/* Middle Column: AI Critique */}
+                <div className={cn(
+                  "transition-all duration-500",
+                  isInsightsPinned ? "lg:col-span-6" : "lg:col-span-9"
+                )}>
                   <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="h-full"
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className={cn(
+                      "rounded-3xl border backdrop-blur-xl h-full min-h-[600px] overflow-hidden shadow-2xl",
+                      isDark ? "bg-slate-900/40 border-white/5 shadow-black/40" : "bg-white/60 border-slate-200 shadow-slate-200/50"
+                    )}
                   >
-                    <FloatingInsights
-                      isOpen={true}
-                      onClose={() => setIsInsightsPinned(false)}
+                    <div className="p-8 border-b border-border/50 bg-background/20">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <LayoutPanelLeft className="w-6 h-6 text-primary" />
+                          <h2 className="text-xl font-headline font-bold uppercase tracking-tight">Performance Diagnostics</h2>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg bg-primary/10 border border-primary/20 text-[10px] font-bold text-primary uppercase tracking-widest">
+                            <CircuitBoard className="w-3 h-3" />
+                            Live Analysis
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-2 md:p-6">
+                      <AIBuildCritique
+                        build={builderState}
+                        externalAnalysis={critiqueAnalysis}
+                        externalLoading={critiqueLoading}
+                        externalError={critiqueError}
+                        onRefresh={() => handleCritique(true)}
+                      />
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* Right Column: Your Build Specs */}
+                <div className="lg:col-span-3">
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="sticky top-24 flex flex-col gap-6 pb-4"
+                  >
+                    <YourBuild
                       build={builderState}
+                      onClearBuild={() => {
+                        localStorage.removeItem('pc_builder_state');
+                        setBuilderState(null);
+                      }}
+                      onRemovePart={handleRemovePart}
+                      onAnalyze={handleCritique}
                       resolution={resolution}
                       onResolutionChange={setResolution}
                       workload={workload}
                       onWorkloadChange={setWorkload}
-                      isPinned={true}
-                      onTogglePin={() => setIsInsightsPinned(false)}
+                      showSystemBalance={false}
+                      hasAnalysis={!!critiqueAnalysis}
                     />
                   </motion.div>
                 </div>
-              )}
 
-              {/* Middle Column: AI Critique */}
-              <div className={cn(
-                "transition-all duration-500",
-                isInsightsPinned ? "lg:col-span-6" : "lg:col-span-9"
-              )}>
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className={cn(
-                    "rounded-3xl border backdrop-blur-xl h-full min-h-[600px] overflow-hidden shadow-2xl",
-                    isDark ? "bg-slate-900/40 border-white/5 shadow-black/40" : "bg-white/60 border-slate-200 shadow-slate-200/50"
-                  )}
-                >
-                  <div className="p-8 border-b border-border/50 bg-background/20">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <LayoutPanelLeft className="w-6 h-6 text-primary" />
-                        <h2 className="text-xl font-headline font-bold uppercase tracking-tight">Performance Diagnostics</h2>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg bg-primary/10 border border-primary/20 text-[10px] font-bold text-primary uppercase tracking-widest">
-                          <CircuitBoard className="w-3 h-3" />
-                          Live Analysis
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-2 md:p-6">
-                    <AIBuildCritique
-                      build={builderState}
-                      externalAnalysis={critiqueAnalysis}
-                      externalLoading={critiqueLoading}
-                      externalError={critiqueError}
-                      onRefresh={() => handleCritique(true)}
-                    />
-                  </div>
-                </motion.div>
               </div>
+            </TabsContent>
+            <TabsContent value="generate" className="mt-0 h-full">
+              {generativeContent}
+            </TabsContent>
+          </Tabs>
+        ) : generativeContent}
 
-              {/* Right Column: Your Build Specs */}
-              <div className="lg:col-span-3">
-                <motion.div 
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="sticky top-24 flex flex-col gap-6 pb-4"
-                >
-                  <YourBuild
-                    build={builderState}
-                    onClearBuild={() => {
-                      localStorage.removeItem('pc_builder_state');
-                      setBuilderState(null);
-                    }}
-                    onRemovePart={handleRemovePart}
-                    onAnalyze={handleCritique}
-                    resolution={resolution}
-                    onResolutionChange={setResolution}
-                    workload={workload}
-                    onWorkloadChange={setWorkload}
-                    showSystemBalance={false}
-                    hasAnalysis={!!critiqueAnalysis}
-                  />
-                </motion.div>
-              </div>
+        <BuilderFloatingChat />
 
-            </div>
-          </TabsContent>
-          <TabsContent value="generate" className="mt-0 h-full">
-            {generativeContent}
-          </TabsContent>
-        </Tabs>
-      ) : generativeContent}
-      
-      <BuilderFloatingChat />
+        {/* Floating Insights Toggle & Panel */}
+        <div className={cn("fixed bottom-6 left-6 z-50 flex flex-col-reverse items-start gap-4", isInsightsPinned ? "lg:hidden" : "")}>
+          {builderState && !showInsights && (
+            <Button
+              size="lg"
+              onClick={() => setShowInsights(true)}
+              className="rounded-full shadow-2xl h-14 px-6 gap-3 bg-primary hover:bg-primary/90 text-white font-bold uppercase tracking-widest border border-white/10 ring-4 ring-primary/20 animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LayoutPanelLeft className="w-5 h-5" />
+              Build Insights
+            </Button>
+          )}
+        </div>
 
-      {/* Floating Insights Toggle & Panel */}
-      <div className={cn("fixed bottom-6 left-6 z-50 flex flex-col-reverse items-start gap-4", isInsightsPinned ? "lg:hidden" : "")}>
-        {builderState && !showInsights && (
-          <Button
-            size="lg"
-            onClick={() => setShowInsights(true)}
-            className="rounded-full shadow-2xl h-14 px-6 gap-3 bg-primary hover:bg-primary/90 text-white font-bold uppercase tracking-widest border border-white/10 ring-4 ring-primary/20 animate-in fade-in slide-in-from-bottom-4 duration-500"
-          >
-            <LayoutPanelLeft className="w-5 h-5" />
-            Build Insights
-          </Button>
+        {builderState && (!isInsightsPinned || showInsights) && (
+          <FloatingInsights
+            isOpen={showInsights}
+            onClose={() => setShowInsights(false)}
+            build={builderState}
+            resolution={resolution}
+            onResolutionChange={setResolution}
+            workload={workload}
+            onWorkloadChange={setWorkload}
+            isPinned={false}
+            onTogglePin={() => {
+              setIsInsightsPinned(true);
+              setShowInsights(false);
+            }}
+          />
         )}
-      </div>
-
-      {builderState && (!isInsightsPinned || showInsights) && (
-        <FloatingInsights
-          isOpen={showInsights}
-          onClose={() => setShowInsights(false)}
-          build={builderState}
-          resolution={resolution}
-          onResolutionChange={setResolution}
-          workload={workload}
-          onWorkloadChange={setWorkload}
-          isPinned={false}
-          onTogglePin={() => {
-            setIsInsightsPinned(true);
-            setShowInsights(false);
-          }}
-        />
-      )}
-    </main>
+      </main>
     </div>
   );
 }
