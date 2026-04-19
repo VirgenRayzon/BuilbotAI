@@ -18,6 +18,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useUserProfile } from '@/context/user-profile';
 import { useRouter } from 'next/navigation';
 import { cn } from "@/lib/utils";
+import { FullPageLoader } from "@/components/full-page-loader";
+import { useLoading } from "@/context/loading-context";
 
 const prebuiltCategories = [
     { name: "Entry", selected: true },
@@ -96,6 +98,23 @@ export default function PreBuiltsPage() {
                 return sortDirection === 'asc' ? compare : -compare;
             });
     }, [prebuiltSystems, categories, sortBy, sortDirection, searchQuery]);
+
+    const [mounted, setMounted] = useState(false);
+
+    const { setIsPageLoading } = useLoading();
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        setIsPageLoading(!mounted || authLoading);
+        return () => setIsPageLoading(false);
+    }, [mounted, authLoading, setIsPageLoading]);
+
+    if (!mounted || authLoading) {
+        return null;
+    }
 
     return (
         <div className={cn(

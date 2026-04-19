@@ -503,7 +503,17 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                 <FormItem>
                                                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Price (PHP ₱)</FormLabel>
                                                     <FormControl>
-                                                        <Input type="number" className="bg-muted/30 border-border/40 h-10 rounded-xl" placeholder="e.g., 125000" {...field} />
+                                                        <Input 
+                                                            type="number" 
+                                                            className="bg-muted/30 border-border/40 h-10 rounded-xl" 
+                                                            placeholder="e.g., 125000" 
+                                                            {...field} 
+                                                            onKeyDown={(e) => {
+                                                                if (["e", "E", "+", "-", "."].includes(e.key)) {
+                                                                    e.preventDefault();
+                                                                }
+                                                            }}
+                                                        />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>

@@ -1,17 +1,18 @@
 "use client";
 
 import React, { useMemo } from 'react';
-import { 
+import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, BarChart, Bar, Legend
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-    TrendingUp, TrendingDown, DollarSign, Package, 
+import {
+    TrendingUp, TrendingDown, DollarSign, Package,
     ArrowUpRight, ArrowDownRight, Activity, PieChart as PieIcon,
     BarChart3, Calendar
 } from 'lucide-react';
-import { Order, Part } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
+import { Order, Part, PrebuiltSystem } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useTheme } from '@/context/theme-provider';
@@ -19,6 +20,7 @@ import { useTheme } from '@/context/theme-provider';
 interface SalesAnalyticsProps {
     orders: Order[];
     parts: Part[];
+    prebuilts: PrebuiltSystem[];
 }
 
 const COLORS = {
@@ -32,7 +34,7 @@ const COLORS = {
     ]
 };
 
-export function SalesAnalytics({ orders, parts }: SalesAnalyticsProps) {
+export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps) {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
 
@@ -84,6 +86,33 @@ export function SalesAnalytics({ orders, parts }: SalesAnalyticsProps) {
         ].filter(d => d.value > 0);
     }, [orders]);
 
+    // Process Prebuilt Sales by Tier
+    const prebuiltTierData = useMemo(() => {
+        const counts = {
+            'Entry': 0,
+            'Mid-Range': 0,
+            'High-End': 0,
+            'Workstation': 0
+        };
+
+        orders.filter(o => o.status !== 'cancelled' && (o as any).type === 'prebuilt').forEach(order => {
+            const prebuiltId = (order as any).prebuiltId;
+            const system = prebuilts.find(s => s.id === prebuiltId);
+            const tier = system?.tier || (order as any).prebuiltTier; // Fallback to order metadata if exists
+
+            if (tier && tier in counts) {
+                counts[tier as keyof typeof counts]++;
+            }
+        });
+
+        return [
+            { name: 'Entry Level', value: counts['Entry'], color: COLORS.chart[2] }, // Emerald
+            { name: 'Mid-Range', value: counts['Mid-Range'], color: COLORS.chart[0] }, // Cyan
+            { name: 'High-End', value: counts['High-End'], color: COLORS.chart[1] }, // Indigo
+            { name: 'Workstation', value: counts['Workstation'], color: COLORS.chart[3] } // Amber
+        ].filter(d => d.value > 0);
+    }, [orders, prebuilts]);
+
     // Process Category Performance
     const categoryData = useMemo(() => {
         const catMap = new Map<string, number>();
@@ -103,10 +132,10 @@ export function SalesAnalytics({ orders, parts }: SalesAnalyticsProps) {
         const validOrders = orders.filter(o => o.status !== 'cancelled');
         const totalRevenue = validOrders.reduce((sum, o) => sum + o.totalPrice, 0);
         const aov = validOrders.length > 0 ? totalRevenue / validOrders.length : 0;
-        const cancellationRate = orders.length > 0 
-            ? (orders.filter(o => o.status === 'cancelled').length / orders.length) * 100 
+        const cancellationRate = orders.length > 0
+            ? (orders.filter(o => o.status === 'cancelled').length / orders.length) * 100
             : 0;
-            
+
         return { totalRevenue, aov, cancellationRate, orderCount: validOrders.length };
     }, [orders]);
 
@@ -114,32 +143,32 @@ export function SalesAnalytics({ orders, parts }: SalesAnalyticsProps) {
         <div className="space-y-6">
             {/* Metric Cards - Bento Grid Style */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <MetricCard 
-                    title="Gross Revenue" 
+                <MetricCard
+                    title="Gross Revenue"
                     value={formatCurrency(metrics.totalRevenue)}
                     icon={<DollarSign className="w-5 h-5 text-emerald-400" />}
                     trend="+12.5%"
                     trendUp={true}
                     delay={0}
                 />
-                <MetricCard 
-                    title="Total Reservations" 
+                <MetricCard
+                    title="Total Reservations"
                     value={metrics.orderCount.toString()}
                     icon={<Package className="w-5 h-5 text-blue-400" />}
                     trend="+5 today"
                     trendUp={true}
                     delay={0.1}
                 />
-                <MetricCard 
-                    title="Avg. Order Value" 
+                <MetricCard
+                    title="Avg. Order Value"
                     value={formatCurrency(metrics.aov)}
                     icon={<Activity className="w-5 h-5 text-purple-400" />}
                     trend="-2.4%"
                     trendUp={false}
                     delay={0.2}
                 />
-                <MetricCard 
-                    title="Cancellation Rate" 
+                <MetricCard
+                    title="Cancellation Rate"
                     value={`${metrics.cancellationRate.toFixed(1)}%`}
                     icon={<ArrowDownRight className="w-5 h-5 text-red-400" />}
                     trend="+0.5%"
@@ -166,28 +195,28 @@ export function SalesAnalytics({ orders, parts }: SalesAnalyticsProps) {
                             <AreaChart data={revenueData}>
                                 <defs>
                                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.3}/>
-                                        <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0}/>
+                                        <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} />
-                                <XAxis 
-                                    dataKey="name" 
-                                    axisLine={false} 
-                                    tickLine={false} 
+                                <XAxis
+                                    dataKey="name"
+                                    axisLine={false}
+                                    tickLine={false}
                                     tick={{ fill: isDark ? '#888' : '#666', fontSize: 10 }}
                                     dy={10}
                                 />
-                                <YAxis 
-                                    axisLine={false} 
-                                    tickLine={false} 
+                                <YAxis
+                                    axisLine={false}
+                                    tickLine={false}
                                     tick={{ fill: isDark ? '#888' : '#666', fontSize: 10 }}
-                                    tickFormatter={(val) => `₱${val >= 1000 ? (val/1000).toFixed(0) + 'k' : val}`}
+                                    tickFormatter={(val) => `₱${val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val}`}
                                 />
-                                <Tooltip 
-                                    contentStyle={{ 
-                                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)', 
-                                        borderRadius: '12px', 
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                                        borderRadius: '12px',
                                         border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
                                         backdropFilter: 'blur(8px)',
                                         fontSize: '12px',
@@ -196,21 +225,19 @@ export function SalesAnalytics({ orders, parts }: SalesAnalyticsProps) {
                                     itemStyle={{ color: COLORS.primary }}
                                     formatter={(val: number) => [formatCurrency(val), 'Revenue']}
                                 />
-                                <Area 
-                                    type="monotone" 
-                                    dataKey="revenue" 
-                                    stroke={COLORS.primary} 
+                                <Area
+                                    type="monotone"
+                                    dataKey="revenue"
+                                    stroke={COLORS.primary}
                                     strokeWidth={3}
-                                    fillOpacity={1} 
-                                    fill="url(#colorRevenue)" 
+                                    fillOpacity={1}
+                                    fill="url(#colorRevenue)"
                                     animationDuration={2000}
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
                     </CardContent>
-                </Card>
-
-                {/* Status Distribution */}
+                </Card>                {/* Status Distribution */}
                 <Card className="bg-background/40 backdrop-blur-xl border-border/50 shadow-2xl overflow-hidden">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-xl font-headline font-bold flex items-center gap-2 uppercase tracking-tight">
@@ -236,10 +263,10 @@ export function SalesAnalytics({ orders, parts }: SalesAnalyticsProps) {
                                         <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                                     ))}
                                 </Pie>
-                                <Tooltip 
-                                    contentStyle={{ 
-                                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)', 
-                                        borderRadius: '12px', 
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                                        borderRadius: '12px',
                                         border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
                                         backdropFilter: 'blur(8px)',
                                         fontSize: '12px',
@@ -260,65 +287,198 @@ export function SalesAnalytics({ orders, parts }: SalesAnalyticsProps) {
                     </CardContent>
                 </Card>
 
-                {/* Category Performance */}
-                <Card className="lg:col-span-3 bg-background/40 backdrop-blur-xl border-border/50 shadow-2xl overflow-hidden">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xl font-headline font-bold flex items-center gap-2 uppercase tracking-tight">
-                            <BarChart3 className="w-5 h-5 text-emerald-400" />
-                            Revenue by Category
-                        </CardTitle>
-                        <p className="text-xs text-muted-foreground uppercase tracking-widest opacity-60">Top performing component segments</p>
-                    </CardHeader>
-                    <CardContent className="pt-4 h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={categoryData} layout="vertical" margin={{ left: 40, right: 40 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} />
-                                <XAxis type="number" hide />
-                                <YAxis 
-                                    dataKey="name" 
-                                    type="category" 
-                                    axisLine={false} 
-                                    tickLine={false}
-                                    tick={{ fill: isDark ? '#fff' : '#000', fontSize: 10, fontWeight: 'bold' }}
-                                    width={100}
-                                />
-                                <Tooltip 
-                                    cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
-                                    contentStyle={{ 
-                                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)', 
-                                        borderRadius: '12px', 
-                                        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
-                                        backdropFilter: 'blur(8px)',
-                                        color: isDark ? '#fff' : '#000'
-                                    }}
-                                    formatter={(val: number) => [formatCurrency(val), 'Revenue']}
-                                />
-                                <Bar 
-                                    dataKey="value" 
-                                    fill={COLORS.primary} 
-                                    radius={[0, 4, 4, 0]} 
-                                    barSize={20}
-                                    animationDuration={1500}
+                {/* Prebuilt Tier Distribution & Revenue by Category Row - ALIGNED */}
+                <div className="lg:col-span-3 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Prebuilt Tier Distribution */}
+                    <Card className="bg-background/40 backdrop-blur-xl border-border/50 shadow-2xl overflow-hidden">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-xl font-headline font-bold flex items-center gap-2 uppercase tracking-tight">
+                                <Package className="w-5 h-5 text-emerald-400" />
+                                Prebuilt Sales
+                            </CardTitle>
+                            <p className="text-xs text-muted-foreground uppercase tracking-widest opacity-60">Performance tier distribution</p>
+                        </CardHeader>
+                        <CardContent className="h-[300px] flex flex-col items-center justify-center">
+                            <ResponsiveContainer width="100%" height="80%">
+                                <PieChart>
+                                    <Pie
+                                        data={prebuiltTierData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={50}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                        animationDuration={1500}
+                                    >
+                                        {prebuiltTierData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        contentStyle={{
+                                            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                                            borderRadius: '12px',
+                                            border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
+                                            backdropFilter: 'blur(8px)',
+                                            fontSize: '12px',
+                                            color: isDark ? '#fff' : '#000'
+                                        }}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="grid grid-cols-2 gap-3 w-full px-4 mt-2">
+                                {prebuiltTierData.length > 0 ? prebuiltTierData.map((d, i) => (
+                                    <div key={i} className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: d.color }} />
+                                        <span className="text-[9px] uppercase font-bold tracking-wider opacity-70">{d.name}</span>
+                                        <span className="text-xs font-mono ml-auto">{d.value}</span>
+                                    </div>
+                                )) : (
+                                    <div className="col-span-2 text-center text-[9px] text-muted-foreground uppercase tracking-widest py-2">
+                                        No data
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Category Performance */}
+                    <Card className="lg:col-span-2 bg-background/40 backdrop-blur-xl border-border/50 shadow-2xl overflow-hidden">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-xl font-headline font-bold flex items-center gap-2 uppercase tracking-tight">
+                                <BarChart3 className="w-5 h-5 text-emerald-400" />
+                                Revenue by Category
+                            </CardTitle>
+                            <p className="text-xs text-muted-foreground uppercase tracking-widest opacity-60">Top performing component segments</p>
+                        </CardHeader>
+                        <CardContent className="pt-4 h-[300px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={categoryData} layout="vertical" margin={{ left: 40, right: 40 }}>
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} />
+                                    <XAxis type="number" hide />
+                                    <YAxis
+                                        dataKey="name"
+                                        type="category"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: isDark ? '#fff' : '#000', fontSize: 10, fontWeight: 'bold' }}
+                                        width={100}
+                                    />
+                                    <Tooltip
+                                        cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
+                                        contentStyle={{
+                                            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                                            borderRadius: '12px',
+                                            border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
+                                            backdropFilter: 'blur(8px)',
+                                            color: isDark ? '#fff' : '#000'
+                                        }}
+                                        formatter={(val: number) => [formatCurrency(val), 'Revenue']}
+                                    />
+                                    <Bar
+                                        dataKey="value"
+                                        fill={COLORS.primary}
+                                        radius={[0, 4, 4, 0]}
+                                        barSize={20}
+                                        animationDuration={1500}
+                                    >
+                                        {categoryData.map((entry, index) => (
+                                            <Cell
+                                                key={`cell-${index}`}
+                                                fill={COLORS.chart[index % COLORS.chart.length]}
+                                                fillOpacity={0.8}
+                                            />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Most Popular Components by Category */}
+                <div className="lg:col-span-3 space-y-6">
+                    <div className="flex items-center gap-3">
+                        <TrendingUp className="w-6 h-6 text-primary animate-pulse" />
+                        <div>
+                            <h3 className="text-2xl font-headline font-bold uppercase tracking-tight">Popularity Matrix</h3>
+                            <p className="text-xs text-muted-foreground uppercase tracking-widest opacity-60">Top 5 most purchased components per segment</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {Object.entries(
+                            parts.reduce((acc, part) => {
+                                if (!acc[part.category]) acc[part.category] = [];
+                                acc[part.category].push(part);
+                                return acc;
+                            }, {} as Record<string, Part[]>)
+                        ).map(([category, catParts]) => {
+                            const topParts = catParts
+                                .filter(p => (p as any).popularity > 0)
+                                .sort((a, b) => ((b as any).popularity || 0) - ((a as any).popularity || 0))
+                                .slice(0, 5);
+
+                            if (topParts.length === 0) return null;
+
+                            return (
+                                <motion.div
+                                    key={category}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.4 }}
                                 >
-                                    {categoryData.map((entry, index) => (
-                                        <Cell 
-                                            key={`cell-${index}`} 
-                                            fill={COLORS.chart[index % COLORS.chart.length]} 
-                                            fillOpacity={0.8}
-                                        />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
+                                    <Card className="bg-background/40 backdrop-blur-xl border-border/50 shadow-xl overflow-hidden h-full group">
+                                        <CardHeader className="pb-3 border-b border-white/5 bg-muted/20">
+                                            <div className="flex items-center justify-between">
+                                                <CardTitle className="text-sm font-headline font-bold uppercase tracking-[0.2em] text-primary">
+                                                    {category}
+                                                </CardTitle>
+                                                <Badge variant="outline" className="text-[10px] border-primary/20 text-primary/60">
+                                                    Top Segment
+                                                </Badge>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="p-0">
+                                            <div className="divide-y divide-white/5">
+                                                {topParts.map((item, index) => (
+                                                    <div key={item.id} className="p-3 flex items-center gap-3 hover:bg-primary/5 transition-all group/item">
+                                                        <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center font-bold text-[10px] text-primary shrink-0 border border-primary/20 group-hover/item:scale-110 transition-transform">
+                                                            #{index + 1}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-bold text-sm truncate leading-tight group-hover/item:text-primary transition-colors">
+                                                                {item.name}
+                                                            </p>
+                                                            <p className="text-[9px] text-muted-foreground uppercase tracking-widest mt-0.5">
+                                                                {item.brand}
+                                                            </p>
+                                                        </div>
+                                                        <div className="text-right shrink-0">
+                                                            <div className="flex items-center gap-1.5 justify-end">
+                                                                <span className="font-mono font-bold text-sm">{(item as any).popularity || 0}</span>
+                                                                <Activity className="w-3 h-3 text-primary/40" />
+                                                            </div>
+                                                            <p className="text-[8px] text-muted-foreground uppercase tracking-tighter opacity-60">Purchases</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
+                            );
+                        }).filter(card => card !== null)}
+                    </div>
+                </div>
             </div>
         </div>
     );
 }
 
-function MetricCard({ title, value, icon, trend, trendUp, delay }: { 
-    title: string, value: string, icon: React.ReactNode, trend: string, trendUp: boolean, delay: number 
+function MetricCard({ title, value, icon, trend, trendUp, delay }: {
+    title: string, value: string, icon: React.ReactNode, trend: string, trendUp: boolean, delay: number
 }) {
     return (
         <motion.div

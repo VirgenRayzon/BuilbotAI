@@ -12,7 +12,9 @@ import { FeatureShowcase } from '@/components/landing/feature-showcase';
 import { VisualizerPreview } from '@/components/landing/visualizer-preview';
 import { PrebuiltShowcase } from '@/components/landing/prebuilt-showcase';
 import { useTheme } from '@/context/theme-provider';
+import { useLoading } from '@/context/loading-context';
 import { cn } from '@/lib/utils';
+import { FullPageLoader } from '@/components/full-page-loader';
 
 export default function StartPage() {
   const { theme } = useTheme();
@@ -31,15 +33,15 @@ export default function StartPage() {
     }
   }, [authUser, profile, loading, router]);
 
+  const { setIsPageLoading } = useLoading();
+
+  useEffect(() => {
+    setIsPageLoading(loading || !!authUser);
+    return () => setIsPageLoading(false);
+  }, [loading, authUser, setIsPageLoading]);
+
   if (loading || authUser) {
-    return (
-      <div className={cn(
-        "flex items-center justify-center min-h-screen transition-colors duration-500",
-        isDark ? "bg-[#0c0f14]" : "bg-slate-50"
-      )}>
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
-      </div>
-    );
+    return null;
   }
 
   return (

@@ -268,21 +268,53 @@ function PrebuiltTableRow({
         <TableCell onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center gap-2">
             {showActions && onArchive && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                onClick={() => onArchive(system.id, !isArchiveView)}
-                title={isArchiveView ? "Restore" : "Archive"}
-              >
-                {isArchiveView ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                    onClick={(e) => e.stopPropagation()}
+                    title={isArchiveView ? "Restore" : "Archive"}
+                  >
+                    {isArchiveView ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{isArchiveView ? "Restore System?" : "Archive System?"}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {isArchiveView 
+                        ? `This will restore ${system.name} to the public showcase.`
+                        : `This will move ${system.name} to the archive. It will no longer be visible to customers.`
+                      }
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onArchive(system.id, !isArchiveView);
+                      }}
+                      className={isArchiveView ? "bg-primary hover:bg-primary/90" : "bg-orange-500 hover:bg-orange-600"}
+                    >
+                      {isArchiveView ? "Restore" : "Archive"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
 
             {showActions && onDelete && isSuperAdmin ? (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={(e) => e.stopPropagation()}
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </AlertDialogTrigger>

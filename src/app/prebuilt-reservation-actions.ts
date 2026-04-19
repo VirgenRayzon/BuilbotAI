@@ -9,7 +9,7 @@ export async function reservePrebuiltSystem(
     userId: string, 
     userEmail: string, 
     userName: string, 
-    system: PrebuiltSystem, 
+    system: { id: string, name: string, price: number }, 
     components: Record<string, { id: string, name: string, price: number, category: string }>
 ) {
     const firestore = getAdminFirestore();

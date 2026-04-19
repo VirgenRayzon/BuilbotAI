@@ -132,7 +132,11 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
         authUser.uid,
         profile.email,
         profile.name || profile.email.split('@')[0],
-        system,
+        {
+          id: system.id,
+          name: system.name,
+          price: system.price
+        },
         componentsMap
       );
 

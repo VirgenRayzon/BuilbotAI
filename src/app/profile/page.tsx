@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useUserProfile } from "@/context/user-profile";
 import { useTheme } from "@/context/theme-provider";
 import { useFirestore } from "@/firebase";
+import { useRouter } from "next/navigation";
 import { collection, query, where, getDocs, updateDoc, doc, deleteDoc } from "firebase/firestore";
 import { Order } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -16,6 +17,8 @@ import {
     ArrowUpRight, ShoppingBag, CreditCard
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { FullPageLoader } from "@/components/full-page-loader";
+import { useLoading } from "@/context/loading-context";
 import { formatCurrency, cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { SuperAdminSettings } from "@/components/super-admin-settings";
@@ -37,7 +40,14 @@ export default function ProfilePage() {
     const { theme } = useTheme();
     const isDark = theme === "dark";
     const firestore = useFirestore();
+    const router = useRouter();
     const { toast } = useToast();
+    const { setIsPageLoading } = useLoading();
+
+    useEffect(() => {
+        setIsPageLoading(userLoading);
+        return () => setIsPageLoading(false);
+    }, [userLoading, setIsPageLoading]);
 
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState("");
@@ -194,11 +204,7 @@ export default function ProfilePage() {
     }, [reservations]);
 
     if (userLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-[80vh]">
-                <Loader2 className="w-12 h-12 animate-spin text-primary" />
-            </div>
-        );
+        return null;
     }
 
     if (!authUser) {

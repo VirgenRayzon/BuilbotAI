@@ -39,8 +39,9 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
-import { Loader2, Sparkles, Cpu, BrainCircuit, Search, Check, ChevronDown, Plus, X, Bold, Italic, Heading1, Heading2, List, Code } from "lucide-react";
+import { Loader2, Sparkles, Cpu, BrainCircuit, Search, Check, ChevronDown, Plus, X, Bold, Italic, Heading1, Heading2, List, Code, Type } from "lucide-react";
 import { getAiPrebuiltSuggestions } from "@/app/actions";
 import { ImageUpload } from "./image-upload";
 import Image from "next/image";
@@ -207,7 +208,7 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
         for (const part of parts || []) {
             // Only include non-archived parts in the selection list
             if (part.isArchived) continue;
-            
+
             if (!grouped[part.category]) grouped[part.category] = [];
             grouped[part.category].push(part);
         }
@@ -284,28 +285,28 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
         };
 
         // Check if we actually found any component names to send to AI
-        const hasComponents = Object.values(selectedComponents).some(c => 
+        const hasComponents = Object.values(selectedComponents).some(c =>
             Array.isArray(c) ? c.length > 0 : !!c
         );
 
         if (!hasComponents) {
-            toast({ 
-                variant: "destructive", 
-                title: "No Components Found", 
-                description: "The AI needs at least one selected component name to generate an identity. Please ensure parts are selected from the dropdowns." 
+            toast({
+                variant: "destructive",
+                title: "No Components Found",
+                description: "The AI needs at least one selected component name to generate an identity. Please ensure parts are selected from the dropdowns."
             });
             return;
         }
 
         startAiTransition(async () => {
             try {
-                const result = await getAiPrebuiltSuggestions({ 
+                const result = await getAiPrebuiltSuggestions({
                     components: {
                         ...selectedComponents,
                         ram: (selectedComponents.ram as string[]).join(", "),
                         storage: (selectedComponents.storage as string[]).join(", ")
-                    }, 
-                    tier: form.getValues("tier") || undefined 
+                    },
+                    tier: form.getValues("tier") || undefined
                 });
 
                 if (result && "systemName" in result) {
@@ -341,17 +342,17 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                         toast({ title: "Assist Complete", description: "Identity fields were already filled and were not overwritten." });
                     }
                 } else {
-                    toast({ 
-                        variant: "destructive", 
-                        title: "AI Response Error", 
-                        description: (result as any)?.error || "The AI returned an empty response. Please try again." 
+                    toast({
+                        variant: "destructive",
+                        title: "AI Response Error",
+                        description: (result as any)?.error || "The AI returned an empty response. Please try again."
                     });
                 }
             } catch (err: any) {
-                toast({ 
-                    variant: "destructive", 
-                    title: "AI Assist Failed", 
-                    description: err.message || "An unexpected error occurred while communicating with the AI." 
+                toast({
+                    variant: "destructive",
+                    title: "AI Assist Failed",
+                    description: err.message || "An unexpected error occurred while communicating with the AI."
                 });
             }
         });
@@ -443,7 +444,7 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
 
                                 {/* Section: System Identity */}
                                 <div className="grid grid-cols-12 gap-8 items-start">
-                                    
+
                                     {/* Left Column: Image Preview */}
                                     <div className="col-span-12 md:col-span-4 sticky top-0">
                                         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mb-4 flex items-center gap-3">
@@ -454,9 +455,9 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                                             <FormField control={form.control} name="imageUrl" render={({ field }) => (
                                                 <FormItem>
                                                     <FormControl>
-                                                        <ImageUpload 
-                                                            value={field.value || ""} 
-                                                            onChange={field.onChange} 
+                                                        <ImageUpload
+                                                            value={field.value || ""}
+                                                            onChange={field.onChange}
                                                             variant="large"
                                                         />
                                                     </FormControl>
@@ -472,7 +473,7 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                                             <span className="inline-block w-4 h-px bg-primary/40" />
                                             System Details
                                         </p>
-                                        
+
                                         <div className="grid grid-cols-2 gap-4">
                                             {/* Full width System Name */}
                                             <div className="col-span-2">
@@ -511,7 +512,17 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                                                 <FormItem>
                                                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Price (PHP ₱)</FormLabel>
                                                     <FormControl>
-                                                        <Input type="number" className="bg-muted/30 border-border/40 h-10 rounded-xl font-mono" placeholder="e.g., 125000" {...field} />
+                                                        <Input 
+                                                            type="number" 
+                                                            className="bg-muted/30 border-border/40 h-10 rounded-xl" 
+                                                            placeholder="e.g., 125000" 
+                                                            {...field} 
+                                                            onKeyDown={(e) => {
+                                                                if (["e", "E", "+", "-", "."].includes(e.key)) {
+                                                                    e.preventDefault();
+                                                                }
+                                                            }}
+                                                        />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -598,12 +609,9 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                                                             </div>
                                                         </div>
                                                         <FormControl>
-                                                            <textarea 
+                                                            <textarea
                                                                 className="flex min-h-[140px] w-full rounded-2xl border border-border/40 bg-muted/20 px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus:bg-background focus:border-primary/40 focus:ring-1 focus:ring-primary/20 focus-visible:outline-none transition-all duration-300 font-mono leading-relaxed"
-                                                                placeholder="Craft a compelling system story...
-- Top-tier compatibility
-- Zero bottleneck guarantee
-"
+                                                                placeholder="Craft a compelling system story... - Top-tier compatibility - Zero bottleneck guarantee"
                                                                 {...field}
                                                             />
                                                         </FormControl>
@@ -696,10 +704,10 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                                             <FormItem>
                                                 <div className="flex items-center justify-between mb-1">
                                                     <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">RAM Modules</FormLabel>
-                                                    <Button 
-                                                        type="button" 
-                                                        variant="ghost" 
-                                                        size="sm" 
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
                                                         className="h-6 text-[9px] uppercase tracking-wider text-primary hover:text-primary hover:bg-primary/10"
                                                         onClick={() => {
                                                             const current = form.getValues("ram");
@@ -750,10 +758,10 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                                             <FormItem>
                                                 <div className="flex items-center justify-between mb-1">
                                                     <FormLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Storage Drives</FormLabel>
-                                                    <Button 
-                                                        type="button" 
-                                                        variant="ghost" 
-                                                        size="sm" 
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
                                                         className="h-6 text-[9px] uppercase tracking-wider text-primary hover:text-primary hover:bg-primary/10"
                                                         onClick={() => {
                                                             const current = form.getValues("storage");
@@ -835,47 +843,52 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                                         </div>
                                     </div>
                                 </div>
-
                             </div>
                         </ScrollArea>
 
                         {/* ── Sticky Footer ── */}
-                        <DialogFooter className="flex items-center justify-between px-6 py-4 border-t border-border/60 bg-muted/20 sm:justify-between space-x-0">
-                            <p className="text-xs text-muted-foreground">
-                                {(() => {
-                                    const vals = form.watch();
-                                    const baseKeys = ['cpu', 'gpu', 'motherboard', 'psu', 'case', 'cooler'];
-                                    const filledBase = baseKeys.filter(k => !!(vals as any)[k]).length;
-                                    const filledRam = (vals.ram || []).filter(r => !!r).length;
-                                    const filledStorage = (vals.storage || []).filter(s => !!s).length;
-                                    return filledBase + filledRam + filledStorage;
-                                })()} components selected
-                            </p>
-                            <div className="flex gap-2">
+                        <DialogFooter className="px-8 py-6 border-t border-border/40 bg-muted/20 flex-row justify-between items-center sm:justify-between">
+                            <div className="flex flex-col">
+                                <p className="text-xs text-muted-foreground font-medium">
+                                    {(() => {
+                                        const vals = form.watch();
+                                        const baseKeys = ['cpu', 'gpu', 'motherboard', 'psu', 'case', 'cooler'];
+                                        const filledBase = baseKeys.filter(k => !!(vals as any)[k]).length;
+                                        const filledRam = (vals.ram || []).filter(r => !!r).length;
+                                        const filledStorage = (vals.storage || []).filter(s => !!s).length;
+                                        return filledBase + filledRam + filledStorage;
+                                    })()} components selected
+                                </p>
                                 <Button
                                     type="button"
-                                    variant="outline"
+                                    variant="link"
                                     size="sm"
+                                    className="h-auto p-0 text-[10px] text-muted-foreground/60 hover:text-primary justify-start"
                                     onClick={() => {
                                         form.reset({
                                             name: "", tier: "", description: "", price: 0, imageUrl: "",
                                             cpu: "", gpu: "", motherboard: "", ram: [], storage: [], psu: "", case: "", cooler: "",
                                         });
-                                        toast({ title: "Form Cleared", description: "All fields have been reset." });
-                        <DialogFooter className="px-8 py-6 border-t border-border/40 bg-muted/20 flex-row justify-between items-center sm:justify-between">
-                            <DialogClose asChild>
-                                <Button type="button" variant="ghost" size="lg" className="rounded-xl px-6 font-bold uppercase tracking-wider text-xs hover:bg-destructive/10 hover:text-destructive">
-                                    Cancel
+                                        toast({ title: "Form Clear", description: "All fields have been reset." });
+                                    }}
+                                >
+                                    Clear all fields
                                 </Button>
-                            </DialogClose>
-                            <Button
-                                type="submit"
-                                size="lg"
-                                onClick={form.handleSubmit(onSubmit)}
-                                className="rounded-xl px-10 font-bold uppercase tracking-[0.15em] text-xs h-12 shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all duration-200"
-                            >
-                                {initialData ? "Update Selection" : "Complete Build"}
-                            </Button>
+                            </div>
+                            <div className="flex gap-3">
+                                <DialogClose asChild>
+                                    <Button type="button" variant="ghost" size="lg" className="rounded-xl px-6 font-bold uppercase tracking-wider text-xs hover:bg-destructive/10 hover:text-destructive">
+                                        Cancel
+                                    </Button>
+                                </DialogClose>
+                                <Button
+                                    type="submit"
+                                    size="lg"
+                                    className="rounded-xl px-10 font-bold uppercase tracking-[0.15em] text-xs h-12 shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all duration-200"
+                                >
+                                    {initialData ? "Update Selection" : "Complete Build"}
+                                </Button>
+                            </div>
                         </DialogFooter>
                     </form>
                 </Form>

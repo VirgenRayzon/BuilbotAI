@@ -8,6 +8,8 @@ import "./globals.css";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { UserProfileProvider } from "@/context/user-profile";
 import { ThemeProvider } from "@/context/theme-provider";
+import { AppLayout } from "@/components/app-layout";
+import { LoadingProvider } from "@/context/loading-context";
 
 export const metadata: Metadata = {
   title: "Buildbot AI",
@@ -41,9 +43,11 @@ export default function RootLayout({
         <ThemeProvider defaultTheme="dark" storageKey="buildbot-ui-theme">
           <FirebaseClientProvider>
             <UserProfileProvider>
-              <Header />
-              <main className="flex-1">{children}</main>
-              <Footer />
+              <LoadingProvider>
+                <AppLayout>
+                  {children}
+                </AppLayout>
+              </LoadingProvider>
               <Toaster />
             </UserProfileProvider>
           </FirebaseClientProvider>

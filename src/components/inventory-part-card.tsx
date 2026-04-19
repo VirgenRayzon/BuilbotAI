@@ -105,18 +105,42 @@ export function InventoryPartCard({
                                 <CardTitle className="text-base font-headline leading-snug line-clamp-2 h-10">{part.name}</CardTitle>
                             </div>
                             <div className="flex items-start gap-1">
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="h-8 w-8 text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors -mt-1"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onArchive(part.id, part.category, !isArchiveView);
-                                    }}
-                                    title={isArchiveView ? "Restore" : "Archive"}
-                                >
-                                    {isArchiveView ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
-                                </Button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-8 w-8 text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors -mt-1"
+                                            onClick={(e) => e.stopPropagation()}
+                                            title={isArchiveView ? "Restore" : "Archive"}
+                                        >
+                                            {isArchiveView ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>{isArchiveView ? "Restore Part?" : "Archive Part?"}</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                {isArchiveView 
+                                                    ? `This will restore ${part.name} to the active inventory.`
+                                                    : `This will move ${part.name} to the archive. It will no longer be visible to customers.`
+                                                }
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onArchive(part.id, part.category, !isArchiveView);
+                                                }}
+                                                className={isArchiveView ? "bg-primary hover:bg-primary/90" : "bg-orange-500 hover:bg-orange-600"}
+                                            >
+                                                {isArchiveView ? "Restore" : "Archive"}
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
 
                                 {isSuperAdmin && (
                                     <AlertDialog>

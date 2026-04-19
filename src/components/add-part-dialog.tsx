@@ -564,7 +564,17 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                         <FormItem>
                           <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Price (PHP ₱)</FormLabel>
                           <FormControl>
-                            <Input type="number" className="bg-muted/30 border-border/40 h-10 rounded-xl" placeholder="e.g., 17500" {...field} />
+                            <Input 
+                              type="number" 
+                              className="bg-muted/30 border-border/40 h-10 rounded-xl" 
+                              placeholder="e.g., 17500" 
+                              {...field} 
+                              onKeyDown={(e) => {
+                                if (["e", "E", "+", "-", "."].includes(e.key)) {
+                                  e.preventDefault();
+                                }
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -574,7 +584,17 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                         <FormItem>
                           <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Inventory Stock</FormLabel>
                           <FormControl>
-                            <Input type="number" className="bg-muted/30 border-border/40 h-10 rounded-xl font-mono" placeholder="e.g., 10" {...field} />
+                            <Input 
+                              type="number" 
+                              className="bg-muted/30 border-border/40 h-10 rounded-xl font-mono" 
+                              placeholder="e.g., 10" 
+                              {...field} 
+                              onKeyDown={(e) => {
+                                if (["e", "E", "+", "-", "."].includes(e.key)) {
+                                  e.preventDefault();
+                                }
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -584,7 +604,17 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                         <FormItem>
                           <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Performance Rank (0–100)</FormLabel>
                           <FormControl>
-                            <Input type="number" className="bg-muted/30 border-border/40 h-10 rounded-xl" placeholder="e.g., 75" {...field} />
+                            <Input 
+                              type="number" 
+                              className="bg-muted/30 border-border/40 h-10 rounded-xl" 
+                              placeholder="e.g., 75" 
+                              {...field} 
+                              onKeyDown={(e) => {
+                                if (["e", "E", "+", "-", "."].includes(e.key)) {
+                                  e.preventDefault();
+                                }
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

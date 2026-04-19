@@ -37,6 +37,7 @@ import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { formatCurrency, cn, getOptimizedStorageUrl } from "@/lib/utils";
+import { FullPageLoader } from "@/components/full-page-loader";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { PaginationControls } from "@/components/pagination-controls";
@@ -45,6 +46,7 @@ import { useUserProfile } from "@/context/user-profile";
 import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
 import { FloatingInsights } from "@/components/floating-insights";
+import { useLoading } from "@/context/loading-context";
 import { LayoutPanelLeft } from "lucide-react";
 import type { Resolution, WorkloadType } from "@/lib/types";
 import { checkCompatibility } from "@/lib/compatibility";
@@ -137,7 +139,21 @@ export default function BuilderPage() {
   const [workload, setWorkload] = useState<WorkloadType>('Balanced');
   const [showInsights, setShowInsights] = useState(false);
   const [isInsightsPinned, setIsInsightsPinned] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const { setIsPageLoading } = useLoading();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Sync with global layout loading
+  useEffect(() => {
+    setIsPageLoading(!mounted || authLoading || !isLoaded);
+    
+    // Cleanup on unmount
+    return () => setIsPageLoading(false);
+  }, [mounted, authLoading, isLoaded, setIsPageLoading]);
 
   // Handle AI suggestions from window-level
   useEffect(() => {
@@ -594,6 +610,10 @@ export default function BuilderPage() {
     }
     return (build[part.category] as ComponentData)?.model === part.name;
   };
+
+  if (!mounted || authLoading || !isLoaded) {
+    return null;
+  }
 
   return (
     <div className={cn(

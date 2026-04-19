@@ -277,3 +277,26 @@ export async function createSystemNotification(firestore: Firestore, notificatio
         createdAt: new Date()
     });
 }
+
+// Sales Metrics Reset
+export async function resetSalesMetrics(
+    firestore: Firestore, 
+    orders: { id: string }[], 
+    parts: { id: string, category: Part['category'] }[]
+) {
+    const batch = writeBatch(firestore);
+    
+    // 1. Delete all orders
+    orders.forEach(order => {
+        const orderRef = doc(firestore, 'orders', order.id);
+        batch.delete(orderRef);
+    });
+    
+    // 2. Reset popularity for all parts
+    parts.forEach(part => {
+        const partRef = doc(firestore, part.category, part.id);
+        batch.update(partRef, { popularity: 0 });
+    });
+    
+    await batch.commit();
+}

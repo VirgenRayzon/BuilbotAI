@@ -11,6 +11,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { Build, AiRecommendation, ComponentData, Resolution, WorkloadType } from "@/lib/types";
 import { Cpu, Server, CircuitBoard, MemoryStick, Bot, Wallet, Database, Power, RectangleVertical, Wind } from "lucide-react";
 import { formatCurrency, cn } from "@/lib/utils";
+import { FullPageLoader } from "@/components/full-page-loader";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FloatingInsights } from "@/components/floating-insights";
@@ -20,6 +21,7 @@ import { YourBuild } from "@/components/your-build";
 import { PCVisualizer } from "@/components/pc-visualizer";
 import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
+import { useLoading } from "@/context/loading-context";
 import { useUserProfile } from "@/context/user-profile";
 import { useRouter } from "next/navigation";
 import { useCollection } from "@/firebase/firestore/use-collection";
@@ -127,6 +129,17 @@ export default function AiBuildAdvisorPage() {
       }
     }
   }, [authUser, profile, userLoading, router]);
+
+  const { setIsPageLoading } = useLoading();
+
+  useEffect(() => {
+    setIsPageLoading(userLoading);
+    return () => setIsPageLoading(false);
+  }, [userLoading, setIsPageLoading]);
+
+  if (userLoading) {
+    return null;
+  }
 
   const [build, setBuild] = useState<Build | null>(null);
   const [builderState, setBuilderState] = useState<Record<string, ComponentData | ComponentData[] | null> | null>(null);

@@ -3,16 +3,17 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
     Plus, Package, PackageCheck, ServerCrash, Loader2, BarChart3, 
     History, TrendingUp, DollarSign, Cpu, Monitor, CircuitBoard, 
     MemoryStick, HardDrive, PlugZap, Square, Wind, Mouse, Headset, 
     ChevronRight, Settings, Trash2, ChevronDown, Search, Filter, 
-    Archive, LayoutGrid, Table as TableIcon, CheckSquare 
+    Archive, LayoutGrid, Table as TableIcon, CheckSquare, RefreshCcw 
 } from "lucide-react";
 import { Order } from '@/lib/types';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -32,9 +33,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
 import { InventoryToolbar } from '@/components/inventory-toolbar';
-import { Card, CardContent } from '@/components/ui/card';
 import { AddPartDialog, type AddPartFormSchema } from '@/components/add-part-dialog';
 import { AddPrebuiltDialog, type AddPrebuiltFormSchema } from '@/components/add-prebuilt-dialog';
 import type { Part, PrebuiltSystem } from '@/lib/types';
@@ -46,7 +45,7 @@ import {
     addPrebuiltSystem, deletePrebuiltSystem, archivePrebuiltSystem, 
     bulkArchivePrebuilts, bulkDeletePrebuilts,
     updatePart, updatePrebuiltSystem,
-    createSystemNotification 
+    createSystemNotification, resetSalesMetrics 
 } from '@/firebase/database';
 import { collection, deleteDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
@@ -55,7 +54,9 @@ import { TableSkeleton } from '@/components/table-skeleton';
 import { SuperAdminSettings } from '@/components/super-admin-settings';
 import { useUserProfile } from '@/context/user-profile';
 import { useTheme } from '@/context/theme-provider';
+import { useLoading } from "@/context/loading-context";
 import { useToast } from "@/hooks/use-toast";
+import { FullPageLoader } from "@/components/full-page-loader";
 import { InventoryPartCard } from '@/components/inventory-part-card';
 import { InventoryPrebuiltCard } from '@/components/inventory-prebuilt-card';
 import { updateReservationStatus } from '@/app/checkout-actions';
@@ -96,6 +97,12 @@ export default function AdminPage() {
     const { theme } = useTheme();
     const isDark = theme === "dark";
     const { toast } = useToast();
+    const { setIsPageLoading } = useLoading();
+
+    useEffect(() => {
+        setIsPageLoading(userLoading);
+        return () => setIsPageLoading(false);
+    }, [userLoading, setIsPageLoading]);
 
     // Route protection
     useEffect(() => {
@@ -141,6 +148,8 @@ export default function AdminPage() {
         type: 'archive' | 'restore' | 'delete';
         target: 'parts' | 'prebuilts';
     }>({ isOpen: false, type: 'archive', target: 'parts' });
+    const [isResettingSales, setIsResettingSales] = useState(false);
+    const [showResetSalesConfirm, setShowResetSalesConfirm] = useState(false);
 
 
     const searchParams = useSearchParams();
@@ -546,6 +555,32 @@ export default function AdminPage() {
         }
     };
 
+    const handleResetSales = async () => {
+        if (!firestore || !profile?.isSuperAdmin) return;
+        setIsResettingSales(true);
+        try {
+            const ordersToReset = orders?.map(o => ({ id: o.id })) || [];
+            const partsToReset = parts?.map(p => ({ id: p.id, category: p.category })) || [];
+            
+            await resetSalesMetrics(firestore, ordersToReset, partsToReset);
+            
+            toast({
+                title: "Sales Reset Successful",
+                description: "All orders have been cleared and component popularity metrics have been reset.",
+            });
+            setShowResetSalesConfirm(false);
+        } catch (error) {
+            console.error("Reset sales error:", error);
+            toast({
+                title: "Reset Failed",
+                description: "Failed to reset sales metrics. Check console for details.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsResettingSales(false);
+        }
+    };
+
     const filteredAndSortedParts = useMemo(() => {
         const selectedCategories = partCategories.filter(c => c.selected).map(c => c.name);
         return (parts?.filter(part => {
@@ -633,11 +668,7 @@ export default function AdminPage() {
     };
 
     if (userLoading || !authUser || !profile?.isManager) {
-        return (
-            <div className="flex items-center justify-center min-h-[80vh]">
-                <Loader2 className="w-12 h-12 animate-spin text-primary" />
-            </div>
-        );
+        return null;
     }
 
     return (
@@ -1058,15 +1089,27 @@ export default function AdminPage() {
                                                                 >
                                                                     <div className="flex items-center gap-4">
                                                                         <div className="p-2.5 rounded-xl bg-muted/50 border border-white/5 shadow-sm">
-                                                                            <Package className="h-4 w-4 text-muted-foreground" />
+                                                                            {(order as any).type === 'prebuilt' ? (
+                                                                                <Monitor className="h-4 w-4 text-primary" />
+                                                                            ) : (
+                                                                                <Package className="h-4 w-4 text-muted-foreground" />
+                                                                            )}
                                                                         </div>
                                                                         <div>
                                                                             <div className="flex items-center gap-2 mb-1.5">
                                                                                 <p className="font-bold text-base tracking-tight">{order.userEmail}</p>
+                                                                                {(order as any).type === 'prebuilt' && (
+                                                                                    <Badge variant="outline" className="border-primary/30 text-primary text-[8px] h-3.5 uppercase tracking-tighter bg-primary/5">PREBUILT</Badge>
+                                                                                )}
                                                                                 {order.status === 'pending' && <Badge className="bg-primary hover:bg-primary text-[10px] h-4 animate-pulse">NEW</Badge>}
                                                                             </div>
                                                                             <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest opacity-70">
-                                                                                ID: {order.id.substring(0, 12)} • {order.items.length} items • {order.createdAt?.toDate().toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                                                                                {(order as any).type === 'prebuilt' ? (
+                                                                                    <>RIG: {(order as any).prebuiltName || 'Custom Prebuilt'}</>
+                                                                                ) : (
+                                                                                    <>ID: {order.id.substring(0, 12)} • {order.items.length} items</>
+                                                                                )}
+                                                                                 • {order.createdAt?.toDate().toLocaleDateString(undefined, { dateStyle: 'medium' })}
                                                                             </p>
                                                                         </div>
                                                                     </div>
@@ -1152,14 +1195,47 @@ export default function AdminPage() {
                                 {/* 3D Visualizer Section */}
                                 <div className="xl:col-span-1">
                                     <div className="space-y-4 sticky top-8">
-                                        <div className="flex flex-col">
-                                            <h3 className="text-2xl font-headline font-bold uppercase tracking-tight text-foreground">
-                                                Business Pulse
-                                            </h3>
-                                            <p className="text-xs text-muted-foreground uppercase tracking-widest opacity-60 mt-1">
-                                                Neural data synchronization
-                                            </p>
-                                        </div>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex flex-col">
+                                                    <h3 className="text-2xl font-headline font-bold uppercase tracking-tight text-foreground">
+                                                        Business Pulse
+                                                    </h3>
+                                                    <p className="text-xs text-muted-foreground uppercase tracking-widest opacity-60 mt-1">
+                                                        Neural data synchronization
+                                                    </p>
+                                                </div>
+                                                <AlertDialog open={showResetSalesConfirm} onOpenChange={setShowResetSalesConfirm}>
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                                        onClick={() => setShowResetSalesConfirm(true)}
+                                                    >
+                                                        <RefreshCcw className={cn("h-4 w-4", isResettingSales && "animate-spin")} />
+                                                    </Button>
+                                                    <AlertDialogContent className="bg-background/95 backdrop-blur-2xl border-white/10 max-w-[400px]">
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle className="flex items-center gap-2 text-xl font-headline font-bold">
+                                                                <RefreshCcw className="h-5 w-5 text-destructive" />
+                                                                Reset Sales Analytics?
+                                                            </AlertDialogTitle>
+                                                            <AlertDialogDescription className="text-muted-foreground pt-2">
+                                                                This will PERMANENTLY delete all existing orders and reset component popularity metrics. This action is irreversible and should only be performed during system maintenance.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter className="pt-6">
+                                                            <AlertDialogCancel className="bg-transparent border-white/10 hover:bg-white/5">Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction 
+                                                                className="bg-destructive hover:bg-destructive/90 text-white font-bold"
+                                                                onClick={handleResetSales}
+                                                                disabled={isResettingSales}
+                                                            >
+                                                                {isResettingSales ? "Resetting..." : "Confirm Full Reset"}
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </div>
                                         <SalesVisualizer orderCount={stats.totalOrders} />
                                         <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10">
                                             <p className="text-xs text-primary/80 font-medium leading-relaxed">
@@ -1171,42 +1247,15 @@ export default function AdminPage() {
 
                                 {/* Analytics Dashboard Section */}
                                 <div className="xl:col-span-3">
-                                    <SalesAnalytics orders={orders || []} parts={parts || []} />
+                                    <SalesAnalytics 
+                                        orders={orders || []} 
+                                        parts={parts || []} 
+                                        prebuilts={prebuiltSystems || []}
+                                    />
                                 </div>
                             </div>
 
-                            {/* Most Popular Components Section (Retained but restyled) */}
-                            <div className="grid grid-cols-1 gap-8">
-                                <div>
-                                    <h3 className="text-xl font-headline font-bold mb-4 flex items-center gap-2 uppercase tracking-tight">
-                                        <TrendingUp className="h-5 w-5 text-primary" /> Most Popular Components
-                                    </h3>
-                                    <Card className="bg-background/40 backdrop-blur-xl border-border/50 shadow-2xl">
-                                        <CardContent className="p-0">
-                                            <div className="divide-y border border-white/5 rounded-md overflow-hidden">
-                                                {stats.popularItems.slice(0, 5).map((item, index) => (
-                                                    <div key={item.id} className="p-4 flex items-center gap-4 hover:bg-muted/10 transition-colors group">
-                                                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary shrink-0 border border-primary/20 group-hover:scale-110 transition-transform">
-                                                            {index + 1}
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="font-bold text-base truncate leading-tight group-hover:text-primary transition-colors">{item.name}</p>
-                                                            <p className="text-[10px] text-muted-foreground uppercase opacity-70 tracking-[0.2em] mt-0.5">{item.category}</p>
-                                                        </div>
-                                                        <div className="text-right shrink-0">
-                                                            <p className="font-mono font-bold text-lg">{(item as any).popularity || 0}</p>
-                                                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest opacity-60">Purchases</p>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                                {stats.popularItems.length === 0 && (
-                                                    <div className="p-8 text-center text-muted-foreground italic">No purchase data synchronized yet.</div>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                            </div>
+                            {/* Popular Components handled within SalesAnalytics */}
                         </div>
                     </TabsContent>
                 )}
