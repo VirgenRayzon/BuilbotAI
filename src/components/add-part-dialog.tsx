@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { formatCurrency, formatToPHP } from "@/lib/utils";
+import { formatCurrency, formatToPHP, cn } from "@/lib/utils";
 import type { Part } from "@/lib/types";
 import {
   Dialog,
@@ -103,6 +103,9 @@ const CATEGORY_SPECS: Record<string, { key: string; placeholder: string }[]> = {
     { key: "Modularity", placeholder: "e.g., Fully Modular" },
     { key: "12VHPWR Support", placeholder: "e.g., Native ATX 3.0 / ATX 3.1" },
     { key: "Form Factor", placeholder: "e.g., ATX / SFX" },
+    { key: "Width (mm)", placeholder: "150" },
+    { key: "Depth (mm)", placeholder: "140" },
+    { key: "Height (mm)", placeholder: "86" },
   ],
   Case: [
     { key: "Width (mm)", placeholder: "e.g., 210" },
@@ -111,6 +114,7 @@ const CATEGORY_SPECS: Record<string, { key: string; placeholder: string }[]> = {
     { key: "Mobo Support", placeholder: "Motherboard compatibility" },
     { key: "Radiator Support (mm)", placeholder: "Radiator size support" },
     { key: "Type", placeholder: "Case form factor type" },
+    { key: "Case Type", placeholder: "Fish Tank / High Air Flow" },
     { key: "Back-Connect Cutout", placeholder: "Yes / No" },
     { key: "PSU Form Factor", placeholder: "e.g., ATX / SFX" },
   ],
@@ -254,15 +258,43 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
   const setSpecValue = (key: string, value: string) => {
     const current = form.getValues("specifications");
     const idx = current.findIndex((s) => s.key === key);
+    let updated = [...current];
+
     if (value === "") {
-      form.setValue("specifications", current.filter((s) => s.key !== key));
+      updated = current.filter((s) => s.key !== key);
     } else if (idx >= 0) {
-      const updated = [...current];
       updated[idx] = { key, value };
-      form.setValue("specifications", updated);
     } else {
-      form.setValue("specifications", [...current, { key, value }]);
+      updated.push({ key, value });
     }
+
+    // Auto-populate PSU dimensions
+    if (selectedCategory === "PSU" && key === "Form Factor") {
+      const val = value.toLowerCase();
+      if (val === "atx") {
+        updated = updateOrAddSpec(updated, "Width (mm)", "150 mm");
+        updated = updateOrAddSpec(updated, "Depth (mm)", "140 mm");
+        updated = updateOrAddSpec(updated, "Height (mm)", "86 mm");
+        form.setValue("dimensions", { width: 150, depth: 140, height: 86 });
+      } else if (val === "sfx") {
+        updated = updateOrAddSpec(updated, "Width (mm)", "125 mm");
+        updated = updateOrAddSpec(updated, "Depth (mm)", "100 mm");
+        updated = updateOrAddSpec(updated, "Height (mm)", "64 mm");
+        form.setValue("dimensions", { width: 125, depth: 100, height: 64 });
+      }
+    }
+
+    form.setValue("specifications", updated);
+  };
+
+  const updateOrAddSpec = (specs: { key: string; value: string }[], key: string, value: string) => {
+    const existingIdx = specs.findIndex((s) => s.key === key);
+    if (existingIdx >= 0) {
+      const copy = [...specs];
+      copy[existingIdx] = { key, value };
+      return copy;
+    }
+    return [...specs, { key, value }];
   };
 
   const handleCategoryChange = (newCategory: string) => {
@@ -400,7 +432,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
       toast({ title: initialData ? "Part Updated!" : "Part Added!", description: `${values.partName} has been ${initialData ? 'updated' : 'added to'} the inventory.` });
       if (!initialData) form.reset();
       setOpen(false);
-      
+
     } catch (error: any) {
       toast({ variant: "destructive", title: initialData ? "Error updating part" : "Error adding part", description: error.message || "An unexpected error occurred." });
     } finally {
@@ -483,7 +515,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
 
                 {/* Section: Identity */}
                 <div className="grid grid-cols-12 gap-8 items-start">
-                  
+
                   {/* Left Column: Image Preview */}
                   <div className="col-span-12 md:col-span-4 sticky top-0">
                     <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mb-4 flex items-center gap-3">
@@ -494,9 +526,9 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                       <FormField control={form.control} name="imageUrl" render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <ImageUpload 
-                              value={field.value || ""} 
-                              onChange={field.onChange} 
+                            <ImageUpload
+                              value={field.value || ""}
+                              onChange={field.onChange}
                               variant="large"
                             />
                           </FormControl>
@@ -512,7 +544,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                       <span className="inline-block w-4 h-px bg-primary/40" />
                       Core Details
                     </p>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       {/* Full width row */}
                       <div className="col-span-2">
@@ -560,11 +592,11 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                         <FormItem>
                           <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Price (PHP ₱)</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
-                              className="bg-muted/30 border-border/40 h-10 rounded-xl" 
-                              placeholder="e.g., 17500" 
-                              {...field} 
+                            <Input
+                              type="number"
+                              className="bg-muted/30 border-border/40 h-10 rounded-xl"
+                              placeholder="e.g., 17500"
+                              {...field}
                               onKeyDown={(e) => {
                                 if (["e", "E", "+", "-", "."].includes(e.key)) {
                                   e.preventDefault();
@@ -580,11 +612,11 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                         <FormItem>
                           <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Inventory Stock</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
-                              className="bg-muted/30 border-border/40 h-10 rounded-xl font-mono" 
-                              placeholder="e.g., 10" 
-                              {...field} 
+                            <Input
+                              type="number"
+                              className="bg-muted/30 border-border/40 h-10 rounded-xl font-mono"
+                              placeholder="e.g., 10"
+                              {...field}
                               onKeyDown={(e) => {
                                 if (["e", "E", "+", "-", "."].includes(e.key)) {
                                   e.preventDefault();
@@ -600,11 +632,11 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                         <FormItem>
                           <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Performance Rank (0–100)</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
-                              className="bg-muted/30 border-border/40 h-10 rounded-xl" 
-                              placeholder="e.g., 75" 
-                              {...field} 
+                            <Input
+                              type="number"
+                              className="bg-muted/30 border-border/40 h-10 rounded-xl"
+                              placeholder="e.g., 75"
+                              {...field}
                               onKeyDown={(e) => {
                                 if (["e", "E", "+", "-", "."].includes(e.key)) {
                                   e.preventDefault();
@@ -620,7 +652,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                         <FormField control={form.control} name="packageType" render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 flex items-center gap-1.5">
-                              Package 
+                              Package
                               <Badge variant="outline" className="text-[8px] py-0 px-1 border-primary/30 text-primary uppercase font-bold tracking-tight">CPU</Badge>
                             </FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
@@ -639,14 +671,14 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                         )} />
                       )}
                     </div>
-                    
+
                     {/* Description — Part of Right Column */}
                     <div className="pt-4">
                       <FormField control={form.control} name="description" render={({ field }) => (
                         <FormItem>
                           <div className="flex items-center justify-between mb-3">
                             <FormLabel className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 flex items-center gap-2">
-                               <Type className="h-3 w-3" /> Description
+                              <Type className="h-3 w-3" /> Description
                             </FormLabel>
                             <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60 border border-border/40 shadow-sm">
                               <Button
@@ -736,10 +768,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                           <FormControl>
                             <textarea
                               className="flex min-h-[140px] w-full rounded-2xl border border-border/40 bg-muted/20 px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus:bg-background focus:border-primary/40 focus:ring-1 focus:ring-primary/20 focus-visible:outline-none transition-all duration-300 font-mono leading-relaxed"
-                              placeholder="Supports Markdown...
-- High-performance architecture
-- Real-world verified metrics
-"
+                              placeholder="Supports Markdown... - High-performance architecture - Real-world verified metrics"
                               {...field}
                             />
                           </FormControl>
@@ -749,7 +778,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                     </div>
                   </div>
 
-                  </div>
+                </div>
 
 
                 {/* Section: Category Specs */}
@@ -764,12 +793,12 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                     <div className="grid grid-cols-3 gap-3 p-4 rounded-xl border border-primary/10 bg-primary/5">
                       {CATEGORY_SPECS[selectedCategory].map(({ key, placeholder }) => (
                         <div key={key} className={
-                          (selectedCategory === "Case" && (key === "Mobo Support" || key === "Radiator Support (mm)")) 
-                          ? "col-span-3 space-y-2 py-2" 
-                          : "space-y-1.5"
+                          (selectedCategory === "Case" && (key === "Mobo Support" || key === "Radiator Support (mm)"))
+                            ? "col-span-3 space-y-2 py-2"
+                            : "space-y-1.5"
                         }>
                           <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest block mb-1">{key}</label>
-                          
+
                           {/* Case: Mobo Support (Checkboxes) */}
                           {selectedCategory === "Case" && key === "Mobo Support" ? (
                             <div className="flex flex-wrap gap-4 p-3 rounded-xl border border-primary/20 bg-primary/5 shadow-inner">
@@ -777,7 +806,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                                 const checked = getSpecValue(key).split(",").filter(Boolean).includes(val);
                                 return (
                                   <div key={val} className="flex items-center gap-2 group cursor-pointer">
-                                    <Checkbox 
+                                    <Checkbox
                                       id={`mobo-${val}`}
                                       checked={checked}
                                       onCheckedChange={(checked) => {
@@ -795,185 +824,192 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                               })}
                             </div>
                           ) : /* Case: Radiator Support (Checkboxes) */
-                          selectedCategory === "Case" && key === "Radiator Support (mm)" ? (
-                            <div className="flex flex-wrap gap-4 p-3 rounded-xl border border-primary/20 bg-primary/5 shadow-inner">
-                              {["120", "140", "240", "280", "360", "480"].map((val) => {
-                                const checked = getSpecValue(key).split(",").filter(Boolean).includes(val);
-                                return (
-                                  <div key={val} className="flex items-center gap-2 group cursor-pointer">
-                                    <Checkbox 
-                                      id={`rad-${val}`}
-                                      checked={checked}
-                                      onCheckedChange={(checked) => {
-                                        const current = getSpecValue(key).split(",").filter(Boolean);
-                                        if (checked) setSpecValue(key, [...current, val].join(","));
-                                        else setSpecValue(key, current.filter(v => v !== val).join(","));
-                                      }}
-                                      className="border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                                    />
-                                    <Label htmlFor={`rad-${val}`} className="text-[10px] font-bold uppercase tracking-wider cursor-pointer group-hover:text-primary transition-colors">
-                                      {val}mm
-                                    </Label>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : /* Case/Mobo: Dropdowns */
-                          ((selectedCategory === "Case" && (key === "Type" || key === "Back-Connect Cutout")) || 
-                           (selectedCategory === "Motherboard" && key === "Form Factor") ||
-                           (selectedCategory === "Storage" && key === "Type")) ? (
-                            <Select 
-                              value={getSpecValue(key)} 
-                              onValueChange={(v) => setSpecValue(key, v)}
-                            >
-                              <SelectTrigger className="h-8 text-sm bg-background/60 border-border/50 focus:border-primary/50">
-                                <SelectValue placeholder="Select..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {key === "Back-Connect Cutout" ? (
-                                  ["yes", "no"].map(v => <SelectItem key={v} value={v}>{v.toUpperCase()}</SelectItem>)
-                                ) : key === "Type" && selectedCategory === "Case" ? (
-                                  ["full tower", "mid tower", "mini tower", "sff"].map(v => <SelectItem key={v} value={v}>{v.toUpperCase()}</SelectItem>)
-                                ) : key === "Type" && selectedCategory === "Storage" ? (
-                                  ["NVME", "SATA"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)
-                                ) : (
-                                  ["eatx", "atx", "matx", "itx"].map(v => <SelectItem key={v} value={v}>{v.toUpperCase()}</SelectItem>)
-                                )}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <Input
-                              placeholder={placeholder}
-                              value={(() => {
-                                const currentVal = getSpecValue(key);
-                                if (key === "Slot Thickness") return currentVal.replace(/\s*slot\s*/gi, "");
-                                if (key.includes("(mm)") || key === "Height" || key === "Radiator Size" || key === "Driver Size") return currentVal.replace(/\s*mm\s*/gi, "");
-                                if (key.includes("(W)") || key.includes("Power") || key === "TDP Rating") return currentVal.replace(/\s*w\s*/gi, "");
-                                if (key.includes("(GHz)") || key === "Screen Size" || key.includes("Speed") || key === "L3 Cache" || key === "TBW Rating" || key === "DPI" || key === "Refresh Rate" || key === "Weight") {
-                                  return currentVal.replace(/[^\d.]/g, '');
-                                }
-                                if (key === "Cores" || key === "Threads" || key === "CUDA Cores") return currentVal.replace(/\D/g, '');
-                                return currentVal;
-                              })()}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (key === "Slot Thickness") {
-                                  setSpecValue(key, val ? `${val} Slot` : "");
-                                } else if (key.includes("(mm)") || key === "Height" || key === "Radiator Size" || key === "Driver Size") {
-                                  const intVal = val.replace(/\D/g, '').slice(0, 3);
-                                  setSpecValue(key, intVal ? `${intVal} mm` : "");
-                                } else if (key.includes("(W)") || key.includes("Power") || key === "TDP Rating") {
-                                  const intVal = val.replace(/\D/g, '');
-                                  setSpecValue(key, intVal ? `${intVal} W` : "");
-                                } else if (key.includes("(GHz)")) {
-                                  const floatVal = val.replace(/[^\d.]/g, '');
-                                  setSpecValue(key, floatVal ? `${floatVal} GHz` : "");
-                                } else if (key === "Screen Size") {
-                                  const floatVal = val.replace(/[^\d.]/g, '');
-                                  setSpecValue(key, floatVal ? `${floatVal} inch` : "");
-                                } else if (key === "Read Speed" || key === "Write Speed") {
-                                  const intVal = val.replace(/\D/g, '');
-                                  setSpecValue(key, intVal ? `${intVal} MB/s` : "");
-                                } else if (key === "L3 Cache") {
-                                  const intVal = val.replace(/\D/g, '');
-                                  setSpecValue(key, intVal ? `${intVal} MB` : "");
-                                } else if (key === "TBW Rating") {
-                                  const intVal = val.replace(/\D/g, '');
-                                  setSpecValue(key, intVal ? `${intVal} TBW` : "");
-                                } else if (key === "Refresh Rate") {
-                                  const intVal = val.replace(/\D/g, '');
-                                  setSpecValue(key, intVal ? `${intVal} Hz` : "");
-                                } else if (key === "Weight") {
-                                  const intVal = val.replace(/\D/g, '');
-                                  setSpecValue(key, intVal ? `${intVal}g` : "");
-                                } else if (key === "DPI") {
-                                  const intVal = val.replace(/\D/g, '');
-                                  setSpecValue(key, intVal);
-                                } else if (key === "Cores" || key === "Threads" || key === "CUDA Cores") {
-                                  const intVal = val.replace(/\D/g, '');
-                                  setSpecValue(key, intVal);
-                                } else {
-                                  setSpecValue(key, val);
-                                }
-                              }}
-                              type={
-                                key.includes("Slots") || 
-                                key.includes("Count") || 
-                                key === "Slot Thickness" || 
-                                key.includes("(mm)") ||
-                                key === "Height" ||
-                                key === "Radiator Size" ||
-                                key === "Driver Size" ||
-                                key.includes("(W)") ||
-                                key.includes("Power") ||
-                                key === "TDP Rating" ||
-                                key === "Cores" ||
-                                key === "Threads" ||
-                                key === "CUDA Cores" ||
-                                key === "DPI" ||
-                                key === "Refresh Rate" ||
-                                key === "Read Speed" ||
-                                key === "Write Speed" ||
-                                key === "L3 Cache" ||
-                                key === "TBW Rating" ||
-                                key.includes("(GHz)") ||
-                                key === "Screen Size"
-                                ? "number" : "text"
-                              }
-                              step="any"
-                              className="h-8 text-sm bg-background/60 border-border/50 focus:border-primary/50"
-                            />
-                          )}
+                            selectedCategory === "Case" && key === "Radiator Support (mm)" ? (
+                              <div className="flex flex-wrap gap-4 p-3 rounded-xl border border-primary/20 bg-primary/5 shadow-inner">
+                                {["120", "140", "240", "280", "360", "480"].map((val) => {
+                                  const checked = getSpecValue(key).split(",").filter(Boolean).includes(val);
+                                  return (
+                                    <div key={val} className="flex items-center gap-2 group cursor-pointer">
+                                      <Checkbox
+                                        id={`rad-${val}`}
+                                        checked={checked}
+                                        onCheckedChange={(checked) => {
+                                          const current = getSpecValue(key).split(",").filter(Boolean);
+                                          if (checked) setSpecValue(key, [...current, val].join(","));
+                                          else setSpecValue(key, current.filter(v => v !== val).join(","));
+                                        }}
+                                        className="border-primary/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                      />
+                                      <Label htmlFor={`rad-${val}`} className="text-[10px] font-bold uppercase tracking-wider cursor-pointer group-hover:text-primary transition-colors">
+                                        {val}mm
+                                      </Label>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : /* Case/Mobo: Dropdowns */
+                              ((selectedCategory === "Case" && (key === "Type" || key === "Case Type" || key === "Back-Connect Cutout" || key === "PSU Form Factor")) ||
+                                (selectedCategory === "PSU" && key === "Form Factor") ||
+                                (selectedCategory === "Motherboard" && key === "Form Factor") ||
+                                (selectedCategory === "Storage" && key === "Type")) ? (
+                                <Select
+                                  value={getSpecValue(key)}
+                                  onValueChange={(v) => setSpecValue(key, v)}
+                                >
+                                  <SelectTrigger className="h-8 text-sm bg-background/60 border-border/50 focus:border-primary/50">
+                                    <SelectValue placeholder="Select..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {key === "Back-Connect Cutout" ? (
+                                      ["yes", "no"].map(v => <SelectItem key={v} value={v}>{v.toUpperCase()}</SelectItem>)
+                                    ) : key === "Case Type" ? (
+                                      ["fish tank", "high air flow"].map(v => <SelectItem key={v} value={v}>{v.toUpperCase()}</SelectItem>)
+                                    ) : key === "Type" && selectedCategory === "Case" ? (
+                                      ["full tower", "mid tower", "mini tower", "sff"].map(v => <SelectItem key={v} value={v}>{v.toUpperCase()}</SelectItem>)
+                                    ) : key === "Type" && selectedCategory === "Storage" ? (
+                                      ["NVME", "SATA"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)
+                                    ) : (key === "Form Factor" && selectedCategory === "PSU") || key === "PSU Form Factor" ? (
+                                      ["atx", "sfx"].map(v => <SelectItem key={v} value={v}>{v.toUpperCase()}</SelectItem>)
+                                    ) : (
+                                      ["eatx", "atx", "matx", "itx"].map(v => <SelectItem key={v} value={v}>{v.toUpperCase()}</SelectItem>)
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <Input
+                                  placeholder={placeholder}
+                                  readOnly={selectedCategory === "PSU" && (key === "Width (mm)" || key === "Depth (mm)" || key === "Height (mm)")}
+                                  value={(() => {
+                                    const currentVal = getSpecValue(key);
+                                    if (key === "Slot Thickness") return currentVal.replace(/\s*slot\s*/gi, "");
+                                    if (key.includes("(mm)") || key === "Height" || key === "Radiator Size" || key === "Driver Size") return currentVal.replace(/\s*mm\s*/gi, "");
+                                    if (key.includes("(W)") || key.includes("Power") || key === "TDP Rating") return currentVal.replace(/\s*w\s*/gi, "");
+                                    if (key.includes("(GHz)") || key === "Screen Size" || key.includes("Speed") || key === "L3 Cache" || key === "TBW Rating" || key === "DPI" || key === "Refresh Rate" || key === "Weight") {
+                                      return currentVal.replace(/[^\d.]/g, '');
+                                    }
+                                    if (key === "Cores" || key === "Threads" || key === "CUDA Cores") return currentVal.replace(/\D/g, '');
+                                    return currentVal;
+                                  })()}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (key === "Slot Thickness") {
+                                      setSpecValue(key, val ? `${val} Slot` : "");
+                                    } else if (key.includes("(mm)") || key === "Height" || key === "Radiator Size" || key === "Driver Size") {
+                                      const intVal = val.replace(/\D/g, '').slice(0, 3);
+                                      setSpecValue(key, intVal ? `${intVal} mm` : "");
+                                    } else if (key.includes("(W)") || key.includes("Power") || key === "TDP Rating") {
+                                      const intVal = val.replace(/\D/g, '');
+                                      setSpecValue(key, intVal ? `${intVal} W` : "");
+                                    } else if (key.includes("(GHz)")) {
+                                      const floatVal = val.replace(/[^\d.]/g, '');
+                                      setSpecValue(key, floatVal ? `${floatVal} GHz` : "");
+                                    } else if (key === "Screen Size") {
+                                      const floatVal = val.replace(/[^\d.]/g, '');
+                                      setSpecValue(key, floatVal ? `${floatVal} inch` : "");
+                                    } else if (key === "Read Speed" || key === "Write Speed") {
+                                      const intVal = val.replace(/\D/g, '');
+                                      setSpecValue(key, intVal ? `${intVal} MB/s` : "");
+                                    } else if (key === "L3 Cache") {
+                                      const intVal = val.replace(/\D/g, '');
+                                      setSpecValue(key, intVal ? `${intVal} MB` : "");
+                                    } else if (key === "TBW Rating") {
+                                      const intVal = val.replace(/\D/g, '');
+                                      setSpecValue(key, intVal ? `${intVal} TBW` : "");
+                                    } else if (key === "Refresh Rate") {
+                                      const intVal = val.replace(/\D/g, '');
+                                      setSpecValue(key, intVal ? `${intVal} Hz` : "");
+                                    } else if (key === "Weight") {
+                                      const intVal = val.replace(/\D/g, '');
+                                      setSpecValue(key, intVal ? `${intVal}g` : "");
+                                    } else if (key === "DPI") {
+                                      const intVal = val.replace(/\D/g, '');
+                                      setSpecValue(key, intVal);
+                                    } else if (key === "Cores" || key === "Threads" || key === "CUDA Cores") {
+                                      const intVal = val.replace(/\D/g, '');
+                                      setSpecValue(key, intVal);
+                                    } else {
+                                      setSpecValue(key, val);
+                                    }
+                                  }}
+                                  type={
+                                    key.includes("Slots") ||
+                                      key.includes("Count") ||
+                                      key === "Slot Thickness" ||
+                                      key.includes("(mm)") ||
+                                      key === "Height" ||
+                                      key === "Radiator Size" ||
+                                      key === "Driver Size" ||
+                                      key.includes("(W)") ||
+                                      key.includes("Power") ||
+                                      key === "TDP Rating" ||
+                                      key === "Cores" ||
+                                      key === "Threads" ||
+                                      key === "CUDA Cores" ||
+                                      key === "DPI" ||
+                                      key === "Refresh Rate" ||
+                                      key === "Read Speed" ||
+                                      key === "Write Speed" ||
+                                      key === "L3 Cache" ||
+                                      key === "TBW Rating" ||
+                                      key.includes("(GHz)") ||
+                                      key === "Screen Size"
+                                      ? "number" : "text"
+                                  }
+                                  step="any"
+                                  className={cn(
+                                    "h-8 text-sm bg-background/60 border-border/50 focus:border-primary/50",
+                                    selectedCategory === "PSU" && (key === "Width (mm)" || key === "Depth (mm)" || key === "Height (mm)") && "bg-muted/40 cursor-not-allowed opacity-80"
+                                  )}
+                                />
+                              )}
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
-
-                {/* Section: Custom Specs */}
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50 mb-3 flex items-center gap-2">
-                    <span className="inline-block w-5 h-px bg-border" />
-                    Custom Specs
-                    <span className="inline-block flex-1 h-px bg-border/40" />
-                  </p>
-                  <div className="flex gap-2 mb-3">
-                    <Input
-                      placeholder="Key (e.g., PCIe Version)"
-                      value={customSpecKey}
-                      onChange={(e) => setCustomSpecKey(e.target.value)}
-                      className="h-8 text-sm bg-muted/40 border-border/60"
-                    />
-                    <Input
-                      placeholder="Value (e.g., 5.0 x16)"
-                      value={customSpecValue}
-                      onChange={(e) => setCustomSpecValue(e.target.value)}
-                      className="h-8 text-sm bg-muted/40 border-border/60"
-                    />
-                    <Button
-                      type="button" size="icon"
-                      className="h-8 w-8 shrink-0 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
-                      onClick={addCustomSpec}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  {customSpecs.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {customSpecs.map((spec) => (
-                        <Badge key={spec.key} variant="secondary" className="gap-1.5 pr-1 text-xs bg-secondary/60 border border-border/40">
-                          <span className="text-muted-foreground font-normal">{spec.key}:</span>
-                          <span className="font-medium">{spec.value}</span>
-                          <button type="button" onClick={() => removeSpec(spec.key)} className="ml-1 hover:text-destructive transition-colors">
-                            <X className="w-3 h-3" />
-                          </button>
-                        </Badge>
-                      ))}
+                    {/* Section: Custom Specs */}
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50 mb-3 flex items-center gap-2">
+                        <span className="inline-block w-5 h-px bg-border" />
+                        Custom Specs
+                        <span className="inline-block flex-1 h-px bg-border/40" />
+                      </p>
+                      <div className="flex gap-2 mb-3">
+                        <Input
+                          placeholder="Key (e.g., PCIe Version)"
+                          value={customSpecKey}
+                          onChange={(e) => setCustomSpecKey(e.target.value)}
+                          className="h-8 text-sm bg-muted/40 border-border/60"
+                        />
+                        <Input
+                          placeholder="Value (e.g., 5.0 x16)"
+                          value={customSpecValue}
+                          onChange={(e) => setCustomSpecValue(e.target.value)}
+                          className="h-8 text-sm bg-muted/40 border-border/60"
+                        />
+                        <Button
+                          type="button" size="icon"
+                          className="h-8 w-8 shrink-0 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
+                          onClick={addCustomSpec}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {customSpecs.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {customSpecs.map((spec) => (
+                            <Badge key={spec.key} variant="secondary" className="gap-1.5 pr-1 text-xs bg-secondary/60 border border-border/40">
+                              <span className="text-muted-foreground font-normal">{spec.key}:</span>
+                              <span className="font-medium">{spec.value}</span>
+                              <button type="button" onClick={() => removeSpec(spec.key)} className="ml-1 hover:text-destructive transition-colors">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-
-              </div>
+                  </div>
             </ScrollArea>
 
             {/* ── Sticky Footer ── */}

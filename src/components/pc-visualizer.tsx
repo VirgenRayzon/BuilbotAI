@@ -209,13 +209,23 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
     const actualGpuThickness = getActualDimension(gpuData, 'GPU', 'secondary') || 0;
     const gpuDisplayHeight = actualGpuThickness || cfg.gpu.height;
 
-    const psuDisplayWidth = (!cfg.psu.height || cfg.psu.height <= cfg.psu.width)
-        ? (actualPsuLength || cfg.psu.width)
-        : (actualPsuLength || 130);
+    const caseStyle = (caseData?.specifications?.["Case Type"] as string || "").toLowerCase().includes("fish tank") ||
+        (caseData?.specifications?.["Type"] as string || "").toLowerCase().includes("fish tank")
+        ? "Fish Tank" : "High Air Flow";
 
-    const psuDisplayHeight = (!cfg.psu.height || cfg.psu.height <= cfg.psu.width)
-        ? cfg.psu.height
-        : psuDisplayWidth;
+    const getPsuSpec = (key: string) => {
+        const val = psuData?.specifications?.[key];
+        if (!val) return null;
+        return parseInt(String(val).replace(/[^\d]/g, ""));
+    };
+
+    const psuW = getPsuSpec("Width (mm)") || psuData?.dimensions?.width || 150;
+    const psuD = getPsuSpec("Depth (mm)") || psuData?.dimensions?.depth || 140;
+    const psuH = getPsuSpec("Height (mm)") || psuData?.dimensions?.height || 86;
+
+    // View Logic: Fish Tank = Top View (W x D), High Air Flow = Side View (D x H)
+    const psuDisplayWidth = caseStyle === "Fish Tank" ? psuW : psuD;
+    const psuDisplayHeight = caseStyle === "Fish Tank" ? psuD : psuH;
 
     const topRadDisplayWidth = (isAio && actualRadSize > 0) ? actualRadSize : (cfg.topRad?.width || 0);
     const frontRadDisplayHeight = (isAio && actualRadSize > 0) ? actualRadSize : (cfg.frontRad?.height || 0);
@@ -253,10 +263,25 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
         return caseH - distFromBottom;
     };
 
-    // Determine anchors per archetype
+    // Determine PSU Position and safety clamp
     const isFrontPsu = archetype === 'ITX';
-    const actualPsuX = isFrontPsu ? getFrontX(cfg.psu.x) : cfg.psu.x;
-    const actualPsuY = isFrontPsu ? cfg.psu.y : getBottomY(cfg.case.height - 80); // Anchor to bottom for ATX/MATX
+    let psuX = isFrontPsu ? getFrontX(cfg.psu.x) : cfg.psu.x;
+    let psuY = isFrontPsu ? cfg.psu.y : getBottomY(cfg.case.height - 10); // Start at bottom edge
+
+    // Archetype/Style adjustments
+    if (caseStyle === "Fish Tank") {
+        // Position at upper left corner (Top-Rear in dual chamber layout)
+        psuX = 20;
+        psuY = 60;
+    } else if (!isFrontPsu) {
+        // Standard ATX: anchor to bottom-left with margin
+        psuX = 20;
+        psuY = caseH - psuDisplayHeight - 10;
+    }
+
+    // FINAL CLAMPING: Ensure PSU is always inside the case boundaries
+    const actualPsuX = Math.max(10, Math.min(psuX, caseW - psuDisplayWidth - 10));
+    const actualPsuY = Math.max(10, Math.min(psuY, caseH - psuDisplayHeight - 10));
 
     const actualFrontRadX = cfg.frontRad ? getFrontX(cfg.frontRad.x) : 0;
     const actualFrontRadY = cfg.frontRad ? cfg.frontRad.y : 0;
@@ -497,12 +522,12 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
 
                             {/* Tech Lines Decoration */}
                             <motion.g initial={{ opacity: 0 }} animate={{ opacity: 0.4 }} transition={{ delay: 1 }}>
-                                <path 
-                                    d={`M ${paddingX + 20} ${paddingTop + 20} L ${paddingX + 60} ${paddingTop + 20} L ${paddingX + 80} ${paddingTop + 40}`} 
+                                <path
+                                    d={`M ${paddingX + 20} ${paddingTop + 20} L ${paddingX + 60} ${paddingTop + 20} L ${paddingX + 80} ${paddingTop + 40}`}
                                     fill="none" stroke={colors.accent} strokeWidth="1" strokeDasharray="4 4"
                                 />
-                                <path 
-                                    d={`M ${paddingX + caseW - 20} ${paddingTop + caseH - 20} L ${paddingX + caseW - 60} ${paddingTop + caseH - 20} L ${paddingX + caseW - 80} ${paddingTop + caseH - 40}`} 
+                                <path
+                                    d={`M ${paddingX + caseW - 20} ${paddingTop + caseH - 20} L ${paddingX + caseW - 60} ${paddingTop + caseH - 20} L ${paddingX + caseW - 80} ${paddingTop + caseH - 40}`}
                                     fill="none" stroke={colors.accent} strokeWidth="1" strokeDasharray="4 4"
                                 />
                             </motion.g>
@@ -607,12 +632,17 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                         fill="rgba(0,0,0,0.2)" stroke={colors.mobo} strokeOpacity={0.1} rx={2}
                                     />
 
-                                    <motion.rect
-                                        animate={{ x: coolerRelX + cfg.cooler.size + 10, y: coolerRelY - 10 }}
-                                        width={12} height={60}
-                                        fill="url(#ramPattern)"
-                                        transition={springConfig}
-                                    />
+                                    {/* RAM Slots */}
+                                    {[...Array(moboFF.includes("ITX") ? 2 : 4)].map((_, i) => (
+                                        <motion.rect
+                                            key={`ram-${i}`}
+                                            animate={{ x: moboW - 60 + i * 8, y: 30 }}
+                                            width={4} height={moboH * 0.3}
+                                            fill={colors.mobo} fillOpacity={0.15}
+                                            rx={1}
+                                            transition={springConfig}
+                                        />
+                                    ))}
 
                                     <motion.rect
                                         animate={{ x: 15, y: topSlotOffset }}
@@ -655,15 +685,15 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                                 transition={springConfig}
                                             >
                                                 {isAio ? (
-                                                    <motion.g animate={{ x: cfg.cooler.size / 2, y: cfg.cooler.size / 2 }}>
+                                                    <motion.g>
                                                         <motion.circle
-                                                            animate={{ r: cfg.cooler.size / 2 }}
+                                                            animate={{ cx: cfg.cooler.size / 2, cy: cfg.cooler.size / 2, r: 65 / 2 }}
                                                             transition={springConfig}
                                                             fill="url(#coolerGrad)"
                                                             stroke={colors.mobo} strokeOpacity={0.3} strokeWidth={1}
                                                         />
-                                                        <motion.circle r={cfg.cooler.size * 0.25} fill="rgba(0,0,0,0.4)" stroke={colors.mobo} strokeOpacity={0.2} />
-                                                        <motion.circle r={cfg.cooler.size * 0.08} fill={colors.mobo} opacity={0.3} />
+                                                        <motion.circle cx={cfg.cooler.size / 2} cy={cfg.cooler.size / 2} r={65 * 0.25} fill="rgba(0,0,0,0.4)" stroke={colors.mobo} strokeOpacity={0.2} />
+                                                        <motion.circle cx={cfg.cooler.size / 2} cy={cfg.cooler.size / 2} r={65 * 0.08} fill={colors.mobo} opacity={0.3} />
                                                     </motion.g>
                                                 ) : (
                                                     <motion.g>

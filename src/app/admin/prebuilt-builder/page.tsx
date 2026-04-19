@@ -18,7 +18,8 @@ import {
     Keyboard,
     Mouse,
     Headphones,
-    Loader2
+    Loader2,
+    LayoutPanelLeft
 } from "lucide-react";
 import type { ComponentData, Part, Resolution, WorkloadType } from "@/lib/types";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
@@ -38,6 +39,7 @@ import { PCVisualizer } from "@/components/pc-visualizer";
 import { useUserProfile } from "@/context/user-profile";
 import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
+import { FloatingInsights } from "@/components/floating-insights";
 import { addPrebuiltSystem } from "@/firebase/database";
 import type { PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
 import { checkCompatibility } from "@/lib/compatibility";
@@ -125,6 +127,8 @@ export default function PrebuiltBuilderPage() {
     });
     const [resolution, setResolution] = useState<Resolution>('1440p');
     const [workload, setWorkload] = useState<WorkloadType>('Balanced');
+    const [showInsights, setShowInsights] = useState(false);
+    const [isInsightsPinned, setIsInsightsPinned] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
 
     // Persistence
@@ -164,25 +168,6 @@ export default function PrebuiltBuilderPage() {
                 next[category] = currentItems;
             } else {
                 next[category] = null;
-
-                // CASCADING REMOVAL LOGIC
-                if (category === 'Case') {
-                    // Remove Motherboard and everything else
-                    Object.keys(next).forEach(key => {
-                        if (key === 'RAM' || key === 'Storage') next[key] = [];
-                        else next[key] = null;
-                    });
-                    toast({ title: 'Build Reset', description: 'Removing the case removes all other components.' });
-                } else if (category === 'Motherboard') {
-                    // Remove everything except Case
-                    Object.keys(next).forEach(key => {
-                        if (key !== 'Case') {
-                            if (key === 'RAM' || key === 'Storage') next[key] = [];
-                            else next[key] = null;
-                        }
-                    });
-                    toast({ title: 'Components Removed', description: 'Changing or removing the motherboard removes all dependent parts.' });
-                }
             }
             return next;
         });
@@ -229,29 +214,9 @@ export default function PrebuiltBuilderPage() {
     const handlePartToggle = (part: Part) => {
         const category = part.category;
 
-        // SELECTION ORDER ENFORCEMENT
-        if (category !== 'Case' && !build['Case']) {
-            toast({
-                variant: 'destructive',
-                title: 'Selection Order',
-                description: 'Please select a Case first before adding other components.'
-            });
-            return;
-        }
-
-        if (category !== 'Case' && category !== 'Motherboard' && !build['Motherboard']) {
-            toast({
-                variant: 'destructive',
-                title: 'Selection Order',
-                description: 'Please select a Motherboard before adding other components.'
-            });
-            return;
-        }
+        const { compatible, message } = checkCompatibility(part, build);
 
         if (category === 'Storage' || category === 'RAM') {
-            const buildItems = Array.isArray(build[category]) ? (build[category] as ComponentData[]) : (build[category] ? [build[category] as ComponentData] : []);
-            
-            const { compatible, message } = checkCompatibility(part, build);
             if (!compatible) {
                 toast({
                     variant: 'destructive',
@@ -295,34 +260,10 @@ export default function PrebuiltBuilderPage() {
             return;
         }
 
-        const { compatible, message } = checkCompatibility(part, build);
         const isCurrentlySelected = (build[category] as ComponentData)?.model === part.name;
 
         if (isCurrentlySelected) {
-            setBuild(prevBuild => {
-                const nextBuild = { ...prevBuild, [category]: null };
-
-                // CASCADING REMOVAL ON TOGGLE OFF
-                if (category === 'Case') {
-                    // Remove Motherboard and everything else
-                    Object.keys(nextBuild).forEach(key => {
-                        if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
-                        else nextBuild[key] = null;
-                    });
-                    toast({ title: 'Build Reset', description: 'Removing the case removes all other components.' });
-                } else if (category === 'Motherboard') {
-                    // Remove everything except Case
-                    Object.keys(nextBuild).forEach(key => {
-                        if (key !== 'Case') {
-                            if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
-                            else nextBuild[key] = null;
-                        }
-                    });
-                    toast({ title: 'Components Removed', description: 'Changing or removing the motherboard removes all dependent parts.' });
-                }
-
-                return nextBuild;
-            });
+            setBuild(prevBuild => ({ ...prevBuild, [category]: null }));
             toast({ title: 'Part Removed', description: `${part.name} has been removed from your build.` });
         } else {
             if (!compatible) {
@@ -357,32 +298,7 @@ export default function PrebuiltBuilderPage() {
                 dimensions: part.dimensions,
             };
 
-            setBuild(prevBuild => {
-                const nextBuild = { ...prevBuild, [category]: componentData };
-
-                // CASCADING REMOVAL ON CHANGE
-                if (category === 'Case' && prevBuild['Case'] && (prevBuild['Case'] as ComponentData).id !== componentData.id) {
-                    // If changing case, remove everything else
-                    Object.keys(nextBuild).forEach(key => {
-                        if (key !== 'Case') {
-                            if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
-                            else nextBuild[key] = null;
-                        }
-                    });
-                    toast({ title: 'Build Updated', description: 'Changing the case removed dependent components.' });
-                } else if (category === 'Motherboard' && prevBuild['Motherboard'] && (prevBuild['Motherboard'] as ComponentData).id !== componentData.id) {
-                    // If changing motherboard, remove everything except Case
-                    Object.keys(nextBuild).forEach(key => {
-                        if (key !== 'Case' && key !== 'Motherboard') {
-                            if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
-                            else nextBuild[key] = null;
-                        }
-                    });
-                    toast({ title: 'Build Updated', description: 'Changing the motherboard removed dependent components.' });
-                }
-
-                return nextBuild;
-            });
+            setBuild(prevBuild => ({ ...prevBuild, [category]: componentData }));
             toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
         }
     };
@@ -478,7 +394,27 @@ export default function PrebuiltBuilderPage() {
             </div>
 
             <div className="grid lg:grid-cols-12 gap-6 xl:gap-8">
-                <div className="lg:col-span-9 flex flex-col gap-6">
+                {/* Left Sidebar: Build Insights (Pinned) */}
+                {isInsightsPinned && (
+                    <div className="hidden lg:block lg:col-span-3 h-[calc(100vh-120px)] sticky top-20">
+                        <FloatingInsights
+                            isOpen={true}
+                            onClose={() => setIsInsightsPinned(false)}
+                            build={build}
+                            resolution={resolution}
+                            onResolutionChange={setResolution}
+                            workload={workload}
+                            onWorkloadChange={setWorkload}
+                            isPinned={true}
+                            onTogglePin={() => setIsInsightsPinned(false)}
+                        />
+                    </div>
+                )}
+
+                <div className={cn(
+                    "flex flex-col gap-6",
+                    isInsightsPinned ? "lg:col-span-6" : "lg:col-span-9"
+                )}>
                     <InventoryToolbar
                         categories={categories}
                         onCategoryChange={handleCategoryChange}
@@ -616,7 +552,39 @@ export default function PrebuiltBuilderPage() {
                     </div>
                 </div>
             </div>
-            <BuilderFloatingChat />
+
+            {/* Floating Insights Toggle & Panel */}
+            <div className={cn("fixed bottom-6 left-6 z-50 flex flex-col-reverse items-start gap-4", isInsightsPinned ? "lg:hidden" : "")}>
+                {!showInsights && (
+                    <Button
+                        size="lg"
+                        onClick={() => setShowInsights(true)}
+                        className="rounded-full shadow-2xl h-14 px-6 gap-3 bg-primary hover:bg-primary/90 text-white font-bold uppercase tracking-widest border border-white/10 ring-4 ring-primary/20 animate-in fade-in slide-in-from-bottom-4 duration-500"
+                    >
+                        <LayoutPanelLeft className="w-5 h-5" />
+                        Build Insights
+                    </Button>
+                )}
+            </div>
+
+            {(!isInsightsPinned || showInsights) && (
+                <FloatingInsights
+                    isOpen={showInsights}
+                    onClose={() => setShowInsights(false)}
+                    build={build}
+                    resolution={resolution}
+                    onResolutionChange={setResolution}
+                    workload={workload}
+                    onWorkloadChange={setWorkload}
+                    isPinned={false}
+                    onTogglePin={() => {
+                        setIsInsightsPinned(true);
+                        setShowInsights(false);
+                    }}
+                />
+            )}
+
+            <BuilderFloatingChat build={build} />
         </main >
     );
 }
