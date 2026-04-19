@@ -401,10 +401,6 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
       if (!initialData) form.reset();
       setOpen(false);
       
-      // Refresh the UI to show the latest changes immediately
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
     } catch (error: any) {
       toast({ variant: "destructive", title: initialData ? "Error updating part" : "Error adding part", description: error.message || "An unexpected error occurred." });
     } finally {
@@ -864,7 +860,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                                 if (key === "Slot Thickness") {
                                   setSpecValue(key, val ? `${val} Slot` : "");
                                 } else if (key.includes("(mm)") || key === "Height" || key === "Radiator Size" || key === "Driver Size") {
-                                  const intVal = val.replace(/\D/g, '');
+                                  const intVal = val.replace(/\D/g, '').slice(0, 3);
                                   setSpecValue(key, intVal ? `${intVal} mm` : "");
                                 } else if (key.includes("(W)") || key.includes("Power") || key === "TDP Rating") {
                                   const intVal = val.replace(/\D/g, '');
