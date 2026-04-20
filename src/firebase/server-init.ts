@@ -5,7 +5,7 @@ function initializeAdmin() {
     if (admin.apps.length > 0) return;
 
     try {
-        const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+        const serviceAccount = process.env.FB_SERVICE_ACCOUNT;
         const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
         
         console.log("[Firebase Admin] Attempting initialization...");
@@ -32,10 +32,10 @@ function initializeAdmin() {
                 console.log("[Firebase Admin] Initialized with service account from environment.");
             } catch (jsonError) {
                 console.error("[Firebase Admin] JSON Parse Error Detail:", jsonError);
-                throw new Error("Invalid FIREBASE_SERVICE_ACCOUNT JSON format.");
+                throw new Error("Invalid FB_SERVICE_ACCOUNT JSON format.");
             }
         } else {
-            console.warn("[Firebase Admin] No FIREBASE_SERVICE_ACCOUNT found. Falling back to default credentials.");
+            console.warn("[Firebase Admin] No FB_SERVICE_ACCOUNT found. Falling back to default credentials.");
             // Fallback to default credentials (works in GCP environments like Vercel/Firebase Functions)
             admin.initializeApp({
                 projectId: projectId,
