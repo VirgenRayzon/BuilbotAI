@@ -41,7 +41,6 @@ import { FullPageLoader } from "@/components/full-page-loader";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { PaginationControls } from "@/components/pagination-controls";
-import { PCVisualizer } from "@/components/pc-visualizer";
 import { useUserProfile } from "@/context/user-profile";
 import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";

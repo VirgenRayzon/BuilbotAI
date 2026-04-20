@@ -4,14 +4,13 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Activity, Cpu, Pin, PinOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PCVisualizer } from "@/components/pc-visualizer";
 import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
 import { ComponentData, Resolution, WorkloadType } from "@/lib/types";
 
 interface FloatingInsightsProps {
     isOpen: boolean;
     onClose: () => void;
-    build: Record<string, any>;
+    build: Record<string, ComponentData | ComponentData[] | null>;
     resolution: Resolution;
     onResolutionChange: (res: Resolution) => void;
     workload: WorkloadType;
@@ -52,16 +51,6 @@ export function FloatingInsights({
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
-                    <section>
-                        <div className="flex items-center gap-2 mb-4">
-                            <Cpu className="w-4 h-4 text-cyan-400" />
-                            <h3 className="text-sm font-bold tracking-widest text-cyan-400 uppercase">Clearance Preview</h3>
-                        </div>
-                        <div className="rounded-xl overflow-hidden border border-border shadow-inner bg-muted/20">
-                            <PCVisualizer build={build} />
-                        </div>
-                    </section>
-
                     <section>
                         <div className="flex items-center gap-2 mb-4">
                             <Activity className="w-4 h-4 text-purple-400" />
@@ -121,16 +110,6 @@ export function FloatingInsights({
 
                         {/* Content */}
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
-                            <section>
-                                <div className="flex items-center gap-2 mb-4">
-                                    <Cpu className="w-4 h-4 text-cyan-400" />
-                                    <h3 className="text-sm font-bold tracking-widest text-cyan-400 uppercase">Clearance Preview</h3>
-                                </div>
-                        <div className="rounded-xl overflow-hidden border border-border shadow-inner bg-muted/20">
-                            <PCVisualizer build={build} />
-                        </div>
-                            </section>
-
                             <section>
                                 <div className="flex items-center gap-2 mb-4">
                                     <Activity className="w-4 h-4 text-purple-400" />

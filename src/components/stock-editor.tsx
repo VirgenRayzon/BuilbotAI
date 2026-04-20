@@ -5,13 +5,15 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Minus, Plus } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface StockEditorProps {
   stock: number;
   onStockChange: (newStock: number) => void;
+  className?: string;
 }
 
-export function StockEditor({ stock, onStockChange }: StockEditorProps) {
+export function StockEditor({ stock, onStockChange, className }: StockEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(stock.toString());
   const inputRef = useRef<HTMLInputElement>(null);
@@ -73,7 +75,7 @@ export function StockEditor({ stock, onStockChange }: StockEditorProps) {
   }
 
   return (
-    <div className="flex items-center justify-center gap-2">
+    <div className={cn("flex items-center justify-center gap-2", className)}>
       <Button variant="outline" size="icon" className="h-6 w-6" onClick={handleDecrement}>
         <Minus className="h-3 w-3" />
       </Button>

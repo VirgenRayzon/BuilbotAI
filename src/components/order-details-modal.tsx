@@ -4,10 +4,7 @@ import { useState, useEffect } from "react";
 import { useFirestore } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { Order } from "@/lib/types";
-import { 
-    Dialog, DialogContent, DialogHeader, DialogTitle, 
-    DialogDescription, DialogFooter 
-} from "@/components/ui/card"; // Wait, Dialog is in ui/dialog usually
+import { Button } from "@/components/ui/button";
 import { 
     Dialog as ShdnDialog, 
     DialogContent as ShdnDialogContent, 
@@ -16,7 +13,6 @@ import {
     DialogDescription as ShdnDialogDescription,
     DialogFooter as ShdnDialogFooter
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Loader2, Package, Calendar, CreditCard, ChevronRight, User } from "lucide-react";
 import { formatCurrency, cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";

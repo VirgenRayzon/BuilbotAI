@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn, formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
 import {
   Table,
@@ -151,7 +151,7 @@ function PrebuiltTableRow({
   const missingParts = getMissingParts(system);
   const isComplete = missingParts.length === 0;
 
-  useState(() => {
+  useEffect(() => {
     if (!firestore || !isComplete) {
       setStockStatus('out-of-stock');
       return;

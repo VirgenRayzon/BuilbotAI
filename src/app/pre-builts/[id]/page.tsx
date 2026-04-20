@@ -81,7 +81,7 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                         router.push('/pre-builts');
                         return;
                     }
-                    setSystem({ id: snap.id, ...data });
+                    setSystem({ ...data, id: snap.id });
                 } else {
                     toast({
                         title: "System Not Found",

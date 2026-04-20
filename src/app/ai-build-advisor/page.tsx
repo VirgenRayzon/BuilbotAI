@@ -18,7 +18,6 @@ import { FloatingInsights } from "@/components/floating-insights";
 import { LayoutPanelLeft } from "lucide-react";
 import { AIBuildCritique } from "@/components/ai-build-critique";
 import { YourBuild } from "@/components/your-build";
-import { PCVisualizer } from "@/components/pc-visualizer";
 import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
 import { useLoading } from "@/context/loading-context";

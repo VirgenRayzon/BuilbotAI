@@ -1,7 +1,6 @@
 "use server";
 
 import { getAdminStorage } from "@/firebase/server-init";
-import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import crypto from "crypto";
 
 /**
@@ -72,13 +71,19 @@ export async function uploadBase64ToStorage(base64Data: string, storagePath: str
             }
         }
 
+        const bucket = getAdminStorage().bucket();
         const fileName = `${sanitizedPrefix}.${extension}`;
-        const storageRef = ref(storage, `${storagePath}/${fileName}`);
+        const file = bucket.file(`${storagePath}/${fileName}`);
 
         console.log(`[Server Action] Uploading to: ${storagePath}/${fileName} (${contentType})`);
         
-        await uploadString(storageRef, cleanBase64, 'base64', { contentType });
-        const downloadUrl = await getDownloadURL(storageRef);
+        await file.save(Buffer.from(cleanBase64, 'base64'), {
+            metadata: { contentType }
+        });
+        
+        // Make the file public to get a persistent URL
+        await file.makePublic();
+        const downloadUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
         
         console.log(`[Server Action] Upload successful: ${downloadUrl}`);
         return downloadUrl;
