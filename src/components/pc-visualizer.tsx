@@ -196,109 +196,114 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
 
     const cfg = LAYOUT_CONFIGS[archetype];
 
-    // ── Dynamic CPU Cooler Position ──────────────────
-    const coolerRelX = (moboW - cfg.cooler.size) / 2;
-    const coolerRelY = moboH * 0.12;
+    // ── Layout Memoization ──────────────────────────────────────────────────
+    const layout = React.useMemo(() => {
+        const coolerRelX = (moboW - cfg.cooler.size) / 2;
+        const coolerRelY = moboH * 0.12;
 
-    const actualGpuLength = getActualDimension(gpuData, 'GPU', 'primary') || 0;
-    const actualPsuLength = getActualDimension(psuData, 'PSU') || 0;
-    const radiatorSizeVal = String(radiatorSize || coolerData?.model || "");
-    const actualRadSize = parseInt(radiatorSizeVal.match(/(\d+)/)?.[0] || "0");
+        const actualGpuLength = getActualDimension(gpuData, 'GPU', 'primary') || 0;
+        const actualPsuLength = getActualDimension(psuData, 'PSU') || 0;
+        const radiatorSizeVal = String(radiatorSize || coolerData?.model || "");
+        const actualRadSize = parseInt(radiatorSizeVal.match(/(\d+)/)?.[0] || "0");
 
-    const gpuDisplayWidth = actualGpuLength || cfg.gpu.width;
-    const actualGpuThickness = getActualDimension(gpuData, 'GPU', 'secondary') || 0;
-    const gpuDisplayHeight = actualGpuThickness || cfg.gpu.height;
+        const gpuDisplayWidth = actualGpuLength || cfg.gpu.width;
+        const actualGpuThickness = getActualDimension(gpuData, 'GPU', 'secondary') || 0;
+        const gpuDisplayHeight = actualGpuThickness || cfg.gpu.height;
 
-    const caseStyle = (caseData?.specifications?.["Case Type"] as string || "").toLowerCase().includes("fish tank") ||
-        (caseData?.specifications?.["Type"] as string || "").toLowerCase().includes("fish tank")
-        ? "Fish Tank" : "High Air Flow";
+        const caseStyle = (caseData?.specifications?.["Case Type"] as string || "").toLowerCase().includes("fish tank") ||
+            (caseData?.specifications?.["Type"] as string || "").toLowerCase().includes("fish tank")
+            ? "Fish Tank" : "High Air Flow";
 
-    const getPsuSpec = (key: string) => {
-        const val = psuData?.specifications?.[key];
-        if (!val) return null;
-        return parseInt(String(val).replace(/[^\d]/g, ""));
-    };
+        const getPsuSpec = (key: string) => {
+            const val = psuData?.specifications?.[key];
+            if (!val) return null;
+            return parseInt(String(val).replace(/[^\d]/g, ""));
+        };
 
-    const psuW = getPsuSpec("Width (mm)") || psuData?.dimensions?.width || 150;
-    const psuD = getPsuSpec("Depth (mm)") || psuData?.dimensions?.depth || 140;
-    const psuH = getPsuSpec("Height (mm)") || psuData?.dimensions?.height || 86;
+        const psuW = getPsuSpec("Width (mm)") || psuData?.dimensions?.width || 150;
+        const psuD = getPsuSpec("Depth (mm)") || psuData?.dimensions?.depth || 140;
+        const psuH = getPsuSpec("Height (mm)") || psuData?.dimensions?.height || 86;
 
-    // View Logic: Fish Tank = Top View (W x D), High Air Flow = Side View (D x H)
-    const psuDisplayWidth = caseStyle === "Fish Tank" ? psuW : psuD;
-    const psuDisplayHeight = caseStyle === "Fish Tank" ? psuD : psuH;
+        const psuDisplayWidth = caseStyle === "Fish Tank" ? psuW : psuD;
+        const psuDisplayHeight = caseStyle === "Fish Tank" ? psuD : psuH;
 
-    const topRadDisplayWidth = (isAio && actualRadSize > 0) ? actualRadSize : (cfg.topRad?.width || 0);
-    const frontRadDisplayHeight = (isAio && actualRadSize > 0) ? actualRadSize : (cfg.frontRad?.height || 0);
+        const topRadDisplayWidth = (isAio && actualRadSize > 0) ? actualRadSize : (cfg.topRad?.width || 0);
+        const frontRadDisplayHeight = (isAio && actualRadSize > 0) ? actualRadSize : (cfg.frontRad?.height || 0);
 
-    const topSlotOffset = currentMoboConfig.topSlotOffset;
-    const gpuY = cfg.mobo.y + topSlotOffset;
+        const topSlotOffset = currentMoboConfig.topSlotOffset;
+        const gpuY = cfg.mobo.y + topSlotOffset;
 
-    const getNumSpec = (data: any, key: string) => {
-        const val = data?.specifications?.[key];
-        if (!val) return null;
-        const parsed = parseInt(String(val).replace(/[^\d]/g, ""));
-        return isNaN(parsed) ? null : parsed;
-    };
+        const getNumSpec = (data: any, key: string) => {
+            const val = data?.specifications?.[key];
+            if (!val) return null;
+            const parsed = parseInt(String(val).replace(/[^\d]/g, ""));
+            return isNaN(parsed) ? null : parsed;
+        };
 
-    const specWidth = getNumSpec(caseData, "Width (mm)");
-    const specDepth = getNumSpec(caseData, "Depth (mm)");
-    const specHeight = getNumSpec(caseData, "Height (mm)");
+        const specWidth = getNumSpec(caseData, "Width (mm)");
+        const specDepth = getNumSpec(caseData, "Depth (mm)");
+        const specHeight = getNumSpec(caseData, "Height (mm)");
 
-    const caseW = specDepth || (caseData?.dimensions?.depth) || cfg.case.width;
-    const caseH = specHeight || (caseData?.dimensions?.height) || cfg.case.height;
+        const caseW = specDepth || (caseData?.dimensions?.depth) || cfg.case.width;
+        const caseH = specHeight || (caseData?.dimensions?.height) || cfg.case.height;
 
-    // ── Content-Aware Component Positioning ────────────────────────
-    // We calculate the actual X/Y by maintaining the relative distance from the 
-    // case edges defined in the baseline LAYOUT_CONFIGS.
+        const getFrontX = (baselineX: number) => {
+            const distFromFront = cfg.case.width - baselineX;
+            return caseW - distFromFront;
+        };
 
-    // Front-anchored parts move with case depth (caseW)
-    const getFrontX = (baselineX: number) => {
-        const distFromFront = cfg.case.width - baselineX;
-        return caseW - distFromFront;
-    };
+        const getBottomY = (baselineY: number) => {
+            const distFromBottom = cfg.case.height - baselineY;
+            return caseH - distFromBottom;
+        };
 
-    // Bottom-anchored parts move with case height (caseH)
-    const getBottomY = (baselineY: number) => {
-        const distFromBottom = cfg.case.height - baselineY;
-        return caseH - distFromBottom;
-    };
+        const isFrontPsu = archetype === 'ITX';
+        let psuX = isFrontPsu ? getFrontX(cfg.psu.x) : cfg.psu.x;
+        let psuY = isFrontPsu ? cfg.psu.y : getBottomY(cfg.case.height - 10);
 
-    // Determine PSU Position and safety clamp
-    const isFrontPsu = archetype === 'ITX';
-    let psuX = isFrontPsu ? getFrontX(cfg.psu.x) : cfg.psu.x;
-    let psuY = isFrontPsu ? cfg.psu.y : getBottomY(cfg.case.height - 10); // Start at bottom edge
+        if (caseStyle === "Fish Tank") {
+            psuX = 20;
+            psuY = 60;
+        } else if (!isFrontPsu) {
+            psuX = 20;
+            psuY = caseH - psuDisplayHeight - 10;
+        }
 
-    // Archetype/Style adjustments
-    if (caseStyle === "Fish Tank") {
-        // Position at upper left corner (Top-Rear in dual chamber layout)
-        psuX = 20;
-        psuY = 60;
-    } else if (!isFrontPsu) {
-        // Standard ATX: anchor to bottom-left with margin
-        psuX = 20;
-        psuY = caseH - psuDisplayHeight - 10;
-    }
+        const actualPsuX = Math.max(10, Math.min(psuX, caseW - psuDisplayWidth - 10));
+        const actualPsuY = Math.max(10, Math.min(psuY, caseH - psuDisplayHeight - 10));
 
-    // FINAL CLAMPING: Ensure PSU is always inside the case boundaries
-    const actualPsuX = Math.max(10, Math.min(psuX, caseW - psuDisplayWidth - 10));
-    const actualPsuY = Math.max(10, Math.min(psuY, caseH - psuDisplayHeight - 10));
+        const actualFrontRadX = cfg.frontRad ? getFrontX(cfg.frontRad.x) : 0;
+        const actualFrontRadY = cfg.frontRad ? cfg.frontRad.y : 0;
 
-    const actualFrontRadX = cfg.frontRad ? getFrontX(cfg.frontRad.x) : 0;
-    const actualFrontRadY = cfg.frontRad ? cfg.frontRad.y : 0;
+        const gpuAbsX = cfg.gpu.x + gpuDisplayWidth;
+        const gpuSlotCount = getGpuSlotCount(gpuData);
+        const isSlotBlocked = archetype === 'ITX' && gpuSlotCount > 2;
+        const gpuBlocked = (gpuAbsX > caseW - 10) || isSlotBlocked;
 
-    const gpuAbsX = cfg.gpu.x + gpuDisplayWidth;
-    const gpuSlotCount = getGpuSlotCount(gpuData);
-    const isSlotBlocked = archetype === 'ITX' && gpuSlotCount > 2;
-    const gpuBlocked = (gpuAbsX > caseW - 10) || isSlotBlocked;
+        const paddingX = 50;
+        const paddingTop = 130;
+        const paddingBottom = 50;
+        const svgW = caseW + paddingX * 2;
+        const svgH = caseH + paddingTop + paddingBottom;
 
-    const paddingX = 50;
-    const paddingTop = 130;
-    const paddingBottom = 50;
-    const svgW = caseW + paddingX * 2;
-    const svgH = caseH + paddingTop + paddingBottom;
+        return {
+            moboW, moboH, moboLabel, cfg, coolerRelX, coolerRelY, 
+            gpuDisplayWidth, gpuDisplayHeight, gpuY, gpuBlocked, gpuSlotCount,
+            psuDisplayWidth, psuDisplayHeight, actualPsuX, actualPsuY, actualPsuLength,
+            topRadDisplayWidth, frontRadDisplayHeight, actualFrontRadX, actualFrontRadY,
+            caseW, caseH, specWidth, actualRadSize,
+            paddingX, paddingTop, svgW, svgH
+        };
+    }, [build, archetype, moboW, moboH, moboLabel, isAio, radiatorSize, coolerData, gpuData, psuData, caseData, currentMoboConfig]);
+
+    const {
+        coolerRelX, coolerRelY, gpuDisplayWidth, gpuDisplayHeight, gpuY, gpuBlocked, gpuSlotCount,
+        psuDisplayWidth, psuDisplayHeight, actualPsuX, actualPsuY, actualPsuLength,
+        topRadDisplayWidth, frontRadDisplayHeight, actualFrontRadX, actualFrontRadY,
+        caseW, caseH, specWidth, actualRadSize, paddingX, paddingTop, svgW, svgH
+    } = layout;
 
     const containerAspectRatio = `${svgW} / ${svgH}`;
-
     const cx = (relX: number) => paddingX + relX;
     const cy = (relY: number) => paddingTop + relY;
 
@@ -546,6 +551,8 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                     transition={springConfig}
                                 >
                                     <motion.rect
+                                        x={0} y={0}
+                                        width={topRadDisplayWidth}
                                         animate={{ width: topRadDisplayWidth }}
                                         transition={springConfig}
                                         height={cfg.topRad.height}
@@ -553,6 +560,8 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                         stroke={colors.gpu} strokeOpacity={0.3} strokeWidth={1}
                                     />
                                     <motion.rect
+                                        x={0} y={0}
+                                        width={topRadDisplayWidth}
                                         animate={{ width: topRadDisplayWidth }}
                                         transition={springConfig}
                                         height={cfg.topRad.height}
@@ -560,6 +569,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                         opacity={0.4}
                                     />
                                     <motion.text
+                                        x={topRadDisplayWidth / 2}
                                         animate={{ x: topRadDisplayWidth / 2 }}
                                         transition={springConfig}
                                         y={cfg.topRad.height / 2 + 4}
@@ -581,6 +591,8 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                     transition={springConfig}
                                 >
                                     <motion.rect
+                                        x={0} y={0}
+                                        height={frontRadDisplayHeight}
                                         animate={{ height: frontRadDisplayHeight }}
                                         transition={springConfig}
                                         width={cfg.frontRad.width}
@@ -588,6 +600,8 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                         stroke={colors.gpu} strokeOpacity={0.3} strokeWidth={1}
                                     />
                                     <motion.rect
+                                        x={0} y={0}
+                                        height={frontRadDisplayHeight}
                                         animate={{ height: frontRadDisplayHeight }}
                                         transition={springConfig}
                                         width={cfg.frontRad.width}
@@ -595,6 +609,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                         opacity={0.4}
                                     />
                                     <motion.text
+                                        y={frontRadDisplayHeight / 2}
                                         animate={{ y: frontRadDisplayHeight / 2 }}
                                         transition={springConfig}
                                         x={cfg.frontRad.width / 2}
@@ -617,17 +632,22 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                     transition={springConfig}
                                 >
                                     <motion.rect
+                                        x={0} y={0}
+                                        width={moboW} height={moboH}
                                         animate={{ width: moboW, height: moboH }}
                                         transition={springConfig}
                                         rx={4} fill="url(#moboGrad)"
                                         stroke={colors.mobo} strokeOpacity={0.4} strokeWidth={1}
                                     />
                                     <motion.rect
+                                        x={0} y={0}
+                                        width={moboW} height={moboH}
                                         animate={{ width: moboW, height: moboH }}
                                         transition={springConfig}
                                         fill="url(#techPattern)" opacity={0.3} rx={4}
                                     />
                                     <motion.rect
+                                        x={moboW * 0.6} y={moboH * 0.5}
                                         animate={{ x: moboW * 0.6, y: moboH * 0.5, width: moboW * 0.15, height: moboW * 0.15 }}
                                         fill="rgba(0,0,0,0.2)" stroke={colors.mobo} strokeOpacity={0.1} rx={2}
                                     />
@@ -636,6 +656,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                     {[...Array(moboFF.includes("ITX") ? 2 : 4)].map((_, i) => (
                                         <motion.rect
                                             key={`ram-${i}`}
+                                            x={moboW - 60 + i * 8} y={30}
                                             animate={{ x: moboW - 60 + i * 8, y: 30 }}
                                             width={4} height={moboH * 0.3}
                                             fill={colors.mobo} fillOpacity={0.15}
@@ -645,6 +666,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                     ))}
 
                                     <motion.rect
+                                        x={15} y={topSlotOffset}
                                         animate={{ x: 15, y: topSlotOffset }}
                                         width={moboW - 60} height={10}
                                         fill="url(#pciePattern)"
@@ -652,6 +674,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                     />
                                     {currentMoboConfig.slots > 1 && (
                                         <motion.rect
+                                            x={15} y={topSlotOffset + 40}
                                             animate={{ x: 15, y: topSlotOffset + 40 }}
                                             width={moboW - 80} height={10}
                                             fill="url(#pciePattern)"
@@ -660,6 +683,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                     )}
 
                                     <motion.text
+                                        x={moboW / 2} y={moboH - 12}
                                         animate={{ x: moboW / 2, y: moboH - 12 }}
                                         transition={springConfig}
                                         fill={colors.mobo} fontSize="11" fontWeight="bold" textAnchor="middle" opacity={0.8}
@@ -668,6 +692,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                         {moboLabel}
                                     </motion.text>
                                     <motion.text
+                                        x={moboW / 2} y={moboH - 24}
                                         animate={{ x: moboW / 2, y: moboH - 24 }}
                                         transition={springConfig}
                                         fill={colors.mobo} fontSize="9" textAnchor="middle" opacity={0.5}
@@ -736,6 +761,8 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                     transition={springConfig}
                                 >
                                     <motion.rect
+                                        x={0} y={0}
+                                        width={gpuDisplayWidth} height={gpuDisplayHeight}
                                         animate={{ width: gpuDisplayWidth, height: gpuDisplayHeight }}
                                         transition={springConfig}
                                         rx={6}
@@ -798,12 +825,16 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                     transition={springConfig}
                                 >
                                     <motion.rect
+                                        x={0} y={0}
+                                        width={psuDisplayWidth} height={psuDisplayHeight}
                                         animate={{ width: psuDisplayWidth, height: psuDisplayHeight }}
                                         transition={springConfig}
                                         rx={6} fill="url(#psuGrad)"
                                         stroke={colors.psu} strokeOpacity={0.4} strokeWidth={1}
                                     />
                                     <motion.rect
+                                        x={0} y={0}
+                                        width={psuDisplayWidth} height={psuDisplayHeight}
                                         animate={{ width: psuDisplayWidth, height: psuDisplayHeight }}
                                         fill="url(#ventPattern)" opacity={0.4} rx={6}
                                     />
@@ -813,6 +844,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                     />
 
                                     <motion.text
+                                        x={psuDisplayWidth / 2} y={psuDisplayHeight / 2 + 4}
                                         animate={{ x: psuDisplayWidth / 2, y: psuDisplayHeight / 2 + 4 }}
                                         transition={springConfig}
                                         fill={colors.psu} fontSize="11" fontWeight="bold" textAnchor="middle" opacity={0.8}
@@ -824,6 +856,7 @@ export function PCVisualizer({ build }: PCVisualizerProps) {
                                         {actualPsuLength > 0 && (
                                             <motion.text
                                                 key="psu-length"
+                                                x={psuDisplayWidth / 2} y={psuDisplayHeight / 2 + 15}
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 0.6, x: psuDisplayWidth / 2, y: psuDisplayHeight / 2 + 15 }}
                                                 exit={{ opacity: 0 }}
