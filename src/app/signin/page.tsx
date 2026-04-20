@@ -8,16 +8,24 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth, useFirestore } from '@/firebase';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { setDoc } from 'firebase/firestore';
+import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Terminal } from 'lucide-react';
+import { Loader2, Terminal, Key } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 
 const formSchema = z.object({
@@ -35,6 +43,9 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<RoleTab>("user");
+  const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
+  const [requestEmail, setRequestEmail] = useState('');
+  const [requestLoading, setRequestLoading] = useState(false);
   const router = useRouter();
   const auth = useAuth();
   const firestore = useFirestore();
@@ -83,13 +94,30 @@ export default function SignInPage() {
              effectiveProfile.isManager = true;
            }
            const keyStr = values.roleKey || "none";
-           const keyDocSnap = await getDoc(doc(firestore, 'authKeys', keyStr)).catch(() => null);
-           const isDbKey = keyDocSnap?.exists() && keyDocSnap.data()?.role === "manager";
-           if (!isDbKey && keyStr !== "00216764") {
-             await signOut(auth);
-             form.setError('roleKey', { message: 'Incorrect manager key.' });
-             setLoading(false);
-             return;
+           
+           // Individual Key Validation
+           if (userData.activeManagerKey) {
+             if (userData.activeManagerKey !== keyStr) {
+               await signOut(auth);
+               form.setError('roleKey', { message: 'Incorrect manager key.' });
+               setLoading(false);
+               return;
+             }
+           } else {
+             // Migration Path: Check legacy unified key
+             const keyDocSnap = await getDoc(doc(firestore, 'authKeys', keyStr)).catch(() => null);
+             const isLegacyKey = (keyDocSnap?.exists() && keyDocSnap.data()?.role === "manager") || keyStr === "00216764";
+             
+             if (!isLegacyKey) {
+               await signOut(auth);
+               form.setError('roleKey', { message: 'Incorrect manager key.' });
+               setLoading(false);
+               return;
+             }
+             
+             // Adopt the key into the user profile
+             await updateDoc(userDocRef, { activeManagerKey: keyStr });
+             effectiveProfile.activeManagerKey = keyStr;
            }
         } else if (activeTab === "superadmin") {
            if (!userData.isSuperAdmin) {
@@ -135,6 +163,39 @@ export default function SignInPage() {
       setError(err.message || 'An error occurred during sign-in.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRequestKey = async () => {
+    if (!firestore || !requestEmail) return;
+    if (!requestEmail.includes('@')) {
+      toast({ title: "Invalid Email", description: "Please enter a valid email address.", variant: "destructive" });
+      return;
+    }
+
+    setRequestLoading(true);
+    try {
+      await addDoc(collection(firestore, 'keyRequests'), {
+        email: requestEmail,
+        role: 'manager',
+        status: 'pending',
+        requestedAt: serverTimestamp(),
+      });
+      toast({
+        title: "Request Sent",
+        description: "Your request for a new manager key has been sent to the Super Admin.",
+      });
+      setIsRequestDialogOpen(false);
+      setRequestEmail('');
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: "Failed to send request. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setRequestLoading(false);
     }
   };
 
@@ -199,21 +260,34 @@ export default function SignInPage() {
                   </FormItem>
                 )}
               />
-              {activeTab === "manager" && (
-                <FormField
-                  control={form.control}
-                  name="roleKey"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Manager Key</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="Required manager key" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
+                {activeTab === "manager" && (
+                  <div className="space-y-1">
+                    <FormField
+                      control={form.control}
+                      name="roleKey"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Manager Key</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="Required manager key" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-end">
+                      <Button 
+                        type="button"
+                        variant="link" 
+                        size="sm" 
+                        className="px-0 h-auto text-xs text-muted-foreground hover:text-primary transition-colors"
+                        onClick={() => setIsRequestDialogOpen(true)}
+                      >
+                        Forgot Manager Key?
+                      </Button>
+                    </div>
+                  </div>
+                )}
               {activeTab === "superadmin" && (
                 <FormField
                   control={form.control}
@@ -243,6 +317,40 @@ export default function SignInPage() {
           </div>
         </CardContent>
       </Card>
+      <Dialog open={isRequestDialogOpen} onOpenChange={setIsRequestDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5 text-primary" />
+              Request Manager Key
+            </DialogTitle>
+            <DialogDescription>
+              Forgot your key? Enter your account email and the Super Admin will review your request.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="request-email">Email Address</Label>
+              <Input
+                id="request-email"
+                type="email"
+                placeholder="Enter your registered email"
+                value={requestEmail}
+                onChange={(e) => setRequestEmail(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRequestDialogOpen(false)} disabled={requestLoading}>
+              Cancel
+            </Button>
+            <Button onClick={handleRequestKey} disabled={requestLoading || !requestEmail}>
+              {requestLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Send Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

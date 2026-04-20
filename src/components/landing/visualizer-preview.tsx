@@ -36,21 +36,33 @@ export function VisualizerPreview() {
                 }}
             />
 
-            {/* "Mock" PC Case Frame */}
             <motion.div
                 className={cn(
-                    "w-4/5 h-4/5 border-2 rounded-3xl relative flex items-center justify-center z-10 shadow-2xl backdrop-blur-sm overflow-hidden group",
+                    "w-4/5 h-4/5 border-2 rounded-3xl relative z-10 shadow-2xl backdrop-blur-sm overflow-hidden group perspective-1000",
                     isDark ? "bg-slate-900/40 border-white/10 shadow-black/40" : "bg-white/60 border-slate-200 shadow-slate-200/20"
                 )}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 1 }}
+                initial={{ opacity: 0, scale: 0.9, rotateX: 10, rotateY: -10 }}
+                animate={{ 
+                    opacity: 1, 
+                    scale: 1, 
+                    rotateX: [2, -2, 2],
+                    rotateY: [-3, 3, -3],
+                    y: [0, -10, 0]
+                }}
+                transition={{ 
+                    opacity: { duration: 1 },
+                    scale: { duration: 1 },
+                    rotateX: { duration: 8, repeat: Infinity, ease: "easeInOut" },
+                    rotateY: { duration: 10, repeat: Infinity, ease: "easeInOut" },
+                    y: { duration: 6, repeat: Infinity, ease: "easeInOut" }
+                }}
+                style={{ transformStyle: 'preserve-3d' }}
             >
-                {/* Component Outlines with Hover States */}
+                {/* 3D Component Outlines */}
                 <motion.div 
-                    whileHover={{ scale: 1.05, backgroundColor: isDark ? "rgba(34,211,238,0.1)" : "rgba(34,211,238,0.05)" }}
+                    whileHover={{ scale: 1.05, translateZ: 20, backgroundColor: isDark ? "rgba(34,211,238,0.1)" : "rgba(34,211,238,0.05)" }}
                     className={cn(
-                        "absolute top-6 left-6 w-1/3 h-1/2 border rounded-xl flex flex-col items-center justify-center gap-3 transition-all duration-300 cursor-help",
+                        "absolute top-6 left-6 w-1/3 h-1/2 border rounded-xl flex flex-col items-center justify-center gap-3 transition-all duration-300 cursor-help shadow-lg",
                         isDark ? "bg-cyan-500/5 border-cyan-500/20" : "bg-cyan-500/5 border-cyan-500/30"
                     )}
                 >
@@ -58,23 +70,23 @@ export function VisualizerPreview() {
                         <Cpu className="w-5 h-5 text-cyan-400 animate-pulse" />
                     </div>
                     <div className="flex flex-col items-center">
-                        <span className="text-[9px] text-cyan-400 font-black tracking-[0.2em] uppercase">Mobo_V2</span>
-                        <span className="text-[7px] text-cyan-400/60 font-mono">READY</span>
+                        <span className="text-[9px] text-cyan-400 font-black tracking-[0.2em] uppercase">Core_Matrix</span>
+                        <span className="text-[7px] text-cyan-400/60 font-mono">OPTIMIZED</span>
                     </div>
                 </motion.div>
 
                 <motion.div
-                    whileHover={{ scale: 1.02, backgroundColor: isDark ? "rgba(168,85,247,0.1)" : "rgba(168,85,247,0.05)" }}
+                    whileHover={{ scale: 1.02, translateZ: 30, backgroundColor: isDark ? "rgba(168,85,247,0.1)" : "rgba(168,85,247,0.05)" }}
                     className={cn(
-                        "absolute bottom-8 left-6 w-2/3 h-1/4 border rounded-xl flex items-center justify-center gap-4 transition-all duration-300 cursor-help",
+                        "absolute bottom-8 left-6 w-2/3 h-1/4 border rounded-xl flex items-center justify-center gap-4 transition-all duration-300 cursor-help shadow-lg",
                         isDark ? "bg-purple-500/5 border-purple-500/20" : "bg-purple-500/5 border-purple-500/30"
                     )}
-                    animate={{ x: [0, 8, 0] }}
+                    animate={{ x: [0, 8, 0], translateZ: [10, 20, 10] }}
                     transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
                 >
                     <Layers className="w-4 h-4 text-purple-400" />
                     <div className="flex flex-col">
-                        <span className="text-[9px] text-purple-400 font-black tracking-[0.2em] uppercase">GPU_CLEARANCE_ENGINE</span>
+                        <span className="text-[9px] text-purple-400 font-black tracking-[0.2em] uppercase">3D_VOLUMETRIC_ENGINE</span>
                         <div className="flex gap-1 mt-0.5">
                             {[1,2,3,4,5].map(i => (
                                 <div key={i} className="w-1.5 h-1 bg-purple-400/40 rounded-full" />
@@ -84,15 +96,15 @@ export function VisualizerPreview() {
                 </motion.div>
 
                 <motion.div 
-                    whileHover={{ scale: 1.05, backgroundColor: isDark ? "rgba(59,130,246,0.1)" : "rgba(59,130,246,0.05)" }}
+                    whileHover={{ scale: 1.05, translateZ: 40, backgroundColor: isDark ? "rgba(59,130,246,0.1)" : "rgba(59,130,246,0.05)" }}
                     className={cn(
-                        "absolute top-6 right-6 w-1/4 h-2/3 border rounded-xl flex items-center justify-center transition-all duration-300 cursor-help",
+                        "absolute top-6 right-6 w-1/4 h-2/3 border rounded-xl flex items-center justify-center transition-all duration-300 cursor-help shadow-lg",
                         isDark ? "bg-blue-500/5 border-blue-500/20" : "bg-blue-500/5 border-blue-500/30"
                     )}
                 >
                     <span className="text-[9px] text-blue-400 font-black tracking-[0.3em] uppercase [writing-mode:vertical-lr] flex items-center gap-2">
                         <Zap className="w-3 h-3 rotate-90" />
-                        RAD_THERMAL_SYNC
+                        THERMAL_FLOW_Z
                     </span>
                 </motion.div>
 

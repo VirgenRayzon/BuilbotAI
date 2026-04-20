@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useUserProfile } from '@/context/user-profile';
 import Link from 'next/link';
-import { Loader2, ArrowRight, Cpu, Sparkles, MonitorSmartphone, Zap, ShieldCheck, Box, Headphones, Layers, LayoutPanelLeft } from 'lucide-react';
+import { Loader2, ArrowRight, Cpu, Sparkles, MonitorSmartphone, Zap, ShieldCheck, Box, Headphones, Layers, LayoutPanelLeft, CheckCircle2, Bot } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SectionHeader } from '@/components/landing/section-header';
 import { FeatureShowcase } from '@/components/landing/feature-showcase';
@@ -96,7 +96,7 @@ export default function StartPage() {
                 "max-w-xl text-xl md:text-2xl mb-12 leading-relaxed font-medium",
                 isDark ? "text-slate-400" : "text-slate-600"
               )}>
-                Forge high-performance machines with a real-time <span className="text-primary font-bold">2D clearance engine</span>, neural bottleneck diagnostics, and intelligent hardware critique.
+                Forge high-performance machines with a real-time <span className="text-primary font-bold">3D Clearance Visualizer</span>, neural bottleneck diagnostics, and intelligent hardware critique.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-start gap-6">
@@ -195,8 +195,8 @@ export default function StartPage() {
           />
 
           <FeatureShowcase
-            title="2D Clearance Engine"
-            description="Our proprietary engine maps component dimensions (GPU length, CPU cooler height, PSU depth) directly against case frames in real-time. No more guessing—if it fits in Buildbot, it fits on your desk."
+            title="3D Real-time Visualizer"
+            description="Experience your build before the first screw is turned. Our immersive 3D engine simulates component clearance, cable routing paths, and thermal zones in a high-fidelity environment."
             visual={<VisualizerPreview />}
           />
 
@@ -258,8 +258,8 @@ export default function StartPage() {
           />
 
           <FeatureShowcase
-            title="LLM Hardware Critique"
-            description="Not sure if a specific AIO is overkill for your CPU? Ask the Buildbot! Our integrated AI analyzes your entire hardware cart for value, thermal efficiency, and generational compatibility."
+            title="Buildbot Build Critique"
+            description="Not sure if a specific AIO is overkill for your CPU? Our Buildbot Critique analyzes your entire hardware selection for value, thermal efficiency, and generational compatibility, providing professional feedback on every choice."
             visual={
               <div className="w-full h-full flex items-center justify-center p-12">
                 <div className={cn(
@@ -279,6 +279,44 @@ export default function StartPage() {
                   )}>
                     "Architectural Scan Complete: The Ryzen 7 7800X3D choice is optimal for your gaming profile. However, the selected 360mm AIO exceeds thermal requirements for this 120W TDP chip. Consider a 240mm unit to reallocate $45 towards a faster NVMe storage tier..."
                   </p>
+                </div>
+              </div>
+            }
+          />
+
+          <FeatureShowcase
+            reversed
+            title="Instant AI Build Generation"
+            description="Tell Buildbot your budget, favorite games, and performance goals. Within seconds, our neural engine architects a complete, perfectly matched build from our live inventory—zero research required."
+            visual={
+              <div className="w-full h-full flex flex-col justify-center p-12 gap-4">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+                        <Bot className="w-4 h-4 text-primary" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Neural Architect Stream</span>
+                </div>
+                
+                <div className="space-y-3">
+                    {[
+                        { text: "Scanning GPU market for better value...", icon: CheckCircle2, color: "text-emerald-500" },
+                        { text: "CPU-Motherboard socket match: VERIFIED", icon: ShieldCheck, color: "text-blue-500" },
+                        { text: "Suggestion: DDR5-6000 CL30 for optimal latency", icon: Zap, color: "text-purple-400" }
+                    ].map((item, i) => (
+                        <motion.div 
+                            key={i}
+                            initial={{ opacity: 0, x: -20 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.2 * i }}
+                            className={cn(
+                                "p-3 rounded-xl border flex items-center gap-3",
+                                isDark ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"
+                            )}
+                        >
+                            <item.icon className={cn("w-4 h-4", item.color)} />
+                            <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{item.text}</span>
+                        </motion.div>
+                    ))}
                 </div>
               </div>
             }
