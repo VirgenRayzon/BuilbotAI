@@ -249,6 +249,9 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                                                         }}>
                                                                             {part.text}
                                                                         </ReactMarkdown>
+                                                                        {isLoading && i === messages.length - 1 && partIdx === msg.parts!.length - 1 && (
+                                                                            <span className="inline-block w-1.5 h-4 ml-1 bg-cyan-400 animate-pulse align-middle" />
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             );
