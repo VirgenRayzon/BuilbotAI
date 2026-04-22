@@ -98,7 +98,18 @@ INSTRUCTIONS:
             stopWhen: stepCountIs(5), // Allow for tool calling loops automatically
         });
 
-        return result.toUIMessageStreamResponse();
+        return result.toUIMessageStreamResponse({
+            headers: {
+                'Transfer-Encoding': 'chunked',
+                'Connection': 'keep-alive',
+            },
+            onError: (error: unknown) => {
+                if (error == null) return 'unknown error';
+                if (typeof error === 'string') return error;
+                if (error instanceof Error) return error.message;
+                return JSON.stringify(error);
+            }
+        });
 
     } catch (error) {
         console.error("Error in chat route:", error);
