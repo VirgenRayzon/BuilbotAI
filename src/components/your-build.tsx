@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import type { ComponentData } from "@/lib/types";
 import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical as CaseIcon, Wind, AlertCircle, X as CloseIcon, BrainCircuit, Loader2, ThumbsUp, ThumbsDown, MonitorPlay, Zap, Plus, Sparkles, Monitor, Keyboard, Mouse, Headphones, ShieldCheck, CheckCircle2, Gauge } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -38,6 +38,7 @@ interface YourBuildProps {
     allParts?: Part[];
     onAddPrebuilt?: (data: PrebuiltBuilderAddFormSchema) => void;
     hasAnalysis?: boolean;
+    onCategorySelect?: (category: string) => void;
 }
 
 function BottleneckMeter({ build, resolution }: { build: Record<string, ComponentData | ComponentData[] | null>, resolution: Resolution }) {
@@ -89,7 +90,8 @@ export function YourBuild({
     isManagerMode = false,
     allParts = [],
     onAddPrebuilt,
-    hasAnalysis = false
+    hasAnalysis = false,
+    onCategorySelect
 }: YourBuildProps) {
     const [analysis, setAnalysis] = useState<any>(null);
     const [loading, setLoading] = useState(false);
@@ -322,7 +324,14 @@ export function YourBuild({
 
                             if (components.length === 0) {
                                 return (
-                                    <div key={name} className="flex items-center gap-4 py-1.5 opacity-40 grayscale group cursor-default transition-all hover:opacity-100 hover:grayscale-0">
+                                    <div 
+                                        key={name} 
+                                        className={cn(
+                                            "flex items-center gap-4 py-1.5 opacity-40 grayscale group transition-all hover:opacity-100 hover:grayscale-0",
+                                            onCategorySelect ? "cursor-pointer" : "cursor-default"
+                                        )}
+                                        onClick={() => onCategorySelect?.(name)}
+                                    >
                                         <div className="p-2 bg-secondary/80 rounded flex items-center justify-center">
                                             <Icon className="w-4 h-4 text-muted-foreground" />
                                         </div>
@@ -386,7 +395,14 @@ export function YourBuild({
 
                             if (!component) {
                                 return (
-                                    <div key={name} className="flex items-center gap-4 py-1.5 opacity-40 grayscale group cursor-default transition-all hover:opacity-100 hover:grayscale-0">
+                                    <div 
+                                        key={name} 
+                                        className={cn(
+                                            "flex items-center gap-4 py-1.5 opacity-40 grayscale group transition-all hover:opacity-100 hover:grayscale-0",
+                                            onCategorySelect ? "cursor-pointer" : "cursor-default"
+                                        )}
+                                        onClick={() => onCategorySelect?.(name)}
+                                    >
                                         <div className="p-2 bg-secondary/80 rounded flex items-center justify-center">
                                             <Icon className="w-4 h-4 text-muted-foreground" />
                                         </div>

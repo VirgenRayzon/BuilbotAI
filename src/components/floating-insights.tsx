@@ -35,7 +35,7 @@ export function FloatingInsights({
     // The parent layout will wrap it appropriately
     if (isPinned) {
         return (
-            <div className="h-full flex flex-col bg-background/60 backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden">
+            <div className="h-fit max-h-full flex flex-col bg-background/60 backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5">
                     <div className="flex items-center gap-2">

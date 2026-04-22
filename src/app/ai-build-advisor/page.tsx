@@ -816,6 +816,7 @@ export default function AiBuildAdvisorPage() {
                       onWorkloadChange={setWorkload}
                       showSystemBalance={false}
                       hasAnalysis={!!critiqueAnalysis}
+                      onCategorySelect={(cat) => router.push(`/builder?category=${cat}`)}
                     />
                   </motion.div>
                 </div>

@@ -443,7 +443,12 @@ export default function PrebuiltBuilderPage() {
                     ) : sortedAndFilteredParts.length > 0 ? (
                         view === 'grid' ? (
                             <>
-                                <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-6">
+                                <div className={cn(
+                                    "grid gap-6",
+                                    isInsightsPinned 
+                                        ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" 
+                                        : "grid-cols-[repeat(auto-fill,minmax(250px,1fr))]"
+                                )}>
                                     {paginatedParts.map(part => (
                                         <PartCard
                                             key={part.id}
@@ -547,6 +552,7 @@ export default function PrebuiltBuilderPage() {
                             isManagerMode={true}
                             allParts={allParts}
                             onAddPrebuilt={handleAddPrebuilt}
+                            onCategorySelect={(cat) => handleCategoryChange(cat, true)}
                         />
                     </div>
                 </div>

@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/context/theme-provider";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { YourBuild } from "@/components/your-build";
 import {
@@ -74,6 +74,7 @@ export default function BuilderPage() {
   const { toast } = useToast();
   const { authUser, profile, loading: authLoading } = useUserProfile();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Redirect unauthenticated users to sign-in or admins to admin dashboard
   useEffect(() => {
@@ -295,6 +296,16 @@ export default function BuilderPage() {
   const [categories, setCategories] = useState(
     componentCategories.map(c => ({ name: c.name, selected: true }))
   );
+
+  useEffect(() => {
+    const categoryParam = searchParams.get('category');
+    if (categoryParam) {
+      const matchedCategory = componentCategories.find(c => c.name.toLowerCase() === categoryParam.toLowerCase());
+      if (matchedCategory) {
+        handleCategoryChange(matchedCategory.name, true);
+      }
+    }
+  }, [searchParams, allParts]); // Also depend on allParts to ensure it triggers after data is available if needed
 
   useEffect(() => {
     if (isLoaded) {
@@ -707,7 +718,12 @@ export default function BuilderPage() {
             ) : sortedAndFilteredParts.length > 0 ? (
               view === 'grid' ? (
                 <>
-                  <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 md:gap-6">
+                  <div className={cn(
+                    "grid gap-3 md:gap-6",
+                    isInsightsPinned 
+                      ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" 
+                      : "grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]"
+                  )}>
                     {paginatedParts.map(part => (
                       <PartCard
                         key={part.id}
@@ -823,6 +839,7 @@ export default function BuilderPage() {
               workload={workload}
               onWorkloadChange={setWorkload}
               showSystemBalance={false}
+              onCategorySelect={(cat) => handleCategoryChange(cat, true)}
             />
           </div>
         </div>
