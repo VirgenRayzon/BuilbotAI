@@ -51,7 +51,7 @@ const prompt = ai.definePrompt({
   },
   output: { schema: AiPrebuiltAdvisorOutputSchema },
   config: {
-    model: 'googleai/gemini-3-flash-preview',
+    model: 'googleai/gemini-1.5-flash',
     temperature: 0.2,
   },
   prompt: `You are an expert PC Builder. A user has selected a list of components for a pre-built system.
@@ -99,6 +99,7 @@ const aiPrebuiltAdvisorFlow = ai.defineFlow(
       .filter(c => c !== undefined && c !== '')
       .join(' ');
 
+    console.log(`[aiPrebuiltAdvisorFlow] Starting analysis for: ${componentNames}`);
     const knowledgeResults = await retrieveLocalKnowledge(`compatibility rules tier lists ${componentNames}`);
     const knowledgeContext = knowledgeResults.join('\n\n');
 
@@ -121,26 +122,43 @@ Tasks:
 
 Provide details in clear text.`;
 
-    const analysisResponse = await ai.generate({
-      model: 'googleai/gemini-3-flash-preview',
-      prompt: analysisPrompt,
-      config: {
-        temperature: 0.2,
-        googleSearchRetrieval: {}
-      }
-    });
-
-    const analysisText = analysisResponse.text;
+    let analysisText = "";
+    try {
+      console.log("[aiPrebuiltAdvisorFlow] Requesting Stage 1 Analysis (with Google Search)...");
+      const analysisResponse = await ai.generate({
+        model: 'googleai/gemini-1.5-flash',
+        prompt: analysisPrompt,
+        config: {
+          temperature: 0.2,
+          googleSearchRetrieval: {}
+        }
+      });
+      analysisText = analysisResponse.text;
+    } catch (searchError) {
+      console.warn("[aiPrebuiltAdvisorFlow] Google Search Retrieval failed, falling back to internal knowledge:", searchError);
+      const fallbackResponse = await ai.generate({
+        model: 'googleai/gemini-1.5-flash',
+        prompt: analysisPrompt,
+        config: {
+          temperature: 0.2,
+        }
+      });
+      analysisText = fallbackResponse.text;
+    }
+    console.log("[aiPrebuiltAdvisorFlow] Stage 1 Analysis complete.");
 
     // Stage 2: Format to JSON (Structured Output) using the defined prompt
+    console.log("[aiPrebuiltAdvisorFlow] Requesting Stage 2 Formatting...");
     const { output } = await prompt({
       ...input,
       knowledgeContext: `ANALYSIS FINDINGS:\n${analysisText}\n\n${knowledgeContext}`
     });
 
     if (!output) {
+      console.error("[aiPrebuiltAdvisorFlow] Failed to get output from prompt.");
       throw new Error('Failed to get suggestions from the AI.');
     }
+    console.log("[aiPrebuiltAdvisorFlow] Flow complete.");
     return output;
   }
 );
