@@ -63,12 +63,16 @@ INSTRUCTIONS:
 - SPEECH BUBBLES: To keep things readable, break your thoughts into logical steps. If you search for something, explain your search in one step, and provide the results in the next. The UI will automatically render these as separate bubbles.
 `;
 
-        const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
+        const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 
         if (!apiKey) {
-            console.error("AI API Key is missing. Please check your .env file.");
+            console.error("AI API Key is missing. Checked: GOOGLE_GENERATIVE_AI_API_KEY, GEMINI_API_KEY, GOOGLE_API_KEY. None found.");
             return new Response(JSON.stringify({ error: "AI service is currently unavailable" }), { status: 500 });
         }
+
+        const keySource = process.env.GOOGLE_GENERATIVE_AI_API_KEY ? 'GOOGLE_GENERATIVE_AI_API_KEY' 
+            : process.env.GEMINI_API_KEY ? 'GEMINI_API_KEY' : 'GOOGLE_API_KEY';
+        console.log(`[Chat API] Using API key from: ${keySource}`);
 
         const googleProvider = createGoogleGenerativeAI({
             apiKey: apiKey,
