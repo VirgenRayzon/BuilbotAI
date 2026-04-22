@@ -98,7 +98,7 @@ Output your final gathered findings clearly in plain text for the formatter.`;
     const searchConfig = groundedContext ? {} : { googleSearchRetrieval: {} };
 
     const searchResponse = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
+      model: 'googleai/gemini-3-flash-preview',
       prompt: researcherPrompt,
       config: {
         temperature: 0,
@@ -139,7 +139,7 @@ ADDITIONAL FIELDS:
 Output ONLY the JSON object.`;
 
     const formatResponse = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
+      model: 'googleai/gemini-3-flash-preview',
       prompt: formatPrompt,
       output: {
         schema: ExtractPartDetailsOutputSchema,
