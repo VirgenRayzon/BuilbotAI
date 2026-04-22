@@ -613,62 +613,7 @@ export default function AiBuildAdvisorPage() {
 
       <div className="lg:col-span-8">
         <AnimatePresence mode="wait">
-          {build ? (
-            <motion.div
-              key="build-result"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="space-y-8"
-            >
-              <div className={cn(
-                "p-8 rounded-3xl border backdrop-blur-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6",
-                isDark ? "bg-slate-900/40 border-white/5" : "bg-white/60 border-slate-200"
-              )}>
-                <div className="flex items-center gap-4">
-                  <div className="p-4 rounded-2xl bg-primary/10">
-                    <Wallet className="w-10 h-10 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-widest mb-1">Total Configuration Value</h3>
-                    <p className={cn(
-                      "text-4xl font-black font-headline tracking-tighter",
-                      isDark ? "text-white" : "text-slate-900"
-                    )}>
-                      ₱{totalPrice.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-end gap-1">
-                  <div className="px-3 py-1 rounded-full bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/30">
-                    Optimal Efficiency
-                  </div>
-                  <span className="text-[10px] font-mono text-muted-foreground">REFRESH RATE: 144Hz+ TARGET</span>
-                </div>
-              </div>
-
-              <BuildSummary build={build} isPending={isPending} elapsedTime={elapsedTime} finalResponseTime={finalResponseTime} totalPrice={totalPrice} />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="placeholder"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className={cn(
-                "h-full min-h-[500px] rounded-3xl border-2 border-dashed flex flex-col items-center justify-center p-12 text-center transition-colors duration-500",
-                isDark ? "bg-slate-900/20 border-white/5" : "bg-slate-50/50 border-slate-200"
-              )}
-            >
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                <Bot className="w-10 h-10 text-primary opacity-20" />
-              </div>
-              <h3 className="text-xl font-headline font-bold mb-2">Awaiting Parameters</h3>
-              <p className="text-muted-foreground max-w-sm">
-                Submit your requirements on the left to initialize the build generation process.
-              </p>
-            </motion.div>
-          )}
+          <BuildSummary build={build} isPending={isPending} elapsedTime={elapsedTime} finalResponseTime={finalResponseTime} totalPrice={totalPrice} />
         </AnimatePresence>
       </div>
     </motion.div>

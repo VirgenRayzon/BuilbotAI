@@ -5,7 +5,7 @@ function initializeAdmin() {
     if (admin.apps.length > 0) return;
 
     try {
-        const serviceAccount = process.env.FB_SERVICE_ACCOUNT;
+        const serviceAccount = process.env.FB_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT;
         const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
         
         console.log("[Firebase Admin] Attempting initialization...");

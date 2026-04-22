@@ -43,6 +43,7 @@ import { addPrebuiltSystem } from "@/firebase/database";
 import type { PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
 import { checkCompatibility } from "@/lib/compatibility";
 
+
 type PartWithoutCategory = Omit<Part, 'category'>;
 
 const componentCategories = [
@@ -129,6 +130,7 @@ export default function PrebuiltBuilderPage() {
     const [showInsights, setShowInsights] = useState(false);
     const [isInsightsPinned, setIsInsightsPinned] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
+
 
     // Persistence
     useEffect(() => {
@@ -354,18 +356,13 @@ export default function PrebuiltBuilderPage() {
     };
 
     const handleAddPrebuilt = async (data: PrebuiltBuilderAddFormSchema) => {
-        if (!firestore) return;
-        try {
-            await addPrebuiltSystem(firestore, data);
-            toast({ 
-                title: "Prebuilt Added Successfully!", 
-                description: `${data.name} is now available in the Prebuilt Overview tab.`,
-                variant: "default"
-            });
-            // Optional: clear build after adding? User didn't specify, I'll keep it for now.
-        } catch (err: any) {
-            toast({ variant: "destructive", title: "Add Failed", description: err.message });
-        }
+        if (!firestore) throw new Error("Firestore not initialized");
+        await addPrebuiltSystem(firestore, data);
+        toast({ 
+            title: "Prebuilt Added Successfully!", 
+            description: `${data.name} is now available in the Prebuilt Overview tab.`,
+            variant: "default"
+        });
     };
 
     const isBuilderLoading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading || monitorsLoading || keyboardsLoading || miceLoading || headsetsLoading || authLoading;
@@ -590,6 +587,7 @@ export default function PrebuiltBuilderPage() {
             )}
 
             <BuilderFloatingChat build={build} />
+
         </main >
     );
 }

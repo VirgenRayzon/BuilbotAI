@@ -22,6 +22,7 @@ import { OrderItem } from "@/lib/types";
 import { calculateBottleneck } from "@/lib/bottleneck";
 import { type PrebuiltBuilderAddFormSchema } from "./prebuilt-builder-add-dialog";
 import { Part, PrebuiltSystem } from "@/lib/types";
+import { AIProgressModal, type ProgressPhase } from "./ai-progress-modal";
 
 interface YourBuildProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
@@ -36,7 +37,7 @@ interface YourBuildProps {
     className?: string;
     isManagerMode?: boolean;
     allParts?: Part[];
-    onAddPrebuilt?: (data: PrebuiltBuilderAddFormSchema) => void;
+    onAddPrebuilt?: (data: PrebuiltBuilderAddFormSchema) => void | Promise<void>;
     hasAnalysis?: boolean;
     onCategorySelect?: (category: string) => void;
 }
@@ -99,6 +100,8 @@ export function YourBuild({
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isCheckoutDialogOpen, setIsCheckoutDialogOpen] = useState(false);
     const [isCheckingOut, setIsCheckingOut] = useState(false);
+    const [showLocalAiProgress, setShowLocalAiProgress] = useState(false);
+    const [aiPhase, setAiPhase] = useState<ProgressPhase>('init');
     const user = useUser();
     const { toast } = useToast();
 
@@ -113,12 +116,16 @@ export function YourBuild({
     const handleAddPrebuiltWithAi = () => {
         if (!onAddPrebuilt) return;
 
+        // Show modal immediately with init phase
+        setAiPhase('init');
+        setShowLocalAiProgress(true);
+
         startAiTransition(async () => {
-            toast({
-                title: "Generating Identity...",
-                description: "Buildbot is creating a name, description, and image for this system.",
-            });
             try {
+                // Phase: AI Requesting
+                await new Promise(r => setTimeout(r, 400));
+                setAiPhase('ai-requesting');
+
                 const selectedComponents = {
                     cpu: (build['CPU'] as ComponentData)?.model,
                     gpu: (build['GPU'] as ComponentData)?.model,
@@ -138,7 +145,18 @@ export function YourBuild({
                     components: selectedComponents
                 });
 
+                // Phase: AI Complete
+                setAiPhase('ai-complete');
+
+                // Phase: Formatting
+                await new Promise(r => setTimeout(r, 300));
+                setAiPhase('ai-formatting');
+
                 if (result && "systemName" in result) {
+                    // Phase: Image Fetch
+                    await new Promise(r => setTimeout(r, 300));
+                    setAiPhase('image-fetch');
+
                     const randomNum = Math.floor(Math.random() * 1000);
                     const systemSlug = result.systemName.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
                     const finalImage = `https://picsum.photos/seed/${systemSlug}${randomNum}/800/600`;
@@ -159,8 +177,16 @@ export function YourBuild({
                         cooler: (build['Cooler'] as ComponentData)?.id || "",
                     };
 
-                    onAddPrebuilt(finalData);
+                    // Phase: Saving to Firestore
+                    await new Promise(r => setTimeout(r, 300));
+                    setAiPhase('saving');
+
+                    await onAddPrebuilt(finalData);
+
+                    // Phase: Done
+                    setAiPhase('done');
                 } else {
+                    setShowLocalAiProgress(false);
                     toast({
                         variant: "destructive",
                         title: "AI Generation Failed",
@@ -168,6 +194,7 @@ export function YourBuild({
                     });
                 }
             } catch (error: any) {
+                setShowLocalAiProgress(false);
                 toast({
                     variant: "destructive",
                     title: "Error",
@@ -306,6 +333,7 @@ export function YourBuild({
     const router = useRouter();
 
     return (
+        <>
         <Card className={`flex flex-col border-primary/20 shadow-[0_0_40px_rgba(34,211,238,0.05)] overflow-hidden bg-background/40 backdrop-blur-2xl ring-1 ring-white/5 relative ${className || ""}`}>
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
             <CardHeader className="flex flex-row items-center justify-between py-5 bg-white/5 border-b border-white/5 flex-none">
@@ -582,5 +610,14 @@ export function YourBuild({
                 </div>
             </CardFooter>
         </Card >
+
+            {/* AI Progress Modal — renders centered on screen when adding prebuilt */}
+            <AIProgressModal
+                isOpen={showLocalAiProgress}
+                onComplete={() => setShowLocalAiProgress(false)}
+                title="Architecting Prebuilt"
+                currentPhase={aiPhase}
+            />
+        </>
     )
 }

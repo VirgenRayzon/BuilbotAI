@@ -154,7 +154,7 @@ If the build is completely empty, kindly invite the user to start picking out pa
         const analysisPrompt = `${prompt}\n\nProvide your analysis in clear text including the pros/cons, bottleneck explanation, FPS estimates, and suggestions. Use Google Search if you need benchmarks or specific info.`;
 
         const analysisResponse = await ai.generate({
-            model: 'googleai/gemini-2.5-flash',
+            model: 'googleai/gemini-3-flash-preview',
             prompt: analysisPrompt,
             config: {
                 temperature: 0.2,
@@ -180,7 +180,7 @@ Required Output Schema:
 Output ONLY the JSON.`;
 
         const formatResponse = await ai.generate({
-            model: 'googleai/gemini-2.5-flash',
+            model: 'googleai/gemini-3-flash-preview',
             prompt: formatPrompt,
             output: {
                 schema: aiBuildCritiqueOutputSchema,
