@@ -51,7 +51,7 @@ const prompt = ai.definePrompt({
   },
   output: { schema: AiPrebuiltAdvisorOutputSchema },
   config: {
-    model: 'googleai/gemini-3-flash-preview',
+    model: 'googleai/gemini-2.5-flash',
     temperature: 0.2,
   },
   prompt: `You are an expert PC Builder. A user has selected a list of components for a pre-built system.
@@ -126,7 +126,7 @@ Provide details in clear text.`;
     try {
       console.log("[aiPrebuiltAdvisorFlow] Requesting Stage 1 Analysis (with Google Search)...");
       const analysisResponse = await ai.generate({
-        model: 'googleai/gemini-3-flash-preview',
+        model: 'googleai/gemini-2.5-flash',
         prompt: analysisPrompt,
         config: {
           temperature: 0.2,
@@ -137,7 +137,7 @@ Provide details in clear text.`;
     } catch (searchError) {
       console.warn("[aiPrebuiltAdvisorFlow] Google Search Retrieval failed, falling back to internal knowledge:", searchError);
       const fallbackResponse = await ai.generate({
-        model: 'googleai/gemini-3-flash-preview',
+        model: 'googleai/gemini-2.5-flash',
         prompt: analysisPrompt,
         config: {
           temperature: 0.2,

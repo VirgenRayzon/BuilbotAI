@@ -106,7 +106,7 @@ const aiBuildAdvisorRecommendationsPrompt = ai.definePrompt({
   name: 'aiBuildAdvisorRecommendationsPrompt',
   input: { schema: AiBuildAdvisorRecommendationsInputSchema.extend({ knowledgeContext: z.string().optional() }) },
   output: { schema: AiBuildAdvisorRecommendationsOutputSchema },
-  model: 'googleai/gemini-3-flash-preview',
+  model: 'googleai/gemini-2.5-flash',
   config: { temperature: 0.1 },
   prompt: `You are an expert PC building advisor specializing in the Philippine market. Your goal is to recommend a set of compatible core components (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, Cooler) for a user based on their specific needs.
 
