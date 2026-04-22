@@ -102,7 +102,11 @@ export function InventoryPartCard({
                         <div className="flex justify-between items-start gap-2">
                             <div className={cn("space-y-0.5 flex-grow", isSelected && "pl-5")}>
                                 <p className="text-[8px] md:text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{part.brand}</p>
-                                <CardTitle className="text-xs md:text-base font-headline leading-snug line-clamp-2 h-8 md:h-10">{part.name}</CardTitle>
+                                <div className="h-10 md:h-12 flex flex-col justify-center overflow-hidden">
+                                    <CardTitle className="text-xs md:text-base font-headline leading-snug line-clamp-2 m-0 p-0">
+                                        {part.name.length > 60 ? part.name.substring(0, 57) + "......." : part.name}
+                                    </CardTitle>
+                                </div>
                             </div>
                             <div className="flex items-start gap-1">
                                 <AlertDialog>
@@ -202,22 +206,22 @@ export function InventoryPartCard({
                                         fill
                                         unoptimized
                                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                        className="object-contain transition-transform duration-500 group-hover:scale-105"
+                                        className={cn(
+                                            "transition-transform duration-500 group-hover:scale-105",
+                                            part.category === 'Headset' ? "object-cover scale-125" : "object-contain"
+                                        )}
                                     />
                                 </div>
                             </AddPartDialog>
                         )}
 
-                        <div className="flex justify-between items-center py-0.5 md:py-1">
+                        <div className="flex justify-between items-center">
                             <p className="text-sm md:text-xl font-bold font-headline tracking-tight">{formatCurrency(part.price)}</p>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 md:h-7 md:w-7 text-muted-foreground/60 hover:text-primary transition-colors">
-                                <Info className="h-3 w-3 md:h-4 md:w-4" />
-                            </Button>
                         </div>
 
                         <Separator className="bg-border/40" />
 
-                        <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 md:gap-x-3 md:gap-y-2.5 py-0.5 md:py-1">
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 md:gap-x-3 md:gap-y-1.5 py-0.5">
                             {specKeys.map((key) => {
                                 const value = part.specifications?.[key] || (key === 'Wattage' ? part.wattage : null);
                                 return (

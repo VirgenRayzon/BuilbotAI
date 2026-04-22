@@ -96,7 +96,11 @@ export function InventoryPrebuiltCard({
                                     parts={parts}
                                     onSave={(data) => onUpdate(system.id, data)}
                                 >
-                                    <CardTitle className="text-xs md:text-base font-headline leading-snug line-clamp-2 h-8 md:h-10 hover:text-primary transition-colors">{system.name}</CardTitle>
+                                    <div className="h-10 md:h-12 flex flex-col justify-center overflow-hidden">
+                                        <CardTitle className="text-xs md:text-base font-headline leading-snug line-clamp-2 hover:text-primary transition-colors m-0 p-0">
+                                            {system.name.length > 60 ? system.name.substring(0, 57) + "......." : system.name}
+                                        </CardTitle>
+                                    </div>
                                 </AddPrebuiltDialog>
                             )}
                         </div>
@@ -205,7 +209,7 @@ export function InventoryPrebuiltCard({
                         </AddPrebuiltDialog>
                     )}
 
-                     <div className="flex justify-between items-center py-1 md:py-2 border-t border-border/10 mt-1 md:mt-2">
+                     <div className="flex justify-between items-center py-0.5 md:py-1 border-t border-border/10 mt-1 md:mt-2">
                         <div className="flex flex-col">
                            <p className="text-[7px] md:text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Starting Price</p>
                            <p className="text-sm md:text-2xl font-black font-headline tracking-tighter text-primary">{formatCurrency(system.price)}</p>
@@ -247,9 +251,6 @@ export function InventoryPrebuiltCard({
                             >
                                 <div className="py-4 border-t border-primary/20 mt-3 bg-primary/[0.03] backdrop-blur-md -mx-3.5 px-3.5 rounded-b-xl border-dashed shadow-inner">
                                     <div className="flex items-center gap-2 mb-3">
-                                        <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20">
-                                            <Info className="h-3 w-3 text-primary" />
-                                        </div>
                                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/80">System Inventory List</p>
                                     </div>
                                     <div className="space-y-1">
@@ -272,7 +273,6 @@ export function InventoryPrebuiltCard({
                         asChild
                     >
                         <a href={`/pre-builts/${system.id}`} className="flex items-center justify-center">
-                            <Info className="mr-1 md:mr-2 h-3 md:h-3.5 w-3 md:w-3.5 transition-transform group-hover:scale-110" />
                             Launch Page
                             <ChevronRight className="ml-1 md:ml-2 h-2.5 md:h-3 w-2.5 md:w-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                         </a>

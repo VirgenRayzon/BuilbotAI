@@ -185,8 +185,12 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           </div>
-          <div className="flex justify-between items-start gap-2 h-8 md:h-10 mb-1">
-            <CardTitle className="text-xs md:text-base font-headline leading-tight line-clamp-2 group-hover:text-primary transition-colors flex-grow">{system.name}</CardTitle>
+          <div className="flex justify-between items-start gap-2 h-10 md:h-12 mb-1">
+            <div className="flex flex-col justify-center flex-grow h-full overflow-hidden">
+              <CardTitle className="text-xs md:text-base font-headline leading-tight line-clamp-2 group-hover:text-primary transition-colors m-0 p-0">
+                {system.name.length > 60 ? system.name.substring(0, 57) + "......." : system.name}
+              </CardTitle>
+            </div>
             <Badge variant="outline" className="h-3 md:h-4 px-1 text-[7px] md:text-[8px] uppercase tracking-tighter border-primary/20 text-primary/70 shrink-0">
               {system.tier}
             </Badge>
@@ -217,7 +221,7 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
         </CardHeader>
 
         <CardFooter className="p-2 md:p-3.5 pt-0 flex flex-col gap-1.5 md:gap-2 mt-auto relative z-10">
-          <div className="flex justify-between items-center w-full py-0.5 md:py-1">
+          <div className="flex justify-between items-center w-full">
             <p className="text-sm md:text-xl font-bold font-headline text-primary tracking-tight">{formatCurrency(system.price)}</p>
             <Button
               variant="ghost"
