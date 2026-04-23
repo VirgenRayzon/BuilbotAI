@@ -5,7 +5,7 @@ import { useUserProfile } from "@/context/user-profile";
 import { useTheme } from "@/context/theme-provider";
 import { useFirestore } from "@/firebase";
 import { useRouter } from "next/navigation";
-import { collection, query, where, getDocs, updateDoc, doc, deleteDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, updateDoc, doc, deleteDoc, onSnapshot } from "firebase/firestore";
 import { Order } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -73,15 +73,22 @@ export default function ProfilePage() {
         }
     }, [profile]);
 
-    const fetchReservations = async () => {
-        if (!authUser || !firestore) return;
+    useEffect(() => {
+        if (!authUser || !firestore) {
+            if (!userLoading) {
+                setReservationsLoading(false);
+            }
+            return;
+        }
+
         setReservationsLoading(true);
-        try {
-            const q = query(
-                collection(firestore, "orders"),
-                where("userId", "==", authUser.uid)
-            );
-            const querySnapshot = await getDocs(q);
+        
+        const q = query(
+            collection(firestore, "orders"),
+            where("userId", "==", authUser.uid)
+        );
+
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const fetchedOrders: Order[] = [];
             querySnapshot.forEach((doc) => {
                 fetchedOrders.push({ id: doc.id, ...doc.data() } as Order);
@@ -95,25 +102,19 @@ export default function ProfilePage() {
             });
 
             setReservations(fetchedOrders);
-        } catch (error) {
+            setReservationsLoading(false);
+        }, (error) => {
             console.error("Error fetching reservations:", error);
             toast({
                 title: "Error",
                 description: "Failed to load reserved builds.",
                 variant: "destructive"
             });
-        } finally {
             setReservationsLoading(false);
-        }
-    };
+        });
 
-    useEffect(() => {
-        if (authUser) {
-            fetchReservations();
-        } else if (!userLoading) {
-            setReservationsLoading(false);
-        }
-    }, [authUser, firestore, userLoading]);
+        return () => unsubscribe();
+    }, [authUser, firestore, userLoading, toast]);
 
     const handleSaveProfile = async () => {
         if (!authUser || !firestore) return;

@@ -25,6 +25,10 @@ import { reservePrebuiltSystem } from '@/app/prebuilt-reservation-actions';
 import { useUserProfile } from '@/context/user-profile';
 import type { Part } from '@/lib/types';
 import { useRouter } from 'next/navigation';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { CheckCircle2 } from "lucide-react";
 
 interface PrebuiltSystemCardProps {
   system: PrebuiltSystem;
@@ -41,6 +45,7 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
   const [resolvedParts, setResolvedParts] = useState<Record<string, Part>>({});
   const [loadingStock, setLoadingStock] = useState(isComplete);
   const [isReserving, setIsReserving] = useState(false);
+  const [isCheckoutDialogOpen, setIsCheckoutDialogOpen] = useState(false);
   const firestore = useFirestore();
   const { authUser, profile } = useUserProfile();
   const router = useRouter();
@@ -99,7 +104,7 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
   const isInStock = isComplete && Object.keys(partsStock).length > 0 && 
                     Object.values(partsStock).every(stock => stock > 0);
 
-  const handleReserve = async (e: React.MouseEvent) => {
+  const openCheckoutDialog = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!isComplete || !authUser || !profile || isReserving || !isInStock) {
@@ -112,7 +117,11 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
       }
       return;
     }
+    setIsCheckoutDialogOpen(true);
+  };
 
+  const handleReserve = async () => {
+    if (!authUser || !profile) return;
     setIsReserving(true);
     try {
       // Prepare component map for the reservation action
@@ -269,7 +278,7 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
             ) : (
               <Button 
                 size="sm" 
-                onClick={handleReserve} 
+                onClick={openCheckoutDialog} 
                 disabled={loadingStock || isReserving} 
                 className="w-full h-full group/btn text-[8px] md:text-[10px] uppercase font-bold tracking-widest"
               >
@@ -284,6 +293,57 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
           </div>
         </CardFooter>
       </Card>
+
+      <Dialog open={isCheckoutDialogOpen} onOpenChange={setIsCheckoutDialogOpen}>
+        <DialogContent className="max-w-md" onClick={(e) => e.stopPropagation()}>
+            <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                    <ShieldCheck className="h-6 w-6 text-emerald-600" />
+                    Confirm Reservation
+                </DialogTitle>
+                <DialogDescription>
+                    Review the components for <span className="text-emerald-400 font-semibold">{system.name}</span> before reserving this build.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+                <ScrollArea className="max-h-[30vh]">
+                    <div className="space-y-2">
+                        {Object.entries(resolvedParts).map(([category, part]) => (
+                            part && (
+                                <div key={category} className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">
+                                        <span className="capitalize mr-1">
+                                            {category === 'cpu' || category === 'gpu' || category === 'psu' || category === 'ram' 
+                                                ? category.toUpperCase() 
+                                                : category}:
+                                        </span>
+                                        {part.name || part.model}
+                                    </span>
+                                    <span className="font-medium">{formatCurrency(part.price || 0)}</span>
+                                </div>
+                            )
+                        ))}
+                    </div>
+                </ScrollArea>
+                <Separator />
+                <div className="flex justify-between items-center font-bold text-lg">
+                    <span>Total Price</span>
+                    <span className="text-primary">{formatCurrency(system.price)}</span>
+                </div>
+                <div className="bg-muted/30 p-3 rounded-lg text-xs text-muted-foreground flex gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                    By confirming, your reservation will be processed and stock will be held for you.
+                </div>
+            </div>
+            <div className="flex gap-3">
+                <Button variant="outline" className="flex-1" onClick={(e) => { e.stopPropagation(); setIsCheckoutDialogOpen(false); }}>Cancel</Button>
+                <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={(e) => { e.stopPropagation(); handleReserve(); }} disabled={isReserving}>
+                    {isReserving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Confirm Reservation
+                </Button>
+            </div>
+        </DialogContent>
+      </Dialog>
     </Link>
   );
 }
