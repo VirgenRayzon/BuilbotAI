@@ -317,7 +317,7 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
                                                 ? category.toUpperCase() 
                                                 : category}:
                                         </span>
-                                        {part.name || part.model}
+                                        {part.name}
                                     </span>
                                     <span className="font-medium">{formatCurrency(part.price || 0)}</span>
                                 </div>
