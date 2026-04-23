@@ -362,11 +362,7 @@ export default function ProfilePage() {
                                 </CardContent>
                             </Card>
 
-                            {profile?.isSuperAdmin && (
-                                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
-                                    <SuperAdminSettings />
-                                </div>
-                            )}
+
 
                             {(!profile?.isManager && !profile?.isSuperAdmin) && (
                                 <Card className="border-white/5 bg-background/20">
@@ -529,31 +525,16 @@ export default function ProfilePage() {
                             )}
 
                             {(profile?.isManager || profile?.isSuperAdmin) && (
-                                <div className="h-full flex flex-col items-center justify-center p-12 text-center space-y-8 animate-in fade-in zoom-in duration-700">
-                                    <div className="relative">
-                                        <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 opacity-20"></div>
-                                        <Shield className="h-24 w-24 text-primary relative z-10" />
+                                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                    <div className="flex items-end justify-between px-1">
+                                        <div className="space-y-1">
+                                            <h2 className="text-2xl font-headline font-bold flex items-center gap-3">
+                                                <Shield className="h-6 w-6 text-primary" /> Management Portal
+                                            </h2>
+                                            <p className="text-sm text-muted-foreground">Manage system access, manager accounts, and reset requests.</p>
+                                        </div>
                                     </div>
-                                    <div className="space-y-4 relative z-10">
-                                        <h2 className="text-3xl font-headline font-bold uppercase tracking-tight">Administrative Portal</h2>
-                                        <p className="text-muted-foreground max-w-md mx-auto leading-relaxed">
-                                            Your account is elevated with administrative privileges. Personal build reservations are disabled to focus on global system management and inventory control.
-                                        </p>
-                                    </div>
-                                    <div className="flex flex-wrap items-center justify-center gap-4 relative z-10">
-                                        <Button size="lg" className="rounded-2xl px-8 shadow-lg shadow-primary/20 group" asChild>
-                                            <a href="/admin">
-                                                Manage Dashboard
-                                                <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
-                                            </a>
-                                        </Button>
-                                        <Button size="lg" variant="outline" className="rounded-2xl px-8 border-white/10 hover:bg-white/5 group" asChild>
-                                            <a href="/admin/prebuilt-builder">
-                                                Prebuilt Builder
-                                                <Sparkles className="h-4 w-4 ml-2 transition-all group-hover:text-primary" />
-                                            </a>
-                                        </Button>
-                                    </div>
+                                    <SuperAdminSettings />
                                 </div>
                             )}
                         </div>

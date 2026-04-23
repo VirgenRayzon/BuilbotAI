@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { useFirestore } from '@/firebase';
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc, onSnapshot, updateDoc, serverTimestamp, limit, arrayUnion } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Check, X, RefreshCw, Mail, Key } from 'lucide-react';
+import { Loader2, Check, X, RefreshCw, Mail, Key, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useUserProfile } from '@/context/user-profile';
 
 export function SuperAdminSettings() {
     const [managerKey, setManagerKey] = useState('');
@@ -25,6 +26,8 @@ export function SuperAdminSettings() {
 
     const firestore = useFirestore();
     const { toast } = useToast();
+    const { profile } = useUserProfile();
+    const isSuperAdmin = profile?.isSuperAdmin;
 
     useEffect(() => {
         async function fetchKeys() {
@@ -237,7 +240,7 @@ export function SuperAdminSettings() {
     }
 
     return (
-        <div className="space-y-6 max-w-2xl">
+        <div className="space-y-6 w-full">
             <Card>
                 <CardHeader>
                     <CardTitle>Access Keys</CardTitle>
@@ -253,6 +256,7 @@ export function SuperAdminSettings() {
                                 value={managerKey} 
                                 onChange={(e) => setManagerKey(e.target.value)} 
                                 placeholder="Enter Manager Key"
+                                type="password"
                             />
                             <Button onClick={handleSaveManagerKey} disabled={saving || managerKey === originalManagerDocId}>
                                 Save
@@ -260,19 +264,22 @@ export function SuperAdminSettings() {
                         </div>
                     </div>
                     
-                    <div className="space-y-2">
-                        <Label>Super Admin Key</Label>
-                        <div className="flex gap-2">
-                            <Input 
-                                value={superAdminKey} 
-                                onChange={(e) => setSuperAdminKey(e.target.value)} 
-                                placeholder="Enter Super Admin Key"
-                            />
-                            <Button onClick={handleSaveSuperAdminKey} disabled={saving || superAdminKey === originalSuperAdminDocId}>
-                                Save
-                            </Button>
+                    {isSuperAdmin && (
+                        <div className="space-y-2">
+                            <Label>Super Admin Key</Label>
+                            <div className="flex gap-2">
+                                <Input 
+                                    value={superAdminKey} 
+                                    onChange={(e) => setSuperAdminKey(e.target.value)} 
+                                    placeholder="Enter Super Admin Key"
+                                    type="password"
+                                />
+                                <Button onClick={handleSaveSuperAdminKey} disabled={saving || superAdminKey === originalSuperAdminDocId}>
+                                    Save
+                                </Button>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </CardContent>
             </Card>
 
