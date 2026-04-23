@@ -47,6 +47,13 @@ export default function PreBuiltsPage() {
     const [sortBy, setSortBy] = useState('Date Added');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
     const [view, setView] = useState<'grid' | 'list'>('grid');
+    const [expandedIds, setExpandedIds] = useState<string[]>([]);
+    
+    const toggleExpand = (id: string) => {
+        setExpandedIds(prev => 
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
     const [searchQuery, setSearchQuery] = useState('');
 
     // Role-based redirection
@@ -237,7 +244,12 @@ export default function PreBuiltsPage() {
                         </div>
                     ) : (
                         <div className="overflow-hidden rounded-2xl border border-border/50 bg-background/20">
-                            <PrebuiltsTable systems={filteredAndSortedSystems} showActions={false} />
+                            <PrebuiltsTable 
+                                systems={filteredAndSortedSystems} 
+                                showActions={false} 
+                                expandedIds={expandedIds}
+                                onToggleExpand={toggleExpand}
+                            />
                         </div>
                     )
                 ) : (

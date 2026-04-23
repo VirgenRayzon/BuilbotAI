@@ -358,8 +358,8 @@ export default function PrebuiltBuilderPage() {
     const handleAddPrebuilt = async (data: PrebuiltBuilderAddFormSchema) => {
         if (!firestore) throw new Error("Firestore not initialized");
         await addPrebuiltSystem(firestore, data);
-        toast({ 
-            title: "Prebuilt Added Successfully!", 
+        toast({
+            title: "Prebuilt Added Successfully!",
             description: `${data.name} is now available in the Prebuilt Overview tab.`,
             variant: "default"
         });
@@ -379,9 +379,6 @@ export default function PrebuiltBuilderPage() {
         <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-4 md:py-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
                 <div className="text-left">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 uppercase tracking-widest text-[10px] py-0.5">Admin Interface</Badge>
-                    </div>
                     <h1 className="text-4xl font-headline font-bold uppercase">Prebuilt Builder</h1>
                     <p className="text-muted-foreground mt-2">
                         Configure new pre-built systems for the catalog using current inventory.
@@ -442,8 +439,8 @@ export default function PrebuiltBuilderPage() {
                             <>
                                 <div className={cn(
                                     "grid gap-6",
-                                    isInsightsPinned 
-                                        ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" 
+                                    isInsightsPinned
+                                        ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
                                         : "grid-cols-[repeat(auto-fill,minmax(250px,1fr))]"
                                 )}>
                                     {paginatedParts.map(part => (

@@ -23,6 +23,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
 
 export function Header() {
   const pathname = usePathname();
@@ -39,30 +40,39 @@ export function Header() {
     }
   };
 
-  const mainLinks = [
+  interface NavLink {
+    href: string;
+    label: string;
+    role?: string;
+    admin?: boolean;
+  }
+
+  const mainLinks: NavLink[] = [
     { href: "/builder", label: "Builder" },
     { href: "/ai-build-advisor", label: "Build Advisor" },
     { href: "/pre-builts", label: "Pre-builts" },
   ];
 
-  const adminLinks = [
+  const adminLinks: NavLink[] = [
     { 
       href: "/admin", 
-      label: profile?.isSuperAdmin ? "Super Admin" : "Manager", 
+      label: "Dashboard", 
+      role: profile?.isSuperAdmin ? "Super Admin" : "Manager",
       admin: true 
     },
     { 
       href: "/admin/prebuilt-builder", 
       label: "Prebuilt Builder", 
+      role: profile?.isSuperAdmin ? "Super Admin" : "Manager",
       admin: true 
     },
   ];
 
-  const commonLinks = [
+  const commonLinks: NavLink[] = [
     { href: "/profile", label: "Profile" },
   ];
 
-  const filteredLinks = !profile?.isManager
+  const filteredLinks: NavLink[] = !profile?.isManager
     ? [...mainLinks, ...commonLinks]
     : [...adminLinks, ...commonLinks];
 
@@ -94,7 +104,20 @@ export function Header() {
                 >
                   <span className="relative z-10 flex items-center gap-2">
                     {link.label}
-                    {(link as any).admin && profile?.isSuperAdmin && <Shield className="w-3 h-3" />}
+                    {link.role && (
+                      <Badge 
+                        variant="outline" 
+                        className={cn(
+                          "ml-1 px-1.5 py-0 text-[8px] uppercase tracking-tighter transition-all duration-300",
+                          isActive 
+                            ? (profile?.isSuperAdmin ? "bg-primary/20 text-primary border-primary/30" : "bg-amber-500/20 text-amber-500 border-amber-500/30")
+                            : "bg-muted/50 text-muted-foreground border-border/50"
+                        )}
+                      >
+                        {link.role}
+                      </Badge>
+                    )}
+                    {link.admin && profile?.isSuperAdmin && !link.role && <Shield className="w-3 h-3" />}
                   </span>
                   {isActive && (
                     <motion.div
@@ -184,7 +207,18 @@ export function Header() {
                             >
                               <span className="flex items-center gap-2">
                                 {link.label}
-                                {(link as any).admin && profile?.isSuperAdmin && <Shield className="w-4 h-4" />}
+                                {link.role && (
+                                  <Badge 
+                                    variant="outline" 
+                                    className={cn(
+                                      "px-2 py-0 text-[8px] uppercase tracking-tighter",
+                                      profile?.isSuperAdmin ? "bg-primary/10 text-primary border-primary/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                                    )}
+                                  >
+                                    {link.role}
+                                  </Badge>
+                                )}
+                                {link.admin && profile?.isSuperAdmin && !link.role && <Shield className="w-4 h-4" />}
                               </span>
                               {isActive && <div className="h-1.5 w-1.5 rounded-full bg-primary" />}
                             </Link>

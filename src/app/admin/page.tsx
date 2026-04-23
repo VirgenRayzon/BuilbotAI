@@ -6,22 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-    Plus, Package, PackageCheck, ServerCrash, Loader2, BarChart3, 
-    History, TrendingUp, DollarSign, Cpu, Monitor, CircuitBoard, 
-    MemoryStick, HardDrive, PlugZap, Square, Wind, Mouse, Headset, 
-    ChevronRight, Settings, Trash2, ChevronDown, Search, Filter, 
-    Archive, LayoutGrid, Table as TableIcon, CheckSquare, RefreshCcw 
+import {
+    Plus, Package, PackageCheck, ServerCrash, Loader2, BarChart3,
+    History, TrendingUp, DollarSign, Cpu, Monitor, CircuitBoard,
+    MemoryStick, HardDrive, PlugZap, Square, Wind, Mouse, Headset,
+    ChevronRight, Settings, Trash2, ChevronDown, Search, Filter,
+    Archive, LayoutGrid, Table as TableIcon, CheckSquare, RefreshCcw
 } from "lucide-react";
 import { Order } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { 
-    DropdownMenu, 
-    DropdownMenuTrigger, 
-    DropdownMenuContent, 
-    DropdownMenuCheckboxItem 
+import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuCheckboxItem
 } from '@/components/ui/dropdown-menu';
 import {
     AlertDialog,
@@ -40,12 +40,12 @@ import type { Part, PrebuiltSystem } from '@/lib/types';
 import { InventoryTable } from '@/components/inventory-table';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { 
+import {
     addPart, deletePart, archivePart, bulkArchiveParts, bulkDeleteParts,
-    addPrebuiltSystem, deletePrebuiltSystem, archivePrebuiltSystem, 
+    addPrebuiltSystem, deletePrebuiltSystem, archivePrebuiltSystem,
     bulkArchivePrebuilts, bulkDeletePrebuilts,
     updatePart, updatePrebuiltSystem,
-    createSystemNotification, resetSalesMetrics 
+    createSystemNotification, resetSalesMetrics
 } from '@/firebase/database';
 import { collection, deleteDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
@@ -137,7 +137,7 @@ export default function AdminPage() {
     const [orderItemsPerPage, setOrderItemsPerPage] = useState(5);
     const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
     const [activeView, setActiveView] = useState<'grid' | 'table'>('grid');
-    
+
     // Selection state
     const [selectedPartIds, setSelectedPartIds] = useState<{ id: string, category: Part['category'] }[]>([]);
     const [selectedPrebuiltIds, setSelectedPrebuiltIds] = useState<string[]>([]);
@@ -309,7 +309,7 @@ export default function AdminPage() {
         if (!firestore) return;
         try {
             await archivePart(firestore, partId, category, isArchived);
-            
+
             // Resolve part name for notification
             const partName = parts.find(p => p.id === partId)?.name || partId;
 
@@ -386,7 +386,7 @@ export default function AdminPage() {
 
     const toggleAllPartsSelection = (currentParts: Part[]) => {
         const allVisibleSelected = currentParts.length > 0 && currentParts.every(p => selectedPartIds.some(s => s.id === p.id));
-        
+
         if (allVisibleSelected) {
             // Deselect ONLY the visible items
             setSelectedPartIds(prev => prev.filter(p => !currentParts.some(cp => cp.id === p.id)));
@@ -500,10 +500,19 @@ export default function AdminPage() {
         }
     };
 
-    const togglePrebuiltExpandAll = (id: string) => {
+    const togglePrebuiltExpand = (id: string) => {
         setExpandedPrebuiltIds(prev =>
             prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
         );
+    };
+
+    const toggleAllPrebuiltsExpand = (systems: PrebuiltSystem[]) => {
+        const allExpanded = systems.length > 0 && systems.every(s => expandedPrebuiltIds.includes(s.id));
+        if (allExpanded) {
+            setExpandedPrebuiltIds([]);
+        } else {
+            setExpandedPrebuiltIds(systems.map(s => s.id));
+        }
     };
 
     const handleDeleteOrder = async (orderId: string) => {
@@ -561,9 +570,9 @@ export default function AdminPage() {
         try {
             const ordersToReset = orders?.map(o => ({ id: o.id })) || [];
             const partsToReset = parts?.map(p => ({ id: p.id, category: p.category })) || [];
-            
+
             await resetSalesMetrics(firestore, ordersToReset, partsToReset);
-            
+
             toast({
                 title: "Sales Reset Successful",
                 description: "All orders have been cleared and component popularity metrics have been reset.",
@@ -683,520 +692,520 @@ export default function AdminPage() {
             )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
             <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 relative z-10">
-            <div className="mb-8 flex items-center justify-between">
-                <div>
-                    <h1 className="text-4xl font-headline font-bold uppercase tracking-tight text-foreground">
-                        {profile?.isSuperAdmin ? "Super Admin" : "Manager"} Dashboard
-                    </h1>
-                    <p className="text-muted-foreground mt-2">
-                        {profile?.isSuperAdmin 
-                            ? "Master control for system configurations, inventory, and analytics." 
-                            : "Manage stock inventory, prebuilt systems, and track sales performance."}
-                    </p>
-                </div>
-            </div>
-            
-            <Tabs value={currentTab} onValueChange={handleTabChange}>
-                <div className="flex flex-col gap-4 mb-8">
-                    <div className="overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                        <TabsList className="inline-flex w-auto min-w-full md:min-w-0">
-                            <TabsTrigger value="stock" className="whitespace-nowrap">
-                                <Package className="mr-2" />
-                                Manage Stock
-                            </TabsTrigger>
-                            <TabsTrigger value="prebuilts" className="whitespace-nowrap">
-                                <PackageCheck className="mr-2 h-4 w-4" />
-                                Manage Prebuilts
-                            </TabsTrigger>
-                            <TabsTrigger value="reservations" className="relative whitespace-nowrap">
-                                <History className="mr-2 h-4 w-4" />
-                                Reservations
-                                {stats.pendingOrdersCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground animate-bounce">
-                                        {stats.pendingOrdersCount}
-                                    </span>
-                                )}
-                            </TabsTrigger>
-                            {profile?.isSuperAdmin && (
-                                <TabsTrigger value="sales" className="whitespace-nowrap">
-                                    <BarChart3 className="mr-2 h-4 w-4" />
-                                    Sales
-                                </TabsTrigger>
-                            )}
-                            <TabsTrigger value="archive" className="whitespace-nowrap">
-                                <Archive className="mr-2 h-4 w-4" />
-                                Archive
-                            </TabsTrigger>
-                        </TabsList>
+                <div className="mb-8 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-4xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-slate-50">
+                            Admin Dashboard
+                        </h1>
+                        <p className="text-muted-foreground mt-2 font-medium italic">
+                            {profile?.isSuperAdmin
+                                ? "Master control for system configurations, inventory, and analytics."
+                                : "Manage stock inventory, prebuilt systems, and track sales performance."}
+                        </p>
                     </div>
                 </div>
 
-                <TabsContent value="stock" className="mt-6 space-y-6">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-muted/30 p-4 rounded-xl border border-white/5 backdrop-blur-md">
-                        <div className="flex items-center gap-4 w-full md:w-auto">
-                            <div className="relative flex-grow md:flex-grow-0 md:w-80 group">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                <Input
-                                    placeholder="Search parts by name or brand..."
-                                    value={partSearchQuery}
-                                    onChange={(e) => setPartSearchQuery(e.target.value)}
-                                    className="pl-10 h-11 bg-background/50 border-white/10 focus:border-primary/50 transition-all rounded-lg"
-                                />
-                            </div>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30">
-                                        <Filter className="h-4 w-4" />
-                                        Categories
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
-                                    <DropdownMenuCheckboxItem
-                                        checked={partCategories.every(c => c.selected)}
-                                        onCheckedChange={() => {
-                                            const anyUnselected = partCategories.some(cat => !cat.selected);
-                                            setPartCategories(prev => prev.map(c => ({ ...c, selected: anyUnselected })));
-                                        }}
-                                    >
-                                        All Categories
-                                    </DropdownMenuCheckboxItem>
-                                    <Separator className="my-1 opacity-50" />
-                                    {partCategories.map((category) => (
+                <Tabs value={currentTab} onValueChange={handleTabChange}>
+                    <div className="flex flex-col gap-4 mb-8">
+                        <div className="overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+                            <TabsList className="inline-flex w-auto min-w-full md:min-w-0">
+                                <TabsTrigger value="stock" className="whitespace-nowrap">
+                                    <Package className="mr-2" />
+                                    Manage Stock
+                                </TabsTrigger>
+                                <TabsTrigger value="prebuilts" className="whitespace-nowrap">
+                                    <PackageCheck className="mr-2 h-4 w-4" />
+                                    Manage Prebuilts
+                                </TabsTrigger>
+                                <TabsTrigger value="reservations" className="relative whitespace-nowrap">
+                                    <History className="mr-2 h-4 w-4" />
+                                    Reservations
+                                    {stats.pendingOrdersCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground animate-bounce">
+                                            {stats.pendingOrdersCount}
+                                        </span>
+                                    )}
+                                </TabsTrigger>
+                                {profile?.isSuperAdmin && (
+                                    <TabsTrigger value="sales" className="whitespace-nowrap">
+                                        <BarChart3 className="mr-2 h-4 w-4" />
+                                        Sales
+                                    </TabsTrigger>
+                                )}
+                                <TabsTrigger value="archive" className="whitespace-nowrap">
+                                    <Archive className="mr-2 h-4 w-4" />
+                                    Archive
+                                </TabsTrigger>
+                            </TabsList>
+                        </div>
+                    </div>
+
+                    <TabsContent value="stock" className="mt-6 space-y-6">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-muted/30 p-4 rounded-xl border border-white/5 backdrop-blur-md">
+                            <div className="flex items-center gap-4 w-full md:w-auto">
+                                <div className="relative flex-grow md:flex-grow-0 md:w-80 group">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                    <Input
+                                        placeholder="Search parts by name or brand..."
+                                        value={partSearchQuery}
+                                        onChange={(e) => setPartSearchQuery(e.target.value)}
+                                        className="pl-10 h-11 bg-background/50 border-white/10 focus:border-primary/50 transition-all rounded-lg"
+                                    />
+                                </div>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30">
+                                            <Filter className="h-4 w-4" />
+                                            Categories
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
                                         <DropdownMenuCheckboxItem
-                                            key={category.name}
-                                            checked={category.selected}
+                                            checked={partCategories.every(c => c.selected)}
                                             onCheckedChange={() => {
-                                                setPartCategories(prev => prev.map(c => ({
-                                                    ...c,
-                                                    selected: c.name === category.name ? true : false
-                                                })));
+                                                const anyUnselected = partCategories.some(cat => !cat.selected);
+                                                setPartCategories(prev => prev.map(c => ({ ...c, selected: anyUnselected })));
                                             }}
                                         >
-                                            {category.name}
+                                            All Categories
                                         </DropdownMenuCheckboxItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
+                                        <Separator className="my-1 opacity-50" />
+                                        {partCategories.map((category) => (
+                                            <DropdownMenuCheckboxItem
+                                                key={category.name}
+                                                checked={category.selected}
+                                                onCheckedChange={() => {
+                                                    setPartCategories(prev => prev.map(c => ({
+                                                        ...c,
+                                                        selected: c.name === category.name ? true : false
+                                                    })));
+                                                }}
+                                            >
+                                                {category.name}
+                                            </DropdownMenuCheckboxItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
 
-                        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                            <Button 
-                                variant={isPartSelectionMode ? "secondary" : "outline"}
-                                className={cn(
-                                    "h-11 gap-2 border-white/10 bg-background/50 transition-all",
-                                    isPartSelectionMode && "bg-primary/20 border-primary/50 text-white shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]"
-                                )}
-                                onClick={() => {
-                                    setIsPartSelectionMode(!isPartSelectionMode);
-                                    if (isPartSelectionMode) setSelectedPartIds([]);
-                                }}
-                            >
-                                <CheckSquare className="h-4 w-4" />
-                                {isPartSelectionMode ? "Finish Selection" : "Select"}
-                            </Button>
-
-                            {isPartSelectionMode && (
+                            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                                 <Button
-                                    variant="outline"
-                                    className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5"
-                                    onClick={() => toggleAllPartsSelection(currentParts)}
-                                >
-                                    <PackageCheck className="h-4 w-4" />
-                                    {currentParts.length > 0 && currentParts.every(p => selectedPartIds.some(s => s.id === p.id)) ? "Deselect All" : "Select All"}
-                                </Button>
-                            )}
-
-                            {selectedPartIds.length > 0 && (
-                                <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 animate-in fade-in slide-in-from-right-2">
-                                    <span className="text-xs font-bold text-primary">{selectedPartIds.length} Selected</span>
-                                    <Separator orientation="vertical" className="h-4 bg-primary/20" />
-                                    <Button 
-                                        size="sm" 
-                                        variant="ghost" 
-                                        className="h-7 text-xs hover:bg-primary/20"
-                                        onClick={() => setConfirmAction({ isOpen: true, type: 'archive', target: 'parts' })}
-                                    >
-                                        <Archive className="mr-1.5 h-3 w-3" /> Archive
-                                    </Button>
-                                    {profile?.isSuperAdmin && (
-                                        <Button 
-                                            size="sm" 
-                                            variant="ghost" 
-                                            className="h-7 text-xs text-destructive hover:bg-destructive/20"
-                                            onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'parts' })}
-                                        >
-                                            <Trash2 className="mr-1.5 h-3 w-3" /> Delete
-                                        </Button>
+                                    variant={isPartSelectionMode ? "secondary" : "outline"}
+                                    className={cn(
+                                        "h-11 gap-2 border-white/10 bg-background/50 transition-all",
+                                        isPartSelectionMode && "bg-primary/20 border-primary/50 text-white shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]"
                                     )}
-                                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPartIds([])}>
-                                        Cancel
+                                    onClick={() => {
+                                        setIsPartSelectionMode(!isPartSelectionMode);
+                                        if (isPartSelectionMode) setSelectedPartIds([]);
+                                    }}
+                                >
+                                    <CheckSquare className="h-4 w-4" />
+                                    {isPartSelectionMode ? "Finish Selection" : "Select"}
+                                </Button>
+
+                                {isPartSelectionMode && (
+                                    <Button
+                                        variant="outline"
+                                        className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5"
+                                        onClick={() => toggleAllPartsSelection(currentParts)}
+                                    >
+                                        <PackageCheck className="h-4 w-4" />
+                                        {currentParts.length > 0 && currentParts.every(p => selectedPartIds.some(s => s.id === p.id)) ? "Deselect All" : "Select All"}
+                                    </Button>
+                                )}
+
+                                {selectedPartIds.length > 0 && (
+                                    <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 animate-in fade-in slide-in-from-right-2">
+                                        <span className="text-xs font-bold text-primary">{selectedPartIds.length} Selected</span>
+                                        <Separator orientation="vertical" className="h-4 bg-primary/20" />
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-7 text-xs hover:bg-primary/20"
+                                            onClick={() => setConfirmAction({ isOpen: true, type: 'archive', target: 'parts' })}
+                                        >
+                                            <Archive className="mr-1.5 h-3 w-3" /> Archive
+                                        </Button>
+                                        {profile?.isSuperAdmin && (
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-7 text-xs text-destructive hover:bg-destructive/20"
+                                                onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'parts' })}
+                                            >
+                                                <Trash2 className="mr-1.5 h-3 w-3" /> Delete
+                                            </Button>
+                                        )}
+                                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPartIds([])}>
+                                            Cancel
+                                        </Button>
+                                    </div>
+                                )}
+                                <div className="flex bg-muted/50 p-1 rounded-lg border border-white/10 shrink-0">
+                                    <Button
+                                        variant={activeView === 'grid' ? 'secondary' : 'ghost'}
+                                        size="icon"
+                                        onClick={() => setActiveView('grid')}
+                                        className={cn("h-9 w-9", activeView === 'grid' && "bg-background shadow-sm")}
+                                    >
+                                        <LayoutGrid className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant={activeView === 'table' ? 'secondary' : 'ghost'}
+                                        size="icon"
+                                        onClick={() => setActiveView('table')}
+                                        className={cn("h-9 w-9", activeView === 'table' && "bg-background shadow-sm")}
+                                    >
+                                        <TableIcon className="h-4 w-4" />
                                     </Button>
                                 </div>
-                            )}
-                            <div className="flex bg-muted/50 p-1 rounded-lg border border-white/10 shrink-0">
-                                <Button
-                                    variant={activeView === 'grid' ? 'secondary' : 'ghost'}
-                                    size="icon"
-                                    onClick={() => setActiveView('grid')}
-                                    className={cn("h-9 w-9", activeView === 'grid' && "bg-background shadow-sm")}
-                                >
-                                    <LayoutGrid className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant={activeView === 'table' ? 'secondary' : 'ghost'}
-                                    size="icon"
-                                    onClick={() => setActiveView('table')}
-                                    className={cn("h-9 w-9", activeView === 'table' && "bg-background shadow-sm")}
-                                >
-                                    <TableIcon className="h-4 w-4" />
-                                </Button>
+                                <AddPartDialog onSave={handleAddPart}>
+                                    <Button className="h-11 gap-2 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 px-6 shrink-0 transition-transform active:scale-95">
+                                        <Plus className="h-4 w-4" />
+                                        Add Part
+                                    </Button>
+                                </AddPartDialog>
                             </div>
-                            <AddPartDialog onSave={handleAddPart}>
-                                <Button className="h-11 gap-2 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 px-6 shrink-0 transition-transform active:scale-95">
-                                    <Plus className="h-4 w-4" />
-                                    Add Part
-                                </Button>
-                            </AddPartDialog>
                         </div>
-                    </div>
 
-                    {activeView === 'grid' ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
-                            {currentParts.map((part) => (
-                                <InventoryPartCard
-                                    key={part.id}
-                                    part={part}
+                        {activeView === 'grid' ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
+                                {currentParts.map((part) => (
+                                    <InventoryPartCard
+                                        key={part.id}
+                                        part={part}
+                                        onDelete={handleDeletePart}
+                                        onArchive={handleArchivePart}
+                                        onUpdateStock={handleUpdatePartStock}
+                                        onUpdatePart={handleUpdatePart}
+                                        isSelected={selectedPartIds.some(p => p.id === part.id)}
+                                        onToggleSelection={togglePartSelection}
+                                        isSelectionMode={isPartSelectionMode}
+                                        isSuperAdmin={profile?.isSuperAdmin}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
+                                <InventoryTable
+                                    parts={currentParts}
                                     onDelete={handleDeletePart}
                                     onArchive={handleArchivePart}
                                     onUpdateStock={handleUpdatePartStock}
                                     onUpdatePart={handleUpdatePart}
-                                    isSelected={selectedPartIds.some(p => p.id === part.id)}
+                                    selectedIds={selectedPartIds}
                                     onToggleSelection={togglePartSelection}
-                                    isSelectionMode={isPartSelectionMode}
+                                    onToggleSelectAll={() => toggleAllPartsSelection(currentParts)}
                                     isSuperAdmin={profile?.isSuperAdmin}
                                 />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
-                            <InventoryTable
-                                parts={currentParts}
-                                onDelete={handleDeletePart}
-                                onArchive={handleArchivePart}
-                                onUpdateStock={handleUpdatePartStock}
-                                onUpdatePart={handleUpdatePart}
-                                selectedIds={selectedPartIds}
-                                onToggleSelection={togglePartSelection}
-                                onToggleSelectAll={() => toggleAllPartsSelection(currentParts)}
-                                isSuperAdmin={profile?.isSuperAdmin}
-                            />
-                        </div>
-                    )}
-                    <PaginationControls
-                        currentPage={partCurrentPage}
-                        totalPages={partTotalPages}
-                        itemsPerPage={partItemsPerPage}
-                        onPageChange={setPartCurrentPage}
-                        onItemsPerPageChange={setPartItemsPerPage}
-                    />
-                </TabsContent>
+                            </div>
+                        )}
+                        <PaginationControls
+                            currentPage={partCurrentPage}
+                            totalPages={partTotalPages}
+                            itemsPerPage={partItemsPerPage}
+                            onPageChange={setPartCurrentPage}
+                            onItemsPerPageChange={setPartItemsPerPage}
+                        />
+                    </TabsContent>
 
-                <TabsContent value="prebuilts" className="mt-6 space-y-6">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-muted/30 p-4 rounded-xl border border-white/5 backdrop-blur-md">
-                        <div className="flex items-center gap-4 w-full md:w-auto">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30">
-                                        <Filter className="h-4 w-4" />
-                                        Filter Tiers
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
-                                    {prebuiltCategories.map((category) => (
-                                        <DropdownMenuCheckboxItem
-                                            key={category.name}
-                                            checked={category.selected}
-                                            onCheckedChange={() => {
-                                                setPrebuiltCategories(prev => prev.map(c =>
-                                                    c.name === category.name ? { ...c, selected: !c.selected } : c
-                                                ));
-                                            }}
-                                        >
-                                            {category.name}
-                                        </DropdownMenuCheckboxItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                            <Button 
-                                variant={isPrebuiltSelectionMode ? "secondary" : "outline"}
-                                className={cn(
-                                    "h-11 gap-2 border-white/10 bg-background/50 transition-all",
-                                    isPrebuiltSelectionMode && "bg-primary/20 border-primary/50 text-white shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]"
-                                )}
-                                onClick={() => {
-                                    setIsPrebuiltSelectionMode(!isPrebuiltSelectionMode);
-                                    if (isPrebuiltSelectionMode) setSelectedPrebuiltIds([]);
-                                }}
-                            >
-                                <CheckSquare className="h-4 w-4" />
-                                {isPrebuiltSelectionMode ? "Finish Selection" : "Select"}
-                            </Button>
-
-                            {isPrebuiltSelectionMode && (
-                                <Button
-                                    variant="outline"
-                                    className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5"
-                                    onClick={() => toggleAllPrebuiltsSelection(currentPrebuilts)}
-                                >
-                                    <PackageCheck className="h-4 w-4" />
-                                    {currentPrebuilts.length > 0 && currentPrebuilts.every(s => selectedPrebuiltIds.includes(s.id)) ? "Deselect All" : "Select All"}
-                                </Button>
-                            )}
-
-                            {selectedPrebuiltIds.length > 0 && (
-                                <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 animate-in fade-in slide-in-from-right-2">
-                                    <span className="text-xs font-bold text-primary">{selectedPrebuiltIds.length} Selected</span>
-                                    <Separator orientation="vertical" className="h-4 bg-primary/20" />
-                                    <Button 
-                                        size="sm" 
-                                        variant="ghost" 
-                                        className="h-7 text-xs hover:bg-primary/20"
-                                        onClick={() => setConfirmAction({ isOpen: true, type: 'archive', target: 'prebuilts' })}
-                                    >
-                                        <Archive className="mr-1.5 h-3 w-3" /> Archive
-                                    </Button>
-                                    {profile?.isSuperAdmin && (
-                                        <Button 
-                                            size="sm" 
-                                            variant="ghost" 
-                                            className="h-7 text-xs text-destructive hover:bg-destructive/20"
-                                            onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'prebuilts' })}
-                                        >
-                                            <Trash2 className="mr-1.5 h-3 w-3" /> Delete
+                    <TabsContent value="prebuilts" className="mt-6 space-y-6">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-muted/30 p-4 rounded-xl border border-white/5 backdrop-blur-md">
+                            <div className="flex items-center gap-4 w-full md:w-auto">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30">
+                                            <Filter className="h-4 w-4" />
+                                            Filter Tiers
                                         </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
+                                        {prebuiltCategories.map((category) => (
+                                            <DropdownMenuCheckboxItem
+                                                key={category.name}
+                                                checked={category.selected}
+                                                onCheckedChange={() => {
+                                                    setPrebuiltCategories(prev => prev.map(c =>
+                                                        c.name === category.name ? { ...c, selected: !c.selected } : c
+                                                    ));
+                                                }}
+                                            >
+                                                {category.name}
+                                            </DropdownMenuCheckboxItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                                <Button
+                                    variant={isPrebuiltSelectionMode ? "secondary" : "outline"}
+                                    className={cn(
+                                        "h-11 gap-2 border-white/10 bg-background/50 transition-all",
+                                        isPrebuiltSelectionMode && "bg-primary/20 border-primary/50 text-white shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]"
                                     )}
-                                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPrebuiltIds([])}>
-                                        Cancel
+                                    onClick={() => {
+                                        setIsPrebuiltSelectionMode(!isPrebuiltSelectionMode);
+                                        if (isPrebuiltSelectionMode) setSelectedPrebuiltIds([]);
+                                    }}
+                                >
+                                    <CheckSquare className="h-4 w-4" />
+                                    {isPrebuiltSelectionMode ? "Finish Selection" : "Select"}
+                                </Button>
+
+                                {isPrebuiltSelectionMode && (
+                                    <Button
+                                        variant="outline"
+                                        className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5"
+                                        onClick={() => toggleAllPrebuiltsSelection(currentPrebuilts)}
+                                    >
+                                        <PackageCheck className="h-4 w-4" />
+                                        {currentPrebuilts.length > 0 && currentPrebuilts.every(s => selectedPrebuiltIds.includes(s.id)) ? "Deselect All" : "Select All"}
+                                    </Button>
+                                )}
+
+                                {selectedPrebuiltIds.length > 0 && (
+                                    <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 animate-in fade-in slide-in-from-right-2">
+                                        <span className="text-xs font-bold text-primary">{selectedPrebuiltIds.length} Selected</span>
+                                        <Separator orientation="vertical" className="h-4 bg-primary/20" />
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-7 text-xs hover:bg-primary/20"
+                                            onClick={() => setConfirmAction({ isOpen: true, type: 'archive', target: 'prebuilts' })}
+                                        >
+                                            <Archive className="mr-1.5 h-3 w-3" /> Archive
+                                        </Button>
+                                        {profile?.isSuperAdmin && (
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-7 text-xs text-destructive hover:bg-destructive/20"
+                                                onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'prebuilts' })}
+                                            >
+                                                <Trash2 className="mr-1.5 h-3 w-3" /> Delete
+                                            </Button>
+                                        )}
+                                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPrebuiltIds([])}>
+                                            Cancel
+                                        </Button>
+                                    </div>
+                                )}
+                                <div className="flex bg-muted/50 p-1 rounded-lg border border-white/10 shrink-0">
+                                    <Button
+                                        variant={activeView === 'grid' ? 'secondary' : 'ghost'}
+                                        size="icon"
+                                        onClick={() => setActiveView('grid')}
+                                        className={cn("h-9 w-9", activeView === 'grid' && "bg-background shadow-sm")}
+                                    >
+                                        <LayoutGrid className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant={activeView === 'table' ? 'secondary' : 'ghost'}
+                                        size="icon"
+                                        onClick={() => setActiveView('table')}
+                                        className={cn("h-9 w-9", activeView === 'table' && "bg-background shadow-sm")}
+                                    >
+                                        <TableIcon className="h-4 w-4" />
                                     </Button>
                                 </div>
-                            )}
-                            <div className="flex bg-muted/50 p-1 rounded-lg border border-white/10 shrink-0">
-                                <Button
-                                    variant={activeView === 'grid' ? 'secondary' : 'ghost'}
-                                    size="icon"
-                                    onClick={() => setActiveView('grid')}
-                                    className={cn("h-9 w-9", activeView === 'grid' && "bg-background shadow-sm")}
+                                <AddPrebuiltDialog
+                                    parts={parts || []}
+                                    onSave={handleAddPrebuilt}
                                 >
-                                    <LayoutGrid className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant={activeView === 'table' ? 'secondary' : 'ghost'}
-                                    size="icon"
-                                    onClick={() => setActiveView('table')}
-                                    className={cn("h-9 w-9", activeView === 'table' && "bg-background shadow-sm")}
-                                >
-                                    <TableIcon className="h-4 w-4" />
-                                </Button>
+                                    <Button className="h-11 gap-2 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 px-6 shrink-0 transition-transform active:scale-95">
+                                        <Plus className="h-4 w-4" />
+                                        Add System
+                                    </Button>
+                                </AddPrebuiltDialog>
                             </div>
-                            <AddPrebuiltDialog
-                                parts={parts || []}
-                                onSave={handleAddPrebuilt}
-                            >
-                                <Button className="h-11 gap-2 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 px-6 shrink-0 transition-transform active:scale-95">
-                                    <Plus className="h-4 w-4" />
-                                    Add System
-                                </Button>
-                            </AddPrebuiltDialog>
                         </div>
-                    </div>
 
-                    {activeView === 'grid' ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-6">
-                            {currentPrebuilts.map((system) => (
-                                <InventoryPrebuiltCard
-                                    key={system.id}
-                                    system={system}
+                        {activeView === 'grid' ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-6">
+                                {currentPrebuilts.map((system) => (
+                                    <InventoryPrebuiltCard
+                                        key={system.id}
+                                        system={system}
+                                        parts={parts || []}
+                                        onDelete={handleDeletePrebuilt}
+                                        onArchive={handleArchivePrebuilt}
+                                        onUpdate={handleUpdatePrebuilt}
+                                        isExpanded={expandedPrebuiltIds.includes(system.id)}
+                                        onToggleExpand={() => togglePrebuiltExpand(system.id)}
+                                        isSelected={selectedPrebuiltIds.includes(system.id)}
+                                        onToggleSelection={togglePrebuiltSelection}
+                                        isSelectionMode={isPrebuiltSelectionMode}
+                                        isSuperAdmin={profile?.isSuperAdmin}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
+                                <PrebuiltsTable
+                                    systems={currentPrebuilts}
                                     parts={parts || []}
                                     onDelete={handleDeletePrebuilt}
                                     onArchive={handleArchivePrebuilt}
                                     onUpdate={handleUpdatePrebuilt}
-                                    isExpanded={expandedPrebuiltIds.includes(system.id)}
-                                    onToggleExpand={() => togglePrebuiltExpandAll(system.id)}
-                                    isSelected={selectedPrebuiltIds.includes(system.id)}
+                                    expandedIds={expandedPrebuiltIds}
+                                    onToggleExpand={togglePrebuiltExpand}
+                                    selectedIds={selectedPrebuiltIds}
                                     onToggleSelection={togglePrebuiltSelection}
-                                    isSelectionMode={isPrebuiltSelectionMode}
+                                    onToggleSelectAll={() => toggleAllPrebuiltsSelection(currentPrebuilts)}
                                     isSuperAdmin={profile?.isSuperAdmin}
                                 />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
-                            <PrebuiltsTable
-                                systems={currentPrebuilts}
-                                parts={parts || []}
-                                onDelete={handleDeletePrebuilt}
-                                onArchive={handleArchivePrebuilt}
-                                onUpdate={handleUpdatePrebuilt}
-                                isExpanded={expandedPrebuiltIds.length > 0}
-                                onToggleExpand={() => togglePrebuiltExpandAll(currentPrebuilts[0]?.id || '')}
-                                selectedIds={selectedPrebuiltIds}
-                                onToggleSelection={togglePrebuiltSelection}
-                                onToggleSelectAll={() => toggleAllPrebuiltsSelection(currentPrebuilts)}
-                                isSuperAdmin={profile?.isSuperAdmin}
-                            />
-                        </div>
-                    )}
-                    <PaginationControls
-                        currentPage={prebuiltCurrentPage}
-                        totalPages={prebuiltTotalPages}
-                        itemsPerPage={prebuiltItemsPerPage}
-                        onPageChange={setPrebuiltCurrentPage}
-                        onItemsPerPageChange={setPrebuiltItemsPerPage}
-                    />
-                </TabsContent>
+                            </div>
+                        )}
+                        <PaginationControls
+                            currentPage={prebuiltCurrentPage}
+                            totalPages={prebuiltTotalPages}
+                            itemsPerPage={prebuiltItemsPerPage}
+                            onPageChange={setPrebuiltCurrentPage}
+                            onItemsPerPageChange={setPrebuiltItemsPerPage}
+                        />
+                    </TabsContent>
 
-                <TabsContent value="reservations">
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 gap-8">
-                            <div>
-                                <h2 className="text-2xl font-headline font-bold mb-4 flex items-center gap-2 uppercase">
-                                    <Package className="h-6 w-6 text-primary" /> Current Reservations
-                                </h2>
-                                <Card>
-                                    <CardContent className="p-0">
-                                        {ordersLoading ? <TableSkeleton columns={3} /> : (
-                                            orders && orders.length > 0 ? (
-                                                <>
-                                                    <div className="divide-y overflow-hidden rounded-md border border-white/5">
-                                                        {paginatedOrders.map(order => (
-                                                            <div 
-                                                                key={order.id} 
-                                                                className={cn(
-                                                                    "flex flex-col transition-all duration-300",
-                                                                    order.status === 'pending' 
-                                                                        ? "border-l-4 border-l-primary shadow-[0_0_20px_rgba(34,211,238,0.05)]" 
-                                                                        : "border-l-4 border-l-transparent",
-                                                                    order.status === 'cancelled' && "opacity-60 grayscale-[0.5]"
-                                                                )}
-                                                            >
-                                                                <div 
+                    <TabsContent value="reservations">
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 gap-8">
+                                <div>
+                                    <h2 className="text-2xl font-headline font-bold mb-4 flex items-center gap-2 uppercase">
+                                        <Package className="h-6 w-6 text-primary" /> Current Reservations
+                                    </h2>
+                                    <Card>
+                                        <CardContent className="p-0">
+                                            {ordersLoading ? <TableSkeleton columns={3} /> : (
+                                                orders && orders.length > 0 ? (
+                                                    <>
+                                                        <div className="divide-y overflow-hidden rounded-md border border-white/5">
+                                                            {paginatedOrders.map(order => (
+                                                                <div
+                                                                    key={order.id}
                                                                     className={cn(
-                                                                        "p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-muted/20 transition-colors",
-                                                                        expandedOrderId === order.id && "bg-muted/30 pb-3"
+                                                                        "flex flex-col transition-all duration-300",
+                                                                        order.status === 'pending'
+                                                                            ? "border-l-4 border-l-primary shadow-[0_0_20px_rgba(34,211,238,0.05)]"
+                                                                            : "border-l-4 border-l-transparent",
+                                                                        order.status === 'cancelled' && "opacity-60 grayscale-[0.5]"
                                                                     )}
-                                                                    onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
                                                                 >
-                                                                    <div className="flex items-center gap-4">
-                                                                        <div className="p-2.5 rounded-xl bg-muted/50 border border-white/5 shadow-sm">
-                                                                            {(order as any).type === 'prebuilt' ? (
-                                                                                <Monitor className="h-4 w-4 text-primary" />
-                                                                            ) : (
-                                                                                <Package className="h-4 w-4 text-muted-foreground" />
-                                                                            )}
-                                                                        </div>
-                                                                        <div>
-                                                                            <div className="flex items-center gap-2 mb-1.5">
-                                                                                <p className="font-bold text-base tracking-tight">{order.userEmail}</p>
-                                                                                {(order as any).type === 'prebuilt' && (
-                                                                                    <Badge variant="outline" className="border-primary/30 text-primary text-[8px] h-3.5 uppercase tracking-tighter bg-primary/5">PREBUILT</Badge>
-                                                                                )}
-                                                                                {order.status === 'pending' && <Badge className="bg-primary hover:bg-primary text-[10px] h-4 animate-pulse">NEW</Badge>}
-                                                                            </div>
-                                                                            <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest opacity-70">
+                                                                    <div
+                                                                        className={cn(
+                                                                            "p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-muted/20 transition-colors",
+                                                                            expandedOrderId === order.id && "bg-muted/30 pb-3"
+                                                                        )}
+                                                                        onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
+                                                                    >
+                                                                        <div className="flex items-center gap-4">
+                                                                            <div className="p-2.5 rounded-xl bg-muted/50 border border-white/5 shadow-sm">
                                                                                 {(order as any).type === 'prebuilt' ? (
-                                                                                    <>RIG: {(order as any).prebuiltName || 'Custom Prebuilt'}</>
+                                                                                    <Monitor className="h-4 w-4 text-primary" />
                                                                                 ) : (
-                                                                                    <>ID: {order.id.substring(0, 12)} • {order.items.length} items</>
+                                                                                    <Package className="h-4 w-4 text-muted-foreground" />
                                                                                 )}
-                                                                                 • {order.createdAt?.toDate().toLocaleDateString(undefined, { dateStyle: 'medium' })}
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="flex flex-row items-center justify-between md:justify-end gap-5 shrink-0" onClick={e => e.stopPropagation()}>
-                                                                        <div className="text-right">
-                                                                            <p className="text-[10px] text-muted-foreground uppercase tracking-tighter mb-0.5">Amount</p>
-                                                                            <p className="font-headline font-bold text-base text-emerald-500 tracking-tight">{formatCurrency(order.totalPrice)}</p>
-                                                                        </div>
-                                                                        <Select
-                                                                            defaultValue={order.status || 'pending'}
-                                                                            onValueChange={(val) => handleUpdateOrder(order.id, val as Order['status'])}
-                                                                        >
-                                                                            <SelectTrigger className={cn(
-                                                                                "w-[140px] h-9 text-[10px] font-bold uppercase tracking-wider",
-                                                                                order.status === 'pending' && "border-primary/50 text-primary",
-                                                                                order.status === 'cancelled' && "text-destructive border-destructive/30"
-                                                                            )}>
-                                                                                <SelectValue placeholder="Status" />
-                                                                            </SelectTrigger>
-                                                                            <SelectContent>
-                                                                                <SelectItem value="pending" className="font-bold text-primary">Pending</SelectItem>
-                                                                                <SelectItem value="building" className="font-bold text-blue-400">Building</SelectItem>
-                                                                                <SelectItem value="finished building" className="font-bold text-emerald-400">Finished Building</SelectItem>
-                                                                                <SelectItem value="cancelled" className="text-destructive font-bold bg-destructive/5">Cancelled</SelectItem>
-                                                                            </SelectContent>
-                                                                        </Select>
-                                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteOrder(order.id)}>
-                                                                            <Trash2 className="h-4 w-4" />
-                                                                        </Button>
-                                                                        <Button variant="ghost" size="icon" className={cn("h-8 w-8 transition-transform", expandedOrderId === order.id && "rotate-180")}>
-                                                                            <ChevronRight className="h-4 w-4" />
-                                                                        </Button>
-                                                                    </div>
-                                                                </div>
-                                                                
-                                                                {expandedOrderId === order.id && (
-                                                                    <div className="px-5 pb-5 pt-0 animate-in fade-in slide-in-from-top-2 duration-300">
-                                                                        <div className="grid grid-cols-1 gap-1.5 bg-background/40 rounded-xl p-4 border border-white/5 shadow-inner">
-                                                                            <div className="flex justify-between items-center mb-2 px-1 pb-1 border-b border-white/5">
-                                                                                <span className="text-[9px] uppercase tracking-[0.2em] font-bold text-muted-foreground/60">Full Component List</span>
-                                                                                <span className="text-[9px] uppercase tracking-[0.2em] font-bold text-muted-foreground/60">Price</span>
                                                                             </div>
-                                                                            {order.items.map((item, idx) => (
-                                                                                <div key={idx} className="flex justify-between items-baseline group py-1 border-t border-white/[0.03] first:border-t-0">
-                                                                                    <div className="flex flex-col">
-                                                                                        <span className="text-[8px] uppercase font-bold text-primary/60 tracking-tighter">{item.category}</span>
-                                                                                        <span className="text-sm font-medium text-foreground/80 leading-tight group-hover:text-primary transition-colors pr-4">{item.name}</span>
-                                                                                    </div>
-                                                                                    <span className="font-mono text-xs text-primary/70 shrink-0">{formatCurrency(item.price)}</span>
+                                                                            <div>
+                                                                                <div className="flex items-center gap-2 mb-1.5">
+                                                                                    <p className="font-bold text-base tracking-tight">{order.userEmail}</p>
+                                                                                    {(order as any).type === 'prebuilt' && (
+                                                                                        <Badge variant="outline" className="border-primary/30 text-primary text-[8px] h-3.5 uppercase tracking-tighter bg-primary/5">PREBUILT</Badge>
+                                                                                    )}
+                                                                                    {order.status === 'pending' && <Badge className="bg-primary hover:bg-primary text-[10px] h-4 animate-pulse">NEW</Badge>}
                                                                                 </div>
-                                                                            ))}
+                                                                                <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest opacity-70">
+                                                                                    {(order as any).type === 'prebuilt' ? (
+                                                                                        <>RIG: {(order as any).prebuiltName || 'Custom Prebuilt'}</>
+                                                                                    ) : (
+                                                                                        <>ID: {order.id.substring(0, 12)} • {order.items.length} items</>
+                                                                                    )}
+                                                                                    • {order.createdAt?.toDate().toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex flex-row items-center justify-between md:justify-end gap-5 shrink-0" onClick={e => e.stopPropagation()}>
+                                                                            <div className="text-right">
+                                                                                <p className="text-[10px] text-muted-foreground uppercase tracking-tighter mb-0.5">Amount</p>
+                                                                                <p className="font-headline font-bold text-base text-emerald-500 tracking-tight">{formatCurrency(order.totalPrice)}</p>
+                                                                            </div>
+                                                                            <Select
+                                                                                defaultValue={order.status || 'pending'}
+                                                                                onValueChange={(val) => handleUpdateOrder(order.id, val as Order['status'])}
+                                                                            >
+                                                                                <SelectTrigger className={cn(
+                                                                                    "w-[140px] h-9 text-[10px] font-bold uppercase tracking-wider",
+                                                                                    order.status === 'pending' && "border-primary/50 text-primary",
+                                                                                    order.status === 'cancelled' && "text-destructive border-destructive/30"
+                                                                                )}>
+                                                                                    <SelectValue placeholder="Status" />
+                                                                                </SelectTrigger>
+                                                                                <SelectContent>
+                                                                                    <SelectItem value="pending" className="font-bold text-primary">Pending</SelectItem>
+                                                                                    <SelectItem value="building" className="font-bold text-blue-400">Building</SelectItem>
+                                                                                    <SelectItem value="finished building" className="font-bold text-emerald-400">Finished Building</SelectItem>
+                                                                                    <SelectItem value="cancelled" className="text-destructive font-bold bg-destructive/5">Cancelled</SelectItem>
+                                                                                </SelectContent>
+                                                                            </Select>
+                                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteOrder(order.id)}>
+                                                                                <Trash2 className="h-4 w-4" />
+                                                                            </Button>
+                                                                            <Button variant="ghost" size="icon" className={cn("h-8 w-8 transition-transform", expandedOrderId === order.id && "rotate-180")}>
+                                                                                <ChevronRight className="h-4 w-4" />
+                                                                            </Button>
                                                                         </div>
                                                                     </div>
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                    <div className="mt-4">
-                                                        <PaginationControls
-                                                            currentPage={orderCurrentPage}
-                                                            totalPages={orderTotalPages}
-                                                            itemsPerPage={orderItemsPerPage}
-                                                            onPageChange={setOrderCurrentPage}
-                                                            onItemsPerPageChange={setOrderItemsPerPage}
-                                                        />
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <div className="p-8 text-center text-muted-foreground">No reservations yet.</div>
-                                            )
-                                        )}
-                                    </CardContent>
-                                </Card>
+
+                                                                    {expandedOrderId === order.id && (
+                                                                        <div className="px-5 pb-5 pt-0 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                                            <div className="grid grid-cols-1 gap-1.5 bg-background/40 rounded-xl p-4 border border-white/5 shadow-inner">
+                                                                                <div className="flex justify-between items-center mb-2 px-1 pb-1 border-b border-white/5">
+                                                                                    <span className="text-[9px] uppercase tracking-[0.2em] font-bold text-muted-foreground/60">Full Component List</span>
+                                                                                    <span className="text-[9px] uppercase tracking-[0.2em] font-bold text-muted-foreground/60">Price</span>
+                                                                                </div>
+                                                                                {order.items.map((item, idx) => (
+                                                                                    <div key={idx} className="flex justify-between items-baseline group py-1 border-t border-white/[0.03] first:border-t-0">
+                                                                                        <div className="flex flex-col">
+                                                                                            <span className="text-[8px] uppercase font-bold text-primary/60 tracking-tighter">{item.category}</span>
+                                                                                            <span className="text-sm font-medium text-foreground/80 leading-tight group-hover:text-primary transition-colors pr-4">{item.name}</span>
+                                                                                        </div>
+                                                                                        <span className="font-mono text-xs text-primary/70 shrink-0">{formatCurrency(item.price)}</span>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        <div className="mt-4">
+                                                            <PaginationControls
+                                                                currentPage={orderCurrentPage}
+                                                                totalPages={orderTotalPages}
+                                                                itemsPerPage={orderItemsPerPage}
+                                                                onPageChange={setOrderCurrentPage}
+                                                                onItemsPerPageChange={setOrderItemsPerPage}
+                                                            />
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="p-8 text-center text-muted-foreground">No reservations yet.</div>
+                                                )
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </TabsContent>
+                    </TabsContent>
 
-                {profile?.isSuperAdmin && (
-                    <TabsContent value="sales" className="mt-6">
-                        <div className="space-y-8">
-                            <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 items-start">
-                                {/* 3D Visualizer Section */}
-                                <div className="xl:col-span-1">
-                                    <div className="space-y-4 sticky top-8">
+                    {profile?.isSuperAdmin && (
+                        <TabsContent value="sales" className="mt-6">
+                            <div className="space-y-8">
+                                <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 items-start">
+                                    {/* 3D Visualizer Section */}
+                                    <div className="xl:col-span-1">
+                                        <div className="space-y-4 sticky top-8">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex flex-col">
                                                     <h3 className="text-2xl font-headline font-bold uppercase tracking-tight text-foreground">
@@ -1207,9 +1216,9 @@ export default function AdminPage() {
                                                     </p>
                                                 </div>
                                                 <AlertDialog open={showResetSalesConfirm} onOpenChange={setShowResetSalesConfirm}>
-                                                    <Button 
-                                                        variant="ghost" 
-                                                        size="icon" 
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
                                                         className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                                                         onClick={() => setShowResetSalesConfirm(true)}
                                                     >
@@ -1227,7 +1236,7 @@ export default function AdminPage() {
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter className="pt-6">
                                                             <AlertDialogCancel className="bg-transparent border-white/10 hover:bg-white/5">Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction 
+                                                            <AlertDialogAction
                                                                 className="bg-destructive hover:bg-destructive/90 text-white font-bold"
                                                                 onClick={handleResetSales}
                                                                 disabled={isResettingSales}
@@ -1238,201 +1247,202 @@ export default function AdminPage() {
                                                     </AlertDialogContent>
                                                 </AlertDialog>
                                             </div>
-                                        <SalesVisualizer orderCount={stats.totalOrders} />
-                                        <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10">
-                                            <p className="text-xs text-primary/80 font-medium leading-relaxed">
-                                                The Neural Core reflects real-time reservation intensity. Higher pulse rates indicate increased customer engagement cycles.
-                                            </p>
+                                            <SalesVisualizer orderCount={stats.totalOrders} />
+                                            <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10">
+                                                <p className="text-xs text-primary/80 font-medium leading-relaxed">
+                                                    The Neural Core reflects real-time reservation intensity. Higher pulse rates indicate increased customer engagement cycles.
+                                                </p>
+                                            </div>
                                         </div>
+                                    </div>
+
+                                    {/* Analytics Dashboard Section */}
+                                    <div className="xl:col-span-3">
+                                        <SalesAnalytics
+                                            orders={orders || []}
+                                            parts={parts || []}
+                                            prebuilts={prebuiltSystems || []}
+                                        />
                                     </div>
                                 </div>
 
-                                {/* Analytics Dashboard Section */}
-                                <div className="xl:col-span-3">
-                                    <SalesAnalytics 
-                                        orders={orders || []} 
-                                        parts={parts || []} 
-                                        prebuilts={prebuiltSystems || []}
-                                    />
+                                {/* Popular Components handled within SalesAnalytics */}
+                            </div>
+                        </TabsContent>
+                    )}
+
+                    <TabsContent value="archive" className="mt-6 space-y-8">
+                        <div className="space-y-4">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                <h2 className="text-xl font-headline font-bold flex items-center gap-2">
+                                    <Archive className="h-5 w-5 text-primary" />
+                                    Archived Parts
+                                </h2>
+                                <div className="flex items-center gap-3">
+                                    {selectedPartIds.length > 0 && (
+                                        <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 animate-in fade-in slide-in-from-right-2">
+                                            <span className="text-xs font-bold text-primary">{selectedPartIds.length} Selected</span>
+                                            <Separator orientation="vertical" className="h-4 bg-primary/20" />
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-7 text-xs hover:bg-primary/20 text-emerald-400"
+                                                onClick={() => setConfirmAction({ isOpen: true, type: 'restore', target: 'parts' })}
+                                            >
+                                                <PackageCheck className="mr-1.5 h-3 w-3" /> Restore
+                                            </Button>
+                                            {profile?.isSuperAdmin && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-7 text-xs text-destructive hover:bg-destructive/20"
+                                                    onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'parts' })}
+                                                >
+                                                    <Trash2 className="mr-1.5 h-3 w-3" /> Delete
+                                                </Button>
+                                            )}
+                                            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPartIds([])}>
+                                                Cancel
+                                            </Button>
+                                        </div>
+                                    )}
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" className="h-9 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30 text-xs">
+                                                <Filter className="h-3 w-3" />
+                                                Categories
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
+                                            <DropdownMenuCheckboxItem
+                                                checked={archivePartCategories.every(c => c.selected)}
+                                                onCheckedChange={() => {
+                                                    const anyUnselected = archivePartCategories.some(cat => !cat.selected);
+                                                    setArchivePartCategories(prev => prev.map(c => ({ ...c, selected: anyUnselected })));
+                                                }}
+                                            >
+                                                All Categories
+                                            </DropdownMenuCheckboxItem>
+                                            <Separator className="my-1 opacity-50" />
+                                            {archivePartCategories.map((category) => (
+                                                <DropdownMenuCheckboxItem
+                                                    key={category.name}
+                                                    checked={category.selected}
+                                                    onCheckedChange={() => {
+                                                        setArchivePartCategories(prev => prev.map(c => ({
+                                                            ...c,
+                                                            selected: c.name === category.name ? true : false
+                                                        })));
+                                                    }}
+                                                >
+                                                    {category.name}
+                                                </DropdownMenuCheckboxItem>
+                                            ))}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
                             </div>
-
-                            {/* Popular Components handled within SalesAnalytics */}
+                            <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
+                                <InventoryTable
+                                    parts={parts?.filter(p => p.isArchived && archivePartCategories.find(c => c.name === p.category)?.selected) || []}
+                                    onDelete={handleDeletePart}
+                                    onArchive={handleArchivePart}
+                                    onUpdateStock={handleUpdatePartStock}
+                                    onUpdatePart={handleUpdatePart}
+                                    selectedIds={selectedPartIds}
+                                    onToggleSelection={togglePartSelection}
+                                    onToggleSelectAll={() => toggleAllPartsSelection(parts?.filter(p => p.isArchived) || [])}
+                                    isSuperAdmin={profile?.isSuperAdmin}
+                                    isArchiveView={true}
+                                />
+                            </div>
                         </div>
-                    </TabsContent>
-                )}
 
-                <TabsContent value="archive" className="mt-6 space-y-8">
-                    <div className="space-y-4">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                            <h2 className="text-xl font-headline font-bold flex items-center gap-2">
-                                <Archive className="h-5 w-5 text-primary" />
-                                Archived Parts
-                            </h2>
-                            <div className="flex items-center gap-3">
-                                {selectedPartIds.length > 0 && (
+                        <div className="space-y-4">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                <h2 className="text-xl font-headline font-bold flex items-center gap-2">
+                                    <Archive className="h-5 w-5 text-primary" />
+                                    Archived Prebuilts
+                                </h2>
+                                {selectedPrebuiltIds.length > 0 && (
                                     <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 animate-in fade-in slide-in-from-right-2">
-                                        <span className="text-xs font-bold text-primary">{selectedPartIds.length} Selected</span>
+                                        <span className="text-xs font-bold text-primary">{selectedPrebuiltIds.length} Selected</span>
                                         <Separator orientation="vertical" className="h-4 bg-primary/20" />
-                                        <Button 
-                                            size="sm" 
-                                            variant="ghost" 
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
                                             className="h-7 text-xs hover:bg-primary/20 text-emerald-400"
-                                            onClick={() => setConfirmAction({ isOpen: true, type: 'restore', target: 'parts' })}
+                                            onClick={() => setConfirmAction({ isOpen: true, type: 'restore', target: 'prebuilts' })}
                                         >
                                             <PackageCheck className="mr-1.5 h-3 w-3" /> Restore
                                         </Button>
                                         {profile?.isSuperAdmin && (
-                                            <Button 
-                                                size="sm" 
-                                                variant="ghost" 
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
                                                 className="h-7 text-xs text-destructive hover:bg-destructive/20"
-                                                onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'parts' })}
+                                                onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'prebuilts' })}
                                             >
                                                 <Trash2 className="mr-1.5 h-3 w-3" /> Delete
                                             </Button>
                                         )}
-                                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPartIds([])}>
+                                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPrebuiltIds([])}>
                                             Cancel
                                         </Button>
                                     </div>
                                 )}
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" className="h-9 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30 text-xs">
-                                            <Filter className="h-3 w-3" />
-                                            Categories
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
-                                        <DropdownMenuCheckboxItem
-                                            checked={archivePartCategories.every(c => c.selected)}
-                                            onCheckedChange={() => {
-                                                const anyUnselected = archivePartCategories.some(cat => !cat.selected);
-                                                setArchivePartCategories(prev => prev.map(c => ({ ...c, selected: anyUnselected })));
-                                            }}
-                                        >
-                                            All Categories
-                                        </DropdownMenuCheckboxItem>
-                                        <Separator className="my-1 opacity-50" />
-                                        {archivePartCategories.map((category) => (
-                                            <DropdownMenuCheckboxItem
-                                                key={category.name}
-                                                checked={category.selected}
-                                                onCheckedChange={() => {
-                                                    setArchivePartCategories(prev => prev.map(c => ({
-                                                        ...c,
-                                                        selected: c.name === category.name ? true : false
-                                                    })));
-                                                }}
-                                            >
-                                                {category.name}
-                                            </DropdownMenuCheckboxItem>
-                                        ))}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                            </div>
+                            <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
+                                <PrebuiltsTable
+                                    systems={prebuiltSystems?.filter(s => s.isArchived) || []}
+                                    parts={parts || []}
+                                    onDelete={handleDeletePrebuilt}
+                                    onArchive={handleArchivePrebuilt}
+                                    onUpdate={handleUpdatePrebuilt}
+                                    expandedIds={[]}
+                                    onToggleExpand={() => {}}
+                                    selectedIds={selectedPrebuiltIds}
+                                    onToggleSelection={togglePrebuiltSelection}
+                                    onToggleSelectAll={() => toggleAllPrebuiltsSelection(prebuiltSystems?.filter(s => s.isArchived) || [])}
+                                    isSuperAdmin={profile?.isSuperAdmin}
+                                    isArchiveView={true}
+                                />
                             </div>
                         </div>
-                        <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
-                            <InventoryTable
-                                parts={parts?.filter(p => p.isArchived && archivePartCategories.find(c => c.name === p.category)?.selected) || []}
-                                onDelete={handleDeletePart}
-                                onArchive={handleArchivePart}
-                                onUpdateStock={handleUpdatePartStock}
-                                onUpdatePart={handleUpdatePart}
-                                selectedIds={selectedPartIds}
-                                onToggleSelection={togglePartSelection}
-                                onToggleSelectAll={() => toggleAllPartsSelection(parts?.filter(p => p.isArchived) || [])}
-                                isSuperAdmin={profile?.isSuperAdmin}
-                                isArchiveView={true}
-                            />
-                        </div>
-                    </div>
+                    </TabsContent>
+                </Tabs>
 
-                    <div className="space-y-4">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                            <h2 className="text-xl font-headline font-bold flex items-center gap-2">
-                                <Archive className="h-5 w-5 text-primary" />
-                                Archived Prebuilts
-                            </h2>
-                            {selectedPrebuiltIds.length > 0 && (
-                                <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 animate-in fade-in slide-in-from-right-2">
-                                    <span className="text-xs font-bold text-primary">{selectedPrebuiltIds.length} Selected</span>
-                                    <Separator orientation="vertical" className="h-4 bg-primary/20" />
-                                    <Button 
-                                        size="sm" 
-                                        variant="ghost" 
-                                        className="h-7 text-xs hover:bg-primary/20 text-emerald-400"
-                                        onClick={() => setConfirmAction({ isOpen: true, type: 'restore', target: 'prebuilts' })}
-                                    >
-                                        <PackageCheck className="mr-1.5 h-3 w-3" /> Restore
-                                    </Button>
-                                    {profile?.isSuperAdmin && (
-                                        <Button 
-                                            size="sm" 
-                                            variant="ghost" 
-                                            className="h-7 text-xs text-destructive hover:bg-destructive/20"
-                                            onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'prebuilts' })}
-                                        >
-                                            <Trash2 className="mr-1.5 h-3 w-3" /> Delete
-                                        </Button>
-                                    )}
-                                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPrebuiltIds([])}>
-                                        Cancel
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-                        <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
-                            <PrebuiltsTable
-                                systems={prebuiltSystems?.filter(s => s.isArchived) || []}
-                                parts={parts || []}
-                                onDelete={handleDeletePrebuilt}
-                                onArchive={handleArchivePrebuilt}
-                                onUpdate={handleUpdatePrebuilt}
-                                isExpanded={false}
-                                selectedIds={selectedPrebuiltIds}
-                                onToggleSelection={togglePrebuiltSelection}
-                                onToggleSelectAll={() => toggleAllPrebuiltsSelection(prebuiltSystems?.filter(s => s.isArchived) || [])}
-                                isSuperAdmin={profile?.isSuperAdmin}
-                                isArchiveView={true}
-                            />
-                        </div>
-                    </div>
-                </TabsContent>
-            </Tabs>
-
-            {/* Global Bulk Action Confirmation Dialog */}
-            <AlertDialog open={confirmAction.isOpen} onOpenChange={(open) => setConfirmAction(prev => ({ ...prev, isOpen: open }))}>
-                <AlertDialogContent className="bg-background/95 backdrop-blur-2xl border-white/10 max-w-[400px]">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2 text-xl font-headline font-bold">
-                            {confirmAction.type === 'delete' ? <Trash2 className="h-5 w-5 text-destructive" /> : <Archive className="h-5 w-5 text-primary" />}
-                            Confirm {confirmAction.type.charAt(0).toUpperCase() + confirmAction.type.slice(1)} Action
-                        </AlertDialogTitle>
-                        <AlertDialogDescription className="text-muted-foreground pt-2">
-                            {confirmAction.type === 'delete' 
-                                ? "This action is PERMANENT and cannot be undone. All selected items will be removed forever."
-                                : confirmAction.type === 'archive'
-                                    ? "Are you sure you want to move the selected items to the archive?"
-                                    : "Are you sure you want to restore the selected items to the main inventory?"}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="pt-6">
-                        <AlertDialogCancel className="bg-transparent border-white/10 hover:bg-white/5">Cancel</AlertDialogCancel>
-                        <AlertDialogAction 
-                            className={cn(
-                                "text-white font-bold",
-                                confirmAction.type === 'delete' ? "bg-destructive hover:bg-destructive/90" : "bg-primary hover:bg-primary/90"
-                            )}
-                            onClick={executeBulkAction}
-                        >
-                            Confirm {confirmAction.type.charAt(0).toUpperCase() + confirmAction.type.slice(1)}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </div>
+                {/* Global Bulk Action Confirmation Dialog */}
+                <AlertDialog open={confirmAction.isOpen} onOpenChange={(open) => setConfirmAction(prev => ({ ...prev, isOpen: open }))}>
+                    <AlertDialogContent className="bg-background/95 backdrop-blur-2xl border-white/10 max-w-[400px]">
+                        <AlertDialogHeader>
+                            <AlertDialogTitle className="flex items-center gap-2 text-xl font-headline font-bold">
+                                {confirmAction.type === 'delete' ? <Trash2 className="h-5 w-5 text-destructive" /> : <Archive className="h-5 w-5 text-primary" />}
+                                Confirm {confirmAction.type.charAt(0).toUpperCase() + confirmAction.type.slice(1)} Action
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-muted-foreground pt-2">
+                                {confirmAction.type === 'delete'
+                                    ? "This action is PERMANENT and cannot be undone. All selected items will be removed forever."
+                                    : confirmAction.type === 'archive'
+                                        ? "Are you sure you want to move the selected items to the archive?"
+                                        : "Are you sure you want to restore the selected items to the main inventory?"}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="pt-6">
+                            <AlertDialogCancel className="bg-transparent border-white/10 hover:bg-white/5">Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                                className={cn(
+                                    "text-white font-bold",
+                                    confirmAction.type === 'delete' ? "bg-destructive hover:bg-destructive/90" : "bg-primary hover:bg-primary/90"
+                                )}
+                                onClick={executeBulkAction}
+                            >
+                                Confirm {confirmAction.type.charAt(0).toUpperCase() + confirmAction.type.slice(1)}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </div>
         </div>
     )
 }

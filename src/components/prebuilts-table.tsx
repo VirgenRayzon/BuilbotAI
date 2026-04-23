@@ -48,8 +48,8 @@ interface PrebuiltsTableProps {
   onUpdate?: (systemId: string, data: AddPrebuiltFormSchema) => Promise<void>;
   parts?: Part[];
   showActions?: boolean;
-  isExpanded?: boolean;
-  onToggleExpand?: () => void;
+  expandedIds?: string[];
+  onToggleExpand?: (id: string) => void;
   selectedIds?: string[];
   onToggleSelection?: (id: string) => void;
   onToggleSelectAll?: () => void;
@@ -64,7 +64,7 @@ export function PrebuiltsTable({
   onUpdate, 
   parts = [], 
   showActions = true, 
-  isExpanded = false, 
+  expandedIds = [], 
   onToggleExpand = () => {},
   selectedIds = [],
   onToggleSelection = () => {},
@@ -104,8 +104,8 @@ export function PrebuiltsTable({
             onUpdate={onUpdate} 
             parts={parts} 
             showActions={showActions}
-            isExpanded={isExpanded}
-            onToggleExpand={onToggleExpand}
+            isExpanded={expandedIds.includes(system.id)}
+            onToggleExpand={() => onToggleExpand(system.id)}
             isSelected={selectedIds.includes(system.id)}
             onToggleSelection={onToggleSelection}
             isSuperAdmin={isSuperAdmin}
