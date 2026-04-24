@@ -9,7 +9,6 @@ import { Loader2, ArrowRight, Cpu, Sparkles, MonitorSmartphone, Zap, ShieldCheck
 import { motion } from 'framer-motion';
 import { SectionHeader } from '@/components/landing/section-header';
 import { FeatureShowcase } from '@/components/landing/feature-showcase';
-import { VisualizerPreview } from '@/components/landing/visualizer-preview';
 import { PrebuiltShowcase } from '@/components/landing/prebuilt-showcase';
 import { useTheme } from '@/context/theme-provider';
 import { useLoading } from '@/context/loading-context';
@@ -96,7 +95,7 @@ export default function StartPage() {
                 "max-w-xl text-xl md:text-2xl mb-12 leading-relaxed font-medium",
                 isDark ? "text-slate-400" : "text-slate-600"
               )}>
-                Forge high-performance machines with a real-time <span className="text-primary font-bold">3D Clearance Visualizer</span>, neural bottleneck diagnostics, and intelligent hardware critique.
+                Forge high-performance machines with neural bottleneck diagnostics, intelligent hardware critique, and precision part matching.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-start gap-6">
@@ -192,12 +191,6 @@ export default function StartPage() {
             badge="Advanced Engineering"
             title="Beyond Simple Compatibility"
             subtitle="BuildbotAI doesn't just list parts—it understands the physical and technical interplay of your entire architecture."
-          />
-
-          <FeatureShowcase
-            title="3D Real-time Visualizer"
-            description="Experience your build before the first screw is turned. Our immersive 3D engine simulates component clearance, cable routing paths, and thermal zones in a high-fidelity environment."
-            visual={<VisualizerPreview />}
           />
 
           <FeatureShowcase
@@ -426,8 +419,8 @@ export default function StartPage() {
                 
                 <div className="flex items-center gap-12 flex-wrap justify-center opacity-60">
                 <div className="flex flex-col items-center gap-2">
-                    <span className="text-3xl font-black font-headline tracking-tight">100%</span>
-                    <span className="text-[9px] text-muted-foreground uppercase font-black tracking-[0.3em]">Clearance Check</span>
+                    <span className="text-3xl font-black font-headline tracking-tight">PRECISION</span>
+                    <span className="text-[9px] text-muted-foreground uppercase font-black tracking-[0.3em]">Part Matching</span>
                 </div>
                 <div className="w-px h-12 bg-border hidden md:block" />
                 <div className="flex flex-col items-center gap-2">

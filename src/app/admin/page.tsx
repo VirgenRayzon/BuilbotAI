@@ -1202,7 +1202,7 @@ export default function AdminPage() {
                         <TabsContent value="sales" className="mt-6">
                             <div className="space-y-8">
                                 <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 items-start">
-                                    {/* 3D Visualizer Section */}
+                                    {/* Sales Activity Visualizer */}
                                     <div className="xl:col-span-1">
                                         <div className="space-y-4 sticky top-8">
                                             <div className="flex items-center justify-between">
