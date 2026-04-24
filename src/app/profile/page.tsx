@@ -524,7 +524,7 @@ export default function ProfilePage() {
                                 </>
                             )}
 
-                            {(profile?.isManager || profile?.isSuperAdmin) && (
+                            {profile?.isSuperAdmin && (
                                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                                     <div className="flex items-end justify-between px-1">
                                         <div className="space-y-1">

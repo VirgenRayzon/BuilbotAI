@@ -51,7 +51,6 @@ import { collection, deleteDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { TableSkeleton } from '@/components/table-skeleton';
-import { SuperAdminSettings } from '@/components/super-admin-settings';
 import { useUserProfile } from '@/context/user-profile';
 import { useTheme } from '@/context/theme-provider';
 import { useLoading } from "@/context/loading-context";
@@ -695,7 +694,7 @@ export default function AdminPage() {
                 <div className="mb-8 flex items-center justify-between">
                     <div>
                         <h1 className="text-4xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-slate-50">
-                            Admin Dashboard
+                            Dashboard
                         </h1>
                         <p className="text-muted-foreground mt-2 font-medium italic">
                             {profile?.isSuperAdmin
@@ -1400,7 +1399,7 @@ export default function AdminPage() {
                                     onArchive={handleArchivePrebuilt}
                                     onUpdate={handleUpdatePrebuilt}
                                     expandedIds={[]}
-                                    onToggleExpand={() => {}}
+                                    onToggleExpand={() => { }}
                                     selectedIds={selectedPrebuiltIds}
                                     onToggleSelection={togglePrebuiltSelection}
                                     onToggleSelectAll={() => toggleAllPrebuiltsSelection(prebuiltSystems?.filter(s => s.isArchived) || [])}
