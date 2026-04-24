@@ -24,6 +24,17 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export function Header() {
   const pathname = usePathname();
@@ -33,6 +44,7 @@ export function Header() {
 
   const handleSignOut = async () => {
     if (auth) {
+      localStorage.removeItem('pc_chat_history_v2');
       localStorage.removeItem('pc_builder_state');
       localStorage.removeItem('admin_pc_builder_state');
       await signOut(auth);
@@ -161,15 +173,35 @@ export function Header() {
                 <ThemeToggle />
               </div>
               
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleSignOut} 
-                className="hidden sm:flex rounded-xl h-9 px-4 text-[10px] font-bold uppercase tracking-widest border border-destructive/20 hover:bg-destructive/10 hover:text-destructive transition-all duration-300 group"
-              >
-                <LogOut className="mr-2 h-3.5 w-3.5 transition-transform group-hover:-translate-x-1" />
-                Sign Out
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="hidden sm:flex rounded-xl h-9 px-4 text-[10px] font-bold uppercase tracking-widest border border-destructive/20 hover:bg-destructive/10 hover:text-destructive transition-all duration-300 group"
+                  >
+                    <LogOut className="mr-2 h-3.5 w-3.5 transition-transform group-hover:-translate-x-1" />
+                    Sign Out
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-background/95 backdrop-blur-xl border-border/40 rounded-2xl shadow-2xl">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-xl font-bold tracking-tight">Confirm Sign Out</AlertDialogTitle>
+                    <AlertDialogDescription className="text-muted-foreground">
+                      Are you sure you want to sign out? You will need to sign back in to access your saved builds and settings.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="mt-4 gap-2">
+                    <AlertDialogCancel className="rounded-xl border-border/40 hover:bg-muted/50 font-bold uppercase tracking-widest text-[10px]">Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleSignOut}
+                      className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-destructive/20"
+                    >
+                      Sign Out
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
 
               {/* Mobile Menu Trigger */}
               <div className="md:hidden">
@@ -231,14 +263,34 @@ export function Header() {
                            {profile?.isManager && <NotificationCenter />}
                            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Notifications</span>
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          onClick={handleSignOut} 
-                          className="w-full justify-start rounded-xl h-12 px-4 text-xs font-bold uppercase tracking-widest border border-destructive/20 text-destructive hover:bg-destructive/10"
-                        >
-                          <LogOut className="mr-3 h-4 w-4" />
-                          Sign Out
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              className="w-full justify-start rounded-xl h-12 px-4 text-xs font-bold uppercase tracking-widest border border-destructive/20 text-destructive hover:bg-destructive/10"
+                            >
+                              <LogOut className="mr-3 h-4 w-4" />
+                              Sign Out
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-background/95 backdrop-blur-xl border-border/40 rounded-2xl w-[90vw] max-w-[350px]">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-lg font-bold tracking-tight">Sign Out?</AlertDialogTitle>
+                              <AlertDialogDescription className="text-xs text-muted-foreground">
+                                You will be logged out of your account.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter className="mt-4 flex flex-row gap-2 sm:flex-row">
+                              <AlertDialogCancel className="flex-1 rounded-xl border-border/40 font-bold uppercase tracking-widest text-[10px] m-0">No</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={handleSignOut}
+                                className="flex-1 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold uppercase tracking-widest text-[10px] m-0"
+                              >
+                                Yes
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   </SheetContent>

@@ -26,6 +26,16 @@ export async function POST(req: Request) {
         } else {
             messageText = lastMessage.content || lastMessage.text || "";
         }
+
+        // Handle trigger greeting for streaming start
+        if (messageText === 'SYSTEM_TRIGGER_GREETING') {
+            const greetingPrompt = "Initialize sequence... Hello Architect. Please introduce yourself as Buildbot AI and offer to help me build my PC. Keep it professional, welcoming, and high-tech.";
+            lastMessage.content = greetingPrompt;
+            if (lastMessage.parts) {
+                lastMessage.parts = [{ type: 'text', text: greetingPrompt }];
+            }
+        }
+
         // Context formatting
         const formattedContext = buildContext
             ? `\nCURRENT BUILD CONTEXT:\n${Object.entries(buildContext)
@@ -59,7 +69,8 @@ Our platform provides a comprehensive PC building experience, curating high-qual
 
 **[Token & Formatting Constraints - CRITICAL]**
 - **Save Tokens:** Keep all answers ultra-concise, stripped-down, and informative. Use Markdown clearly (e.g., bolding part names).
-- **Full Builds:** When recommending a full PC build, provide a simple bulleted list of the components. Do NOT write detailed explanations for each part unless the user explicitly asks for the reasoning.
+- **Hard Cap:** You MUST recommend a maximum of 4 items at a time. Do not overwhelm the user.
+- **Full Builds:** When the user asks for a complete PC build (especially based on a budget), you MUST decline the request. Politely state that you cannot build a full PC from scratch in the chat, and highly recommend that they use the dedicated "Build Advisor" tool on the platform instead.
 - **Brief Explanations:** If recommending single parts, briefly state why it fits (maximum one sentence) to save tokens.
 - **Speech Bubbles:** To keep things readable and UI minimalist, break your thoughts into logical steps. Provide recommendations in a new logical step after receiving tool results.
 
@@ -77,12 +88,11 @@ Our platform provides a comprehensive PC building experience, curating high-qual
 Before answering any query, take a deep breath and think through it step-by-step.
 1. Greet the customer warmly (friendly tone).
 2. Identify needs: ask what kind of PC parts they are looking for (gaming, office, productivity, etc.).
-3. Gather details: ask about their specific use case, budget, and the aesthetic look they want.
-4. Request an image of their workspace, current PC, or aesthetic inspiration for better assessment.
-5. Suggest products based on the customer's needs and available products in the store via your tools.
-6. If you cannot find the right product, encourage them to search the site themselves.
-7. If you do not know the answer to a query, say: "I don't have an answer, please ask the store clerk for assistance."
-8. Let them know they can reach out for further assistance after their purchase.
+3. Gather details: ask about their specific use case and budget.
+4. Suggest products based on the customer's needs and available products in the store via your tools.
+5. If you cannot find the right product, encourage them to search the site themselves.
+6. If you do not know the answer to a query, say: "I don't have an answer, please ask the store clerk for assistance."
+7. Let them know they can reach out for further assistance after their purchase.
 `;
 
         const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
@@ -104,19 +114,25 @@ Before answering any query, take a deep breath and think through it step-by-step
 
         const result = await streamText({
             model: googleProvider('gemini-3-flash-preview'),
-            maxOutputTokens: 1000,
+            maxOutputTokens: 4096,
             messages: await convertToModelMessages(recentMessages),
             system: systemInstruction,
             tools: {
                 searchInventory: tool({
-                    description: "Search the live store database for PC parts by category to find exact matching parts to recommend to the user. Use searchTerm to filter for specific models.",
+                    description: "Search the live store database for PC parts by category. IMPORTANT: To ensure you find results, leave 'searchTerm' empty to fetch all available parts in a category, then pick the best ones yourself. Do NOT pass overly specific terms (like '650W Bronze' or 'ATX Case') as the search is strict. NEVER pass the string 'undefined'.",
                     inputSchema: z.object({
                         category: z.enum(['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler', 'monitor', 'keyboard', 'mouse', 'headset']),
-                        searchTerm: z.string().optional().describe("The specific model name or keywords to filter by"),
+                        searchTerm: z.string().optional().describe("Keep this EMPTY to get all items in the category."),
                     }),
                     execute: async ({ category, searchTerm }) => {
-                        console.log(`[Tool: searchInventory] Searching for ${category} with term: "${searchTerm}"`);
-                        const inventory = await getInventoryFromFirestore(category, searchTerm);
+                        // Clean up literal "undefined" strings that the AI sometimes sends
+                        const cleanTerm = (searchTerm === "undefined" || searchTerm === "") ? undefined : searchTerm;
+                        console.log(`[Tool: searchInventory] Searching for ${category} with term: ${cleanTerm ? `"${cleanTerm}"` : "none"}`);
+                        const inventory = await getInventoryFromFirestore(category, cleanTerm);
+
+                        if (!inventory || inventory.length === 0) {
+                            return { error: `No parts found in category ${category} matching term '${cleanTerm}'. Try searching again with an EMPTY searchTerm to see all available parts.` };
+                        }
                         return inventory;
                     },
                 }),
@@ -125,10 +141,6 @@ Before answering any query, take a deep breath and think through it step-by-step
         });
 
         return result.toUIMessageStreamResponse({
-            headers: {
-                'Transfer-Encoding': 'chunked',
-                'Connection': 'keep-alive',
-            },
             onError: (error: unknown) => {
                 if (error == null) return 'unknown error';
                 if (typeof error === 'string') return error;
