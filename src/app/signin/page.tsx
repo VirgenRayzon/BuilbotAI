@@ -210,18 +210,19 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[80vh]">
-      <Card className="w-full max-w-md mx-4">
+    <div className="flex items-center justify-center min-h-[80vh] bg-background">
+      <Card className="w-full max-w-md mx-4 glass-panel border-primary/20 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary"></div>
         <CardHeader>
-          <CardTitle className="text-2xl font-headline">Sign In</CardTitle>
-          <CardDescription>Enter your credentials to access your account.</CardDescription>
+          <CardTitle className="text-3xl font-headline font-bold uppercase tracking-tight">Access Matrix</CardTitle>
+          <CardDescription className="font-body text-muted-foreground/80">Initialize your secure architect session.</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mb-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="user">User</TabsTrigger>
-              <TabsTrigger value="manager">Manager</TabsTrigger>
-              <TabsTrigger value="superadmin">Super Admin</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 bg-muted/50 border border-border/40 p-1 rounded-xl">
+              <TabsTrigger value="user" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white font-headline font-bold uppercase text-[10px] tracking-widest">User</TabsTrigger>
+              <TabsTrigger value="manager" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white font-headline font-bold uppercase text-[10px] tracking-widest">Manager</TabsTrigger>
+              <TabsTrigger value="superadmin" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white font-headline font-bold uppercase text-[10px] tracking-widest">Admin</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -303,9 +304,9 @@ export default function SignInPage() {
                   )}
                 />
               )}
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full font-headline font-bold uppercase tracking-[0.2em] h-12 bg-primary hover:bg-primary/90 text-white shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sign In
+                Initialize Session
               </Button>
             </form>
           </Form>

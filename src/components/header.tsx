@@ -89,7 +89,7 @@ export function Header() {
     : [...adminLinks, ...commonLinks];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/40">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/60 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/40 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent z-20 opacity-50"></div>
       
       <div className="flex h-16 max-w-[1800px] w-full mx-auto items-center px-4 md:px-12">
@@ -102,7 +102,7 @@ export function Header() {
 
         {/* Center: Animated Navigation */}
         <div className="flex-1 flex justify-center">
-          <nav className="hidden md:flex items-center gap-2 p-1 bg-muted/30 rounded-2xl border border-border/20 backdrop-blur-md">
+          <nav className="hidden md:flex items-center gap-2 p-1 bg-muted/20 rounded-2xl border border-border/40 backdrop-blur-2xl ring-1 ring-ring/5">
             {authUser && filteredLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -110,7 +110,7 @@ export function Header() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "relative px-4 py-1.5 text-xs font-bold uppercase tracking-widest transition-colors duration-200 rounded-xl",
+                    "relative px-4 py-1.5 text-[10px] font-headline font-bold uppercase tracking-widest transition-all duration-300 rounded-xl hover:scale-105 active:scale-95",
                     isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -167,6 +167,15 @@ export function Header() {
             <Loader2 className="w-5 h-5 animate-spin text-primary/50" />
           ) : authUser ? (
             <div className="flex items-center gap-3">
+              <div className="hidden lg:flex flex-col items-end mr-1">
+                <span className="text-[10px] font-headline font-bold uppercase tracking-[0.15em] text-foreground">
+                  {profile?.name || authUser?.displayName || authUser?.email?.split('@')[0] || "User"}
+                </span>
+                <span className="text-[8px] font-bold uppercase tracking-widest text-primary/80 -mt-0.5">
+                  {profile?.isSuperAdmin ? "Neural Administrator" : profile?.isManager ? "System Manager" : "Citizen Architect"}
+                </span>
+              </div>
+
               <div className="hidden sm:flex items-center gap-1.5 p-1 bg-muted/40 rounded-xl border border-border/20">
                 {!profile?.isManager && <UserNotifications />}
                 {profile?.isManager && <NotificationCenter />}
@@ -219,9 +228,19 @@ export function Header() {
                       </SheetDescription>
                     </SheetHeader>
                     <div className="flex flex-col gap-6 mt-8">
-                      <div className="flex items-center justify-between">
-                        <Logo />
-                        <ThemeToggle />
+                      <div className="flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                          <Logo />
+                          <ThemeToggle />
+                        </div>
+                        <div className="flex flex-col gap-1 px-4 py-3 bg-muted/30 rounded-2xl border border-border/20">
+                          <span className="text-xs font-headline font-bold uppercase tracking-[0.1em] text-foreground">
+                            {profile?.name || authUser?.displayName || authUser?.email?.split('@')[0] || "User"}
+                          </span>
+                          <span className="text-[9px] font-bold uppercase tracking-widest text-primary/80">
+                            {profile?.isSuperAdmin ? "Neural Administrator" : profile?.isManager ? "System Manager" : "Citizen Architect"}
+                          </span>
+                        </div>
                       </div>
                       <nav className="flex flex-col gap-2">
                         {filteredLinks.map((link) => {

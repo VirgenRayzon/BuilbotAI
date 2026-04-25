@@ -104,8 +104,8 @@ export function NotificationCenter() {
                         )}
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-80 p-0 bg-background/95 backdrop-blur-xl border-white/10 shadow-2xl" align="end">
-                    <div className="flex items-center justify-between p-4 border-b border-white/5">
+                <PopoverContent className="w-80 p-0 bg-background/95 backdrop-blur-xl border-border/40 shadow-2xl" align="end">
+                    <div className="flex items-center justify-between p-4 border-b border-border/40">
                         <h3 className="font-headline font-bold text-sm">System Alerts</h3>
                         {unreadCount > 0 && (
                             <Button
@@ -124,7 +124,7 @@ export function NotificationCenter() {
                                 <span className="text-xs text-muted-foreground animate-pulse">Scanning alerts...</span>
                             </div>
                         ) : notifications && notifications.length > 0 ? (
-                            <div className="divide-y divide-white/5">
+                            <div className="divide-y divide-border/40">
                                 {notifications.map((notification) => (
                                     <div
                                         key={notification.id}
@@ -178,7 +178,7 @@ export function NotificationCenter() {
                             </div>
                         )}
                     </ScrollArea>
-                    <div className="p-2 border-t border-white/5 bg-muted/20">
+                    <div className="p-2 border-t border-border/40 bg-muted/20">
                         <Button variant="ghost" className="w-full text-[10px] font-bold uppercase tracking-widest h-8 opacity-60 hover:opacity-100">
                             View Audit Log
                         </Button>
@@ -187,7 +187,7 @@ export function NotificationCenter() {
             </Popover>
 
             <Dialog open={!!selectedNotification} onOpenChange={(open) => !open && setSelectedNotification(null)}>
-                <DialogContent className="sm:max-w-[425px] bg-background/80 backdrop-blur-2xl border-white/10 shadow-2xl overflow-hidden">
+                <DialogContent className="sm:max-w-[425px] bg-background/80 backdrop-blur-2xl border-border/40 shadow-2xl overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 via-primary to-primary/50" />
                     <DialogHeader className="pt-4">
                         <div className="flex items-center gap-3 mb-2">
@@ -198,12 +198,12 @@ export function NotificationCenter() {
                                 {selectedNotification?.title}
                             </DialogTitle>
                         </div>
-                        <DialogDescription className="text-xs text-muted-foreground uppercase tracking-[0.2em] font-black pb-2 border-b border-white/5">
+                        <DialogDescription className="text-xs text-muted-foreground uppercase tracking-[0.2em] font-black pb-2 border-b border-border/40">
                             System Alert Details
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-6">
-                        <div className="p-4 rounded-2xl bg-muted/30 border border-white/5 shadow-inner relative group overflow-hidden">
+                        <div className="p-4 rounded-2xl bg-muted/30 border border-border/40 shadow-inner relative group overflow-hidden">
                             <div className="absolute top-0 right-0 p-8 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:bg-primary/10" />
                             <p className="text-sm font-medium leading-relaxed relative z-10 text-foreground/90">
                                 {selectedNotification?.message}

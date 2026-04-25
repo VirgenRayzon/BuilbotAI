@@ -46,7 +46,7 @@ export default function StartPage() {
   return (
     <div className={cn(
       "min-h-screen transition-colors duration-500 overflow-x-hidden",
-      isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
+      isDark ? "bg-background text-foreground" : "bg-white text-slate-900"
     )}>
 
       {/* Hero Section */}
@@ -85,10 +85,10 @@ export default function StartPage() {
                 </div>
               </div>
 
-              <h1 className="font-headline text-6xl font-black tracking-tighter sm:text-8xl lg:text-9xl mb-8 leading-[0.85] uppercase">
+              <h1 className="font-headline text-5xl md:text-8xl lg:text-9xl font-bold tracking-tighter mb-8 leading-[0.85] uppercase">
                 Build Your <br /> 
                 <span className="text-primary italic">Masterpiece</span> <br /> 
-                With <span className={isDark ? "text-white" : "text-slate-900"}>AI</span>
+                With <span className={isDark ? "text-foreground" : "text-slate-900"}>AI</span>
               </h1>
 
               <p className={cn(
@@ -106,7 +106,7 @@ export default function StartPage() {
                 </Button>
                 <Button asChild variant="outline" size="lg" className={cn(
                   "h-16 px-10 text-[11px] uppercase tracking-[0.3em] rounded-2xl font-black border-2 transition-all hover:scale-[1.02] active:scale-[0.98] backdrop-blur-md relative overflow-hidden group/advisor",
-                  isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-white border-slate-200 text-slate-900 hover:bg-slate-50"
+                  isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-muted/40 border-border text-foreground hover:bg-muted/60"
                 )}>
                   <Link href="/signin" className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-primary" />
@@ -142,8 +142,7 @@ export default function StartPage() {
                     animate={{ y: [0, -15, 0], x: [0, 5, 0] }}
                     transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
                     className={cn(
-                        "absolute top-[15%] -left-4 p-5 rounded-2xl border backdrop-blur-2xl z-20 shadow-2xl",
-                        isDark ? "bg-slate-900/60 border-white/10 shadow-black/40" : "bg-white/80 border-slate-200 shadow-slate-200/20"
+                        "absolute top-[15%] -left-4 p-5 rounded-2xl z-20 shadow-xl glass-panel"
                     )}
                 >
                     <div className="flex items-center gap-4">
@@ -161,8 +160,7 @@ export default function StartPage() {
                     animate={{ y: [0, 15, 0], x: [0, -5, 0] }}
                     transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
                     className={cn(
-                        "absolute bottom-[20%] -right-4 p-5 rounded-2xl border backdrop-blur-2xl z-20 shadow-2xl",
-                        isDark ? "bg-slate-900/60 border-white/10 shadow-black/40" : "bg-white/80 border-slate-200 shadow-slate-200/20"
+                        "absolute bottom-[20%] -right-4 p-5 rounded-2xl z-20 shadow-xl glass-panel"
                     )}
                 >
                     <div className="flex items-center gap-4">
@@ -184,7 +182,7 @@ export default function StartPage() {
       {/* Feature Showcase Section */}
       <section className={cn(
           "py-32 relative transition-colors duration-500",
-          isDark ? "bg-[#0c0f14]" : "bg-white"
+          isDark ? "bg-background" : "bg-white"
       )}>
         <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8">
           <SectionHeader
@@ -267,7 +265,7 @@ export default function StartPage() {
                     <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Buildbot Intelligence Matrix</span>
                   </div>
                   <p className={cn(
-                      "text-sm md:text-base leading-relaxed font-medium italic",
+                      "text-sm md:text-base leading-relaxed font-body italic",
                       isDark ? "text-slate-300" : "text-slate-700"
                   )}>
                     "Architectural Scan Complete: The Ryzen 7 7800X3D choice is optimal for your gaming profile. However, the selected 360mm AIO exceeds thermal requirements for this 120W TDP chip. Consider a 240mm unit to reallocate $45 towards a faster NVMe storage tier..."
@@ -302,8 +300,8 @@ export default function StartPage() {
                             whileInView={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.2 * i }}
                             className={cn(
-                                "p-3 rounded-xl border flex items-center gap-3",
-                                isDark ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"
+                                "p-3 rounded-xl border flex items-center gap-3 glass-panel",
+                                isDark ? "bg-white/5 border-white/10" : "bg-muted/40 border-border"
                             )}
                         >
                             <item.icon className={cn("w-4 h-4", item.color)} />
@@ -323,7 +321,7 @@ export default function StartPage() {
       {/* New: Pre-builts & Accessories */}
       <section className={cn(
           "py-32 relative border-y transition-colors duration-500",
-          isDark ? "bg-[#0c0f14] border-white/5" : "bg-white border-slate-100"
+          isDark ? "bg-background border-border/20" : "bg-muted/10 border-border/40"
       )}>
         <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8">
           <SectionHeader
@@ -336,8 +334,8 @@ export default function StartPage() {
             <motion.div
               whileHover={{ y: -8 }}
               className={cn(
-                  "p-10 rounded-[40px] border flex flex-col gap-8 group transition-all duration-500 relative overflow-hidden",
-                  isDark ? "bg-slate-900/40 border-white/5 hover:border-primary/40" : "bg-slate-50 border-slate-200 hover:border-primary/30 shadow-xl shadow-slate-200/50"
+                  "p-10 rounded-[40px] flex flex-col gap-8 group transition-all duration-500 relative overflow-hidden glass-panel",
+                  isDark ? "shadow-none hover:border-primary/40" : "hover:border-primary/30 shadow-xl shadow-foreground/5"
               )}
             >
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-primary/50 to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -345,8 +343,8 @@ export default function StartPage() {
                 <Box className="w-8 h-8 text-primary" />
               </div>
               <div>
-                <h4 className="text-3xl font-black font-headline uppercase tracking-tight mb-3">Battle-Ready Rigs</h4>
-                <p className={cn("text-lg font-medium leading-relaxed", isDark ? "text-slate-400" : "text-slate-600")}>
+                <h4 className="text-3xl font-bold font-headline uppercase tracking-tight mb-3">Battle-Ready Rigs</h4>
+                <p className={cn("text-lg font-body leading-relaxed", isDark ? "text-slate-400" : "text-slate-600")}>
                     Professionally curated systems, built by experts using our AI validation tools. Guaranteed performance deployment.
                 </p>
               </div>
@@ -360,8 +358,8 @@ export default function StartPage() {
             <motion.div
               whileHover={{ y: -8 }}
               className={cn(
-                "p-10 rounded-[40px] border flex flex-col gap-8 group transition-all duration-500 relative overflow-hidden",
-                isDark ? "bg-slate-900/40 border-white/5 hover:border-purple-500/40" : "bg-slate-50 border-slate-200 hover:border-purple-500/30 shadow-xl shadow-slate-200/50"
+                "p-10 rounded-[40px] flex flex-col gap-8 group transition-all duration-500 relative overflow-hidden glass-panel",
+                isDark ? "shadow-none hover:border-purple-500/40" : "hover:border-purple-500/30 shadow-xl shadow-foreground/5"
               )}
             >
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-purple-500/50 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -369,8 +367,8 @@ export default function StartPage() {
                 <MonitorSmartphone className="w-8 h-8 text-purple-400" />
               </div>
               <div>
-                <h4 className="text-3xl font-black font-headline uppercase tracking-tight mb-3">Total Command setup</h4>
-                <p className={cn("text-lg font-medium leading-relaxed", isDark ? "text-slate-400" : "text-slate-600")}>
+                <h4 className="text-3xl font-bold font-headline uppercase tracking-tight mb-3">Total Command setup</h4>
+                <p className={cn("text-lg font-body leading-relaxed", isDark ? "text-slate-400" : "text-slate-600")}>
                     Beyond the tower. Buildbot helps you synchronize the perfect Monitor, Keyboard, and Headset ecosystem.
                 </p>
               </div>
@@ -387,7 +385,7 @@ export default function StartPage() {
       {/* CTA Footer Section */}
       <section className={cn(
           "py-40 relative overflow-hidden transition-colors duration-500",
-          isDark ? "bg-[#0c0f14]" : "bg-slate-50"
+          isDark ? "bg-background" : "bg-slate-50"
       )}>
         {/* Decorative Grid for CTA */}
         <div className={cn(

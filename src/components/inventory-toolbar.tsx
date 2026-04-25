@@ -90,10 +90,10 @@ export function InventoryToolbar({
           <ToggleGroupItem
             value="All"
             aria-label="Show all categories"
-            className="px-3 py-2 h-10 flex flex-row items-center gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all border border-transparent data-[state=off]:border-border data-[state=off]:hover:bg-accent rounded-md min-w-fit"
+            className="px-4 py-2 h-11 flex flex-row items-center gap-2 data-[state=on]:bg-primary data-[state=on]:text-white transition-all border border-border/40 data-[state=off]:bg-muted/20 data-[state=off]:hover:bg-muted/40 rounded-xl min-w-fit font-headline font-bold uppercase tracking-wider text-[10px]"
           >
-            <Layers className="h-5 w-5 shrink-0" />
-            <span className="text-sm font-medium">All</span>
+            <Layers className="h-4 w-4 shrink-0" />
+            <span>All</span>
           </ToggleGroupItem>
           {categories.map((cat) => {
             const Icon = cat.icon!;
@@ -102,16 +102,16 @@ export function InventoryToolbar({
                 key={cat.name}
                 value={cat.name}
                 aria-label={`Toggle ${cat.name}`}
-                className="px-3 py-2 h-10 flex flex-row items-center gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all border border-transparent data-[state=off]:border-border data-[state=off]:hover:bg-accent rounded-md min-w-fit"
+                className="px-4 py-2 h-11 flex flex-row items-center gap-2 data-[state=on]:bg-primary data-[state=on]:text-white transition-all border border-border/40 data-[state=off]:bg-muted/20 data-[state=off]:hover:bg-muted/40 rounded-xl min-w-fit font-headline font-bold uppercase tracking-wider text-[10px]"
               >
-                <Icon className="h-5 w-5 shrink-0" />
-                <span className="text-sm font-medium">{cat.name}</span>
+                <Icon className="h-4 w-4 shrink-0" />
+                <span>{cat.name}</span>
               </ToggleGroupItem>
             );
           })}
         </ToggleGroup>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg bg-card border p-2 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border p-2 shadow-sm glass-panel">
         <div className="flex flex-wrap items-center gap-3">
           {onSearchQueryChange && (
             <div className="relative w-full sm:w-64">
@@ -188,8 +188,8 @@ export function InventoryToolbar({
           </Button>
         </div>
 
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span className="hidden sm:inline-flex font-medium bg-muted/50 px-3 py-1.5 rounded-md">
+        <div className="flex items-center gap-4 text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
+          <span className="hidden sm:inline-flex font-bold bg-muted/20 px-3 py-1.5 rounded-lg border border-border/40">
             Showing {itemCount} items
           </span>
           {showViewToggle && view && onViewChange && (

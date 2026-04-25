@@ -5,7 +5,7 @@ import { useUserProfile } from "@/context/user-profile";
 import { useTheme } from "@/context/theme-provider";
 import { useFirestore } from "@/firebase";
 import { useRouter } from "next/navigation";
-import { collection, query, where, getDocs, updateDoc, doc, deleteDoc, onSnapshot } from "firebase/firestore";
+import { collection, query, where, getDocs, updateDoc, doc, deleteDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { Order } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import {
     Loader2, Package, CheckCircle2, Clock, Truck, ServerCrash,
     User, Mail, Calendar, Shield, Trash2, ChevronRight,
-    ArrowUpRight, ShoppingBag, CreditCard, Sparkles
+    ArrowUpRight, ShoppingBag, CreditCard, Sparkles, Key
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FullPageLoader } from "@/components/full-page-loader";
@@ -59,6 +59,11 @@ export default function ProfilePage() {
 
     const [confirmAction, setConfirmAction] = useState<{ id: string, type: 'cancel' | 'delete' } | null>(null);
 
+    const [superAdminKey, setSuperAdminKey] = useState('');
+    const [originalSuperAdminKey, setOriginalSuperAdminKey] = useState('');
+    const [isSavingKey, setIsSavingKey] = useState(false);
+    const [isKeyLoading, setIsKeyLoading] = useState(false);
+
     useEffect(() => {
         // Force unlock scroll on mount in case of stale state from other pages/modals
         document.body.classList.remove('antigravity-scroll-lock');
@@ -72,6 +77,31 @@ export default function ProfilePage() {
             setEmail(profile.email || "");
         }
     }, [profile]);
+
+    useEffect(() => {
+        if (!authUser || !firestore || !profile?.isSuperAdmin) return;
+
+        async function fetchSuperAdminKey() {
+            setIsKeyLoading(true);
+            try {
+                const keysRef = collection(firestore!, 'authKeys');
+                const q = query(keysRef, where('role', '==', 'superadmin'));
+                const snapshot = await getDocs(q);
+                
+                if (!snapshot.empty) {
+                    const docSnap = snapshot.docs[0];
+                    setSuperAdminKey(docSnap.id);
+                    setOriginalSuperAdminKey(docSnap.id);
+                }
+            } catch (err) {
+                console.error("Error fetching super admin key:", err);
+            } finally {
+                setIsKeyLoading(false);
+            }
+        }
+
+        fetchSuperAdminKey();
+    }, [authUser, firestore, profile?.isSuperAdmin]);
 
     useEffect(() => {
         if (!authUser || !firestore) {
@@ -138,6 +168,28 @@ export default function ProfilePage() {
             });
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleSaveSuperAdminKey = async () => {
+        if (!firestore) return;
+        if (!superAdminKey.trim()) {
+            toast({ title: "Error", description: "Super Admin key cannot be empty", variant: "destructive" });
+            return;
+        }
+        setIsSavingKey(true);
+        try {
+            if (originalSuperAdminKey && originalSuperAdminKey !== superAdminKey) {
+                await deleteDoc(doc(firestore, 'authKeys', originalSuperAdminKey));
+            }
+            await setDoc(doc(firestore, 'authKeys', superAdminKey), { role: 'superadmin' });
+            setOriginalSuperAdminKey(superAdminKey);
+            toast({ title: "Success", description: "Super Admin Key updated successfully" });
+        } catch (err) {
+            console.error(err);
+            toast({ title: "Error", description: "Failed to update Super Admin Key", variant: "destructive" });
+        } finally {
+            setIsSavingKey(false);
         }
     };
 
@@ -352,6 +404,39 @@ export default function ProfilePage() {
                                         </div>
                                         <p className="text-[10px] text-muted-foreground/60 italic px-1">Used for build updates and notifications.</p>
                                     </div>
+
+                                    {profile?.isSuperAdmin && (
+                                        <div className="space-y-2 pt-2 border-t border-white/5">
+                                            <Label htmlFor="superAdminKey" className="text-xs uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
+                                                <Key className="h-3 w-3" /> Super Admin Key
+                                            </Label>
+                                            <div className="flex gap-2">
+                                                <div className="relative flex-1 group">
+                                                    <Shield className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-50 transition-opacity group-focus-within:opacity-100" />
+                                                    <Input
+                                                        id="superAdminKey"
+                                                        value={superAdminKey}
+                                                        onChange={(e) => setSuperAdminKey(e.target.value)}
+                                                        disabled={!isEditing}
+                                                        className="pl-10 h-10 bg-background/50 border-white/5 focus-visible:ring-primary/30"
+                                                        placeholder="Enter Super Admin Key"
+                                                        type="password"
+                                                    />
+                                                </div>
+                                                {isEditing && (
+                                                    <Button 
+                                                        size="sm"
+                                                        onClick={handleSaveSuperAdminKey} 
+                                                        disabled={isSavingKey || superAdminKey === originalSuperAdminKey || !superAdminKey.trim()}
+                                                        className="h-10 px-4"
+                                                    >
+                                                        {isSavingKey ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                                                    </Button>
+                                                )}
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground/60 italic px-1">Global key used for new super admin signups.</p>
+                                        </div>
+                                    )}
 
                                     {isEditing && (
                                         <Button className="relative z-30 w-full mt-2 shadow-lg shadow-primary/20" onClick={handleSaveProfile} disabled={isSaving}>

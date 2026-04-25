@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BrainCircuit, Send, Bot, User, MessageSquare, X, PlusCircle, RotateCcw } from "lucide-react";
+import { useTheme } from "@/context/theme-provider";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import type { ComponentData } from "@/lib/types";
@@ -11,6 +12,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, UIMessage } from "ai";
 import { useUserProfile } from "@/context/user-profile";
+import { cn } from "@/lib/utils";
 import {
     Carousel,
     CarouselContent,
@@ -28,6 +30,8 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
     const [input, setInput] = useState("");
     const [elapsedTime, setElapsedTime] = useState(0);
     const [timerActive, setTimerActive] = useState(false);
+    const { theme } = useTheme();
+    const isDark = theme === "dark";
     const { authUser, loading } = useUserProfile();
 
     const {
@@ -137,18 +141,24 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="w-[350px] sm:w-[500px]"
+                        className="w-[350px] sm:w-[500px] z-50"
                     >
-                        <Card className="flex flex-col h-[800px] border-cyan-500/40 shadow-[0_10px_50px_rgba(6,182,212,0.25)] overflow-hidden bg-background/80 backdrop-blur-2xl relative border rounded-2xl">
+                        <Card className={cn(
+                            "flex flex-col h-[800px] shadow-[0_10px_50px_rgba(6,182,212,0.25)] overflow-hidden backdrop-blur-2xl relative border rounded-2xl transition-colors duration-500",
+                            isDark ? "border-cyan-500/40 bg-background/80" : "border-cyan-500/20 bg-white/90"
+                        )}>
                             {/* Animated Background Orbs */}
                             <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[80px] animate-pulse pointer-events-none"></div>
                             <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-cyan-600/10 rounded-full blur-[80px] animate-pulse pointer-events-none" style={{ animationDelay: '2s' }}></div>
 
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 animate-pulse z-10"></div>
 
-                            <CardHeader className="py-4 px-5 bg-black/20 flex flex-row items-center justify-between flex-none z-10 border-b border-white/10 shadow-sm backdrop-blur-md">
-                                <CardTitle className="font-headline text-md flex items-center gap-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 font-bold tracking-tight">
-                                    <BrainCircuit className="w-5 h-5 text-blue-400" /> Buildbot AI Interface
+                            <CardHeader className={cn(
+                                "py-4 px-5 flex flex-row items-center justify-between flex-none z-10 border-b shadow-sm backdrop-blur-md transition-colors",
+                                isDark ? "bg-black/20 border-white/10" : "bg-muted/40 border-border/40"
+                            )}>
+                                <CardTitle className="font-headline text-md flex items-center gap-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-600 font-bold tracking-tight">
+                                    <BrainCircuit className="w-5 h-5 text-blue-500" /> Buildbot AI Interface
                                 </CardTitle>
                                 <div className="flex items-center gap-1">
                                     <Button variant="ghost" size="sm" onClick={handleClearChat} className="h-8 px-2 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-all rounded-lg flex items-center gap-1.5 group/clear" title="Clear Chat History">
@@ -161,7 +171,10 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                 </div>
                             </CardHeader>
 
-                            <CardContent className="flex-1 p-0 min-h-0 relative z-0 flex flex-col overflow-hidden bg-gradient-to-b from-transparent to-black/20">
+                            <CardContent className={cn(
+                                "flex-1 p-0 min-h-0 relative z-0 flex flex-col overflow-hidden transition-colors",
+                                isDark ? "bg-gradient-to-b from-transparent to-black/20" : "bg-gradient-to-b from-transparent to-muted/20"
+                            )}>
                                 <ScrollArea className="flex-1 w-full min-w-0">
                                     <div className="flex flex-col gap-8 py-4 max-w-full overflow-x-hidden">
                                         {messages
@@ -189,14 +202,23 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                                                     return (
                                                                         <div
                                                                             key={partIdx}
-                                                                            className={`p-4 rounded-2xl text-sm leading-relaxed shadow-lg relative overflow-hidden group hover:shadow-xl transition-all duration-300 break-words w-fit max-w-[85%] sm:max-w-[80%] ${msg.role === 'user'
-                                                                                ? 'bg-gradient-to-br from-cyan-900/40 to-blue-900/20 text-cyan-50 rounded-tr-sm border border-cyan-500/40 backdrop-blur-md'
-                                                                                : 'bg-gradient-to-br from-blue-900/20 to-cyan-900/10 backdrop-blur-xl text-blue-50 rounded-tl-sm border border-blue-500/30'
-                                                                                }`}
+                                                                            className={cn(
+                                                                                "p-4 rounded-2xl text-sm leading-relaxed shadow-lg relative overflow-hidden group hover:shadow-xl transition-all duration-300 break-words w-fit max-w-[85%] sm:max-w-[80%]",
+                                                                                msg.role === 'user'
+                                                                                    ? (isDark 
+                                                                                        ? 'bg-gradient-to-br from-cyan-900/40 to-blue-900/20 text-cyan-50 rounded-tr-sm border border-cyan-500/40 backdrop-blur-md'
+                                                                                        : 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white rounded-tr-sm shadow-cyan-500/20 border border-cyan-400/30')
+                                                                                    : (isDark
+                                                                                        ? 'bg-gradient-to-br from-blue-900/20 to-cyan-900/10 backdrop-blur-xl text-blue-50 rounded-tl-sm border border-blue-500/30'
+                                                                                        : 'bg-white border border-border/60 text-foreground rounded-tl-sm shadow-sm hover:border-blue-500/30')
+                                                                            )}
                                                                         >
                                                                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 -translate-x-full group-hover:translate-x-full transition-all duration-1000 ease-in-out pointer-events-none"></div>
 
-                                                                            <div className="prose prose-invert prose-p:leading-snug prose-sm max-w-full prose-a:text-cyan-400 prose-strong:text-blue-300 break-words overflow-hidden prose-pre:whitespace-pre-wrap prose-pre:break-words">
+                                                                            <div className={cn(
+                                                                                "prose prose-p:leading-snug prose-sm max-w-full break-words overflow-hidden prose-pre:whitespace-pre-wrap prose-pre:break-words transition-colors",
+                                                                                isDark ? "prose-invert prose-a:text-cyan-400 prose-strong:text-blue-300" : "prose-slate prose-a:text-blue-600 prose-strong:text-blue-800"
+                                                                            )}>
                                                                                 {(() => {
                                                                                     const regex = /(?:^[ \t]*[-*+][ \t]+)?\*{0,2}\[[^\]]*\]\((?:add(?:-part(?::[^)]*)?)?)?\)?\*{0,2}(?:\s*-\s*)?/gm;
                                                                                     const cleanText = part.text
@@ -227,7 +249,10 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                                                     const partAny = part as any;
                                                                     const isComplete = (partAny.state || partAny.toolInvocation?.state) === 'result';
                                                                     return (
-                                                                        <div key={partIdx} className={`py-2 px-4 rounded-xl text-xs shadow-sm w-fit bg-black/40 text-cyan-400 border border-cyan-500/20 flex items-center gap-2`}>
+                                                                        <div key={partIdx} className={cn(
+                                                                            "py-2 px-4 rounded-xl text-xs shadow-sm w-fit flex items-center gap-2 border transition-colors",
+                                                                            isDark ? "bg-black/40 text-cyan-400 border-cyan-500/20" : "bg-muted text-cyan-700 border-cyan-500/20"
+                                                                        )}>
                                                                             {!isComplete ? (
                                                                                 <div className="w-3 h-3 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin shrink-0"></div>
                                                                             ) : (
@@ -284,14 +309,26 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
 
                                                                                     return (
                                                                                         <CarouselItem key={idx} className="pl-2 basis-[85%] sm:basis-[220px] shrink-0">
-                                                                                            <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-2xl group/card transition-all hover:border-cyan-500/40 hover:shadow-cyan-500/10 flex flex-col h-full mb-2">
-                                                                                                <div className="relative aspect-video w-full bg-white/5 overflow-hidden">
-                                                                                                    <img src={finalImage} alt={category} className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover/card:scale-110 mix-blend-screen opacity-90" />
-                                                                                                    <div className="absolute top-3 right-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 text-[10px] font-black text-cyan-400 uppercase tracking-widest">{category}</div>
-                                                                                                </div>
-                                                                                                <div className="p-4 flex flex-col gap-3 flex-1 bg-gradient-to-b from-transparent to-white/[0.02]">
-                                                                                                    <div className="flex flex-col gap-1">
-                                                                                                        <h3 className="text-[13px] font-bold text-white leading-tight line-clamp-2 min-h-[32px]">{partName}</h3>
+                                                                                            <div className={cn(
+                                                                                "rounded-3xl overflow-hidden shadow-2xl group/card transition-all flex flex-col h-full mb-2 border",
+                                                                                isDark ? "bg-white/5 border-white/10 hover:border-cyan-500/40 hover:shadow-cyan-500/10" : "bg-card border-border/60 hover:border-cyan-500/40 hover:shadow-cyan-500/10"
+                                                                            )}>
+                                                                                <div className={cn(
+                                                                                    "relative aspect-video w-full overflow-hidden transition-colors",
+                                                                                    isDark ? "bg-white/5" : "bg-muted/20"
+                                                                                )}>
+                                                                                    <img src={finalImage} alt={category} className={cn(
+                                                                                        "w-full h-full object-contain p-4 transition-transform duration-700 group-hover/card:scale-110 opacity-90",
+                                                                                        isDark ? "mix-blend-screen" : "mix-blend-multiply"
+                                                                                    )} />
+                                                                                    <div className="absolute top-3 right-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 text-[10px] font-black text-cyan-400 uppercase tracking-widest">{category}</div>
+                                                                                </div>
+                                                                                <div className="p-4 flex flex-col gap-3 flex-1">
+                                                                                    <div className="flex flex-col gap-1">
+                                                                                        <h3 className={cn(
+                                                                                            "text-[13px] font-bold leading-tight line-clamp-2 min-h-[32px] transition-colors",
+                                                                                            isDark ? "text-white" : "text-foreground"
+                                                                                        )}>{partName}</h3>
                                                                                                         {partPrice && (
                                                                                                             <div className="text-[14px] font-black text-cyan-400 flex items-center gap-1">
                                                                                                                 <span className="text-[10px] opacity-60 font-medium uppercase tracking-tighter">Price:</span>₱{formattedPrice}
@@ -337,7 +374,10 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                                     <Bot className="w-4 h-4 relative z-10" />
                                                 </div>
                                                 <div className="flex flex-col gap-1.5">
-                                                    <div className="p-4 rounded-2xl bg-white/5 backdrop-blur-md rounded-tl-sm border border-cyan-500/30 flex items-center gap-1.5 h-[42px] shadow-[0_0_20px_rgba(6,182,212,0.1)]">
+                                                    <div className={cn(
+                                                        "p-4 rounded-2xl backdrop-blur-md rounded-tl-sm border flex items-center gap-1.5 h-[42px] shadow-[0_0_20px_rgba(6,182,212,0.1)] transition-colors",
+                                                        isDark ? "bg-white/5 border-cyan-500/30" : "bg-muted border-cyan-500/20"
+                                                    )}>
                                                         <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce shadow-[0_0_10px_rgba(6,182,212,0.8)]" style={{ animationDelay: '0ms' }}></span>
                                                         <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce shadow-[0_0_10_rgba(6,182,212,0.8)]" style={{ animationDelay: '150ms' }}></span>
                                                         <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce shadow-[0_0_10_rgba(6,182,212,0.8)]" style={{ animationDelay: '300ms' }}></span>
@@ -360,13 +400,19 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                 </ScrollArea>
                             </CardContent>
 
-                            <CardFooter className="p-4 bg-black/40 backdrop-blur-xl flex-none border-t border-white/10 shadow-[0_-10px_30px_rgba(0,0,0,0.4)] relative z-10">
+                            <CardFooter className={cn(
+                                "p-4 backdrop-blur-xl flex-none border-t relative z-10 transition-colors",
+                                isDark ? "bg-black/40 border-white/10 shadow-[0_-10px_30px_rgba(0,0,0,0.4)]" : "bg-muted/80 border-border/40 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]"
+                            )}>
                                 <form onSubmit={handleSendMessage} className="flex w-full gap-2 relative group">
                                     <Input
                                         value={input}
                                         onChange={(e) => setInput(e.target.value)}
                                         placeholder="Ask for advice or part recommendations..."
-                                        className="bg-black/60 border-cyan-500/30 focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:border-cyan-400 text-sm pr-12 h-12 rounded-xl transition-all placeholder:text-zinc-500 shadow-inner group-hover:border-cyan-500/50"
+                                        className={cn(
+                                            "focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:border-cyan-400 text-sm pr-12 h-12 rounded-xl transition-all placeholder:text-zinc-500 shadow-inner group-hover:border-cyan-500/50",
+                                            isDark ? "bg-black/60 border-cyan-500/30 text-white" : "bg-white border-border text-foreground"
+                                        )}
                                     />
                                     <Button
                                         type="submit"

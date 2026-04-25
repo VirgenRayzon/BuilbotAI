@@ -628,13 +628,13 @@ export default function BuilderPage() {
   return (
     <div className={cn(
       "min-h-screen transition-colors duration-500 overflow-x-hidden",
-      isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
+      isDark ? "bg-background text-foreground" : "bg-white text-slate-900"
     )}>
       {/* Circuit Pattern Background */}
       <div className={cn(
-        "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
+        "fixed inset-0 opacity-[0.05] pointer-events-none z-0",
         isDark ? "invert" : ""
-      )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+      )} style={{ backgroundImage: 'radial-gradient(currentColor 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
       <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pt-24 md:pt-32 relative z-10">
       <div className="relative mb-12">
@@ -647,10 +647,10 @@ export default function BuilderPage() {
             <div className="h-px w-8 bg-primary" />
             <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary italic">Forge Your Machine</span>
           </div>
-          <h1 className="text-5xl md:text-7xl font-headline font-black uppercase tracking-tighter leading-none mb-6">
+          <h1 className="text-5xl md:text-7xl font-headline font-bold uppercase tracking-tighter leading-none mb-6">
             Masterpiece <span className="text-primary italic">Architect</span>
           </h1>
-          <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed font-medium">
+          <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed font-body">
             Select high-performance components and let our AI ensure everything fits perfectly together through real-time compatibility diagnostics.
           </p>
         </motion.div>
@@ -682,9 +682,8 @@ export default function BuilderPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              "p-6 rounded-3xl border backdrop-blur-xl shadow-2xl transition-all duration-500",
-              isInsightsPinned ? "lg:col-span-6" : "lg:col-span-9",
-              isDark ? "bg-slate-900/40 border-white/5 shadow-black/40" : "bg-white/60 border-slate-200 shadow-slate-200/50"
+              "p-6 rounded-3xl border shadow-2xl transition-all duration-500 glass-panel",
+              isInsightsPinned ? "lg:col-span-6" : "lg:col-span-9"
             )}
           >
             <div className="mb-8">
@@ -708,7 +707,7 @@ export default function BuilderPage() {
             {loading ? (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-6">
                 {[...Array(8)].map((_, i) => (
-                  <Card key={i} className="rounded-2xl border-white/5 bg-white/5">
+                  <Card key={i} className="rounded-2xl border-border/20 bg-muted/10">
                     <CardContent className="p-4"><Skeleton className="aspect-square w-full mb-2 rounded-xl" /></CardContent>
                     <CardContent className="p-4 pt-0 space-y-2"><Skeleton className="h-5 w-3/4" /><Skeleton className="h-4 w-1/2" /></CardContent>
                     <CardFooter className="p-4 pt-0 flex justify-between items-center"><Skeleton className="h-6 w-1/3" /><Skeleton className="h-9 w-20" /></CardFooter>

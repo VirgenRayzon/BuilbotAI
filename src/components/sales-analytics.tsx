@@ -204,26 +204,34 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                     dataKey="name"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: isDark ? '#888' : '#666', fontSize: 10 }}
+                                    tick={{ fill: isDark ? '#cbd5e1' : '#64748b', fontSize: 10 }}
                                     dy={10}
                                 />
                                 <YAxis
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: isDark ? '#888' : '#666', fontSize: 10 }}
+                                    tick={{ fill: isDark ? '#cbd5e1' : '#64748b', fontSize: 10 }}
                                     tickFormatter={(val) => `₱${val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val}`}
                                 />
                                 <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-                                        borderRadius: '12px',
-                                        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
-                                        backdropFilter: 'blur(8px)',
-                                        fontSize: '12px',
-                                        color: isDark ? '#fff' : '#000'
+                                    content={({ active, payload, label }) => {
+                                        if (active && payload && payload.length) {
+                                            return (
+                                                <div className={cn(
+                                                    "p-3 rounded-xl border backdrop-blur-xl shadow-2xl",
+                                                    isDark ? "bg-[#0f172a]/95 border-white/10 text-white" : "bg-white/95 border-black/10 text-slate-900"
+                                                )}>
+                                                    <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">{label}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-2 h-2 rounded-full bg-primary" />
+                                                        <span className="font-bold text-sm">Revenue:</span>
+                                                        <span className="font-mono font-bold text-sm text-primary">{formatCurrency(payload[0].value as number)}</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
                                     }}
-                                    itemStyle={{ color: COLORS.primary }}
-                                    formatter={(val: number) => [formatCurrency(val), 'Revenue']}
                                 />
                                 <Area
                                     type="monotone"
@@ -264,23 +272,38 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                     ))}
                                 </Pie>
                                 <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-                                        borderRadius: '12px',
-                                        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
-                                        backdropFilter: 'blur(8px)',
-                                        fontSize: '12px',
-                                        color: isDark ? '#fff' : '#000'
+                                    content={({ active, payload }) => {
+                                        if (active && payload && payload.length) {
+                                            return (
+                                                <div className={cn(
+                                                    "p-3 rounded-xl border backdrop-blur-xl shadow-2xl",
+                                                    isDark ? "bg-[#0f172a]/95 border-white/10 text-white" : "bg-white/95 border-black/10 text-slate-900"
+                                                )}>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: (payload[0].payload as any)?.color || payload[0].color || COLORS.primary }} />
+                                                        <span className="font-bold text-sm">{payload[0].name} :</span>
+                                                        <span className="font-mono font-bold text-sm">{payload[0].value}</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
                                     }}
                                 />
                             </PieChart>
                         </ResponsiveContainer>
                         <div className="grid grid-cols-2 gap-4 w-full px-4 mt-2">
                             {statusData.map((d, i) => (
-                                <div key={i} className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} />
-                                    <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">{d.name}</span>
-                                    <span className="text-xs font-mono ml-auto">{d.value}</span>
+                                <div key={i} className="flex items-center gap-2 group/legend cursor-default">
+                                    <div className="w-2 h-2 rounded-full transition-transform group-hover/legend:scale-125" style={{ backgroundColor: d.color }} />
+                                    <span className={cn(
+                                        "text-[10px] uppercase font-bold tracking-wider transition-colors",
+                                        isDark ? "text-slate-400 group-hover/legend:text-white" : "text-slate-500 group-hover/legend:text-slate-900"
+                                    )}>{d.name}</span>
+                                    <span className={cn(
+                                        "text-xs font-mono ml-auto",
+                                        isDark ? "text-slate-300" : "text-slate-700"
+                                    )}>{d.value}</span>
                                 </div>
                             ))}
                         </div>
@@ -316,23 +339,38 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                         ))}
                                     </Pie>
                                     <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-                                            borderRadius: '12px',
-                                            border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
-                                            backdropFilter: 'blur(8px)',
-                                            fontSize: '12px',
-                                            color: isDark ? '#fff' : '#000'
+                                        content={({ active, payload }) => {
+                                            if (active && payload && payload.length) {
+                                                return (
+                                                    <div className={cn(
+                                                        "p-3 rounded-xl border backdrop-blur-xl shadow-2xl",
+                                                        isDark ? "bg-[#0f172a]/95 border-white/10 text-white" : "bg-white/95 border-black/10 text-slate-900"
+                                                    )}>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: (payload[0].payload as any)?.color || payload[0].color || COLORS.primary }} />
+                                                            <span className="font-bold text-sm">{payload[0].name} :</span>
+                                                            <span className="font-mono font-bold text-sm">{payload[0].value}</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
                                         }}
                                     />
                                 </PieChart>
                             </ResponsiveContainer>
                             <div className="grid grid-cols-2 gap-3 w-full px-4 mt-2">
                                 {prebuiltTierData.length > 0 ? prebuiltTierData.map((d, i) => (
-                                    <div key={i} className="flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: d.color }} />
-                                        <span className="text-[9px] uppercase font-bold tracking-wider opacity-70">{d.name}</span>
-                                        <span className="text-xs font-mono ml-auto">{d.value}</span>
+                                    <div key={i} className="flex items-center gap-2 group/legend cursor-default">
+                                        <div className="w-1.5 h-1.5 rounded-full transition-transform group-hover/legend:scale-125" style={{ backgroundColor: d.color }} />
+                                        <span className={cn(
+                                            "text-[9px] uppercase font-bold tracking-wider transition-colors",
+                                            isDark ? "text-slate-400 group-hover/legend:text-white" : "text-slate-500 group-hover/legend:text-slate-900"
+                                        )}>{d.name}</span>
+                                        <span className={cn(
+                                            "text-xs font-mono ml-auto",
+                                            isDark ? "text-slate-300" : "text-slate-700"
+                                        )}>{d.value}</span>
                                     </div>
                                 )) : (
                                     <div className="col-span-2 text-center text-[9px] text-muted-foreground uppercase tracking-widest py-2">
@@ -367,14 +405,24 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                     />
                                     <Tooltip
                                         cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
-                                        contentStyle={{
-                                            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-                                            borderRadius: '12px',
-                                            border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
-                                            backdropFilter: 'blur(8px)',
-                                            color: isDark ? '#fff' : '#000'
+                                        content={({ active, payload, label }) => {
+                                            if (active && payload && payload.length) {
+                                                return (
+                                                    <div className={cn(
+                                                        "p-3 rounded-xl border backdrop-blur-xl shadow-2xl",
+                                                        isDark ? "bg-[#0f172a]/95 border-white/10 text-white" : "bg-white/95 border-black/10 text-slate-900"
+                                                    )}>
+                                                        <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">{label}</p>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].color || (payload[0].payload as any)?.fill || COLORS.primary }} />
+                                                            <span className="font-bold text-sm">Revenue:</span>
+                                                            <span className="font-mono font-bold text-sm">{formatCurrency(payload[0].value as number)}</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
                                         }}
-                                        formatter={(val: number) => [formatCurrency(val), 'Revenue']}
                                     />
                                     <Bar
                                         dataKey="value"

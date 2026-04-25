@@ -334,12 +334,12 @@ export function YourBuild({
 
     return (
         <>
-        <Card className={`flex flex-col border-primary/20 shadow-[0_0_40px_rgba(34,211,238,0.05)] overflow-hidden bg-background/40 backdrop-blur-2xl ring-1 ring-white/5 relative ${className || ""}`}>
+        <Card className={`flex flex-col border-primary/20 shadow-[0_0_40px_rgba(34,211,238,0.05)] overflow-hidden relative glass-panel ${className || ""}`}>
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
-            <CardHeader className="flex flex-row items-center justify-between py-5 bg-white/5 border-b border-white/5 flex-none">
-                <CardTitle className="font-headline text-xl font-bold tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">Your Build</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between py-5 bg-muted/20 border-b border-border/40 flex-none">
+                <CardTitle className="font-headline text-xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent uppercase">Your Build</CardTitle>
                 <div className="flex flex-col gap-2 items-end">
-                    <Badge variant="secondary" className="font-mono text-[10px] px-2 py-0.5 whitespace-nowrap bg-primary/20 text-primary border-primary/30">{selectedParts}/{totalParts} PARTS</Badge>
+                    <Badge variant="secondary" className="font-headline font-bold text-[10px] px-2 py-0.5 whitespace-nowrap bg-primary/20 text-primary border-primary/30 uppercase tracking-widest">{selectedParts}/{totalParts} PARTS</Badge>
                 </div>
             </CardHeader>
             <CardContent className="px-5 py-4 flex flex-col">
@@ -474,9 +474,9 @@ export function YourBuild({
                     <Separator className="mb-3 opacity-50" />
                     {showSystemBalance !== false && <BottleneckMeter build={build} resolution={resolution} />}
 
-                    <div className="flex justify-between items-center pt-3 mt-3 border-t border-dashed">
-                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Total Cost</span>
-                        <span className="text-2xl font-bold font-headline text-primary">{formatCurrency(totalPrice)}</span>
+                    <div className="flex justify-between items-center pt-3 mt-3 border-t border-dashed border-border/40">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Total Value</span>
+                        <span className="text-2xl font-bold font-headline text-primary tracking-tighter">{formatCurrency(totalPrice)}</span>
                     </div>
                 </div>
             </CardContent>
@@ -495,7 +495,7 @@ export function YourBuild({
                         hasAnalysis ? (
                             <Button
                                 variant="outline"
-                                className="w-full font-headline tracking-wide flex items-center gap-2 border-primary/50 hover:bg-primary/10 transition-colors group/analyze"
+                                className="w-full font-headline font-bold tracking-widest flex items-center justify-center gap-2 border-primary/50 hover:bg-primary/10 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase text-[10px]"
                                 size="lg"
                                 disabled={selectedParts === 0}
                                 onClick={() => {
@@ -506,12 +506,12 @@ export function YourBuild({
                                     }
                                 }}
                             >
-                                <BrainCircuit className="h-5 w-5 text-primary" />
+                                <BrainCircuit className="h-4 w-4 text-primary" />
                                 Refresh Analysis
                             </Button>
                         ) : (
                             <Button
-                                className="w-full font-headline tracking-wide flex items-center gap-2 bg-primary hover:bg-primary/90 relative overflow-hidden group/analyze shadow-md transition-all"
+                                className="w-full font-headline font-bold tracking-widest flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 relative overflow-hidden group/analyze shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] text-white uppercase text-[10px]"
                                 size="lg"
                                 disabled={selectedParts === 0}
                                 onClick={() => {
@@ -522,16 +522,16 @@ export function YourBuild({
                                     }
                                 }}
                             >
-                                <BrainCircuit className="h-5 w-5 animate-pulse" />
-                                <Sparkles className="absolute left-4 w-4 h-4 text-white/40 animate-sparkle" />
-                                Analyze My Build
+                                <BrainCircuit className="h-4 w-4 animate-pulse" />
+                                <Sparkles className="absolute left-4 w-3 h-3 text-white/40 animate-sparkle" />
+                                Analyze Build
                                 <div className="absolute inset-0 animate-shimmer pointer-events-none opacity-0 group-hover/analyze:opacity-100 transition-opacity" />
                             </Button>
                         )
                     )}
 
 
-                    <Button variant="ghost" className="w-full text-muted-foreground hover:text-destructive h-8 text-xs" onClick={onClearBuild} disabled={selectedParts === 0}>
+                    <Button variant="ghost" className="w-full text-muted-foreground hover:text-destructive h-8 text-[9px] font-bold uppercase tracking-widest transition-all hover:bg-destructive/5" onClick={onClearBuild} disabled={selectedParts === 0}>
                         Clear Build
                     </Button>
 

@@ -14,12 +14,10 @@ import { useUserProfile } from '@/context/user-profile';
 
 export function SuperAdminSettings() {
     const [managerKey, setManagerKey] = useState('');
-    const [superAdminKey, setSuperAdminKey] = useState('');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     
     const [originalManagerDocId, setOriginalManagerDocId] = useState<string | null>(null);
-    const [originalSuperAdminDocId, setOriginalSuperAdminDocId] = useState<string | null>(null);
     const [requests, setRequests] = useState<any[]>([]);
     const [managers, setManagers] = useState<any[]>([]);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -27,7 +25,6 @@ export function SuperAdminSettings() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const { profile } = useUserProfile();
-    const isSuperAdmin = profile?.isSuperAdmin;
 
     useEffect(() => {
         async function fetchKeys() {
@@ -41,9 +38,6 @@ export function SuperAdminSettings() {
                     if (data.role === 'manager') {
                         setManagerKey(docSnap.id);
                         setOriginalManagerDocId(docSnap.id);
-                    } else if (data.role === 'superadmin') {
-                        setSuperAdminKey(docSnap.id);
-                        setOriginalSuperAdminDocId(docSnap.id);
                     }
                 });
             } catch (err) {
@@ -121,28 +115,6 @@ export function SuperAdminSettings() {
         } catch (err) {
             console.error(err);
             toast({ title: "Error", description: "Failed to update Manager Key", variant: "destructive" });
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleSaveSuperAdminKey = async () => {
-        if (!firestore) return;
-        if (!superAdminKey.trim()) {
-            toast({ title: "Error", description: "Super Admin key cannot be empty", variant: "destructive" });
-            return;
-        }
-        setSaving(true);
-        try {
-            if (originalSuperAdminDocId && originalSuperAdminDocId !== superAdminKey) {
-                await deleteDoc(doc(firestore, 'authKeys', originalSuperAdminDocId));
-            }
-            await setDoc(doc(firestore, 'authKeys', superAdminKey), { role: 'superadmin' });
-            setOriginalSuperAdminDocId(superAdminKey);
-            toast({ title: "Success", description: "Super Admin Key updated successfully" });
-        } catch (err) {
-            console.error(err);
-            toast({ title: "Error", description: "Failed to update Super Admin Key", variant: "destructive" });
         } finally {
             setSaving(false);
         }
@@ -263,23 +235,6 @@ export function SuperAdminSettings() {
                             </Button>
                         </div>
                     </div>
-                    
-                    {isSuperAdmin && (
-                        <div className="space-y-2">
-                            <Label>Super Admin Key</Label>
-                            <div className="flex gap-2">
-                                <Input 
-                                    value={superAdminKey} 
-                                    onChange={(e) => setSuperAdminKey(e.target.value)} 
-                                    placeholder="Enter Super Admin Key"
-                                    type="password"
-                                />
-                                <Button onClick={handleSaveSuperAdminKey} disabled={saving || superAdminKey === originalSuperAdminDocId}>
-                                    Save
-                                </Button>
-                            </div>
-                        </div>
-                    )}
                 </CardContent>
             </Card>
 

@@ -51,7 +51,7 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                 isDisabled={(!compatibility || !compatibility.compatible) && !isSelected}
             >
                 <Card className={cn(
-                    "flex flex-col justify-between h-full transform transition-all duration-500 ease-out hover:-translate-y-2 relative group overflow-hidden border-primary/10 hover:border-primary/40 bg-background/40 backdrop-blur-xl shadow-lg hover:shadow-primary/20 cursor-pointer rounded-3xl",
+                    "flex flex-col justify-between h-full transform transition-all duration-500 ease-out hover:-translate-y-2 relative group overflow-hidden border-primary/10 hover:border-primary/40 glass-panel shadow-lg hover:shadow-primary/20 cursor-pointer rounded-3xl",
                     (currentStock === 0 || (compatibility && !compatibility.compatible)) && "grayscale opacity-60"
                 )}>
                     {/* --- Incompatibility Overlay --- */}
@@ -106,7 +106,7 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                                 <p className="text-[7px] md:text-[9px] text-muted-foreground uppercase tracking-[0.2em] font-black">{part.brand}</p>
                             </div>
                             <div className="h-10 md:h-12 flex flex-col justify-center overflow-hidden">
-                                <CardTitle className="text-xs md:text-lg font-headline font-black uppercase tracking-tight leading-[1.1] line-clamp-2 group-hover:text-primary transition-colors m-0 p-0">
+                                <CardTitle className="text-xs md:text-lg font-headline font-bold uppercase tracking-tight leading-[1.1] line-clamp-2 group-hover:text-primary transition-colors m-0 p-0">
                                     {part.name.length > 60 ? part.name.substring(0, 57) + "......." : part.name}
                                 </CardTitle>
                             </div>
@@ -128,8 +128,8 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
 
                         <div className="flex justify-between items-end">
                             <div className="flex flex-col">
-                                <p className="text-[7px] md:text-[9px] text-muted-foreground uppercase font-black tracking-widest">MSRP VALUE</p>
-                                <p className="text-sm md:text-2xl font-black font-headline tracking-tighter text-primary leading-none">{formatCurrency(part.price)}</p>
+                                <p className="text-[7px] md:text-[9px] text-muted-foreground uppercase font-bold tracking-widest">MSRP VALUE</p>
+                                <p className="text-sm md:text-2xl font-bold font-headline tracking-tighter text-primary leading-none">{formatCurrency(part.price)}</p>
                                 {part.usdSrp && (
                                     <p className="text-[9px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-tight mt-0.5 opacity-70">
                                         EST. {formatToPHP(part.usdSrp)}
@@ -145,8 +145,8 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                                 const value = part.specifications?.[key] || (key === 'Wattage' ? part.wattage : null);
                                 return (
                                     <div key={key} className="min-w-0 group/spec">
-                                        <p className="text-[6px] md:text-[8px] text-muted-foreground uppercase font-black tracking-[0.1em] group-hover/spec:text-primary transition-colors">{key}</p>
-                                        <p className="font-bold text-[8px] md:text-[11px] truncate leading-none uppercase tracking-tight" title={String(value || 'N/A')}>{String(value || 'N/A')}</p>
+                                        <p className="text-[6px] md:text-[8px] text-muted-foreground uppercase font-bold tracking-[0.1em] group-hover/spec:text-primary transition-colors">{key}</p>
+                                        <p className="font-bold text-[8px] md:text-[11px] font-body truncate leading-none uppercase tracking-tight" title={String(value || 'N/A')}>{String(value || 'N/A')}</p>
                                     </div>
                                 );
                             })}
@@ -159,10 +159,10 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                             onClick={handleToggle}
                             disabled={(currentStock === 0 && !isSelected)}
                             className={cn(
-                                "w-full rounded-none h-9 md:h-12 mt-auto z-[41] transition-all duration-300 font-headline uppercase tracking-[0.2em] border-t text-[8px] md:text-[11px]",
+                                "w-full rounded-none h-9 md:h-12 mt-auto z-[41] transition-all duration-300 font-headline font-bold uppercase tracking-[0.2em] border-t text-[8px] md:text-[11px] hover:scale-105 active:scale-95",
                                 isSelected
                                     ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
-                                    : "bg-primary/5 hover:bg-primary/10 text-primary border-border/50 hover:border-primary/30"
+                                    : "bg-primary text-white border-primary/20 hover:bg-primary/90"
                             )}
                             variant="ghost"
                         >
