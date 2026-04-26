@@ -41,7 +41,7 @@ import { InventoryTable } from '@/components/inventory-table';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import {
-    addPrebuiltSystem, deletePrebuiltSystem, archivePrebuiltSystem,
+    addPart, addPrebuiltSystem, deletePrebuiltSystem, archivePrebuiltSystem,
     bulkArchivePrebuilts, bulkDeletePrebuilts,
     updatePart, deletePart, archivePart, updatePrebuiltSystem,
     bulkArchiveParts, bulkDeleteParts,
