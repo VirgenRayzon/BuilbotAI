@@ -44,6 +44,7 @@ import {
     addPrebuiltSystem, deletePrebuiltSystem, archivePrebuiltSystem,
     bulkArchivePrebuilts, bulkDeletePrebuilts,
     updatePart, deletePart, archivePart, updatePrebuiltSystem,
+    bulkArchiveParts, bulkDeleteParts,
     createSystemNotification, resetSalesMetrics, ingestDummySalesData
 } from '@/firebase/database';
 import { collection, deleteDoc } from 'firebase/firestore';
