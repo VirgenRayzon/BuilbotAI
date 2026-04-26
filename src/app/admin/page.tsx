@@ -41,11 +41,10 @@ import { InventoryTable } from '@/components/inventory-table';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import {
-    addPart, deletePart, archivePart, bulkArchiveParts, bulkDeleteParts,
     addPrebuiltSystem, deletePrebuiltSystem, archivePrebuiltSystem,
     bulkArchivePrebuilts, bulkDeletePrebuilts,
     updatePart, updatePrebuiltSystem,
-    createSystemNotification, resetSalesMetrics
+    createSystemNotification, resetSalesMetrics, ingestDummySalesData
 } from '@/firebase/database';
 import { collection, deleteDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
@@ -107,7 +106,7 @@ export default function AdminPage() {
     useEffect(() => {
         if (!userLoading) {
             if (!authUser) {
-                router.replace('/signin');
+                router.replace('/');
             } else if (!(profile?.isManager || profile?.isSuperAdmin)) {
                 router.replace('/builder');
             }
@@ -148,7 +147,9 @@ export default function AdminPage() {
         target: 'parts' | 'prebuilts';
     }>({ isOpen: false, type: 'archive', target: 'parts' });
     const [isResettingSales, setIsResettingSales] = useState(false);
+    const [isIngestingDummyData, setIsIngestingDummyData] = useState(false);
     const [showResetSalesConfirm, setShowResetSalesConfirm] = useState(false);
+    const [showIngestDummyConfirm, setShowIngestDummyConfirm] = useState(false);
 
 
     const searchParams = useSearchParams();
@@ -564,30 +565,44 @@ export default function AdminPage() {
     };
 
     const handleResetSales = async () => {
-        if (!firestore || !profile?.isSuperAdmin) return;
+        if (!firestore || !orders) return;
         setIsResettingSales(true);
         try {
             const ordersToReset = orders?.map(o => ({ id: o.id })) || [];
             const partsToReset = parts?.map(p => ({ id: p.id, category: p.category })) || [];
-
             await resetSalesMetrics(firestore, ordersToReset, partsToReset);
-
-            toast({
-                title: "Sales Reset Successful",
-                description: "All orders have been cleared and component popularity metrics have been reset.",
-            });
+            toast({ title: "Sales Metrics Reset", description: "All orders have been deleted and popularity metrics cleared." });
             setShowResetSalesConfirm(false);
         } catch (error) {
-            console.error("Reset sales error:", error);
-            toast({
-                title: "Reset Failed",
-                description: "Failed to reset sales metrics. Check console for details.",
-                variant: "destructive"
-            });
+            console.error("Reset error:", error);
+            toast({ title: "Reset Failed", description: "An error occurred while resetting sales data.", variant: "destructive" });
         } finally {
             setIsResettingSales(false);
         }
     };
+
+    const handleIngestDummyData = async () => {
+        if (!firestore) return;
+        setIsIngestingDummyData(true);
+        try {
+            await ingestDummySalesData(firestore, parts, prebuiltSystems || []);
+            toast({ 
+                title: "Dummy Data Ingested", 
+                description: "100 random orders and part popularity metrics have been generated.",
+            });
+            setShowIngestDummyConfirm(false);
+        } catch (error) {
+            console.error("Ingestion error:", error);
+            toast({ 
+                title: "Ingestion Failed", 
+                description: "An error occurred while generating dummy data.", 
+                variant: "destructive" 
+            });
+        } finally {
+            setIsIngestingDummyData(false);
+        }
+    };
+
 
     const filteredAndSortedParts = useMemo(() => {
         const selectedCategories = partCategories.filter(c => c.selected).map(c => c.name);
@@ -1214,37 +1229,77 @@ export default function AdminPage() {
                                                         Neural data synchronization
                                                     </p>
                                                 </div>
-                                                <AlertDialog open={showResetSalesConfirm} onOpenChange={setShowResetSalesConfirm}>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                                                        onClick={() => setShowResetSalesConfirm(true)}
-                                                    >
-                                                        <RefreshCcw className={cn("h-4 w-4", isResettingSales && "animate-spin")} />
-                                                    </Button>
-                                                    <AlertDialogContent className="bg-background/95 backdrop-blur-2xl border-white/10 max-w-[400px]">
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle className="flex items-center gap-2 text-xl font-headline font-bold">
-                                                                <RefreshCcw className="h-5 w-5 text-destructive" />
-                                                                Reset Sales Analytics?
-                                                            </AlertDialogTitle>
-                                                            <AlertDialogDescription className="text-muted-foreground pt-2">
-                                                                This will PERMANENTLY delete all existing orders and reset component popularity metrics. This action is irreversible and should only be performed during system maintenance.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter className="pt-6">
-                                                            <AlertDialogCancel className="bg-transparent border-white/10 hover:bg-white/5">Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction
-                                                                className="bg-destructive hover:bg-destructive/90 text-white font-bold"
-                                                                onClick={handleResetSales}
-                                                                disabled={isResettingSales}
-                                                            >
-                                                                {isResettingSales ? "Resetting..." : "Confirm Full Reset"}
-                                                            </AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
+                                                <div className="flex items-center gap-2">
+                                                    <AlertDialog open={showIngestDummyConfirm} onOpenChange={setShowIngestDummyConfirm}>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                                                            onClick={() => setShowIngestDummyConfirm(true)}
+                                                            title="Ingest Dummy Data"
+                                                        >
+                                                            <Plus className={cn("h-4 w-4", isIngestingDummyData && "animate-pulse")} />
+                                                        </Button>
+                                                        <AlertDialogContent className="bg-background/95 backdrop-blur-2xl border-border max-w-[400px]">
+
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle className="flex items-center gap-2 text-xl font-headline font-bold">
+                                                                    <Plus className="h-5 w-5 text-primary" />
+                                                                    Ingest Dummy Data?
+                                                                </AlertDialogTitle>
+                                                                <AlertDialogDescription className="text-muted-foreground pt-2">
+                                                                    This will generate 100 random orders over the last 12 months and update part popularity scores. This is intended for testing analytics and visualization.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter className="pt-6">
+                                                                <AlertDialogCancel className="bg-transparent border-border hover:bg-muted">Cancel</AlertDialogCancel>
+
+                                                                <AlertDialogAction
+                                                                    className="bg-primary hover:bg-primary/90 text-white font-bold"
+                                                                    onClick={handleIngestDummyData}
+                                                                    disabled={isIngestingDummyData}
+                                                                >
+                                                                    {isIngestingDummyData ? "Ingesting..." : "Confirm Ingestion"}
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+
+                                                    <AlertDialog open={showResetSalesConfirm} onOpenChange={setShowResetSalesConfirm}>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                                            onClick={() => setShowResetSalesConfirm(true)}
+                                                            title="Reset Sales Metrics"
+                                                        >
+                                                            <RefreshCcw className={cn("h-4 w-4", isResettingSales && "animate-spin")} />
+                                                        </Button>
+                                                        <AlertDialogContent className="bg-background/95 backdrop-blur-2xl border-border max-w-[400px]">
+
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle className="flex items-center gap-2 text-xl font-headline font-bold">
+                                                                    <RefreshCcw className="h-5 w-5 text-destructive" />
+                                                                    Reset Sales Analytics?
+                                                                </AlertDialogTitle>
+                                                                <AlertDialogDescription className="text-muted-foreground pt-2">
+                                                                    This will PERMANENTLY delete all existing orders and reset component popularity metrics. This action is irreversible and should only be performed during system maintenance.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter className="pt-6">
+                                                                <AlertDialogCancel className="bg-transparent border-border hover:bg-muted">Cancel</AlertDialogCancel>
+
+                                                                <AlertDialogAction
+                                                                    className="bg-destructive hover:bg-destructive/90 text-white font-bold"
+                                                                    onClick={handleResetSales}
+                                                                    disabled={isResettingSales}
+                                                                >
+                                                                    {isResettingSales ? "Resetting..." : "Confirm Full Reset"}
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
                                             </div>
                                             <SalesVisualizer orderCount={stats.totalOrders} />
                                             <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10">

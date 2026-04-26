@@ -50,131 +50,152 @@ export default function StartPage() {
     )}>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center pt-20 pb-32 overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {/* Full Screen Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="/hero-custom.webp" 
+            alt="BuildbotAI Custom Rig" 
+            className="w-full h-full object-cover opacity-70"
+          />
+          {/* Dark Gradients for Text Readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+        </div>
+
         {/* Animated Background Elements */}
         <div className={cn(
-          "absolute inset-0 opacity-30",
+          "absolute inset-0 opacity-30 z-0",
           isDark 
-            ? "bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.1),transparent_50%)]" 
-            : "bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.05),transparent_50%)]"
+            ? "bg-[radial-gradient(circle_at_30%_50%,rgba(34,211,238,0.15),transparent_50%)]" 
+            : "bg-[radial-gradient(circle_at_30%_50%,rgba(59,130,246,0.1),transparent_50%)]"
         )} />
         
         {/* Circuit Pattern Background (Simulated with CSS) */}
         <div className={cn(
-          "absolute inset-0 opacity-[0.03] pointer-events-none",
+          "absolute inset-0 opacity-[0.05] pointer-events-none z-0",
           isDark ? "invert" : ""
-        )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+        )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '32px 32px' }} />
 
-        <div className="max-w-[1800px] w-full relative z-10 mx-auto px-4 md:px-8">
+        <div className="max-w-[1800px] w-full relative z-10 mx-auto px-4 md:px-8 py-20">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left Content */}
             <motion.div
-              initial={{ opacity: 0, x: -40 }}
+              initial={{ opacity: 0, x: -60 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              transition={{ duration: 1, ease: "easeOut" }}
               className="text-left"
             >
               <div className="flex items-center gap-3 mb-8">
-                <div className="h-px w-10 bg-primary" />
+                <div className="h-px w-12 bg-primary" />
                 <div className={cn(
-                    "inline-flex items-center rounded-full border px-5 py-2 text-[10px] font-black tracking-[0.4em] uppercase",
-                    isDark ? "bg-primary/10 border-primary/20 text-primary" : "bg-primary/5 border-primary/10 text-primary shadow-sm"
+                    "inline-flex items-center rounded-full border px-6 py-2.5 text-[10px] font-black tracking-[0.5em] uppercase backdrop-blur-md",
+                    isDark ? "bg-primary/10 border-primary/30 text-primary" : "bg-primary/5 border-primary/20 text-primary shadow-sm"
                 )}>
-                  <Sparkles className="mr-2.5 h-3.5 w-3.5 animate-pulse" />
+                  <Sparkles className="mr-3 h-4 w-4 animate-pulse" />
                   Neural PC Architect v2.0
                 </div>
               </div>
 
-              <h1 className="font-headline text-5xl md:text-8xl lg:text-9xl font-bold tracking-tighter mb-8 leading-[0.85] uppercase">
+              <h1 className="font-headline text-4xl sm:text-6xl md:text-8xl lg:text-[10rem] font-black tracking-tighter mb-8 md:mb-10 leading-[0.9] md:leading-[0.8] uppercase">
                 Build Your <br /> 
-                <span className="text-primary italic">Masterpiece</span> <br /> 
+                <span className="text-primary italic relative inline-block">
+                  Masterpiece
+                  <motion.div 
+                    className="absolute -bottom-1 md:-bottom-2 left-0 h-0.5 md:h-1 bg-primary"
+                    initial={{ width: 0 }}
+                    animate={{ width: "100%" }}
+                    transition={{ delay: 1, duration: 0.8 }}
+                  />
+                </span> <br className="hidden sm:block" /> 
                 With <span className={isDark ? "text-foreground" : "text-slate-900"}>AI</span>
               </h1>
 
               <p className={cn(
-                "max-w-xl text-xl md:text-2xl mb-12 leading-relaxed font-medium",
-                isDark ? "text-slate-400" : "text-slate-600"
+                "max-w-xl text-lg md:text-2xl mb-10 md:mb-14 leading-relaxed font-medium opacity-90",
+                isDark ? "text-slate-300" : "text-slate-600"
               )}>
                 Forge high-performance machines with neural bottleneck diagnostics, intelligent hardware critique, and precision part matching.
               </p>
 
-              <div className="flex flex-col sm:flex-row items-center justify-start gap-6">
-                <Button asChild size="lg" className="h-16 px-10 text-lg rounded-2xl font-black uppercase tracking-widest shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] bg-primary hover:bg-primary/90 text-white">
-                  <Link href="/signin" className="flex items-center gap-3">
-                    Initialize Builder <LayoutPanelLeft className="w-5 h-5" />
+              <div className="flex flex-col sm:flex-row items-center justify-start gap-4 md:gap-8">
+                <Button asChild size="lg" className="w-full sm:w-auto h-16 md:h-20 px-8 md:px-12 text-lg md:text-xl rounded-xl md:rounded-2xl font-black uppercase tracking-widest shadow-[0_20px_50px_rgba(34,211,238,0.3)] transition-all hover:scale-[1.05] active:scale-[0.95] bg-primary hover:bg-primary/90 text-white border-none">
+                  <Link href="/signin" className="flex items-center gap-4">
+                    Initialize Builder <LayoutPanelLeft className="w-5 h-5 md:w-6 md:h-6" />
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className={cn(
-                  "h-16 px-10 text-[11px] uppercase tracking-[0.3em] rounded-2xl font-black border-2 transition-all hover:scale-[1.02] active:scale-[0.98] backdrop-blur-md relative overflow-hidden group/advisor",
-                  isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-muted/40 border-border text-foreground hover:bg-muted/60"
+                  "w-full sm:w-auto h-16 md:h-20 px-8 md:px-12 text-[10px] md:text-[12px] uppercase tracking-[0.3em] md:tracking-[0.4em] rounded-xl md:rounded-2xl font-black border-2 transition-all hover:scale-[1.05] active:scale-[0.95] backdrop-blur-xl relative overflow-hidden group/advisor",
+                  isDark ? "bg-white/5 border-white/20 text-white hover:bg-white/10" : "bg-muted/40 border-border text-foreground hover:bg-muted/60"
                 )}>
-                  <Link href="/signin" className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-primary" />
+                  <Link href="/signin" className="flex items-center gap-3">
+                    <Zap className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                     AI Advisor
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-full group-hover/advisor:translate-x-full transition-transform duration-1000" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent -translate-x-full group-hover/advisor:translate-x-full transition-transform duration-1000" />
                   </Link>
                 </Button>
               </div>
             </motion.div>
 
-            {/* Right Asset (PC Visual) */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, rotateY: 20 }}
-              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-              transition={{ duration: 1.2, ease: "easeOut", delay: 0.2 }}
-              className="relative perspective-1000"
-            >
-              <div className="relative z-10 w-full aspect-square max-w-[700px] ml-auto">
-                {/* Visual Glow */}
-                <div className={cn(
-                    "absolute inset-0 rounded-full blur-[120px] opacity-20 animate-pulse",
-                    isDark ? "bg-primary" : "bg-primary/40"
-                )} />
-                
-                <img
-                  src="/hero-pc.png"
-                  alt="High-end Custom PC"
-                  className="w-full h-full object-contain drop-shadow-[0_0_80px_rgba(34,211,238,0.2)] animate-float relative z-10"
-                />
-                
-                {/* Floating HUD Elements */}
+            {/* Right Asset (HUD Elements) */}
+            <div className="relative hidden lg:block">
+              {/* Floating HUD Container */}
+              <div className="relative h-[600px] w-full">
+                {/* Center Core HUD */}
                 <motion.div
-                    animate={{ y: [0, -15, 0], x: [0, 5, 0] }}
-                    transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                    className={cn(
-                        "absolute top-[15%] -left-4 p-5 rounded-2xl z-20 shadow-xl glass-panel"
-                    )}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 1.2, delay: 0.5 }}
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full border border-primary/20 flex items-center justify-center"
                 >
-                    <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/20">
-                            <Cpu className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                            <p className="text-[9px] text-muted-foreground uppercase font-black tracking-[0.2em] mb-0.5">Core Efficiency</p>
-                            <p className="text-lg font-black font-headline tracking-tight">99.8<span className="text-[10px] text-primary ml-0.5">%</span></p>
-                        </div>
-                    </div>
+                  <div className="absolute inset-0 rounded-full border border-primary/10 animate-[spin_10s_linear_infinite]" />
+                  <div className="absolute inset-4 rounded-full border-2 border-dashed border-primary/20 animate-[spin_15s_linear_infinite_reverse]" />
+                  <div className="w-48 h-48 rounded-full bg-primary/5 backdrop-blur-xl border border-primary/30 flex flex-col items-center justify-center p-6 text-center shadow-[0_0_50px_rgba(34,211,238,0.2)]">
+                    <Bot className="w-12 h-12 text-primary mb-4 animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Neural Core</span>
+                    <span className="text-xl font-headline font-bold">READY</span>
+                  </div>
                 </motion.div>
 
+                {/* Satellite HUD 1 */}
                 <motion.div
-                    animate={{ y: [0, 15, 0], x: [0, -5, 0] }}
-                    transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                    className={cn(
-                        "absolute bottom-[20%] -right-4 p-5 rounded-2xl z-20 shadow-xl glass-panel"
-                    )}
+                  animate={{ y: [0, -20, 0] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute top-[10%] right-[10%] p-6 rounded-3xl border border-primary/20 bg-background/40 backdrop-blur-2xl shadow-2xl z-20"
                 >
-                    <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center border border-purple-500/20">
-                            <Zap className="w-5 h-5 text-purple-400" />
-                        </div>
-                        <div>
-                            <p className="text-[9px] text-muted-foreground uppercase font-black tracking-[0.2em] mb-0.5">Synergy Diagnostic</p>
-                            <p className="text-lg font-black font-headline tracking-tight">OPTIMIZED</p>
-                        </div>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                      <Cpu className="w-6 h-6 text-primary" />
                     </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.3em] mb-1">Architecture</p>
+                      <p className="text-2xl font-black font-headline text-primary">OPTIMIZED</p>
+                    </div>
+                  </div>
                 </motion.div>
+
+                {/* Satellite HUD 2 */}
+                <motion.div
+                  animate={{ y: [0, 20, 0] }}
+                  transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                  className="absolute bottom-[10%] left-[10%] p-6 rounded-3xl border border-purple-500/20 bg-background/40 backdrop-blur-2xl shadow-2xl z-20"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+                      <Zap className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.3em] mb-1">Bottleneck</p>
+                      <p className="text-2xl font-black font-headline text-purple-400">0.02%</p>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Visual Connector Lines (Simulated with div) */}
+                <div className="absolute top-[30%] left-[20%] w-px h-32 bg-gradient-to-b from-primary/0 via-primary/40 to-primary/0 rotate-45 opacity-30" />
+                <div className="absolute bottom-[30%] right-[20%] w-px h-32 bg-gradient-to-b from-purple-500/0 via-purple-500/40 to-purple-500/0 -rotate-45 opacity-30" />
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
@@ -192,57 +213,57 @@ export default function StartPage() {
           />
 
           <FeatureShowcase
-            reversed
+            reversed={false}
             title="Neural Bottleneck Analysis"
             description="Shift between 1080p, 1440p, and 4K workload projections. Our AI analyzes the compute tier of your CPU vs your GPU to warn you if components will choke performance before you spend a dime."
             visual={
-              <div className="w-full h-full flex flex-col justify-center p-12 gap-6">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-primary" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Resolution Target: 4K UHD</span>
+              <div className="relative w-full h-full overflow-hidden group">
+                <img 
+                  src="/feature-1.webp" 
+                  alt="Neural Bottleneck Analysis" 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+                <div className="absolute inset-0 flex flex-col justify-end p-8 gap-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-primary" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Resolution Target: 4K UHD</span>
+                    </div>
+                    <Zap className="w-5 h-5 text-primary animate-pulse" />
                   </div>
-                  <Zap className="w-5 h-5 text-primary animate-pulse" />
-                </div>
-                
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                            <span>Compute Unit Utilization</span>
-                            <span className="text-primary">98% PEAK</span>
-                        </div>
-                        <div className="h-2 w-full bg-primary/10 rounded-full overflow-hidden border border-primary/5">
-                            <motion.div
-                                className="h-full bg-primary shadow-[0_0_10px_rgba(34,211,238,0.5)]"
-                                initial={{ width: 0 }}
-                                whileInView={{ width: "98%" }}
-                                transition={{ duration: 1.5, delay: 0.5 }}
-                            />
-                        </div>
-                    </div>
+                  
+                  <div className="space-y-3">
+                      <div className="space-y-1.5">
+                          <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-white/80">
+                              <span>Compute Unit Utilization</span>
+                              <span className="text-primary">98% PEAK</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-primary/20 rounded-full overflow-hidden backdrop-blur-sm">
+                              <motion.div
+                                  className="h-full bg-primary shadow-[0_0_10px_rgba(34,211,238,0.5)]"
+                                  initial={{ width: 0 }}
+                                  whileInView={{ width: "98%" }}
+                                  transition={{ duration: 1.5, delay: 0.5 }}
+                              />
+                          </div>
+                      </div>
 
-                    <div className="space-y-2">
-                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                            <span>Graphics Throughput</span>
-                            <span className="text-purple-400">100% MAXIMUM</span>
-                        </div>
-                        <div className="h-2 w-full bg-purple-500/10 rounded-full overflow-hidden border border-purple-500/5">
-                            <motion.div
-                                className="h-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]"
-                                initial={{ width: 0 }}
-                                whileInView={{ width: "100%" }}
-                                transition={{ duration: 1.5, delay: 0.7 }}
-                            />
-                        </div>
-                    </div>
-                </div>
-                
-                <div className={cn(
-                    "mt-4 p-3 rounded-xl border flex items-center gap-3",
-                    isDark ? "bg-emerald-500/5 border-emerald-500/20" : "bg-emerald-50 border-emerald-200"
-                )}>
-                    <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Zero Bottleneck Detected at target resolution</span>
+                      <div className="space-y-1.5">
+                          <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-white/80">
+                              <span>Graphics Throughput</span>
+                              <span className="text-purple-400">100% MAXIMUM</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-purple-500/20 rounded-full overflow-hidden backdrop-blur-sm">
+                              <motion.div
+                                  className="h-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]"
+                                  initial={{ width: 0 }}
+                                  whileInView={{ width: "100%" }}
+                                  transition={{ duration: 1.5, delay: 0.7 }}
+                              />
+                          </div>
+                      </div>
+                  </div>
                 </div>
               </div>
             }
@@ -252,62 +273,78 @@ export default function StartPage() {
             title="Buildbot Build Critique"
             description="Not sure if a specific AIO is overkill for your CPU? Our Buildbot Critique analyzes your entire hardware selection for value, thermal efficiency, and generational compatibility, providing professional feedback on every choice."
             visual={
-              <div className="w-full h-full flex items-center justify-center p-12">
-                <div className={cn(
-                    "rounded-2xl p-6 w-full border relative overflow-hidden",
-                    isDark ? "bg-slate-900/60 border-primary/20" : "bg-white border-primary/20 shadow-xl"
-                )}>
-                  <div className="absolute top-0 right-0 p-2 opacity-10">
-                    <Sparkles className="w-12 h-12 text-primary" />
-                  </div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Buildbot Intelligence Matrix</span>
-                  </div>
-                  <p className={cn(
-                      "text-sm md:text-base leading-relaxed font-body italic",
-                      isDark ? "text-slate-300" : "text-slate-700"
+              <div className="relative w-full h-full overflow-hidden group">
+                <img 
+                  src="/feature-2.webp" 
+                  alt="Buildbot Build Critique" 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-l from-background/90 via-background/20 to-transparent" />
+                <div className="absolute inset-0 flex items-center justify-end p-8">
+                  <div className={cn(
+                      "rounded-2xl p-6 w-full max-w-sm border relative overflow-hidden backdrop-blur-xl",
+                      isDark ? "bg-slate-900/40 border-primary/20" : "bg-white/80 border-primary/20 shadow-xl"
                   )}>
-                    "Architectural Scan Complete: The Ryzen 7 7800X3D choice is optimal for your gaming profile. However, the selected 360mm AIO exceeds thermal requirements for this 120W TDP chip. Consider a 240mm unit to reallocate $45 towards a faster NVMe storage tier..."
-                  </p>
+                    <div className="absolute top-0 right-0 p-2 opacity-10">
+                      <Sparkles className="w-12 h-12 text-primary" />
+                    </div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                      <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Buildbot Intelligence Matrix</span>
+                    </div>
+                    <p className={cn(
+                        "text-sm leading-relaxed font-body italic",
+                        isDark ? "text-slate-200" : "text-slate-700"
+                    )}>
+                      "Architectural Scan Complete: The Ryzen 7 7800X3D choice is optimal. However, the 360mm AIO exceeds thermal requirements. Consider a 240mm unit to reallocate $45 towards faster NVMe..."
+                    </p>
+                  </div>
                 </div>
               </div>
             }
           />
 
           <FeatureShowcase
-            reversed
+            reversed={true}
             title="Instant AI Build Generation"
             description="Tell Buildbot your budget, favorite games, and performance goals. Within seconds, our neural engine architects a complete, perfectly matched build from our live inventory—zero research required."
             visual={
-              <div className="w-full h-full flex flex-col justify-center p-12 gap-4">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
-                        <Bot className="w-4 h-4 text-primary" />
+              <div className="relative w-full h-full overflow-hidden group">
+                <img 
+                  src="/feature-3.webp" 
+                  alt="Instant AI Build Generation" 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-l from-background/80 via-transparent to-transparent" />
+                <div className="absolute inset-0 flex flex-col justify-center p-8 gap-3 items-end">
+                    <div className="flex items-center gap-3 mb-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Neural Architect Stream</span>
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 backdrop-blur-md">
+                            <Bot className="w-4 h-4 text-primary" />
+                        </div>
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Neural Architect Stream</span>
-                </div>
-                
-                <div className="space-y-3">
-                    {[
-                        { text: "Scanning GPU market for better value...", icon: CheckCircle2, color: "text-emerald-500" },
-                        { text: "CPU-Motherboard socket match: VERIFIED", icon: ShieldCheck, color: "text-blue-500" },
-                        { text: "Suggestion: DDR5-6000 CL30 for optimal latency", icon: Zap, color: "text-purple-400" }
-                    ].map((item, i) => (
-                        <motion.div 
-                            key={i}
-                            initial={{ opacity: 0, x: -20 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.2 * i }}
-                            className={cn(
-                                "p-3 rounded-xl border flex items-center gap-3 glass-panel",
-                                isDark ? "bg-white/5 border-white/10" : "bg-muted/40 border-border"
-                            )}
-                        >
-                            <item.icon className={cn("w-4 h-4", item.color)} />
-                            <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{item.text}</span>
-                        </motion.div>
-                    ))}
+                    
+                    <div className="space-y-3 w-full max-w-[280px]">
+                        {[
+                            { text: "Scanning GPU market...", icon: CheckCircle2, color: "text-emerald-500" },
+                            { text: "Socket match: VERIFIED", icon: ShieldCheck, color: "text-blue-500" },
+                            { text: "Optimizing DDR5 Latency", icon: Zap, color: "text-purple-400" }
+                        ].map((item, i) => (
+                            <motion.div 
+                                key={i}
+                                initial={{ opacity: 0, x: 20 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.2 * i }}
+                                className={cn(
+                                    "p-3 rounded-xl border flex items-center gap-3 glass-panel backdrop-blur-xl",
+                                    isDark ? "bg-white/5 border-white/10" : "bg-muted/40 border-border"
+                                )}
+                            >
+                                <item.icon className={cn("w-4 h-4", item.color)} />
+                                <span className="text-[9px] font-bold uppercase tracking-widest opacity-90">{item.text}</span>
+                            </motion.div>
+                        ))}
+                    </div>
                 </div>
               </div>
             }
@@ -411,8 +448,8 @@ export default function StartPage() {
                 Initialize the Neural PC Architect and begin crafting your perfectly optimized, high-performance machine today.
             </p>
             <div className="flex flex-col items-center gap-12">
-                <Button asChild size="lg" className="h-20 px-16 text-2xl rounded-3xl font-black uppercase tracking-widest shadow-[0_20px_50px_rgba(34,211,238,0.3)] transition-all hover:scale-[1.05] active:scale-[0.95] bg-primary hover:bg-primary/90 text-white border-none">
-                <Link href="/signin">Launch Architect Matrix</Link>
+                <Button asChild size="lg" className="w-full sm:w-auto h-16 md:h-20 px-8 md:px-16 text-lg md:text-2xl rounded-2xl md:rounded-3xl font-black uppercase tracking-widest shadow-[0_20px_50px_rgba(34,211,238,0.3)] transition-all hover:scale-[1.05] active:scale-[0.95] bg-primary hover:bg-primary/90 text-white border-none">
+                  <Link href="/signin">Launch Architect Matrix</Link>
                 </Button>
                 
                 <div className="flex items-center gap-12 flex-wrap justify-center opacity-60">

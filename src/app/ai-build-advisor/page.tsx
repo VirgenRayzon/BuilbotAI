@@ -111,7 +111,7 @@ export default function AiBuildAdvisorPage() {
   useEffect(() => {
     if (!userLoading) {
       if (!authUser) {
-        router.push('/signin');
+        router.push('/');
       } else if (profile?.isManager) {
         router.push('/admin');
       }

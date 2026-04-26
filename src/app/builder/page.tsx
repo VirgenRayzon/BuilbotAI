@@ -80,7 +80,7 @@ export default function BuilderPage() {
   useEffect(() => {
     if (!authLoading) {
       if (!authUser) {
-        router.push('/signin');
+        router.push('/');
       } else if (profile?.isManager || profile?.isSuperAdmin) {
         router.push('/admin');
       }
@@ -647,10 +647,10 @@ export default function BuilderPage() {
             <div className="h-px w-8 bg-primary" />
             <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary italic">Forge Your Machine</span>
           </div>
-          <h1 className="text-5xl md:text-7xl font-headline font-bold uppercase tracking-tighter leading-none mb-6">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-headline font-bold uppercase tracking-tighter leading-none mb-6">
             Masterpiece <span className="text-primary italic">Architect</span>
           </h1>
-          <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed font-body">
+          <p className="text-muted-foreground max-w-2xl text-base md:text-lg leading-relaxed font-body">
             Select high-performance components and let our AI ensure everything fits perfectly together through real-time compatibility diagnostics.
           </p>
         </motion.div>

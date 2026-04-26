@@ -60,7 +60,7 @@ export default function PreBuiltsPage() {
     useEffect(() => {
         if (!authLoading) {
             if (!authUser) {
-                router.push('/signin');
+                router.push('/');
             } else if (profile?.isManager) {
                 router.push('/admin');
             }

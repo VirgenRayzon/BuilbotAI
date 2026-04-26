@@ -120,7 +120,7 @@ export function Header() {
                       <Badge 
                         variant="outline" 
                         className={cn(
-                          "ml-1 px-1.5 py-0 text-[8px] uppercase tracking-tighter transition-all duration-300",
+                          "ml-1 px-1.5 py-0 text-[8px] uppercase tracking-tighter transition-all duration-300 whitespace-nowrap",
                           isActive 
                             ? (profile?.isSuperAdmin ? "bg-primary/20 text-primary border-primary/30" : "bg-amber-500/20 text-amber-500 border-amber-500/30")
                             : "bg-muted/50 text-muted-foreground border-border/50"
@@ -262,7 +262,7 @@ export function Header() {
                                   <Badge 
                                     variant="outline" 
                                     className={cn(
-                                      "px-2 py-0 text-[8px] uppercase tracking-tighter",
+                                      "px-2 py-0 text-[8px] uppercase tracking-tighter whitespace-nowrap",
                                       profile?.isSuperAdmin ? "bg-primary/10 text-primary border-primary/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"
                                     )}
                                   >

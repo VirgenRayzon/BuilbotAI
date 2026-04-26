@@ -36,15 +36,15 @@ export function FeatureShowcase({
                 transition={{ duration: 0.8, ease: "easeOut" }}
                 className={cn("flex flex-col gap-8", reversed ? "lg:order-last" : "")}
             >
-                <div className="flex items-center gap-4">
-                    <div className="h-px w-10 bg-primary/40" />
+                <div className="flex items-center gap-3 md:gap-4">
+                    <div className="h-px w-8 md:h-px md:w-10 bg-primary/40" />
                     <h3 className={cn(
-                        "text-3xl md:text-5xl font-black tracking-tight font-headline uppercase leading-[1.1]",
+                        "text-2xl sm:text-3xl md:text-5xl font-black tracking-tight font-headline uppercase leading-[1.1]",
                         isDark ? "text-white" : "text-slate-900"
                     )}>{title}</h3>
                 </div>
                 <p className={cn(
-                    "text-lg md:text-xl leading-relaxed font-medium",
+                    "text-base sm:text-lg md:text-xl leading-relaxed font-medium",
                     isDark ? "text-slate-400" : "text-slate-600"
                 )}>
                     {description}

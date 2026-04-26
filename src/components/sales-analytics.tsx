@@ -1,15 +1,22 @@
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, BarChart, Bar, Legend
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
     TrendingUp, TrendingDown, DollarSign, Package,
     ArrowUpRight, ArrowDownRight, Activity, PieChart as PieIcon,
-    BarChart3, Calendar
+    BarChart3, Calendar, ChevronDown
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Order, Part, PrebuiltSystem } from '@/lib/types';
@@ -38,30 +45,63 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
     const { theme } = useTheme();
     const isDark = theme === 'dark';
 
-    // Process Revenue Data (Last 7 Days)
+    const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year'>('week');
+
+    // Process Revenue Data based on time range
     const revenueData = useMemo(() => {
-        const last7Days = Array.from({ length: 7 }, (_, i) => {
-            const d = new Date();
-            d.setDate(d.getDate() - (6 - i));
-            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-        });
+        const now = new Date();
+        let dataPoints: { name: string, date: Date }[] = [];
+
+        if (timeRange === 'week') {
+            dataPoints = Array.from({ length: 7 }, (_, i) => {
+                const d = new Date(now);
+                d.setDate(d.getDate() - (6 - i));
+                return {
+                    name: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+                    date: d
+                };
+            });
+        } else if (timeRange === 'month') {
+            dataPoints = Array.from({ length: 30 }, (_, i) => {
+                const d = new Date(now);
+                d.setDate(d.getDate() - (29 - i));
+                return {
+                    name: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+                    date: d
+                };
+            });
+        } else if (timeRange === 'year') {
+            dataPoints = Array.from({ length: 12 }, (_, i) => {
+                const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
+                return {
+                    name: d.toLocaleDateString(undefined, { month: 'short' }) + " '" + d.getFullYear().toString().slice(-2),
+                    date: d
+                };
+            });
+        }
 
         const dataMap = new Map<string, number>();
-        last7Days.forEach(day => dataMap.set(day, 0));
+        dataPoints.forEach(p => dataMap.set(p.name, 0));
 
         orders.filter(o => o.status !== 'cancelled').forEach(order => {
             const date = order.createdAt?.toDate?.() || new Date(order.createdAt);
-            const dayStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-            if (dataMap.has(dayStr)) {
-                dataMap.set(dayStr, (dataMap.get(dayStr) || 0) + order.totalPrice);
+            let key = "";
+            if (timeRange === 'year') {
+                key = date.toLocaleDateString(undefined, { month: 'short' }) + " '" + date.getFullYear().toString().slice(-2);
+            } else {
+                key = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            }
+
+            if (dataMap.has(key)) {
+                dataMap.set(key, (dataMap.get(key) || 0) + order.totalPrice);
             }
         });
 
-        return last7Days.map(name => ({
-            name,
-            revenue: dataMap.get(name) || 0
+        return dataPoints.map(p => ({
+            name: p.name,
+            revenue: dataMap.get(p.name) || 0
         }));
-    }, [orders]);
+    }, [orders, timeRange]);
 
     // Process Status Distribution
     const statusData = useMemo(() => {
@@ -186,9 +226,27 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                 <TrendingUp className="w-5 h-5 text-primary" />
                                 Revenue Performance
                             </CardTitle>
-                            <p className="text-xs text-muted-foreground uppercase tracking-widest opacity-60">Daily revenue tracking (Last 7 Days)</p>
+                            <p className="text-xs text-muted-foreground uppercase tracking-widest opacity-60">
+                                {timeRange === 'week' ? 'Daily revenue tracking (Last 7 Days)' : 
+                                 timeRange === 'month' ? 'Daily revenue tracking (Last 30 Days)' : 
+                                 'Monthly revenue tracking (Last 12 Months)'}
+                            </p>
                         </div>
-                        <Calendar className="w-5 h-5 text-muted-foreground opacity-40" />
+                        <Select value={timeRange} onValueChange={(v: any) => setTimeRange(v)}>
+                            <SelectTrigger className="w-[140px] bg-muted/30 border-border hover:bg-muted/50 transition-colors text-[10px] font-bold uppercase tracking-widest h-8">
+
+                                <div className="flex items-center gap-2">
+                                    <Calendar className="w-3 h-3 text-primary" />
+                                    <SelectValue placeholder="Select Range" />
+                                </div>
+                            </SelectTrigger>
+                            <SelectContent className="bg-popover/95 border-border backdrop-blur-xl">
+                                <SelectItem value="week" className="text-[10px] font-bold uppercase tracking-widest focus:bg-primary/20 focus:text-primary cursor-pointer">Last Week</SelectItem>
+                                <SelectItem value="month" className="text-[10px] font-bold uppercase tracking-widest focus:bg-primary/20 focus:text-primary cursor-pointer">Last Month</SelectItem>
+                                <SelectItem value="year" className="text-[10px] font-bold uppercase tracking-widest focus:bg-primary/20 focus:text-primary cursor-pointer">Last Year</SelectItem>
+                            </SelectContent>
+
+                        </Select>
                     </CardHeader>
                     <CardContent className="pt-4 h-[350px]">
                         <ResponsiveContainer width="100%" height="100%">
@@ -217,10 +275,8 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                     content={({ active, payload, label }) => {
                                         if (active && payload && payload.length) {
                                             return (
-                                                <div className={cn(
-                                                    "p-3 rounded-xl border backdrop-blur-xl shadow-2xl",
-                                                    isDark ? "bg-[#0f172a]/95 border-white/10 text-white" : "bg-white/95 border-black/10 text-slate-900"
-                                                )}>
+                                                <div className="p-3 rounded-xl border border-border bg-popover/95 text-popover-foreground backdrop-blur-xl shadow-2xl">
+
                                                     <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">{label}</p>
                                                     <div className="flex items-center gap-2">
                                                         <div className="w-2 h-2 rounded-full bg-primary" />
@@ -275,10 +331,8 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                     content={({ active, payload }) => {
                                         if (active && payload && payload.length) {
                                             return (
-                                                <div className={cn(
-                                                    "p-3 rounded-xl border backdrop-blur-xl shadow-2xl",
-                                                    isDark ? "bg-[#0f172a]/95 border-white/10 text-white" : "bg-white/95 border-black/10 text-slate-900"
-                                                )}>
+                                                <div className="p-3 rounded-xl border border-border bg-popover/95 text-popover-foreground backdrop-blur-xl shadow-2xl">
+
                                                     <div className="flex items-center gap-2">
                                                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: (payload[0].payload as any)?.color || payload[0].color || COLORS.primary }} />
                                                         <span className="font-bold text-sm">{payload[0].name} :</span>
@@ -342,10 +396,8 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                         content={({ active, payload }) => {
                                             if (active && payload && payload.length) {
                                                 return (
-                                                    <div className={cn(
-                                                        "p-3 rounded-xl border backdrop-blur-xl shadow-2xl",
-                                                        isDark ? "bg-[#0f172a]/95 border-white/10 text-white" : "bg-white/95 border-black/10 text-slate-900"
-                                                    )}>
+                                                    <div className="p-3 rounded-xl border border-border bg-popover/95 text-popover-foreground backdrop-blur-xl shadow-2xl">
+
                                                         <div className="flex items-center gap-2">
                                                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: (payload[0].payload as any)?.color || payload[0].color || COLORS.primary }} />
                                                             <span className="font-bold text-sm">{payload[0].name} :</span>
@@ -408,10 +460,8 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                         content={({ active, payload, label }) => {
                                             if (active && payload && payload.length) {
                                                 return (
-                                                    <div className={cn(
-                                                        "p-3 rounded-xl border backdrop-blur-xl shadow-2xl",
-                                                        isDark ? "bg-[#0f172a]/95 border-white/10 text-white" : "bg-white/95 border-black/10 text-slate-900"
-                                                    )}>
+                                                    <div className="p-3 rounded-xl border border-border bg-popover/95 text-popover-foreground backdrop-blur-xl shadow-2xl">
+
                                                         <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">{label}</p>
                                                         <div className="flex items-center gap-2">
                                                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].color || (payload[0].payload as any)?.fill || COLORS.primary }} />
@@ -478,7 +528,8 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                     transition={{ duration: 0.4 }}
                                 >
                                     <Card className="bg-background/40 backdrop-blur-xl border-border/50 shadow-xl overflow-hidden h-full group">
-                                        <CardHeader className="pb-3 border-b border-white/5 bg-muted/20">
+                                        <CardHeader className="pb-3 border-b border-border bg-muted/20">
+
                                             <div className="flex items-center justify-between">
                                                 <CardTitle className="text-sm font-headline font-bold uppercase tracking-[0.2em] text-primary">
                                                     {category}
@@ -489,7 +540,8 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                             </div>
                                         </CardHeader>
                                         <CardContent className="p-0">
-                                            <div className="divide-y divide-white/5">
+                                            <div className="divide-y divide-border">
+
                                                 {topParts.map((item, index) => (
                                                     <div key={item.id} className="p-3 flex items-center gap-3 hover:bg-primary/5 transition-all group/item">
                                                         <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center font-bold text-[10px] text-primary shrink-0 border border-primary/20 group-hover/item:scale-110 transition-transform">

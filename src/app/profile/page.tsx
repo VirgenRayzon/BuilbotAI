@@ -49,6 +49,12 @@ export default function ProfilePage() {
         return () => setIsPageLoading(false);
     }, [userLoading, setIsPageLoading]);
 
+    useEffect(() => {
+        if (!userLoading && !authUser) {
+            router.push('/');
+        }
+    }, [userLoading, authUser, router]);
+
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");

@@ -10,6 +10,8 @@ import { UserProfileProvider } from "@/context/user-profile";
 import { ThemeProvider } from "@/context/theme-provider";
 import { AppLayout } from "@/components/app-layout";
 import { LoadingProvider } from "@/context/loading-context";
+import { SessionTimeout } from "@/components/auth/session-timeout";
+
 
 export const metadata: Metadata = {
   title: "Buildbot AI",
@@ -49,7 +51,9 @@ export default function RootLayout({
                 </AppLayout>
               </LoadingProvider>
               <Toaster />
+              <SessionTimeout />
             </UserProfileProvider>
+
           </FirebaseClientProvider>
         </ThemeProvider>
       </body>

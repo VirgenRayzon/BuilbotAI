@@ -134,17 +134,17 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
     };
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-4 max-w-full">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="w-[350px] sm:w-[500px] z-50"
+                        className="w-[calc(100vw-2rem)] sm:w-[500px] z-50"
                     >
                         <Card className={cn(
-                            "flex flex-col h-[800px] shadow-[0_10px_50px_rgba(6,182,212,0.25)] overflow-hidden backdrop-blur-2xl relative border rounded-2xl transition-colors duration-500",
+                            "flex flex-col h-[60vh] sm:h-[800px] max-h-[800px] shadow-[0_10px_50px_rgba(6,182,212,0.25)] overflow-hidden backdrop-blur-2xl relative border rounded-2xl transition-colors duration-500",
                             isDark ? "border-cyan-500/40 bg-background/80" : "border-cyan-500/20 bg-white/90"
                         )}>
                             {/* Animated Background Orbs */}
@@ -437,9 +437,9 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                 <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-600 to-cyan-600 blur opacity-60 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
                 <Button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="relative h-16 w-16 rounded-full shadow-[0_0_30px_rgba(6,182,212,0.4)] bg-gradient-to-tr from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 p-0 border border-white/20 z-10"
+                    className="relative h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-[0_0_30px_rgba(6,182,212,0.4)] bg-gradient-to-tr from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 p-0 border border-white/20 z-10"
                 >
-                    <MessageSquare className="w-7 h-7 text-white" />
+                    <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                 </Button>
             </motion.div>
         </div>

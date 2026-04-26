@@ -300,3 +300,101 @@ export async function resetSalesMetrics(
     
     await batch.commit();
 }
+
+// Ingest Dummy Sales Data
+export async function ingestDummySalesData(
+    firestore: Firestore,
+    parts: Part[],
+    prebuilts: PrebuiltSystem[]
+) {
+    if (parts.length === 0) return;
+
+    const batch = writeBatch(firestore);
+    const orderCount = 100;
+    const now = new Date();
+    
+    // Popularity tracker for parts
+    const popularityMap = new Map<string, { category: string, count: number }>();
+
+    for (let i = 0; i < orderCount; i++) {
+        // Random date in last 12 months
+        const date = new Date(now.getTime() - Math.random() * (365 * 24 * 60 * 60 * 1000));
+        const orderRef = doc(collection(firestore, 'orders'));
+        
+        const isPrebuilt = Math.random() > 0.4 && prebuilts.length > 0;
+        let items: any[] = [];
+        let totalPrice = 0;
+        let orderType = 'custom';
+        let prebuiltId = '';
+        let prebuiltName = '';
+        let prebuiltTier = '';
+
+        if (isPrebuilt) {
+            const system = prebuilts[Math.floor(Math.random() * prebuilts.length)];
+            orderType = 'prebuilt';
+            prebuiltId = system.id;
+            prebuiltName = system.name;
+            prebuiltTier = system.tier;
+            
+            // Convert prebuilt components to items
+            const componentIds = Object.values(system.components).flat().filter(id => !!id);
+            componentIds.forEach(id => {
+                const part = parts.find(p => p.id === id);
+                if (part) {
+                    items.push({
+                        id: part.id,
+                        name: part.name,
+                        category: part.category,
+                        price: part.price
+                    });
+                    totalPrice += part.price;
+                    
+                    const current = popularityMap.get(part.id) || { category: part.category, count: 0 };
+                    popularityMap.set(part.id, { ...current, count: current.count + 1 });
+                }
+            });
+            // Round up to system price if needed or just use sum
+            totalPrice = system.price; 
+        } else {
+            // Random parts (3-8 parts)
+            const count = Math.floor(Math.random() * 5) + 3;
+            for (let j = 0; j < count; j++) {
+                const part = parts[Math.floor(Math.random() * parts.length)];
+                items.push({
+                    id: part.id,
+                    name: part.name,
+                    category: part.category,
+                    price: part.price
+                });
+                totalPrice += part.price;
+                
+                const current = popularityMap.get(part.id) || { category: part.category, count: 0 };
+                popularityMap.set(part.id, { ...current, count: current.count + 1 });
+            }
+        }
+
+        const orderData = {
+            userId: 'dummy-user',
+            userEmail: `customer-${Math.floor(Math.random() * 1000)}@example.com`,
+            items,
+            totalPrice,
+            status: Math.random() > 0.1 ? 'finished building' : (Math.random() > 0.5 ? 'pending' : 'cancelled'),
+            createdAt: date,
+            type: orderType,
+            prebuiltId,
+            prebuiltName,
+            prebuiltTier
+        };
+
+        batch.set(orderRef, orderData);
+    }
+
+    // Update part popularity
+    popularityMap.forEach((data, id) => {
+        const partRef = doc(firestore, data.category, id);
+        batch.update(partRef, { popularity: data.count });
+    });
+
+    await batch.commit();
+}
+
