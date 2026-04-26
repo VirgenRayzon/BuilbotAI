@@ -43,7 +43,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import {
     addPrebuiltSystem, deletePrebuiltSystem, archivePrebuiltSystem,
     bulkArchivePrebuilts, bulkDeletePrebuilts,
-    updatePart, updatePrebuiltSystem,
+    updatePart, deletePart, archivePart, updatePrebuiltSystem,
     createSystemNotification, resetSalesMetrics, ingestDummySalesData
 } from '@/firebase/database';
 import { collection, deleteDoc } from 'firebase/firestore';
