@@ -13,6 +13,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, UIMessage } from "ai";
 import { useUserProfile } from "@/context/user-profile";
 import { cn } from "@/lib/utils";
+import { useToast } from \"@/hooks/use-toast\";
 import {
     Carousel,
     CarouselContent,
@@ -33,6 +34,7 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
     const { theme } = useTheme();
     const isDark = theme === "dark";
     const { authUser, loading } = useUserProfile();
+    const { toast } = useToast();
 
     const {
         messages,
@@ -54,6 +56,11 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
         onError: (err) => {
             console.error("Chat error:", err);
             setTimerActive(false);
+            toast({
+                variant: "destructive",
+                title: "Connection Interrupted",
+                description: err.message || "The AI service is temporarily unavailable or timed out. Please try again.",
+            });
         }
     });
 

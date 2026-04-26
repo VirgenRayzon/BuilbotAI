@@ -187,10 +187,11 @@ export function YourBuild({
                     setAiPhase('done');
                 } else {
                     setShowLocalAiProgress(false);
+                    const errorMessage = (result as any)?.error || "Could not generate name and description. Please try again or check API configuration.";
                     toast({
                         variant: "destructive",
                         title: "AI Generation Failed",
-                        description: "Could not generate name and description. Please try again or check API configuration."
+                        description: errorMessage
                     });
                 }
             } catch (error: any) {

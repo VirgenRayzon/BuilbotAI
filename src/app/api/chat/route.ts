@@ -4,7 +4,7 @@ import { retrieveLocalKnowledge } from "@/lib/knowledge-retriever";
 import { getInventoryFromFirestore } from "@/lib/inventory-fetcher";
 import { z } from 'zod';
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function POST(req: Request) {
     try {
@@ -138,6 +138,7 @@ Before answering any query, take a deep breath and think through it step-by-step
                 }),
             },
             stopWhen: stepCountIs(5), // Allow for tool calling loops automatically
+            abortSignal: AbortSignal.timeout(60000), // 60 second timeout
         });
 
         return result.toUIMessageStreamResponse({
