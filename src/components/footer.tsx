@@ -15,14 +15,14 @@ export function Footer() {
       <div className="max-w-[1800px] w-full mx-auto pt-24 pb-12 px-4 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-24">
           {/* Brand Column */}
-          <div className="col-span-1 md:col-span-5 space-y-6">
+          <div className="col-span-1 md:col-span-8 space-y-6">
             <Logo />
-            <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
-              Forging the future of PC building with artificial intelligence. 
-              Premium components, expert advice, and immersive 3D visualization.
+            <p className="text-muted-foreground text-sm max-w-md leading-relaxed">
+              The ultimate AI-driven PC building platform. Real-time hardware synthesis, 
+              immersive 3D visualizations, and intelligent inventory management for 
+              the next generation of hardware enthusiasts and professionals.
             </p>
             <div className="flex gap-4">
-               {/* Social placeholders could go here */}
                <div className="w-8 h-8 rounded-full bg-muted/50 border border-border flex items-center justify-center hover:bg-primary/10 hover:border-primary/30 transition-all cursor-pointer">
                   <span className="text-[10px] font-bold">TW</span>
                </div>
@@ -35,7 +35,7 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Links Columns */}
+          {/* Links Columns - Now on the Right */}
           <div className="col-span-1 md:col-span-2 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground/50">Platform</h3>
             <nav className="flex flex-col gap-2">
@@ -55,21 +55,6 @@ export function Footer() {
               <Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">API Docs</Link>
               <Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Contact</Link>
             </nav>
-          </div>
-
-          <div className="col-span-1 md:col-span-3 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground/50">Newsletter</h3>
-            <p className="text-xs text-muted-foreground">Get the latest hardware drops and AI updates.</p>
-            <div className="flex gap-2">
-               <input 
-                  type="email" 
-                  placeholder="Email address" 
-                  className="bg-muted/50 border border-border rounded-lg px-3 py-2 text-xs w-full focus:outline-none focus:border-primary/50 transition-colors"
-               />
-               <button className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-xs font-bold hover:bg-primary/90 transition-all shrink-0">
-                  Join
-               </button>
-            </div>
           </div>
         </div>
 
