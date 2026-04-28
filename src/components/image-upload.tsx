@@ -24,7 +24,36 @@ export function ImageUpload({ value, onChange, className, variant = "default" }:
             setFileName(file.name);
             const reader = new FileReader();
             reader.onloadend = () => {
-                onChange(reader.result as string);
+                const img = new (window as any).Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    // Max dimensions for About page images to keep them small
+                    const MAX_SIZE = 1200; 
+                    if (width > height) {
+                        if (width > MAX_SIZE) {
+                            height *= MAX_SIZE / width;
+                            width = MAX_SIZE;
+                        }
+                    } else {
+                        if (height > MAX_SIZE) {
+                            width *= MAX_SIZE / height;
+                            height = MAX_SIZE;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx?.drawImage(img, 0, 0, width, height);
+                    
+                    // Compress to 0.7 quality to save space
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                    onChange(compressedBase64);
+                };
+                img.src = reader.result as string;
             };
             reader.readAsDataURL(file);
         }

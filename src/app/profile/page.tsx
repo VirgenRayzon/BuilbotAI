@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import {
     Loader2, Package, CheckCircle2, Clock, Truck, ServerCrash,
     User, Mail, Calendar, Shield, Trash2, ChevronRight,
-    ArrowUpRight, ShoppingBag, CreditCard, Sparkles, Key
+    ArrowUpRight, ShoppingBag, CreditCard, Sparkles, Key, FileText
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FullPageLoader } from "@/components/full-page-loader";
@@ -22,6 +22,7 @@ import { useLoading } from "@/context/loading-context";
 import { formatCurrency, cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { SuperAdminSettings } from "@/components/super-admin-settings";
+import { AboutManagement } from "@/components/about-management";
 import { Separator } from "@/components/ui/separator";
 import { updateReservationStatus } from "@/app/checkout-actions";
 import {
@@ -626,6 +627,16 @@ export default function ProfilePage() {
                                         </div>
                                     </div>
                                     <SuperAdminSettings />
+                                    
+                                    <div className="pt-6 border-t border-white/5">
+                                        <div className="mb-6 px-1">
+                                            <h2 className="text-2xl font-headline font-bold flex items-center gap-3">
+                                                <FileText className="h-6 w-6 text-cyan-400" /> Site Content
+                                            </h2>
+                                            <p className="text-sm text-muted-foreground">Update public-facing information and brand messaging.</p>
+                                        </div>
+                                        <AboutManagement />
+                                    </div>
                                 </div>
                             )}
                         </div>
