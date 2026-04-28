@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useUserProfile } from "@/context/user-profile";
 import { useTheme } from "@/context/theme-provider";
-import { useFirestore } from "@/firebase";
+import { useFirestore, useDoc } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { collection, query, where, getDocs, updateDoc, doc, deleteDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { Order } from "@/lib/types";
@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
     Loader2, Package, CheckCircle2, Clock, Truck, ServerCrash,
-    User, Mail, Calendar, Shield, Trash2, ChevronRight,
+    User, Mail, Calendar, Shield, Trash2, ChevronRight, PlugZap, RefreshCcw,
     ArrowUpRight, ShoppingBag, CreditCard, Sparkles, Key, FileText
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -84,6 +84,72 @@ export default function ProfilePage() {
             setEmail(profile.email || "");
         }
     }, [profile]);
+
+    // Maintenance Mode Logic (Kill Switch)
+    const settingsDocRef = useMemo(() => {
+        if (firestore) return doc(firestore, 'siteSettings', 'main');
+        return null;
+    }, [firestore]);
+
+    const { data: settings } = useDoc<any>(settingsDocRef);
+    const isMaintenanceMode = settings?.isMaintenanceMode || false;
+    const isStorageKillSwitch = settings?.isStorageKillSwitch || false;
+
+    const handleToggleMaintenance = async () => {
+        if (!firestore || !profile?.isSuperAdmin) return;
+        
+        const newState = !isMaintenanceMode;
+        const confirmMsg = newState 
+            ? "WARNING: You are about to ACTIVATE THE SYSTEM KILL SWITCH. Public users will see the maintenance screen. Continue?" 
+            : "Restore site access for all users?";
+            
+        if (!window.confirm(confirmMsg)) return;
+
+        try {
+            await setDoc(doc(firestore, 'siteSettings', 'main'), {
+                isMaintenanceMode: newState,
+                lastUpdated: new Date().toISOString(),
+                updatedBy: profile.email
+            }, { merge: true });
+            
+            toast({
+                title: newState ? "System Kill Switch Active" : "Site Restored",
+                description: newState ? "Maintenance screen is now visible to public users." : "Site is now public.",
+                variant: newState ? "destructive" : "default"
+            });
+        } catch (error) {
+            console.error("Error toggling maintenance:", error);
+            toast({ title: "Operation Failed", description: "Could not update site settings.", variant: "destructive" });
+        }
+    };
+
+    const handleToggleStorageKillSwitch = async () => {
+        if (!firestore || !profile?.isSuperAdmin) return;
+        
+        const newState = !isStorageKillSwitch;
+        const confirmMsg = newState 
+            ? "WARNING: You are about to ACTIVATE THE STORAGE KILL SWITCH. All images will appear broken for non-admins. Continue?" 
+            : "Restore storage image visibility?";
+            
+        if (!window.confirm(confirmMsg)) return;
+
+        try {
+            await setDoc(doc(firestore, 'siteSettings', 'main'), {
+                isStorageKillSwitch: newState,
+                lastUpdated: new Date().toISOString(),
+                updatedBy: profile.email
+            }, { merge: true });
+            
+            toast({
+                title: newState ? "Storage Kill Switch Active" : "Storage Restored",
+                description: newState ? "Images are now appearing as broken for non-admins." : "Images are now visible again.",
+                variant: newState ? "destructive" : "default"
+            });
+        } catch (error) {
+            console.error("Error toggling storage kill switch:", error);
+            toast({ title: "Operation Failed", description: "Could not update storage settings.", variant: "destructive" });
+        }
+    };
 
     useEffect(() => {
         if (!authUser || !firestore || !profile?.isSuperAdmin) return;
@@ -445,6 +511,45 @@ export default function ProfilePage() {
                                         </div>
                                     )}
 
+                                    {/* Emergency Toggles - Relocated below Account Details */}
+                                    {profile?.isSuperAdmin && (
+                                        <div className="space-y-4 pt-4 border-t border-white/5">
+                                            <div className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-background/30 transition-all hover:border-primary/20">
+                                                <div className="space-y-0.5">
+                                                    <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground flex items-center gap-1.5">
+                                                        <ServerCrash className={cn("h-3 w-3", isMaintenanceMode ? "text-destructive animate-pulse" : "text-muted-foreground")} /> System Status
+                                                    </p>
+                                                    <p className="text-sm font-bold font-headline">Maintenance Mode</p>
+                                                </div>
+                                                <Button 
+                                                    size="sm" 
+                                                    variant={isMaintenanceMode ? "destructive" : "outline"}
+                                                    className="h-8 text-[10px] uppercase font-black"
+                                                    onClick={handleToggleMaintenance}
+                                                >
+                                                    {isMaintenanceMode ? "ACTIVE" : "OFF"}
+                                                </Button>
+                                            </div>
+
+                                            <div className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-background/30 transition-all hover:border-primary/20">
+                                                <div className="space-y-0.5">
+                                                    <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground flex items-center gap-1.5">
+                                                        <PlugZap className={cn("h-3 w-3", isStorageKillSwitch ? "text-amber-500 animate-pulse" : "text-muted-foreground")} /> Storage Status
+                                                    </p>
+                                                    <p className="text-sm font-bold font-headline">Chaos Mode (Broken Images)</p>
+                                                </div>
+                                                <Button 
+                                                    size="sm" 
+                                                    variant="outline"
+                                                    className={cn("h-8 text-[10px] uppercase font-black transition-all", isStorageKillSwitch ? "bg-amber-600 text-white border-amber-700 hover:bg-amber-700 shadow-[0_0_15px_rgba(217,119,6,0.3)]" : "text-muted-foreground")}
+                                                    onClick={handleToggleStorageKillSwitch}
+                                                >
+                                                    {isStorageKillSwitch ? "ACTIVE" : "OFF"}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {isEditing && (
                                         <Button className="relative z-30 w-full mt-2 shadow-lg shadow-primary/20" onClick={handleSaveProfile} disabled={isSaving}>
                                             {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ArrowUpRight className="h-4 w-4 mr-2" />}
@@ -617,15 +722,17 @@ export default function ProfilePage() {
                             )}
 
                             {profile?.isSuperAdmin && (
-                                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                <div className="space-y-6">
+                                    {/* Management Portal Header */}
                                     <div className="flex items-end justify-between px-1">
                                         <div className="space-y-1">
                                             <h2 className="text-2xl font-headline font-bold flex items-center gap-3">
                                                 <Shield className="h-6 w-6 text-primary" /> Management Portal
                                             </h2>
-                                            <p className="text-sm text-muted-foreground">Manage system access, manager accounts, and reset requests.</p>
+                                            <p className="text-sm text-muted-foreground">Manage manager accounts and system-wide configurations.</p>
                                         </div>
                                     </div>
+
                                     <SuperAdminSettings />
                                     
                                     <div className="pt-6 border-t border-white/5">

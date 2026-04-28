@@ -10,6 +10,7 @@ import type { Part } from '@/lib/types';
 import { Trash2, Info, AlertTriangle, Archive, RotateCcw, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { useSiteSettings } from '@/context/site-settings-context';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -72,6 +73,7 @@ export function InventoryPartCard({
     isSuperAdmin = false,
     isArchiveView = false
 }: InventoryPartCardProps) {
+    const { shouldCorruptImages } = useSiteSettings();
     const specKeys = categorySpecsMap[part.category] || Object.keys(part.specifications || {}).slice(0, 4);
 
     return (
@@ -186,7 +188,7 @@ export function InventoryPartCard({
                         {isSelectionMode ? (
                             <div className="aspect-square relative w-full overflow-hidden rounded-lg bg-muted/10 border border-white/5 p-2 cursor-pointer">
                                 <Image
-                                    src={getOptimizedStorageUrl(part.imageUrl) || '/placeholder-part.png'}
+                                    src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || '/placeholder-part.png'}
                                     alt={part.name}
                                     fill
                                     unoptimized
@@ -201,7 +203,7 @@ export function InventoryPartCard({
                             >
                                 <div className="aspect-square relative w-full overflow-hidden rounded-lg bg-muted/10 border border-white/5 p-2 cursor-pointer">
                                     <Image
-                                        src={getOptimizedStorageUrl(part.imageUrl) || '/placeholder-part.png'}
+                                        src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || '/placeholder-part.png'}
                                         alt={part.name}
                                         fill
                                         unoptimized

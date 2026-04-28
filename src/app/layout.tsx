@@ -11,7 +11,7 @@ import { ThemeProvider } from "@/context/theme-provider";
 import { AppLayout } from "@/components/app-layout";
 import { LoadingProvider } from "@/context/loading-context";
 import { SessionTimeout } from "@/components/auth/session-timeout";
-
+import { SiteSettingsProvider } from "@/context/site-settings-context";
 
 export const metadata: Metadata = {
   title: "Buildbot AI",
@@ -46,9 +46,11 @@ export default function RootLayout({
           <FirebaseClientProvider>
             <UserProfileProvider>
               <LoadingProvider>
-                <AppLayout>
-                  {children}
-                </AppLayout>
+                <SiteSettingsProvider>
+                  <AppLayout>
+                    {children}
+                  </AppLayout>
+                </SiteSettingsProvider>
               </LoadingProvider>
               <Toaster />
               <SessionTimeout />

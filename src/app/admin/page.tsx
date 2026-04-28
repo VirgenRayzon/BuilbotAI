@@ -40,6 +40,7 @@ import type { Part, PrebuiltSystem } from '@/lib/types';
 import { InventoryTable } from '@/components/inventory-table';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
 import { useCollection } from '@/firebase/firestore/use-collection';
+import { useDoc } from '@/firebase';
 import {
     addPart, addPrebuiltSystem, deletePrebuiltSystem, archivePrebuiltSystem,
     bulkArchivePrebuilts, bulkDeletePrebuilts,
@@ -158,6 +159,8 @@ export default function AdminPage() {
     const [currentTab, setCurrentTab] = useState(
         (initialTab === 'sales' && !profile?.isSuperAdmin) ? 'stock' : initialTab
     );
+
+
 
     useEffect(() => {
         const tab = searchParams.get('tab');
@@ -719,6 +722,8 @@ export default function AdminPage() {
                         </p>
                     </div>
                 </div>
+
+
 
                 <Tabs value={currentTab} onValueChange={handleTabChange}>
                     <div className="flex flex-col gap-4 mb-8">

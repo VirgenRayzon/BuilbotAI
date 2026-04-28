@@ -7,6 +7,7 @@ import { calculateBottleneck } from "@/lib/bottleneck";
 import { checkFullBuildCompatibility } from "@/lib/compatibility";
 import { retrieveLocalKnowledge } from "@/lib/knowledge-retriever";
 import { getInventoryFromFirestore } from "@/lib/inventory-fetcher";
+import { getAdminFirestore } from "@/firebase/server-init";
 
 const ComponentDataSchema = z.object({
     model: z.string(),
@@ -72,6 +73,18 @@ export const aiBuildCritique = ai.defineFlow(
 export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
     if (!process.env.GOOGLE_API_KEY) {
         throw new Error("Missing GOOGLE_API_KEY for Build Critique.");
+    }
+
+    // 0. Check Maintenance Mode (Kill Switch)
+    const db = getAdminFirestore();
+    try {
+        const settingsSnap = await db.collection('siteSettings').doc('main').get();
+        if (settingsSnap.exists && settingsSnap.data()?.isMaintenanceMode) {
+            throw new Error("MAINTENANCE_MODE_ACTIVE: AI services are temporarily restricted for system updates.");
+        }
+    } catch (e: any) {
+        if (e.message.includes("MAINTENANCE_MODE_ACTIVE")) throw e;
+        console.warn("Failed to check maintenance mode:", e);
     }
 
     // 1. Perform deterministic analysis

@@ -29,12 +29,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { CheckCircle2 } from "lucide-react";
+import { useSiteSettings } from '@/context/site-settings-context';
 
 interface PrebuiltSystemCardProps {
   system: PrebuiltSystem;
 }
 
 export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
+  const { shouldCorruptImages } = useSiteSettings();
   const [isExpanded, setIsExpanded] = useState(false);
   const { toast } = useToast();
 
@@ -189,7 +191,7 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
         <CardHeader className="p-2 md:p-3.5 pb-0 relative z-10">
           <div className="aspect-square relative w-full overflow-hidden rounded-lg mb-1.5 md:mb-2.5 shadow-sm group-hover:shadow-md transition-shadow bg-muted/30">
             <SmartImageMagnifier
-              src={getOptimizedStorageUrl(system.imageUrl) || "/placeholder-system.png"}
+              src={getOptimizedStorageUrl(system.imageUrl, shouldCorruptImages) || "/placeholder-system.png"}
               alt={system.name}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />

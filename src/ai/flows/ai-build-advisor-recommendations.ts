@@ -149,6 +149,20 @@ Please format your response as a JSON object strictly following the output schem
 
 // Genkit Flow Definition
 import { retrieveLocalKnowledge } from '@/lib/knowledge-retriever';
+import { getAdminFirestore } from '@/firebase/server-init';
+
+const CACHE_COLLECTION = 'ai_recommendation_cache';
+
+const generateCacheKey = (input: AiBuildAdvisorRecommendationsInput) => {
+  const parts = [
+    input.intendedUse.toLowerCase().trim(),
+    input.budget.toLowerCase().trim().replace(/[^\d]/g, ''), // Extract numbers for more consistent caching (e.g. 20000)
+    input.performanceLevel.toLowerCase().trim(),
+    (input.additionalNotes || '').toLowerCase().trim(),
+    input.allowFlexibleBudget ? 'flexible' : 'strict'
+  ];
+  return parts.join('|').replace(/[\/.]/g, '_').substring(0, 1000);
+};
 
 const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
   {
@@ -157,6 +171,41 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
     outputSchema: AiBuildAdvisorRecommendationsOutputSchema,
   },
   async (input) => {
+    const cacheKey = generateCacheKey(input);
+    const db = getAdminFirestore();
+
+    // 0. Check Maintenance Mode (Kill Switch)
+    try {
+      const settingsSnap = await db.collection('siteSettings').doc('main').get();
+      if (settingsSnap.exists && settingsSnap.data()?.isMaintenanceMode) {
+        throw new Error("MAINTENANCE_MODE_ACTIVE: AI services are temporarily restricted for system updates.");
+      }
+    } catch (e: any) {
+      if (e.message.includes("MAINTENANCE_MODE_ACTIVE")) throw e;
+      console.warn("Failed to check maintenance mode:", e);
+    }
+
+    // 1. Try to fetch from cache
+    try {
+      const cacheRef = db.collection(CACHE_COLLECTION).doc(cacheKey);
+      const cacheSnap = await cacheRef.get();
+      
+      if (cacheSnap.exists) {
+        const cacheData = cacheSnap.data();
+        // Cache expiry check (e.g., 7 days)
+        const ageInDays = (Date.now() - cacheData?.timestamp) / (1000 * 60 * 60 * 24);
+        if (ageInDays < 7) {
+          console.log(`[AI Cache] Hit for key: ${cacheKey}`);
+          return cacheData?.output as AiBuildAdvisorRecommendationsOutput;
+        }
+      }
+    } catch (e) {
+      console.warn(`[AI Cache] Read error:`, e);
+    }
+
+    // 2. Cache miss: Run AI
+    console.log(`[AI Cache] Miss for key: ${cacheKey}. Generating fresh...`);
+    
     // Fetch relevant local knowledge based on the user's intent and performance level
     const query = `${input.intendedUse} ${input.performanceLevel} ${input.additionalNotes || ''}`;
     const knowledgeResults = await retrieveLocalKnowledge(query);
@@ -170,6 +219,19 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
     if (!output) {
       throw new Error('Failed to get recommendations from the AI.');
     }
+
+    // 3. Save to cache
+    try {
+      await db.collection(CACHE_COLLECTION).doc(cacheKey).set({
+        input,
+        output,
+        timestamp: Date.now()
+      });
+      console.log(`[AI Cache] Saved new entry for key: ${cacheKey}`);
+    } catch (e) {
+      console.warn(`[AI Cache] Write error:`, e);
+    }
+
     return output;
   }
 );

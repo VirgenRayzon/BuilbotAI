@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { StockEditor } from "./stock-editor";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useSiteSettings } from "@/context/site-settings-context";
 
 interface InventoryTableProps {
   parts: Part[];
@@ -52,6 +53,7 @@ export function InventoryTable({
   isSuperAdmin,
   isArchiveView
 }: InventoryTableProps) {
+  const { shouldCorruptImages } = useSiteSettings();
   const allSelected = parts.length > 0 && parts.every(p => selectedIds.some(s => s.id === p.id));
 
   return (
@@ -84,7 +86,7 @@ export function InventoryTable({
             <TableCell className="font-medium">
               <div className="flex items-center gap-3">
                 <Image
-                  src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"}
+                  src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || "/placeholder-part.png"}
                   alt={part.name}
                   width={40}
                   height={40}

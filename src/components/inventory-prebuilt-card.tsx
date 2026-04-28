@@ -20,6 +20,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from '@/components/ui/badge';
+import { useSiteSettings } from '@/context/site-settings-context';
 import React, { useState } from 'react';
 import { PrebuiltCardSpecs } from './prebuilt-card-specs';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -55,6 +56,7 @@ export function InventoryPrebuiltCard({
     isSuperAdmin = false,
     isArchiveView = false
 }: InventoryPrebuiltCardProps) {
+    const { shouldCorruptImages } = useSiteSettings();
 
     return (
         <div className="relative group/card-wrapper h-full">
@@ -182,7 +184,7 @@ export function InventoryPrebuiltCard({
                     {isSelectionMode ? (
                         <div className="aspect-square relative w-full overflow-hidden rounded-lg bg-muted/30">
                             <Image
-                                src={getOptimizedStorageUrl(system.imageUrl) || '/placeholder-system.png'}
+                                src={getOptimizedStorageUrl(system.imageUrl, shouldCorruptImages) || '/placeholder-system.png'}
                                 alt={system.name}
                                 fill
                                 unoptimized
@@ -198,7 +200,7 @@ export function InventoryPrebuiltCard({
                         >
                             <div className="aspect-square relative w-full overflow-hidden rounded-lg bg-muted/30 cursor-pointer">
                                 <Image
-                                    src={getOptimizedStorageUrl(system.imageUrl) || '/placeholder-system.png'}
+                                    src={getOptimizedStorageUrl(system.imageUrl, shouldCorruptImages) || '/placeholder-system.png'}
                                     alt={system.name}
                                     fill
                                     unoptimized

@@ -11,27 +11,27 @@ export function Footer() {
     <footer className="bg-background border-t border-border mt-32 font-body relative overflow-hidden">
       {/* Decorative top bar */}
       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent z-20"></div>
-      
+
       <div className="max-w-[1800px] w-full mx-auto pt-24 pb-12 px-4 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-24">
           {/* Brand Column */}
           <div className="col-span-1 md:col-span-8 space-y-6">
             <Logo />
             <p className="text-muted-foreground text-sm max-w-md leading-relaxed">
-              The ultimate AI-driven PC building platform. Real-time hardware synthesis, 
-              immersive 3D visualizations, and intelligent inventory management for 
-              the next generation of hardware enthusiasts and professionals.
+              The ultimate AI-driven PC building platform. Real-time hardware synthesis,
+              AI analysis, and smart AI recommendations for the next generation of hardware
+              enthusiasts and professionals.
             </p>
             <div className="flex gap-4">
-               <div className="w-8 h-8 rounded-full bg-muted/50 border border-border flex items-center justify-center hover:bg-primary/10 hover:border-primary/30 transition-all cursor-pointer">
-                  <span className="text-[10px] font-bold">TW</span>
-               </div>
-               <div className="w-8 h-8 rounded-full bg-muted/50 border border-border flex items-center justify-center hover:bg-primary/10 hover:border-primary/30 transition-all cursor-pointer">
-                  <span className="text-[10px] font-bold">IG</span>
-               </div>
-               <div className="w-8 h-8 rounded-full bg-muted/50 border border-border flex items-center justify-center hover:bg-primary/10 hover:border-primary/30 transition-all cursor-pointer">
-                  <span className="text-[10px] font-bold">DC</span>
-               </div>
+              <div className="w-8 h-8 rounded-full bg-muted/50 border border-border flex items-center justify-center hover:bg-primary/10 hover:border-primary/30 transition-all cursor-pointer">
+                <span className="text-[10px] font-bold">TW</span>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-muted/50 border border-border flex items-center justify-center hover:bg-primary/10 hover:border-primary/30 transition-all cursor-pointer">
+                <span className="text-[10px] font-bold">IG</span>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-muted/50 border border-border flex items-center justify-center hover:bg-primary/10 hover:border-primary/30 transition-all cursor-pointer">
+                <span className="text-[10px] font-bold">DC</span>
+              </div>
             </div>
           </div>
 
@@ -60,7 +60,7 @@ export function Footer() {
 
         {/* Big Text Section */}
         <div className="relative pt-12 pb-24 overflow-hidden select-none pointer-events-none">
-          <motion.h1 
+          <motion.h1
             initial={{ y: 100, opacity: 0 }}
             whileInView={{ y: 0, opacity: 1 }}
             transition={{ duration: 1, ease: [0.23, 1, 0.32, 1] }}
@@ -69,14 +69,14 @@ export function Footer() {
             BuildbotAI
           </motion.h1>
           <div className="absolute inset-0 flex items-center justify-center">
-             <motion.p 
-               initial={{ opacity: 0 }}
-               whileInView={{ opacity: 1 }}
-               transition={{ delay: 0.5, duration: 1 }}
-               className="text-[2vw] md:text-[1.5vw] font-bold uppercase tracking-[0.5em] text-primary/40 text-center"
-             >
-               Next-Gen PC Synthesis
-             </motion.p>
+            <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 1 }}
+              className="text-[2vw] md:text-[1.5vw] font-bold uppercase tracking-[0.5em] text-primary/40 text-center"
+            >
+              Next-Gen PC Synthesis
+            </motion.p>
           </div>
         </div>
 

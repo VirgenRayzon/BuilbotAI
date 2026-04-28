@@ -8,6 +8,7 @@ import { formatCurrency, formatToPHP, getOptimizedStorageUrl } from '@/lib/utils
 import type { Part } from '@/lib/types';
 import { Plus, Info, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useSiteSettings } from '@/context/site-settings-context';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -29,6 +30,7 @@ interface PartCardProps {
 import { PartDetailsDialog } from './part-details-dialog';
 
 export function PartCard({ part, onToggleBuild, isSelected, compatibility, effectiveStock }: PartCardProps) {
+    const { shouldCorruptImages } = useSiteSettings();
     const currentStock = effectiveStock !== undefined ? effectiveStock : part.stock;
 
     const handleToggle = (e: React.MouseEvent) => {
@@ -114,7 +116,7 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
 
                         <div className="aspect-square relative w-full overflow-hidden rounded-2xl bg-slate-900/5 dark:bg-white/5 border border-white/5 p-4 group-hover:bg-primary/[0.03] transition-colors duration-500">
                             <Image
-                                src={getOptimizedStorageUrl(part.imageUrl) || '/placeholder-part.png'}
+                                src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || '/placeholder-part.png'}
                                 alt={part.name}
                                 fill
                                 unoptimized

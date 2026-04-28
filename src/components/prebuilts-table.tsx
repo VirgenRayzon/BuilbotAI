@@ -40,6 +40,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useFirestore } from "@/firebase";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { checkSystemStock } from "@/lib/prebuilt-utils";
+import { useSiteSettings } from "@/context/site-settings-context";
 
 interface PrebuiltsTableProps {
   systems: PrebuiltSystem[];
@@ -144,6 +145,7 @@ function PrebuiltTableRow({
   isSuperAdmin: boolean,
   isArchiveView: boolean
 }) {
+  const { shouldCorruptImages } = useSiteSettings();
   const { toast } = useToast();
   const firestore = useFirestore();
   const [stockStatus, setStockStatus] = useState<'loading' | 'in-stock' | 'out-of-stock'>('loading');
@@ -229,7 +231,7 @@ function PrebuiltTableRow({
           <div className="flex items-center gap-4">
             <div className="relative w-14 h-14 rounded-md overflow-hidden bg-muted flex-shrink-0 border shadow-sm group-hover:border-primary/30 transition-colors">
               <Image
-                src={getOptimizedStorageUrl(system.imageUrl) || "/placeholder-system.png"}
+                src={getOptimizedStorageUrl(system.imageUrl, shouldCorruptImages) || "/placeholder-system.png"}
                 alt={system.name}
                 fill
                 unoptimized
