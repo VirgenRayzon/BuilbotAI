@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { SparkleButton } from "./ui/sparkle-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BrainCircuit, Loader2, ThumbsUp, ThumbsDown, AlertTriangle, MonitorPlay, Zap, Bot, Plus, Sparkles, Gamepad2 } from "lucide-react";
@@ -202,9 +203,9 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                             </p>
                         </div>
                         {!isControlled && (
-                            <Button onClick={handleAnalyze} size="lg" className="mt-6 font-headline tracking-widest uppercase text-xs h-12 px-10">
+                            <SparkleButton onClick={handleAnalyze} className="mt-6 px-10">
                                 Analyze My Build
-                            </Button>
+                            </SparkleButton>
                         )}
                     </div>
                 )}
@@ -246,7 +247,7 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                     <div className="bg-destructive/10 text-destructive p-4 rounded-md">
                         <p className="font-semibold flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Analysis Failed</p>
                         <p className="text-sm mt-1">{error}</p>
-                        <Button variant="outline" size="sm" onClick={handleAnalyze} className="mt-3">Try Again</Button>
+                        <SparkleButton onClick={handleAnalyze} className="mt-3">Try Again</SparkleButton>
                     </div>
                 )}
 

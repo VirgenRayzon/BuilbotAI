@@ -44,6 +44,9 @@ import { Badge } from "@/components/ui/badge";
 import { ImageUpload } from "./image-upload";
 import { Loader2, Sparkles, Cpu, BrainCircuit, Search, Check, ChevronDown, Plus, X, Bold, Italic, Heading1, Heading2, List, Code } from "lucide-react";
 import { getAiPrebuiltSuggestions } from "@/app/actions";
+import { useFirestore, useDoc } from "@/firebase";
+import { doc } from "firebase/firestore";
+import { SparkleButton } from "./ui/sparkle-button";
 import type { Part, PrebuiltSystem } from "@/lib/types";
 
 const formSchema = z.object({
@@ -201,6 +204,14 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
     const [openSlot, setOpenSlot] = useState<string | null>(null);
     const { toast } = useToast();
 
+    const firestore = useFirestore();
+    const settingsDocRef = useMemo(() => {
+        if (firestore) return doc(firestore, 'siteSettings', 'main');
+        return null;
+    }, [firestore]);
+    const { data: settings } = useDoc<any>(settingsDocRef);
+    const isAiKillSwitch = settings?.isAiKillSwitch || false;
+
     // Group parts by category, sorted alphabetically within each category
     const inventory = useMemo(() => {
         const grouped: Record<string, Part[]> = {};
@@ -261,6 +272,15 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
     }, [open, initialData, form]);
 
     const handleAiAssist = () => {
+        if (isAiKillSwitch) {
+            toast({
+                title: "AI Disabled",
+                description: "AI is disable by Administrator.",
+                variant: "destructive"
+            });
+            return;
+        }
+
         // More robust part lookup with trimming and type safety
         const getPartName = (id?: string) => {
             if (!id || id.trim() === "") return undefined;
@@ -387,22 +407,14 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                         </DialogDescription>
                     </div>
                     <div className="ml-auto">
-                        <Button
+                        <SparkleButton
                             type="button"
-                            variant="outline"
-                            size="lg"
                             onClick={handleAiAssist}
-                            disabled={isAiPending}
-                            className="relative overflow-hidden group border-primary/30 hover:border-primary hover:bg-primary/10 text-primary gap-2 h-11 px-6 font-bold uppercase tracking-wider text-xs shadow-lg shadow-primary/5 transition-all duration-300"
+                            isLoading={isAiPending}
+                            className="h-11 px-6 shadow-lg transition-all duration-300"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/10 to-primary/0 opacity-0 group-hover:opacity-100 animate-shimmer pointer-events-none" />
-                            {isAiPending ? (
-                                <Loader2 className="animate-spin h-4 w-4" />
-                            ) : (
-                                <Sparkles className="h-4 w-4 transition-transform group-hover:scale-125 group-hover:rotate-12 duration-300" />
-                            )}
                             AI Assist
-                        </Button>
+                        </SparkleButton>
                     </div>
                 </DialogHeader>
                 {isAiPending && (

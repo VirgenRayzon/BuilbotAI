@@ -9,7 +9,7 @@ import { BuildSummary } from "@/components/build-summary";
 import { getAiRecommendations, getAiBuildCritique } from "@/app/actions";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { Build, AiRecommendation, ComponentData, Resolution, WorkloadType } from "@/lib/types";
-import { Cpu, Server, CircuitBoard, MemoryStick, Bot, Wallet, Database, Power, RectangleVertical, Wind } from "lucide-react";
+import { Cpu, Server, CircuitBoard, MemoryStick, Bot, Wallet, Database, Power, RectangleVertical, Wind, AlertCircle } from "lucide-react";
 import { formatCurrency, cn } from "@/lib/utils";
 import { FullPageLoader } from "@/components/full-page-loader";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import { useFirestore, useDoc } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import type { Part } from "@/lib/types";
 import { checkCompatibility } from "@/lib/compatibility";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type PartWithoutCategory = Omit<Part, 'category'>;
 
@@ -654,6 +655,24 @@ export default function AiBuildAdvisorPage() {
       )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
       <main className="flex-1 w-full max-w-[1800px] mx-auto p-4 md:p-8 pt-24 md:pt-32 relative z-10">
+        {isAiKillSwitch && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <Alert variant="destructive" className="border-destructive/50 bg-destructive/10 backdrop-blur-xl rounded-2xl py-6 shadow-2xl shadow-destructive/20">
+              <AlertCircle className="h-6 w-6" />
+              <div className="ml-4">
+                <AlertTitle className="text-xl font-headline font-black uppercase tracking-tight mb-2">Neural Core Suspended</AlertTitle>
+                <AlertDescription className="text-sm font-medium opacity-90">
+                  AI-driven build optimization and critiques have been temporarily disabled by the system administrator for maintenance.
+                </AlertDescription>
+              </div>
+            </Alert>
+          </motion.div>
+        )}
+
         <div className="relative mb-12">
           <motion.div
             initial={{ opacity: 0, x: -20 }}

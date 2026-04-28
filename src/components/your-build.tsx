@@ -2,6 +2,7 @@ import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { SparkleButton } from "./ui/sparkle-button";
 import { Separator } from "@/components/ui/separator";
 import type { ComponentData } from "@/lib/types";
 import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical as CaseIcon, Wind, AlertCircle, X as CloseIcon, BrainCircuit, Loader2, ThumbsUp, ThumbsDown, MonitorPlay, Zap, Plus, Sparkles, Monitor, Keyboard, Mouse, Headphones, ShieldCheck, CheckCircle2, Gauge, ChevronDown } from "lucide-react";
@@ -532,10 +533,8 @@ export function YourBuild({
                 <div className="flex flex-col gap-3 w-full">
                     {!isManagerMode && (
                         hasAnalysis ? (
-                            <Button
-                                variant="outline"
-                                className="w-full font-headline font-bold tracking-widest flex items-center justify-center gap-2 border-primary/50 hover:bg-primary/10 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase text-[10px]"
-                                size="lg"
+                            <SparkleButton
+                                className="w-full h-12"
                                 disabled={selectedParts === 0}
                                 onClick={() => {
                                     if (onAnalyze) {
@@ -545,13 +544,12 @@ export function YourBuild({
                                     }
                                 }}
                             >
-                                <BrainCircuit className="h-4 w-4 text-primary" />
+                                <Sparkles className="h-4 w-4 mr-2" />
                                 Refresh Analysis
-                            </Button>
+                            </SparkleButton>
                         ) : (
-                            <Button
-                                className="w-full font-headline font-bold tracking-widest flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 relative overflow-hidden group/analyze shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] text-white uppercase text-[10px]"
-                                size="lg"
+                            <SparkleButton
+                                className="w-full h-12"
                                 disabled={selectedParts === 0}
                                 onClick={() => {
                                     if (onAnalyze) {
@@ -561,11 +559,9 @@ export function YourBuild({
                                     }
                                 }}
                             >
-                                <BrainCircuit className="h-4 w-4 animate-pulse" />
-                                <Sparkles className="absolute left-4 w-3 h-3 text-white/40 animate-sparkle" />
+                                <Sparkles className="h-4 w-4 mr-2" />
                                 Analyze Build
-                                <div className="absolute inset-0 animate-shimmer pointer-events-none opacity-0 group-hover/analyze:opacity-100 transition-opacity" />
-                            </Button>
+                            </SparkleButton>
                         )
                     )}
 
@@ -575,25 +571,15 @@ export function YourBuild({
                     </Button>
 
                     {isManagerMode ? (
-                        <Button
-                            className="w-full font-headline tracking-wide flex items-center gap-2 bg-primary hover:bg-primary/90 text-white relative overflow-hidden group/add-prebuilt"
-                            size="lg"
+                        <SparkleButton
+                            className="w-full h-12"
                             disabled={!isBuildComplete || isAiPending}
                             onClick={handleAddPrebuiltWithAi}
+                            isLoading={isAiPending}
+                            icon={<Sparkles className="h-4 w-4" />}
                         >
-                            {isAiPending ? (
-                                <>
-                                    <Loader2 className="h-5 w-5 animate-spin" />
-                                    <span>Generating Identity...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Plus className="h-5 w-5" />
-                                    <span>Add New Prebuilt</span>
-                                </>
-                            )}
-                            <div className="absolute inset-0 animate-shimmer pointer-events-none opacity-0 group-hover/add-prebuilt:opacity-100 transition-opacity" />
-                        </Button>
+                            {isAiPending ? "Generating Identity..." : "Add New Prebuilt"}
+                        </SparkleButton>
                     ) : (
                         <Dialog open={isCheckoutDialogOpen} onOpenChange={setIsCheckoutDialogOpen}>
                             <DialogTrigger asChild>

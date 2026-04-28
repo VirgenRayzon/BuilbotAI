@@ -8,6 +8,10 @@ import { Cpu, Loader2, Save, X, Lightbulb } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { getAiSmartBudget } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
+import { useFirestore, useDoc } from "@/firebase";
+import { doc } from "firebase/firestore";
+import { SparkleButton } from "./ui/sparkle-button";
+import { useMemo } from "react";
 
 interface SmartBudgetProps {
     inventory: any[];
@@ -22,7 +26,24 @@ export function SmartBudget({ inventory, onApplyBuild, onClose }: SmartBudgetPro
     const [result, setResult] = useState<any>(null);
     const { toast } = useToast();
 
+    const firestore = useFirestore();
+    const settingsDocRef = useMemo(() => {
+        if (firestore) return doc(firestore, 'siteSettings', 'main');
+        return null;
+    }, [firestore]);
+    const { data: settings } = useDoc<any>(settingsDocRef);
+    const isAiKillSwitch = settings?.isAiKillSwitch || false;
+
     const handleGenerate = async () => {
+        if (isAiKillSwitch) {
+            toast({
+                title: "AI Disabled",
+                description: "AI is disable by Administrator.",
+                variant: "destructive"
+            });
+            return;
+        }
+
         const budgetNum = parseInt(budget, 10);
         if (isNaN(budgetNum) || budgetNum <= 0) {
             toast({ variant: "destructive", title: "Invalid Budget", description: "Please enter a valid budget amount." });
@@ -172,9 +193,13 @@ export function SmartBudget({ inventory, onApplyBuild, onClose }: SmartBudgetPro
             </CardContent>
             {!result && !loading && (
                 <CardFooter>
-                    <Button onClick={handleGenerate} className="w-full font-headline tracking-wide">
+                    <SparkleButton 
+                        onClick={handleGenerate} 
+                        className="w-full"
+                        isLoading={loading}
+                    >
                         Generate Build
-                    </Button>
+                    </SparkleButton>
                 </CardFooter>
             )}
         </Card>

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { SparkleButton } from "./ui/sparkle-button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BrainCircuit, Send, Bot, User, MessageSquare, X, PlusCircle, RotateCcw } from "lucide-react";
@@ -14,6 +15,9 @@ import { DefaultChatTransport, UIMessage } from "ai";
 import { useUserProfile } from "@/context/user-profile";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useFirestore, useDoc } from "@/firebase";
+import { doc } from "firebase/firestore";
+import { useMemo } from "react";
 import {
     Carousel,
     CarouselContent,
@@ -35,6 +39,14 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
     const isDark = theme === "dark";
     const { authUser, loading } = useUserProfile();
     const { toast } = useToast();
+
+    const firestore = useFirestore();
+    const settingsDocRef = useMemo(() => {
+        if (firestore) return doc(firestore, 'siteSettings', 'main');
+        return null;
+    }, [firestore]);
+    const { data: settings } = useDoc<any>(settingsDocRef);
+    const isAiKillSwitch = settings?.isAiKillSwitch || false;
 
     const {
         messages,
@@ -118,7 +130,7 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
 
     // Trigger streaming greeting when chat is first opened and empty
     useEffect(() => {
-        if (isOpen && messages.length === 0 && !isLoading && authUser) {
+        if (isOpen && messages.length === 0 && !isLoading && authUser && !isAiKillSwitch) {
             sendMessage({
                 text: 'SYSTEM_TRIGGER_GREETING'
             });
@@ -132,6 +144,16 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (isAiKillSwitch) {
+            toast({
+                title: "AI Disabled",
+                description: "AI is disable by Administrator.",
+                variant: "destructive"
+            });
+            return;
+        }
+
         if (!input.trim() || isLoading) return;
 
         setElapsedTime(0);
@@ -415,20 +437,22 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                     <Input
                                         value={input}
                                         onChange={(e) => setInput(e.target.value)}
-                                        placeholder="Ask for advice or part recommendations..."
+                                        placeholder={isAiKillSwitch ? "AI is disabled by Administrator" : "Ask for advice or part recommendations..."}
+                                        disabled={isAiKillSwitch}
                                         className={cn(
                                             "focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:border-cyan-400 text-sm pr-12 h-12 rounded-xl transition-all placeholder:text-zinc-500 shadow-inner group-hover:border-cyan-500/50",
-                                            isDark ? "bg-black/60 border-cyan-500/30 text-white" : "bg-white border-border text-foreground"
+                                            isDark ? "bg-black/60 border-cyan-500/30 text-white" : "bg-white border-border text-foreground",
+                                            isAiKillSwitch && "opacity-50 cursor-not-allowed"
                                         )}
                                     />
-                                    <Button
+                                    <SparkleButton
                                         type="submit"
-                                        size="icon"
-                                        className="absolute right-1 top-1 h-10 w-10 bg-gradient-to-br from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-lg transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:shadow-[0_0_20px_rgba(6,182,212,0.6)] active:scale-95"
-                                        disabled={!input.trim() || isLoading}
+                                        className="absolute right-1 top-1 h-10 w-10 min-w-[40px] px-0"
+                                        disabled={!input.trim() || isLoading || isAiKillSwitch}
+                                        isLoading={isLoading}
                                     >
                                         <Send className="w-4 h-4 ml-0.5" />
-                                    </Button>
+                                    </SparkleButton>
                                 </form>
                             </CardFooter>
                         </Card>

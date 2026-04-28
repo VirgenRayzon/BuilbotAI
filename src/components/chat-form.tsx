@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import { SparkleButton } from "./ui/sparkle-button";
 import {
   Form,
   FormControl,
@@ -211,10 +212,14 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full h-12 font-headline uppercase tracking-widest text-xs" disabled={isPending}>
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <SparkleButton 
+            type="submit" 
+            className="w-full h-12" 
+            isLoading={isPending}
+            icon={<Sparkles className="h-4 w-4" />}
+          >
             {isPending ? "Architecting..." : "Get Recommendations"}
-          </Button>
+          </SparkleButton>
         </form>
       </Form>
     </div>

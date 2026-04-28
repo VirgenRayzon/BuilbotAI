@@ -39,8 +39,12 @@ import { getAiPartDetails } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "./ui/scroll-area";
 import { ImageUpload } from "./image-upload";
+import { SparkleButton } from "./ui/sparkle-button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { useFirestore, useDoc } from "@/firebase";
+import { doc } from "firebase/firestore";
+import { useMemo } from "react";
 import Image from "next/image";
 
 const componentCategories = [
@@ -191,6 +195,14 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
+  const firestore = useFirestore();
+  const settingsDocRef = useMemo(() => {
+    if (firestore) return doc(firestore, 'siteSettings', 'main');
+    return null;
+  }, [firestore]);
+  const { data: settings } = useDoc<any>(settingsDocRef);
+  const isAiKillSwitch = settings?.isAiKillSwitch || false;
+
   const [customSpecKey, setCustomSpecKey] = useState("");
   const [customSpecValue, setCustomSpecValue] = useState("");
 
@@ -305,6 +317,15 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
   };
 
   const handleGetAiDetails = () => {
+    if (isAiKillSwitch) {
+      toast({
+        title: "AI Disabled",
+        description: "AI is disable by Administrator.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const partName = form.getValues("partName");
     if (!partName) {
       form.setError("partName", { message: "Please enter a part name first." });
@@ -465,22 +486,14 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
             </DialogDescription>
           </div>
           <div className="ml-auto">
-            <Button
+            <SparkleButton
               type="button"
-              variant="outline"
-              size="lg"
               onClick={handleGetAiDetails}
-              disabled={isAiPending}
-              className="relative overflow-hidden group border-primary/30 hover:border-primary hover:bg-primary/10 text-primary gap-2 h-11 px-6 font-bold uppercase tracking-wider text-xs shadow-lg shadow-primary/5 transition-all duration-300"
+              isLoading={isAiPending}
+              className="h-11 px-6 shadow-lg transition-all duration-300"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/10 to-primary/0 opacity-0 group-hover:opacity-100 animate-shimmer pointer-events-none" />
-              {isAiPending ? (
-                <Loader2 className="animate-spin h-4 w-4" />
-              ) : (
-                <Sparkles className="h-4 w-4 transition-transform group-hover:scale-125 group-hover:rotate-12 duration-300" />
-              )}
               AI Autofill
-            </Button>
+            </SparkleButton>
           </div>
         </DialogHeader>
 

@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency, getOptimizedStorageUrl, cn } from "@/lib/utils";
 import type { PrebuiltSystem, Part } from "@/lib/types";
 import { getMissingParts } from "@/lib/prebuilt-utils";
-import { BrainCircuit, ShieldCheck, Loader2, AlertCircle, ThumbsUp, ThumbsDown, MonitorPlay, Zap, ExternalLink, Gamepad2, ArrowLeft, ChevronLeft, CircuitBoard, Database, Box } from "lucide-react";
+import { Sparkles, ShieldCheck, Loader2, AlertCircle, ThumbsUp, ThumbsDown, MonitorPlay, Zap, ExternalLink, Gamepad2, ArrowLeft, ChevronLeft, CircuitBoard, Database, Box } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getAiPrebuiltPerformance } from "@/app/actions";
 import { doc, getDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
@@ -22,6 +22,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useUserProfile } from "@/context/user-profile";
 import { reservePrebuiltSystem } from "@/app/prebuilt-reservation-actions";
 import { checkSystemStock } from "@/lib/prebuilt-utils";
+import { SparkleButton } from "@/components/ui/sparkle-button";
 
 const getPerformanceStyle = (fps: string) => {
     const minFps = parseInt(fps.match(/\d+/)?.[0] || "0");
@@ -179,11 +180,14 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                 }
             });
 
+            // Sanitize system object for Server Action (remove Firestore Timestamps/toJSON methods)
+            const sanitizedSystem = JSON.parse(JSON.stringify(system));
+
             const result = await reservePrebuiltSystem(
                 authUser.uid,
                 profile.email,
                 profile.name || profile.email.split('@')[0],
-                system,
+                sanitizedSystem,
                 componentsMap
             );
 
@@ -359,19 +363,15 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                                 <p className="text-5xl md:text-6xl font-black font-headline text-primary tracking-tighter">{formatCurrency(system.price)}</p>
                             </div>
                             <div className="flex-shrink-0 w-full md:w-auto">
-                                <Button
-                                    size="lg"
-                                    className="rounded-2xl font-headline uppercase tracking-widest h-16 px-12 shadow-2xl w-full md:w-auto text-lg transition-all hover:scale-[1.02] active:scale-[0.98] bg-primary hover:bg-primary/90 text-white border-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 group/reserve"
-                                    disabled={!isComplete || loadingParts || !isInStock || isReserving}
+                                <SparkleButton
                                     onClick={handleReserve}
+                                    isLoading={isReserving}
+                                    disabled={!isComplete || loadingParts || !isInStock || isReserving}
+                                    icon={<Zap className="h-6 w-6" />}
+                                    className="px-12 h-16 text-lg shadow-2xl"
                                 >
-                                    {isReserving ? (
-                                        <Loader2 className="mr-3 h-6 w-6 animate-spin" />
-                                    ) : (
-                                        <ShieldCheck className="mr-3 h-6 w-6 transition-transform group-hover/reserve:-translate-y-1" />
-                                    )}
-                                    {loadingParts ? "Validating Stock..." : isReserving ? "Processing..." : !isInStock ? "Diagnostics Failed" : "Reserve this Prebuilt"}
-                                </Button>
+                                    {loadingParts ? "Validating Stock..." : !isInStock ? "Diagnostics Failed" : "Reserve this Prebuilt"}
+                                </SparkleButton>
                                 {!isComplete && (
                                     <div className="mt-4 flex items-center justify-center md:justify-end gap-2 text-destructive">
                                         <AlertCircle className="h-4 w-4" />
@@ -473,7 +473,7 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                     className="text-center mb-16"
                 >
                     <div className="inline-flex items-center justify-center p-4 bg-primary/10 rounded-3xl mb-6">
-                        <BrainCircuit className="h-10 w-10 text-primary animate-pulse" />
+                        <Sparkles className="h-10 w-10 text-primary animate-pulse" />
                     </div>
                     <h2 className="text-4xl md:text-5xl font-headline font-black uppercase tracking-tighter mb-6">Synergy Diagnostics</h2>
                     <p className="text-muted-foreground max-w-3xl mx-auto text-xl leading-relaxed font-medium">
@@ -487,18 +487,18 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                             <CardContent className="flex flex-col items-center justify-center py-24 text-center relative overflow-hidden">
                                 <div className="absolute inset-0 bg-primary/5 blur-[120px] rounded-full w-[500px] h-[500px] -z-10 m-auto opacity-30 animate-pulse" />
                                 {canGenerateReport ? (
-                                    <Button 
-                                        size="lg" 
+                                    <SparkleButton 
                                         onClick={handleAnalyze} 
-                                        className="rounded-full font-headline uppercase tracking-[0.2em] px-12 h-16 text-lg shadow-2xl hover:shadow-primary/40 transition-all hover:scale-105 group border-none bg-primary text-white"
+                                        isLoading={loadingAnalysis}
+                                        icon={<Sparkles className="h-6 w-6" />}
+                                        className="px-12 h-16 text-lg shadow-2xl"
                                     >
-                                        <BrainCircuit className="mr-3 h-7 w-7 group-hover:rotate-12 transition-transform" />
                                         Initialize Neural Analysis
-                                    </Button>
+                                    </SparkleButton>
                                 ) : (
                                     <div className="flex flex-col items-center">
                                         <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-6">
-                                            <BrainCircuit className="h-10 w-10 text-muted-foreground/30" />
+                                            <Sparkles className="h-10 w-10 text-muted-foreground/30" />
                                         </div>
                                         <h3 className="text-2xl font-headline font-bold uppercase tracking-tight mb-2">Diagnostic Data Unavailable</h3>
                                         <p className="text-muted-foreground max-w-md">The performance architectural report for this system has not been authorized yet.</p>
@@ -513,7 +513,7 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                             <div className="relative">
                                 <div className="absolute inset-0 bg-primary/20 animate-ping rounded-full scale-150" />
                                 <div className="w-24 h-24 rounded-3xl bg-primary/10 flex items-center justify-center border border-primary/30 relative z-10 backdrop-blur-md">
-                                    <BrainCircuit className="h-12 w-12 text-primary animate-pulse" />
+                                    <Sparkles className="h-12 w-12 text-primary animate-pulse" />
                                 </div>
                             </div>
                             <div className="text-center space-y-2">
@@ -529,7 +529,13 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                             <h3 className="text-2xl font-headline font-black uppercase tracking-tight mb-3">Diagnostic Failure</h3>
                             <p className="mb-8 text-lg font-medium">{analysisError}</p>
                             {canGenerateReport && (
-                                <Button variant="outline" onClick={handleAnalyze} className="rounded-xl px-10 h-12 uppercase tracking-widest font-bold text-xs">Re-Attempt Sync</Button>
+                                <SparkleButton 
+                                    onClick={handleAnalyze} 
+                                    className="px-10 h-12 text-xs"
+                                    icon={<Zap className="h-4 w-4" />}
+                                >
+                                    Re-Attempt Sync
+                                </SparkleButton>
                             )}
                         </div>
                     )}
@@ -585,14 +591,14 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
 
                             {canGenerateReport && (
                                 <div className="py-8 flex justify-center">
-                                    <Button 
-                                        variant="ghost" 
+                                    <SparkleButton 
                                         onClick={handleAnalyze} 
-                                        disabled={loadingAnalysis} 
-                                        className="rounded-full px-10 gap-3 text-muted-foreground hover:text-primary uppercase tracking-[0.3em] font-black text-[10px]"
+                                        isLoading={loadingAnalysis} 
+                                        className="h-12 text-[10px]"
+                                        icon={<ArrowLeft className="h-4 w-4" />}
                                     >
-                                        <ArrowLeft className="h-4 w-4" /> Reset Diagnostic Matrix
-                                    </Button>
+                                        Reset Diagnostic Matrix
+                                    </SparkleButton>
                                 </div>
                             )}
                         </div>
