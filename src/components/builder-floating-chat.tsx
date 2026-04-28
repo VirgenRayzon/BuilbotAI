@@ -13,7 +13,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, UIMessage } from "ai";
 import { useUserProfile } from "@/context/user-profile";
 import { cn } from "@/lib/utils";
-import { useToast } from \"@/hooks/use-toast\";
+import { useToast } from "@/hooks/use-toast";
 import {
     Carousel,
     CarouselContent,
@@ -212,7 +212,7 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                                                             className={cn(
                                                                                 "p-4 rounded-2xl text-sm leading-relaxed shadow-lg relative overflow-hidden group hover:shadow-xl transition-all duration-300 break-words w-fit max-w-[85%] sm:max-w-[80%]",
                                                                                 msg.role === 'user'
-                                                                                    ? (isDark 
+                                                                                    ? (isDark
                                                                                         ? 'bg-gradient-to-br from-cyan-900/40 to-blue-900/20 text-cyan-50 rounded-tr-sm border border-cyan-500/40 backdrop-blur-md'
                                                                                         : 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white rounded-tr-sm shadow-cyan-500/20 border border-cyan-400/30')
                                                                                     : (isDark
@@ -317,25 +317,25 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                                                                     return (
                                                                                         <CarouselItem key={idx} className="pl-2 basis-[85%] sm:basis-[220px] shrink-0">
                                                                                             <div className={cn(
-                                                                                "rounded-3xl overflow-hidden shadow-2xl group/card transition-all flex flex-col h-full mb-2 border",
-                                                                                isDark ? "bg-white/5 border-white/10 hover:border-cyan-500/40 hover:shadow-cyan-500/10" : "bg-card border-border/60 hover:border-cyan-500/40 hover:shadow-cyan-500/10"
-                                                                            )}>
-                                                                                <div className={cn(
-                                                                                    "relative aspect-video w-full overflow-hidden transition-colors",
-                                                                                    isDark ? "bg-white/5" : "bg-muted/20"
-                                                                                )}>
-                                                                                    <img src={finalImage} alt={category} className={cn(
-                                                                                        "w-full h-full object-contain p-4 transition-transform duration-700 group-hover/card:scale-110 opacity-90",
-                                                                                        isDark ? "mix-blend-screen" : "mix-blend-multiply"
-                                                                                    )} />
-                                                                                    <div className="absolute top-3 right-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 text-[10px] font-black text-cyan-400 uppercase tracking-widest">{category}</div>
-                                                                                </div>
-                                                                                <div className="p-4 flex flex-col gap-3 flex-1">
-                                                                                    <div className="flex flex-col gap-1">
-                                                                                        <h3 className={cn(
-                                                                                            "text-[13px] font-bold leading-tight line-clamp-2 min-h-[32px] transition-colors",
-                                                                                            isDark ? "text-white" : "text-foreground"
-                                                                                        )}>{partName}</h3>
+                                                                                                "rounded-3xl overflow-hidden shadow-2xl group/card transition-all flex flex-col h-full mb-2 border",
+                                                                                                isDark ? "bg-white/5 border-white/10 hover:border-cyan-500/40 hover:shadow-cyan-500/10" : "bg-card border-border/60 hover:border-cyan-500/40 hover:shadow-cyan-500/10"
+                                                                                            )}>
+                                                                                                <div className={cn(
+                                                                                                    "relative aspect-video w-full overflow-hidden transition-colors",
+                                                                                                    isDark ? "bg-white/5" : "bg-muted/20"
+                                                                                                )}>
+                                                                                                    <img src={finalImage} alt={category} className={cn(
+                                                                                                        "w-full h-full object-contain p-4 transition-transform duration-700 group-hover/card:scale-110 opacity-90",
+                                                                                                        isDark ? "mix-blend-screen" : "mix-blend-multiply"
+                                                                                                    )} />
+                                                                                                    <div className="absolute top-3 right-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 text-[10px] font-black text-cyan-400 uppercase tracking-widest">{category}</div>
+                                                                                                </div>
+                                                                                                <div className="p-4 flex flex-col gap-3 flex-1">
+                                                                                                    <div className="flex flex-col gap-1">
+                                                                                                        <h3 className={cn(
+                                                                                                            "text-[13px] font-bold leading-tight line-clamp-2 min-h-[32px] transition-colors",
+                                                                                                            isDark ? "text-white" : "text-foreground"
+                                                                                                        )}>{partName}</h3>
                                                                                                         {partPrice && (
                                                                                                             <div className="text-[14px] font-black text-cyan-400 flex items-center gap-1">
                                                                                                                 <span className="text-[10px] opacity-60 font-medium uppercase tracking-tighter">Price:</span>₱{formattedPrice}
