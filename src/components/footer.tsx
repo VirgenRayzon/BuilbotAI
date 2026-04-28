@@ -49,11 +49,10 @@ export function Footer() {
           <div className="col-span-1 md:col-span-2 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground/50">Support</h3>
             <nav className="flex flex-col gap-2">
-              <Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Help Center</Link>
+              <Link href="/faq" className="text-sm text-muted-foreground hover:text-primary transition-colors">FAQ</Link>
               <Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Guides</Link>
-              <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">About Us</Link>
-              <Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">API Docs</Link>
-              <Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Contact</Link>
+              <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">About</Link>
+              <Link href="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">Contact</Link>
             </nav>
           </div>
         </div>

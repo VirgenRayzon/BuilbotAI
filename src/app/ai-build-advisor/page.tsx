@@ -24,8 +24,8 @@ import { useLoading } from "@/context/loading-context";
 import { useUserProfile } from "@/context/user-profile";
 import { useRouter } from "next/navigation";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { useFirestore } from "@/firebase";
-import { collection } from "firebase/firestore";
+import { useFirestore, useDoc } from "@/firebase";
+import { collection, doc } from "firebase/firestore";
 import type { Part } from "@/lib/types";
 import { checkCompatibility } from "@/lib/compatibility";
 
@@ -73,6 +73,13 @@ export default function AiBuildAdvisorPage() {
   const { authUser, profile, loading: userLoading } = useUserProfile();
   const router = useRouter();
   const firestore = useFirestore();
+
+  const settingsDocRef = useMemo(() => {
+    if (firestore) return doc(firestore, 'siteSettings', 'main');
+    return null;
+  }, [firestore]);
+  const { data: settings } = useDoc<any>(settingsDocRef);
+  const isAiKillSwitch = settings?.isAiKillSwitch || false;
 
   // Fetch each category collection for Quick Add support
   const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
@@ -343,6 +350,14 @@ export default function AiBuildAdvisorPage() {
 
 
   const handleGetRecommendations = (data: FormSchema) => {
+    if (isAiKillSwitch) {
+      toast({
+        title: "AI Disabled",
+        description: "AI is disable by Administrator.",
+        variant: "destructive"
+      });
+      return;
+    }
     startTransition(async () => {
       const result = await getAiRecommendations(data);
       if (!result || "error" in result) {
@@ -478,6 +493,14 @@ export default function AiBuildAdvisorPage() {
   };
 
   const handleCritique = async (forceRefresh: boolean = false) => {
+    if (isAiKillSwitch) {
+      toast({
+        title: "AI Disabled",
+        description: "AI is disable by Administrator.",
+        variant: "destructive"
+      });
+      return;
+    }
     if (!builderState) return;
 
     const buildKey = getBuildKey(builderState);

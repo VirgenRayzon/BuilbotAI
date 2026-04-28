@@ -13,8 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
     Loader2, Package, CheckCircle2, Clock, Truck, ServerCrash,
-    User, Mail, Calendar, Shield, Trash2, ChevronRight, PlugZap, RefreshCcw,
-    ArrowUpRight, ShoppingBag, CreditCard, Sparkles, Key, FileText
+    User as UserIcon, Mail, Calendar, Shield, Trash2, ChevronRight, PlugZap, RefreshCcw,
+    ArrowUpRight, ShoppingBag, CreditCard, Sparkles, Key, FileText, BrainCircuit
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FullPageLoader } from "@/components/full-page-loader";
@@ -94,15 +94,16 @@ export default function ProfilePage() {
     const { data: settings } = useDoc<any>(settingsDocRef);
     const isMaintenanceMode = settings?.isMaintenanceMode || false;
     const isStorageKillSwitch = settings?.isStorageKillSwitch || false;
+    const isAiKillSwitch = settings?.isAiKillSwitch || false;
 
     const handleToggleMaintenance = async () => {
         if (!firestore || !profile?.isSuperAdmin) return;
-        
+
         const newState = !isMaintenanceMode;
-        const confirmMsg = newState 
-            ? "WARNING: You are about to ACTIVATE THE SYSTEM KILL SWITCH. Public users will see the maintenance screen. Continue?" 
+        const confirmMsg = newState
+            ? "WARNING: You are about to ACTIVATE THE SYSTEM KILL SWITCH. Public users will see the maintenance screen. Continue?"
             : "Restore site access for all users?";
-            
+
         if (!window.confirm(confirmMsg)) return;
 
         try {
@@ -111,7 +112,7 @@ export default function ProfilePage() {
                 lastUpdated: new Date().toISOString(),
                 updatedBy: profile.email
             }, { merge: true });
-            
+
             toast({
                 title: newState ? "System Kill Switch Active" : "Site Restored",
                 description: newState ? "Maintenance screen is now visible to public users." : "Site is now public.",
@@ -125,12 +126,12 @@ export default function ProfilePage() {
 
     const handleToggleStorageKillSwitch = async () => {
         if (!firestore || !profile?.isSuperAdmin) return;
-        
+
         const newState = !isStorageKillSwitch;
-        const confirmMsg = newState 
-            ? "WARNING: You are about to ACTIVATE THE STORAGE KILL SWITCH. All images will appear broken for non-admins. Continue?" 
+        const confirmMsg = newState
+            ? "WARNING: You are about to ACTIVATE THE STORAGE KILL SWITCH. All images will appear broken for non-admins. Continue?"
             : "Restore storage image visibility?";
-            
+
         if (!window.confirm(confirmMsg)) return;
 
         try {
@@ -139,7 +140,7 @@ export default function ProfilePage() {
                 lastUpdated: new Date().toISOString(),
                 updatedBy: profile.email
             }, { merge: true });
-            
+
             toast({
                 title: newState ? "Storage Kill Switch Active" : "Storage Restored",
                 description: newState ? "Images are now appearing as broken for non-admins." : "Images are now visible again.",
@@ -148,6 +149,34 @@ export default function ProfilePage() {
         } catch (error) {
             console.error("Error toggling storage kill switch:", error);
             toast({ title: "Operation Failed", description: "Could not update storage settings.", variant: "destructive" });
+        }
+    };
+
+    const handleToggleAiKillSwitch = async () => {
+        if (!firestore || !profile?.isSuperAdmin) return;
+
+        const newState = !isAiKillSwitch;
+        const confirmMsg = newState
+            ? "WARNING: You are about to DISABLE ALL AI FEATURES. Users will not be able to analyze builds or use the AI Advisor. Continue?"
+            : "Restore AI feature access?";
+
+        if (!window.confirm(confirmMsg)) return;
+
+        try {
+            await setDoc(doc(firestore, 'siteSettings', 'main'), {
+                isAiKillSwitch: newState,
+                lastUpdated: new Date().toISOString(),
+                updatedBy: profile.email
+            }, { merge: true });
+
+            toast({
+                title: newState ? "AI Kill Switch Active" : "AI Restored",
+                description: newState ? "All neural features are now disabled." : "AI features are now online.",
+                variant: newState ? "destructive" : "default"
+            });
+        } catch (error) {
+            console.error("Error toggling AI kill switch:", error);
+            toast({ title: "Operation Failed", description: "Could not update AI settings.", variant: "destructive" });
         }
     };
 
@@ -160,7 +189,7 @@ export default function ProfilePage() {
                 const keysRef = collection(firestore!, 'authKeys');
                 const q = query(keysRef, where('role', '==', 'superadmin'));
                 const snapshot = await getDocs(q);
-                
+
                 if (!snapshot.empty) {
                     const docSnap = snapshot.docs[0];
                     setSuperAdminKey(docSnap.id);
@@ -337,7 +366,7 @@ export default function ProfilePage() {
         return (
             <div className="container mx-auto py-8 flex flex-col items-center justify-center min-h-[60vh]">
                 <div className="p-12 text-center space-y-4 max-w-md">
-                    <User className="h-16 w-16 mx-auto opacity-20" />
+                    <UserIcon className="h-16 w-16 mx-auto opacity-20" />
                     <h1 className="text-3xl font-headline font-bold">Sign in Required</h1>
                     <p className="text-muted-foreground">Please sign in to view your profile and manage your PC build reservations.</p>
                     <Button className="w-full mt-4" asChild>
@@ -451,7 +480,7 @@ export default function ProfilePage() {
                                     <div className="space-y-2">
                                         <Label htmlFor="name" className="text-xs uppercase tracking-widest text-muted-foreground ml-1">Full Name</Label>
                                         <div className="relative group">
-                                            <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-50 transition-opacity group-focus-within:opacity-100" />
+                                            <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-50 transition-opacity group-focus-within:opacity-100" />
                                             <Input
                                                 id="name"
                                                 value={name}
@@ -497,9 +526,9 @@ export default function ProfilePage() {
                                                     />
                                                 </div>
                                                 {isEditing && (
-                                                    <Button 
+                                                    <Button
                                                         size="sm"
-                                                        onClick={handleSaveSuperAdminKey} 
+                                                        onClick={handleSaveSuperAdminKey}
                                                         disabled={isSavingKey || superAdminKey === originalSuperAdminKey || !superAdminKey.trim()}
                                                         className="h-10 px-4"
                                                     >
@@ -521,8 +550,8 @@ export default function ProfilePage() {
                                                     </p>
                                                     <p className="text-sm font-bold font-headline">Maintenance Mode</p>
                                                 </div>
-                                                <Button 
-                                                    size="sm" 
+                                                <Button
+                                                    size="sm"
                                                     variant={isMaintenanceMode ? "destructive" : "outline"}
                                                     className="h-8 text-[10px] uppercase font-black"
                                                     onClick={handleToggleMaintenance}
@@ -536,15 +565,32 @@ export default function ProfilePage() {
                                                     <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground flex items-center gap-1.5">
                                                         <PlugZap className={cn("h-3 w-3", isStorageKillSwitch ? "text-amber-500 animate-pulse" : "text-muted-foreground")} /> Storage Status
                                                     </p>
-                                                    <p className="text-sm font-bold font-headline">Chaos Mode (Broken Images)</p>
+                                                    <p className="text-sm font-bold font-headline">Chaos Mode</p>
                                                 </div>
-                                                <Button 
-                                                    size="sm" 
+                                                <Button
+                                                    size="sm"
                                                     variant="outline"
                                                     className={cn("h-8 text-[10px] uppercase font-black transition-all", isStorageKillSwitch ? "bg-amber-600 text-white border-amber-700 hover:bg-amber-700 shadow-[0_0_15px_rgba(217,119,6,0.3)]" : "text-muted-foreground")}
                                                     onClick={handleToggleStorageKillSwitch}
                                                 >
                                                     {isStorageKillSwitch ? "ACTIVE" : "OFF"}
+                                                </Button>
+                                            </div>
+
+                                            <div className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-background/30 transition-all hover:border-primary/20">
+                                                <div className="space-y-0.5">
+                                                    <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground flex items-center gap-1.5">
+                                                        <BrainCircuit className={cn("h-3 w-3", isAiKillSwitch ? "text-rose-500 animate-pulse" : "text-muted-foreground")} /> Neural Status
+                                                    </p>
+                                                    <p className="text-sm font-bold font-headline">AI Kill Switch</p>
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className={cn("h-8 text-[10px] uppercase font-black transition-all", isAiKillSwitch ? "bg-rose-600 text-white border-rose-700 hover:bg-rose-700 shadow-[0_0_15px_rgba(225,29,72,0.3)]" : "text-muted-foreground")}
+                                                    onClick={handleToggleAiKillSwitch}
+                                                >
+                                                    {isAiKillSwitch ? "ACTIVE" : "OFF"}
                                                 </Button>
                                             </div>
                                         </div>
@@ -734,7 +780,7 @@ export default function ProfilePage() {
                                     </div>
 
                                     <SuperAdminSettings />
-                                    
+
                                     <div className="pt-6 border-t border-white/5">
                                         <div className="mb-6 px-1">
                                             <h2 className="text-2xl font-headline font-bold flex items-center gap-3">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,8 @@ import { getAiBuildCritique } from "@/app/actions";
 import { ComponentData } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from 'react-markdown';
+import { useFirestore, useDoc } from "@/firebase";
+import { doc } from "firebase/firestore";
 
 const getPerformanceStyle = (fps: string) => {
     const minFps = parseInt(fps.match(/\d+/)?.[0] || "0");
@@ -40,6 +42,14 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
     const [internalLoading, setInternalLoading] = useState(false);
     const [internalError, setInternalError] = useState<string | null>(null);
     const [loadingStep, setLoadingStep] = useState(0);
+
+    const firestore = useFirestore();
+    const settingsDocRef = useMemo(() => {
+        if (firestore) return doc(firestore, 'siteSettings', 'main');
+        return null;
+    }, [firestore]);
+    const { data: settings } = useDoc<any>(settingsDocRef);
+    const isAiKillSwitch = settings?.isAiKillSwitch || false;
 
     const [elapsedTime, setElapsedTime] = useState(0);
     const [finalResponseTime, setFinalResponseTime] = useState<number | null>(null);
@@ -104,6 +114,14 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
     };
 
     const handleAnalyze = async () => {
+        if (isAiKillSwitch) {
+            toast({
+                title: "AI Disabled",
+                description: "AI is disable by Administrator.",
+                variant: "destructive"
+            });
+            return;
+        }
         setInternalLoading(true);
         setInternalError(null);
 

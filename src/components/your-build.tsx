@@ -1,10 +1,10 @@
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { ComponentData } from "@/lib/types";
-import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical as CaseIcon, Wind, AlertCircle, X as CloseIcon, BrainCircuit, Loader2, ThumbsUp, ThumbsDown, MonitorPlay, Zap, Plus, Sparkles, Monitor, Keyboard, Mouse, Headphones, ShieldCheck, CheckCircle2, Gauge } from "lucide-react";
+import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical as CaseIcon, Wind, AlertCircle, X as CloseIcon, BrainCircuit, Loader2, ThumbsUp, ThumbsDown, MonitorPlay, Zap, Plus, Sparkles, Monitor, Keyboard, Mouse, Headphones, ShieldCheck, CheckCircle2, Gauge, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, cn } from "@/lib/utils";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
@@ -16,7 +16,8 @@ import { Resolution, WorkloadType } from "@/lib/types";
 
 import Link from "next/link";
 import { processCheckout } from "@/app/checkout-actions";
-import { useUser } from "@/firebase";
+import { useUser, useFirestore, useDoc } from "@/firebase";
+import { doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { OrderItem } from "@/lib/types";
 import { calculateBottleneck } from "@/lib/bottleneck";
@@ -102,6 +103,16 @@ export function YourBuild({
     const [isCheckingOut, setIsCheckingOut] = useState(false);
     const [showLocalAiProgress, setShowLocalAiProgress] = useState(false);
     const [aiPhase, setAiPhase] = useState<ProgressPhase>('init');
+    const [showAccessories, setShowAccessories] = useState(false);
+
+    const firestore = useFirestore();
+    const settingsDocRef = useMemo(() => {
+        if (firestore) return doc(firestore, 'siteSettings', 'main');
+        return null;
+    }, [firestore]);
+    const { data: settings } = useDoc<any>(settingsDocRef);
+    const isAiKillSwitch = settings?.isAiKillSwitch || false;
+
     const user = useUser();
     const { toast } = useToast();
 
@@ -115,6 +126,15 @@ export function YourBuild({
 
     const handleAddPrebuiltWithAi = () => {
         if (!onAddPrebuilt) return;
+
+        if (isAiKillSwitch) {
+            toast({
+                title: "AI Disabled",
+                description: "AI is disable by Administrator.",
+                variant: "destructive"
+            });
+            return;
+        }
 
         // Show modal immediately with init phase
         setAiPhase('init');
@@ -257,6 +277,15 @@ export function YourBuild({
     };
 
     const handleAnalyze = async () => {
+        if (isAiKillSwitch) {
+            toast({
+                title: "AI Disabled",
+                description: "AI is disable by Administrator.",
+                variant: "destructive"
+            });
+            return;
+        }
+
         if (onAnalyze) {
             onAnalyze();
             return;
@@ -410,15 +439,24 @@ export function YourBuild({
                             );
                         })}
 
-                        <div className="pt-4 pb-2">
+                        <div 
+                            className="pt-4 pb-2 cursor-pointer group/acc"
+                            onClick={() => setShowAccessories(!showAccessories)}
+                        >
                             <div className="flex items-center gap-2">
-                                <Separator className="flex-1 opacity-30" />
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] whitespace-nowrap">Accessories</span>
-                                <Separator className="flex-1 opacity-30" />
+                                <Separator className="flex-1 opacity-30 group-hover/acc:opacity-50 transition-opacity" />
+                                <div className="flex items-center gap-2 px-2">
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] whitespace-nowrap group-hover/acc:text-primary transition-colors">Accessories</span>
+                                    <ChevronDown className={cn(
+                                        "w-3 h-3 text-muted-foreground transition-transform duration-300 group-hover/acc:text-primary",
+                                        showAccessories && "rotate-180"
+                                    )} />
+                                </div>
+                                <Separator className="flex-1 opacity-30 group-hover/acc:opacity-50 transition-opacity" />
                             </div>
                         </div>
 
-                        {['Monitor', 'Keyboard', 'Mouse', 'Headset'].map((name) => {
+                        {showAccessories && ['Monitor', 'Keyboard', 'Mouse', 'Headset'].map((name) => {
                             const component = build[name];
                             const Icon = componentIcons[name.toLowerCase()] || Monitor;
 

@@ -14,6 +14,7 @@ import { useTheme } from '@/context/theme-provider';
 import { useLoading } from '@/context/loading-context';
 import { cn } from '@/lib/utils';
 import { FullPageLoader } from '@/components/full-page-loader';
+import { CanvasText } from '@/components/ui/canvas-text';
 
 export default function StartPage() {
   const { theme } = useTheme();
@@ -53,9 +54,9 @@ export default function StartPage() {
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Full Screen Background Image */}
         <div className="absolute inset-0 z-0">
-          <img 
-            src="/hero-custom.webp" 
-            alt="BuildbotAI Custom Rig" 
+          <img
+            src="/hero-custom.webp"
+            alt="BuildbotAI Custom Rig"
             className="w-full h-full object-cover opacity-70"
           />
           {/* Dark Gradients for Text Readability */}
@@ -66,11 +67,11 @@ export default function StartPage() {
         {/* Animated Background Elements */}
         <div className={cn(
           "absolute inset-0 opacity-30 z-0",
-          isDark 
-            ? "bg-[radial-gradient(circle_at_30%_50%,rgba(34,211,238,0.15),transparent_50%)]" 
+          isDark
+            ? "bg-[radial-gradient(circle_at_30%_50%,rgba(34,211,238,0.15),transparent_50%)]"
             : "bg-[radial-gradient(circle_at_30%_50%,rgba(59,130,246,0.1),transparent_50%)]"
         )} />
-        
+
         {/* Circuit Pattern Background (Simulated with CSS) */}
         <div className={cn(
           "absolute inset-0 opacity-[0.05] pointer-events-none z-0",
@@ -89,8 +90,8 @@ export default function StartPage() {
               <div className="flex items-center gap-3 mb-8">
                 <div className="h-px w-12 bg-primary" />
                 <div className={cn(
-                    "inline-flex items-center rounded-full border px-6 py-2.5 text-[10px] font-black tracking-[0.5em] uppercase backdrop-blur-md",
-                    isDark ? "bg-primary/10 border-primary/30 text-primary" : "bg-primary/5 border-primary/20 text-primary shadow-sm"
+                  "inline-flex items-center rounded-full border px-6 py-2.5 text-[10px] font-black tracking-[0.5em] uppercase backdrop-blur-md",
+                  isDark ? "bg-primary/10 border-primary/30 text-primary" : "bg-primary/5 border-primary/20 text-primary shadow-sm"
                 )}>
                   <Sparkles className="mr-3 h-4 w-4 animate-pulse" />
                   Neural PC Architect v2.0
@@ -98,16 +99,18 @@ export default function StartPage() {
               </div>
 
               <h1 className="font-headline text-4xl sm:text-6xl md:text-8xl lg:text-[10rem] font-black tracking-tighter mb-8 md:mb-10 leading-[0.9] md:leading-[0.8] uppercase">
-                Build Your <br /> 
-                <span className="text-primary italic relative inline-block">
-                  Masterpiece
-                  <motion.div 
-                    className="absolute -bottom-1 md:-bottom-2 left-0 h-0.5 md:h-1 bg-primary"
-                    initial={{ width: 0 }}
-                    animate={{ width: "100%" }}
-                    transition={{ delay: 1, duration: 0.8 }}
-                  />
-                </span> <br className="hidden sm:block" /> 
+                Build Your <br />
+                <CanvasText
+                  text="MASTERPIECE"
+                  className="italic text-primary font-headline"
+                  backgroundClassName="bg-blue-600 dark:bg-blue-900"
+                  colors={[
+                    "rgba(34, 211, 238, 1)", // Cyan
+                  ]}
+                  animationDuration={12}
+                  lineGap={5}
+                  curveIntensity={35}
+                /><br className="hidden sm:block" />
                 With <span className={isDark ? "text-foreground" : "text-slate-900"}>AI</span>
               </h1>
 
@@ -202,8 +205,8 @@ export default function StartPage() {
 
       {/* Feature Showcase Section */}
       <section className={cn(
-          "py-32 relative transition-colors duration-500",
-          isDark ? "bg-background" : "bg-white"
+        "py-32 relative transition-colors duration-500",
+        isDark ? "bg-background" : "bg-white"
       )}>
         <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8">
           <SectionHeader
@@ -218,10 +221,10 @@ export default function StartPage() {
             description="Shift between 1080p, 1440p, and 4K workload projections. Our AI analyzes the compute tier of your CPU vs your GPU to warn you if components will choke performance before you spend a dime."
             visual={
               <div className="relative w-full h-full overflow-hidden group">
-                <img 
-                  src="/feature-1.webp" 
-                  alt="Neural Bottleneck Analysis" 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                <img
+                  src="/feature-1.webp"
+                  alt="Neural Bottleneck Analysis"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
                 <div className="absolute inset-0 flex flex-col justify-end p-8 gap-4">
@@ -232,37 +235,37 @@ export default function StartPage() {
                     </div>
                     <Zap className="w-5 h-5 text-primary animate-pulse" />
                   </div>
-                  
-                  <div className="space-y-3">
-                      <div className="space-y-1.5">
-                          <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-white/80">
-                              <span>Compute Unit Utilization</span>
-                              <span className="text-primary">98% PEAK</span>
-                          </div>
-                          <div className="h-1.5 w-full bg-primary/20 rounded-full overflow-hidden backdrop-blur-sm">
-                              <motion.div
-                                  className="h-full bg-primary shadow-[0_0_10px_rgba(34,211,238,0.5)]"
-                                  initial={{ width: 0 }}
-                                  whileInView={{ width: "98%" }}
-                                  transition={{ duration: 1.5, delay: 0.5 }}
-                              />
-                          </div>
-                      </div>
 
-                      <div className="space-y-1.5">
-                          <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-white/80">
-                              <span>Graphics Throughput</span>
-                              <span className="text-purple-400">100% MAXIMUM</span>
-                          </div>
-                          <div className="h-1.5 w-full bg-purple-500/20 rounded-full overflow-hidden backdrop-blur-sm">
-                              <motion.div
-                                  className="h-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]"
-                                  initial={{ width: 0 }}
-                                  whileInView={{ width: "100%" }}
-                                  transition={{ duration: 1.5, delay: 0.7 }}
-                              />
-                          </div>
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-white/80">
+                        <span>Compute Unit Utilization</span>
+                        <span className="text-primary">98% PEAK</span>
                       </div>
+                      <div className="h-1.5 w-full bg-primary/20 rounded-full overflow-hidden backdrop-blur-sm">
+                        <motion.div
+                          className="h-full bg-primary shadow-[0_0_10px_rgba(34,211,238,0.5)]"
+                          initial={{ width: 0 }}
+                          whileInView={{ width: "98%" }}
+                          transition={{ duration: 1.5, delay: 0.5 }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-white/80">
+                        <span>Graphics Throughput</span>
+                        <span className="text-purple-400">100% MAXIMUM</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-purple-500/20 rounded-full overflow-hidden backdrop-blur-sm">
+                        <motion.div
+                          className="h-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]"
+                          initial={{ width: 0 }}
+                          whileInView={{ width: "100%" }}
+                          transition={{ duration: 1.5, delay: 0.7 }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -274,16 +277,16 @@ export default function StartPage() {
             description="Not sure if a specific AIO is overkill for your CPU? Our Buildbot Critique analyzes your entire hardware selection for value, thermal efficiency, and generational compatibility, providing professional feedback on every choice."
             visual={
               <div className="relative w-full h-full overflow-hidden group">
-                <img 
-                  src="/feature-2.webp" 
-                  alt="Buildbot Build Critique" 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                <img
+                  src="/feature-2.webp"
+                  alt="Buildbot Build Critique"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-l from-background/90 via-background/20 to-transparent" />
                 <div className="absolute inset-0 flex items-center justify-end p-8">
                   <div className={cn(
-                      "rounded-2xl p-6 w-full max-w-sm border relative overflow-hidden backdrop-blur-xl",
-                      isDark ? "bg-slate-900/40 border-primary/20" : "bg-white/80 border-primary/20 shadow-xl"
+                    "rounded-2xl p-6 w-full max-w-sm border relative overflow-hidden backdrop-blur-xl",
+                    isDark ? "bg-slate-900/40 border-primary/20" : "bg-white/80 border-primary/20 shadow-xl"
                   )}>
                     <div className="absolute top-0 right-0 p-2 opacity-10">
                       <Sparkles className="w-12 h-12 text-primary" />
@@ -293,8 +296,8 @@ export default function StartPage() {
                       <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Buildbot Intelligence Matrix</span>
                     </div>
                     <p className={cn(
-                        "text-sm leading-relaxed font-body italic",
-                        isDark ? "text-slate-200" : "text-slate-700"
+                      "text-sm leading-relaxed font-body italic",
+                      isDark ? "text-slate-200" : "text-slate-700"
                     )}>
                       "Architectural Scan Complete: The Ryzen 7 7800X3D choice is optimal. However, the 360mm AIO exceeds thermal requirements. Consider a 240mm unit to reallocate $45 towards faster NVMe..."
                     </p>
@@ -310,41 +313,41 @@ export default function StartPage() {
             description="Tell Buildbot your budget, favorite games, and performance goals. Within seconds, our neural engine architects a complete, perfectly matched build from our live inventory—zero research required."
             visual={
               <div className="relative w-full h-full overflow-hidden group">
-                <img 
-                  src="/feature-3.webp" 
-                  alt="Instant AI Build Generation" 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                <img
+                  src="/feature-3.webp"
+                  alt="Instant AI Build Generation"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-l from-background/80 via-transparent to-transparent" />
                 <div className="absolute inset-0 flex flex-col justify-center p-8 gap-3 items-end">
-                    <div className="flex items-center gap-3 mb-2">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Neural Architect Stream</span>
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 backdrop-blur-md">
-                            <Bot className="w-4 h-4 text-primary" />
-                        </div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Neural Architect Stream</span>
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 backdrop-blur-md">
+                      <Bot className="w-4 h-4 text-primary" />
                     </div>
-                    
-                    <div className="space-y-3 w-full max-w-[280px]">
-                        {[
-                            { text: "Scanning GPU market...", icon: CheckCircle2, color: "text-emerald-500" },
-                            { text: "Socket match: VERIFIED", icon: ShieldCheck, color: "text-blue-500" },
-                            { text: "Optimizing DDR5 Latency", icon: Zap, color: "text-purple-400" }
-                        ].map((item, i) => (
-                            <motion.div 
-                                key={i}
-                                initial={{ opacity: 0, x: 20 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.2 * i }}
-                                className={cn(
-                                    "p-3 rounded-xl border flex items-center gap-3 glass-panel backdrop-blur-xl",
-                                    isDark ? "bg-white/5 border-white/10" : "bg-muted/40 border-border"
-                                )}
-                            >
-                                <item.icon className={cn("w-4 h-4", item.color)} />
-                                <span className="text-[9px] font-bold uppercase tracking-widest opacity-90">{item.text}</span>
-                            </motion.div>
-                        ))}
-                    </div>
+                  </div>
+
+                  <div className="space-y-3 w-full max-w-[280px]">
+                    {[
+                      { text: "Scanning GPU market...", icon: CheckCircle2, color: "text-emerald-500" },
+                      { text: "Socket match: VERIFIED", icon: ShieldCheck, color: "text-blue-500" },
+                      { text: "Optimizing DDR5 Latency", icon: Zap, color: "text-purple-400" }
+                    ].map((item, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: 20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 * i }}
+                        className={cn(
+                          "p-3 rounded-xl border flex items-center gap-3 glass-panel backdrop-blur-xl",
+                          isDark ? "bg-white/5 border-white/10" : "bg-muted/40 border-border"
+                        )}
+                      >
+                        <item.icon className={cn("w-4 h-4", item.color)} />
+                        <span className="text-[9px] font-bold uppercase tracking-widest opacity-90">{item.text}</span>
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
               </div>
             }
@@ -357,8 +360,8 @@ export default function StartPage() {
 
       {/* New: Pre-builts & Accessories */}
       <section className={cn(
-          "py-32 relative border-y transition-colors duration-500",
-          isDark ? "bg-background border-border/20" : "bg-muted/10 border-border/40"
+        "py-32 relative border-y transition-colors duration-500",
+        isDark ? "bg-background border-border/20" : "bg-muted/10 border-border/40"
       )}>
         <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8">
           <SectionHeader
@@ -371,8 +374,8 @@ export default function StartPage() {
             <motion.div
               whileHover={{ y: -8 }}
               className={cn(
-                  "p-10 rounded-[40px] flex flex-col gap-8 group transition-all duration-500 relative overflow-hidden glass-panel",
-                  isDark ? "shadow-none hover:border-primary/40" : "hover:border-primary/30 shadow-xl shadow-foreground/5"
+                "p-10 rounded-[40px] flex flex-col gap-8 group transition-all duration-500 relative overflow-hidden glass-panel",
+                isDark ? "shadow-none hover:border-primary/40" : "hover:border-primary/30 shadow-xl shadow-foreground/5"
               )}
             >
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-primary/50 to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -382,7 +385,7 @@ export default function StartPage() {
               <div>
                 <h4 className="text-3xl font-bold font-headline uppercase tracking-tight mb-3">Battle-Ready Rigs</h4>
                 <p className={cn("text-lg font-body leading-relaxed", isDark ? "text-slate-400" : "text-slate-600")}>
-                    Professionally curated systems, built by experts using our AI validation tools. Guaranteed performance deployment.
+                  Professionally curated systems, built by experts using our AI validation tools. Guaranteed performance deployment.
                 </p>
               </div>
               <Button asChild variant="link" className="text-primary p-0 h-auto justify-start w-fit group/btn text-sm font-black uppercase tracking-widest">
@@ -406,7 +409,7 @@ export default function StartPage() {
               <div>
                 <h4 className="text-3xl font-bold font-headline uppercase tracking-tight mb-3">Total Command setup</h4>
                 <p className={cn("text-lg font-body leading-relaxed", isDark ? "text-slate-400" : "text-slate-600")}>
-                    Beyond the tower. Buildbot helps you synchronize the perfect Monitor, Keyboard, and Headset ecosystem.
+                  Beyond the tower. Buildbot helps you synchronize the perfect Monitor, Keyboard, and Headset ecosystem.
                 </p>
               </div>
               <Button asChild variant="link" className="text-purple-400 p-0 h-auto justify-start w-fit group/btn text-sm font-black uppercase tracking-widest">
@@ -421,15 +424,15 @@ export default function StartPage() {
 
       {/* CTA Footer Section */}
       <section className={cn(
-          "py-40 relative overflow-hidden transition-colors duration-500",
-          isDark ? "bg-background" : "bg-slate-50"
+        "py-40 relative overflow-hidden transition-colors duration-500",
+        isDark ? "bg-background" : "bg-slate-50"
       )}>
         {/* Decorative Grid for CTA */}
         <div className={cn(
           "absolute inset-0 opacity-[0.03] pointer-events-none",
           isDark ? "invert" : ""
         )} style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-        
+
         <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8 text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -437,37 +440,48 @@ export default function StartPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-5xl md:text-8xl font-black font-headline mb-10 uppercase tracking-tighter leading-none">
-                Ready to Build Your <br />
-                <span className="text-primary italic">Endgame</span> Architecture?
+            <h2 className="text-5xl md:text-8xl font-black font-headline mb-10 uppercase tracking-tighter leading-none flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+              <span className="w-full">Ready to Build Your</span>
+              <CanvasText
+                text="ENDGAME"
+                className="italic text-primary font-headline"
+                backgroundClassName="bg-blue-600 dark:bg-blue-900"
+                colors={[
+                  "rgba(34, 211, 238, 1)", // Cyan
+                ]}
+                animationDuration={12}
+                lineGap={5}
+                curveIntensity={35}
+              />{" "}
+              Architecture?
             </h2>
             <p className={cn(
-                "text-xl md:text-2xl mb-16 max-w-3xl mx-auto font-medium leading-relaxed",
-                isDark ? "text-slate-400" : "text-slate-600"
+              "text-xl md:text-2xl mb-16 max-w-3xl mx-auto font-medium leading-relaxed",
+              isDark ? "text-slate-400" : "text-slate-600"
             )}>
-                Initialize the Neural PC Architect and begin crafting your perfectly optimized, high-performance machine today.
+              Initialize the Neural PC Architect and begin crafting your perfectly optimized, high-performance machine today.
             </p>
             <div className="flex flex-col items-center gap-12">
-                <Button asChild size="lg" className="w-full sm:w-auto h-16 md:h-20 px-8 md:px-16 text-lg md:text-2xl rounded-2xl md:rounded-3xl font-black uppercase tracking-widest shadow-[0_20px_50px_rgba(34,211,238,0.3)] transition-all hover:scale-[1.05] active:scale-[0.95] bg-primary hover:bg-primary/90 text-white border-none">
-                  <Link href="/signin">Launch Architect Matrix</Link>
-                </Button>
-                
-                <div className="flex items-center gap-12 flex-wrap justify-center opacity-60">
+              <Button asChild size="lg" className="w-full sm:w-auto h-16 md:h-20 px-8 md:px-16 text-lg md:text-2xl rounded-2xl md:rounded-3xl font-black uppercase tracking-widest shadow-[0_20px_50px_rgba(34,211,238,0.3)] transition-all hover:scale-[1.05] active:scale-[0.95] bg-primary hover:bg-primary/90 text-white border-none">
+                <Link href="/signin">Launch Architect Matrix</Link>
+              </Button>
+
+              <div className="flex items-center gap-12 flex-wrap justify-center opacity-60">
                 <div className="flex flex-col items-center gap-2">
-                    <span className="text-3xl font-black font-headline tracking-tight">PRECISION</span>
-                    <span className="text-[9px] text-muted-foreground uppercase font-black tracking-[0.3em]">Part Matching</span>
+                  <span className="text-3xl font-black font-headline tracking-tight">PRECISION</span>
+                  <span className="text-[9px] text-muted-foreground uppercase font-black tracking-[0.3em]">Part Matching</span>
                 </div>
                 <div className="w-px h-12 bg-border hidden md:block" />
                 <div className="flex flex-col items-center gap-2">
-                    <span className="text-3xl font-black font-headline tracking-tight">NEURAL</span>
-                    <span className="text-[9px] text-muted-foreground uppercase font-black tracking-[0.3em]">AI Validation</span>
+                  <span className="text-3xl font-black font-headline tracking-tight">NEURAL</span>
+                  <span className="text-[9px] text-muted-foreground uppercase font-black tracking-[0.3em]">AI Validation</span>
                 </div>
                 <div className="w-px h-12 bg-border hidden md:block" />
                 <div className="flex flex-col items-center gap-2">
-                    <span className="text-3xl font-black font-headline tracking-tight">NEXT-GEN</span>
-                    <span className="text-[9px] text-muted-foreground uppercase font-black tracking-[0.3em]">UI Experience</span>
+                  <span className="text-3xl font-black font-headline tracking-tight">NEXT-GEN</span>
+                  <span className="text-[9px] text-muted-foreground uppercase font-black tracking-[0.3em]">UI Experience</span>
                 </div>
-                </div>
+              </div>
             </div>
           </motion.div>
         </div>
