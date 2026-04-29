@@ -15,6 +15,7 @@ import { useLoading } from '@/context/loading-context';
 import { cn } from '@/lib/utils';
 import { FullPageLoader } from '@/components/full-page-loader';
 import { CanvasText } from '@/components/ui/canvas-text';
+import { SparkleButton } from '@/components/ui/sparkle-button';
 
 export default function StartPage() {
   const { theme } = useTheme();
@@ -127,16 +128,15 @@ export default function StartPage() {
                     Initialize Builder <LayoutPanelLeft className="w-5 h-5 md:w-6 md:h-6" />
                   </Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className={cn(
-                  "w-full sm:w-auto h-16 md:h-20 px-8 md:px-12 text-[10px] md:text-[12px] uppercase tracking-[0.3em] md:tracking-[0.4em] rounded-xl md:rounded-2xl font-black border-2 transition-all hover:scale-[1.05] active:scale-[0.95] backdrop-blur-xl relative overflow-hidden group/advisor",
-                  isDark ? "bg-white/5 border-white/20 text-white hover:bg-white/10" : "bg-muted/40 border-border text-foreground hover:bg-muted/60"
-                )}>
-                  <Link href="/signin" className="flex items-center gap-3">
-                    <Zap className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                    AI Advisor
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent -translate-x-full group-hover/advisor:translate-x-full transition-transform duration-1000" />
+                <SparkleButton 
+                  asChild 
+                  className="w-full sm:w-auto h-16 md:h-20 px-8 md:px-12 text-sm md:text-base uppercase tracking-[0.3em] md:tracking-[0.4em] rounded-xl md:rounded-2xl font-black transition-all hover:scale-[1.05] active:scale-[0.95]"
+                  icon={<Sparkles className="w-4 h-4 md:w-5 md:h-5 text-primary" />}
+                >
+                  <Link href="/signin">
+                    AI ADVISOR
                   </Link>
-                </Button>
+                </SparkleButton>
               </div>
             </motion.div>
 
@@ -462,9 +462,13 @@ export default function StartPage() {
               Initialize the Neural PC Architect and begin crafting your perfectly optimized, high-performance machine today.
             </p>
             <div className="flex flex-col items-center gap-12">
-              <Button asChild size="lg" className="w-full sm:w-auto h-16 md:h-20 px-8 md:px-16 text-lg md:text-2xl rounded-2xl md:rounded-3xl font-black uppercase tracking-widest shadow-[0_20px_50px_rgba(34,211,238,0.3)] transition-all hover:scale-[1.05] active:scale-[0.95] bg-primary hover:bg-primary/90 text-white border-none">
-                <Link href="/signin">Launch Architect Matrix</Link>
-              </Button>
+              <SparkleButton 
+                asChild
+                icon={<Sparkles className="w-5 h-5 md:w-8 md:h-8 text-primary" />}
+                className="w-full sm:w-auto h-16 md:h-20 px-8 md:px-16 text-xl md:text-3xl rounded-2xl md:rounded-3xl font-black transition-all hover:scale-[1.05] active:scale-[0.95]"
+              >
+                <Link href="/signin">LAUNCH ARCHITECT MATRIX</Link>
+              </SparkleButton>
 
               <div className="flex items-center gap-12 flex-wrap justify-center opacity-60">
                 <div className="flex flex-col items-center gap-2">

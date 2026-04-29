@@ -36,6 +36,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+import { SparkleButton } from "@/components/ui/sparkle-button";
+
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
@@ -95,9 +97,16 @@ export function Header() {
       <div className="flex h-16 max-w-[1800px] w-full mx-auto items-center px-4 md:px-12">
         {/* Left: Logo */}
         <div className="flex-none">
-          <Link href={authUser ? (profile?.isManager ? "/admin" : "/builder") : "/"} className="flex items-center">
-            <Logo />
-          </Link>
+          <SparkleButton
+            asChild
+            pill
+            className="p-1 px-4 border-none bg-transparent hover:bg-white/5 shadow-none"
+            sparkleColor="#06b6d4"
+          >
+            <Link href={authUser ? (profile?.isManager ? "/admin" : "/builder") : "/"} className="flex items-center">
+              <Logo />
+            </Link>
+          </SparkleButton>
         </div>
 
         {/* Center: Animated Navigation */}

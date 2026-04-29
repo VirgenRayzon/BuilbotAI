@@ -534,7 +534,8 @@ export function YourBuild({
                     {!isManagerMode && (
                         hasAnalysis ? (
                             <SparkleButton
-                                className="w-full h-12"
+                                icon={<Sparkles className="h-4 w-4" />}
+                                className="w-full h-12 text-xs font-black uppercase tracking-widest"
                                 disabled={selectedParts === 0}
                                 onClick={() => {
                                     if (onAnalyze) {
@@ -544,12 +545,12 @@ export function YourBuild({
                                     }
                                 }}
                             >
-                                <Sparkles className="h-4 w-4 mr-2" />
-                                Refresh Analysis
+                                REFRESH ANALYSIS
                             </SparkleButton>
                         ) : (
                             <SparkleButton
-                                className="w-full h-12"
+                                icon={<Sparkles className="h-4 w-4" />}
+                                className="w-full h-12 text-xs font-black uppercase tracking-widest"
                                 disabled={selectedParts === 0}
                                 onClick={() => {
                                     if (onAnalyze) {
@@ -559,8 +560,7 @@ export function YourBuild({
                                     }
                                 }}
                             >
-                                <Sparkles className="h-4 w-4 mr-2" />
-                                Analyze Build
+                                ANALYZE BUILD
                             </SparkleButton>
                         )
                     )}
@@ -572,13 +572,13 @@ export function YourBuild({
 
                     {isManagerMode ? (
                         <SparkleButton
-                            className="w-full h-12"
+                            className="w-full h-12 text-xs font-black uppercase tracking-widest"
                             disabled={!isBuildComplete || isAiPending}
                             onClick={handleAddPrebuiltWithAi}
                             isLoading={isAiPending}
                             icon={<Sparkles className="h-4 w-4" />}
                         >
-                            {isAiPending ? "Generating Identity..." : "Add New Prebuilt"}
+                            {isAiPending ? "GENERATING IDENTITY..." : "ADD NEW PREBUILT"}
                         </SparkleButton>
                     ) : (
                         <Dialog open={isCheckoutDialogOpen} onOpenChange={setIsCheckoutDialogOpen}>

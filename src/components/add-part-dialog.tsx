@@ -490,9 +490,10 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
               type="button"
               onClick={handleGetAiDetails}
               isLoading={isAiPending}
-              className="h-11 px-6 shadow-lg transition-all duration-300"
+              icon={<Sparkles className="h-4 w-4" />}
+              className="h-11 px-6 shadow-lg transition-all duration-300 text-xs font-black uppercase tracking-widest"
             >
-              AI Autofill
+              AI AUTOFILL
             </SparkleButton>
           </div>
         </DialogHeader>

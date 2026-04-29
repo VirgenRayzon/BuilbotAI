@@ -4,13 +4,13 @@ import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { 
-  ChevronDown, 
-  Search, 
-  Cpu, 
-  ShieldCheck, 
-  Truck, 
-  CreditCard, 
+import {
+  ChevronDown,
+  Search,
+  Cpu,
+  ShieldCheck,
+  Truck,
+  CreditCard,
   MessageSquare,
   HelpCircle
 } from "lucide-react";
@@ -22,15 +22,15 @@ const faqData = [
     questions: [
       {
         question: "How does the AI PC Builder work?",
-        answer: "Our Neural PC Architect uses advanced machine learning models trained on thousands of hardware benchmarks and compatibility databases. It analyzes your performance goals, budget, and aesthetic preferences to synthesize the most optimized parts list possible, checking for bottlenecks and physical clearance in real-time."
+        answer: "Our Project BuildbotAI uses AI models trained on thousands of hardware combinations and compatibility databases. It analyzes your performance goals and budget to synthesize the most optimized parts list possible, checking for bottlenecks in real-time."
       },
       {
         question: "What is 'Bottleneck Analysis'?",
-        answer: "Bottleneck Analysis is our proprietary diagnostic tool that identifies if any single component (usually the CPU or GPU) is significantly limiting the performance of the rest of the system. We provide a percentage-based impact score to help you balance your build."
+        answer: "Bottleneck Analysis is our tool that identifies if any single component (usually the CPU or GPU) is significantly limiting the performance of the rest of the system. We provide a percentage-based impact score to help you balance your build."
       },
       {
         question: "Can I customize the AI-generated builds?",
-        answer: "Absolutely. The AI provides a 'gold standard' starting point. You can swap any component, and the AI will re-validate the entire system's compatibility and performance metrics instantly."
+        answer: "Absolutely. The AI provides a good starting point. You can swap any component, and the AI will re-validate the entire system's compatibility and performance metrics instantly."
       }
     ]
   },
@@ -44,7 +44,7 @@ const faqData = [
       },
       {
         question: "Do you ship internationally?",
-        answer: "Currently, we ship to North America, Europe, and select regions in Asia. Shipping costs and import duties vary by location and will be calculated at checkout."
+        answer: "Currently, we do not ship internationally. We only ship inside the Philippines"
       },
       {
         question: "How can I track my order?",
@@ -66,7 +66,7 @@ const faqData = [
       },
       {
         question: "How do I get technical support?",
-        answer: "Our support matrix is available 24/7. You can reach us via the live chat on our site, through the 'Support' ticket system in your dashboard, or by emailing support@buildbot.ai."
+        answer: "Our AI chatbot is available 24/7. You can reach us via the live chat on our site, through the 'Support' ticket system in your dashboard, or by emailing support@buildbot.ai."
       }
     ]
   }
@@ -82,7 +82,7 @@ export default function FAQPage() {
 
   const filteredFaq = faqData.map(category => ({
     ...category,
-    questions: category.questions.filter(q => 
+    questions: category.questions.filter(q =>
       q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
       q.answer.toLowerCase().includes(searchQuery.toLowerCase())
     )
@@ -105,7 +105,7 @@ export default function FAQPage() {
             <HelpCircle className="w-3.5 h-3.5" />
             Knowledge Base
           </motion.div>
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -113,7 +113,7 @@ export default function FAQPage() {
           >
             Frequently Asked <span className="text-primary">Questions</span>
           </motion.h1>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -124,15 +124,15 @@ export default function FAQPage() {
         </div>
 
         {/* Search */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3 }}
           className="relative mb-16"
         >
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Search the neural database..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -144,7 +144,7 @@ export default function FAQPage() {
         <div className="space-y-12">
           {filteredFaq.length > 0 ? (
             filteredFaq.map((cat, catIndex) => (
-              <motion.div 
+              <motion.div
                 key={cat.category}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -163,14 +163,14 @@ export default function FAQPage() {
                     const isOpen = openIndex === id;
 
                     return (
-                      <div 
+                      <div
                         key={id}
                         className={cn(
                           "group border border-border/50 rounded-2xl overflow-hidden transition-all duration-300",
                           isOpen ? "bg-muted/30 border-primary/30" : "hover:border-primary/20 hover:bg-muted/10"
                         )}
                       >
-                        <button 
+                        <button
                           onClick={() => toggleAccordion(id)}
                           className="w-full text-left px-8 py-6 flex items-center justify-between gap-4"
                         >
@@ -204,7 +204,7 @@ export default function FAQPage() {
         </div>
 
         {/* Footer CTA */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}

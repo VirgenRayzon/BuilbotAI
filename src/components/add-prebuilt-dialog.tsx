@@ -411,9 +411,10 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                             type="button"
                             onClick={handleAiAssist}
                             isLoading={isAiPending}
-                            className="h-11 px-6 shadow-lg transition-all duration-300"
+                            icon={<Sparkles className="h-4 w-4" />}
+                            className="h-11 px-6 shadow-lg transition-all duration-300 text-xs font-black uppercase tracking-widest"
                         >
-                            AI Assist
+                            AI ASSIST
                         </SparkleButton>
                     </div>
                 </DialogHeader>

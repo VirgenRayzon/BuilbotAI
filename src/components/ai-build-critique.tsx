@@ -203,8 +203,12 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                             </p>
                         </div>
                         {!isControlled && (
-                            <SparkleButton onClick={handleAnalyze} className="mt-6 px-10">
-                                Analyze My Build
+                            <SparkleButton 
+                                onClick={handleAnalyze} 
+                                icon={<Sparkles className="h-4 w-4" />}
+                                className="mt-6 px-10 text-xs font-black uppercase tracking-widest"
+                            >
+                                ANALYZE MY BUILD
                             </SparkleButton>
                         )}
                     </div>
