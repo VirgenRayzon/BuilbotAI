@@ -8,9 +8,9 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-background border-t border-border mt-32 font-body relative overflow-hidden">
+    <footer className="relative overflow-hidden transition-colors duration-1000 mt-32 font-body">
       {/* Decorative top bar */}
-      <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent z-20"></div>
+      <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent z-20"></div>
 
       <div className="max-w-[1800px] w-full mx-auto pt-24 pb-12 px-4 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-24">
@@ -37,22 +37,22 @@ export function Footer() {
 
           {/* Links Columns - Now on the Right */}
           <div className="col-span-1 md:col-span-2 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground/50">Platform</h3>
+            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-primary font-headline">Platform</h3>
             <nav className="flex flex-col gap-2">
-              <Link href="/builder" className="text-sm text-muted-foreground hover:text-primary transition-colors">Builder</Link>
-              <Link href="/pre-builts" className="text-sm text-muted-foreground hover:text-primary transition-colors">Pre-builts</Link>
-              <Link href="/ai-build-advisor" className="text-sm text-muted-foreground hover:text-primary transition-colors">AI Advisor</Link>
-              <Link href="/admin" className="text-sm text-muted-foreground hover:text-primary transition-colors">Inventory</Link>
+              <Link href="/builder" className="text-sm text-muted-foreground/80 font-medium hover:text-primary transition-colors">Builder</Link>
+              <Link href="/pre-builts" className="text-sm text-muted-foreground/80 font-medium hover:text-primary transition-colors">Pre-builts</Link>
+              <Link href="/ai-build-advisor" className="text-sm text-muted-foreground/80 font-medium hover:text-primary transition-colors">AI Advisor</Link>
+              <Link href="/admin" className="text-sm text-muted-foreground/80 font-medium hover:text-primary transition-colors">Inventory</Link>
             </nav>
           </div>
 
           <div className="col-span-1 md:col-span-2 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground/50">Support</h3>
+            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-primary font-headline">Support</h3>
             <nav className="flex flex-col gap-2">
-              <Link href="/faq" className="text-sm text-muted-foreground hover:text-primary transition-colors">FAQ</Link>
-              <Link href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Guides</Link>
-              <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">About</Link>
-              <Link href="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">Contact</Link>
+              <Link href="/faq" className="text-sm text-muted-foreground/80 font-medium hover:text-primary transition-colors">FAQ</Link>
+              <Link href="#" className="text-sm text-muted-foreground/80 font-medium hover:text-primary transition-colors">Guides</Link>
+              <Link href="/about" className="text-sm text-muted-foreground/80 font-medium hover:text-primary transition-colors">About</Link>
+              <Link href="/contact" className="text-sm text-muted-foreground/80 font-medium hover:text-primary transition-colors">Contact</Link>
             </nav>
           </div>
         </div>
@@ -72,7 +72,7 @@ export function Footer() {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ delay: 0.5, duration: 1 }}
-              className="text-[2vw] md:text-[1.5vw] font-bold uppercase tracking-[0.5em] text-primary/40 text-center"
+              className="text-[2vw] md:text-[1.5vw] font-black font-headline uppercase tracking-[0.6em] text-primary/40 text-center"
             >
               Next-Gen PC Synthesis
             </motion.p>
@@ -90,9 +90,6 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Background Decorative Element */}
-      <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
-      <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-purple-500/5 rounded-full blur-[100px] pointer-events-none"></div>
     </footer>
   );
 }

@@ -54,21 +54,7 @@ export function TeamSection() {
   const isDark = theme === 'dark';
 
   return (
-    <section className={cn(
-      "py-32 relative overflow-hidden transition-colors duration-500",
-      isDark ? "bg-background" : "bg-white"
-    )}>
-      {/* Background decoration */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none z-0 overflow-hidden">
-        <div className={cn(
-          "absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full blur-[120px] opacity-20",
-          isDark ? "bg-primary" : "bg-primary/30"
-        )} />
-        <div className={cn(
-          "absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full blur-[120px] opacity-20",
-          isDark ? "bg-purple-500" : "bg-purple-500/30"
-        )} />
-      </div>
+    <section className="py-32 relative overflow-hidden transition-colors duration-1000">
 
       <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8 relative z-10">
         <SectionHeader

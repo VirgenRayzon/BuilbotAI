@@ -17,6 +17,7 @@ import { FullPageLoader } from '@/components/full-page-loader';
 import { CanvasText } from '@/components/ui/canvas-text';
 import { SparkleButton } from '@/components/ui/sparkle-button';
 import { TeamSection } from '@/components/landing/team-section';
+import { UnifiedBackground } from '@/components/landing/unified-background';
 
 export default function StartPage() {
   const { theme } = useTheme();
@@ -48,9 +49,10 @@ export default function StartPage() {
 
   return (
     <div className={cn(
-      "min-h-screen transition-colors duration-500 overflow-x-hidden",
-      isDark ? "bg-background text-foreground" : "bg-white text-slate-900"
+      "relative min-h-screen transition-colors duration-1000 selection:bg-primary/30 selection:text-primary",
+      isDark ? "text-foreground" : "text-slate-900"
     )}>
+      <UnifiedBackground />
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -74,11 +76,7 @@ export default function StartPage() {
             : "bg-[radial-gradient(circle_at_30%_50%,rgba(59,130,246,0.1),transparent_50%)]"
         )} />
 
-        {/* Circuit Pattern Background (Simulated with CSS) */}
-        <div className={cn(
-          "absolute inset-0 opacity-[0.05] pointer-events-none z-0",
-          isDark ? "invert" : ""
-        )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '32px 32px' }} />
+        {/* Circuit Pattern Background (Removed redundant pattern as it's now in UnifiedBackground) */}
 
         <div className="max-w-[1800px] w-full relative z-10 mx-auto px-4 md:px-8 py-20">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -204,11 +202,7 @@ export default function StartPage() {
         </div>
       </section>
 
-      {/* Feature Showcase Section */}
-      <section className={cn(
-        "py-32 relative transition-colors duration-500",
-        isDark ? "bg-background" : "bg-white"
-      )}>
+      <section className="py-32 relative transition-colors duration-1000">
         <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8">
           <SectionHeader
             badge="Advanced Engineering"
@@ -364,8 +358,8 @@ export default function StartPage() {
 
       {/* New: Pre-builts & Accessories */}
       <section className={cn(
-        "py-32 relative border-y transition-colors duration-500",
-        isDark ? "bg-background border-border/20" : "bg-muted/10 border-border/40"
+        "py-32 relative border-y transition-colors duration-1000",
+        isDark ? "border-white/5" : "border-slate-200"
       )}>
         <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8">
           <SectionHeader
@@ -427,15 +421,8 @@ export default function StartPage() {
       </section>
 
       {/* CTA Footer Section */}
-      <section className={cn(
-        "py-40 relative overflow-hidden transition-colors duration-500",
-        isDark ? "bg-background" : "bg-slate-50"
-      )}>
-        {/* Decorative Grid for CTA */}
-        <div className={cn(
-          "absolute inset-0 opacity-[0.03] pointer-events-none",
-          isDark ? "invert" : ""
-        )} style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      <section className="py-40 relative overflow-hidden transition-colors duration-1000">
+        {/* Decorative Grid removed as it's in UnifiedBackground */}
 
         <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8 text-center relative z-10">
           <motion.div
@@ -494,7 +481,6 @@ export default function StartPage() {
           </motion.div>
         </div>
       </section>
-
     </div>
   );
 }

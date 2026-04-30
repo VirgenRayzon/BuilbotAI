@@ -44,6 +44,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   // Only Super Admins can bypass to keep working
   const showMaintenance = isMaintenanceMode && !isSuperAdmin && !loading;
 
+  // Routes that should NOT show the global footer
+  const hideFooterRoutes = ['/builder', '/admin', '/signin', '/signup', '/profile'];
+  const shouldHideFooter = hideFooterRoutes.some(route => pathname.startsWith(route));
+
   return (
     <>
       {showGlobalLoader && <FullPageLoader label="BuilbotAI" subtitle="Architecting Experience" />}
@@ -56,7 +60,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <main className={cn("flex-1 min-h-screen", isMaintenanceMode && !isSuperAdmin && "grayscale-[0.5] contrast-125")}>
             {children}
           </main>
-          <Footer />
+          {!shouldHideFooter && <Footer />}
         </div>
       )}
     </>

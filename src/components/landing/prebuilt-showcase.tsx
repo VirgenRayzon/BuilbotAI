@@ -40,10 +40,7 @@ export function PrebuiltShowcase() {
     }, [systems]);
 
     return (
-        <section className={cn(
-            "py-32 relative overflow-hidden transition-colors duration-500",
-            isDark ? "bg-slate-950/40" : "bg-slate-50"
-        )}>
+        <section className="py-32 relative overflow-hidden transition-colors duration-1000">
             <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8 relative z-10">
                 <SectionHeader
                     badge="Battle-Ready"
@@ -116,15 +113,6 @@ export function PrebuiltShowcase() {
                 </div>
             </div>
 
-            {/* Background Accents */}
-            <div className={cn(
-                "absolute top-1/2 left-0 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[180px] -z-10 opacity-10",
-                isDark ? "bg-primary" : "bg-primary/30"
-            )} />
-            <div className={cn(
-                "absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full blur-[180px] -z-10 opacity-10",
-                isDark ? "bg-purple-600" : "bg-purple-600/30"
-            )} />
         </section>
     );
 }
