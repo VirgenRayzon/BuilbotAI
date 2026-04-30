@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { FullPageLoader } from '@/components/full-page-loader';
 import { CanvasText } from '@/components/ui/canvas-text';
 import { SparkleButton } from '@/components/ui/sparkle-button';
+import { TeamSection } from '@/components/landing/team-section';
 
 export default function StartPage() {
   const { theme } = useTheme();
@@ -357,6 +358,9 @@ export default function StartPage() {
 
       {/* Prebuilt Showcase */}
       <PrebuiltShowcase />
+
+      {/* Team Section */}
+      <TeamSection />
 
       {/* New: Pre-builts & Accessories */}
       <section className={cn(
