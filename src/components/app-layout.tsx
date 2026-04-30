@@ -44,9 +44,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   // Only Super Admins can bypass to keep working
   const showMaintenance = isMaintenanceMode && !isSuperAdmin && !loading;
 
-  // Routes that should NOT show the global footer
-  const hideFooterRoutes = ['/builder', '/admin', '/signin', '/signup', '/profile'];
-  const shouldHideFooter = hideFooterRoutes.some(route => pathname.startsWith(route));
+  // Routes where the global footer SHOULD appear (Whitelist)
+  const showFooterRoutes = ['/about', '/faq', '/contact'];
+  const isLandingPage = pathname === '/';
+  const shouldShowFooter = isLandingPage || showFooterRoutes.some(route => pathname === route);
 
   return (
     <>
@@ -60,7 +61,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <main className={cn("flex-1 min-h-screen", isMaintenanceMode && !isSuperAdmin && "grayscale-[0.5] contrast-125")}>
             {children}
           </main>
-          {!shouldHideFooter && <Footer />}
+          {shouldShowFooter && <Footer />}
         </div>
       )}
     </>
