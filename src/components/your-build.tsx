@@ -522,11 +522,16 @@ export function YourBuild({
             </CardContent>
             <CardFooter className="flex-none flex flex-col items-stretch gap-4 pb-6">
                 {showPsuWarning && (
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Power Supply Warning</AlertTitle>
-                        <AlertDescription>
-                            Your PSU ({psuWattage}W) may be insufficient for the estimated {totalWattage}W load.
+                    <Alert 
+                        variant="destructive" 
+                        className="border-[3px] border-red-600 bg-red-600/10 dark:bg-red-600/20 animate-pulse shadow-[0_0_30px_rgba(220,38,38,0.4)] dark:shadow-[0_0_40px_rgba(220,38,38,0.2)] transition-all py-4"
+                    >
+                        <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-500" />
+                        <AlertTitle className="font-black uppercase tracking-tighter text-red-700 dark:text-red-400 text-lg leading-none">
+                            Power Critical
+                        </AlertTitle>
+                        <AlertDescription className="font-extrabold text-red-900 dark:text-red-200 text-[11px] mt-1.5 leading-tight">
+                            Build load (~{totalWattage}W) exceeds or dangerously nears PSU capacity ({psuWattage}W). System instability imminent.
                         </AlertDescription>
                     </Alert>
                 )}
