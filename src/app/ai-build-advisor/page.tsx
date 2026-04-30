@@ -9,17 +9,16 @@ import { BuildSummary } from "@/components/build-summary";
 import { getAiRecommendations, getAiBuildCritique } from "@/app/actions";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { Build, AiRecommendation, ComponentData, Resolution, WorkloadType } from "@/lib/types";
-import { Cpu, Server, CircuitBoard, MemoryStick, Bot, Wallet, Database, Power, RectangleVertical, Wind, AlertCircle } from "lucide-react";
+import { Cpu, Server, CircuitBoard, MemoryStick, Bot, Wallet, Database, Power, RectangleVertical, Wind, AlertCircle, LayoutPanelLeft } from "lucide-react";
 import { formatCurrency, cn } from "@/lib/utils";
 import { FullPageLoader } from "@/components/full-page-loader";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FloatingInsights } from "@/components/floating-insights";
-import { LayoutPanelLeft } from "lucide-react";
+import { BuilderFloatingChat } from "@/components/builder-floating-chat";
+import { BuilderFloatingAnalytics } from "@/components/builder-floating-analytics";
 import { AIBuildCritique } from "@/components/ai-build-critique";
 import { YourBuild } from "@/components/your-build";
 import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
-import { BuilderFloatingChat } from "@/components/builder-floating-chat";
 import { useLoading } from "@/context/loading-context";
 import { useUserProfile } from "@/context/user-profile";
 import { useRouter } from "next/navigation";
@@ -139,8 +138,6 @@ export default function AiBuildAdvisorPage() {
   const [isPending, startTransition] = useTransition();
   const [resolution, setResolution] = useState<Resolution>('1440p');
   const [workload, setWorkload] = useState<WorkloadType>('Balanced');
-  const [showInsights, setShowInsights] = useState(false);
-  const [isInsightsPinned, setIsInsightsPinned] = useState(false);
 
   const [critiqueAnalysis, setCritiqueAnalysis] = useState<any>(null);
   const [critiqueLoading, setCritiqueLoading] = useState(false);
@@ -720,32 +717,10 @@ export default function AiBuildAdvisorPage() {
             <TabsContent value="critique" className="mt-0 h-full">
               <div className="grid lg:grid-cols-12 gap-8 h-full">
 
-                {isInsightsPinned && (
-                  <div className="hidden lg:block lg:col-span-3 h-[calc(100vh-140px)] sticky top-24">
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="h-full"
-                    >
-                      <FloatingInsights
-                        isOpen={true}
-                        onClose={() => setIsInsightsPinned(false)}
-                        build={builderState}
-                        resolution={resolution}
-                        onResolutionChange={setResolution}
-                        workload={workload}
-                        onWorkloadChange={setWorkload}
-                        isPinned={true}
-                        onTogglePin={() => setIsInsightsPinned(false)}
-                      />
-                    </motion.div>
-                  </div>
-                )}
 
                 {/* Middle Column: AI Critique */}
                 <div className={cn(
-                  "transition-all duration-500",
-                  isInsightsPinned ? "lg:col-span-6" : "lg:col-span-9"
+                  "transition-all duration-500 lg:col-span-9"
                 )}>
                   <motion.div
                     initial={{ opacity: 0, scale: 0.98 }}
@@ -816,38 +791,14 @@ export default function AiBuildAdvisorPage() {
           </Tabs>
         ) : generativeContent}
 
-        <BuilderFloatingChat />
-
-        {/* Floating Insights Toggle & Panel */}
-        <div className={cn("fixed bottom-6 left-6 z-50 flex flex-col-reverse items-start gap-4", isInsightsPinned ? "lg:hidden" : "")}>
-          {builderState && !showInsights && (
-            <Button
-              size="lg"
-              onClick={() => setShowInsights(true)}
-              className="rounded-full shadow-2xl h-14 px-6 gap-3 bg-primary hover:bg-primary/90 text-white font-bold uppercase tracking-widest border border-white/10 ring-4 ring-primary/20 animate-in fade-in slide-in-from-bottom-4 duration-500"
-            >
-              <LayoutPanelLeft className="w-5 h-5" />
-              Build Insights
-            </Button>
-          )}
-        </div>
-
-        {builderState && (!isInsightsPinned || showInsights) && (
-          <FloatingInsights
-            isOpen={showInsights}
-            onClose={() => setShowInsights(false)}
-            build={builderState}
-            resolution={resolution}
-            onResolutionChange={setResolution}
-            workload={workload}
-            onWorkloadChange={setWorkload}
-            isPinned={false}
-            onTogglePin={() => {
-              setIsInsightsPinned(true);
-              setShowInsights(false);
-            }}
-          />
-        )}
+        <BuilderFloatingAnalytics
+          build={builderState || {}}
+          resolution={resolution}
+          onResolutionChange={setResolution}
+          workload={workload}
+          onWorkloadChange={setWorkload}
+        />
+        <BuilderFloatingChat build={builderState || {}} />
       </main>
     </div>
   );

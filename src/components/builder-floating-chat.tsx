@@ -32,6 +32,25 @@ interface BuilderFloatingChatProps {
 
 export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
     const [isOpen, setIsOpen] = useState(false);
+
+    // Close when other floating actions open
+    useEffect(() => {
+        const handleOpen = (e: any) => {
+            if (e.detail?.type !== 'chat') {
+                setIsOpen(false);
+            }
+        };
+        window.addEventListener('floating-action-open', handleOpen);
+        return () => window.removeEventListener('floating-action-open', handleOpen);
+    }, []);
+
+    const toggleOpen = () => {
+        const newState = !isOpen;
+        setIsOpen(newState);
+        if (newState) {
+            window.dispatchEvent(new CustomEvent('floating-action-open', { detail: { type: 'chat' } }));
+        }
+    };
     const [input, setInput] = useState("");
     const [elapsedTime, setElapsedTime] = useState(0);
     const [timerActive, setTimerActive] = useState(false);
@@ -467,8 +486,8 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
             >
                 <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-600 to-cyan-600 blur opacity-60 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
                 <Button
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="relative h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-[0_0_30px_rgba(6,182,212,0.4)] bg-gradient-to-tr from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 p-0 border border-white/20 z-10"
+                    onClick={toggleOpen}
+                    className="relative h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-[0_0_30px_rgba(6,182,212,0.4)] bg-gradient-to-tr from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 p-0 border border-white/20 z-10 transition-all duration-300"
                 >
                     <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                 </Button>

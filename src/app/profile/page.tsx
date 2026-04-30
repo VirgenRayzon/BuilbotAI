@@ -72,10 +72,11 @@ export default function ProfilePage() {
     const [isKeyLoading, setIsKeyLoading] = useState(false);
 
     useEffect(() => {
-        // Force unlock scroll on mount in case of stale state from other pages/modals
+        // Force unlock scroll on mount and reset position
         document.body.classList.remove('antigravity-scroll-lock');
         document.body.style.pointerEvents = 'auto';
         document.body.style.overflow = 'auto';
+        window.scrollTo(0, 0);
     }, []);
 
     useEffect(() => {

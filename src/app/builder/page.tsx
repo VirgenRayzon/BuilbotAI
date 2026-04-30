@@ -44,7 +44,7 @@ import { PaginationControls } from "@/components/pagination-controls";
 import { useUserProfile } from "@/context/user-profile";
 import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
-import { FloatingInsights } from "@/components/floating-insights";
+import { BuilderFloatingAnalytics } from "@/components/builder-floating-analytics";
 import { useLoading } from "@/context/loading-context";
 import { LayoutPanelLeft } from "lucide-react";
 import type { Resolution, WorkloadType } from "@/lib/types";
@@ -137,8 +137,6 @@ export default function BuilderPage() {
   });
   const [resolution, setResolution] = useState<Resolution>('1440p');
   const [workload, setWorkload] = useState<WorkloadType>('Balanced');
-  const [showInsights, setShowInsights] = useState(false);
-  const [isInsightsPinned, setIsInsightsPinned] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const { setIsPageLoading } = useLoading();
@@ -660,31 +658,12 @@ export default function BuilderPage() {
       </div>
 
       <div className="grid lg:grid-cols-12 gap-6 xl:gap-8">
-        {/* Left Sidebar: Build Insights (Pinned) */}
-        {isInsightsPinned && (
-          <div className="hidden lg:block lg:col-span-3 h-[calc(100vh-120px)] sticky top-20">
-            <FloatingInsights
-              isOpen={true}
-              onClose={() => setIsInsightsPinned(false)}
-              build={build}
-              resolution={resolution}
-              onResolutionChange={setResolution}
-              workload={workload}
-              onWorkloadChange={setWorkload}
-              isPinned={true}
-              onTogglePin={() => setIsInsightsPinned(false)}
-            />
-          </div>
-        )}
 
         {/* Center: Parts Grid (Dynamic width based on pinned state) */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={cn(
-              "p-6 rounded-3xl border shadow-2xl transition-all duration-500 glass-panel",
-              isInsightsPinned ? "lg:col-span-6" : "lg:col-span-9"
-            )}
+            className="p-6 rounded-3xl border shadow-2xl transition-all duration-500 glass-panel lg:col-span-9"
           >
             <div className="mb-8">
               <InventoryToolbar
@@ -717,12 +696,7 @@ export default function BuilderPage() {
             ) : sortedAndFilteredParts.length > 0 ? (
               view === 'grid' ? (
                 <>
-                  <div className={cn(
-                    "grid gap-3 md:gap-6",
-                    isInsightsPinned 
-                      ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" 
-                      : "grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]"
-                  )}>
+                  <div className="grid gap-3 md:gap-6 grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
                     {paginatedParts.map(part => (
                       <PartCard
                         key={part.id}
@@ -844,37 +818,13 @@ export default function BuilderPage() {
         </div>
       </div>
 
-      {/* Floating Insights Toggle & Panel (Only shown if NOT pinned, or if on mobile) */}
-      <div className={cn("fixed bottom-6 left-6 z-50 flex flex-col-reverse items-start gap-4", isInsightsPinned ? "lg:hidden" : "")}>
-        {!showInsights && (
-          <Button
-            size="lg"
-            onClick={() => setShowInsights(true)}
-            className="rounded-full shadow-2xl h-14 px-6 gap-3 bg-primary hover:bg-primary/90 text-white font-bold uppercase tracking-widest border border-white/10 ring-4 ring-primary/20 animate-in fade-in slide-in-from-bottom-4 duration-500"
-          >
-            <LayoutPanelLeft className="w-5 h-5" />
-            Build Insights
-          </Button>
-        )}
-      </div>
-
-      {(!isInsightsPinned || showInsights) && (
-        <FloatingInsights
-          isOpen={showInsights}
-          onClose={() => setShowInsights(false)}
-          build={build}
-          resolution={resolution}
-          onResolutionChange={setResolution}
-          workload={workload}
-          onWorkloadChange={setWorkload}
-          isPinned={false}
-          onTogglePin={() => {
-            setIsInsightsPinned(true);
-            setShowInsights(false);
-          }}
-        />
-      )}
-
+      <BuilderFloatingAnalytics
+        build={build}
+        resolution={resolution}
+        onResolutionChange={setResolution}
+        workload={workload}
+        onWorkloadChange={setWorkload}
+      />
       <BuilderFloatingChat build={build} />
     </main>
     </div>
