@@ -136,31 +136,7 @@ function FpsMeter({ build, resolution, workload }: { build: Record<string, Compo
     );
 }
 
-function PowerMeter({ value, max }: { value: number; max: number }) {
-    const maxToUse = max > 0 ? max : Math.max(value + 200, 600);
-    const percentage = Math.min((value / maxToUse) * 100, 100);
-
-    let colorClass = "bg-cyan-500 shadow-[0_0_10px_theme('colors.cyan.500')]";
-    if (percentage > 90) colorClass = "bg-red-500 shadow-[0_0_10px_theme('colors.red.500')]";
-    else if (percentage > 70) colorClass = "bg-fuchsia-500 shadow-[0_0_10px_theme('colors.fuchsia.500')]";
-
-    return (
-        <div className="space-y-2 mb-4">
-            <div className="flex justify-between items-baseline mb-1">
-                <span className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1">
-                    <Zap className="w-3 h-3 text-cyan-400" /> Power Load
-                </span>
-                <span className="text-sm font-bold font-headline">{value}W <span className="text-muted-foreground font-normal text-xs">/ {maxToUse}W</span></span>
-            </div>
-            <div className="h-2 w-full bg-secondary/30 rounded-full overflow-hidden border border-cyan-500/20">
-                <div
-                    className={`h-full transition-all duration-1000 ease-out ${colorClass}`}
-                    style={{ width: `${percentage}%` }}
-                />
-            </div>
-        </div>
-    );
-}
+import { PowerMeter } from "@/components/ui/power-meter";
 
 function BottleneckMeter({ build, resolution }: { build: Record<string, ComponentData | ComponentData[] | null>, resolution: Resolution }) {
     const result = calculateBottleneck(build, resolution);

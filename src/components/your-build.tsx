@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getAiBuildCritique, getAiPrebuiltSuggestions } from "@/app/actions";
 import { Resolution, WorkloadType } from "@/lib/types";
+import { PowerMeter } from "./ui/power-meter";
 
 import Link from "next/link";
 import { processCheckout } from "@/app/checkout-actions";
@@ -352,7 +353,6 @@ export function YourBuild({
 
     const psu = build['PSU'] as ComponentData | null;
     const psuWattage = psu && typeof psu.wattage === 'number' ? psu.wattage : 0;
-    const showPsuWarning = psuWattage > 0 && totalWattage > 0 && psuWattage < totalWattage * 1.2;
 
     const totalPrice = Object.values(build).reduce((acc, component) => {
         if (Array.isArray(component)) {
@@ -510,31 +510,21 @@ export function YourBuild({
                     </div>
                 </div>
 
-                <div className="pt-4 flex-none">
-                    <Separator className="mb-3 opacity-50" />
+                <div className="pt-4 flex-none space-y-4">
+                    <Separator className="opacity-50" />
                     {showSystemBalance !== false && <BottleneckMeter build={build} resolution={resolution} />}
+                    
+                    {totalWattage > 0 && (
+                        <PowerMeter value={totalWattage} max={psuWattage} className="mt-2" />
+                    )}
 
-                    <div className="flex justify-between items-center pt-3 mt-3 border-t border-dashed border-border/40">
+                    <div className="flex justify-between items-center pt-3 border-t border-dashed border-border/40">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Total Value</span>
                         <span className="text-2xl font-bold font-headline text-primary tracking-tighter">{formatCurrency(totalPrice)}</span>
                     </div>
                 </div>
             </CardContent>
             <CardFooter className="flex-none flex flex-col items-stretch gap-4 pb-6">
-                {showPsuWarning && (
-                    <Alert 
-                        variant="destructive" 
-                        className="border-[3px] border-red-600 bg-red-600/10 dark:bg-red-600/20 animate-pulse shadow-[0_0_30px_rgba(220,38,38,0.4)] dark:shadow-[0_0_40px_rgba(220,38,38,0.2)] transition-all py-4"
-                    >
-                        <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-500" />
-                        <AlertTitle className="font-black uppercase tracking-tighter text-red-700 dark:text-red-400 text-lg leading-none">
-                            Power Critical
-                        </AlertTitle>
-                        <AlertDescription className="font-extrabold text-red-900 dark:text-red-200 text-[11px] mt-1.5 leading-tight">
-                            Build load (~{totalWattage}W) exceeds or dangerously nears PSU capacity ({psuWattage}W). System instability imminent.
-                        </AlertDescription>
-                    </Alert>
-                )}
                 <div className="flex flex-col gap-3 w-full">
                     {!isManagerMode && (
                         hasAnalysis ? (
