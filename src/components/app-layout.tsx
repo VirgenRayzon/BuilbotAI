@@ -61,7 +61,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <main className={cn("flex-1 min-h-screen", isMaintenanceMode && !isSuperAdmin && "grayscale-[0.5] contrast-125")}>
             {children}
           </main>
-          {shouldShowFooter && <Footer />}
+          {mounted && shouldShowFooter && <Footer />}
         </div>
       )}
     </>
