@@ -136,8 +136,6 @@ function FpsMeter({ build, resolution, workload }: { build: Record<string, Compo
     );
 }
 
-import { PowerMeter } from "@/components/ui/power-meter";
-
 function BottleneckMeter({ build, resolution }: { build: Record<string, ComponentData | ComponentData[] | null>, resolution: Resolution }) {
     const result = calculateBottleneck(build, resolution);
 
@@ -178,23 +176,6 @@ function BottleneckMeter({ build, resolution }: { build: Record<string, Componen
 }
 
 export function BuilderSidebarLeft({ build, resolution, onResolutionChange, workload, onWorkloadChange, className }: BuilderSidebarLeftProps) {
-    const totalWattage = Object.entries(build).reduce((acc, [key, component]) => {
-        // Exclude PSU (supply), accessories, and non-drawing parts like Case and Cooler
-        const drawingParts = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage'];
-        if (!drawingParts.includes(key)) return acc;
-        
-        if (Array.isArray(component)) {
-            return acc + component.reduce((sum, c) => sum + (c.wattage || 0), 0);
-        }
-        if (component && !Array.isArray(component) && typeof component.wattage === 'number') {
-            return acc + component.wattage;
-        }
-        return acc;
-    }, 0);
-
-    const psu = build['PSU'] as ComponentData | null;
-    const psuWattage = psu && typeof psu.wattage === 'number' ? psu.wattage : 0;
-
     return (
         <div className={`flex flex-col gap-4 ${className || ""}`}>
             {/* Analytics Dashboard */}
@@ -229,7 +210,6 @@ export function BuilderSidebarLeft({ build, resolution, onResolutionChange, work
                 </CardHeader>
                 <CardContent className="p-4">
                     <FpsMeter build={build} resolution={resolution} workload={workload} />
-                    <PowerMeter value={totalWattage} max={psuWattage} />
                     <BottleneckMeter build={build} resolution={resolution} />
                 </CardContent>
             </Card>

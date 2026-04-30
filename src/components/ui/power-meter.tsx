@@ -23,14 +23,14 @@ export function PowerMeter({ value, max, className }: PowerMeterProps) {
     }
 
     return (
-        <div className={cn("space-y-2 mb-4", className)}>
-            <div className="flex justify-between items-baseline mb-1">
-                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-                    <Zap className="w-3.5 h-3.5 text-cyan-400" /> Power Load
+        <div className={cn("space-y-3 mb-4", className)}>
+            <div className="flex justify-between items-baseline mb-2">
+                <span className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-cyan-400" /> Power Load
                 </span>
-                <span className="text-sm font-bold font-headline tabular-nums">
+                <span className="text-xl font-bold font-headline tabular-nums">
                     {value}W 
-                    <span className="text-muted-foreground font-medium text-[10px] ml-1.5 opacity-60">
+                    <span className="text-muted-foreground font-bold text-xs ml-2 opacity-50">
                         / {maxToUse}W
                     </span>
                 </span>
@@ -54,11 +54,11 @@ export function PowerMeter({ value, max, className }: PowerMeterProps) {
             </div>
             
             {/* Contextual Label */}
-            <div className="flex justify-between items-center text-[9px] font-bold uppercase tracking-tighter opacity-50">
+            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest mt-1">
                 <span className={cn(percentage > 90 ? "text-red-500" : "text-muted-foreground")}>
                     {percentage > 90 ? "Critical Load" : percentage > 70 ? "High Load" : "Optimal"}
                 </span>
-                <span className="text-muted-foreground">{Math.round(percentage)}%</span>
+                <span className="text-muted-foreground opacity-60">{Math.round(percentage)}%</span>
             </div>
         </div>
     );
