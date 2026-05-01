@@ -1,4 +1,4 @@
-import { useState, useTransition, useMemo } from "react";
+import { useState, useTransition, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { getAiBuildCritique, getAiPrebuiltSuggestions } from "@/app/actions";
 import { Resolution, WorkloadType } from "@/lib/types";
 import { PowerMeter } from "./ui/power-meter";
@@ -26,6 +27,7 @@ import { calculateBottleneck } from "@/lib/bottleneck";
 import { type PrebuiltBuilderAddFormSchema } from "./prebuilt-builder-add-dialog";
 import { Part, PrebuiltSystem } from "@/lib/types";
 import { AIProgressModal, type ProgressPhase } from "./ai-progress-modal";
+import { AnimatedIconButton, AnimatedRotateIcon, AnimatedBrainIcon, AnimatedShieldIcon, AnimatedXIcon, AnimatedCaseIcon } from "./ui/animated-icons";
 
 interface YourBuildProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
@@ -106,6 +108,8 @@ export function YourBuild({
     const [showLocalAiProgress, setShowLocalAiProgress] = useState(false);
     const [aiPhase, setAiPhase] = useState<ProgressPhase>('init');
     const [showAccessories, setShowAccessories] = useState(false);
+    const desktopCardRef = useRef<HTMLDivElement>(null);
+    const prevSelectedPartsRef = useRef(0);
 
     const firestore = useFirestore();
     const settingsDocRef = useMemo(() => {
@@ -125,6 +129,21 @@ export function YourBuild({
     });
 
     const [isAiPending, startAiTransition] = useTransition();
+
+    const selectedParts = Object.entries(build).reduce((acc, [name, value]) => {
+        if (Array.isArray(value)) return acc + value.length;
+        return acc + (value ? 1 : 0);
+    }, 0);
+    const totalParts = Object.keys(build).length;
+
+    // Scroll to "Your Build" when the first part is added
+    useEffect(() => {
+        const prevCount = prevSelectedPartsRef.current;
+        prevSelectedPartsRef.current = selectedParts;
+        if (prevCount === 0 && selectedParts > 0 && desktopCardRef.current) {
+            desktopCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, [selectedParts]);
 
     const handleAddPrebuiltWithAi = () => {
         if (!onAddPrebuilt) return;
@@ -332,12 +351,6 @@ export function YourBuild({
         }
     };
 
-    const selectedParts = Object.entries(build).reduce((acc, [name, value]) => {
-        if (Array.isArray(value)) return acc + value.length;
-        return acc + (value ? 1 : 0);
-    }, 0);
-    const totalParts = Object.keys(build).length;
-
     const totalWattage = Object.entries(build).reduce((acc, [key, component]) => {
         const drawingParts = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage'];
         if (!drawingParts.includes(key)) return acc;
@@ -363,19 +376,11 @@ export function YourBuild({
 
     const router = useRouter();
 
-    return (
+    const renderBuildContent = () => (
         <>
-        <Card className={`flex flex-col border-primary/20 shadow-[0_0_40px_rgba(34,211,238,0.05)] overflow-hidden relative glass-panel ${className || ""}`}>
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
-            <CardHeader className="flex flex-row items-center justify-between py-5 bg-muted/20 border-b border-border/40 flex-none">
-                <CardTitle className="font-headline text-xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent uppercase">Your Build</CardTitle>
-                <div className="flex flex-col gap-2 items-end">
-                    <Badge variant="secondary" className="font-headline font-bold text-[10px] px-2 py-0.5 whitespace-nowrap bg-primary/20 text-primary border-primary/30 uppercase tracking-widest">{selectedParts}/{totalParts} PARTS</Badge>
-                </div>
-            </CardHeader>
-            <CardContent className="px-5 py-4 flex flex-col">
-                <div className="flex-1 pr-4">
-                    <div className="space-y-3 py-1">
+            <CardContent className="px-5 py-4 flex flex-col flex-1 min-h-0">
+                <ScrollArea className="flex-1">
+                    <div className="space-y-3 py-1 overflow-hidden">
                         {['Case', 'Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'].map((name) => {
                             const component = build[name];
                             const Icon = componentIcons[name.toLowerCase()] || Cpu;
@@ -407,11 +412,14 @@ export function YourBuild({
                                     {components.map((c, idx) => (
                                         <div key={`${name}-${idx}`} className="flex items-center gap-4 py-1.5 animate-in fade-in slide-in-from-left-3 duration-300 group">
                                             <div
-                                                className="p-2 bg-primary/15 rounded flex items-center justify-center border border-primary/20 shadow-sm cursor-pointer transition-all hover:bg-destructive/20 hover:border-destructive/30 hover:scale-105 active:scale-95 group/icon"
+                                                className="relative p-2 bg-primary/15 rounded flex items-center justify-center border border-primary/20 shadow-sm cursor-pointer transition-all hover:bg-destructive/20 hover:border-destructive/30 hover:scale-105 active:scale-95 group/icon"
                                                 onClick={() => onRemovePart(name, name === 'Storage' ? idx : undefined)}
                                                 title={`Remove ${name}`}
                                             >
                                                 <Icon className="w-4 h-4 text-primary group-hover/icon:text-destructive transition-colors" />
+                                                <div className="absolute -top-1.5 -right-1.5 lg:hidden bg-destructive text-white rounded-full p-0.5 shadow-lg border border-background">
+                                                    <CloseIcon className="w-2.5 h-2.5" />
+                                                </div>
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-xs font-bold text-primary uppercase tracking-wider leading-none mb-1">
@@ -428,7 +436,7 @@ export function YourBuild({
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive text-muted-foreground"
+                                                    className="hidden lg:flex h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 hover:text-destructive text-muted-foreground"
                                                     onClick={() => onRemovePart(name, name === 'Storage' ? idx : undefined)}
                                                 >
                                                     <CloseIcon className="h-4 w-4" />
@@ -440,22 +448,28 @@ export function YourBuild({
                             );
                         })}
 
-                        <div 
-                            className="pt-4 pb-2 cursor-pointer group/acc"
-                            onClick={() => setShowAccessories(!showAccessories)}
+                        <button 
+                            type="button"
+                            className="w-full pt-6 pb-3 cursor-pointer group/acc border-none bg-transparent outline-none"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setShowAccessories(!showAccessories);
+                            }}
                         >
-                            <div className="flex items-center gap-2">
-                                <Separator className="flex-1 opacity-30 group-hover/acc:opacity-50 transition-opacity" />
-                                <div className="flex items-center gap-2 px-2">
-                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] whitespace-nowrap group-hover/acc:text-primary transition-colors">Accessories</span>
+                            <div className="flex items-center gap-3 w-full">
+                                <span className="flex items-center gap-1.5 shrink-0">
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] group-hover/acc:text-primary transition-colors">
+                                        Accessories
+                                    </span>
                                     <ChevronDown className={cn(
-                                        "w-3 h-3 text-muted-foreground transition-transform duration-300 group-hover/acc:text-primary",
+                                        "w-4 h-4 text-muted-foreground transition-transform duration-300 group-hover/acc:text-primary",
                                         showAccessories && "rotate-180"
                                     )} />
-                                </div>
-                                <Separator className="flex-1 opacity-30 group-hover/acc:opacity-50 transition-opacity" />
+                                </span>
+                                <div className="h-px flex-1 bg-border/30 group-hover/acc:bg-primary/40 transition-colors" />
                             </div>
-                        </div>
+                        </button>
 
                         {showAccessories && ['Monitor', 'Keyboard', 'Mouse', 'Headset'].map((name) => {
                             const component = build[name];
@@ -486,11 +500,14 @@ export function YourBuild({
                             return (
                                 <div key={name} className="flex items-center gap-4 py-1.5 animate-in fade-in slide-in-from-left-3 duration-300 group">
                                     <div
-                                        className="p-2 bg-primary/10 rounded flex items-center justify-center border border-primary/10 shadow-sm cursor-pointer transition-all hover:bg-destructive/20 hover:border-destructive/30 hover:scale-105 active:scale-95 group/icon"
+                                        className="relative p-2 bg-primary/10 rounded flex items-center justify-center border border-primary/10 shadow-sm cursor-pointer transition-all hover:bg-destructive/20 hover:border-destructive/30 hover:scale-105 active:scale-95 group/icon"
                                         onClick={() => onRemovePart(name)}
                                         title={`Remove ${name}`}
                                     >
                                         <Icon className="w-4 h-4 text-primary/80 group-hover/icon:text-destructive transition-colors" />
+                                        <div className="absolute -top-1.5 -right-1.5 lg:hidden bg-destructive text-white rounded-full p-0.5 shadow-lg border border-background">
+                                            <CloseIcon className="w-2.5 h-2.5" />
+                                        </div>
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-xs font-bold text-primary/80 uppercase tracking-wider leading-none mb-1">{name}</p>
@@ -499,7 +516,7 @@ export function YourBuild({
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive text-muted-foreground"
+                                        className="hidden lg:flex h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 hover:text-destructive text-muted-foreground"
                                         onClick={() => onRemovePart(name)}
                                     >
                                         <CloseIcon className="h-4 w-4" />
@@ -508,7 +525,7 @@ export function YourBuild({
                             );
                         })}
                     </div>
-                </div>
+                </ScrollArea>
 
                 <div className="pt-4 flex-none space-y-4">
                     <Separator className="opacity-50" />
@@ -525,12 +542,13 @@ export function YourBuild({
                 </div>
             </CardContent>
             <CardFooter className="flex-none flex flex-col items-stretch gap-4 pb-6">
-                <div className="flex flex-col gap-3 w-full">
+                <div className="flex flex-row lg:flex-col gap-3 w-full items-center justify-end lg:justify-center">
                     {!isManagerMode && (
                         hasAnalysis ? (
                             <SparkleButton
                                 icon={<Sparkles className="h-4 w-4" />}
-                                className="w-full h-12 text-xs font-black uppercase tracking-widest"
+                                containerClassName="order-1 flex-none lg:w-full"
+                                className="w-12 lg:w-full h-12 text-xs font-black uppercase tracking-widest px-0 lg:px-8"
                                 disabled={selectedParts === 0}
                                 onClick={() => {
                                     if (onAnalyze) {
@@ -540,12 +558,13 @@ export function YourBuild({
                                     }
                                 }}
                             >
-                                REFRESH ANALYSIS
+                                <span className="hidden lg:inline">REFRESH ANALYSIS</span>
                             </SparkleButton>
                         ) : (
                             <SparkleButton
                                 icon={<Sparkles className="h-4 w-4" />}
-                                className="w-full h-12 text-xs font-black uppercase tracking-widest"
+                                containerClassName="order-1 flex-none lg:w-full"
+                                className="w-12 lg:w-full h-12 text-xs font-black uppercase tracking-widest px-0 lg:px-8"
                                 disabled={selectedParts === 0}
                                 onClick={() => {
                                     if (onAnalyze) {
@@ -555,36 +574,43 @@ export function YourBuild({
                                     }
                                 }}
                             >
-                                ANALYZE BUILD
+                                <span className="hidden lg:inline">ANALYZE BUILD</span>
                             </SparkleButton>
                         )
                     )}
 
 
-                    <Button variant="ghost" className="w-full text-muted-foreground hover:text-destructive h-8 text-[9px] font-bold uppercase tracking-widest transition-all hover:bg-destructive/5" onClick={onClearBuild} disabled={selectedParts === 0}>
-                        Clear Build
-                    </Button>
+                    <AnimatedIconButton 
+                        icon={<AnimatedRotateIcon className="h-4 w-4" />}
+                        className="order-2 flex-none w-12 lg:w-full text-muted-foreground hover:text-destructive h-12 lg:h-8 text-[9px] font-bold uppercase tracking-widest transition-all bg-transparent lg:bg-transparent border-border/20 lg:border-transparent hover:bg-destructive/5 px-0 lg:px-4" 
+                        onClick={onClearBuild} 
+                        disabled={selectedParts === 0}
+                    >
+                        <span className="hidden lg:inline">Clear Build</span>
+                    </AnimatedIconButton>
 
                     {isManagerMode ? (
                         <SparkleButton
-                            className="w-full h-12 text-xs font-black uppercase tracking-widest"
+                            containerClassName="order-3 flex-none lg:w-full"
+                            className="w-12 lg:w-full h-12 text-xs font-black uppercase tracking-widest px-0 lg:px-8"
                             disabled={!isBuildComplete || isAiPending}
                             onClick={handleAddPrebuiltWithAi}
                             isLoading={isAiPending}
                             icon={<Sparkles className="h-4 w-4" />}
                         >
-                            {isAiPending ? "GENERATING IDENTITY..." : "ADD NEW PREBUILT"}
+                            <span className="hidden lg:inline">{isAiPending ? "GENERATING IDENTITY..." : "ADD NEW PREBUILT"}</span>
                         </SparkleButton>
                     ) : (
                         <Dialog open={isCheckoutDialogOpen} onOpenChange={setIsCheckoutDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button
-                                    className="w-full font-headline tracking-wide flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
-                                    size="lg"
+                                <AnimatedIconButton
+                                    icon={<AnimatedShieldIcon className="h-5 w-5" />}
+                                    className="order-3 flex-none w-12 lg:w-full h-12 text-xs font-black uppercase tracking-widest bg-emerald-600/20 hover:bg-emerald-600/30 border-emerald-500/30 hover:border-emerald-500/50 text-emerald-500 px-0 lg:px-8"
                                     disabled={!isBuildComplete}
+                                    glowColor="rgba(16, 185, 129, 0.5)"
                                 >
-                                    <ShieldCheck className="h-5 w-5" /> Reserve Build
-                                </Button>
+                                    <span className="hidden lg:inline">Reserve Build</span>
+                                </AnimatedIconButton>
                             </DialogTrigger>
                             <DialogContent className="max-w-md">
                                 <DialogHeader>
@@ -622,17 +648,84 @@ export function YourBuild({
                                 </div>
                                 <div className="flex gap-3">
                                     <Button variant="outline" className="flex-1" onClick={() => setIsCheckoutDialogOpen(false)}>Cancel</Button>
-                                    <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={handleCheckout} disabled={isCheckingOut}>
-                                        {isCheckingOut ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                    <AnimatedIconButton 
+                                        className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 text-white border-none" 
+                                        onClick={handleCheckout} 
+                                        disabled={isCheckingOut}
+                                        isLoading={isCheckingOut}
+                                        icon={<AnimatedShieldIcon className="h-4 w-4" />}
+                                        glowColor="rgba(255, 255, 255, 0.3)"
+                                    >
                                         Confirm Reservation
-                                    </Button>
+                                    </AnimatedIconButton>
                                 </div>
                             </DialogContent>
                         </Dialog>
                     )}
                 </div>
             </CardFooter>
-        </Card >
+        </>
+    );
+
+    return (
+        <>
+            {/* Desktop View */}
+            {/* Scroll anchor for desktop — scrollIntoView lands here */}
+            <div ref={desktopCardRef} className="hidden lg:block">
+            <Card className={`flex flex-col border-primary/20 shadow-[0_0_40px_rgba(34,211,238,0.05)] overflow-hidden relative glass-panel sticky top-4 max-h-[calc(100vh-2rem)] ${className || ""}`}>
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
+                <CardHeader className="flex flex-row items-center justify-between py-5 bg-muted/20 border-b border-border/40 flex-none">
+                    <CardTitle className="font-headline text-xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent uppercase">Your Build</CardTitle>
+                    <div className="flex flex-col gap-2 items-end">
+                        <Badge variant="secondary" className="font-headline font-bold text-[10px] px-2 py-0.5 whitespace-nowrap bg-primary/20 text-primary border-primary/30 uppercase tracking-widest">{selectedParts}/{totalParts} PARTS</Badge>
+                    </div>
+                </CardHeader>
+                {renderBuildContent()}
+            </Card>
+            </div>
+
+            {/* Mobile View */}
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/80 backdrop-blur-xl border-t border-border shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+                <Sheet>
+                    <SheetTrigger asChild>
+                        <AnimatedIconButton 
+                            className="w-full h-14 shadow-2xl bg-primary text-primary-foreground hover:bg-primary/90 border-none px-4"
+                            icon={<AnimatedCaseIcon className="w-5 h-5 shrink-0" />}
+                        >
+                            <div className="flex items-center justify-between w-full">
+                                <div className="flex flex-col items-start leading-tight">
+                                    <span className="font-headline font-bold uppercase tracking-widest text-sm">View Build</span>
+                                    <span className="text-[10px] font-bold text-primary-foreground/80 tracking-widest">
+                                        {selectedParts}/{totalParts} PARTS
+                                    </span>
+                                </div>
+                                <span className="font-black tracking-tighter text-lg">{formatCurrency(totalPrice)}</span>
+                            </div>
+                        </AnimatedIconButton>
+                    </SheetTrigger>
+                    <SheetContent side="bottom" hideClose className="h-[85vh] p-0 flex flex-col rounded-t-3xl border-primary/20">
+                        <SheetHeader className="py-4 px-5 border-b border-border/40 bg-muted/20 flex flex-row items-center justify-between sticky top-0 z-10 text-left">
+                            <SheetTitle className="font-headline text-xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent uppercase m-0 pt-1">
+                                Your Build
+                            </SheetTitle>
+                            <div className="flex items-center gap-3">
+                                <Badge variant="secondary" className="font-headline font-bold text-[10px] px-2 py-0.5 whitespace-nowrap bg-primary/20 text-primary border-primary/30 uppercase tracking-widest m-0 mt-1">
+                                    {selectedParts}/{totalParts} PARTS
+                                </Badge>
+                                <SheetClose asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-muted/50 hover:bg-muted text-foreground/70 hover:text-foreground transition-colors shrink-0">
+                                        <CloseIcon className="h-4 w-4" />
+                                        <span className="sr-only">Close</span>
+                                    </Button>
+                                </SheetClose>
+                            </div>
+                        </SheetHeader>
+                        <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
+                            {renderBuildContent()}
+                        </div>
+                    </SheetContent>
+                </Sheet>
+            </div>
 
             {/* AI Progress Modal — renders centered on screen when adding prebuilt */}
             <AIProgressModal

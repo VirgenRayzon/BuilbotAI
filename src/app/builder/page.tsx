@@ -634,7 +634,7 @@ export default function BuilderPage() {
         isDark ? "invert" : ""
       )} style={{ backgroundImage: 'radial-gradient(currentColor 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-      <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pt-24 md:pt-32 relative z-10">
+      <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pb-24 lg:pb-12 pt-24 md:pt-32 relative z-10">
       <div className="relative mb-12">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -801,7 +801,7 @@ export default function BuilderPage() {
           </motion.div>
 
         {/* Right Sidebar: Your Build */}
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3 min-w-0 overflow-hidden">
           <div className="sticky top-20 flex flex-col gap-6 pb-4 pr-2">
             <YourBuild
               build={build}

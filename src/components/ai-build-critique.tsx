@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SparkleButton } from "./ui/sparkle-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AnimatedIconButton, AnimatedRotateIcon, AnimatedBrainIcon, AnimatedBotIcon } from "./ui/animated-icons";
 import { BrainCircuit, Loader2, ThumbsUp, ThumbsDown, AlertTriangle, MonitorPlay, Zap, Bot, Plus, Sparkles, Gamepad2 } from "lucide-react";
 import { getAiBuildCritique } from "@/app/actions";
 import { ComponentData } from "@/lib/types";
@@ -178,13 +179,13 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
             <CardHeader>
                 <CardTitle className="flex items-center justify-between font-headline text-2xl">
                     <div className="flex items-center gap-2">
-                        <BrainCircuit className="h-6 w-6 text-primary" />
+                        <AnimatedBrainIcon className="h-6 w-6 text-primary" />
                         Buildbot Build Critique
                     </div>
                     {finalResponseTime && !loading && (
                         <div className="flex items-center gap-1.5 opacity-40 hover:opacity-100 transition-opacity">
-                            <Bot className="h-3.5 w-3.5 text-primary" />
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Analyzed in {finalResponseTime}s</span>
+                             <AnimatedBotIcon className="h-3.5 w-3.5 text-primary" />
+                             <span className="text-[10px] font-bold uppercase tracking-widest">Analyzed in {finalResponseTime}s</span>
                         </div>
                     )}
                 </CardTitle>
@@ -195,7 +196,7 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
             <CardContent className="space-y-6">
                 {!analysis && !loading && !error && (
                     <div className="flex flex-col items-center justify-center py-16 px-8 border-2 border-dashed border-muted-foreground/20 rounded-xl bg-muted/10 space-y-6">
-                        <Bot className="h-20 w-20 text-muted-foreground/30" />
+                         <AnimatedBotIcon className="h-20 w-20 text-muted-foreground/30" />
                         <div className="text-center space-y-3">
                             <h3 className="text-2xl font-headline font-semibold tracking-tight">Your build awaits</h3>
                             <p className="text-muted-foreground max-w-sm mx-auto text-lg leading-relaxed">
@@ -368,9 +369,15 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                         )}
 
                         <div className="pt-4 pb-2">
-                            <Button variant="outline" className="w-full" onClick={isControlled && onRefresh ? onRefresh : handleAnalyze} disabled={loading}>
+                             <AnimatedIconButton 
+                                icon={<AnimatedRotateIcon className="h-4 w-4" />}
+                                className="w-full h-11" 
+                                onClick={isControlled && onRefresh ? onRefresh : handleAnalyze} 
+                                disabled={loading}
+                                isLoading={loading}
+                            >
                                 Refresh Analysis
-                            </Button>
+                            </AnimatedIconButton>
                         </div>
                     </div>
                 )}

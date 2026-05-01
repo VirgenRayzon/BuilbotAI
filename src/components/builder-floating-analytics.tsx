@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Activity, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AnimatedIconButton, AnimatedActivityIcon, AnimatedXIcon } from "./ui/animated-icons";
 import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
 import { ComponentData, Resolution, WorkloadType } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -45,7 +46,7 @@ export function BuilderFloatingAnalytics({
     };
 
     return (
-        <div className="fixed bottom-[112px] right-4 sm:bottom-[128px] sm:right-6 z-50 flex flex-col items-end gap-4">
+        <div className="fixed bottom-[192px] right-4 sm:bottom-[128px] sm:right-6 z-50 flex flex-col items-end gap-4">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -61,14 +62,12 @@ export function BuilderFloatingAnalytics({
                                     <Activity className="w-5 h-5 text-primary" />
                                     <h2 className="text-lg font-headline font-bold uppercase tracking-tight">System Analytics</h2>
                                 </div>
-                                <Button 
+                                <AnimatedIconButton 
                                     variant="ghost" 
-                                    size="icon" 
                                     onClick={() => setIsOpen(false)} 
-                                    className="rounded-full hover:bg-white/10"
-                                >
-                                    <X className="w-5 h-5" />
-                                </Button>
+                                    className="h-8 w-8"
+                                    icon={<AnimatedXIcon size={20} />}
+                                />
                             </div>
 
                             {/* Content */}
@@ -87,33 +86,20 @@ export function BuilderFloatingAnalytics({
             </AnimatePresence>
 
             {/* FAB */}
-            <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="relative group"
-            >
+            <div className="relative group">
                 <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-cyan-600 to-blue-600 blur opacity-40 group-hover:opacity-100 transition duration-1000 animate-pulse"></div>
-                <Button
+                <AnimatedIconButton
                     onClick={toggleOpen}
-                    className={cn(
-                        "relative h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-[0_0_25px_rgba(6,182,212,0.3)] border border-white/20 z-10 transition-all duration-300 p-0",
-                        isOpen 
-                            ? "bg-destructive hover:bg-destructive/90" 
-                            : "bg-gradient-to-tr from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500"
-                    )}
-                >
-                    {isOpen ? (
-                        <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                    ) : (
-                        <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                    )}
-                </Button>
+                    variant={isOpen ? 'destructive' : 'primary'}
+                    className="h-12 w-12 sm:h-14 sm:w-14 shadow-[0_0_25px_rgba(6,182,212,0.3)]"
+                    icon={isOpen ? <AnimatedXIcon size={24} className="text-white" /> : <AnimatedActivityIcon size={24} className="text-white" />}
+                />
                 
                 {/* Tooltip-like label */}
                 <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 px-3 py-1 bg-black/80 backdrop-blur-md rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap hidden sm:block">
                     <span className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Live Analytics</span>
                 </div>
-            </motion.div>
+            </div>
         </div>
     );
 }

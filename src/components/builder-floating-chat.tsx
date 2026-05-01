@@ -18,6 +18,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { useMemo } from "react";
+import { 
+    AnimatedIconButton, 
+    AnimatedMessageIcon, 
+    AnimatedXIcon, 
+    AnimatedRotateIcon,
+    AnimatedSendIcon
+} from "./ui/animated-icons";
 import {
     Carousel,
     CarouselContent,
@@ -182,7 +189,7 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
     };
 
     return (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-4 max-w-full">
+        <div className="fixed bottom-[120px] right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-4 max-w-full">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -209,13 +216,20 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                     <BrainCircuit className="w-5 h-5 text-blue-500" /> Buildbot AI Interface
                                 </CardTitle>
                                 <div className="flex items-center gap-1">
-                                    <Button variant="ghost" size="sm" onClick={handleClearChat} className="h-8 px-2 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-all rounded-lg flex items-center gap-1.5 group/clear" title="Clear Chat History">
-                                        <RotateCcw className="w-3.5 h-3.5 transition-transform group-hover/clear:rotate-[-45deg]" />
-                                        <span className="text-[10px] font-bold uppercase tracking-wider">Clear</span>
-                                    </Button>
-                                    <Button size="icon" variant="ghost" onClick={() => setIsOpen(false)} className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-white/10 transition-colors rounded-full">
-                                        <X className="w-4 h-4" />
-                                    </Button>
+                                    <AnimatedIconButton 
+                                        variant="ghost" 
+                                        onClick={handleClearChat} 
+                                        className="h-8 px-2 group/clear" 
+                                        title="Clear Chat History"
+                                        label="Clear"
+                                        icon={<AnimatedRotateIcon size={14} />}
+                                    />
+                                    <AnimatedIconButton 
+                                        variant="ghost" 
+                                        onClick={() => setIsOpen(false)} 
+                                        className="h-8 w-8"
+                                        icon={<AnimatedXIcon size={16} />}
+                                    />
                                 </div>
                             </CardHeader>
 
@@ -470,7 +484,7 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                         disabled={!input.trim() || isLoading || isAiKillSwitch}
                                         isLoading={isLoading}
                                     >
-                                        <Send className="w-4 h-4 ml-0.5" />
+                                        <AnimatedSendIcon size={18} active={!isLoading && input.trim().length > 0} />
                                     </SparkleButton>
                                 </form>
                             </CardFooter>
@@ -479,19 +493,14 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                 )}
             </AnimatePresence>
 
-            <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="relative"
-            >
+            <div className="relative">
                 <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-600 to-cyan-600 blur opacity-60 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-                <Button
+                <AnimatedIconButton
                     onClick={toggleOpen}
-                    className="relative h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-[0_0_30px_rgba(6,182,212,0.4)] bg-gradient-to-tr from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 p-0 border border-white/20 z-10 transition-all duration-300"
-                >
-                    <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                </Button>
-            </motion.div>
+                    className="h-14 w-14 sm:h-16 sm:w-16 shadow-[0_0_30px_rgba(6,182,212,0.4)]"
+                    icon={<AnimatedMessageIcon size={28} className="text-white" />}
+                />
+            </div>
         </div>
     );
 }

@@ -24,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
+import { AnimatedIconButton } from "./ui/animated-icons";
 
 import { Switch } from "@/components/ui/switch";
 import { Sparkles, Zap, Gamepad2, Laptop, HardDrive } from "lucide-react";
@@ -87,17 +88,14 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2 mb-2">
         {SUGGESTIONS.map((sug) => (
-          <Button
+          <AnimatedIconButton
             key={sug.label}
-            variant="outline"
-            size="sm"
-            type="button"
+            variant="secondary"
             onClick={() => applySuggestion(sug.values)}
-            className="h-8 text-[10px] font-bold uppercase tracking-widest gap-2 bg-primary/5 border-primary/10 hover:bg-primary/10 transition-all"
-          >
-            <sug.icon className="w-3 h-3 text-primary" />
-            {sug.label}
-          </Button>
+            className="h-8 px-4"
+            label={sug.label}
+            icon={<sug.icon size={14} />}
+          />
         ))}
       </div>
 

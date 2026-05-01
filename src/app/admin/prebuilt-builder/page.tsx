@@ -374,7 +374,7 @@ export default function PrebuiltBuilderPage() {
     }
 
     return (
-        <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-4 md:py-8">
+        <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-4 md:py-8 pb-24 lg:pb-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
                 <div className="text-left">
                     <h1 className="text-4xl font-headline font-bold uppercase">Prebuilt Builder</h1>

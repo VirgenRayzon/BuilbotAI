@@ -12,6 +12,7 @@ interface SparkleButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   pill?: boolean;
   icon?: React.ReactNode;
   asChild?: boolean;
+  containerClassName?: string;
 }
 
 import { Slot } from "@radix-ui/react-slot";
@@ -19,6 +20,7 @@ import { Slot } from "@radix-ui/react-slot";
 export function SparkleButton({
   children,
   className,
+  containerClassName,
   isLoading,
   sparkleColor = "#06b6d4",
   baseColor = "#09090b",
@@ -47,7 +49,7 @@ export function SparkleButton({
 
   return (
     <div 
-      className={cn("relative group inline-block", className?.includes("w-full") && "w-full")}
+      className={cn("relative group inline-block", className?.split(' ').includes("w-full") && "w-full", containerClassName)}
       onMouseEnter={() => setActive(true)}
       onMouseLeave={() => setActive(false)}
     >
@@ -120,7 +122,7 @@ export function SparkleButton({
           </div>
 
           {/* Content */}
-          <span className="relative z-50 flex items-center gap-3 tracking-[0.2em] uppercase font-black text-white">
+          <span className="relative z-50 flex items-center lg:gap-3 gap-0 tracking-[0.2em] uppercase font-black text-white">
             {isLoading ? (
               <motion.div
                 animate={{ rotate: 360 }}
