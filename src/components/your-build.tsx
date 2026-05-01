@@ -378,9 +378,8 @@ export function YourBuild({
 
     const renderBuildContent = () => (
         <>
-            <CardContent className="px-5 py-4 flex flex-col flex-1 min-h-0">
-                <ScrollArea className="flex-1">
-                    <div className="space-y-3 py-1 overflow-hidden">
+            <CardContent className="px-5 py-4 flex flex-col">
+                <div className="space-y-3 py-1">
                         {['Case', 'Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'].map((name) => {
                             const component = build[name];
                             const Icon = componentIcons[name.toLowerCase()] || Cpu;
@@ -525,7 +524,6 @@ export function YourBuild({
                             );
                         })}
                     </div>
-                </ScrollArea>
 
                 <div className="pt-4 flex-none space-y-4">
                     <Separator className="opacity-50" />
@@ -672,7 +670,7 @@ export function YourBuild({
             {/* Desktop View */}
             {/* Scroll anchor for desktop — scrollIntoView lands here */}
             <div ref={desktopCardRef} className="hidden lg:block">
-            <Card className={`flex flex-col border-primary/20 shadow-[0_0_40px_rgba(34,211,238,0.05)] overflow-hidden relative glass-panel sticky top-4 max-h-[calc(100vh-2rem)] ${className || ""}`}>
+            <Card className={`flex flex-col border-primary/20 shadow-[0_0_40px_rgba(34,211,238,0.05)] overflow-hidden relative glass-panel sticky top-4 ${className || ""}`}>
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
                 <CardHeader className="flex flex-row items-center justify-between py-5 bg-muted/20 border-b border-border/40 flex-none">
                     <CardTitle className="font-headline text-xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent uppercase">Your Build</CardTitle>
@@ -720,9 +718,9 @@ export function YourBuild({
                                 </SheetClose>
                             </div>
                         </SheetHeader>
-                        <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
+                        <ScrollArea className="flex-1 w-full h-full pr-0">
                             {renderBuildContent()}
-                        </div>
+                        </ScrollArea>
                     </SheetContent>
                 </Sheet>
             </div>

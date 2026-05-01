@@ -221,6 +221,15 @@ export const AnimatedBotIcon = ({ className, size = 24, active }: AnimatedIconPr
     </motion.div>
   );
 };
+AnimatedBrainIcon.isAnimatedIcon = true;
+AnimatedActivityIcon.isAnimatedIcon = true;
+AnimatedMessageIcon.isAnimatedIcon = true;
+AnimatedSendIcon.isAnimatedIcon = true;
+AnimatedXIcon.isAnimatedIcon = true;
+AnimatedRotateIcon.isAnimatedIcon = true;
+AnimatedShieldIcon.isAnimatedIcon = true;
+AnimatedCaseIcon.isAnimatedIcon = true;
+AnimatedBotIcon.isAnimatedIcon = true;
 
 interface AnimatedButtonProps extends HTMLMotionProps<"button"> {
   icon: React.ReactNode;
@@ -301,7 +310,7 @@ export const AnimatedIconButton = React.forwardRef<HTMLButtonElement, AnimatedBu
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin shrink-0" />
           ) : (
-            icon && React.isValidElement(icon) && typeof icon.type !== 'string' 
+            icon && React.isValidElement(icon) && typeof icon.type === 'function' && (icon.type as any).isAnimatedIcon 
               ? React.cloneElement(icon as React.ReactElement<any>, { active: isHovered }) 
               : icon
           )}
