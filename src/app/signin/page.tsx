@@ -18,6 +18,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, Terminal, Key } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { UnifiedBackground } from '@/components/landing/unified-background';
+import { useTheme } from '@/context/theme-provider';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -46,6 +49,8 @@ export default function SignInPage() {
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [requestEmail, setRequestEmail] = useState('');
   const [requestLoading, setRequestLoading] = useState(false);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const router = useRouter();
   const auth = useAuth();
   const firestore = useFirestore();
@@ -210,8 +215,13 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[80vh] bg-background">
-      <Card className="w-full max-w-md mx-4 glass-panel border-primary/20 shadow-2xl relative overflow-hidden">
+    <div className={cn(
+      "relative min-h-[calc(100vh-4rem)] flex items-center justify-center transition-colors duration-1000 overflow-hidden",
+      isDark ? "text-foreground" : "text-slate-900"
+    )}>
+      <UnifiedBackground />
+      
+      <Card className="w-full max-w-md mx-4 glass-panel border-primary/20 shadow-2xl relative overflow-hidden z-10">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary"></div>
         <CardHeader>
           <CardTitle className="text-3xl font-headline font-bold uppercase tracking-tight">Access Matrix</CardTitle>

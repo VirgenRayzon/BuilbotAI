@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { FullPageLoader } from '@/components/full-page-loader';
 import { CanvasText } from '@/components/ui/canvas-text';
 import { SparkleButton } from '@/components/ui/sparkle-button';
-import { TeamSection } from '@/components/landing/team-section';
+
 import { UnifiedBackground } from '@/components/landing/unified-background';
 
 export default function StartPage() {
@@ -49,7 +49,7 @@ export default function StartPage() {
 
   return (
     <div className={cn(
-      "relative min-h-screen transition-colors duration-1000 selection:bg-primary/30 selection:text-primary",
+      "relative min-h-screen transition-colors duration-1000 selection:bg-primary/30 selection:text-primary overflow-x-hidden",
       isDark ? "text-foreground" : "text-slate-900"
     )}>
       <UnifiedBackground />
@@ -211,7 +211,7 @@ export default function StartPage() {
           />
 
           <FeatureShowcase
-            reversed={false}
+            reversed={true}
             title="Neural Bottleneck Analysis"
             description="Shift between 1080p, 1440p, and 4K workload projections. Our AI analyzes the compute tier of your CPU vs your GPU to warn you if components will choke performance before you spend a dime."
             visual={
@@ -353,8 +353,7 @@ export default function StartPage() {
       {/* Prebuilt Showcase */}
       <PrebuiltShowcase />
 
-      {/* Team Section */}
-      <TeamSection />
+
 
       {/* New: Pre-builts & Accessories */}
       <section className={cn(

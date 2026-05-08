@@ -45,7 +45,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const showMaintenance = isMaintenanceMode && !isSuperAdmin && !loading;
 
   // Routes where the global footer SHOULD appear (Whitelist)
-  const showFooterRoutes = ['/about', '/faq', '/contact'];
+  const showFooterRoutes = ['/about', '/faq', '/contact', '/team'];
   const isLandingPage = pathname === '/';
   const shouldShowFooter = isLandingPage || showFooterRoutes.some(route => pathname === route);
 
@@ -56,9 +56,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {showMaintenance ? (
         <MaintenanceScreen />
       ) : (
-        <div className={showGlobalLoader ? "opacity-0 invisible" : "opacity-100 visible"}>
+        <div className={cn("flex flex-col min-h-screen overflow-x-hidden", showGlobalLoader ? "opacity-0 invisible" : "opacity-100 visible")}>
           <Header />
-          <main className={cn("flex-1 min-h-screen", isMaintenanceMode && !isSuperAdmin && "grayscale-[0.5] contrast-125")}>
+          <main className={cn("flex-1 min-h-[calc(100vh-4rem)]", isMaintenanceMode && !isSuperAdmin && "grayscale-[0.5] contrast-125")}>
             {children}
           </main>
           {mounted && shouldShowFooter && <Footer />}

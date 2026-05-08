@@ -9,9 +9,9 @@ import { Code, FileText, UserCheck, Palette, Github, Linkedin, Twitter } from 'l
 const teamMembers = [
   {
     role: "Developer",
-    name: "Alex Rivera",
+    name: "Rayzon Virgen",
     description: "Engineered the core neural architecture and real-time validation systems of BuildbotAI.",
-    image: "/team/developer.png",
+    image: "/team/developer_m.png",
     icon: Code,
     color: "text-cyan-400",
     borderColor: "border-cyan-500/20",
@@ -19,9 +19,9 @@ const teamMembers = [
   },
   {
     role: "Documentation",
-    name: "Sarah Chen",
+    name: "Robert Codilla",
     description: "Authored the technical specifications and user guidance for the entire platform.",
-    image: "/team/documentation.png",
+    image: "/team/documentation_m.png",
     icon: FileText,
     color: "text-blue-400",
     borderColor: "border-blue-500/20",
@@ -29,9 +29,9 @@ const teamMembers = [
   },
   {
     role: "Project Manager",
-    name: "Marcus Thorne",
+    name: "John Vincent Dela Rosa",
     description: "Orchestrated the development lifecycle and strategic roadmap of the project.",
-    image: "/team/pm.png",
+    image: "/team/pm_m.png",
     icon: UserCheck,
     color: "text-purple-400",
     borderColor: "border-purple-500/20",
@@ -39,9 +39,9 @@ const teamMembers = [
   },
   {
     role: "UI/UX Designer",
-    name: "Elena Vance",
+    name: "John Christian Gripon",
     description: "Crafted the immersive, high-fidelity interface and visual identity of the architect matrix.",
-    image: "/team/ui.png",
+    image: "/team/ui_m.png",
     icon: Palette,
     color: "text-pink-400",
     borderColor: "border-pink-500/20",
