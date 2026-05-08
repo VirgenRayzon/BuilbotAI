@@ -40,13 +40,13 @@ export async function POST(req: Request) {
         const formattedContext = buildContext
             ? `\nCURRENT BUILD CONTEXT:\n${Object.entries(buildContext)
                 .map(([cat, parts]) => {
-                    if (!parts) return `${cat}: None selected`;
+                    if (!parts || (Array.isArray(parts) && parts.length === 0)) return `${cat}: None selected`;
                     if (Array.isArray(parts)) return `${cat}: ${parts.map((p: any) => `${p.brand || ''} ${p.model}`).join(', ')}`;
                     const singlePart = parts as any;
                     return `${cat}: ${singlePart.brand || ''} ${singlePart.model}`;
                 })
                 .join('\n')}`
-            : '';
+            : '\nCURRENT BUILD CONTEXT: No build context provided yet.';
 
         // Retrieve background knowledge
         const queryTerms = messageText || "PC components";
@@ -58,6 +58,7 @@ export async function POST(req: Request) {
 
         const systemInstruction = `You are a helpful, expert PC building assistant named "Buildbot AI".
 You are chatting with a user who is currently building a PC.
+IMPORTANT: The user's current build selections are listed below. Always acknowledge these selections when giving advice.
 ${formattedContext}
 ${knowledgeText}
 
@@ -68,7 +69,7 @@ Your name is BuildbotAI. You are a world-class expert and highly experienced onl
 Our platform provides a comprehensive PC building experience, curating high-quality components like CPUs, GPUs, motherboards, RAM, storage, and cooling solutions. We value our customers, and our goal is to solve their pain points—such as hardware incompatibility, performance bottlenecks, and budget constraints. Your role is to provide top-tier customer service, understand the user's specific computing needs, and recommend optimal, compatible products that meet those requirements. Both the administration team and our customers greatly value your technical assistance and recommendations.
 
 **[Token & Formatting Constraints - CRITICAL]**
-- **Save Tokens:** Keep all answers ultra-concise, stripped-down, and informative. Use Markdown clearly (e.g., bolding part names).
+- **Save Tokens:** Keep all answers concise and informative. Your responses are capped at 1,000 tokens, so ensure you finish your thoughts without being overly wordy. Use Markdown clearly (e.g., bolding part names).
 - **Hard Cap:** You MUST recommend a maximum of 4 items at a time. Do not overwhelm the user.
 - **Full Builds:** When the user asks for a complete PC build (especially based on a budget), you MUST decline the request. Politely state that you cannot build a full PC from scratch in the chat, and highly recommend that they use the dedicated "Build Advisor" tool on the platform instead.
 - **Brief Explanations:** If recommending single parts, briefly state why it fits (maximum one sentence) to save tokens.
@@ -114,7 +115,7 @@ Before answering any query, take a deep breath and think through it step-by-step
 
         const result = await streamText({
             model: googleProvider('gemini-3-flash-preview'),
-            maxOutputTokens: 4096,
+            maxOutputTokens: 1000,
             messages: await convertToModelMessages(recentMessages),
             system: systemInstruction,
             tools: {
