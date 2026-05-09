@@ -179,12 +179,33 @@
 
 /* Remove up and down arrows from number inputs globally */
 @layer base {
+
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }
+
   input[type="number"] {
     -moz-appearance: textfield;
   }
 }
+
+/* Next.js Dev Indicator Relocation */
+#__next-dev-indicator,
+[data-nextjs-toast],
+[data-nextjs-indicator] {
+  right: auto !important;
+  left: 24px !important;
+  bottom: 160px !important;
+  z-index: 9999 !important;
+}
+
+@media (min-width: 640px) {
+  #__next-dev-indicator,
+  [data-nextjs-toast],
+  [data-nextjs-indicator] {
+    left: 24px !important;
+    bottom: 184px !important;
+  }
+}

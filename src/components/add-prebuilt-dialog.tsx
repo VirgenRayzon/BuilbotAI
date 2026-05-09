@@ -4,7 +4,7 @@ import { useState, useTransition, useMemo, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import {
     Dialog,
     DialogContent,
@@ -42,7 +42,33 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "./ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { ImageUpload } from "./image-upload";
-import { Loader2, Sparkles, Cpu, BrainCircuit, Search, Check, ChevronDown, Plus, X, Bold, Italic, Heading1, Heading2, List, Code } from "lucide-react";
+import { 
+    Loader2, 
+    Sparkles, 
+    Cpu, 
+    BrainCircuit, 
+    Search, 
+    Check, 
+    ChevronDown, 
+    Plus, 
+    X, 
+    Bold, 
+    Italic, 
+    Heading1, 
+    Heading2, 
+    List, 
+    Code,
+    CircuitBoard,
+    MemoryStick,
+    HardDrive,
+    Box,
+    Zap,
+    Fan,
+    Thermometer,
+    Layers,
+    Monitor,
+    MousePointer2
+} from "lucide-react";
 import { getAiPrebuiltSuggestions } from "@/app/actions";
 import { useFirestore, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
@@ -124,7 +150,7 @@ function PartSelector({
                 <Button
                     variant="outline"
                     role="combobox"
-                    className="w-full justify-between bg-muted/40 border-border/60 h-9 px-3 text-sm font-normal"
+                    className="w-full justify-between bg-muted/40 border-border/60 h-9 px-3 text-sm font-normal hover:scale-100 active:scale-100 transition-none"
                 >
                     <span className="truncate">
                         {selectedPart ? selectedPart.name : `Select ${category}…`}
@@ -132,12 +158,18 @@ function PartSelector({
                     <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[400px] p-0" align="start">
-                <div className="flex items-center gap-2 px-3 py-2 border-b border-border/60 sticky top-0 bg-popover z-10">
-                    <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <PopoverContent 
+                className="w-[var(--radix-popover-trigger-width)] p-0 border-border/40 shadow-2xl rounded-2xl overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-100 data-[state=open]:slide-in-from-top-0 duration-0" 
+                align="start"
+                sideOffset={8}
+            >
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40 bg-muted/20 backdrop-blur-md sticky top-0 z-20">
+                    <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                        <Search className="h-4 w-4 text-primary" />
+                    </div>
                     <input
                         ref={inputRef}
-                        className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+                        className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/40 font-bold tracking-tight"
                         placeholder={`Search ${category}…`}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
@@ -147,37 +179,88 @@ function PartSelector({
                         <button
                             type="button"
                             onClick={() => setQuery("")}
-                            className="text-muted-foreground hover:text-foreground text-xs"
+                            className="p-1 rounded-full hover:bg-muted/60 text-muted-foreground/40 hover:text-foreground transition-colors"
                         >
-                            ✕
+                            <X className="h-3 w-3" />
                         </button>
                     )}
                 </div>
-                <ScrollArea className="h-60">
+                <div className="px-4 py-2 bg-muted/5 flex items-center justify-between border-b border-border/20">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">{category} Inventory</span>
+                    <span className="text-[10px] font-bold text-primary/60">{filtered.length} Results</span>
+                </div>
+                <ScrollArea className="h-[340px]">
                     <div className="p-1">
                         {filtered.length === 0 ? (
-                            <p className="text-xs text-muted-foreground text-center py-4">No parts found.</p>
+                            <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                                <Search className="h-8 w-8 text-muted-foreground/20 mb-2" />
+                                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/40">No components found</p>
+                                <p className="text-[10px] text-muted-foreground/40 mt-1 italic">Try a different search term</p>
+                            </div>
                         ) : (
-                            filtered.map((item) => (
-                                <button
-                                    key={item.id}
-                                    type="button"
-                                    onClick={() => {
-                                        onChange(item.id);
-                                        onOpenChange(false);
-                                        setQuery("");
-                                    }}
-                                    className={cn(
-                                        "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground",
-                                        value === item.id && "bg-accent text-accent-foreground"
-                                    )}
-                                >
-                                    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-                                        {value === item.id && <Check className="h-3.5 w-3.5" />}
-                                    </span>
-                                    <span className="truncate">{item.name}</span>
-                                </button>
-                            ))
+                            <div className="space-y-1">
+                                {filtered.map((item) => {
+                                    const Icon = category === "CPU" ? Cpu : 
+                                                 category === "GPU" ? Monitor : 
+                                                 category === "Motherboard" ? CircuitBoard : 
+                                                 category === "RAM" ? MemoryStick : 
+                                                 category === "Storage" ? HardDrive : 
+                                                 category === "Case" ? Box : 
+                                                 category === "Power Supply" ? Zap : 
+                                                 category === "Cooler" ? Fan : 
+                                                 category === "OS" ? Layers : MousePointer2;
+                                    
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            type="button"
+                                            onClick={() => {
+                                                onChange(item.id);
+                                                onOpenChange(false);
+                                                setQuery("");
+                                            }}
+                                            className={cn(
+                                                "relative flex w-full cursor-default select-none items-center rounded-xl py-3 px-3 text-sm outline-none transition-all duration-200 border border-transparent",
+                                                "hover:bg-primary/10 hover:border-primary/20 group",
+                                                value === item.id ? "bg-primary/5 border-primary/20 ring-1 ring-primary/10" : ""
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-4 w-full">
+                                                <div className={cn(
+                                                    "h-10 w-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300",
+                                                    value === item.id 
+                                                        ? "bg-primary text-primary-foreground shadow-[0_0_15px_rgba(var(--primary),0.3)]" 
+                                                        : "bg-muted/30 text-muted-foreground/60 group-hover:bg-primary/20 group-hover:text-primary"
+                                                )}>
+                                                    <Icon className="h-5 w-5" />
+                                                </div>
+                                                
+                                                <div className="flex flex-col items-start gap-0.5 text-left flex-1 min-w-0">
+                                                    <span className={cn(
+                                                        "font-bold text-[13px] leading-tight tracking-tight truncate w-full transition-colors",
+                                                        value === item.id ? "text-primary" : "text-foreground group-hover:text-primary"
+                                                    )}>
+                                                        {item.name}
+                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground/40">{item.brand}</span>
+                                                        <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
+                                                        <span className="text-[11px] font-bold text-primary/80 font-mono">
+                                                            {formatCurrency(item.price)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {value === item.id && (
+                                                    <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center shadow-lg animate-in zoom-in duration-300">
+                                                        <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         )}
                     </div>
                 </ScrollArea>
@@ -501,7 +584,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                                 <SelectValue placeholder="Select tier…" />
                                                             </SelectTrigger>
                                                         </FormControl>
-                                                        <SelectContent className="rounded-xl">
+                                                        <SelectContent className="rounded-xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-100 data-[state=open]:slide-in-from-top-0 duration-0">
                                                             <SelectItem value="Entry">Entry</SelectItem>
                                                             <SelectItem value="Mid-Range">Mid-Range</SelectItem>
                                                             <SelectItem value="High-End">High-End</SelectItem>
