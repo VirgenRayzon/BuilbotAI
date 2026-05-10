@@ -46,7 +46,7 @@ export function BuilderFloatingAnalytics({
     };
 
     return (
-        <div className="fixed bottom-[192px] right-4 sm:bottom-[128px] sm:right-6 z-50 flex flex-col items-end gap-4">
+        <div className="fixed bottom-[88px] left-6 sm:bottom-[104px] sm:left-6 z-50 flex flex-col items-start gap-4">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -91,12 +91,12 @@ export function BuilderFloatingAnalytics({
                 <AnimatedIconButton
                     onClick={toggleOpen}
                     variant={isOpen ? 'destructive' : 'primary'}
-                    className="h-12 w-12 sm:h-14 sm:w-14 shadow-[0_0_25px_rgba(6,182,212,0.3)]"
+                    className="h-14 w-14 sm:h-16 sm:w-16 p-0 shadow-[0_0_40px_rgba(6,182,212,0.5)] border-white/20 bg-gradient-to-tr from-cyan-600/90 to-blue-600/90 backdrop-blur-xl"
                     icon={isOpen ? <AnimatedXIcon size={24} className="text-white" /> : <AnimatedActivityIcon size={24} className="text-white" />}
                 />
                 
                 {/* Tooltip-like label */}
-                <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 px-3 py-1 bg-black/80 backdrop-blur-md rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap hidden sm:block">
+                <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1 bg-black/80 backdrop-blur-md rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap hidden sm:block">
                     <span className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Live Analytics</span>
                 </div>
             </div>

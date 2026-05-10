@@ -189,7 +189,7 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
     };
 
     return (
-        <div className="fixed bottom-[120px] right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-4 max-w-full">
+        <div className="fixed bottom-6 left-6 z-50 flex flex-col items-start gap-4 max-w-full">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -497,7 +497,7 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                 <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-600 to-cyan-600 blur opacity-60 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
                 <AnimatedIconButton
                     onClick={toggleOpen}
-                    className="h-14 w-14 sm:h-16 sm:w-16 shadow-[0_0_30px_rgba(6,182,212,0.4)]"
+                    className="h-14 w-14 sm:h-16 sm:w-16 p-0 shadow-[0_0_40px_rgba(6,182,212,0.5)] border-white/20 bg-gradient-to-tr from-blue-600/90 to-cyan-600/90 backdrop-blur-xl"
                     icon={<AnimatedMessageIcon size={28} className="text-white" />}
                 />
             </div>
