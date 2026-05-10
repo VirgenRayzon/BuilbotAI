@@ -1,3 +1,7 @@
+/**
+ * UserProfileContext — Provides authenticated user and Firestore profile data.
+ * Combines Firebase Auth state with the 'users' collection document for role-based access.
+ */
 
 'use client';
 

@@ -1,6 +1,11 @@
+/**
+ * InventoryPartCard — Grid-view card for a single inventory part in the admin dashboard.
+ * Shows image, specs, stock, price, and provides archive/delete/edit actions with tooltips.
+ */
 'use client';
 
-import { AddPartDialog, type AddPartFormSchema } from './add-part-dialog';
+import { AddPartDialog } from './add-part-dialog';
+import { type AddPartFormSchema } from '@/hooks/use-part-form';
 
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

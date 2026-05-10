@@ -1,3 +1,8 @@
+/**
+ * SiteSettingsContext — Firestore-backed global site configuration provider.
+ * Manages maintenance mode, storage kill switch, and image corruption logic.
+ * Super Admins bypass image corruption even when the kill switch is active.
+ */
 "use client";
 
 import React, { createContext, useContext, useMemo } from "react";

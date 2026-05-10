@@ -1,8 +1,13 @@
+/**
+ * database — Firebase Firestore CRUD operations for all data models.
+ * Handles parts, prebuilt systems, users, notifications, orders, and sales metrics.
+ * Includes image upload pipeline (local base64 and remote URL proxy via server actions).
+ */
 
 import { addDoc, collection, deleteDoc, doc, Firestore, setDoc, updateDoc, writeBatch } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
-import type { AddPartFormSchema } from "@/components/add-part-dialog";
+import type { AddPartFormSchema } from "@/hooks/use-part-form";
 import type { AddPrebuiltFormSchema } from "@/components/add-prebuilt-dialog";
 import type { Part, PrebuiltSystem, UserProfile, SystemNotification } from "@/lib/types";
 import { fetchImageBase64, uploadBase64ToStorage } from "@/app/image-actions";
@@ -115,7 +120,7 @@ function cleanData(obj: any): any {
 
 // Parts
 export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
-    const specificationsMap = part.specifications.reduce((acc, spec) => {
+    const specificationsMap = part.specifications.reduce((acc: Record<string, string>, spec: { key: string; value: string }) => {
         acc[spec.key] = spec.value;
         return acc;
     }, {} as Record<string, string>);

@@ -1,3 +1,8 @@
+/**
+ * InventoryTable — Admin data table for managing inventory parts.
+ * Supports inline stock editing, bulk selection, archive/restore, and delete actions.
+ * Part names are clickable to open the AddPartDialog for editing.
+ */
 
 import {
   Table,
@@ -12,7 +17,8 @@ import Image from "next/image";
 import { Trash2, Archive, RotateCcw } from "lucide-react";
 import { formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
 import type { Part } from "@/lib/types";
-import { AddPartDialog, type AddPartFormSchema } from "./add-part-dialog";
+import { AddPartDialog } from "./add-part-dialog";
+import { type AddPartFormSchema } from "@/hooks/use-part-form";
 import {
   AlertDialog,
   AlertDialogAction,

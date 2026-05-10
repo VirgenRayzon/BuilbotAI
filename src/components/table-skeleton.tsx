@@ -1,3 +1,7 @@
+/**
+ * TableSkeleton — Shimmer loading placeholder for data tables.
+ * Renders configurable rows/columns of skeleton blocks to indicate loading state.
+ */
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";

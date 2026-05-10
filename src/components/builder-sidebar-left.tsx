@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { BrainCircuit, Activity, Zap, Send, Bot, User, Gauge } from "lucide-react";
-import { LineChart } from "lucide-react";
+/**
+ * BuilderSidebarLeft — Left-side analytics panel for the Builder page.
+ * Displays FPS estimation charts (via Recharts) and bottleneck analysis
+ * based on the user's current hardware build, resolution, and workload preset.
+ */
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Activity, Gauge } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ComponentData, Resolution, WorkloadType } from "@/lib/types";
 import { calculateBottleneck } from "@/lib/bottleneck";

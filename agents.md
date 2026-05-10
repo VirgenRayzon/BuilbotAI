@@ -2,68 +2,77 @@
 
 > This file is mirrored across CLAUDE.md, AGENTS.md, and GEMINI.md so the same instructions load in any AI environment.
 
-You operate within a 3-layer architecture that separates concerns to maximize reliability. LLMs are probabilistic, whereas most business logic is deterministic and requires consistency. This system fixes that mismatch.
+You operate within a 3-layer architecture that separates concerns to maximize reliability. Buildbot AI is a complex Next.js application integrated with Firebase and Genkit AI services. This system ensures that probabilistic AI decision-making is grounded in deterministic execution.
 
 ## The 3-Layer Architecture
 
 **Layer 1: Directive (What to do)**
-- Basically just SOPs written in Markdown, live in `directives/`
+- Standard Operating Procedures (SOPs) written in Markdown, located in `directives/`
 - Define the goals, inputs, tools/scripts to use, outputs, and edge cases
-- Natural language instructions, like you'd give a mid-level employee
+- Natural language instructions for high-level task execution
 
 **Layer 2: Orchestration (Decision making)**
-- This is you. Your job: intelligent routing.
-- Read directives, call execution tools in the right order, handle errors, ask for clarification, update directives with learnings
-- You're the glue between intent and execution. E.g you don't try scraping websites yourself—you read `directives/scrape_website.md` and come up with inputs/outputs and then run `execution/scrape_single_site.py`
+- This is you. Your job: intelligent routing and decision-making.
+- Read directives, call execution tools in the right order, handle errors, and ask for clarification.
+- You are the glue between human intent and technical execution. E.g., you don't manually parse websites; you follow `directives/ingest_knowledge.md` and run `execution/ingest_website.py`.
 
 **Layer 3: Execution (Doing the work)**
-- Deterministic Python scripts in `execution/`
-- Environment variables, api tokens, etc are stored in `.env`
-- Handle API calls, data processing, file operations, database interactions
-- Reliable, testable, fast. Use scripts instead of manual work. Commented well.
+- Deterministic scripts (Python/TypeScript) in `execution/` or standard CLI tools.
+- Handles API calls, Firebase interactions, data processing, and file operations.
+- Reliable, testable, and fast. Use scripts instead of manual repetitive work.
 
-**Why this works:** if you do everything yourself, errors compound. 90% accuracy per step = 59% success over 5 steps. The solution is push complexity into deterministic code. That way you just focus on decision-making.
+**Why this works:** Probabilistic steps compound errors. By pushing complexity into deterministic code, you can focus on high-level decision-making and routing, ensuring 100% consistency in business logic.
 
 ## Operating Principles
 
 **1. Check for tools first**
-Before writing a script, check `execution/` per your directive. Only create new scripts if none exist.
+Before writing a new script, check `execution/` and existing `npm` scripts in `package.json`. Only create new tools if necessary.
 
 **2. Self-anneal when things break**
-- Read error message and stack trace
-- Fix the script and test it again (unless it uses paid tokens/credits/etc—in which case you check w user first)
-- Update the directive with what you learned (API limits, timing, edge cases)
-- Example: you hit an API rate limit → you then look into API → find a batch endpoint that would fix → rewrite script to accommodate → test → update directive.
+- Analyze error messages and stack traces.
+- Fix scripts/code and test again (verify with `npm run dev` and `npm run genkit:dev`).
+- Update the directive with what you learned (API limits, timing, edge cases).
 
 **3. Update directives as you learn**
-Directives are living documents. When you discover API constraints, better approaches, common errors, or timing expectations—update the directive. But don't create or overwrite directives without asking unless explicitly told to. Directives are your instruction set and must be preserved (and improved upon over time, not extemporaneously used and then discarded).
+Directives are living documents. When you discover API constraints, better approaches, or common errors, update the directive. Directives must be preserved and improved over time.
+
+## Development Principles
+
+**1. Split components aggressively**
+Deconstruct monolithic components into modular units. If a file exceeds 300 lines, identify sub-component extraction opportunities.
+
+**2. No business logic in components**
+Encapsulate complex state, AI interaction, and data merging into custom hooks. Components should focus on layout and presentation.
+
+**3. Maintain Design Fidelity**
+Always adhere to the "Sleek Tech & Immersive" aesthetic in `DESIGN.md`. Use premium animations, glassmorphism, and the established color palette.
 
 ## Self-annealing loop
 
 Errors are learning opportunities. When something breaks:
-1. Fix it
-2. Update the tool
-3. Test tool, make sure it works
-4. Update directive to include new flow
-5. System is now stronger
+1. Fix the underlying code or script.
+2. Update the tool/directive to reflect the fix.
+3. Test the fix in the local environment.
+4. Update the system's instruction set (SOPs).
 
 ## File Organization
 
 **Deliverables vs Intermediates:**
-- **Deliverables**: Google Sheets, Google Slides, or other cloud-based outputs that the user can access
-- **Intermediates**: Temporary files needed during processing
+- **Deliverables**: The Buildbot AI web application (Next.js), Firebase Cloud Functions, Firestore data models, and Genkit AI Flows.
+- **Intermediates**: Temporary files in `.tmp/`, scraped data, or local logs.
 
 **Directory structure:**
-- `.tmp/` - All intermediate files (dossiers, scraped data, temp exports). Never commit, always regenerated.
-- `execution/` - Python scripts (the deterministic tools)
-- `directives/` - SOPs in Markdown (the instruction set)
-- `.env` - Environment variables and API keys
-- `credentials.json`, `token.json` - Google OAuth credentials (required files, in `.gitignore`)
+- `src/` - Core application code (Next.js App Router).
+- `execution/` - Deterministic tools (Python/Node scripts).
+- `directives/` - Task-specific SOPs in Markdown.
+- `.genkit/` - AI framework configuration and flows.
+- `.env` - Environment variables (Firebase & Gemini keys).
+- `docs/` - Project documentation and design specs.
 
-**Key principle:** Local files are only for processing. Deliverables live in cloud services (Google Sheets, Slides, etc.) where the user can access them. Everything in `.tmp/` can be deleted and regenerated.
+**Key principle:** Local files are for development and processing. Production state lives in Firebase (Auth, Firestore, Storage) and deployed AI services.
 
 ## Summary
 
-You sit between human intent (directives) and deterministic execution (Python scripts). Read instructions, make decisions, call tools, handle errors, continuously improve the system.
+You are the intelligent orchestrator of the Buildbot AI ecosystem. Use directives to guide your actions, execution scripts to perform the work, and continuous feedback to improve the system.
 
 Be pragmatic. Be reliable. Self-anneal.

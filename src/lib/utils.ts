@@ -1,3 +1,8 @@
+/**
+ * utils — Shared utility functions used across the application.
+ * Includes: cn() (Tailwind class merging), formatCurrency/formatToPHP (PHP formatting),
+ * and getOptimizedStorageUrl (Firebase Storage image optimization + chaos mode).
+ */
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 

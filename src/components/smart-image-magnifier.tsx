@@ -1,8 +1,12 @@
+/**
+ * SmartImageMagnifier — Hover-to-zoom lens component for product images.
+ * Wraps the Lens UI primitive with a scanline overlay and tooltip hint.
+ * Used in prebuilt system detail pages and product cards.
+ */
 "use client";
 
 import React, { useState } from 'react';
 import { Lens } from './ui/lens';
-import { motion } from 'framer-motion';
 
 interface SmartImageMagnifierProps {
     src: string;

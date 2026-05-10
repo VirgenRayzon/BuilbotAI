@@ -1,33 +1,33 @@
-import { useState, useTransition, useMemo, useEffect, useRef } from "react";
+/**
+ * YourBuild — The main "Your Build" sidebar panel.
+ * Displays selected components, total price, wattage, and action buttons
+ * (Analyze, Checkout, Clear). Delegates business logic to useBuildActions hook.
+ */
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SparkleButton } from "./ui/sparkle-button";
-import { Separator } from "@/components/ui/separator";
 import type { ComponentData } from "@/lib/types";
-import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical as CaseIcon, Wind, AlertCircle, X as CloseIcon, BrainCircuit, Loader2, ThumbsUp, ThumbsDown, MonitorPlay, Zap, Plus, Sparkles, Monitor, Keyboard, Mouse, Headphones, ShieldCheck, CheckCircle2, Gauge, ChevronDown } from "lucide-react";
+import { X as CloseIcon, BrainCircuit, ShieldCheck, CheckCircle2, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, cn } from "@/lib/utils";
-import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
-import { getAiBuildCritique, getAiPrebuiltSuggestions } from "@/app/actions";
-import { Resolution, WorkloadType } from "@/lib/types";
-import { PowerMeter } from "./ui/power-meter";
+import { Resolution, WorkloadType, Part } from "@/lib/types";
+import { Separator } from "@/components/ui/separator";
 
-import Link from "next/link";
-import { processCheckout } from "@/app/checkout-actions";
 import { useUser, useFirestore, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { OrderItem } from "@/lib/types";
-import { calculateBottleneck } from "@/lib/bottleneck";
 import { type PrebuiltBuilderAddFormSchema } from "./prebuilt-builder-add-dialog";
-import { Part, PrebuiltSystem } from "@/lib/types";
-import { AIProgressModal, type ProgressPhase } from "./ai-progress-modal";
-import { AnimatedIconButton, AnimatedRotateIcon, AnimatedBrainIcon, AnimatedShieldIcon, AnimatedXIcon, AnimatedCaseIcon } from "./ui/animated-icons";
+import { AIProgressModal } from "./ai-progress-modal";
+import { AnimatedIconButton, AnimatedRotateIcon, AnimatedShieldIcon, AnimatedCaseIcon } from "./ui/animated-icons";
+
+// Extracted Components & Hooks
+import { BuildContent } from "./build/build-content";
+import { useBuildActions } from "@/hooks/use-build-actions";
 
 interface YourBuildProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
@@ -47,67 +47,21 @@ interface YourBuildProps {
     onCategorySelect?: (category: string) => void;
 }
 
-function BottleneckMeter({ build, resolution }: { build: Record<string, ComponentData | ComponentData[] | null>, resolution: Resolution }) {
-    const result = calculateBottleneck(build, resolution);
-
-    if (result.status === 'Incomplete') return null;
-
-    return (
-        <div
-            className="mt-4 p-4 border-l-4 rounded-r-md bg-muted/40 transition-colors duration-300"
-            style={{ borderColor: result.color }}
-        >
-            <h4 className="font-headline font-bold mb-1 flex items-center gap-2" style={{ color: result.color }}>
-                <Gauge className="w-4 h-4" /> System Balance: {result.status}
-            </h4>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-                {result.message}
-            </p>
-        </div>
-    );
-}
-
-const componentIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-    cpu: Cpu,
-    gpu: Server,
-    motherboard: CircuitBoard,
-    ram: MemoryStick,
-    storage: Database,
-    psu: Power,
-    case: CaseIcon,
-    cooler: Wind,
-    monitor: Monitor,
-    keyboard: Keyboard,
-    mouse: Mouse,
-    headset: Headphones,
-};
-
 export function YourBuild({
     build,
     onClearBuild,
     onRemovePart,
     onAnalyze,
     resolution,
-    onResolutionChange,
-    workload,
-    onWorkloadChange,
     showSystemBalance = true,
     className,
     isManagerMode = false,
-    allParts = [],
     onAddPrebuilt,
     hasAnalysis = false,
     onCategorySelect
 }: YourBuildProps) {
-    const [analysis, setAnalysis] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isCheckoutDialogOpen, setIsCheckoutDialogOpen] = useState(false);
-    const [isCheckingOut, setIsCheckingOut] = useState(false);
-    const [showLocalAiProgress, setShowLocalAiProgress] = useState(false);
-    const [aiPhase, setAiPhase] = useState<ProgressPhase>('init');
-    const [showAccessories, setShowAccessories] = useState(false);
     const desktopCardRef = useRef<HTMLDivElement>(null);
     const prevSelectedPartsRef = useRef(0);
 
@@ -121,6 +75,7 @@ export function YourBuild({
 
     const user = useUser();
     const { toast } = useToast();
+    const router = useRouter();
 
     const mandatoryCategories = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler'];
     const isBuildComplete = mandatoryCategories.every(cat => {
@@ -128,228 +83,11 @@ export function YourBuild({
         return Array.isArray(val) ? val.length > 0 : !!val;
     });
 
-    const [isAiPending, startAiTransition] = useTransition();
-
     const selectedParts = Object.entries(build).reduce((acc, [name, value]) => {
         if (Array.isArray(value)) return acc + value.length;
         return acc + (value ? 1 : 0);
     }, 0);
     const totalParts = Object.keys(build).length;
-
-    // Scroll to "Your Build" when the first part is added
-    useEffect(() => {
-        const prevCount = prevSelectedPartsRef.current;
-        prevSelectedPartsRef.current = selectedParts;
-        if (prevCount === 0 && selectedParts > 0 && desktopCardRef.current) {
-            desktopCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    }, [selectedParts]);
-
-    const handleAddPrebuiltWithAi = () => {
-        if (!onAddPrebuilt) return;
-
-        if (isAiKillSwitch) {
-            toast({
-                title: "AI Disabled",
-                description: "AI is disable by Administrator.",
-                variant: "destructive"
-            });
-            return;
-        }
-
-        // Show modal immediately with init phase
-        setAiPhase('init');
-        setShowLocalAiProgress(true);
-
-        startAiTransition(async () => {
-            try {
-                // Phase: AI Requesting
-                await new Promise(r => setTimeout(r, 400));
-                setAiPhase('ai-requesting');
-
-                const selectedComponents = {
-                    cpu: (build['CPU'] as ComponentData)?.model,
-                    gpu: (build['GPU'] as ComponentData)?.model,
-                    motherboard: (build['Motherboard'] as ComponentData)?.model,
-                    ram: Array.isArray(build['RAM']) 
-                        ? (build['RAM'] as ComponentData[]).map(r => r.model).join(", ") 
-                        : (build['RAM'] as ComponentData)?.model,
-                    storage: Array.isArray(build['Storage']) 
-                        ? (build['Storage'] as ComponentData[]).map(s => s.model).join(", ") 
-                        : (build['Storage'] as ComponentData)?.model,
-                    psu: (build['PSU'] as ComponentData)?.model,
-                    case: (build['Case'] as ComponentData)?.model,
-                    cooler: (build['Cooler'] as ComponentData)?.model,
-                };
-
-                const result = await getAiPrebuiltSuggestions({
-                    components: selectedComponents
-                });
-
-                // Phase: AI Complete
-                setAiPhase('ai-complete');
-
-                // Phase: Formatting
-                await new Promise(r => setTimeout(r, 300));
-                setAiPhase('ai-formatting');
-
-                if (result && "systemName" in result) {
-                    // Phase: Image Fetch
-                    await new Promise(r => setTimeout(r, 300));
-                    setAiPhase('image-fetch');
-
-                    const randomNum = Math.floor(Math.random() * 1000);
-                    const systemSlug = result.systemName.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-                    const finalImage = `https://picsum.photos/seed/${systemSlug}${randomNum}/800/600`;
-
-                    const finalData: PrebuiltBuilderAddFormSchema = {
-                        name: result.systemName,
-                        description: result.description || "High-performance prebuilt system.",
-                        price: Math.round(totalPrice * 100) / 100,
-                        tier: result.tier || "Mid-Range",
-                        imageUrl: finalImage,
-                        cpu: (build['CPU'] as ComponentData)?.id || "",
-                        gpu: (build['GPU'] as ComponentData)?.id || "",
-                        motherboard: (build['Motherboard'] as ComponentData)?.id || "",
-                        ram: Array.isArray(build['RAM']) ? (build['RAM'] as ComponentData[]).map(r => r.id) : (build['RAM'] ? [(build['RAM'] as ComponentData).id] : []),
-                        storage: Array.isArray(build['Storage']) ? (build['Storage'] as ComponentData[]).map(s => s.id) : (build['Storage'] ? [(build['Storage'] as ComponentData).id] : []),
-                        psu: (build['PSU'] as ComponentData)?.id || "",
-                        case: (build['Case'] as ComponentData)?.id || "",
-                        cooler: (build['Cooler'] as ComponentData)?.id || "",
-                    };
-
-                    // Phase: Saving to Firestore
-                    await new Promise(r => setTimeout(r, 300));
-                    setAiPhase('saving');
-
-                    await onAddPrebuilt(finalData);
-
-                    // Phase: Done
-                    setAiPhase('done');
-                } else {
-                    setShowLocalAiProgress(false);
-                    const errorMessage = (result as any)?.error || "Could not generate name and description. Please try again or check API configuration.";
-                    toast({
-                        variant: "destructive",
-                        title: "AI Generation Failed",
-                        description: errorMessage
-                    });
-                }
-            } catch (error: any) {
-                setShowLocalAiProgress(false);
-                toast({
-                    variant: "destructive",
-                    title: "Error",
-                    description: error.message || "An unexpected error occurred."
-                });
-            }
-        });
-    };
-
-    const handleCheckout = async () => {
-        if (!user) {
-            toast({
-                title: "Authentication Required",
-                description: "Please sign in to reserve your build.",
-                variant: "destructive"
-            });
-            return;
-        }
-
-        setIsCheckingOut(true);
-        const orderItems: OrderItem[] = [];
-        Object.entries(build).forEach(([category, val]) => {
-            if (val) {
-                if (Array.isArray(val)) {
-                    val.forEach(v => orderItems.push({
-                        id: v.id,
-                        name: v.model,
-                        category,
-                        price: v.price
-                    }));
-                } else {
-                    orderItems.push({
-                        id: (val as any).id,
-                        name: (val as any).model,
-                        category,
-                        price: (val as any).price
-                    });
-                }
-            }
-        });
-
-        const result = await processCheckout(user.uid, user.email || "guest", orderItems);
-
-        if (result.success) {
-            toast({
-                title: "Build Reserved!",
-                description: "Your build reservation has been recorded and is now pending.",
-            });
-            setIsCheckoutDialogOpen(false);
-            onClearBuild();
-        } else {
-            toast({
-                title: "Reservation Failed",
-                description: result.error,
-                variant: "destructive"
-            });
-        }
-        setIsCheckingOut(false);
-    };
-
-    const handleAnalyze = async () => {
-        if (isAiKillSwitch) {
-            toast({
-                title: "AI Disabled",
-                description: "AI is disable by Administrator.",
-                variant: "destructive"
-            });
-            return;
-        }
-
-        if (onAnalyze) {
-            onAnalyze();
-            return;
-        }
-        setLoading(true);
-        setError(null);
-        setIsDialogOpen(true);
-
-        const inputData: any = {};
-        Object.entries(build).forEach(([key, val]) => {
-            if (val) {
-                if (Array.isArray(val)) {
-                    inputData[key] = val.map((v: any) => ({
-                        model: v.model,
-                        price: v.price,
-                        category: key,
-                        brand: v.model.split(' ')[0]
-                    }));
-                } else {
-                    const singleVal = val as any;
-                    inputData[key] = {
-                        model: singleVal.model,
-                        price: singleVal.price,
-                        category: key,
-                        brand: singleVal.model.split(' ')[0]
-                    };
-                }
-            }
-        });
-
-        try {
-            const result = await getAiBuildCritique(inputData);
-            if ('error' in result) {
-                setError(result.error as string);
-            } else {
-                setAnalysis(result);
-            }
-        } catch (err) {
-            setError("An unexpected error occurred during analysis.");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const totalWattage = Object.entries(build).reduce((acc, [key, component]) => {
         const drawingParts = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage'];
@@ -374,209 +112,58 @@ export function YourBuild({
         return acc + (component?.price || 0);
     }, 0);
 
-    const router = useRouter();
+    const {
+        isCheckingOut,
+        showLocalAiProgress,
+        setShowLocalAiProgress,
+        aiPhase,
+        isAiPending,
+        handleAddPrebuiltWithAi,
+        handleCheckout,
+        handleAnalyze,
+    } = useBuildActions({
+        build,
+        user,
+        isAiKillSwitch,
+        onClearBuild,
+        onAnalyze,
+        onAddPrebuilt,
+        totalPrice,
+    });
+
+    useEffect(() => {
+        const prevCount = prevSelectedPartsRef.current;
+        prevSelectedPartsRef.current = selectedParts;
+        if (prevCount === 0 && selectedParts > 0 && desktopCardRef.current) {
+            desktopCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, [selectedParts]);
 
     const renderBuildContent = () => (
         <>
-            <CardContent className="px-5 py-4 flex flex-col">
-                <div className="space-y-3 py-1">
-                        {['Case', 'Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'].map((name) => {
-                            const component = build[name];
-                            const Icon = componentIcons[name.toLowerCase()] || Cpu;
-                            const components = Array.isArray(component) ? component : (component ? [component] : []);
-
-                            if (components.length === 0) {
-                                return (
-                                    <div 
-                                        key={name} 
-                                        className={cn(
-                                            "flex items-center gap-4 py-1.5 opacity-40 grayscale group transition-all hover:opacity-100 hover:grayscale-0",
-                                            onCategorySelect ? "cursor-pointer" : "cursor-default"
-                                        )}
-                                        onClick={() => onCategorySelect?.(name)}
-                                    >
-                                        <div className="p-2 bg-secondary/80 rounded flex items-center justify-center">
-                                            <Icon className="w-4 h-4 text-muted-foreground" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider leading-none mb-1">{name}</p>
-                                            <p className="text-[10px] text-muted-foreground/80 italic font-medium">Click to add</p>
-                                        </div>
-                                    </div>
-                                );
-                            }
-
-                            return (
-                                <div key={name} className="space-y-1.5">
-                                    {components.map((c, idx) => (
-                                        <div key={`${name}-${idx}`} className="flex items-center gap-4 py-1.5 animate-in fade-in slide-in-from-left-3 duration-300 group">
-                                            <div
-                                                className="relative p-2 bg-primary/15 rounded flex items-center justify-center border border-primary/20 shadow-sm cursor-pointer transition-all hover:bg-destructive/20 hover:border-destructive/30 hover:scale-105 active:scale-95 group/icon"
-                                                onClick={() => onRemovePart(name, name === 'Storage' ? idx : undefined)}
-                                                title={`Remove ${name}`}
-                                            >
-                                                <Icon className="w-4 h-4 text-primary group-hover/icon:text-destructive transition-colors" />
-                                                <div className="absolute -top-1.5 -right-1.5 lg:hidden bg-destructive text-white rounded-full p-0.5 shadow-lg border border-background">
-                                                    <CloseIcon className="w-2.5 h-2.5" />
-                                                </div>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-xs font-bold text-primary uppercase tracking-wider leading-none mb-1">
-                                                    {(name === 'Storage' || name === 'RAM') && components.length > 1 ? `${name} ${idx + 1}` : name}
-                                                </p>
-                                                <p className="text-sm font-semibold truncate leading-tight tracking-tight">{(c as any).name || c.model}</p>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                {typeof c.wattage === 'number' && (
-                                                    <span className="text-[10px] font-bold text-muted-foreground bg-secondary px-1.5 py-0.5 rounded shadow-inner">
-                                                        {c.wattage}W
-                                                    </span>
-                                                )}
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="hidden lg:flex h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 hover:text-destructive text-muted-foreground"
-                                                    onClick={() => onRemovePart(name, name === 'Storage' ? idx : undefined)}
-                                                >
-                                                    <CloseIcon className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            );
-                        })}
-
-                        <button 
-                            type="button"
-                            className="w-full pt-6 pb-3 cursor-pointer group/acc border-none bg-transparent outline-none"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setShowAccessories(!showAccessories);
-                            }}
-                        >
-                            <div className="flex items-center gap-3 w-full">
-                                <span className="flex items-center gap-1.5 shrink-0">
-                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] group-hover/acc:text-primary transition-colors">
-                                        Accessories
-                                    </span>
-                                    <ChevronDown className={cn(
-                                        "w-4 h-4 text-muted-foreground transition-transform duration-300 group-hover/acc:text-primary",
-                                        showAccessories && "rotate-180"
-                                    )} />
-                                </span>
-                                <div className="h-px flex-1 bg-border/30 group-hover/acc:bg-primary/40 transition-colors" />
-                            </div>
-                        </button>
-
-                        {showAccessories && ['Monitor', 'Keyboard', 'Mouse', 'Headset'].map((name) => {
-                            const component = build[name];
-                            const Icon = componentIcons[name.toLowerCase()] || Monitor;
-
-                            if (!component) {
-                                return (
-                                    <div 
-                                        key={name} 
-                                        className={cn(
-                                            "flex items-center gap-4 py-1.5 opacity-40 grayscale group transition-all hover:opacity-100 hover:grayscale-0",
-                                            onCategorySelect ? "cursor-pointer" : "cursor-default"
-                                        )}
-                                        onClick={() => onCategorySelect?.(name)}
-                                    >
-                                        <div className="p-2 bg-secondary/80 rounded flex items-center justify-center">
-                                            <Icon className="w-4 h-4 text-muted-foreground" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider leading-none mb-1">{name}</p>
-                                            <p className="text-[10px] text-muted-foreground/80 italic font-medium">Click to add</p>
-                                        </div>
-                                    </div>
-                                );
-                            }
-
-                            const c = component as ComponentData;
-                            return (
-                                <div key={name} className="flex items-center gap-4 py-1.5 animate-in fade-in slide-in-from-left-3 duration-300 group">
-                                    <div
-                                        className="relative p-2 bg-primary/10 rounded flex items-center justify-center border border-primary/10 shadow-sm cursor-pointer transition-all hover:bg-destructive/20 hover:border-destructive/30 hover:scale-105 active:scale-95 group/icon"
-                                        onClick={() => onRemovePart(name)}
-                                        title={`Remove ${name}`}
-                                    >
-                                        <Icon className="w-4 h-4 text-primary/80 group-hover/icon:text-destructive transition-colors" />
-                                        <div className="absolute -top-1.5 -right-1.5 lg:hidden bg-destructive text-white rounded-full p-0.5 shadow-lg border border-background">
-                                            <CloseIcon className="w-2.5 h-2.5" />
-                                        </div>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-bold text-primary/80 uppercase tracking-wider leading-none mb-1">{name}</p>
-                                        <p className="text-sm font-semibold truncate leading-tight tracking-tight">{(c as any).name || c.model}</p>
-                                    </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="hidden lg:flex h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 hover:text-destructive text-muted-foreground"
-                                        onClick={() => onRemovePart(name)}
-                                    >
-                                        <CloseIcon className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                <div className="pt-4 flex-none space-y-4">
-                    <Separator className="opacity-50" />
-                    {showSystemBalance !== false && <BottleneckMeter build={build} resolution={resolution} />}
-                    
-                    {totalWattage > 0 && (
-                        <PowerMeter value={totalWattage} max={psuWattage} className="mt-2" />
-                    )}
-
-                    <div className="flex justify-between items-center pt-3 border-t border-dashed border-border/40">
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Total Value</span>
-                        <span className="text-2xl font-bold font-headline text-primary tracking-tighter">{formatCurrency(totalPrice)}</span>
-                    </div>
-                </div>
-            </CardContent>
+            <BuildContent
+                build={build}
+                onRemovePart={onRemovePart}
+                onCategorySelect={onCategorySelect}
+                showSystemBalance={showSystemBalance}
+                resolution={resolution}
+                totalWattage={totalWattage}
+                psuWattage={psuWattage}
+                totalPrice={totalPrice}
+            />
             <CardFooter className="flex-none flex flex-col items-stretch gap-4 pb-6">
                 <div className="flex flex-row lg:flex-col gap-3 w-full items-center justify-end lg:justify-center">
                     {!isManagerMode && (
-                        hasAnalysis ? (
-                            <SparkleButton
-                                icon={<Sparkles className="h-4 w-4" />}
-                                containerClassName="order-1 flex-none lg:w-full"
-                                className="w-12 lg:w-full h-12 text-xs font-black uppercase tracking-widest px-0 lg:px-8"
-                                disabled={selectedParts === 0}
-                                onClick={() => {
-                                    if (onAnalyze) {
-                                        onAnalyze(true);
-                                    } else {
-                                        router.push('/ai-build-advisor');
-                                    }
-                                }}
-                            >
-                                <span className="hidden lg:inline">REFRESH ANALYSIS</span>
-                            </SparkleButton>
-                        ) : (
-                            <SparkleButton
-                                icon={<Sparkles className="h-4 w-4" />}
-                                containerClassName="order-1 flex-none lg:w-full"
-                                className="w-12 lg:w-full h-12 text-xs font-black uppercase tracking-widest px-0 lg:px-8"
-                                disabled={selectedParts === 0}
-                                onClick={() => {
-                                    if (onAnalyze) {
-                                        onAnalyze();
-                                    } else {
-                                        router.push('/ai-build-advisor');
-                                    }
-                                }}
-                            >
-                                <span className="hidden lg:inline">ANALYZE BUILD</span>
-                            </SparkleButton>
-                        )
+                        <SparkleButton
+                            icon={<Sparkles className="h-4 w-4" />}
+                            containerClassName="order-1 flex-none lg:w-full"
+                            className="w-12 lg:w-full h-12 text-xs font-black uppercase tracking-widest px-0 lg:px-8"
+                            disabled={selectedParts === 0}
+                            onClick={() => handleAnalyze(setIsDialogOpen)}
+                        >
+                            <span className="hidden lg:inline">{hasAnalysis ? "REFRESH ANALYSIS" : "ANALYZE BUILD"}</span>
+                        </SparkleButton>
                     )}
-
 
                     <AnimatedIconButton 
                         icon={<AnimatedRotateIcon className="h-4 w-4" />}
@@ -648,7 +235,7 @@ export function YourBuild({
                                     <Button variant="outline" className="flex-1" onClick={() => setIsCheckoutDialogOpen(false)}>Cancel</Button>
                                     <AnimatedIconButton 
                                         className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 text-white border-none" 
-                                        onClick={handleCheckout} 
+                                        onClick={() => handleCheckout(() => setIsCheckoutDialogOpen(false))} 
                                         disabled={isCheckingOut}
                                         isLoading={isCheckingOut}
                                         icon={<AnimatedShieldIcon className="h-4 w-4" />}
@@ -667,8 +254,6 @@ export function YourBuild({
 
     return (
         <>
-            {/* Desktop View */}
-            {/* Scroll anchor for desktop — scrollIntoView lands here */}
             <div ref={desktopCardRef} className="hidden lg:block">
             <Card className={`flex flex-col border-primary/20 shadow-[0_0_40px_rgba(34,211,238,0.05)] overflow-hidden relative glass-panel sticky top-4 ${className || ""}`}>
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
@@ -682,7 +267,6 @@ export function YourBuild({
             </Card>
             </div>
 
-            {/* Mobile View */}
             <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/80 backdrop-blur-xl border-t border-border shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
                 <Sheet>
                     <SheetTrigger asChild>
@@ -725,7 +309,6 @@ export function YourBuild({
                 </Sheet>
             </div>
 
-            {/* AI Progress Modal — renders centered on screen when adding prebuilt */}
             <AIProgressModal
                 isOpen={showLocalAiProgress}
                 onComplete={() => setShowLocalAiProgress(false)}

@@ -1,3 +1,8 @@
+/**
+ * types — Central TypeScript type definitions for the Buildbot AI platform.
+ * Defines: Part, PrebuiltSystem, ComponentData, Build, Order, UserProfile,
+ * Notification, SystemNotification, and related domain types.
+ */
 
 import type { AiBuildAdvisorRecommendationsOutput } from "@/ai/flows/ai-build-advisor-recommendations";
 

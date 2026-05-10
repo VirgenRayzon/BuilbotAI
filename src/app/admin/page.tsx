@@ -34,7 +34,8 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { InventoryToolbar } from '@/components/inventory-toolbar';
-import { AddPartDialog, type AddPartFormSchema } from '@/components/add-part-dialog';
+import { AddPartDialog } from '@/components/add-part-dialog';
+import { type AddPartFormSchema } from '@/hooks/use-part-form';
 import { AddPrebuiltDialog, type AddPrebuiltFormSchema } from '@/components/add-prebuilt-dialog';
 import type { Part, PrebuiltSystem } from '@/lib/types';
 import { InventoryTable } from '@/components/inventory-table';
@@ -290,7 +291,7 @@ export default function AdminPage() {
             performanceScore: data.performanceScore,
             dimensions: data.dimensions,
             description: data.description,
-            specifications: Object.fromEntries(data.specifications.map(s => [s.key, s.value])),
+            specifications: Object.fromEntries(data.specifications.map((s: { key: string; value: string }) => [s.key, s.value])),
             packageType: data.packageType === "" ? undefined : data.packageType
         });
     };

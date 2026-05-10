@@ -1,3 +1,7 @@
+/**
+ * ThemeToggle — Dark/Light mode toggle button.
+ * Uses Sun/Moon icons with rotate/scale animations for smooth theme transitions.
+ */
 
 'use client';
 

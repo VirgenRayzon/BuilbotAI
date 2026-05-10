@@ -1,3 +1,7 @@
+/**
+ * Logo — Branded Buildbot AI logo with animated 3D cube and text.
+ * Used in the header/navbar across the application.
+ */
 import { AnimatedCubeLogo } from "./animated-cube-logo";
 import { cn } from "@/lib/utils";
 

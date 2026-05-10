@@ -1,3 +1,7 @@
+/**
+ * ComponentCard — Generic card for displaying a single PC component in the build summary.
+ * Shows image, model name, description, price, and an "NOT IN INVENTORY" badge for AI-suggested parts.
+ */
 import {
   Card,
   CardContent,
