@@ -15,20 +15,20 @@ export function FeaturesSection({ isDark }: FeaturesSectionProps) {
     <section className="py-32 relative transition-colors duration-1000">
       <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8">
         <SectionHeader
-          badge="Advanced Engineering"
+          badge="BuildbotAI Features"
           title="Beyond Simple Compatibility"
-          subtitle="BuildbotAI doesn't just list parts—it understands the physical and technical interplay of your entire architecture."
+          subtitle="BuildbotAI doesn't just list parts, it understands the performance and technical interplay of your entire build."
         />
 
         <FeatureShowcase
           reversed={true}
-          title="Neural Bottleneck Analysis"
-          description="Shift between 1080p, 1440p, and 4K workload projections. Our AI analyzes the compute tier of your CPU vs your GPU to warn you if components will choke performance before you spend a dime."
+          title="Bottleneck Analysis"
+          description="Shift between 1080p, 1440p, and 4K workloads. BuildbotAI analyzes the performance tier of your CPU vs your GPU to warn you if components will choke its performance."
           visual={
             <div className="relative w-full h-full overflow-hidden group">
               <img
                 src="/feature-1.webp"
-                alt="Neural Bottleneck Analysis"
+                alt="Bottleneck Analysis"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
@@ -44,7 +44,7 @@ export function FeaturesSection({ isDark }: FeaturesSectionProps) {
                 <div className="space-y-3">
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-white/80">
-                      <span>Compute Unit Utilization</span>
+                      <span>CPU Utilization</span>
                       <span className="text-primary">98% PEAK</span>
                     </div>
                     <div className="h-1.5 w-full bg-primary/20 rounded-full overflow-hidden backdrop-blur-sm">
@@ -59,7 +59,7 @@ export function FeaturesSection({ isDark }: FeaturesSectionProps) {
 
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-white/80">
-                      <span>Graphics Throughput</span>
+                      <span>GPU Utilization</span>
                       <span className="text-purple-400">100% MAXIMUM</span>
                     </div>
                     <div className="h-1.5 w-full bg-purple-500/20 rounded-full overflow-hidden backdrop-blur-sm">
@@ -79,7 +79,7 @@ export function FeaturesSection({ isDark }: FeaturesSectionProps) {
 
         <FeatureShowcase
           title="Buildbot Build Critique"
-          description="Not sure if a specific AIO is overkill for your CPU? Our Buildbot Critique analyzes your entire hardware selection for value, thermal efficiency, and generational compatibility, providing professional feedback on every choice."
+          description="Not sure about your components? Buildbot Critique analyzes your entire hardware selection for value, thermal efficiency, and compatibility, providing professional feedback on every choice."
           visual={
             <div className="relative w-full h-full overflow-hidden group">
               <img
@@ -104,7 +104,7 @@ export function FeaturesSection({ isDark }: FeaturesSectionProps) {
                     "text-sm leading-relaxed font-body italic",
                     isDark ? "text-slate-200" : "text-slate-700"
                   )}>
-                    "Architectural Scan Complete: The Ryzen 7 7800X3D choice is optimal. However, the 360mm AIO exceeds thermal requirements. Consider a 240mm unit to reallocate $45 towards faster NVMe..."
+                    "Scan Complete: The Ryzen 7 7800X3D choice is optimal. However, your PSU is 100w shy of recommended for a 4090 build. Consider a 850w unit..."
                   </p>
                 </div>
               </div>
@@ -115,18 +115,18 @@ export function FeaturesSection({ isDark }: FeaturesSectionProps) {
         <FeatureShowcase
           reversed={true}
           title="Instant AI Build Generation"
-          description="Tell Buildbot your budget, favorite games, and performance goals. Within seconds, our neural engine architects a complete, perfectly matched build from our live inventory—zero research required."
+          description="Tell Buildbot your budget, target resolution, and performance goals. Within seconds, Buildbot builds a complete, perfectly matched PC build from our live inventory."
           visual={
             <div className="relative w-full h-full overflow-hidden group">
               <img
                 src="/feature-3.webp"
-                alt="Instant AI Build Generation"
+                alt="AI Build Generation"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-gradient-to-l from-background/80 via-transparent to-transparent" />
               <div className="absolute inset-0 flex flex-col justify-center p-8 gap-3 items-end">
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Neural Architect Stream</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">AI PC Generation: Completed</span>
                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 backdrop-blur-md">
                     <Bot className="w-4 h-4 text-primary" />
                   </div>
@@ -136,7 +136,7 @@ export function FeaturesSection({ isDark }: FeaturesSectionProps) {
                   {[
                     { text: "Scanning GPU market...", icon: CheckCircle2, color: "text-emerald-500" },
                     { text: "Socket match: VERIFIED", icon: ShieldCheck, color: "text-blue-500" },
-                    { text: "Optimizing DDR5 Latency", icon: Zap, color: "text-purple-400" }
+                    { text: "Power Draw: Optimized", icon: Zap, color: "text-purple-400" }
                   ].map((item, i) => (
                     <motion.div
                       key={i}

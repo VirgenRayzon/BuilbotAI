@@ -20,8 +20,8 @@ export function AccessoriesSection({ isDark }: AccessoriesSectionProps) {
       <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8">
         <SectionHeader
           badge="Curated Experiences"
-          title="Beyond The Blueprint"
-          subtitle="Whether you're architecting from scratch or deploying a pre-validated rig, we provide the ultimate foundation."
+          title="Beyond The System Unit"
+          subtitle="Whether you're building from scratch or looking for a pre-built system, we provide the ultimate foundation."
         />
 
         <div className="grid md:grid-cols-2 gap-10 max-w-6xl mx-auto">
@@ -37,7 +37,7 @@ export function AccessoriesSection({ isDark }: AccessoriesSectionProps) {
               <Box className="w-8 h-8 text-primary" />
             </div>
             <div>
-              <h4 className="text-3xl font-bold font-headline uppercase tracking-tight mb-3">Battle-Ready Rigs</h4>
+              <h4 className="text-3xl font-bold font-headline uppercase tracking-tight mb-3">Plug and Play Rigs</h4>
               <p className={cn("text-lg font-body leading-relaxed", isDark ? "text-slate-400" : "text-slate-600")}>
                 Professionally curated systems, built by experts using our AI validation tools. Guaranteed performance deployment.
               </p>
@@ -61,9 +61,9 @@ export function AccessoriesSection({ isDark }: AccessoriesSectionProps) {
               <MonitorSmartphone className="w-8 h-8 text-purple-400" />
             </div>
             <div>
-              <h4 className="text-3xl font-bold font-headline uppercase tracking-tight mb-3">Total Command setup</h4>
+              <h4 className="text-3xl font-bold font-headline uppercase tracking-tight mb-3">Complete Accessories Setup</h4>
               <p className={cn("text-lg font-body leading-relaxed", isDark ? "text-slate-400" : "text-slate-600")}>
-                Beyond the tower. Buildbot helps you synchronize the perfect Monitor, Keyboard, and Headset ecosystem.
+                Beyond the tower. Buildbot have a selection of Monitor, Keyboard, and Headset for you to choose from.
               </p>
             </div>
             <Button asChild variant="link" className="text-purple-400 p-0 h-auto justify-start w-fit group/btn text-sm font-black uppercase tracking-widest">

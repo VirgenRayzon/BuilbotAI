@@ -51,7 +51,7 @@ export function HeroSection({ isDark }: HeroSectionProps) {
                 isDark ? "bg-primary/10 border-primary/30 text-primary" : "bg-primary/5 border-primary/20 text-primary shadow-sm"
               )}>
                 <Sparkles className="mr-3 h-4 w-4 animate-pulse" />
-                Neural PC Architect v2.0
+                BuildbotAI v4.0
               </div>
             </div>
 
@@ -75,7 +75,7 @@ export function HeroSection({ isDark }: HeroSectionProps) {
               "max-w-xl text-lg md:text-2xl mb-10 md:mb-14 leading-relaxed font-medium opacity-90",
               isDark ? "text-slate-300" : "text-slate-600"
             )}>
-              Forge high-performance machines with neural bottleneck diagnostics, intelligent hardware critique, and precision part matching.
+              Build your high-performance PC with AI-powered bottleneck diagnostics, intelligent hardware critique, and precision part matching.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-start gap-4 md:gap-8">
@@ -84,8 +84,8 @@ export function HeroSection({ isDark }: HeroSectionProps) {
                   Initialize Builder <LayoutPanelLeft className="w-5 h-5 md:w-6 md:h-6" />
                 </Link>
               </Button>
-              <SparkleButton 
-                asChild 
+              <SparkleButton
+                asChild
                 className="w-full sm:w-auto h-16 md:h-20 px-8 md:px-12 text-sm md:text-base uppercase tracking-[0.3em] md:tracking-[0.4em] rounded-xl md:rounded-2xl font-black transition-all hover:scale-[1.05] active:scale-[0.95]"
                 icon={<Sparkles className="w-4 h-4 md:w-5 md:h-5 text-primary" />}
               >

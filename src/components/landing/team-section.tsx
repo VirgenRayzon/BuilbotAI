@@ -58,7 +58,7 @@ export function TeamSection() {
 
       <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8 relative z-10">
         <SectionHeader
-          badge="The Architects"
+          badge="The 4 Horsemen"
           title="Meet The Team"
           subtitle="The visionary minds behind BuildbotAI's neural PC architecture and immersive experience."
         />
@@ -73,8 +73,8 @@ export function TeamSection() {
               viewport={{ once: true }}
               className={cn(
                 "group relative p-8 rounded-[32px] border transition-all duration-500 hover:scale-[1.02]",
-                isDark 
-                  ? "bg-slate-900/40 border-white/5 hover:border-primary/30" 
+                isDark
+                  ? "bg-slate-900/40 border-white/5 hover:border-primary/30"
                   : "bg-slate-50/50 border-slate-200 hover:border-primary/20 shadow-sm"
               )}
             >
@@ -86,7 +86,7 @@ export function TeamSection() {
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
-                
+
                 {/* Role Icon Floating */}
                 <div className={cn(
                   "absolute top-4 right-4 p-3 rounded-xl backdrop-blur-xl border flex items-center justify-center transition-transform duration-500 group-hover:rotate-12",
@@ -113,7 +113,7 @@ export function TeamSection() {
                     {member.name}
                   </h3>
                 </div>
-                
+
                 <p className={cn(
                   "text-sm leading-relaxed font-medium",
                   isDark ? "text-slate-400" : "text-slate-600"
