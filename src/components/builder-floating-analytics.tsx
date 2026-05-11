@@ -15,6 +15,8 @@ interface BuilderFloatingAnalyticsProps {
     onResolutionChange: (res: Resolution) => void;
     workload: WorkloadType;
     onWorkloadChange: (type: WorkloadType) => void;
+    analysis?: any;
+    onApplySuggestion?: (category: string, partId: string) => void;
 }
 
 export function BuilderFloatingAnalytics({
@@ -22,7 +24,9 @@ export function BuilderFloatingAnalytics({
     resolution,
     onResolutionChange,
     workload,
-    onWorkloadChange
+    onWorkloadChange,
+    analysis,
+    onApplySuggestion
 }: BuilderFloatingAnalyticsProps) {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -53,31 +57,21 @@ export function BuilderFloatingAnalytics({
                         initial={{ opacity: 0, scale: 0.9, x: 20 }}
                         animate={{ opacity: 1, scale: 1, x: 0 }}
                         exit={{ opacity: 0, scale: 0.9, x: 20 }}
-                        className="w-[calc(100vw-2rem)] sm:w-[400px] mb-4"
+                        className="w-[calc(100vw-2rem)] sm:w-[440px] mb-4"
                     >
-                        <div className="flex flex-col bg-background/60 backdrop-blur-2xl border border-cyan-500/30 rounded-2xl shadow-2xl overflow-hidden max-h-[80vh]">
-                            {/* Header */}
-                            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5">
-                                <div className="flex items-center gap-2">
-                                    <Activity className="w-5 h-5 text-primary" />
-                                    <h2 className="text-lg font-headline font-bold uppercase tracking-tight">System Analytics</h2>
-                                </div>
-                                <AnimatedIconButton 
-                                    variant="ghost" 
-                                    onClick={() => setIsOpen(false)} 
-                                    className="h-8 w-8"
-                                    icon={<AnimatedXIcon size={20} />}
-                                />
-                            </div>
-
+                        <div className="flex flex-col bg-transparent">
                             {/* Content */}
-                            <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                            <div className="flex-1 overflow-y-auto custom-scrollbar max-h-[90vh]">
                                 <BuilderSidebarLeft
                                     build={build}
                                     resolution={resolution}
                                     onResolutionChange={onResolutionChange}
                                     workload={workload}
                                     onWorkloadChange={onWorkloadChange}
+                                    analysis={analysis}
+                                    onApplySuggestion={onApplySuggestion}
+                                    onClose={() => setIsOpen(false)}
+                                    className="gap-0"
                                 />
                             </div>
                         </div>

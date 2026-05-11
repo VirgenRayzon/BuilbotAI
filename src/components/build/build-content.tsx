@@ -8,6 +8,8 @@ import { ComponentData, Resolution } from "@/lib/types";
 import { BuildItem } from "./build-item";
 import { BottleneckMeter } from "./bottleneck-meter";
 import { PowerMeter } from "../ui/power-meter";
+import { calculateSynergyScore } from "@/lib/bottleneck";
+import { motion } from "framer-motion";
 
 interface BuildContentProps {
   build: Record<string, ComponentData | ComponentData[] | null>;
@@ -107,6 +109,23 @@ export function BuildContent({
         {totalWattage > 0 && (
           <PowerMeter value={totalWattage} max={psuWattage} className="mt-2" />
         )}
+
+        <div className="pt-2">
+            <div className="flex justify-between items-center mb-1">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Synergy Rating</span>
+                <span className={cn("text-[10px] font-black tracking-widest", calculateSynergyScore(build, resolution).score >= 80 ? "text-primary" : "text-amber-500")}>
+                    {calculateSynergyScore(build, resolution).score}/100
+                </span>
+            </div>
+            <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${calculateSynergyScore(build, resolution).score}%` }}
+                    className="h-full bg-primary"
+                    style={{ backgroundColor: calculateSynergyScore(build, resolution).color }}
+                />
+            </div>
+        </div>
 
         <div className="flex justify-between items-center pt-3 border-t border-dashed border-border/40">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Total Value</span>

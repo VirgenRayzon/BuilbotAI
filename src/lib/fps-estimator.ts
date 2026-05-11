@@ -8,7 +8,9 @@ import { getTier, ComponentTier } from "./bottleneck";
 
 export interface FpsEstimate {
     averageFps: number;
-    chartData: { resolution: string; average: number; lows: number }[];
+    lowsFps: number;
+    peakFps: number;
+    chartData: { resolution: string; average: number; lows: number; peak: number }[];
 }
 
 export const estimateFPS = (
@@ -56,7 +58,7 @@ export const estimateFPS = (
 
     // 3. Generate Chart Data based on "Resolution" steps matching mockup
     const chartData = [];
-    const resolutionSteps = ["200", "400", "1000", "1300", "1600"];
+    const resolutionSteps = ["1080", "1440", "2160", "2880", "3840"];
 
     // We want the curve to go upwards as "Resolution" (x-axis) increases in the mockup. 
     // This is purely visual to match the reference image.
@@ -68,15 +70,17 @@ export const estimateFPS = (
         const progress = (i + 1) / resolutionSteps.length;
 
         let pointAvg = currentAvg + (averageFps - currentAvg) * progress;
-
         // Add some random noise
         pointAvg += averageFps * (Math.random() * 0.1 - 0.05);
+        
         let pointLows = pointAvg * (0.7 + Math.random() * 0.1); // ~70-80% of average
+        let pointPeak = pointAvg * (1.2 + Math.random() * 0.1); // ~120-130% of average
 
         chartData.push({
             resolution: resolutionSteps[i],
             average: Math.round(pointAvg),
-            lows: Math.round(pointLows)
+            lows: Math.round(pointLows),
+            peak: Math.round(pointPeak)
         });
 
         currentAvg = pointAvg;
@@ -84,8 +88,12 @@ export const estimateFPS = (
     }
 
     // Ensure the last point is closest to the actual estimated average
-    chartData[chartData.length - 1].average = averageFps;
-    chartData[chartData.length - 1].lows = Math.round(averageFps * 0.75);
+    const lowsFps = Math.round(averageFps * 0.75);
+    const peakFps = Math.round(averageFps * 1.25);
 
-    return { averageFps, chartData };
+    chartData[chartData.length - 1].average = averageFps;
+    chartData[chartData.length - 1].lows = lowsFps;
+    chartData[chartData.length - 1].peak = peakFps;
+
+    return { averageFps, lowsFps, peakFps, chartData };
 };

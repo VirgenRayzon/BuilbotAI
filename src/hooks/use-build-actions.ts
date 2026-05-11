@@ -14,14 +14,15 @@ import { type ProgressPhase } from "@/components/ai-progress-modal";
 import { ComponentData, OrderItem, Part } from "@/lib/types";
 import { type PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
 
-interface UseBuildActionsProps {
+interface UseBuildActionsOptions {
   build: Record<string, ComponentData | ComponentData[] | null>;
   user: any;
   isAiKillSwitch: boolean;
   onClearBuild: () => void;
   onAnalyze?: (forceRefresh?: boolean) => void;
-  onAddPrebuilt?: (data: PrebuiltBuilderAddFormSchema) => void | Promise<void>;
+  onAddPrebuilt?: (data: any) => void | Promise<void>;
   totalPrice: number;
+  onAnalysisUpdate?: (analysis: any) => void;
 }
 
 export function useBuildActions({
@@ -32,8 +33,9 @@ export function useBuildActions({
   onAnalyze,
   onAddPrebuilt,
   totalPrice,
-}: UseBuildActionsProps) {
-  const [analysis, setAnalysis] = useState<any>(null);
+  onAnalysisUpdate,
+}: UseBuildActionsOptions) {
+  const [analysis, setLocalAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -185,7 +187,7 @@ export function useBuildActions({
     setIsCheckingOut(false);
   };
 
-  const handleAnalyze = async (setIsDialogOpen: (open: boolean) => void) => {
+  const handleAnalyze = async (onComplete?: (success: boolean) => void) => {
     if (isAiKillSwitch) {
       toast({
         title: "AI Disabled",
@@ -195,13 +197,8 @@ export function useBuildActions({
       return;
     }
 
-    if (onAnalyze) {
-      onAnalyze();
-      return;
-    }
     setLoading(true);
     setError(null);
-    setIsDialogOpen(true);
 
     const inputData: any = {};
     Object.entries(build).forEach(([key, val]) => {
@@ -227,16 +224,38 @@ export function useBuildActions({
 
     try {
       const result = await getAiBuildCritique(inputData);
-      if ('error' in result) {
+      
+      if (result && 'error' in result) {
         setError(result.error as string);
+        if (onComplete) onComplete(false);
       } else {
-        setAnalysis(result);
+        setLocalAnalysis(result);
+        if (onAnalysisUpdate) onAnalysisUpdate(result);
+        if (onComplete) onComplete(true);
       }
     } catch (err) {
       setError("An unexpected error occurred during analysis.");
+      if (onComplete) onComplete(false);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleApplySuggestion = async (category: string, partId: string) => {
+    if (!partId) return;
+    
+    const event = new CustomEvent('add-suggestion', { 
+      detail: { 
+        id: partId,
+        category: category 
+      } 
+    });
+    window.dispatchEvent(event);
+    
+    toast({
+      title: "Optimization Applied",
+      description: `Updating your build with the recommended ${category}.`,
+    });
   };
 
   return {
@@ -251,5 +270,6 @@ export function useBuildActions({
     handleAddPrebuiltWithAi,
     handleCheckout,
     handleAnalyze,
+    handleApplySuggestion,
   };
 }

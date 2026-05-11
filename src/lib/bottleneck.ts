@@ -86,3 +86,101 @@ export const calculateBottleneck = (
         color: '#22c55e', // Green
     };
 };
+
+export interface SynergyResult {
+    score: number;
+    status: 'Perfect' | 'Great' | 'Good' | 'Fair' | 'Poor' | 'Incomplete';
+    color: string;
+    breakdown: {
+        balance: number;
+        power: number;
+        completeness: number;
+        tierConsistency: number;
+    };
+}
+
+export const calculateSynergyScore = (
+    build: Record<string, ComponentData | ComponentData[] | null>,
+    resolution: Resolution = '1080p'
+): SynergyResult => {
+    const mandatoryCategories = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler'];
+    const selectedCount = mandatoryCategories.filter(cat => {
+        const val = build[cat];
+        return Array.isArray(val) ? val.length > 0 : !!val;
+    }).length;
+
+    // 1. Completeness (25 points)
+    const completenessScore = (selectedCount / mandatoryCategories.length) * 25;
+
+    if (selectedCount < 2) {
+        return {
+            score: Math.round(completenessScore),
+            status: 'Incomplete',
+            color: '#9ca3af',
+            breakdown: { balance: 0, power: 0, completeness: completenessScore, tierConsistency: 0 }
+        };
+    }
+
+    // 2. Balance (Bottleneck) (35 points)
+    const bottleneck = calculateBottleneck(build, resolution);
+    let balanceScore = 0;
+    if (bottleneck.status === 'Balanced') balanceScore = 35;
+    else if (bottleneck.status === 'Slight Mismatch') balanceScore = 20;
+    else if (bottleneck.status === 'Severe Mismatch') balanceScore = 5;
+
+    // 3. Power Headroom (20 points)
+    const totalWattage = Object.entries(build).reduce((acc, [key, component]) => {
+        const drawingParts = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage'];
+        if (!drawingParts.includes(key)) return acc;
+        if (Array.isArray(component)) return acc + component.reduce((sum, c) => sum + (c.wattage || 0), 0);
+        return acc + ((component as any)?.wattage || 0);
+    }, 0);
+    const psu = build['PSU'] as ComponentData | null;
+    const psuWattage = psu?.wattage || 0;
+
+    let powerScore = 0;
+    if (psuWattage > 0) {
+        const ratio = totalWattage / psuWattage;
+        if (ratio > 0.4 && ratio < 0.8) powerScore = 20; // Ideal efficiency
+        else if (ratio <= 0.4 || (ratio >= 0.8 && ratio < 1.0)) powerScore = 10;
+        else if (ratio >= 1.0) powerScore = 0;
+    }
+
+    // 4. Tier Consistency (20 points)
+    const tiers = Object.values(build)
+        .flat()
+        .filter(p => p !== null)
+        .map(p => getTier(p as ComponentData));
+    
+    let tierScore = 0;
+    if (tiers.length > 1) {
+        const avgTier = tiers.reduce((a, b) => a + b, 0) / tiers.length;
+        const variance = tiers.reduce((a, b) => a + Math.pow(b - avgTier, 2), 0) / tiers.length;
+        tierScore = Math.max(0, 20 - (variance * 10));
+    }
+
+    const totalScore = Math.min(100, Math.round(completenessScore + balanceScore + powerScore + tierScore));
+
+    let status: SynergyResult['status'] = 'Fair';
+    let color = '#f59e0b'; // Amber
+
+    if (totalScore >= 95) { status = 'Perfect'; color = '#22d3ee'; } // Cyan
+    else if (totalScore >= 80) { status = 'Great'; color = '#22c55e'; } // Green
+    else if (totalScore >= 65) { status = 'Good'; color = '#10b981'; } // Emerald
+    else if (totalScore >= 40) { status = 'Fair'; color = '#f59e0b'; } // Amber
+    else { status = 'Poor'; color = '#ef4444'; } // Red
+
+    if (selectedCount < mandatoryCategories.length) status = 'Incomplete';
+
+    return {
+        score: totalScore,
+        status,
+        color,
+        breakdown: {
+            balance: balanceScore,
+            power: powerScore,
+            completeness: completenessScore,
+            tierConsistency: tierScore
+        }
+    };
+};

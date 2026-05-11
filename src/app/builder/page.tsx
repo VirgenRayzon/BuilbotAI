@@ -56,10 +56,17 @@ export default function BuilderPage() {
         totalPages
     } = useFilteredInventory(allParts, build, getCountInBuild);
 
-    const [mounted, setMounted] = useState(false);
     const [view, setView] = useState<'grid' | 'list'>('grid');
     const [resolution, setResolution] = useState<Resolution>('1080p');
     const [workload, setWorkload] = useState<WorkloadType>('Balanced');
+    const [analysis, setAnalysis] = useState<any>(null);
+
+    const handleApplySuggestion = (category: string, partId: string) => {
+        const event = new CustomEvent('add-suggestion', { 
+            detail: { id: partId, category } 
+        });
+        window.dispatchEvent(event);
+    };
 
     useEffect(() => {
         setMounted(true);
@@ -137,6 +144,8 @@ export default function BuilderPage() {
                             onResolutionChange={setResolution}
                             workload={workload}
                             onWorkloadChange={setWorkload}
+                            analysis={analysis}
+                            onAnalysisUpdate={setAnalysis}
                         />
                     </aside>
                 </div>
@@ -150,6 +159,8 @@ export default function BuilderPage() {
                 onResolutionChange={setResolution}
                 workload={workload}
                 onWorkloadChange={setWorkload}
+                analysis={analysis}
+                onApplySuggestion={handleApplySuggestion}
             />
         </div>
     </RouteGuard>

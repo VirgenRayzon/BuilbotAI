@@ -43,7 +43,8 @@ interface YourBuildProps {
     isManagerMode?: boolean;
     allParts?: Part[];
     onAddPrebuilt?: (data: PrebuiltBuilderAddFormSchema) => void | Promise<void>;
-    hasAnalysis?: boolean;
+    analysis?: any;
+    onAnalysisUpdate?: (analysis: any) => void;
     onCategorySelect?: (category: string) => void;
 }
 
@@ -53,11 +54,15 @@ export function YourBuild({
     onRemovePart,
     onAnalyze,
     resolution,
+    onResolutionChange,
+    workload,
+    onWorkloadChange,
     showSystemBalance = true,
     className,
     isManagerMode = false,
     onAddPrebuilt,
-    hasAnalysis = false,
+    analysis,
+    onAnalysisUpdate,
     onCategorySelect
 }: YourBuildProps) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -129,6 +134,7 @@ export function YourBuild({
         onAnalyze,
         onAddPrebuilt,
         totalPrice,
+        onAnalysisUpdate,
     });
 
     useEffect(() => {
@@ -161,7 +167,7 @@ export function YourBuild({
                             disabled={selectedParts === 0}
                             onClick={() => handleAnalyze(setIsDialogOpen)}
                         >
-                            <span className="hidden lg:inline">{hasAnalysis ? "REFRESH ANALYSIS" : "ANALYZE BUILD"}</span>
+                            <span className="hidden lg:inline">{analysis ? "REFRESH ANALYSIS" : "ANALYZE BUILD"}</span>
                         </SparkleButton>
                     )}
 
