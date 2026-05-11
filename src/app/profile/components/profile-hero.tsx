@@ -44,11 +44,11 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
                         </div>
                         <div className="flex items-center justify-center md:justify-start gap-4 text-muted-foreground">
                             <span className="flex items-center gap-1.5 text-sm">
-                                <Mail className="h-3.5 w-3.5" /> {authUser.email}
+                                <Mail className="h-3.5 w-3.5" /> {authUser?.email}
                             </span>
                             <span className="h-1 w-1 rounded-full bg-muted-foreground/30" />
                             <span className="flex items-center gap-1.5 text-sm">
-                                <Calendar className="h-3.5 w-3.5" /> Joined {authUser.metadata.creationTime ? new Date(authUser.metadata.creationTime).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : 'Unknown'}
+                                <Calendar className="h-3.5 w-3.5" /> Joined {authUser?.metadata?.creationTime ? new Date(authUser.metadata.creationTime).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : 'Unknown'}
                             </span>
                         </div>
                     </div>
