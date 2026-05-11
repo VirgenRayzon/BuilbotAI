@@ -7,14 +7,20 @@ import { cn } from "@/lib/utils";
 interface FullPageLoaderProps {
   label?: string;
   subtitle?: string;
+  message?: string;
 }
 
 export function FullPageLoader({ 
   label = "Initializing", 
-  subtitle = "Masterpiece Architect" 
+  subtitle = "Masterpiece Architect",
+  message = "Stabilizing Neural Link..."
 }: FullPageLoaderProps) {
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#0c0f14] overflow-hidden">
+    <motion.div 
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0, transition: { duration: 0.5, delay: 1 } }}
+      className="fixed inset-0 z-[999] flex items-center justify-center bg-[#0c0f14] overflow-hidden"
+    >
       {/* Dynamic Background */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.08),transparent_70%)] animate-pulse" />
@@ -120,7 +126,7 @@ export function FullPageLoader({
             transition={{ duration: 2, repeat: Infinity }}
             className="text-[9px] font-mono text-primary/60 uppercase tracking-widest mt-2"
           >
-            Stabilizing Neural Link...
+            {message}
           </motion.p>
         </div>
       </div>
@@ -130,6 +136,6 @@ export function FullPageLoader({
       <div className="absolute top-0 right-0 w-32 h-32 border-t border-r border-primary/10 rounded-tr-3xl m-8" />
       <div className="absolute bottom-0 left-0 w-32 h-32 border-b border-l border-primary/10 rounded-bl-3xl m-8" />
       <div className="absolute bottom-0 right-0 w-32 h-32 border-b border-r border-primary/10 rounded-br-3xl m-8" />
-    </div>
+    </motion.div>
   );
 }

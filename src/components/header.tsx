@@ -1,6 +1,7 @@
 
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/logo";
@@ -43,6 +44,19 @@ export function Header() {
   const router = useRouter();
   const { authUser, profile, loading } = useUserProfile();
   const auth = useAuth();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const logoHref = !mounted 
+    ? "/" 
+    : loading 
+      ? "#" 
+      : authUser 
+        ? (profile?.isManager ? "/admin" : "/builder") 
+        : "/";
 
   const handleSignOut = async () => {
     if (auth) {
@@ -103,7 +117,10 @@ export function Header() {
             className="p-1 px-4 border-none bg-transparent hover:bg-white/5 shadow-none"
             sparkleColor="#06b6d4"
           >
-            <Link href={authUser ? (profile?.isManager ? "/admin" : "/builder") : "/"} className="flex items-center">
+            <Link 
+              href={logoHref} 
+              className="flex items-center"
+            >
               <Logo />
             </Link>
           </SparkleButton>

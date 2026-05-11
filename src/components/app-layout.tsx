@@ -13,6 +13,8 @@ import { useDoc, useFirestore } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 
+import { AnimatePresence } from "framer-motion";
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { loading, authUser, profile } = useUserProfile();
   const { isPageLoading } = useLoading();
@@ -51,12 +53,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {showGlobalLoader && <FullPageLoader label="BuilbotAI" subtitle="Architecting Experience" />}
+      <AnimatePresence>
+        {showGlobalLoader && <FullPageLoader key="global-loader" label="BuilbotAI" subtitle="Architecting Experience" />}
+      </AnimatePresence>
       
       {showMaintenance ? (
         <MaintenanceScreen />
       ) : (
-        <div className={cn("flex flex-col min-h-screen overflow-x-hidden", showGlobalLoader ? "opacity-0 invisible" : "opacity-100 visible")}>
+        <div className={cn("flex flex-col min-h-screen overflow-x-hidden transition-opacity duration-1000", showGlobalLoader ? "opacity-0" : "opacity-100")}>
           <Header />
           <main className={cn("flex-1 min-h-[calc(100vh-4rem)]", isMaintenanceMode && !isSuperAdmin && "grayscale-[0.5] contrast-125")}>
             {children}

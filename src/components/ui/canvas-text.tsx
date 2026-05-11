@@ -45,6 +45,7 @@ export function CanvasText({
   const [resolvedColors, setResolvedColors] = useState<string[]>([]);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [font, setFont] = useState("");
+  const [spacing, setSpacing] = useState({ letter: "normal", word: "normal" });
 
   const updateColors = useCallback(() => {
     if (bgRef.current) {
@@ -83,14 +84,10 @@ export function CanvasText({
       setFont(
         `${computed.fontStyle} ${computed.fontWeight} ${computed.fontSize} ${computed.fontFamily}`,
       );
-      // Capture spacing
-      if (canvasRef.current) {
-        const ctx = canvasRef.current.getContext("2d");
-        if (ctx) {
-          (ctx as any).letterSpacing = computed.letterSpacing;
-          (ctx as any).wordSpacing = computed.wordSpacing;
-        }
-      }
+      setSpacing({
+        letter: computed.letterSpacing,
+        word: computed.wordSpacing
+      });
     };
 
     updateDimensions();
@@ -121,9 +118,8 @@ export function CanvasText({
     canvas.height = height * dpr;
 
     ctx.font = font;
-    const computed = window.getComputedStyle(textRef.current!);
-    (ctx as any).letterSpacing = computed.letterSpacing;
-    (ctx as any).wordSpacing = computed.wordSpacing;
+    (ctx as any).letterSpacing = spacing.letter;
+    (ctx as any).wordSpacing = spacing.word;
 
     const metrics = ctx.measureText(text);
     const ascent = metrics.actualBoundingBoxAscent;
@@ -142,9 +138,8 @@ export function CanvasText({
 
       ctx.globalCompositeOperation = "source-over";
       ctx.font = font;
-      const computed = window.getComputedStyle(textRef.current!);
-      (ctx as any).letterSpacing = computed.letterSpacing;
-      (ctx as any).wordSpacing = computed.wordSpacing;
+      (ctx as any).letterSpacing = spacing.letter;
+      (ctx as any).wordSpacing = spacing.word;
 
       ctx.textBaseline = "alphabetic";
       ctx.textAlign = "left";

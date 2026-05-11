@@ -18,8 +18,7 @@ import {
     Keyboard,
     Mouse,
     Headphones,
-    Loader2,
-    LayoutPanelLeft
+    LayoutDashboard
 } from "lucide-react";
 import type { ComponentData, Part, Resolution, WorkloadType } from "@/lib/types";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
@@ -27,22 +26,25 @@ import { PartCard } from "@/components/part-card";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import { useFirestore } from "@/firebase";
 import { collection } from "firebase/firestore";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { formatCurrency, cn, getOptimizedStorageUrl } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { PaginationControls } from "@/components/pagination-controls";
 import { useUserProfile } from "@/context/user-profile";
-import { BuilderSidebarLeft } from "@/components/builder-sidebar-left";
+import { useLoading } from "@/context/loading-context";
+import { useTheme } from "@/context/theme-provider";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
 import { BuilderFloatingAnalytics } from "@/components/builder-floating-analytics";
 import { addPrebuiltSystem } from "@/firebase/database";
 import type { PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
 import { checkCompatibility } from "@/lib/compatibility";
 
+
+import { RouteGuard } from "@/components/auth/route-guard";
 
 type PartWithoutCategory = Omit<Part, 'category'>;
 
@@ -66,17 +68,9 @@ export default function PrebuiltBuilderPage() {
     const { toast } = useToast();
     const { authUser, profile, loading: authLoading } = useUserProfile();
     const router = useRouter();
-
-    // Redirect non-admins
-    useEffect(() => {
-        if (!authLoading) {
-            if (!authUser) {
-                router.push('/');
-            } else if (!profile?.isManager) {
-                router.push('/builder');
-            }
-        }
-    }, [authUser, profile, authLoading, router]);
+    const { setIsPageLoading } = useLoading();
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
 
     // Fetch collections
     const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
@@ -365,178 +359,180 @@ export default function PrebuiltBuilderPage() {
 
     const isBuilderLoading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading || monitorsLoading || keyboardsLoading || miceLoading || headsetsLoading || authLoading;
 
-    if (authLoading || !profile?.isManager) {
-        return (
-            <div className="flex items-center justify-center min-h-[80vh]">
-                <Loader2 className="w-12 h-12 animate-spin text-primary" />
-            </div>
-        );
-    }
+    // Sync with global layout loading
+    useEffect(() => {
+        setIsPageLoading(isBuilderLoading);
+        return () => setIsPageLoading(false);
+    }, [isBuilderLoading, setIsPageLoading]);
 
     return (
-        <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-4 md:py-8 pb-24 lg:pb-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
-                <div className="text-left">
-                    <h1 className="text-4xl font-headline font-bold uppercase">Prebuilt Builder</h1>
-                    <p className="text-muted-foreground mt-2">
-                        Configure new pre-built systems for the catalog using current inventory.
-                    </p>
-                </div>
-            </div>
-
-            <div className="grid lg:grid-cols-12 gap-6 xl:gap-8">
-
+        <RouteGuard requiredPermission="canAccessAdmin">
+            <div className={cn(
+                "min-h-screen transition-colors duration-500 overflow-x-hidden",
+                isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
+            )}>
+                {/* Circuit Pattern Background */}
                 <div className={cn(
-                    "flex flex-col gap-6 lg:col-span-9"
-                )}>
-                    <InventoryToolbar
-                        categories={categories}
-                        onCategoryChange={handleCategoryChange}
-                        itemCount={sortedAndFilteredParts.length}
-                        sortBy={sortBy}
-                        onSortByChange={(val) => { setSortBy(val); setCurrentPage(1); }}
-                        sortDirection={sortDirection}
-                        onSortDirectionChange={(val) => { setSortDirection(val); setCurrentPage(1); }}
-                        supportedSorts={['Date Added', 'Name', 'Price']}
-                        view={view}
-                        onViewChange={setView}
-                        showViewToggle={true}
-                        searchQuery={searchQuery}
-                        onSearchQueryChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
-                    />
+                    "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
+                    isDark ? "invert" : ""
+                )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-                    {isBuilderLoading ? (
-                        <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-6">
-                            {[...Array(8)].map((_, i) => (
-                                <Card key={i} className="animate-pulse">
-                                    <CardContent className="p-4"><Skeleton className="aspect-square w-full mb-2" /></CardContent>
-                                    <CardContent className="p-4 pt-0 space-y-2"><Skeleton className="h-5 w-3/4" /><Skeleton className="h-4 w-1/2" /></CardContent>
-                                    <CardFooter className="p-4 pt-0 flex justify-between items-center"><Skeleton className="h-6 w-1/3" /><Skeleton className="h-9 w-20" /></CardFooter>
-                                </Card>
-                            ))}
+                <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-4 md:py-8 pb-24 lg:pb-8 relative z-10">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+                        <div className="text-left">
+                            <div className="flex items-center gap-3 mb-2">
+                                <h1 className="text-4xl font-headline font-bold uppercase tracking-tight">Prebuilt Builder</h1>
+                            </div>
+                            <p className="text-muted-foreground font-medium italic">
+                                Configure new pre-built systems for the catalog using current inventory.
+                            </p>
                         </div>
-                    ) : sortedAndFilteredParts.length > 0 ? (
-                        view === 'grid' ? (
-                            <>
-                                    <div className="grid gap-3 md:gap-6 grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
-                                    {paginatedParts.map(part => (
-                                        <PartCard
-                                            key={part.id}
-                                            part={part}
-                                            effectiveStock={(part as any).effectiveStock}
-                                            onToggleBuild={handlePartToggle}
-                                            isSelected={isSelected(part)}
-                                            compatibility={(part as any).compatibility}
-                                        />
-                                    ))}
-                                </div>
-                                <PaginationControls
-                                    currentPage={currentPage}
-                                    totalPages={totalPages}
-                                    itemsPerPage={itemsPerPage}
-                                    onPageChange={setCurrentPage}
-                                    onItemsPerPageChange={setItemsPerPage}
-                                />
-                            </>
-                        ) : (
-                            <Card className="mt-6">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Item</TableHead>
-                                            <TableHead>Stock</TableHead>
-                                            <TableHead className="text-right">Price</TableHead>
-                                            <TableHead className="w-[50px]"></TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {paginatedParts.map(part => {
-                                            const selected = isSelected(part);
-                                            const currentStock = part.stock - getCountInBuild(part.name);
-                                            return (
-                                                <TableRow key={part.id} className={cn(
-                                                    (part as any).effectiveStock === 0 && !selected && "opacity-50 grayscale",
-                                                    (part as any).compatibility && !(part as any).compatibility.compatible && "bg-destructive/[0.03] hover:bg-destructive/[0.06] border-l-2 border-l-destructive shadow-[inset_4px_0_0_-2px_rgba(239,68,68,0.5)]"
-                                                )}>
-                                                    <TableCell className="font-medium">
-                                                        <div className="flex items-center gap-3">
-                                                            <Image src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
-                                                            <div>
-                                                                <p className="font-semibold">{part.name}</p>
-                                                                <p className="text-xs text-muted-foreground">{part.brand}</p>
-                                                            </div>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge variant={currentStock > 5 ? "secondary" : currentStock > 0 ? "destructive" : "outline"}>
-                                                            {currentStock > 0 ? `${currentStock} in stock` : "Out of stock"}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="text-right">{formatCurrency(part.price)}</TableCell>
-                                                    <TableCell>
-                                                        {(!((part as any).compatibility && !(part as any).compatibility.compatible) || selected) && (
-                                                            <Button
-                                                                size="icon"
-                                                                onClick={() => handlePartToggle(part)}
-                                                                disabled={currentStock === 0 && !selected}
-                                                                variant={selected ? 'destructive' : 'default'}
-                                                            >
-                                                                {selected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                                                            </Button>
-                                                        )}
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                    </TableBody>
-                                </Table>
-                                <PaginationControls
-                                    currentPage={currentPage}
-                                    totalPages={totalPages}
-                                    itemsPerPage={itemsPerPage}
-                                    onPageChange={setCurrentPage}
-                                    onItemsPerPageChange={setItemsPerPage}
-                                />
-                            </Card>
-                        )
-                    ) : (
-                        <Card className="mt-6 min-h-[400px] flex items-center justify-center">
-                            <CardContent className="text-center text-muted-foreground p-6">
-                                <p>No components found for the selected categories.</p>
-                            </CardContent>
-                        </Card>
-                    )}
-                </div>
+                    </div>
 
-                <div className="lg:col-span-3">
-                    <div className="sticky top-20 flex flex-col gap-6 pb-4 pr-2">
-                        <YourBuild
-                            build={build}
-                            onClearBuild={handleClearBuild}
-                            onRemovePart={handleRemovePart}
-                            resolution={resolution}
-                            onResolutionChange={setResolution}
-                            workload={workload}
-                            onWorkloadChange={setWorkload}
-                            showSystemBalance={true}
-                            isManagerMode={true}
-                            allParts={allParts}
-                            onAddPrebuilt={handleAddPrebuilt}
-                            onCategorySelect={(cat) => handleCategoryChange(cat, true)}
+                <div className="grid lg:grid-cols-12 gap-6 xl:gap-8">
+
+                    <div className={cn(
+                        "flex flex-col gap-6 lg:col-span-9"
+                    )}>
+                        <InventoryToolbar
+                            categories={categories}
+                            onCategoryChange={handleCategoryChange}
+                            itemCount={sortedAndFilteredParts.length}
+                            sortBy={sortBy}
+                            onSortByChange={(val) => { setSortBy(val); setCurrentPage(1); }}
+                            sortDirection={sortDirection}
+                            onSortDirectionChange={(val) => { setSortDirection(val); setCurrentPage(1); }}
+                            supportedSorts={['Date Added', 'Name', 'Price']}
+                            view={view}
+                            onViewChange={setView}
+                            showViewToggle={true}
+                            searchQuery={searchQuery}
+                            onSearchQueryChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
                         />
+
+                        {isBuilderLoading ? null : sortedAndFilteredParts.length > 0 ? (
+                            view === 'grid' ? (
+                                <>
+                                    <div className="grid gap-3 md:gap-6 grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
+                                        {paginatedParts.map(part => (
+                                            <PartCard
+                                                key={part.id}
+                                                part={part}
+                                                effectiveStock={(part as any).effectiveStock}
+                                                onToggleBuild={handlePartToggle}
+                                                isSelected={isSelected(part)}
+                                                compatibility={(part as any).compatibility}
+                                            />
+                                        ))}
+                                    </div>
+                                    <PaginationControls
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        itemsPerPage={itemsPerPage}
+                                        onPageChange={setCurrentPage}
+                                        onItemsPerPageChange={setItemsPerPage}
+                                    />
+                                </>
+                            ) : (
+                                <Card className="mt-6">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Item</TableHead>
+                                                <TableHead>Stock</TableHead>
+                                                <TableHead className="text-right">Price</TableHead>
+                                                <TableHead className="w-[50px]"></TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {paginatedParts.map(part => {
+                                                const selected = isSelected(part);
+                                                const currentStock = part.stock - getCountInBuild(part.name);
+                                                return (
+                                                    <TableRow key={part.id} className={cn(
+                                                        (part as any).effectiveStock === 0 && !selected && "opacity-50 grayscale",
+                                                        (part as any).compatibility && !(part as any).compatibility.compatible && "bg-destructive/[0.03] hover:bg-destructive/[0.06] border-l-2 border-l-destructive shadow-[inset_4px_0_0_-2px_rgba(239,68,68,0.5)]"
+                                                    )}>
+                                                        <TableCell className="font-medium">
+                                                            <div className="flex items-center gap-3">
+                                                                <OptimizedImage src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
+                                                                <div>
+                                                                    <p className="font-semibold">{part.name}</p>
+                                                                    <p className="text-xs text-muted-foreground">{part.brand}</p>
+                                                                </div>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Badge variant={currentStock > 5 ? "secondary" : currentStock > 0 ? "destructive" : "outline"}>
+                                                                {currentStock > 0 ? `${currentStock} in stock` : "Out of stock"}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="text-right">{formatCurrency(part.price)}</TableCell>
+                                                        <TableCell>
+                                                            {(!((part as any).compatibility && !(part as any).compatibility.compatible) || selected) && (
+                                                                <Button
+                                                                    size="icon"
+                                                                    onClick={() => handlePartToggle(part)}
+                                                                    disabled={currentStock === 0 && !selected}
+                                                                    variant={selected ? 'destructive' : 'default'}
+                                                                >
+                                                                    {selected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                                                                </Button>
+                                                            )}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+                                        </TableBody>
+                                    </Table>
+                                    <PaginationControls
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        itemsPerPage={itemsPerPage}
+                                        onPageChange={setCurrentPage}
+                                        onItemsPerPageChange={setItemsPerPage}
+                                    />
+                                </Card>
+                            )
+                        ) : (
+                            <Card className="mt-6 min-h-[400px] flex items-center justify-center">
+                                <CardContent className="text-center text-muted-foreground p-6">
+                                    <p>No components found for the selected categories.</p>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
+
+                    <div className="lg:col-span-3">
+                        <div className="flex flex-col gap-6 pb-4 pr-2">
+                            <YourBuild
+                                build={build}
+                                onClearBuild={handleClearBuild}
+                                onRemovePart={handleRemovePart}
+                                resolution={resolution}
+                                onResolutionChange={setResolution}
+                                workload={workload}
+                                onWorkloadChange={setWorkload}
+                                showSystemBalance={true}
+                                isManagerMode={true}
+                                allParts={allParts}
+                                onAddPrebuilt={handleAddPrebuilt}
+                                onCategorySelect={(cat) => handleCategoryChange(cat, true)}
+                            />
+                        </div>
                     </div>
                 </div>
+
+                <BuilderFloatingAnalytics
+                    build={build}
+                    resolution={resolution}
+                    onResolutionChange={setResolution}
+                    workload={workload}
+                    onWorkloadChange={setWorkload}
+                />
+                <BuilderFloatingChat build={build} />
+                </main>
             </div>
-
-            <BuilderFloatingAnalytics
-                build={build}
-                resolution={resolution}
-                onResolutionChange={setResolution}
-                workload={workload}
-                onWorkloadChange={setWorkload}
-            />
-            <BuilderFloatingChat build={build} />
-
-        </main >
+        </RouteGuard>
     );
 }

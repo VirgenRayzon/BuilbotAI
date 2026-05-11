@@ -11,7 +11,6 @@ import type { PrebuiltSystem } from '@/lib/types';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useFirestore } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import { Skeleton } from '@/components/ui/skeleton';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
 import { SearchX, MonitorOff, ShieldCheck, Zap, Cpu } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -20,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from "@/lib/utils";
 import { FullPageLoader } from "@/components/full-page-loader";
 import { useLoading } from "@/context/loading-context";
+import { RouteGuard } from "@/components/auth/route-guard";
 
 const prebuiltCategories = [
     { name: "Entry", selected: true },
@@ -55,17 +55,6 @@ export default function PreBuiltsPage() {
         );
     };
     const [searchQuery, setSearchQuery] = useState('');
-
-    // Role-based redirection
-    useEffect(() => {
-        if (!authLoading) {
-            if (!authUser) {
-                router.push('/');
-            } else if (profile?.isManager) {
-                router.push('/admin');
-            }
-        }
-    }, [authUser, profile, authLoading, router]);
 
     const handleCategoryChange = (categoryName: string, selected: boolean) => {
         setCategories(prev => {
@@ -107,27 +96,24 @@ export default function PreBuiltsPage() {
     }, [prebuiltSystems, categories, sortBy, sortDirection, searchQuery]);
 
     const [mounted, setMounted] = useState(false);
-
     const { setIsPageLoading } = useLoading();
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
+    // Sync with global layout loading
     useEffect(() => {
-        setIsPageLoading(!mounted || authLoading);
+        setIsPageLoading(!mounted || authLoading || loading);
         return () => setIsPageLoading(false);
-    }, [mounted, authLoading, setIsPageLoading]);
-
-    if (!mounted || authLoading) {
-        return null;
-    }
+    }, [mounted, authLoading, loading, setIsPageLoading]);
 
     return (
-        <div className={cn(
-            "min-h-screen transition-colors duration-500 overflow-x-hidden",
-            isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
-        )}>
+        <RouteGuard requiredPermission="isClientOnly">
+            <div className={cn(
+                "min-h-screen transition-colors duration-500 overflow-x-hidden",
+                isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
+            )}>
             {/* Circuit Pattern Background */}
             <div className={cn(
                 "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
@@ -183,59 +169,7 @@ export default function PreBuiltsPage() {
                     />
                 </div>
 
-                {loading ? (
-                    view === 'grid' ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
-                            {[...Array(8)].map((_, i) => (
-                                <Card key={i} className="overflow-hidden rounded-2xl border-white/5 bg-white/5">
-                                    <CardContent className="p-0">
-                                        <Skeleton className="aspect-square w-full rounded-none" />
-                                    </CardContent>
-                                    <CardContent className="p-4 space-y-3 mt-2">
-                                        <Skeleton className="h-6 w-3/4" />
-                                        <Skeleton className="h-4 w-full" />
-                                        <Skeleton className="h-5 w-24 mt-4" />
-                                    </CardContent>
-                                    <CardFooter className="p-4 pt-0 flex justify-between items-center mt-2">
-                                        <Skeleton className="h-8 w-1/3" />
-                                        <Skeleton className="h-10 w-28" />
-                                    </CardFooter>
-                                </Card>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="overflow-hidden rounded-2xl border border-border/50 bg-background/20">
-                            <Table>
-                                <TableHeader className="bg-muted/30">
-                                    <TableRow>
-                                        <TableHead className="uppercase text-[10px] font-bold tracking-widest">System Identifier</TableHead>
-                                        <TableHead className="uppercase text-[10px] font-bold tracking-widest">Performance Tier</TableHead>
-                                        <TableHead className="text-right uppercase text-[10px] font-bold tracking-widest">Value (PHP)</TableHead>
-                                        <TableHead className="w-[50px]"></TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {[...Array(5)].map((_, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell>
-                                                <div className="flex items-center gap-4">
-                                                    <Skeleton className="w-12 h-12 rounded-xl" />
-                                                    <div className="space-y-2">
-                                                        <Skeleton className="h-4 w-40" />
-                                                        <Skeleton className="h-3 w-64" />
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
-                                            <TableCell align="right"><Skeleton className="h-5 w-24 ml-auto" /></TableCell>
-                                            <TableCell><Skeleton className="h-8 w-8 rounded-md" /></TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    )
-                ) : filteredAndSortedSystems.length > 0 ? (
+                {loading ? null : filteredAndSortedSystems.length > 0 ? (
                     view === 'grid' ? (
                         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
                             {filteredAndSortedSystems.map(system => (
@@ -274,5 +208,6 @@ export default function PreBuiltsPage() {
             </motion.div>
         </main>
         </div>
+        </RouteGuard>
     )
 }

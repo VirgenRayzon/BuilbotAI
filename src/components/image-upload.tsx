@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Image as ImageIcon, Upload, X, FileText } from "lucide-react";
 import Image from "next/image";
+import { OptimizedImage } from "./ui/optimized-image";
 import { cn } from "@/lib/utils";
 
 interface ImageUploadProps {
@@ -111,7 +112,7 @@ export function ImageUpload({ value, onChange, className, variant = "default" }:
                     >
                         {isPreviewReady ? (
                             <div className="absolute inset-0 animate-in fade-in zoom-in duration-500">
-                                <Image src={value} alt="Preview" fill className="object-cover" />
+                                <OptimizedImage src={value} alt="Preview" fill className="object-cover" />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
                                     <div className="p-2 rounded-full bg-white/20 border border-white/30 text-white">
                                         <Upload className="h-5 w-5" />
@@ -219,7 +220,7 @@ export function ImageUpload({ value, onChange, className, variant = "default" }:
 
                 {isPreviewReady && (
                     <div className="relative h-10 w-10 shrink-0 rounded overflow-hidden border border-border/60 bg-muted/40 shadow-sm animate-in fade-in zoom-in duration-300">
-                        <Image src={value} alt="Preview" fill className="object-cover" />
+                        <OptimizedImage src={value} alt="Preview" fill className="object-cover" />
                     </div>
                 )}
             </div>

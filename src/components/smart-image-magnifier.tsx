@@ -7,6 +7,7 @@
 
 import React, { useState } from 'react';
 import { Lens } from './ui/lens';
+import { OptimizedImage } from './ui/optimized-image';
 
 interface SmartImageMagnifierProps {
     src: string;
@@ -34,9 +35,10 @@ export function SmartImageMagnifier({
                 lensSize={lensSize}
             >
                 <div className="relative aspect-square w-full h-full">
-                    <img
+                    <OptimizedImage
                         src={src}
                         alt={alt}
+                        fill
                         className="w-full h-full object-cover transition-opacity duration-300"
                         style={{ opacity: hovering ? 0.8 : 1 }}
                     />

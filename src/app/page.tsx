@@ -20,25 +20,26 @@ export default function StartPage() {
   const isDark = theme === "dark";
   const { authUser, profile, loading } = useUserProfile();
   const router = useRouter();
-
-  // Redirect based on role
-  useEffect(() => {
-    if (!loading && authUser) {
-      if (profile?.isSuperAdmin || profile?.isManager) {
-        router.push('/admin');
-      } else {
-        router.push('/builder');
-      }
-    }
-  }, [authUser, profile, loading, router]);
-
   const { setIsPageLoading } = useLoading();
 
   useEffect(() => {
-    setIsPageLoading(loading || !!authUser);
-    return () => setIsPageLoading(false);
-  }, [loading, authUser, setIsPageLoading]);
+    // If loading is finished and we have a user, redirect them
+    if (!loading && authUser && profile) {
+      if (profile.isManager || profile.isSuperAdmin) {
+        router.replace('/admin');
+      } else {
+        router.replace('/builder');
+      }
+    }
+  }, [loading, authUser, profile, router]);
 
+  useEffect(() => {
+    setIsPageLoading(loading);
+    return () => setIsPageLoading(false);
+  }, [loading, setIsPageLoading]);
+
+  // If loading, or if we have a user (meaning we are about to redirect), show nothing
+  // The AppLayout will show the FullPageLoader during this time
   if (loading || authUser) {
     return null;
   }

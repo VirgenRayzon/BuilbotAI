@@ -6,8 +6,6 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, limit, query, where } from 'firebase/firestore';
 import { PrebuiltSystem } from '@/lib/types';
 import { PrebuiltSystemCard } from '@/components/prebuilt-system-card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Card } from '@/components/ui/card';
 import { SectionHeader } from './section-header';
 import { motion } from 'framer-motion';
 import { useTheme } from "@/context/theme-provider";
@@ -49,16 +47,7 @@ export function PrebuiltShowcase() {
                 />
 
                 <div className="relative mt-20 px-4 md:px-12">
-                    {loading ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                            {[...Array(4)].map((_, i) => (
-                                <Skeleton key={i} className={cn(
-                                    "h-[500px] w-full rounded-[40px]",
-                                    isDark ? "bg-white/5" : "bg-black/5"
-                                )} />
-                            ))}
-                        </div>
-                    ) : activeSystems.length > 0 ? (
+                    {loading ? null : activeSystems.length > 0 ? (
                         <Carousel
                             opts={{
                                 align: "start",

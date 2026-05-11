@@ -11,12 +11,15 @@ interface PowerMeterProps {
 }
 
 export function PowerMeter({ value, max, className }: PowerMeterProps) {
-    const maxToUse = max > 0 ? max : Math.max(value + 200, 600);
-    const percentage = Math.min((value / maxToUse) * 100, 100);
+    const hasPsu = max > 0;
+    const maxToUse = hasPsu ? max : 0;
+    const percentage = hasPsu ? Math.min((value / maxToUse) * 100, 100) : (value > 0 ? 100 : 0);
 
     // Color logic based on percentage
     let colorClass = "bg-cyan-500 shadow-[0_0_10px_theme('colors.cyan.500')]";
-    if (percentage > 90) {
+    if (!hasPsu && value > 0) {
+        colorClass = "bg-red-500 shadow-[0_0_10px_theme('colors.red.500')]";
+    } else if (percentage > 90) {
         colorClass = "bg-red-500 shadow-[0_0_10px_theme('colors.red.500')]";
     } else if (percentage > 70) {
         colorClass = "bg-fuchsia-500 shadow-[0_0_10px_theme('colors.fuchsia.500')]";
@@ -55,8 +58,8 @@ export function PowerMeter({ value, max, className }: PowerMeterProps) {
             
             {/* Contextual Label */}
             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest mt-1">
-                <span className={cn(percentage > 90 ? "text-red-500" : "text-muted-foreground")}>
-                    {percentage > 90 ? "Critical Load" : percentage > 70 ? "High Load" : "Optimal"}
+                <span className={cn((percentage > 90 || !hasPsu) && value > 0 ? "text-red-500" : "text-muted-foreground")}>
+                    {!hasPsu && value > 0 ? "Missing PSU" : percentage > 90 ? "Critical Load" : percentage > 70 ? "High Load" : "Optimal"}
                 </span>
                 <span className="text-muted-foreground opacity-60">{Math.round(percentage)}%</span>
             </div>

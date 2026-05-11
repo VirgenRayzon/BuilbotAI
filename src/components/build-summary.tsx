@@ -4,10 +4,8 @@ import React from "react";
 import type { Build } from "@/lib/types";
 import { ComponentCard } from "./component-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ThumbsUp, Sparkles, AlertTriangle, MonitorPlay, Gamepad2, Zap, Bot, Info, Loader2, DollarSign, Wallet, Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Skeleton } from "./ui/skeleton";
 
 interface BuildSummaryProps {
   build: Build | null;
@@ -110,11 +108,7 @@ export function BuildSummary({ build, isPending, elapsedTime, finalResponseTime,
                             </AnimatePresence>
                         </div>
 
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 w-full opacity-20">
-                            <Skeleton className="h-40 rounded-2xl" />
-                            <Skeleton className="h-40 rounded-2xl" />
-                            <Skeleton className="h-40 rounded-2xl" />
-                        </div>
+                        {/* Component Ghost Grid Removed per Anti-Skeleton Policy */}
                     </motion.div>
                 ) : !build ? (
                     <motion.div

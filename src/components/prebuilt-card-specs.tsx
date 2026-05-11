@@ -14,7 +14,6 @@ import {
     RectangleVertical as Case, 
     Wind as Cooler 
 } from "lucide-react";
-import { Skeleton } from "./ui/skeleton";
 
 interface PrebuiltCardSpecsProps {
     components: {
@@ -127,19 +126,7 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
     }, [firestore, components]);
 
     if (loading) {
-        return (
-            <div className="space-y-1.5 mt-3 mb-1">
-                <Skeleton className="h-4 w-full opacity-50" />
-                <Skeleton className="h-4 w-11/12 opacity-50" />
-                <Skeleton className="h-4 w-4/5 opacity-50" />
-                {expanded && (
-                    <>
-                        <Skeleton className="h-4 w-full opacity-50" />
-                        <Skeleton className="h-4 w-10/12 opacity-50" />
-                    </>
-                )}
-            </div>
-        );
+        return null;
     }
 
     if (!expanded) {

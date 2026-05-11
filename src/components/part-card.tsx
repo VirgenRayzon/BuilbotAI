@@ -2,6 +2,7 @@
 "use client";
 
 import Image from 'next/image';
+import { OptimizedImage } from './ui/optimized-image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatToPHP, getOptimizedStorageUrl } from '@/lib/utils';
@@ -115,17 +116,17 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                         </div>
 
                         <div className="aspect-square relative w-full overflow-hidden rounded-2xl bg-slate-900/5 dark:bg-white/5 border border-white/5 p-4 group-hover:bg-primary/[0.03] transition-colors duration-500">
-                            <Image
-                                src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || '/placeholder-part.png'}
-                                alt={part.name}
-                                fill
-                                unoptimized
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                className={cn(
-                                    "transition-transform duration-700 group-hover:scale-110",
-                                    part.category === 'Headset' ? "object-cover scale-125" : "object-contain"
-                                )}
-                            />
+                        <OptimizedImage
+                            src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || '/placeholder-part.png'}
+                            alt={part.name}
+                            fill
+                            unoptimized
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            className={cn(
+                                "transition-transform duration-700",
+                                part.category === 'Headset' ? "object-cover scale-125" : "object-contain"
+                            )}
+                        />
                         </div>
 
                         <div className="flex justify-between items-end">

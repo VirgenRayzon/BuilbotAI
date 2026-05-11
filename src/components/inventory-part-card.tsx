@@ -7,6 +7,7 @@
 import { AddPartDialog } from './add-part-dialog';
 import { type AddPartFormSchema } from '@/hooks/use-part-form';
 
+import { OptimizedImage } from './ui/optimized-image';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -192,13 +193,13 @@ export function InventoryPartCard({
 
                         {isSelectionMode ? (
                             <div className="aspect-square relative w-full overflow-hidden rounded-lg bg-muted/10 border border-white/5 p-2 cursor-pointer">
-                                <Image
+                                <OptimizedImage
                                     src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || '/placeholder-part.png'}
                                     alt={part.name}
                                     fill
                                     unoptimized
                                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                    className="object-contain transition-transform duration-500 group-hover:scale-105"
+                                    className="object-contain transition-transform duration-500"
                                 />
                             </div>
                         ) : (
@@ -207,14 +208,14 @@ export function InventoryPartCard({
                                 onSave={(data) => onUpdatePart(part.id, part.category, data)}
                             >
                                 <div className="aspect-square relative w-full overflow-hidden rounded-lg bg-muted/10 border border-white/5 p-2 cursor-pointer">
-                                    <Image
+                                    <OptimizedImage
                                         src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || '/placeholder-part.png'}
                                         alt={part.name}
                                         fill
                                         unoptimized
                                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                         className={cn(
-                                            "transition-transform duration-500 group-hover:scale-105",
+                                            "transition-transform duration-500",
                                             part.category === 'Headset' ? "object-cover scale-125" : "object-contain"
                                         )}
                                     />

@@ -21,6 +21,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { UnifiedBackground } from '@/components/landing/unified-background';
 import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';
+import { useUserProfile } from '@/context/user-profile';
+import React, { useEffect } from 'react';
 
 
 const formSchema = z.object({
@@ -44,6 +46,18 @@ export default function SignUpPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { authUser, profile, loading: authLoading } = useUserProfile();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && authUser && profile) {
+      if (profile.isManager || profile.isSuperAdmin) {
+        router.push('/admin');
+      } else {
+        router.push('/builder');
+      }
+    }
+  }, [authUser, profile, authLoading, router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

@@ -193,7 +193,7 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
             <SmartImageMagnifier
               src={getOptimizedStorageUrl(system.imageUrl, shouldCorruptImages) || "/placeholder-system.png"}
               alt={system.name}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="w-full h-full object-cover transition-transform duration-500"
             />
           </div>
           <div className="flex justify-between items-start gap-2 h-10 md:h-12 mb-1">

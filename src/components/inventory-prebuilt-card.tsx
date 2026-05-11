@@ -3,6 +3,7 @@
 import { AddPrebuiltDialog, type AddPrebuiltFormSchema } from './add-prebuilt-dialog';
 import type { Part, PrebuiltSystem } from '@/lib/types';
 import Image from 'next/image';
+import { OptimizedImage } from './ui/optimized-image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, getOptimizedStorageUrl } from '@/lib/utils';
@@ -183,13 +184,13 @@ export function InventoryPrebuiltCard({
 
                     {isSelectionMode ? (
                         <div className="aspect-square relative w-full overflow-hidden rounded-lg bg-muted/30">
-                            <Image
+                            <OptimizedImage
                                 src={getOptimizedStorageUrl(system.imageUrl, shouldCorruptImages) || '/placeholder-system.png'}
                                 alt={system.name}
                                 fill
                                 unoptimized
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                className="object-cover transition-transform duration-500"
                             />
                         </div>
                     ) : (
@@ -199,13 +200,13 @@ export function InventoryPrebuiltCard({
                             onSave={(data) => onUpdate(system.id, data)}
                         >
                             <div className="aspect-square relative w-full overflow-hidden rounded-lg bg-muted/30 cursor-pointer">
-                                <Image
+                                <OptimizedImage
                                     src={getOptimizedStorageUrl(system.imageUrl, shouldCorruptImages) || '/placeholder-system.png'}
                                     alt={system.name}
                                     fill
                                     unoptimized
                                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                    className="object-cover transition-transform duration-500"
                                 />
                             </div>
                         </AddPrebuiltDialog>
