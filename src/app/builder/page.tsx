@@ -60,6 +60,7 @@ export default function BuilderPage() {
     const [resolution, setResolution] = useState<Resolution>('1080p');
     const [workload, setWorkload] = useState<WorkloadType>('Balanced');
     const [analysis, setAnalysis] = useState<any>(null);
+    const [mounted, setMounted] = useState(false);
 
     const handleApplySuggestion = (category: string, partId: string) => {
         const event = new CustomEvent('add-suggestion', { 
