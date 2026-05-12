@@ -147,6 +147,8 @@ export default function BuilderPage() {
                             onWorkloadChange={setWorkload}
                             analysis={analysis}
                             onAnalysisUpdate={setAnalysis}
+                            onCategorySelect={handleCategoryChange}
+                            categories={categories}
                         />
                     </aside>
                 </div>

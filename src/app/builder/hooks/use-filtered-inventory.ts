@@ -28,16 +28,27 @@ export function useFilteredInventory(allParts: Part[], build: any, getCountInBui
         { name: "Headset", selected: true },
     ]);
 
-    const handleCategoryChange = (categoryName: string, selected: boolean) => {
+    const handleCategoryChange = (categoryName: string, selected?: boolean) => {
         setCurrentPage(1);
         setCategories(prev => {
             if (categoryName === 'All') {
                 const anyUnselected = prev.some(cat => !cat.selected);
                 return prev.map(cat => ({ ...cat, selected: anyUnselected }));
             }
+
+            // Check if this category is already the ONLY one selected
+            const selectedCount = prev.filter(c => c.selected).length;
+            const isAlreadyOnlySelected = selectedCount === 1 && prev.find(c => c.name === categoryName)?.selected;
+
+            if (isAlreadyOnlySelected) {
+                // Reset to all selected (remove filter)
+                return prev.map(cat => ({ ...cat, selected: true }));
+            }
+
+            // Otherwise, select ONLY this category
             return prev.map(cat => ({
                 ...cat,
-                selected: cat.name === categoryName ? true : false
+                selected: cat.name === categoryName
             }));
         });
     };

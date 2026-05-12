@@ -15,6 +15,7 @@ interface BuildContentProps {
   build: Record<string, ComponentData | ComponentData[] | null>;
   onRemovePart: (category: string, index?: number) => void;
   onCategorySelect?: (category: string) => void;
+  categories?: any[];
   showSystemBalance?: boolean;
   resolution: Resolution;
   totalWattage: number;
@@ -44,6 +45,7 @@ export function BuildContent({
   build,
   onRemovePart,
   onCategorySelect,
+  categories,
   showSystemBalance,
   resolution,
   totalWattage,
@@ -51,6 +53,9 @@ export function BuildContent({
   totalPrice,
 }: BuildContentProps) {
   const [showAccessories, setShowAccessories] = useState(false);
+
+  const selectedCategories = categories?.filter(c => c.selected) || [];
+  const activeFilter = selectedCategories.length === 1 ? selectedCategories[0].name : null;
 
   return (
     <div className="px-5 py-4 flex flex-col h-full">
@@ -63,6 +68,7 @@ export function BuildContent({
             icon={componentIcons[name.toLowerCase()] || Cpu}
             onRemove={onRemovePart}
             onSelect={onCategorySelect}
+            isActiveFilter={activeFilter === name}
           />
         ))}
 
@@ -98,6 +104,7 @@ export function BuildContent({
             onRemove={onRemovePart}
             onSelect={onCategorySelect}
             isAccessory={true}
+            isActiveFilter={activeFilter === name}
           />
         ))}
       </div>

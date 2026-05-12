@@ -46,6 +46,7 @@ interface YourBuildProps {
     analysis?: any;
     onAnalysisUpdate?: (analysis: any) => void;
     onCategorySelect?: (category: string) => void;
+    categories?: any[];
 }
 
 export function YourBuild({
@@ -63,7 +64,8 @@ export function YourBuild({
     onAddPrebuilt,
     analysis,
     onAnalysisUpdate,
-    onCategorySelect
+    onCategorySelect,
+    categories
 }: YourBuildProps) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isCheckoutDialogOpen, setIsCheckoutDialogOpen] = useState(false);
@@ -151,6 +153,7 @@ export function YourBuild({
                 build={build}
                 onRemovePart={onRemovePart}
                 onCategorySelect={onCategorySelect}
+                categories={categories}
                 showSystemBalance={showSystemBalance}
                 resolution={resolution}
                 totalWattage={totalWattage}
