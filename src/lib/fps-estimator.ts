@@ -3,7 +3,7 @@
  * Uses CPU/GPU performance tiers and resolution to generate average FPS values
  * and chart data for the Recharts visualization in BuilderSidebarLeft.
  */
-import { ComponentData, Resolution } from "./types";
+import { ComponentData, Resolution, WorkloadType } from "./types";
 import { getTier, ComponentTier } from "./bottleneck";
 
 export interface FpsEstimate {
@@ -15,7 +15,8 @@ export interface FpsEstimate {
 
 export const estimateFPS = (
     build: Record<string, ComponentData | ComponentData[] | null>,
-    resolution: Resolution = '1440p'
+    resolution: Resolution = '1440p',
+    workload: WorkloadType = 'Balanced'
 ): FpsEstimate | null => {
     const cpu = build["CPU"] as ComponentData | null;
     const gpu = build["GPU"] as ComponentData | null;
@@ -42,6 +43,10 @@ export const estimateFPS = (
             break;
     }
 
+    // Apply workload multipliers
+    if (workload === 'AAA') baseFps *= 0.7;
+    if (workload === 'Esports') baseFps *= 1.5;
+
     // 2. CPU Bottleneck Penalty
     const delta = cpuTier - gpuTier;
     let penaltyPercent = 0;
@@ -58,7 +63,23 @@ export const estimateFPS = (
 
     // 3. Generate Chart Data based on "Resolution" steps matching mockup
     const chartData = [];
-    const resolutionSteps = ["1080", "1440", "2160", "2880", "3840"];
+    
+    // Dynamic Resolution Steps based on selected target
+    // Dynamic Resolution Steps based on vertical height (standard for 1080p, 1440p, 2160p)
+    let peakRes = 1080;
+    if (resolution === '4K') peakRes = 2160; // 4K vertical height
+    else if (resolution === '1440p') peakRes = 1440;
+    else peakRes = 1080;
+
+    // Use standard vertical resolutions for cleaner steps
+    const resolutionSteps = [];
+    if (peakRes === 2160) {
+        resolutionSteps.push("720", "1080", "1440", "1800", "2160");
+    } else if (peakRes === 1440) {
+        resolutionSteps.push("480", "720", "900", "1080", "1440");
+    } else {
+        resolutionSteps.push("360", "480", "720", "900", "1080");
+    }
 
     // We want the curve to go upwards as "Resolution" (x-axis) increases in the mockup. 
     // This is purely visual to match the reference image.

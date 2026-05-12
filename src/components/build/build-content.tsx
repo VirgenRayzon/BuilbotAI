@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical as CaseIcon, Wind, Monitor, Keyboard, Mouse, Headphones, ChevronDown, HardDrive } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -9,7 +9,7 @@ import { BuildItem } from "./build-item";
 import { BottleneckMeter } from "./bottleneck-meter";
 import { PowerMeter } from "../ui/power-meter";
 import { calculateSynergyScore } from "@/lib/bottleneck";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface BuildContentProps {
   build: Record<string, ComponentData | ComponentData[] | null>;
@@ -21,6 +21,7 @@ interface BuildContentProps {
   totalWattage: number;
   psuWattage: number;
   totalPrice: number;
+  activeFilter?: string | null;
 }
 
 const componentIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -45,6 +46,7 @@ export function BuildContent({
   build,
   onRemovePart,
   onCategorySelect,
+  activeFilter,
   categories,
   showSystemBalance,
   resolution,
@@ -53,12 +55,35 @@ export function BuildContent({
   totalPrice,
 }: BuildContentProps) {
   const [showAccessories, setShowAccessories] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    RAM: false,
+    Storage: false,
+  });
 
-  const selectedCategories = categories?.filter(c => c.selected) || [];
-  const activeFilter = selectedCategories.length === 1 ? selectedCategories[0].name : null;
+  // Auto-expand if filter is active
+  useEffect(() => {
+    if (activeFilter === 'RAM') {
+      setExpandedSections({ RAM: true, Storage: false });
+    } else if (activeFilter === 'Storage') {
+      setExpandedSections({ RAM: false, Storage: true });
+    } else {
+      setExpandedSections({ RAM: false, Storage: false });
+    }
+  }, [activeFilter]);
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => {
+      const isCurrentlyOpen = prev[section];
+      // Close others when opening one (exclusive focus)
+      if (!isCurrentlyOpen) {
+        return { RAM: false, Storage: false, [section]: true };
+      }
+      return { ...prev, [section]: false };
+    });
+  };
 
   return (
-    <div className="px-5 py-4 flex flex-col h-full">
+    <div className="px-5 py-4 flex flex-col h-full overflow-y-auto no-scrollbar">
       <div className="space-y-3 py-1 flex-1">
         {mainCategories.map((name) => {
           const mobo = build['Motherboard'] as ComponentData | null;
@@ -67,7 +92,6 @@ export function BuildContent({
             const ramData = build['RAM'];
             const rams = Array.isArray(ramData) ? ramData : (ramData ? [ramData] : []);
             
-            // Flatten sticks (e.g. a 2x kit occupies 2 slots)
             const flattenedRams: { data: ComponentData | null; originalIndex: number }[] = [];
             rams.forEach((r, idx) => {
               const sticks = parseInt(r.specifications?.['Stick Count']?.toString() || "1");
@@ -77,24 +101,56 @@ export function BuildContent({
             });
 
             const totalSlots = mobo ? parseInt(mobo.specifications?.['Memory Slots']?.toString() || "4") : Math.max(flattenedRams.length, 1);
-            
-            // Pad with empty slots
             while (flattenedRams.length < totalSlots) {
               flattenedRams.push({ data: null, originalIndex: -1 });
             }
 
-            return flattenedRams.slice(0, totalSlots).map((slot, i) => (
-              <BuildItem
-                key={`${name}-${i}`}
-                name={name}
-                label={`RAM Slot ${i + 1}`}
-                component={slot.data}
-                icon={MemoryStick}
-                onRemove={(cat, _) => onRemovePart(cat, slot.originalIndex)}
-                onSelect={onCategorySelect}
-                isActiveFilter={activeFilter === name}
-              />
-            ));
+            const usedCount = flattenedRams.filter(r => r.data).length;
+            const isExpanded = expandedSections['RAM'];
+
+            return (
+              <div key={name} className="space-y-2">
+                <button 
+                  onClick={() => toggleSection('RAM')}
+                  className="w-full flex items-center justify-between p-2 rounded-xl bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                      <MemoryStick className="w-4 h-4" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70">Memory</p>
+                      <p className="text-xs font-bold text-primary">{usedCount}/{totalSlots} Slots Used</p>
+                    </div>
+                  </div>
+                  <ChevronDown className={cn("w-4 h-4 text-primary/50 transition-transform duration-300", !isExpanded && "-rotate-90")} />
+                </button>
+                
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden space-y-2 pl-2 border-l border-primary/10 ml-5"
+                    >
+                      {flattenedRams.slice(0, totalSlots).map((slot, i) => (
+                        <BuildItem
+                          key={`${name}-${i}`}
+                          name={name}
+                          label={`Slot ${i + 1}`}
+                          component={slot.data}
+                          icon={MemoryStick}
+                          onRemove={(cat, _) => onRemovePart(cat, slot.originalIndex)}
+                          onSelect={onCategorySelect}
+                          isActiveFilter={activeFilter === name}
+                        />
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
           }
 
           if (name === 'Storage') {
@@ -107,36 +163,71 @@ export function BuildContent({
             const nvmeDrives = storages.filter(s => s.specifications?.['Type']?.toString().toLowerCase().includes('nvme') || s.model.toLowerCase().includes('nvme'));
             const sataDrives = storages.filter(s => !nvmeDrives.includes(s));
 
-            // Map drives back to original indices for removal
             const findOriginalIndex = (drive: ComponentData) => storages.indexOf(drive);
+            const isExpanded = expandedSections['Storage'];
 
-            const nvmeElements = Array.from({ length: nvmeSlots }).map((_, i) => (
-              <BuildItem
-                key={`NVME-${i}`}
-                name={name}
-                label={`NVME Slot ${i + 1}`}
-                component={nvmeDrives[i] || null}
-                icon={Database}
-                onRemove={(cat, _) => onRemovePart(cat, findOriginalIndex(nvmeDrives[i]))}
-                onSelect={onCategorySelect}
-                isActiveFilter={activeFilter === name}
-              />
-            ));
+            return (
+              <div key={name} className="space-y-2">
+                <button 
+                  onClick={() => toggleSection('Storage')}
+                  className="w-full flex items-center justify-between p-2 rounded-xl bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                      <Database className="w-4 h-4" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70">Storage</p>
+                      <p className="text-xs font-bold text-primary">{storages.length}/{nvmeSlots + sataSlots} Drives</p>
+                    </div>
+                  </div>
+                  <ChevronDown className={cn("w-4 h-4 text-primary/50 transition-transform duration-300", !isExpanded && "-rotate-90")} />
+                </button>
 
-            const sataElements = Array.from({ length: sataSlots }).map((_, i) => (
-              <BuildItem
-                key={`SATA-${i}`}
-                name={name}
-                label={`SATA Slot ${i + 1}`}
-                component={sataDrives[i] || null}
-                icon={HardDrive}
-                onRemove={(cat, _) => onRemovePart(cat, findOriginalIndex(sataDrives[i]))}
-                onSelect={onCategorySelect}
-                isActiveFilter={activeFilter === name}
-              />
-            ));
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden space-y-2 pl-2 border-l border-primary/10 ml-5"
+                    >
+                      <div className="space-y-1 mt-2">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 mb-1 ml-2">NVMe M.2 Slots</p>
+                        {Array.from({ length: nvmeSlots }).map((_, i) => (
+                          <BuildItem
+                            key={`NVME-${i}`}
+                            name={name}
+                            label={`NVME ${i + 1}`}
+                            component={nvmeDrives[i] || null}
+                            icon={Database}
+                            onRemove={(cat, _) => onRemovePart(cat, findOriginalIndex(nvmeDrives[i]))}
+                            onSelect={onCategorySelect}
+                            isActiveFilter={activeFilter === name}
+                          />
+                        ))}
+                      </div>
 
-            return [...nvmeElements, ...sataElements];
+                      <div className="space-y-1 mt-4">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 mb-1 ml-2">SATA Slots</p>
+                        {Array.from({ length: sataSlots }).map((_, i) => (
+                          <BuildItem
+                            key={`SATA-${i}`}
+                            name={name}
+                            label={`SATA ${i + 1}`}
+                            component={sataDrives[i] || null}
+                            icon={HardDrive}
+                            onRemove={(cat, _) => onRemovePart(cat, findOriginalIndex(sataDrives[i]))}
+                            onSelect={onCategorySelect}
+                            isActiveFilter={activeFilter === name}
+                          />
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
           }
 
           return (

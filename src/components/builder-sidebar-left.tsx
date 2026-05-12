@@ -136,14 +136,9 @@ function OptimizationSuggestions({ analysis, onApply }: { analysis: any, onApply
 }
 
 function FpsMeter({ build, resolution, workload }: { build: Record<string, ComponentData | ComponentData[] | null>, resolution: Resolution, workload: WorkloadType }) {
-    const fpsData = estimateFPS(build, resolution);
+    const fpsData = estimateFPS(build, resolution, workload);
 
     if (!fpsData) return null;
-
-    // Adjust FPS based on workload visual only for now (purely cosmetic logic to give meaning to the preset)
-    let displayFps = fpsData.averageFps;
-    if (workload === 'AAA') displayFps = Math.round(displayFps * 0.7);
-    if (workload === 'Esports') displayFps = Math.round(displayFps * 1.5);
 
     return (
         <div className="space-y-1 mb-6 bg-slate-50 dark:bg-[#1a1c23] p-4 rounded-xl border border-slate-200 dark:border-white/5 relative shadow-inner">
@@ -162,7 +157,7 @@ function FpsMeter({ build, resolution, workload }: { build: Record<string, Compo
             <div className="flex items-center gap-6 mb-6 px-1">
                 <div className="flex flex-col">
                     <span className="text-3xl font-bold font-sans text-cyan-500 dark:text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)] tracking-tight">
-                        <CountUp value={displayFps} />+ <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400 drop-shadow-none tracking-normal">avg</span>
+                        <CountUp value={fpsData.averageFps} />+ <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400 drop-shadow-none tracking-normal">avg</span>
                     </span>
                 </div>
                 <div className="h-8 w-[1px] bg-slate-200 dark:bg-white/10" />
