@@ -3,7 +3,8 @@
 import { motion } from 'framer-motion';
 import { SectionHeader } from '@/components/landing/section-header';
 import { FeatureShowcase } from '@/components/landing/feature-showcase';
-import { Layers, Zap, Sparkles, Bot, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Layers, Zap, Sparkles, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { AnimatedBotIcon } from '@/components/ui/animated-icons';
 import { cn } from '@/lib/utils';
 
 interface FeaturesSectionProps {
@@ -128,7 +129,7 @@ export function FeaturesSection({ isDark }: FeaturesSectionProps) {
                 <div className="flex items-center gap-3 mb-2">
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">AI PC Generation: Completed</span>
                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 backdrop-blur-md">
-                    <Bot className="w-4 h-4 text-primary" />
+                    <AnimatedBotIcon className="h-5 w-5 text-primary" size={20} active />
                   </div>
                 </div>
 

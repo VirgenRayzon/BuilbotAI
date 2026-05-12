@@ -67,7 +67,6 @@ export function YourBuild({
     onCategorySelect,
     categories
 }: YourBuildProps) {
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isCheckoutDialogOpen, setIsCheckoutDialogOpen] = useState(false);
     const desktopCardRef = useRef<HTMLDivElement>(null);
     const prevSelectedPartsRef = useRef(0);
@@ -168,7 +167,7 @@ export function YourBuild({
                             containerClassName="order-1 flex-none lg:w-full"
                             className="w-12 lg:w-full h-12 text-xs font-black uppercase tracking-widest px-0 lg:px-8"
                             disabled={selectedParts === 0}
-                            onClick={() => handleAnalyze(setIsDialogOpen)}
+                            onClick={() => handleAnalyze()}
                         >
                             <span className="hidden lg:inline">{analysis ? "REFRESH ANALYSIS" : "ANALYZE BUILD"}</span>
                         </SparkleButton>

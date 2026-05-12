@@ -5,7 +5,7 @@ import { SparkleButton } from "./ui/sparkle-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AnimatedIconButton, AnimatedRotateIcon, AnimatedBrainIcon, AnimatedBotIcon } from "./ui/animated-icons";
-import { BrainCircuit, Loader2, ThumbsUp, ThumbsDown, AlertTriangle, MonitorPlay, Zap, Bot, Plus, Sparkles, Gamepad2 } from "lucide-react";
+import { BrainCircuit, ThumbsUp, ThumbsDown, AlertTriangle, MonitorPlay, Zap, Plus, Sparkles, Gamepad2 } from "lucide-react";
 import { getAiBuildCritique } from "@/app/actions";
 import { ComponentData } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -184,7 +184,7 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                     </div>
                     {finalResponseTime && !loading && (
                         <div className="flex items-center gap-1.5 opacity-40 hover:opacity-100 transition-opacity">
-                             <AnimatedBotIcon className="h-3.5 w-3.5 text-primary" />
+                             <AnimatedBotIcon className="h-4 w-4 text-primary" size={16} active />
                              <span className="text-[10px] font-bold uppercase tracking-widest">Analyzed in {finalResponseTime}s</span>
                         </div>
                     )}
@@ -196,7 +196,7 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
             <CardContent className="space-y-6">
                 {!analysis && !loading && !error && (
                     <div className="flex flex-col items-center justify-center py-16 px-8 border-2 border-dashed border-muted-foreground/20 rounded-xl bg-muted/10 space-y-6">
-                         <AnimatedBotIcon className="h-20 w-20 text-muted-foreground/30" />
+                         <AnimatedBotIcon className="h-20 w-20 text-muted-foreground/30" size={80} />
                         <div className="text-center space-y-3">
                             <h3 className="text-2xl font-headline font-semibold tracking-tight">Your build awaits</h3>
                             <p className="text-muted-foreground max-w-sm mx-auto text-lg leading-relaxed">
@@ -219,7 +219,7 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                     <div className="flex flex-col items-center justify-center py-10 space-y-6">
                         <div className="relative">
                             <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse" />
-                            <Loader2 className="h-12 w-12 animate-spin text-primary relative z-10" />
+                            <AnimatedBotIcon className="h-12 w-12 text-primary relative z-10" size={48} active />
                         </div>
                         <div className="text-center h-12 flex flex-col items-center justify-center overflow-hidden">
                             <AnimatePresence mode="wait">

@@ -93,7 +93,7 @@ export function CritiqueTab({
                         workload={workload}
                         onWorkloadChange={setWorkload}
                         showSystemBalance={false}
-                        hasAnalysis={!!critiqueAnalysis}
+                        analysis={critiqueAnalysis}
                         onCategorySelect={(cat) => router.push(`/builder?category=${cat}`)}
                     />
                 </motion.div>

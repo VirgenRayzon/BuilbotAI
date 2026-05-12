@@ -7,6 +7,7 @@ import { ComponentData } from "@/lib/types";
 
 interface BuildItemProps {
   name: string;
+  label?: string;
   component: ComponentData | ComponentData[] | null;
   icon: React.ComponentType<{ className?: string }>;
   onRemove: (category: string, index?: number) => void;
@@ -17,6 +18,7 @@ interface BuildItemProps {
 
 export function BuildItem({
   name,
+  label,
   component,
   icon: Icon,
   onRemove,
@@ -46,7 +48,7 @@ export function BuildItem({
           <p className={cn(
             "text-xs font-bold uppercase tracking-wider leading-none mb-1",
             isActiveFilter ? "text-primary" : "text-muted-foreground"
-          )}>{name}</p>
+          )}>{label || name}</p>
           <p className="text-[10px] text-muted-foreground/80 italic font-medium">Click to add</p>
         </div>
       </div>
@@ -86,7 +88,7 @@ export function BuildItem({
               isAccessory ? "text-primary/80" : "text-primary",
               isActiveFilter && "text-primary animate-pulse"
             )}>
-              {(name === 'Storage' || name === 'RAM') && components.length > 1 ? `${name} ${idx + 1}` : name}
+              {label || ((name === 'Storage' || name === 'RAM') && components.length > 1 ? `${name} ${idx + 1}` : name)}
             </p>
             <p className="text-sm font-semibold truncate leading-tight tracking-tight">{(c as any).name || c.model}</p>
           </div>

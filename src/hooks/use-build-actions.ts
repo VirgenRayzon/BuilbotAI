@@ -8,7 +8,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { getAiBuildCritique, getAiPrebuiltSuggestions } from "@/app/actions";
+import { getAiPrebuiltSuggestions } from "@/app/actions";
 import { processCheckout } from "@/app/checkout-actions";
 import { type ProgressPhase } from "@/components/ai-progress-modal";
 import { ComponentData, OrderItem, Part } from "@/lib/types";
@@ -35,9 +35,6 @@ export function useBuildActions({
   totalPrice,
   onAnalysisUpdate,
 }: UseBuildActionsOptions) {
-  const [analysis, setLocalAnalysis] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [showLocalAiProgress, setShowLocalAiProgress] = useState(false);
   const [aiPhase, setAiPhase] = useState<ProgressPhase>('init');
@@ -188,57 +185,23 @@ export function useBuildActions({
   };
 
   const handleAnalyze = async (onComplete?: (success: boolean) => void) => {
+    if (onAnalyze) {
+      onAnalyze();
+      if (onComplete) onComplete(true);
+      return;
+    }
+
     if (isAiKillSwitch) {
       toast({
         title: "AI Disabled",
-        description: "AI is disable by Administrator.",
+        description: "AI is disabled by Administrator.",
         variant: "destructive"
       });
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
-    const inputData: any = {};
-    Object.entries(build).forEach(([key, val]) => {
-      if (val) {
-        if (Array.isArray(val)) {
-          inputData[key] = val.map((v: any) => ({
-            model: v.model,
-            price: v.price,
-            category: key,
-            brand: v.model.split(' ')[0]
-          }));
-        } else {
-          const singleVal = val as any;
-          inputData[key] = {
-            model: singleVal.model,
-            price: singleVal.price,
-            category: key,
-            brand: singleVal.model.split(' ')[0]
-          };
-        }
-      }
-    });
-
-    try {
-      const result = await getAiBuildCritique(inputData);
-      
-      if (result && 'error' in result) {
-        setError(result.error as string);
-        if (onComplete) onComplete(false);
-      } else {
-        setLocalAnalysis(result);
-        if (onAnalysisUpdate) onAnalysisUpdate(result);
-        if (onComplete) onComplete(true);
-      }
-    } catch (err) {
-      setError("An unexpected error occurred during analysis.");
-      if (onComplete) onComplete(false);
-    } finally {
-      setLoading(false);
-    }
+    router.push('/ai-build-advisor');
+    if (onComplete) onComplete(true);
   };
 
   const handleApplySuggestion = async (category: string, partId: string) => {
@@ -259,9 +222,6 @@ export function useBuildActions({
   };
 
   return {
-    analysis,
-    loading,
-    error,
     isCheckingOut,
     showLocalAiProgress,
     setShowLocalAiProgress,
