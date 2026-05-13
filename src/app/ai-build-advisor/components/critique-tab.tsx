@@ -71,7 +71,12 @@ export function CritiqueTab({
                             externalAnalysis={critiqueAnalysis}
                             externalLoading={critiqueLoading}
                             externalError={critiqueError}
-                            onRefresh={() => handleCritique(builderState, true)}
+                            onRefresh={() => handleCritique(builderState, true, { 
+                                intendedUse: workload, 
+                                performanceLevel: resolution 
+                            })}
+                            intendedUse={workload}
+                            performanceLevel={resolution}
                         />
                     </div>
                 </motion.div>
@@ -87,7 +92,10 @@ export function CritiqueTab({
                         build={builderState}
                         onClearBuild={handleClearBuild}
                         onRemovePart={handleRemovePart}
-                        onAnalyze={() => handleCritique(builderState)}
+                        onAnalyze={() => handleCritique(builderState, false, { 
+                            intendedUse: workload, 
+                            performanceLevel: resolution 
+                        })}
                         resolution={resolution}
                         onResolutionChange={setResolution}
                         workload={workload}

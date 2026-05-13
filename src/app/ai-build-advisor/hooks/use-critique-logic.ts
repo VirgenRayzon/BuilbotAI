@@ -23,14 +23,18 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
         return partIds.sort().join('|');
     };
 
-    const handleCritique = useCallback(async (builderState: any, forceRefresh: boolean = false) => {
+    const handleCritique = useCallback(async (
+        builderState: any, 
+        forceRefresh: boolean = false,
+        preferences?: { intendedUse?: string; performanceLevel?: string; additionalNotes?: string }
+    ) => {
         if (isAiKillSwitch) {
             toast({ title: "AI Disabled", description: "AI is disabled by Administrator.", variant: "destructive" });
             return;
         }
         if (!builderState) return;
 
-        const buildKey = getBuildKey(builderState);
+        const buildKey = getBuildKey(builderState) + (preferences?.intendedUse || "") + (preferences?.performanceLevel || "");
         if (!forceRefresh) {
             const cache = localStorage.getItem('pc_critique_cache');
             if (cache) {
@@ -47,11 +51,11 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
         setCritiqueLoading(true);
         setCritiqueError(null);
 
-        const inputData: any = {};
+        const buildData: any = {};
         Object.entries(builderState).forEach(([key, val]) => {
             if (val) {
                 if (Array.isArray(val)) {
-                    inputData[key] = val.map((v: any) => ({
+                    buildData[key] = val.map((v: any) => ({
                         model: v.name || v.model,
                         price: v.price,
                         brand: v.brand,
@@ -64,7 +68,7 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
                     }));
                 } else {
                     const singleVal = val as any;
-                    inputData[key] = {
+                    buildData[key] = {
                         model: singleVal.name || singleVal.model,
                         price: singleVal.price,
                         brand: singleVal.brand,
@@ -80,7 +84,12 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
         });
 
         try {
-            const result = await getAiBuildCritique(inputData);
+            const result = await getAiBuildCritique({
+                build: buildData,
+                intendedUse: preferences?.intendedUse,
+                performanceLevel: preferences?.performanceLevel,
+                additionalNotes: preferences?.additionalNotes
+            });
             if ('error' in result) {
                 setCritiqueError(result.error as string);
             } else {

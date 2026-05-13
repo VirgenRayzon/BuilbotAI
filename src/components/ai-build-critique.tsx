@@ -37,9 +37,21 @@ interface AIBuildCritiqueProps {
     externalLoading?: boolean;
     externalError?: string | null;
     onRefresh?: () => void;
+    intendedUse?: string;
+    performanceLevel?: string;
+    additionalNotes?: string;
 }
 
-export function AIBuildCritique({ build, externalAnalysis, externalLoading, externalError, onRefresh }: AIBuildCritiqueProps) {
+export function AIBuildCritique({ 
+    build, 
+    externalAnalysis, 
+    externalLoading, 
+    externalError, 
+    onRefresh,
+    intendedUse,
+    performanceLevel,
+    additionalNotes
+}: AIBuildCritiqueProps) {
     const [internalAnalysis, setInternalAnalysis] = useState<any>(null);
     const [internalLoading, setInternalLoading] = useState(false);
     const [internalError, setInternalError] = useState<string | null>(null);
@@ -127,11 +139,11 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
         setInternalLoading(true);
         setInternalError(null);
 
-        const inputData: any = {};
+        const buildData: any = {};
         Object.entries(build).forEach(([key, val]) => {
             if (val) {
                 if (Array.isArray(val)) {
-                    inputData[key] = val.map((v: any) => ({
+                    buildData[key] = val.map((v: any) => ({
                         model: v.model,
                         price: v.price,
                         brand: v.brand,
@@ -144,7 +156,7 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                     }));
                 } else {
                     const singleVal = val as any;
-                    inputData[key] = {
+                    buildData[key] = {
                         model: singleVal.model,
                         price: singleVal.price,
                         brand: singleVal.brand,
@@ -160,7 +172,12 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
         });
 
         try {
-            const result = await getAiBuildCritique(inputData);
+            const result = await getAiBuildCritique({
+                build: buildData,
+                intendedUse: intendedUse,
+                performanceLevel: performanceLevel,
+                additionalNotes: additionalNotes
+            });
             if ('error' in result) {
                 setInternalError(result.error as string);
             } else {

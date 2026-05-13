@@ -27,10 +27,15 @@ const ComponentDataSchema = z.object({
     specifications: z.record(z.string(), z.any()).optional(),
 });
 
-const AiBuildCritiqueInputSchema = z.record(
-    z.string(),
-    z.union([ComponentDataSchema, z.array(ComponentDataSchema), z.null()])
-);
+const AiBuildCritiqueInputSchema = z.object({
+    build: z.record(
+        z.string(),
+        z.union([ComponentDataSchema, z.array(ComponentDataSchema), z.null()])
+    ),
+    intendedUse: z.string().optional(),
+    performanceLevel: z.string().optional(),
+    additionalNotes: z.string().optional(),
+});
 
 export type AiBuildCritiqueInput = z.infer<typeof AiBuildCritiqueInputSchema>;
 
@@ -75,6 +80,8 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
         throw new Error("Missing GOOGLE_API_KEY for Build Critique.");
     }
 
+    const { build, intendedUse, performanceLevel, additionalNotes } = input;
+
     // 0. Check Maintenance Mode (Kill Switch)
     const db = getAdminFirestore();
     try {
@@ -88,10 +95,10 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
     }
 
     // 1. Perform deterministic analysis
-    const bottleneck = calculateBottleneck(input as any);
-    const compatibilityIssues = checkFullBuildCompatibility(input as any);
+    const bottleneck = calculateBottleneck(build as any);
+    const compatibilityIssues = checkFullBuildCompatibility(build as any);
 
-    const buildContext = Object.entries(input)
+    const buildContext = Object.entries(build)
         .map(([category, partData]) => {
             if (!partData) return `${category}: None selected`;
             if (Array.isArray(partData)) {
@@ -103,7 +110,7 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
         .join('\n');
 
     // 2. Retrieve local knowledge based on the components
-    const componentNames = Object.values(input)
+    const componentNames = Object.values(build)
         .flat()
         .filter(p => p !== null)
         .map((p: any) => p.model)
@@ -113,7 +120,7 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
     const knowledgeContext = knowledgeResults.join('\n\n');
 
     // 3. Fetch store inventory exclusively from Live Firestore
-    const buildCategories = Object.keys(input);
+    const buildCategories = Object.keys(build);
     const inventoryResults = await Promise.all(
         buildCategories.map(cat => getInventoryFromFirestore(cat, undefined, 5))
     );
@@ -146,11 +153,19 @@ CONS & CONSIDERATIONS (CONSTRUCTIVE & SOFTENED):
 Current Build:
 ${buildContext}
 
+User Preferences:
+- Intended Use: ${intendedUse || "Not specified"}
+- Target Performance: ${performanceLevel || "Not specified"}
+- Additional Notes: ${additionalNotes || "None"}
+
 ${analysisContext}
 
 1. Pros and Cons: Provide a detailed list.
 2. Bottleneck Analysis: Explain the bottleneck balance.
-3. FPS Estimates: Provide estimates for 3 modern games (1440p or 4K preferred).
+3. FPS Estimates: Provide estimates for 3 different games. 
+   DIVERSITY RULE: DO NOT always pick the same games (e.g., avoid always using Cyberpunk 2077, COD, or Forza). 
+   Select games that are RELEVANT to the user's Intended Use (e.g., if 'E-sports', pick Valorant or CS2; if 'Content Creation', pick relevant benchmarks; if 'General', pick a varied mix). 
+   Try to include at least one recent blockbuster and one popular multiplayer title.
 4. Suggestions: Recommend alternatives that provide better value or perfect the build.
    MANDATORY RULE FOR SUGGESTIONS: 
    - You MUST ONLY suggest parts that are listed in the STORE_INVENTORY_MENU provided above. 
