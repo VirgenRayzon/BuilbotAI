@@ -104,28 +104,7 @@ export function AIBuildCritique({
 
     const { toast } = useToast();
 
-    const handleApplySuggestion = (modelName: string, partId?: string) => {
-        const parentWindow = window as any;
-        if (parentWindow.__BOT_ADD_PART__) {
-            parentWindow.__BOT_ADD_PART__(modelName, partId);
-            toast({
-                title: "Finding part...",
-                description: `Searching for ${modelName} in inventory.`,
-            });
-        } else {
-            const event = new CustomEvent('add-suggestion', { 
-                detail: { 
-                    model: modelName,
-                    id: partId
-                } 
-            });
-            window.dispatchEvent(event);
-            toast({
-                title: "Applying Suggestion",
-                description: `Adding ${modelName} to your build...`,
-            });
-        }
-    };
+
 
     const handleAnalyze = async () => {
         if (isAiKillSwitch) {
@@ -364,21 +343,14 @@ export function AIBuildCritique({
                                     {analysis.suggestions.map((sug: any, idx: number) => (
                                         <div
                                             key={idx}
-                                            className="bg-card border rounded-xl p-4 shadow-sm hover:border-primary/50 transition-all group flex flex-col gap-3 relative cursor-pointer active:scale-[0.98]"
-                                            onClick={() => handleApplySuggestion(sug.suggestedComponent, sug.suggestedPartId)}
+                                            className="bg-card border rounded-xl p-4 shadow-sm hover:border-primary/20 transition-all group flex flex-col gap-3 relative"
                                         >
                                             <div className="flex flex-wrap items-center gap-2 mb-1">
                                                 <span className="line-through text-muted-foreground text-xs">{sug.originalComponent}</span>
                                                 <span className="text-primary font-black text-xs">→</span>
-                                                <span className="font-bold text-primary group-hover:underline">{sug.suggestedComponent}</span>
+                                                <span className="font-bold text-primary">{sug.suggestedComponent}</span>
                                             </div>
-                                            <p className="text-muted-foreground text-xs leading-relaxed pr-8">{sug.reason}</p>
-                                            <div className="absolute top-4 right-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Plus className="h-4 w-4" />
-                                            </div>
-                                            <div className="text-[10px] font-bold text-primary/60 uppercase tracking-widest mt-1 opacity-100 flex items-center gap-1">
-                                                <Sparkles className="h-3 w-3" /> Quick Add
-                                            </div>
+                                            <p className="text-muted-foreground text-xs leading-relaxed">{sug.reason}</p>
                                         </div>
                                     ))}
                                 </div>

@@ -162,7 +162,7 @@ ${analysisContext}
 
 1. Pros and Cons: Provide a detailed list.
 2. Bottleneck Analysis: Explain the bottleneck balance.
-3. FPS Estimates: Provide estimates for 3 different games. 
+3. FPS Estimates: Provide estimates for 6 different games. 
    DIVERSITY RULE: DO NOT always pick the same games (e.g., avoid always using Cyberpunk 2077, COD, or Forza). 
    Select games that are RELEVANT to the user's Intended Use (e.g., if 'E-sports', pick Valorant or CS2; if 'Content Creation', pick relevant benchmarks; if 'General', pick a varied mix). 
    Try to include at least one recent blockbuster and one popular multiplayer title.
