@@ -55,7 +55,8 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
             >
                 <Card className={cn(
                     "flex flex-col justify-between h-full transform transition-all duration-500 ease-out hover:-translate-y-2 relative group overflow-hidden border-primary/10 hover:border-primary/40 glass-panel shadow-lg hover:shadow-primary/20 cursor-pointer rounded-3xl",
-                    (currentStock === 0 || (compatibility && !compatibility.compatible)) && "grayscale opacity-60"
+                    (currentStock === 0 && !isSelected) && "grayscale opacity-60",
+                    (compatibility && !compatibility.compatible) && "border-destructive/40 shadow-destructive/20"
                 )}>
                     {/* --- Incompatibility Overlay --- */}
                     {compatibility && !compatibility.compatible && (() => {
@@ -65,16 +66,16 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                                 bg: "bg-amber-500/20", 
                                 border: "border-amber-500/50", 
                                 text: "text-amber-500", 
-                                shadow: "shadow-[0_0_30px_rgba(245,158,11,0.2)]",
-                                ring: "ring-amber-500/20",
+                                shadow: "shadow-[0_0_30px_rgba(245,158,11,0.3)]",
+                                ring: "ring-amber-500/30",
                                 title: "SLOTS FULL!"
                               }
                             : { 
-                                bg: "bg-destructive/20", 
-                                border: "border-destructive/50", 
-                                text: "text-destructive", 
-                                shadow: "shadow-[0_0_30px_rgba(239,68,68,0.2)]",
-                                ring: "ring-destructive/20",
+                                bg: "bg-red-600/20", 
+                                border: "border-red-500/50", 
+                                text: "text-red-500", 
+                                shadow: "shadow-[0_0_30px_rgba(239,68,68,0.3)]",
+                                ring: "ring-red-500/30",
                                 title: "INCOMPATIBLE"
                               };
 
