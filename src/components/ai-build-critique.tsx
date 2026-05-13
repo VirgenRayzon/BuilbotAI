@@ -252,7 +252,7 @@ export function AIBuildCritique({ build, externalAnalysis, externalLoading, exte
                     <div className="bg-destructive/10 text-destructive p-4 rounded-md">
                         <p className="font-semibold flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Analysis Failed</p>
                         <p className="text-sm mt-1">{error}</p>
-                        <SparkleButton onClick={handleAnalyze} className="mt-3">Try Again</SparkleButton>
+                        <SparkleButton onClick={isControlled && onRefresh ? onRefresh : handleAnalyze} className="mt-3">Try Again</SparkleButton>
                     </div>
                 )}
 
