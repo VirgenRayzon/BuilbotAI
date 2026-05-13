@@ -14,7 +14,7 @@ interface CritiqueTabProps {
     critiqueAnalysis: any;
     critiqueLoading: boolean;
     critiqueError: string | null;
-    handleCritique: (state: any, force?: boolean) => void;
+    handleCritique: (state: any, force?: boolean, preferences?: { intendedUse?: string; performanceLevel?: string; additionalNotes?: string }) => void;
     handleRemovePart: (cat: string, idx?: number) => void;
     handleClearBuild: () => void;
     resolution: any;
