@@ -81,7 +81,7 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
 
                         return (
                             <div className={cn(
-                                "absolute inset-0 z-30 bg-background/90 backdrop-blur-xl flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in-95 duration-300 border-2 ring-4 ring-inset",
+                                "absolute inset-0 z-30 bg-background/90 backdrop-blur-xl flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in-95 duration-300 border-2 ring-4 ring-inset rounded-[22px]",
                                 theme.border,
                                 theme.ring
                             )}>
