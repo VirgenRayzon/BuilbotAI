@@ -36,6 +36,10 @@ const AiBuildAdvisorRecommendationsInputSchema = z.object({
     .boolean()
     .optional()
     .describe('Whether the AI is allowed to exceed the budget by up to 30% for significantly better value/performance.'),
+  allowWebSearch: z
+    .boolean()
+    .optional()
+    .describe('Whether the AI is allowed to use Google Search to find parts outside the local inventory.'),
 });
 export type AiBuildAdvisorRecommendationsInput = z.infer<
   typeof AiBuildAdvisorRecommendationsInputSchema
@@ -104,7 +108,7 @@ export async function aiBuildAdvisorRecommendations(
 // Prompt Definition
 const aiBuildAdvisorRecommendationsPrompt = ai.definePrompt({
   name: 'aiBuildAdvisorRecommendationsPrompt',
-  input: { schema: AiBuildAdvisorRecommendationsInputSchema.extend({ knowledgeContext: z.string().optional() }) },
+  input: { schema: AiBuildAdvisorRecommendationsInputSchema.extend({ knowledgeContext: z.string().optional(), storeInventory: z.string().optional() }) },
   output: { schema: AiBuildAdvisorRecommendationsOutputSchema },
   model: 'googleai/gemini-3-flash-preview',
   config: { temperature: 0.1 },
@@ -117,10 +121,20 @@ EXPERT KNOWLEDGE BASE CONTEXT:
 Base your recommendations strictly on the expert knowledge provided above if it relates to the user's request (e.g., use the provided tier lists, avoid known bottlenecks).
 {{/if}}
 
+{{#if storeInventory}}
+STORE_INVENTORY_MENU (MANDATORY EXACT MATCHES IF WEB SEARCH IS OFF):
+{{{storeInventory}}}
+{{/if}}
+
 CRITICAL RULES:
 1. CURRENCY: All price discussions and budget considerations MUST be in Philippine Peso (PHP). Use the ₱ symbol.
 2. LOCAL PRICING: Provide estimated prices that reflect the current PC component market in the Philippines (e.g., shops like Dynaquest, PCHub, Gilmore prices).
-3. INVENTORY AVAILABILITY: Only recommend parts that are commonly available in standard PC parts inventories. If the user provides a specific inventory, prioritize items from that list.
+{{#if allowWebSearch}}
+3. INVENTORY AVAILABILITY: You are allowed to use Google Search to find and recommend the best parts available in the current market, even if they aren't in a specific inventory.
+{{else}}
+3. INVENTORY AVAILABILITY: You MUST ONLY recommend parts that are explicitly listed in the STORE_INVENTORY_MENU above. DO NOT recommend parts that are not in the list. DO NOT hallucinate parts. Ensure the model name exactly matches the inventory.
+   - STRICT INVENTORY RULE: If picking from the limited inventory causes the build to exceed the budget while trying to meet the user's Intended Use, Desired Performance, or Additional Notes, you MUST deprioritize those preferences. Choose lower-tier parts from the inventory to stay within budget, even if it means the build won't meet their original performance goals.
+{{/if}}
 4. COMPATIBILITY: Ensure all recommended components are 100% compatible.
 5. BUDGET ADHERENCE: 
    {{#if allowFlexibleBudget}}
@@ -150,8 +164,9 @@ Please format your response as a JSON object strictly following the output schem
 // Genkit Flow Definition
 import { retrieveLocalKnowledge } from '@/lib/knowledge-retriever';
 import { getAdminFirestore } from '@/firebase/server-init';
+import { getInventoryFromFirestore } from '@/lib/inventory-fetcher';
 
-const CACHE_COLLECTION = 'ai_recommendation_cache';
+const CACHE_COLLECTION = 'ai_recommendation_cache_v3';
 
 const generateCacheKey = (input: AiBuildAdvisorRecommendationsInput) => {
   const parts = [
@@ -159,7 +174,8 @@ const generateCacheKey = (input: AiBuildAdvisorRecommendationsInput) => {
     input.budget.toLowerCase().trim().replace(/[^\d]/g, ''), // Extract numbers for more consistent caching (e.g. 20000)
     input.performanceLevel.toLowerCase().trim(),
     (input.additionalNotes || '').toLowerCase().trim(),
-    input.allowFlexibleBudget ? 'flexible' : 'strict'
+    input.allowFlexibleBudget ? 'flexible' : 'strict',
+    input.allowWebSearch ? 'websearch' : 'local'
   ];
   return parts.join('|').replace(/[\/.]/g, '_').substring(0, 1000);
 };
@@ -211,10 +227,28 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
     const knowledgeResults = await retrieveLocalKnowledge(query);
     const knowledgeContext = knowledgeResults.join('\n\n');
 
-    const { output } = await aiBuildAdvisorRecommendationsPrompt({
-      ...input,
-      knowledgeContext
-    });
+    let storeInventory = '';
+    if (!input.allowWebSearch) {
+      // Fetch store inventory exclusively from Live Firestore if web search is off
+      const categoriesToFetch = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'];
+      const inventoryResults = await Promise.all(
+          categoriesToFetch.map(cat => getInventoryFromFirestore(cat, undefined, 20))
+      );
+      storeInventory = inventoryResults.flat().join('\n');
+    }
+
+    const { output } = await aiBuildAdvisorRecommendationsPrompt(
+      {
+        ...input,
+        knowledgeContext,
+        storeInventory: storeInventory || undefined
+      },
+      {
+        config: {
+          googleSearchRetrieval: input.allowWebSearch ? {} : undefined
+        }
+      }
+    );
 
     if (!output) {
       throw new Error('Failed to get recommendations from the AI.');

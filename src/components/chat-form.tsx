@@ -35,6 +35,7 @@ const formSchema = z.object({
   performanceLevel: z.string().min(1, "Please select a performance level."),
   additionalNotes: z.string().optional(),
   allowFlexibleBudget: z.boolean().default(false),
+  allowWebSearch: z.boolean().default(true),
 });
 
 export type FormSchema = z.infer<typeof formSchema>;
@@ -48,17 +49,17 @@ const SUGGESTIONS = [
   { 
     label: "1080p Esports", 
     icon: Gamepad2,
-    values: { intendedUse: "Gaming", budget: "₱35,000", performanceLevel: "Mid-range (1080p/1440p gaming)", additionalNotes: "Focus on high FPS for Valorant." }
+    values: { intendedUse: "Gaming", budget: "₱50,000", performanceLevel: "Mid-range (1080p/1440p gaming)", additionalNotes: "Focus on high FPS for Valorant." }
   },
   { 
     label: "AAA 4K Beast", 
     icon: Zap,
-    values: { intendedUse: "Gaming", budget: "₱120,000", performanceLevel: "High-end (4K, max settings)", additionalNotes: "Ray tracing enabled." }
+    values: { intendedUse: "Gaming", budget: "₱150,000", performanceLevel: "High-end (4K, max settings)", additionalNotes: "Ray tracing enabled." }
   },
   { 
     label: "Workstation", 
     icon: Laptop,
-    values: { intendedUse: "Video Editing", budget: "₱75,000", performanceLevel: "High-end (4K, max settings)", additionalNotes: "Heavy rendering workloads." }
+    values: { intendedUse: "Video Editing", budget: "₱100,000", performanceLevel: "High-end (4K, max settings)", additionalNotes: "Heavy rendering workloads." }
   },
 ];
 
@@ -71,6 +72,7 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
       performanceLevel: "",
       additionalNotes: "",
       allowFlexibleBudget: false,
+      allowWebSearch: true,
     },
   });
 
@@ -182,6 +184,30 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
                   </FormLabel>
                   <p className="text-[10px] text-muted-foreground font-medium">
                     Allow AI to exceed budget by up to 30% for major gains.
+                  </p>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="allowWebSearch"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-xl border p-4 bg-primary/5 border-primary/10 shadow-inner">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-sm font-bold flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    Web Search
+                  </FormLabel>
+                  <p className="text-[10px] text-muted-foreground font-medium">
+                    Allow AI to search the web for the latest parts outside our inventory.
                   </p>
                 </div>
                 <FormControl>

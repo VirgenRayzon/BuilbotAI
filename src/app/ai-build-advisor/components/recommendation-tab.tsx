@@ -15,6 +15,7 @@ interface RecommendationTabProps {
     elapsedTime: number;
     finalResponseTime: number | null;
     totalPrice: number;
+    error?: string | null;
 }
 
 export function RecommendationTab({
@@ -24,7 +25,8 @@ export function RecommendationTab({
     build,
     elapsedTime,
     finalResponseTime,
-    totalPrice
+    totalPrice,
+    error
 }: RecommendationTabProps) {
     return (
         <motion.div
@@ -88,6 +90,7 @@ export function RecommendationTab({
                     elapsedTime={elapsedTime} 
                     finalResponseTime={finalResponseTime} 
                     totalPrice={totalPrice} 
+                    error={error}
                 />
             </div>
         </motion.div>

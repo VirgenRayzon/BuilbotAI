@@ -49,7 +49,7 @@ export default function AiBuildAdvisorPage() {
 
     const {
         build, totalPrice, isPending, handleGetRecommendations,
-        elapsedTime, finalResponseTime
+        elapsedTime, finalResponseTime, error
     } = useRecommendationLogic(isAiKillSwitch, collections);
 
     // Route Protection handled by RouteGuard wrapper in return
@@ -120,6 +120,7 @@ export default function AiBuildAdvisorPage() {
                                 elapsedTime={elapsedTime}
                                 finalResponseTime={finalResponseTime}
                                 totalPrice={totalPrice}
+                                error={error}
                             />
                         </TabsContent>
                     </Tabs>
@@ -132,6 +133,7 @@ export default function AiBuildAdvisorPage() {
                         elapsedTime={elapsedTime}
                         finalResponseTime={finalResponseTime}
                         totalPrice={totalPrice}
+                        error={error}
                     />
                 )}
 

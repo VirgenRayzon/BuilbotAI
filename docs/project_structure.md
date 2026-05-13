@@ -161,7 +161,8 @@ BuilbotAI
 │   └── ingest_knowledge.md
 ├── docs
 │   ├── backend.json
-│   └── blueprint.md
+│   ├── blueprint.md
+│   └── project_structure.md
 ├── execution
 │   ├── generate_project_structure.js
 │   └── ingest_website.py

@@ -22,6 +22,7 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, collections: any
     const [isPending, startTransition] = useTransition();
     const [elapsedTime, setElapsedTime] = useState(0);
     const [finalResponseTime, setFinalResponseTime] = useState<number | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -42,10 +43,13 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, collections: any
             toast({ title: "AI Disabled", description: "AI is disabled by Administrator.", variant: "destructive" });
             return;
         }
+        setError(null);
         startTransition(async () => {
             const result = await getAiRecommendations(data);
             if (!result || "error" in result) {
-                toast({ variant: "destructive", title: "Error", description: (result as any)?.error || "Failed to get recommendations." });
+                const errorMsg = (result as any)?.error || "Failed to get recommendations.";
+                setError(errorMsg);
+                toast({ variant: "destructive", title: "Error", description: errorMsg });
                 return;
             }
 
@@ -99,6 +103,6 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, collections: any
     return {
         build, setBuild, totalPrice, setTotalPrice,
         isPending, handleGetRecommendations,
-        elapsedTime, finalResponseTime
+        elapsedTime, finalResponseTime, error
     };
 }

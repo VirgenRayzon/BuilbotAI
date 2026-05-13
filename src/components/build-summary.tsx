@@ -6,6 +6,7 @@ import { ComponentCard } from "./component-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThumbsUp, Sparkles, AlertTriangle, MonitorPlay, Gamepad2, Zap, Bot, Info, Loader2, DollarSign, Wallet, Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface BuildSummaryProps {
   build: Build | null;
@@ -13,6 +14,7 @@ interface BuildSummaryProps {
   elapsedTime?: number;
   finalResponseTime?: number | null;
   totalPrice?: number;
+  error?: string | null;
 }
 
 const componentIcons = {
@@ -33,7 +35,7 @@ const LOADING_STEPS = [
     { title: "FINALIZING BUILD", sub: "Sourcing best market prices..." }
 ];
 
-export function BuildSummary({ build, isPending, elapsedTime, finalResponseTime, totalPrice }: BuildSummaryProps) {
+export function BuildSummary({ build, isPending, elapsedTime, finalResponseTime, totalPrice, error }: BuildSummaryProps) {
   const [loadingStep, setLoadingStep] = React.useState(0);
 
   React.useEffect(() => {
@@ -109,6 +111,24 @@ export function BuildSummary({ build, isPending, elapsedTime, finalResponseTime,
                         </div>
 
                         {/* Component Ghost Grid Removed per Anti-Skeleton Policy */}
+                    </motion.div>
+                ) : error ? (
+                    <motion.div
+                        key="error"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex flex-col items-center justify-center py-16 px-8 border-2 border-dashed rounded-xl space-y-6 border-red-500/20 bg-red-500/5"
+                    >
+                        <AlertTriangle className="h-20 w-20 text-red-500/50" />
+                        <div className="text-center space-y-3">
+                            <h3 className="text-2xl font-headline font-semibold tracking-tight uppercase text-red-500">System Error</h3>
+                            <p className="text-red-400/80 max-w-sm mx-auto text-sm leading-relaxed">
+                                {error}
+                            </p>
+                            <p className="text-muted-foreground max-w-sm mx-auto text-xs leading-relaxed mt-4">
+                                Try increasing your budget, relaxing your performance requirements, or enabling Web Search.
+                            </p>
+                        </div>
                     </motion.div>
                 ) : !build ? (
                     <motion.div
