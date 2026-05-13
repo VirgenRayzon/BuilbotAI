@@ -1,0 +1,4 @@
+node execution/generate_project_structure.js
+git add docs/project_structure.md
+# Commit the changes if there are any
+git diff-index --quiet HEAD || git commit -m "chore: update project structure [skip ci]"

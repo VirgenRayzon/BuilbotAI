@@ -25,6 +25,10 @@ You operate within a 3-layer architecture that separates concerns to maximize re
 
 ## Operating Principles
 
+**0. Understand the Codebase**
+At the start of every new conversation, you MUST read `docs/project_structure.md` to understand the current project structure.
+
+
 **1. Check for tools first**
 Before writing a new script, check `execution/` and existing `npm` scripts in `package.json`. Only create new tools if necessary.
 
