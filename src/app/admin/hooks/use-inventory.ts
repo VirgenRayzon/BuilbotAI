@@ -13,6 +13,7 @@ import {
     bulkArchivePrebuilts, bulkDeletePrebuilts,
     createSystemNotification
 } from '@/firebase/database';
+import { createAuditLog } from '@/firebase/audit';
 import { AddPartFormSchema } from '@/hooks/use-part-form';
 import { AddPrebuiltFormSchema } from '@/components/add-prebuilt-dialog';
 
@@ -95,6 +96,15 @@ export function useInventory(profile: any) {
             throw new Error(`A part named "${newPartData.partName}" already exists.`);
         }
         await addPart(firestore, newPartData);
+        await createAuditLog(firestore, {
+            actionName: 'created',
+            actorId: profile?.id || 'unknown',
+            actorName: profile?.name || profile?.email || 'Unknown User',
+            actorEmail: profile?.email,
+            resourceType: 'Part',
+            resourceName: newPartData.partName,
+            details: `Added new part in category ${newPartData.category}`
+        });
     };
 
     const handleUpdatePart = async (partId: string, category: Part['category'], data: AddPartFormSchema) => {
@@ -112,11 +122,32 @@ export function useInventory(profile: any) {
             specifications: Object.fromEntries(data.specifications.map((s: { key: string; value: string }) => [s.key, s.value])),
             packageType: data.packageType === "" ? undefined : data.packageType
         });
+        await createAuditLog(firestore, {
+            actionName: 'updated',
+            actorId: profile?.id || 'unknown',
+            actorName: profile?.name || profile?.email || 'Unknown User',
+            actorEmail: profile?.email,
+            resourceType: 'Part',
+            resourceName: data.partName,
+            resourceId: partId,
+            details: `Updated part in category ${category}`
+        });
     };
 
     const handleUpdatePartStock = async (partId: string, category: Part['category'], newStock: number) => {
         if (!firestore) return;
         await updatePart(firestore, category, partId, { stock: newStock });
+        const partName = parts.find(p => p.id === partId)?.name || partId;
+        await createAuditLog(firestore, {
+            actionName: 'updated',
+            actorId: profile?.id || 'unknown',
+            actorName: profile?.name || profile?.email || 'Unknown User',
+            actorEmail: profile?.email,
+            resourceType: 'Part',
+            resourceName: partName,
+            resourceId: partId,
+            details: `Updated stock to ${newStock} for part in category ${category}`
+        });
     };
 
     const handleDeletePart = async (partId: string, category: Part['category']) => {
@@ -125,7 +156,18 @@ export function useInventory(profile: any) {
             toast({ title: "Permission Denied", description: "Only Super Admins can delete items.", variant: "destructive" });
             return;
         }
+        const partName = parts.find(p => p.id === partId)?.name || partId;
         await deletePart(firestore, partId, category);
+        await createAuditLog(firestore, {
+            actionName: 'deleted',
+            actorId: profile?.id || 'unknown',
+            actorName: profile?.name || profile?.email || 'Unknown User',
+            actorEmail: profile?.email,
+            resourceType: 'Part',
+            resourceName: partName,
+            resourceId: partId,
+            details: `Deleted part in category ${category}`
+        });
     };
 
     const handleArchivePart = async (partId: string, category: Part['category'], isArchived: boolean = true) => {
@@ -143,6 +185,16 @@ export function useInventory(profile: any) {
                     targetId: partId
                 });
             }
+            await createAuditLog(firestore, {
+                actionName: isArchived ? 'archived' : 'restored',
+                actorId: profile?.id || 'unknown',
+                actorName: profile?.name || profile?.email || 'Unknown User',
+                actorEmail: profile?.email,
+                resourceType: 'Part',
+                resourceName: partName,
+                resourceId: partId,
+                details: `${isArchived ? 'Archived' : 'Restored'} part in category ${category}`
+            });
             toast({ title: isArchived ? "Item Archived" : "Item Restored", description: `${isArchived ? "Moved to archive." : "Restored to stock."}` });
         } catch (error) {
             console.error("Archive error:", error);
@@ -152,11 +204,30 @@ export function useInventory(profile: any) {
     const handleAddPrebuilt = async (newPrebuiltData: AddPrebuiltFormSchema) => {
         if (!firestore) return;
         await addPrebuiltSystem(firestore, newPrebuiltData);
+        await createAuditLog(firestore, {
+            actionName: 'created',
+            actorId: profile?.id || 'unknown',
+            actorName: profile?.name || profile?.email || 'Unknown User',
+            actorEmail: profile?.email,
+            resourceType: 'Prebuilt',
+            resourceName: newPrebuiltData.name,
+            details: `Added new prebuilt system`
+        });
     };
 
     const handleUpdatePrebuilt = async (systemId: string, data: AddPrebuiltFormSchema) => {
         if (!firestore) return;
         await updatePrebuiltSystem(firestore, systemId, data);
+        await createAuditLog(firestore, {
+            actionName: 'updated',
+            actorId: profile?.id || 'unknown',
+            actorName: profile?.name || profile?.email || 'Unknown User',
+            actorEmail: profile?.email,
+            resourceType: 'Prebuilt',
+            resourceName: data.name,
+            resourceId: systemId,
+            details: `Updated prebuilt system`
+        });
     };
 
     const handleDeletePrebuilt = async (systemId: string) => {
@@ -165,7 +236,18 @@ export function useInventory(profile: any) {
             toast({ title: "Permission Denied", description: "Only Super Admins can delete items.", variant: "destructive" });
             return;
         }
+        const systemName = prebuiltSystems?.find(s => s.id === systemId)?.name || systemId;
         await deletePrebuiltSystem(firestore, systemId);
+        await createAuditLog(firestore, {
+            actionName: 'deleted',
+            actorId: profile?.id || 'unknown',
+            actorName: profile?.name || profile?.email || 'Unknown User',
+            actorEmail: profile?.email,
+            resourceType: 'Prebuilt',
+            resourceName: systemName,
+            resourceId: systemId,
+            details: `Deleted prebuilt system`
+        });
     };
 
     const handleArchivePrebuilt = async (systemId: string, isArchived: boolean = true) => {
@@ -183,6 +265,16 @@ export function useInventory(profile: any) {
                     targetId: systemId
                 });
             }
+            await createAuditLog(firestore, {
+                actionName: isArchived ? 'archived' : 'restored',
+                actorId: profile?.id || 'unknown',
+                actorName: profile?.name || profile?.email || 'Unknown User',
+                actorEmail: profile?.email,
+                resourceType: 'Prebuilt',
+                resourceName: systemName,
+                resourceId: systemId,
+                details: `${isArchived ? 'Archived' : 'Restored'} prebuilt system`
+            });
             toast({ title: isArchived ? "Prebuilt Archived" : "Prebuilt Restored", description: `${isArchived ? "Moved to archive." : "Restored to systems."}` });
         } catch (error) {
             console.error("Archive error:", error);

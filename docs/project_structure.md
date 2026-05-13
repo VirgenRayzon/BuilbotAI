@@ -165,7 +165,8 @@ BuilbotAI
 │   └── project_structure.md
 ├── execution
 │   ├── generate_project_structure.js
-│   └── ingest_website.py
+│   ├── ingest_website.py
+│   └── migrate_audit_logs.ts
 ├── public
 │   ├── assets
 │   │   └── blueprints
@@ -257,10 +258,12 @@ BuilbotAI
 │   │   ├── profile
 │   │   │   ├── components
 │   │   │   │   ├── account-details.tsx
+│   │   │   │   ├── audit-logs-section.tsx
 │   │   │   │   ├── profile-hero.tsx
 │   │   │   │   └── reservations-list.tsx
 │   │   │   ├── hooks
 │   │   │   │   ├── use-admin-keys.ts
+│   │   │   │   ├── use-audit-logs.ts
 │   │   │   │   ├── use-emergency-controls.ts
 │   │   │   │   ├── use-profile-state.ts
 │   │   │   │   └── use-reservations.ts
@@ -412,6 +415,7 @@ BuilbotAI
 │   │   ├── firestore
 │   │   │   ├── use-collection.tsx
 │   │   │   └── use-doc.tsx
+│   │   ├── audit.ts
 │   │   ├── client-provider.tsx
 │   │   ├── config.ts
 │   │   ├── database.ts
@@ -458,6 +462,7 @@ BuilbotAI
 │       ├── types.ts
 │       └── utils.ts
 ├── .env
+├── .eslintrc.json
 ├── .firebaserc
 ├── .gitignore
 ├── .modified
@@ -484,6 +489,7 @@ BuilbotAI
 ├── tailwind.config.ts
 ├── temp_build.json
 ├── test-ai.ts
+├── test-genkit.ts
 ├── test-nv.ts
 ├── tsconfig.json
 └── tsconfig.tsbuildinfo

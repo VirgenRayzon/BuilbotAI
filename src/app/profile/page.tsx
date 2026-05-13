@@ -16,6 +16,7 @@ import { useProfileState } from "./hooks/use-profile-state";
 import { useReservations } from "./hooks/use-reservations";
 import { useEmergencyControls } from "./hooks/use-emergency-controls";
 import { useAdminKeys } from "./hooks/use-admin-keys";
+import { useAuditLogs } from "./hooks/use-audit-logs";
 
 // Components
 import { ProfileHero } from "./components/profile-hero";
@@ -23,6 +24,7 @@ import { AccountDetails } from "./components/account-details";
 import { ReservationsList } from "./components/reservations-list";
 import { SuperAdminSettings } from "@/components/super-admin-settings";
 import { AboutManagement } from "@/components/about-management";
+import { AuditLogsSection } from "./components/audit-logs-section";
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle 
@@ -44,6 +46,7 @@ export default function ProfilePage() {
     const reservations = useReservations();
     const emergency = useEmergencyControls();
     const adminKeys = useAdminKeys();
+    const audit = useAuditLogs();
 
     const [confirmAction, setConfirmAction] = useState<{ id: string, type: 'cancel' | 'delete' } | null>(null);
 
@@ -128,6 +131,12 @@ export default function ProfilePage() {
                                         </div>
                                         <AboutManagement />
                                     </div>
+                                </div>
+                            )}
+
+                            {(profile?.isManager || profile?.isSuperAdmin) && (
+                                <div id="audit-logs" className="pt-8 mt-8 border-t border-white/5">
+                                    <AuditLogsSection logs={audit.auditLogs} loading={audit.auditLogsLoading} />
                                 </div>
                             )}
                         </div>

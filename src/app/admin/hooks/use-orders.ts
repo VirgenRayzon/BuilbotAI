@@ -7,6 +7,7 @@ import { collection, doc, deleteDoc } from 'firebase/firestore';
 import type { Order } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
 import { updateReservationStatus } from '@/app/checkout-actions';
+import { createAuditLog } from '@/firebase/audit';
 
 /**
  * Hook to manage customer reservations and orders.
@@ -24,6 +25,16 @@ export function useOrders(profile: any) {
 
         try {
             await deleteDoc(doc(firestore, "orders", orderId));
+            await createAuditLog(firestore, {
+                actionName: 'deleted',
+                actorId: profile?.id || 'unknown',
+                actorName: profile?.name || profile?.email || 'Unknown User',
+                actorEmail: profile?.email,
+                resourceType: 'Order',
+                resourceName: `Order ${orderId.substring(0, 8)}`,
+                resourceId: orderId,
+                details: 'Deleted reservation'
+            });
             toast({
                 title: "Reservation Deleted",
                 description: "The reservation has been permanently removed.",
@@ -50,6 +61,16 @@ export function useOrders(profile: any) {
 
             const result = await updateReservationStatus(orderId, newStatus, actorInfo);
             if (result.success) {
+                await createAuditLog(firestore, {
+                    actionName: 'status_changed',
+                    actorId: profile?.id || 'unknown',
+                    actorName: profile?.name || profile?.email || 'Unknown User',
+                    actorEmail: profile?.email,
+                    resourceType: 'Order',
+                    resourceName: `Order ${orderId.substring(0, 8)}`,
+                    resourceId: orderId,
+                    details: `Status changed to ${newStatus}`
+                });
                 toast({
                     title: "Status Updated",
                     description: `Order ${orderId.substring(0, 8)} status changed to ${newStatus}.`,

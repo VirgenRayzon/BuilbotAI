@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Check, X, RefreshCw, Mail, Key, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useUserProfile } from '@/context/user-profile';
+import { createAuditLog } from '@/firebase/audit';
 
 export function SuperAdminSettings() {
     const [managerKey, setManagerKey] = useState('');
@@ -146,6 +147,16 @@ export function SuperAdminSettings() {
                 newKey: newKey,
                 processedAt: serverTimestamp()
             });
+
+            await createAuditLog(firestore, {
+                actionName: 'auth_update',
+                actorId: profile?.id || 'unknown',
+                actorName: profile?.name || profile?.email || 'Unknown User',
+                actorEmail: profile?.email,
+                resourceType: 'User',
+                resourceName: request.email,
+                details: `Approved key reset request for manager`
+            });
             
             toast({ 
                 title: "Request Approved", 
@@ -173,6 +184,17 @@ export function SuperAdminSettings() {
             }
             await updateDoc(doc(firestore, 'users', manager.id), updates);
             
+            await createAuditLog(firestore, {
+                actionName: 'auth_update',
+                actorId: profile?.id || 'unknown',
+                actorName: profile?.name || profile?.email || 'Unknown User',
+                actorEmail: profile?.email,
+                resourceType: 'User',
+                resourceName: manager.email,
+                resourceId: manager.id,
+                details: `Super Admin manually reset manager key`
+            });
+
             toast({ 
                 title: "Key Reset", 
                 description: `New Key for ${manager.email}: ${newKey}.`,

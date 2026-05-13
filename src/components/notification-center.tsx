@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Bell, Check, Archive, ShieldCheck, History, Info, X } from 'lucide-react';
 import {
     Popover,
@@ -28,6 +29,7 @@ import {
 
 export function NotificationCenter() {
     const firestore = useFirestore();
+    const router = useRouter();
     const { profile } = useUserProfile();
     const [selectedNotification, setSelectedNotification] = React.useState<SystemNotification | null>(null);
 
@@ -179,7 +181,11 @@ export function NotificationCenter() {
                         )}
                     </ScrollArea>
                     <div className="p-2 border-t border-border/40 bg-muted/20">
-                        <Button variant="ghost" className="w-full text-[10px] font-bold uppercase tracking-widest h-8 opacity-60 hover:opacity-100">
+                        <Button 
+                            variant="ghost" 
+                            className="w-full text-[10px] font-bold uppercase tracking-widest h-8 opacity-60 hover:opacity-100"
+                            onClick={() => router.push('/profile#audit-logs')}
+                        >
                             View Audit Log
                         </Button>
                     </div>

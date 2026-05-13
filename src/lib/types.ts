@@ -146,3 +146,16 @@ export type SystemNotification = {
   readBy: string[]; // List of user IDs who have seen it
   createdAt: any; // Firestore Timestamp
 };
+
+export type AuditLog = {
+  id: string;
+  actionName: 'created' | 'updated' | 'deleted' | 'archived' | 'restored' | 'status_changed' | 'auth_update' | 'other';
+  actorId: string;
+  actorName: string;
+  actorEmail?: string;
+  resourceType: 'Part' | 'Prebuilt' | 'Order' | 'User' | 'System';
+  resourceName: string;
+  resourceId?: string;
+  details?: string;
+  createdAt: any; // Firestore Timestamp
+};
