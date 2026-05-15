@@ -42,6 +42,7 @@ import { BuilderFloatingAnalytics } from "@/components/builder-floating-analytic
 import { addPrebuiltSystem } from "@/firebase/database";
 import type { PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
 import { checkCompatibility } from "@/lib/compatibility";
+import { logAdminAction } from "@/app/actions";
 
 
 import { RouteGuard } from "@/components/auth/route-guard";
@@ -350,6 +351,7 @@ export default function PrebuiltBuilderPage() {
     const handleAddPrebuilt = async (data: PrebuiltBuilderAddFormSchema) => {
         if (!firestore) throw new Error("Firestore not initialized");
         await addPrebuiltSystem(firestore, data);
+        await logAdminAction('Prebuilt Builder - Deploy', `${data.name} deployed from builder`, data);
         toast({
             title: "Prebuilt Added Successfully!",
             description: `${data.name} is now available in the Prebuilt Overview tab.`,

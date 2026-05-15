@@ -134,11 +134,12 @@ export function ArchiveTab({
                                 {archivePartCategories.map((category) => (
                                     <DropdownMenuCheckboxItem
                                         key={category.name}
-                                        checked={category.selected}
+                                        checked={category.selected && !archivePartCategories.every(c => c.selected)}
                                         onCheckedChange={() => {
+                                            // STRICT SINGLE-SELECT: Clicking any category selects ONLY that one.
                                             setArchivePartCategories(prev => prev.map(c => ({
                                                 ...c,
-                                                selected: c.name === category.name ? !c.selected : c.selected
+                                                selected: c.name === category.name
                                             })));
                                         }}
                                     >

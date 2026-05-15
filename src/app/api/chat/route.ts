@@ -1,6 +1,7 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { streamText, tool, convertToModelMessages, stepCountIs } from 'ai';
 import { retrieveLocalKnowledge } from "@/lib/knowledge-retriever";
+import { retrieveCsvSpecs } from "@/lib/spec-retriever";
 import { getInventoryFromFirestore } from "@/lib/inventory-fetcher";
 import { z } from 'zod';
 
@@ -48,12 +49,15 @@ export async function POST(req: Request) {
                 .join('\n')}`
             : '\nCURRENT BUILD CONTEXT: No build context provided yet.';
 
-        // Retrieve background knowledge
+        // Retrieve background knowledge & specs
         const queryTerms = messageText || "PC components";
-        const localKnowledge = await retrieveLocalKnowledge(queryTerms);
+        const [localKnowledge, csvSpecs] = await Promise.all([
+            retrieveLocalKnowledge(queryTerms),
+            retrieveCsvSpecs(queryTerms)
+        ]);
 
-        const knowledgeText = localKnowledge.length > 0
-            ? `\n\nEXPERT KNOWLEDGE BASE:\n${localKnowledge.join('\n\n')}`
+        const knowledgeText = (localKnowledge.length > 0 || csvSpecs.length > 0)
+            ? `\n\nEXPERT KNOWLEDGE BASE:\n${localKnowledge.join('\n\n')}\n\nTECHNICAL SPECIFICATIONS:\n${csvSpecs.join('\n\n')}`
             : '';
 
         const systemInstruction = `You are a helpful, expert PC building assistant named "Buildbot AI".

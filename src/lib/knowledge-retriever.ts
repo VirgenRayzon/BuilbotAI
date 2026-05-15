@@ -50,5 +50,11 @@ export async function retrieveLocalKnowledge(query: string): Promise<string[]> {
 
     // Deduplicate and limit results to prevent massive token usage
     const uniqueResults = [...new Set(results)].slice(0, 10);
+    
+    if (uniqueResults.length > 0) {
+        const sources = [...new Set(uniqueResults.map(r => r.split('\n')[0].replace('[Source: ', '').replace(']', '')))];
+        console.log(`[Knowledge Base] Retrieved ${uniqueResults.length} relevant sections from: ${sources.join(', ')}`);
+    }
+
     return uniqueResults;
 }

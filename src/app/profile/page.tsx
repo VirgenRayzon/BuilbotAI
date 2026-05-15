@@ -7,9 +7,10 @@ import { useRouter } from "next/navigation";
 import { useLoading } from "@/context/loading-context";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { User as UserIcon, Package, Shield, ChevronRight, FileText } from "lucide-react";
+import { User as UserIcon, Package, Shield, ChevronRight, FileText, LayoutDashboard, Settings, Database, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RouteGuard } from "@/components/auth/route-guard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Custom Hooks
 import { useProfileState } from "./hooks/use-profile-state";
@@ -83,62 +84,110 @@ export default function ProfilePage() {
                             />
                         </div>
 
-                        {/* Main Content: Reservations or Admin Panels */}
-                        <div className="lg:col-span-8 space-y-8">
-                            {(!profile?.isManager && !profile?.isSuperAdmin) && (
-                                <>
-                                    <div className="flex items-end justify-between px-1">
-                                        <div className="space-y-1">
-                                            <h2 className="text-2xl font-headline font-bold flex items-center gap-3">
-                                                <Package className="h-6 w-6 text-primary" /> Reserved Builds
-                                            </h2>
-                                            <p className="text-sm text-muted-foreground">Manage your custom and pre-built system reservations.</p>
+                        {/* Main Content Area */}
+                        <div className="lg:col-span-8">
+                            <Tabs 
+                                defaultValue={profile?.isSuperAdmin ? "management" : (profile?.isManager ? "audit" : "overview")} 
+                                className="w-full"
+                            >
+                                <TabsList className={cn(
+                                    "flex flex-wrap h-auto p-1 bg-transparent border-b border-white/5 rounded-none mb-8 w-full justify-start gap-4",
+                                    isDark ? "border-white/5" : "border-slate-200"
+                                )}>
+                                    {(!profile?.isManager && !profile?.isSuperAdmin) && (
+                                        <TabsTrigger 
+                                            value="overview" 
+                                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg px-6 py-2.5 transition-all flex items-center gap-2"
+                                        >
+                                            <LayoutDashboard className="h-4 w-4" /> Overview
+                                        </TabsTrigger>
+                                    )}
+                                    
+                                    {profile?.isSuperAdmin && (
+                                        <>
+                                            <TabsTrigger 
+                                                value="management" 
+                                                className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg px-6 py-2.5 transition-all flex items-center gap-2"
+                                            >
+                                                <Settings className="h-4 w-4" /> Management
+                                            </TabsTrigger>
+                                            <TabsTrigger 
+                                                value="content" 
+                                                className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg px-6 py-2.5 transition-all flex items-center gap-2"
+                                            >
+                                                <Database className="h-4 w-4" /> Site Content
+                                            </TabsTrigger>
+                                        </>
+                                    )}
+
+                                    {(profile?.isManager || profile?.isSuperAdmin) && (
+                                        <TabsTrigger 
+                                            value="audit" 
+                                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg px-6 py-2.5 transition-all flex items-center gap-2"
+                                        >
+                                            <Activity className="h-4 w-4" /> Audit Logs
+                                        </TabsTrigger>
+                                    )}
+                                </TabsList>
+
+                                {/* Overview Tab: Reservations (Standard Users Only) */}
+                                {(!profile?.isManager && !profile?.isSuperAdmin) && (
+                                    <TabsContent value="overview" className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <div className="flex items-end justify-between px-1">
+                                            <div className="space-y-1">
+                                                <h2 className="text-2xl font-headline font-bold flex items-center gap-3">
+                                                    <Package className="h-6 w-6 text-primary" /> Reserved Builds
+                                                </h2>
+                                                <p className="text-sm text-muted-foreground">Manage your custom and pre-built system reservations.</p>
+                                            </div>
+                                            <Badge variant="secondary" className="mb-1">
+                                                {reservations.reservations.length} total
+                                            </Badge>
                                         </div>
-                                        <Badge variant="secondary" className="mb-1">
-                                            {reservations.reservations.length} total
-                                        </Badge>
-                                    </div>
 
-                                    <ReservationsList 
-                                        reservations={reservations.reservations}
-                                        loading={reservations.loading}
-                                        onCancel={reservations.handleCancelReservation}
-                                        onDelete={reservations.handleDeleteReservation}
-                                        onConfirm={setConfirmAction}
-                                    />
-                                </>
-                            )}
+                                        <ReservationsList 
+                                            reservations={reservations.reservations}
+                                            loading={reservations.loading}
+                                            onCancel={reservations.handleCancelReservation}
+                                            onDelete={reservations.handleDeleteReservation}
+                                            onConfirm={setConfirmAction}
+                                        />
+                                    </TabsContent>
+                                )}
 
-                            {profile?.isSuperAdmin && (
-                                <div className="space-y-6">
-                                    <div className="flex items-end justify-between px-1">
-                                        <div className="space-y-1">
+                                {/* Management Tab: Super Admin Only */}
+                                {profile?.isSuperAdmin && (
+                                    <TabsContent value="management" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <div className="space-y-1 px-1 mb-6">
                                             <h2 className="text-2xl font-headline font-bold flex items-center gap-3">
                                                 <Shield className="h-6 w-6 text-primary" /> Management Portal
                                             </h2>
                                             <p className="text-sm text-muted-foreground">Manage manager accounts and system-wide configurations.</p>
                                         </div>
-                                    </div>
+                                        <SuperAdminSettings />
+                                    </TabsContent>
+                                )}
 
-                                    <SuperAdminSettings />
-
-                                    <div className="pt-6 border-t border-white/5">
-                                        <div className="mb-6 px-1">
+                                {/* Content Tab: Super Admin Only */}
+                                {profile?.isSuperAdmin && (
+                                    <TabsContent value="content" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <div className="space-y-1 px-1 mb-6">
                                             <h2 className="text-2xl font-headline font-bold flex items-center gap-3">
                                                 <FileText className="h-6 w-6 text-cyan-400" /> Site Content
                                             </h2>
                                             <p className="text-sm text-muted-foreground">Update public-facing information and brand messaging.</p>
                                         </div>
                                         <AboutManagement />
-                                    </div>
-                                </div>
-                            )}
+                                    </TabsContent>
+                                )}
 
-                            {(profile?.isManager || profile?.isSuperAdmin) && (
-                                <div id="audit-logs" className="pt-8 mt-8 border-t border-white/5">
-                                    <AuditLogsSection logs={audit.auditLogs} loading={audit.auditLogsLoading} />
-                                </div>
-                            )}
+                                {/* Audit Logs Tab: Manager & Super Admin */}
+                                {(profile?.isManager || profile?.isSuperAdmin) && (
+                                    <TabsContent value="audit" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <AuditLogsSection logs={audit.auditLogs} loading={audit.auditLogsLoading} />
+                                    </TabsContent>
+                                )}
+                            </Tabs>
                         </div>
                     </div>
                 </main>

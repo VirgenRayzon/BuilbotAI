@@ -16,6 +16,7 @@ import {
 import { createAuditLog } from '@/firebase/audit';
 import { AddPartFormSchema } from '@/hooks/use-part-form';
 import { AddPrebuiltFormSchema } from '@/components/add-prebuilt-dialog';
+import { logAdminAction } from '@/app/actions';
 
 type PartWithoutCategory = Omit<Part, 'category'>;
 
@@ -96,6 +97,8 @@ export function useInventory(profile: any) {
             throw new Error(`A part named "${newPartData.partName}" already exists.`);
         }
         await addPart(firestore, newPartData);
+        await logAdminAction('Add Part', `${newPartData.partName} added to ${newPartData.category}`, newPartData);
+        
         await createAuditLog(firestore, {
             actionName: 'created',
             actorId: profile?.id || 'unknown',
@@ -204,6 +207,8 @@ export function useInventory(profile: any) {
     const handleAddPrebuilt = async (newPrebuiltData: AddPrebuiltFormSchema) => {
         if (!firestore) return;
         await addPrebuiltSystem(firestore, newPrebuiltData);
+        await logAdminAction('Deploy System', `${newPrebuiltData.name} deployed in ${newPrebuiltData.tier} tier`, newPrebuiltData);
+        
         await createAuditLog(firestore, {
             actionName: 'created',
             actorId: profile?.id || 'unknown',

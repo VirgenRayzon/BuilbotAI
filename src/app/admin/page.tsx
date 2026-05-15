@@ -120,14 +120,9 @@ export default function AdminPage() {
                                     )}
                                 </TabsTrigger>
                                 {profile?.isSuperAdmin && (
-                                    <>
-                                        <TabsTrigger value="sales" className="whitespace-nowrap">
-                                            Sales & Analytics
-                                        </TabsTrigger>
-                                        <TabsTrigger value="settings" className="whitespace-nowrap">
-                                            System Control
-                                        </TabsTrigger>
-                                    </>
+                                    <TabsTrigger value="sales" className="whitespace-nowrap">
+                                        Sales & Analytics
+                                    </TabsTrigger>
                                 )}
                                 <TabsTrigger value="archive" className="whitespace-nowrap">
                                     Archive
@@ -190,18 +185,13 @@ export default function AdminPage() {
                         </TabsContent>
 
                         {profile?.isSuperAdmin && (
-                            <>
-                                <TabsContent value="sales" className="mt-6">
-                                    <SalesTab 
-                                        orders={orders || []}
-                                        parts={parts}
-                                        prebuiltSystems={prebuiltSystems || []}
-                                    />
-                                </TabsContent>
-                                <TabsContent value="settings" className="mt-6">
-                                    <SuperAdminSettings />
-                                </TabsContent>
-                            </>
+                            <TabsContent value="sales" className="mt-6">
+                                <SalesTab 
+                                    orders={orders || []}
+                                    parts={parts}
+                                    prebuiltSystems={prebuiltSystems || []}
+                                />
+                            </TabsContent>
                         )}
 
                         <TabsContent value="archive" className="mt-6">

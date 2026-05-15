@@ -189,3 +189,12 @@ export async function getAiSmartBudget(input: AiSmartBudgetInput) {
   }
 }
 
+export async function logAdminAction(action: string, details: string, data?: any) {
+  const timestamp = new Date().toLocaleTimeString();
+  console.log(`\n[${timestamp}] 🚀 TERMINAL VERIFICATION: ${action}`);
+  console.log(`   Details: ${details}`);
+  if (data) console.log(`   Data:`, JSON.stringify(data, null, 2));
+  console.log('--------------------------------------------------\n');
+  return { success: true };
+}
+

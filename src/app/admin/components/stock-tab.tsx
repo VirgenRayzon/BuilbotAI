@@ -128,8 +128,14 @@ export function StockTab({
                             {partCategories.map((category) => (
                                 <DropdownMenuCheckboxItem
                                     key={category.name}
-                                    checked={category.selected}
-                                    onCheckedChange={() => onCategoryChange(category.name, !category.selected)}
+                                    checked={category.selected && !partCategories.every(c => c.selected)}
+                                    onCheckedChange={() => {
+                                        // STRICT SINGLE-SELECT: Clicking any category selects ONLY that one.
+                                        onSetCategories(partCategories.map(c => ({
+                                            ...c,
+                                            selected: c.name === category.name
+                                        })));
+                                    }}
                                 >
                                     {category.name}
                                 </DropdownMenuCheckboxItem>

@@ -102,14 +102,25 @@ export function PrebuiltTab({
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
+                            <DropdownMenuCheckboxItem
+                                checked={prebuiltCategories.every(c => c.selected)}
+                                onCheckedChange={() => {
+                                    onSetCategories(prebuiltCategories.map(c => ({ ...c, selected: true })));
+                                }}
+                            >
+                                All Tiers
+                            </DropdownMenuCheckboxItem>
+                            <Separator className="my-1 opacity-50" />
                             {prebuiltCategories.map((category) => (
                                 <DropdownMenuCheckboxItem
                                     key={category.name}
-                                    checked={category.selected}
+                                    checked={category.selected && !prebuiltCategories.every(c => c.selected)}
                                     onCheckedChange={() => {
-                                        onSetCategories(prebuiltCategories.map(c =>
-                                            c.name === category.name ? { ...c, selected: !c.selected } : c
-                                        ));
+                                        // STRICT SINGLE-SELECT: Clicking any tier selects ONLY that one.
+                                        onSetCategories(prebuiltCategories.map(c => ({
+                                            ...c,
+                                            selected: c.name === category.name
+                                        })));
                                     }}
                                 >
                                     {category.name}
