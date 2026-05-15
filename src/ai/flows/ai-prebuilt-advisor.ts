@@ -99,66 +99,34 @@ const aiPrebuiltAdvisorFlow = ai.defineFlow(
       .filter(c => c !== undefined && c !== '')
       .join(' ');
 
-    console.log(`[aiPrebuiltAdvisorFlow] Starting analysis for: ${componentNames}`);
+    console.log(`[aiPrebuiltAdvisorFlow] Starting consolidated analysis for: ${componentNames}`);
     const knowledgeResults = await retrieveLocalKnowledge(`compatibility rules tier lists ${componentNames}`);
     const knowledgeContext = knowledgeResults.join('\n\n');
 
-    // Stage 1: Analyze and Search (Text Output)
-    const analysisPrompt = `You are an expert PC Builder. Analyze the following components for a pre-built system.
-    
-EXPERT LOCAL KNOWLEDGE BASE:
-${knowledgeContext}
-
-Components:
-${Object.entries(input.components).map(([k, v]) => v ? `${k}: ${v}` : '').filter(v => v).join('\n')}
-
-Tier: ${input.tier || 'Not specified'}
-
-Tasks:
-1. Generate name and description.
-2. Analyze compatibility.
-3. Estimate wattage.
-4. Estimate price in PHP (Use Google Search for current pricing).
-
-Provide details in clear text.`;
-
-    let analysisText = "";
+    // CONSOLIDATED STAGE: Research, Analyze, and Format in one call
     try {
-      console.log("[aiPrebuiltAdvisorFlow] Requesting Stage 1 Analysis (with Google Search)...");
-      const analysisResponse = await ai.generate({
-        model: 'googleai/gemini-3-flash-preview',
-        prompt: analysisPrompt,
-        config: {
-          temperature: 0.2,
-          googleSearchRetrieval: {}
+      console.log("[aiPrebuiltAdvisorFlow] Requesting Consolidated Analysis & Formatting...");
+      const { output } = await prompt(
+        {
+          ...input,
+          knowledgeContext
+        },
+        {
+          config: {
+            googleSearchRetrieval: {} // Enable search for pricing/specs verification
+          }
         }
-      });
-      analysisText = analysisResponse.text;
-    } catch (searchError) {
-      console.warn("[aiPrebuiltAdvisorFlow] Google Search Retrieval failed, falling back to internal knowledge:", searchError);
-      const fallbackResponse = await ai.generate({
-        model: 'googleai/gemini-3-flash-preview',
-        prompt: analysisPrompt,
-        config: {
-          temperature: 0.2,
-        }
-      });
-      analysisText = fallbackResponse.text;
-    }
-    console.log("[aiPrebuiltAdvisorFlow] Stage 1 Analysis complete.");
+      );
 
-    // Stage 2: Format to JSON (Structured Output) using the defined prompt
-    console.log("[aiPrebuiltAdvisorFlow] Requesting Stage 2 Formatting...");
-    const { output } = await prompt({
-      ...input,
-      knowledgeContext: `ANALYSIS FINDINGS:\n${analysisText}\n\n${knowledgeContext}`
-    });
+      if (!output) {
+        throw new Error('Failed to get suggestions from the AI.');
+      }
 
-    if (!output) {
-      console.error("[aiPrebuiltAdvisorFlow] Failed to get output from prompt.");
-      throw new Error('Failed to get suggestions from the AI.');
+      console.log("[aiPrebuiltAdvisorFlow] Flow complete.");
+      return output;
+    } catch (error: any) {
+      console.error("[aiPrebuiltAdvisorFlow] Consolidated analysis failed:", error);
+      throw error;
     }
-    console.log("[aiPrebuiltAdvisorFlow] Flow complete.");
-    return output;
   }
 );

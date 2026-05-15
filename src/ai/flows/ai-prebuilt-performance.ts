@@ -80,50 +80,40 @@ ${buildContext}
 `;
 
     try {
-        // Stage 1: Analyze and Search
-        const analysisPrompt = `${prompt}\n\nProvide your analysis in clear text focusing exclusively on the pros/strengths. Use Google Search if you need specific component capabilities to boast about.`;
-
-        const analysisResponse = await ai.generate({
-            model: 'googleai/gemini-3-flash-preview',
-            prompt: analysisPrompt,
-            config: {
-                temperature: 0.3, // Slightly creative for marketing
-                googleSearchRetrieval: {}
-            },
-        });
-
-        const analysisText = analysisResponse.text;
-
-        // Stage 2: Format to JSON
-        const formatPrompt = `Convert the following PC build strengths into a structured JSON object.
+        // CONSOLIDATED STAGE: Analyze, Search, and Format in one call
+        const consolidatedPrompt = `${prompt}
         
-Analysis:
-${analysisText}
+RESEARCH & ANALYSIS INSTRUCTIONS:
+- Use Google Search if you need to verify specific component capabilities or market positions.
+- Analyze the prebuilt for its absolute best strengths.
+- Format your final findings strictly into the requested JSON schema.
 
-Required Output Schema:
+REQUIRED OUTPUT SCHEMA:
 - pros: string[] (Array of the strengths/pros)
 
-Output ONLY the JSON.`;
+Output strictly the JSON object.`;
 
-        const formatResponse = await ai.generate({
+        const response = await ai.generate({
             model: 'googleai/gemini-3-flash-preview',
-            prompt: formatPrompt,
+            prompt: consolidatedPrompt,
             output: {
                 schema: aiPrebuiltPerformanceOutputSchema,
             },
             config: {
-                temperature: 0, // Deterministic for formatting
-            }
+                temperature: 0.3,
+                googleSearchRetrieval: {}
+            },
         });
 
-        if (!formatResponse.output) {
-            throw new Error("AI returned a null output during formatting.");
+        if (!response.output) {
+            throw new Error("AI returned empty output during consolidated prebuilt performance analysis.");
         }
 
-        return formatResponse.output;
+        return response.output;
 
     } catch (error: any) {
         console.error("AI Prebuilt Performance Analysis failed:", error);
         throw error;
     }
 }
+

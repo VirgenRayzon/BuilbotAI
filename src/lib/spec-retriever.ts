@@ -2,6 +2,18 @@ import fs from 'fs';
 import path from 'path';
 
 /**
+ * In-memory cache for CSV data to prevent repeated disk I/O and parsing.
+ */
+interface CachedCsv {
+    headers: string[];
+    lines: string[];
+    timestamp: number;
+}
+
+const csvCache: Record<string, CachedCsv> = {};
+const CACHE_TTL = 1000 * 60 * 60; // 1 hour cache TTL
+
+/**
  * Searches the local CSV database for detailed part specifications.
  */
 export async function retrieveCsvSpecs(query: string): Promise<string[]> {
@@ -20,18 +32,39 @@ export async function retrieveCsvSpecs(query: string): Promise<string[]> {
 
     for (const file of files) {
         const filePath = path.join(dbDir, file);
-        const content = fs.readFileSync(filePath, 'utf-8');
-        const lines = content.split('\n');
         
-        if (lines.length < 2) continue;
+        let headers: string[];
+        let lines: string[];
 
-        const headers = lines[0].split(',').map(h => h.trim());
+        // Check cache first
+        const cached = csvCache[file];
+        if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+            headers = cached.headers;
+            lines = cached.lines;
+        } else {
+            // Cache miss or expired: read and parse
+            const content = fs.readFileSync(filePath, 'utf-8');
+            const allLines = content.split('\n');
+            if (allLines.length < 2) continue;
+            
+            headers = allLines[0].split(',').map(h => h.trim());
+            lines = allLines.slice(1);
+
+            // Save to cache
+            csvCache[file] = {
+                headers,
+                lines,
+                timestamp: Date.now()
+            };
+            console.log(`[CSV Grounding] Cached ${file} (${lines.length} lines)`);
+        }
+
         const nameIndex = headers.findIndex(h => h.includes('metadata/name') || h.includes('name'));
 
         // If we can't find a name column, skip this file
         if (nameIndex === -1) continue;
 
-        for (let i = 1; i < lines.length; i++) {
+        for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line) continue;
 
@@ -74,3 +107,4 @@ export async function retrieveCsvSpecs(query: string): Promise<string[]> {
 
     return results;
 }
+

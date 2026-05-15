@@ -143,7 +143,7 @@ Before answering any query, take a deep breath and think through it step-by-step
                 }),
             },
             stopWhen: stepCountIs(5), // Allow for tool calling loops automatically
-            abortSignal: AbortSignal.timeout(60000), // 60 second timeout
+            abortSignal: AbortSignal.timeout(120000), // 120 second timeout
         });
 
         return result.toUIMessageStreamResponse({

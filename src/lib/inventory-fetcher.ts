@@ -28,16 +28,19 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
         const db = getAdminFirestore();
         const collectionName = CATEGORY_MAP[normalizedCat] || category;
         
-        // Use Admin SDK query syntax
-        let query = db.collection(collectionName).limit(limitCount);
-        const snapshot = await query.get();
+        // 1. Start with native Firestore filtering
+        let query = db.collection(collectionName)
+                      .where('isArchived', '==', false);
+        
+        // 2. Fetch the snapshot
+        // Note: Firestore doesn't support native partial string search without an external indexer (like Algolia),
+        // but we can limit and then filter in memory for small-medium collections.
+        // We'll increase the limit slightly if a search term is present to ensure enough candidates.
+        const snapshot = await query.limit(searchTerm ? limitCount * 2 : limitCount).get();
         
         let docs = snapshot.docs;
 
-        // Filter out archived items
-        docs = docs.filter(doc => !doc.data().isArchived);
-
-        // Manual filtering if searchTerm is provided
+        // 3. Manual filtering if searchTerm is provided
         if (searchTerm) {
             const term = searchTerm.toLowerCase();
             docs = docs.filter(doc => {
@@ -51,7 +54,7 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
                        brand.includes(term) || 
                        series.includes(term) ||
                        model.includes(term);
-            });
+            }).slice(0, limitCount); // Trim back to requested limit
         }
         
         if (docs.length === 0) {
@@ -82,3 +85,4 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
         return [];
     }
 }
+

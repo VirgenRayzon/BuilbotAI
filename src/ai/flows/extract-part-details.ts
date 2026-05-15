@@ -77,11 +77,10 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
   }
 
   try {
-    // Stage 1: Intelligence & Research (Conditional Search)
-    logDebug("Stage 1: Evaluating info and researching if needed...");
+    // CONSOLIDATED STAGE: Research & Format in one call
+    logDebug("Consolidated Stage: Researching and formatting part details...");
 
-    // Determine if we need to research. If groundedContext is for the correct part, we might skip.
-    const researcherPrompt = `You are an expert PC hardware researcher.
+    const researcherPrompt = `You are an expert PC hardware researcher and data formatter.
     
 GROUNDING CONTEXT FROM LOCAL DATABASE:
 ${groundedContext || "NONE - Part not found in local database."}
@@ -89,34 +88,10 @@ ${groundedContext || "NONE - Part not found in local database."}
 User is asking for details on: ${input.partName}
 
 LOGIC RULES:
-1. FIRST, check the GROUNDING CONTEXT above. If it is for the requested part (${input.partName}), summarize its details.
+1. FIRST, check the GROUNDING CONTEXT above. If it is for the requested part (${input.partName}), use its details.
 2. If the context is NONE or for the wrong part, you MUST use the 'googleSearch' tool to find the accurate specs and current street price in USD.
-3. Be accurate. Do not use generic training data for specs if search/context provides specific numbers.
-
-Output your final gathered findings clearly in plain text for the formatter.`;
-
-    const searchConfig = groundedContext ? {} : { googleSearchRetrieval: {} };
-
-    const searchResponse = await ai.generate({
-      model: 'googleai/gemini-3-flash-preview',
-      prompt: researcherPrompt,
-      config: {
-        temperature: 0,
-        ...searchConfig
-      },
-    });
-
-    const findings = searchResponse.text;
-    logDebug(`Stage 1 findings: ${findings.substring(0, 150)}...`);
-
-    // Stage 2: Format findings into structured JSON
-    logDebug("Stage 2: Formatting findings into JSON...");
-    const formatPrompt = `Convert the following PC hardware findings into a structured JSON object.
-
-Findings:
-${findings}
-
-Part Name Requested: ${input.partName}
+3. Once you have the data, format it strictly into the requested JSON schema.
+4. For prices: Convert USD street price to PHP by multiplying by 56 (e.g., $1000 = ₱56,000).
 
 SPECIFICATION RULES (Ensure these keys appear in the JSON 'specifications' array):
 - **CPU**: 'Architecture', 'Cores', 'Threads', 'Base Clock (GHz)', 'Boost Clock (GHz)', 'Socket', 'TDP / Peak Power', 'L3 Cache', 'Memory Support', 'Integrated Graphics'.
@@ -128,35 +103,32 @@ SPECIFICATION RULES (Ensure these keys appear in the JSON 'specifications' array
 - **Case**: 'Width (mm)' (Integer), 'Depth (mm)' (Integer), 'Height (mm)' (Integer), 'Mobo Support' (MANDATORY: comma-separated list of: eatx, atx, matx, itx), 'Radiator Support (mm)' (MANDATORY: comma-separated list of: 120, 140, 240, 280, 360, 480), 'Type' (MANDATORY: exactly one of: full tower, mid tower, mini tower, sff), 'Back-Connect Cutout' (MANDATORY: exactly one of: yes, no), 'PSU Form Factor'.
 - **Cooler**: 'TDP Rating', 'Socket Support', 'Height', 'Radiator Size', 'Type'.
 
-ADDITIONAL FIELDS:
-- 'wattage': number.
-- 'performanceScore': 0-100.
-- 'dimensions': {width, height, depth} in mm. For GPUs, 'depth' is the length.
-- 'price': number in PHP (USD * 56).
-- 'packageType': 'TRAY' or 'BOX' (for CPUs only).
-- 'description': brief product highlights in Markdown.
+Output strictly the JSON object matching the schema.`;
 
-Output ONLY the JSON object.`;
+    const searchConfig = groundedContext ? {} : { googleSearchRetrieval: {} };
 
-    const formatResponse = await ai.generate({
+    const response = await ai.generate({
       model: 'googleai/gemini-3-flash-preview',
-      prompt: formatPrompt,
+      prompt: researcherPrompt,
       output: {
         schema: ExtractPartDetailsOutputSchema,
       },
       config: {
         temperature: 0,
+        ...searchConfig
       },
     });
 
-    if (!formatResponse.output) {
-      throw new Error("AI returned empty formatted output.");
+    if (!response.output) {
+      throw new Error("AI returned empty output during consolidated research and formatting.");
     }
 
-    return formatResponse.output;
+    logDebug(`Successfully consolidated research and formatting for: ${input.partName}`);
+    return response.output;
 
   } catch (error: any) {
     console.error("Extract Part Details failed:", error);
     throw error;
   }
 }
+

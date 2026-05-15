@@ -178,54 +178,44 @@ ${analysisContext}
 If the build is completely empty, kindly invite the user to start picking out parts.`;
 
     try {
-        // Stage 1: Analyze and Search (Text Output) - Tools are allowed here
-        const analysisPrompt = `${prompt}\n\nProvide your analysis in clear text including the pros/cons, bottleneck explanation, FPS estimates, and suggestions. Use Google Search if you need benchmarks or specific info.`;
-
-        const analysisResponse = await ai.generate({
-            model: 'googleai/gemini-3-flash-preview',
-            prompt: analysisPrompt,
-            config: {
-                temperature: 0.2,
-                googleSearchRetrieval: {}
-            },
-        });
-
-        const analysisText = analysisResponse.text;
-
-        // Stage 2: Format to JSON (Structured Output) - Tools are NOT allowed here
-        const formatPrompt = `Convert the following PC build analysis into a structured JSON object.
+        // CONSOLIDATED STAGE: Analyze, Search, and Format in one call
+        const consolidatedPrompt = `${prompt}
         
-Analysis:
-${analysisText}
+RESEARCH & ANALYSIS INSTRUCTIONS:
+- Use Google Search if you need benchmarks, specific component capabilities, or market data to provide a better critique.
+- Analyze the build for pros, cons, bottleneck balance, and FPS estimates as described above.
+- Format your final findings strictly into the requested JSON schema.
 
-Required Output Schema:
+REQUIRED OUTPUT SCHEMA:
 - pros: string[]
 - cons: string[]
 - bottleneck: { analysis: string } (IMPORTANT: Preserve and format using full Markdown. Use **bolding**, \`code\`, and - bullet points for readability.)
 - fpsEstimates: { game: string, fps: string (numeric only, e.g. "95-110"), settings: string (e.g. "1440p Ultra") }[]
 - suggestions: { originalComponent: string, suggestedComponent: string, suggestedPartId: string, reason: string }[]
 
-Output ONLY the JSON.`;
+Output strictly the JSON object.`;
 
-        const formatResponse = await ai.generate({
+        const response = await ai.generate({
             model: 'googleai/gemini-3-flash-preview',
-            prompt: formatPrompt,
+            prompt: consolidatedPrompt,
             output: {
                 schema: aiBuildCritiqueOutputSchema,
             },
             config: {
-                temperature: 0, // Deterministic for formatting
-            }
+                temperature: 0.2,
+                googleSearchRetrieval: {}
+            },
         });
 
-        if (!formatResponse.output) {
-            throw new Error("AI returned a null output during formatting.");
+        if (!response.output) {
+            throw new Error("AI returned empty output during consolidated build critique.");
         }
 
-        return formatResponse.output;
+        return response.output;
 
     } catch (error: any) {
         console.error("AI Build Critique failed:", error);
         throw error;
     }
 }
+

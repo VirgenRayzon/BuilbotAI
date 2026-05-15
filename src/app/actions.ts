@@ -26,7 +26,7 @@ import {
 } from "@/ai/flows/ai-smart-budget";
 
 
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 90000): Promise<T> {
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 120000): Promise<T> {
   const timeoutPromise = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error("AI_TIMEOUT")), timeoutMs)
   );
