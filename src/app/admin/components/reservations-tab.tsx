@@ -24,7 +24,7 @@ export function ReservationsTab({
     onUpdateOrder
 }: ReservationsTabProps) {
     const [orderCurrentPage, setOrderCurrentPage] = useState(1);
-    const [orderItemsPerPage, setOrderItemsPerPage] = useState(5);
+    const [orderItemsPerPage, setOrderItemsPerPage] = useState(10);
     const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
     const paginatedOrders = useMemo(() => {

@@ -234,6 +234,8 @@ BuilbotAI
 │   │   │   │   └── use-recommendation-logic.ts
 │   │   │   └── page.tsx
 │   │   ├── api
+│   │   │   ├── ai
+│   │   │   │   └── extract-details
 │   │   │   └── chat
 │   │   │       └── route.ts
 │   │   ├── builder
