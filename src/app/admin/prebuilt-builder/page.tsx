@@ -122,7 +122,15 @@ export default function PrebuiltBuilderPage() {
     });
     const [resolution, setResolution] = useState<Resolution>('1440p');
     const [workload, setWorkload] = useState<WorkloadType>('Balanced');
+    const [analysis, setAnalysis] = useState<any>(null);
     const [isLoaded, setIsLoaded] = useState(false);
+
+    const handleApplySuggestion = (category: string, partId: string) => {
+        const event = new CustomEvent('add-suggestion', { 
+            detail: { id: partId, category } 
+        });
+        window.dispatchEvent(event);
+    };
 
 
     // Persistence
@@ -162,6 +170,29 @@ export default function PrebuiltBuilderPage() {
                 next[category] = currentItems;
             } else {
                 next[category] = null;
+
+                // Destructive removal logic
+                if (category === 'Case') {
+                    const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                    dependentParts.forEach(key => {
+                        if (key === 'RAM' || key === 'Storage') next[key] = [];
+                        else next[key] = null;
+                    });
+                    toast({ title: 'Build Reset', description: 'Removing the case removes all internal components.' });
+                } else if (category === 'Motherboard') {
+                    const dependentParts = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                    dependentParts.forEach(key => {
+                        if (key === 'RAM' || key === 'Storage') next[key] = [];
+                        else next[key] = null;
+                    });
+                    toast({ title: 'Components Removed', description: 'Removing the motherboard removes all dependent internal parts.' });
+                }
+
+                const currentCooler = next['Cooler'] as ComponentData | null;
+                if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
+                    next['Cooler'] = null;
+                    toast({ title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' });
+                }
             }
             return next;
         });
@@ -277,7 +308,34 @@ export default function PrebuiltBuilderPage() {
         }
 
         if (isCurrentlySelected) {
-            setBuild(prevBuild => ({ ...prevBuild, [category]: null }));
+            setBuild(prev => {
+                const next = { ...prev };
+                next[category] = null;
+                if (category === 'Case') {
+                    const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                    dependentParts.forEach(key => {
+                        if (key === 'RAM' || key === 'Storage') next[key] = [];
+                        else next[key] = null;
+                    });
+                    toast({ title: 'Build Reset', description: 'Case removed.' });
+                } else if (category === 'Motherboard') {
+                    const dependentParts = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                    dependentParts.forEach(key => {
+                        if (key === 'RAM' || key === 'Storage') next[key] = [];
+                        else next[key] = null;
+                    });
+                    toast({ title: 'Components Removed', description: 'Motherboard removed.' });
+                }
+
+                // Handle CPU stock cooler logic
+                const currentCooler = next['Cooler'] as ComponentData | null;
+                if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
+                    next['Cooler'] = null;
+                    toast({ title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' });
+                }
+
+                return next;
+            });
             toast({ title: 'Part Removed', description: `${part.name} has been removed from your build.` });
         } else {
             if (!compatible) {
@@ -312,8 +370,62 @@ export default function PrebuiltBuilderPage() {
                 dimensions: part.dimensions,
             };
 
-            setBuild(prevBuild => ({ ...prevBuild, [category]: componentData }));
+            setBuild(prev => {
+                const next = { ...prev };
+                const prevPart = next[category] as ComponentData | null;
+                next[category] = componentData;
+
+                if (category === 'Case' && prevPart && prevPart.id !== componentData.id) {
+                    const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                    dependentParts.forEach(key => {
+                        if (key === 'RAM' || key === 'Storage') next[key] = [];
+                        else next[key] = null;
+                    });
+                    toast({ title: 'Build Updated', description: 'Case changed.' });
+                } else if (category === 'Motherboard' && prevPart && prevPart.id !== componentData.id) {
+                    const dependentParts = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                    dependentParts.forEach(key => {
+                        if (key === 'RAM' || key === 'Storage') next[key] = [];
+                        else next[key] = null;
+                    });
+                    toast({ title: 'Build Updated', description: 'Motherboard changed.' });
+                }
+                return next;
+            });
             toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
+
+            // Handle CPU stock cooler logic
+            if (category === 'CPU') {
+                const isBoxed = (part as any).packageType === 'BOX';
+                if (isBoxed) {
+                    const isIntel = part.name.toLowerCase().includes('intel');
+                    const isAmd = part.name.toLowerCase().includes('amd');
+                    const coolerModel = isIntel ? "Intel Laminar RM1 CPU Cooler" : isAmd ? "AMD Wraith MAX CPU Cooler with RGB LED" : "Stock Cooler";
+                    
+                    setBuild(prev => ({
+                        ...prev,
+                        Cooler: {
+                            id: isAmd ? 'uGiAh2JerLwnDe5VW431' : 'included-stock-cooler',
+                            model: coolerModel,
+                            price: 0,
+                            description: `Bundled cooler.`,
+                            image: "https://picsum.photos/seed/stockcooler/800/600",
+                            imageHint: "included cooler",
+                            icon: Wind,
+                            wattage: 0,
+                            specifications: { "Type": "Air (Stock)" }
+                        }
+                    }));
+                } else {
+                    // If tray and currently have stock cooler, remove it
+                    setBuild(prev => {
+                        if ((prev.Cooler as ComponentData)?.id === 'included-stock-cooler') {
+                            return { ...prev, Cooler: null };
+                        }
+                        return prev;
+                    });
+                }
+            }
         }
     };
 
@@ -529,17 +641,18 @@ export default function PrebuiltBuilderPage() {
                         <div className="flex flex-col gap-6 pb-4 pr-2">
                             <YourBuild
                                 build={build}
-                                onClearBuild={handleClearBuild}
                                 onRemovePart={handleRemovePart}
+                                onClearBuild={handleClearBuild}
                                 resolution={resolution}
                                 onResolutionChange={setResolution}
                                 workload={workload}
                                 onWorkloadChange={setWorkload}
-                                showSystemBalance={true}
                                 isManagerMode={true}
-                                allParts={allParts}
                                 onAddPrebuilt={handleAddPrebuilt}
                                 onCategorySelect={(cat) => handleCategoryChange(cat, true)}
+                                categories={categories}
+                                analysis={analysis}
+                                onAnalysisUpdate={setAnalysis}
                             />
                         </div>
                     </div>
@@ -551,6 +664,8 @@ export default function PrebuiltBuilderPage() {
                     onResolutionChange={setResolution}
                     workload={workload}
                     onWorkloadChange={setWorkload}
+                    analysis={analysis}
+                    onApplySuggestion={handleApplySuggestion}
                 />
                 <BuilderFloatingChat build={build} />
                 </main>

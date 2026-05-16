@@ -78,19 +78,19 @@ export function useBuilderLogic(allParts: Part[]) {
             next[category] = null;
 
             if (category === 'Case') {
-                Object.keys(next).forEach(key => {
+                const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                dependentParts.forEach(key => {
                     if (key === 'RAM' || key === 'Storage') next[key] = [];
                     else next[key] = null;
                 });
-                toastMsg = { title: 'Build Reset', description: 'Removing the case removes all other components.' };
+                toastMsg = { title: 'Build Reset', description: 'Removing the case removes all internal components.' };
             } else if (category === 'Motherboard') {
-                Object.keys(next).forEach(key => {
-                    if (key !== 'Case') {
-                        if (key === 'RAM' || key === 'Storage') next[key] = [];
-                        else next[key] = null;
-                    }
+                const dependentParts = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                dependentParts.forEach(key => {
+                    if (key === 'RAM' || key === 'Storage') next[key] = [];
+                    else next[key] = null;
                 });
-                toastMsg = { title: 'Components Removed', description: 'Changing or removing the motherboard removes all dependent parts.' };
+                toastMsg = { title: 'Components Removed', description: 'Removing the motherboard removes all dependent internal parts.' };
             }
 
             const currentCooler = next['Cooler'] as ComponentData | null;
@@ -173,19 +173,25 @@ export function useBuilderLogic(allParts: Part[]) {
         if (isCurrentlySelected) {
             nextBuild[category] = null;
             if (category === 'Case') {
-                Object.keys(nextBuild).forEach(key => {
+                const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                dependentParts.forEach(key => {
                     if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
                     else nextBuild[key] = null;
                 });
                 toastsToShow.push({ title: 'Build Reset', description: 'Case removed.' });
             } else if (category === 'Motherboard') {
-                Object.keys(nextBuild).forEach(key => {
-                    if (key !== 'Case') {
-                        if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
-                        else nextBuild[key] = null;
-                    }
+                const dependentParts = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                dependentParts.forEach(key => {
+                    if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
+                    else nextBuild[key] = null;
                 });
                 toastsToShow.push({ title: 'Components Removed', description: 'Motherboard removed.' });
+            }
+
+            const currentCooler = nextBuild['Cooler'] as ComponentData | null;
+            if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
+                nextBuild['Cooler'] = null;
+                toastsToShow.push({ title: 'Cooler Removed', description: 'Stock cooler removed.' });
             }
             toastsToShow.push({ title: 'Part Removed', description: `${part.name} removed.` });
         } else {
@@ -220,19 +226,17 @@ export function useBuilderLogic(allParts: Part[]) {
             nextBuild[category] = componentData;
 
             if (category === 'Case' && prevBuildCopy[category] && (prevBuildCopy[category] as ComponentData).id !== componentData.id) {
-                Object.keys(nextBuild).forEach(key => {
-                    if (key !== 'Case') {
-                        if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
-                        else nextBuild[key] = null;
-                    }
+                const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                dependentParts.forEach(key => {
+                    if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
+                    else nextBuild[key] = null;
                 });
                 toastsToShow.push({ title: 'Build Updated', description: 'Case changed.' });
             } else if (category === 'Motherboard' && prevBuildCopy[category] && (prevBuildCopy[category] as ComponentData).id !== componentData.id) {
-                Object.keys(nextBuild).forEach(key => {
-                    if (key !== 'Case' && key !== 'Motherboard') {
-                        if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
-                        else nextBuild[key] = null;
-                    }
+                const dependentParts = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                dependentParts.forEach(key => {
+                    if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
+                    else nextBuild[key] = null;
                 });
                 toastsToShow.push({ title: 'Build Updated', description: 'Motherboard changed.' });
             }

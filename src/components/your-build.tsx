@@ -147,12 +147,18 @@ export function YourBuild({
         }
     }, [selectedParts]);
 
+    const activeFilter = useMemo(() => {
+        const selected = categories?.filter(c => c.selected);
+        return selected?.length === 1 ? selected[0].name : null;
+    }, [categories]);
+
     const renderBuildContent = () => (
         <>
             <BuildContent
                 build={build}
                 onRemovePart={onRemovePart}
                 onCategorySelect={onCategorySelect}
+                activeFilter={activeFilter}
                 categories={categories}
                 showSystemBalance={showSystemBalance}
                 resolution={resolution}
@@ -162,7 +168,7 @@ export function YourBuild({
             />
             <CardFooter className="flex-none flex flex-col items-stretch gap-4 pb-6">
                 <div className="flex flex-row lg:flex-col gap-3 w-full items-center justify-end lg:justify-center">
-                    {!isManagerMode && (
+                    {(!isManagerMode || onAnalysisUpdate) && (
                         <SparkleButton
                             icon={<Sparkles className="h-4 w-4" />}
                             containerClassName="order-1 flex-none lg:w-full"
