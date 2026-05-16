@@ -155,7 +155,6 @@ export default function BuilderPage() {
             </main>
 
             {/* Floating UI Elements */}
-            <BuilderFloatingChat build={build} />
             <BuilderFloatingAnalytics 
                 build={build} 
                 resolution={resolution}
@@ -165,6 +164,7 @@ export default function BuilderPage() {
                 analysis={analysis}
                 onApplySuggestion={handleApplySuggestion}
             />
+            <BuilderFloatingChat build={build} />
         </div>
     </RouteGuard>
     );

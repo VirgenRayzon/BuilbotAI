@@ -189,14 +189,18 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
     };
 
     return (
-        <div className="fixed bottom-6 left-6 z-50 flex flex-col items-start gap-4 max-w-full">
+        <div className={cn(
+            "fixed left-6 flex flex-col items-start gap-4 max-w-[calc(100vw-3rem)] transition-all duration-300",
+            "bottom-24 lg:bottom-6", 
+            isOpen ? "z-[60]" : "z-50"
+        )}>
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="w-[calc(100vw-2rem)] sm:w-[500px] z-50"
+                        className="w-[calc(100vw-2rem)] sm:w-[500px]"
                     >
                         <Card className={cn(
                             "flex flex-col h-[60vh] sm:h-[800px] max-h-[800px] shadow-[0_10px_50px_rgba(6,182,212,0.25)] overflow-hidden backdrop-blur-2xl relative border rounded-2xl transition-colors duration-500",

@@ -50,7 +50,11 @@ export function BuilderFloatingAnalytics({
     };
 
     return (
-        <div className="fixed bottom-[88px] left-6 sm:bottom-[104px] sm:left-6 z-50 flex flex-col items-start gap-4">
+        <div className={cn(
+            "fixed left-6 flex flex-col items-start gap-4 transition-all duration-300",
+            "bottom-[176px] lg:bottom-[104px]", 
+            isOpen ? "z-[60]" : "z-50"
+        )}>
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
