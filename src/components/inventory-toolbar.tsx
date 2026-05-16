@@ -107,14 +107,8 @@ export function InventoryToolbar({
               <ToggleGroupItem
                 key={cat.name}
                 value={cat.name}
-                disabled={(cat as any).disabled}
                 aria-label={`Toggle ${cat.name}`}
-                className={cn(
-                  "px-4 py-2 h-11 flex flex-row items-center gap-2 transition-all border border-border/40 rounded-xl min-w-fit font-headline font-bold uppercase tracking-wider text-[10px]",
-                  "data-[state=on]:bg-primary data-[state=on]:text-white",
-                  "data-[state=off]:bg-muted/20 data-[state=off]:hover:bg-muted/40",
-                  (cat as any).disabled && "opacity-30 cursor-not-allowed grayscale"
-                )}
+                className="px-4 py-2 h-11 flex flex-row items-center gap-2 data-[state=on]:bg-primary data-[state=on]:text-white transition-all border border-border/40 data-[state=off]:bg-muted/20 data-[state=off]:hover:bg-muted/40 rounded-xl min-w-fit font-headline font-bold uppercase tracking-wider text-[10px]"
               >
                 <Icon className="h-4 w-4 shrink-0" />
                 <span>{cat.name}</span>

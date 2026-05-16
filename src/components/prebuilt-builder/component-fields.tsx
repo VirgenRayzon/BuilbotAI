@@ -7,6 +7,7 @@ import { PartSelector } from "./part-selector";
 import { UseFormReturn } from "react-hook-form";
 import { PrebuiltBuilderAddFormSchema } from "./use-prebuilt-form";
 import type { Part } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 
 interface ComponentFieldsProps {
     form: UseFormReturn<PrebuiltBuilderAddFormSchema>;
@@ -16,6 +17,31 @@ interface ComponentFieldsProps {
 }
 
 export function ComponentFields({ form, inventory, openSlot, setOpenSlot }: ComponentFieldsProps) {
+    const { toast } = useToast();
+
+    const handleOpenSlot = (isOpen: boolean, slotName: string, category: string) => {
+        if (isOpen) {
+            const currentCase = form.getValues('case');
+            const currentMobo = form.getValues('motherboard');
+            const currentCpu = form.getValues('cpu');
+            
+            if (category !== 'Case' && !currentCase) {
+                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a Case first to establish physical dimensions.' });
+                return;
+            }
+            if (category !== 'Case' && category !== 'Motherboard' && !currentMobo) {
+                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a Motherboard next to establish socket compatibility.' });
+                return;
+            }
+            const internalComponents = ['GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+            if (internalComponents.includes(category) && !currentCpu) {
+                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a CPU next to establish core performance baseline.' });
+                return;
+            }
+        }
+        setOpenSlot(isOpen ? slotName : null);
+    };
+
     const renderSingleSlot = (name: keyof PrebuiltBuilderAddFormSchema, label: string, category: string) => (
         <FormField control={form.control} name={name as any} render={({ field }) => (
             <FormItem>
@@ -26,7 +52,7 @@ export function ComponentFields({ form, inventory, openSlot, setOpenSlot }: Comp
                     value={field.value as string || ""}
                     onChange={field.onChange}
                     isOpen={openSlot === name}
-                    onOpenChange={(o) => setOpenSlot(o ? name as string : null)}
+                    onOpenChange={(o) => handleOpenSlot(o, name as string, category)}
                 />
                 <FormMessage />
             </FormItem>
@@ -62,7 +88,7 @@ export function ComponentFields({ form, inventory, openSlot, setOpenSlot }: Comp
                         category="RAM" 
                         inventory={inventory} 
                         openSlot={openSlot} 
-                        setOpenSlot={setOpenSlot} 
+                        onOpenSlot={handleOpenSlot} 
                     />
                     {/* Storage Drives */}
                     <MultiSlotField 
@@ -72,7 +98,7 @@ export function ComponentFields({ form, inventory, openSlot, setOpenSlot }: Comp
                         category="Storage" 
                         inventory={inventory} 
                         openSlot={openSlot} 
-                        setOpenSlot={setOpenSlot} 
+                        onOpenSlot={handleOpenSlot} 
                     />
                 </div>
 
@@ -85,7 +111,7 @@ export function ComponentFields({ form, inventory, openSlot, setOpenSlot }: Comp
     );
 }
 
-function MultiSlotField({ form, name, label, category, inventory, openSlot, setOpenSlot }: any) {
+function MultiSlotField({ form, name, label, category, inventory, openSlot, onOpenSlot }: any) {
     const items = form.watch(name) || [];
 
     return (
@@ -116,7 +142,7 @@ function MultiSlotField({ form, name, label, category, inventory, openSlot, setO
                                     value={field.value || ""}
                                     onChange={field.onChange}
                                     isOpen={openSlot === `${name}-${index}`}
-                                    onOpenChange={(o) => setOpenSlot(o ? `${name}-${index}` : null)}
+                                    onOpenChange={(o) => onOpenSlot(o, `${name}-${index}`, category)}
                                 />
                                 {items.length > 1 && (
                                     <button

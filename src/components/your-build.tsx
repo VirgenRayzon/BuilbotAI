@@ -219,7 +219,8 @@ export function YourBuild({
                                 <div className="space-y-4 py-4">
                                     <ScrollArea className="max-h-[30vh]">
                                         <div className="space-y-2">
-                                            {Object.entries(build).map(([category, val]) => {
+                                            {['Case', 'Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler', 'Monitor', 'Keyboard', 'Mouse', 'Headset'].map((category) => {
+                                                const val = build[category];
                                                 const components = Array.isArray(val) ? val : (val ? [val] : []);
                                                 return components.map((c, idx) => (
                                                     <div key={`${category}-${idx}`} className="flex justify-between text-sm">

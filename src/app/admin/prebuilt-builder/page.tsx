@@ -117,7 +117,7 @@ export default function PrebuiltBuilderPage() {
     }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers, monitors, keyboards, mice, headsets]);
 
     const [build, setBuild] = useState<Record<string, ComponentData | ComponentData[] | null>>({
-        CPU: null, GPU: null, Motherboard: null, RAM: [], Storage: [], PSU: null, Case: null, Cooler: null,
+        Case: null, Motherboard: null, CPU: null, GPU: null, RAM: [], Storage: [], PSU: null, Cooler: null,
         Monitor: null, Keyboard: null, Mouse: null, Headset: null,
     });
     const [resolution, setResolution] = useState<Resolution>('1440p');
@@ -147,7 +147,7 @@ export default function PrebuiltBuilderPage() {
 
     const handleClearBuild = () => {
         setBuild({
-            CPU: null, GPU: null, Motherboard: null, RAM: [], Storage: [], PSU: null, Case: null, Cooler: null,
+            Case: null, Motherboard: null, CPU: null, GPU: null, RAM: [], Storage: [], PSU: null, Cooler: null,
             Monitor: null, Keyboard: null, Mouse: null, Headset: null,
         });
         toast({ title: 'Build Cleared', description: 'Builder has been reset.' });
@@ -168,7 +168,7 @@ export default function PrebuiltBuilderPage() {
     };
 
     const [categories, setCategories] = useState(
-        componentCategories.map(c => ({ name: c.name, selected: c.name === "Case" }))
+        componentCategories.map(c => ({ name: c.name, selected: true }))
     );
 
 
@@ -208,27 +208,26 @@ export default function PrebuiltBuilderPage() {
     const handlePartToggle = (part: Part) => {
         const category = part.category;
 
-        // Enforcement: Case and Motherboard must come first
-        if (category !== "Case" && !build.Case) {
-            toast({
-                variant: 'destructive',
-                title: 'Sequence Enforcement',
-                description: 'Please select a Case first to define the build foundation.'
-            });
-            // Auto-switch to Case category to help the user
-            handleCategoryChange("Case", true);
-            return;
-        }
+        // Determine if we are removing an existing single-slot part
+        const isCurrentlySelected = category !== 'Storage' && category !== 'RAM' && (build[category] as ComponentData)?.model === part.name;
 
-        if (category !== "Case" && category !== "Motherboard" && !build.Motherboard) {
-            toast({
-                variant: 'destructive',
-                title: 'Sequence Enforcement',
-                description: 'Please select a Motherboard before choosing internal components.'
-            });
-            // Auto-switch to Motherboard category to help the user
-            handleCategoryChange("Motherboard", true);
-            return;
+        // Sequence Validation (Only enforce when adding new parts)
+        if (!isCurrentlySelected) {
+            if (category !== 'Case' && !build['Case']) {
+                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a Case first to establish physical dimensions.' });
+                return;
+            }
+            if (category !== 'Case' && category !== 'Motherboard' && !build['Motherboard']) {
+                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a Motherboard next to establish socket compatibility.' });
+                return;
+            }
+            // For accessories like monitors, you might not strictly need a CPU, but for core components it makes sense. 
+            // We'll enforce CPU next for all internal components.
+            const internalComponents = ['GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+            if (internalComponents.includes(category) && !build['CPU']) {
+                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a CPU next to establish core performance baseline.' });
+                return;
+            }
         }
 
         const { compatible, message } = checkCompatibility(part, build);
@@ -276,8 +275,6 @@ export default function PrebuiltBuilderPage() {
             toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
             return;
         }
-
-        const isCurrentlySelected = (build[category] as ComponentData)?.model === part.name;
 
         if (isCurrentlySelected) {
             setBuild(prevBuild => ({ ...prevBuild, [category]: null }));
@@ -420,13 +417,7 @@ export default function PrebuiltBuilderPage() {
                         "flex flex-col gap-6 lg:col-span-9"
                     )}>
                         <InventoryToolbar
-                            categories={categories.map(cat => ({
-                                ...cat,
-                                icon: componentCategories.find(c => c.name === cat.name)?.icon,
-                                disabled: cat.name === "Case" ? false :
-                                          cat.name === "Motherboard" ? !build.Case :
-                                          (!build.Case || !build.Motherboard)
-                            }))}
+                            categories={categories}
                             onCategoryChange={handleCategoryChange}
                             itemCount={sortedAndFilteredParts.length}
                             sortBy={sortBy}

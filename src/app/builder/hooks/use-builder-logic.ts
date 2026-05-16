@@ -109,14 +109,27 @@ export function useBuilderLogic(allParts: Part[]) {
         let nextBuild = { ...build };
         const toastsToShow: { title: string; description: string; variant?: "default" | "destructive" }[] = [];
 
-        if (category !== 'Case' && !build['Case']) {
-            toast({ variant: 'destructive', title: 'Selection Order', description: 'Please select a Case first.' });
-            return;
-        }
+        // Determine if we are removing an existing part
+        const isCurrentlySelected = (category === 'Storage' || category === 'RAM') 
+            ? false 
+            : (build[category] as ComponentData)?.model === part.name;
 
-        if (category !== 'Case' && category !== 'Motherboard' && !build['Motherboard']) {
-            toast({ variant: 'destructive', title: 'Selection Order', description: 'Please select a Motherboard first.' });
-            return;
+        // Sequence Validation (Only enforce when adding new parts)
+        if (!isCurrentlySelected) {
+            if (category !== 'Case' && !build['Case']) {
+                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a Case first to establish physical dimensions.' });
+                return;
+            }
+            if (category !== 'Case' && category !== 'Motherboard' && !build['Motherboard']) {
+                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a Motherboard next to establish socket compatibility.' });
+                return;
+            }
+            // Enforce CPU next for all internal performance components
+            const internalComponents = ['GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+            if (internalComponents.includes(category) && !build['CPU']) {
+                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a CPU next to establish core performance baseline.' });
+                return;
+            }
         }
 
         const { compatible, message } = checkCompatibility(part, build);
@@ -156,8 +169,6 @@ export function useBuilderLogic(allParts: Part[]) {
             toast({ title: 'Part Added', description: `${part.name} added.` });
             return;
         }
-
-        const isCurrentlySelected = (build[category] as ComponentData)?.model === part.name;
 
         if (isCurrentlySelected) {
             nextBuild[category] = null;
