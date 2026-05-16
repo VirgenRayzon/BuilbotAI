@@ -168,7 +168,7 @@ export default function PrebuiltBuilderPage() {
     };
 
     const [categories, setCategories] = useState(
-        componentCategories.map(c => ({ name: c.name, selected: true }))
+        componentCategories.map(c => ({ name: c.name, selected: c.name === "Case" }))
     );
 
 
@@ -207,6 +207,29 @@ export default function PrebuiltBuilderPage() {
 
     const handlePartToggle = (part: Part) => {
         const category = part.category;
+
+        // Enforcement: Case and Motherboard must come first
+        if (category !== "Case" && !build.Case) {
+            toast({
+                variant: 'destructive',
+                title: 'Sequence Enforcement',
+                description: 'Please select a Case first to define the build foundation.'
+            });
+            // Auto-switch to Case category to help the user
+            handleCategoryChange("Case", true);
+            return;
+        }
+
+        if (category !== "Case" && category !== "Motherboard" && !build.Motherboard) {
+            toast({
+                variant: 'destructive',
+                title: 'Sequence Enforcement',
+                description: 'Please select a Motherboard before choosing internal components.'
+            });
+            // Auto-switch to Motherboard category to help the user
+            handleCategoryChange("Motherboard", true);
+            return;
+        }
 
         const { compatible, message } = checkCompatibility(part, build);
 
@@ -397,7 +420,13 @@ export default function PrebuiltBuilderPage() {
                         "flex flex-col gap-6 lg:col-span-9"
                     )}>
                         <InventoryToolbar
-                            categories={categories}
+                            categories={categories.map(cat => ({
+                                ...cat,
+                                icon: componentCategories.find(c => c.name === cat.name)?.icon,
+                                disabled: cat.name === "Case" ? false :
+                                          cat.name === "Motherboard" ? !build.Case :
+                                          (!build.Case || !build.Motherboard)
+                            }))}
                             onCategoryChange={handleCategoryChange}
                             itemCount={sortedAndFilteredParts.length}
                             sortBy={sortBy}
