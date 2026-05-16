@@ -188,6 +188,7 @@ BuilbotAI
 │   └── landing-hero.png
 ├── scratch
 │   ├── check-firestore-schema.js
+│   ├── check-inventory.ts
 │   ├── check-models.js
 │   ├── find-bad-data.js
 │   └── list-models.js
@@ -459,6 +460,7 @@ BuilbotAI
 │       ├── local-db.ts
 │       ├── placeholder-images.ts
 │       ├── prebuilt-utils.ts
+│       ├── spec-retriever.ts
 │       ├── types.ts
 │       └── utils.ts
 ├── .env

@@ -33,11 +33,14 @@ import { useSiteSettings } from '@/context/site-settings-context';
 
 interface PrebuiltSystemCardProps {
   system: PrebuiltSystem;
+  expanded?: boolean;
+  onToggle?: () => void;
 }
 
-export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
+export function PrebuiltSystemCard({ system, expanded = false, onToggle }: PrebuiltSystemCardProps) {
   const { shouldCorruptImages } = useSiteSettings();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpandedLocal, setIsExpandedLocal] = useState(false);
+  const isExpanded = expanded || isExpandedLocal;
   const { toast } = useToast();
 
   const missingParts = getMissingParts(system);
@@ -179,7 +182,11 @@ export function PrebuiltSystemCard({ system }: PrebuiltSystemCardProps) {
   const toggleExpand = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsExpanded(!isExpanded);
+    if (onToggle) {
+      onToggle();
+    } else {
+      setIsExpandedLocal(!isExpandedLocal);
+    }
   };
 
   return (

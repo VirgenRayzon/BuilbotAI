@@ -126,7 +126,13 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
     }, [firestore, components]);
 
     if (loading) {
-        return null;
+        return (
+            <div className="space-y-2 mt-4 mb-2 animate-pulse">
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="h-4 bg-muted rounded w-full" />
+                ))}
+            </div>
+        );
     }
 
     if (!expanded) {

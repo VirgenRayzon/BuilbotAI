@@ -48,12 +48,14 @@ export default function PreBuiltsPage() {
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
     const [view, setView] = useState<'grid' | 'list'>('grid');
     const [expandedIds, setExpandedIds] = useState<string[]>([]);
+    const [showAllDetails, setShowAllDetails] = useState(false);
     
     const toggleExpand = (id: string) => {
         setExpandedIds(prev => 
             prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
         );
     };
+
     const [searchQuery, setSearchQuery] = useState('');
 
     const handleCategoryChange = (categoryName: string, selected: boolean) => {
@@ -94,6 +96,15 @@ export default function PreBuiltsPage() {
                 return sortDirection === 'asc' ? compare : -compare;
             });
     }, [prebuiltSystems, categories, sortBy, sortDirection, searchQuery]);
+
+    // When showAllDetails changes, sync expandedIds for list view
+    useEffect(() => {
+        if (showAllDetails) {
+            setExpandedIds(filteredAndSortedSystems.map(s => s.id));
+        } else {
+            setExpandedIds([]);
+        }
+    }, [showAllDetails, filteredAndSortedSystems]);
 
     const [mounted, setMounted] = useState(false);
     const { setIsPageLoading } = useLoading();
@@ -166,6 +177,8 @@ export default function PreBuiltsPage() {
                         showViewToggle={true}
                         searchQuery={searchQuery}
                         onSearchQueryChange={setSearchQuery}
+                        showDetails={showAllDetails}
+                        onShowDetailsChange={setShowAllDetails}
                     />
                 </div>
 
@@ -173,7 +186,12 @@ export default function PreBuiltsPage() {
                     view === 'grid' ? (
                         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
                             {filteredAndSortedSystems.map(system => (
-                                <PrebuiltSystemCard key={system.id} system={system} />
+                                <PrebuiltSystemCard 
+                                    key={system.id} 
+                                    system={system} 
+                                    expanded={showAllDetails}
+                                    onToggle={() => setShowAllDetails(!showAllDetails)}
+                                />
                             ))}
                         </div>
                     ) : (

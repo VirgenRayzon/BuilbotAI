@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import React from "react";
 import { Layers, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 type Category = {
   name: string;
@@ -50,6 +51,9 @@ interface InventoryToolbarProps {
 
   searchQuery?: string;
   onSearchQueryChange?: (value: string) => void;
+
+  showDetails?: boolean;
+  onShowDetailsChange?: (value: boolean) => void;
 }
 
 export function InventoryToolbar({
@@ -66,6 +70,8 @@ export function InventoryToolbar({
   showViewToggle = false,
   searchQuery,
   onSearchQueryChange,
+  showDetails,
+  onShowDetailsChange,
 }: InventoryToolbarProps) {
   const hasIcons = React.useMemo(() => categories.some(c => c.icon), [categories]);
 
@@ -189,6 +195,21 @@ export function InventoryToolbar({
         </div>
 
         <div className="flex items-center gap-4 text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
+          {onShowDetailsChange && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onShowDetailsChange(!showDetails)}
+              className={cn(
+                "h-9 font-bold transition-all",
+                showDetails ? "bg-primary/20 border-primary/40 text-primary" : "text-muted-foreground"
+              )}
+            >
+              <Layers className="mr-2 h-4 w-4" />
+              {showDetails ? "Hide Specs" : "Show Specs"}
+            </Button>
+          )}
+
           <span className="hidden sm:inline-flex font-bold bg-muted/20 px-3 py-1.5 rounded-lg border border-border/40">
             Showing {itemCount} items
           </span>
