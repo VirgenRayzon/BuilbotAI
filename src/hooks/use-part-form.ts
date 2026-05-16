@@ -5,7 +5,7 @@
  */
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -47,7 +47,8 @@ interface UsePartFormProps {
 }
 
 export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormProps) {
-  const [isAiPending, startAiTransition] = useTransition();
+  const [isAiPending, setIsAiPending] = useState(false);
+  const aiAbortRef = useRef(false);
   const { toast } = useToast();
 
   const form = useForm<AddPartFormSchema>({
@@ -145,9 +146,7 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
       return copy;
     }
     return [...specs, { key, value }];
-  };
-
-  const handleGetAiDetails = () => {
+  };  const handleGetAiDetails = async () => {
     if (isAiKillSwitch) {
       toast({
         title: "AI Disabled",
@@ -162,8 +161,12 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
       form.setError("partName", { message: "Please enter a part name first." });
       return;
     }
-    startAiTransition(async () => {
+    setIsAiPending(true);
+    aiAbortRef.current = false;
+
+    try {
       const result = (await getAiPartDetails({ partName })) as any;
+      if (aiAbortRef.current) return;
       if (result && !("error" in result)) {
         form.setValue("partName", result.partName, { shouldValidate: true });
         form.setValue("category", result.category, { shouldValidate: true });
@@ -255,6 +258,25 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
           description: (result as any)?.error || "Could not fetch details for this part.",
         });
       }
+    } catch (error: any) {
+      if (!aiAbortRef.current) {
+        toast({
+          variant: "destructive",
+          title: "AI Error",
+          description: error.message || "An unexpected error occurred.",
+        });
+      }
+    } finally {
+      setIsAiPending(false);
+    }
+  };
+
+  const handleCancelAiDetails = () => {
+    aiAbortRef.current = true;
+    setIsAiPending(false);
+    toast({
+      title: "AI Generation Cancelled",
+      description: "The AI detail extraction has been aborted.",
     });
   };
 
@@ -262,6 +284,7 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
     form,
     isAiPending,
     handleGetAiDetails,
+    handleCancelAiDetails,
     setSpecValue,
     selectedCategory,
   };

@@ -57,6 +57,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
     form,
     isAiPending,
     handleGetAiDetails,
+    handleCancelAiDetails,
     setSpecValue,
     selectedCategory,
   } = usePartForm({ initialData, open, isAiKillSwitch });
@@ -116,8 +117,9 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
           <div className="ml-auto">
             <SparkleButton
               type="button"
-              onClick={handleGetAiDetails}
+              onClick={isAiPending ? handleCancelAiDetails : handleGetAiDetails}
               isLoading={isAiPending}
+              loadingChildren="CANCEL"
               icon={<Sparkles className="h-4 w-4" />}
               className="h-11 px-6 shadow-lg transition-all duration-300 text-xs font-black uppercase tracking-widest"
             >

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface SparkleButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
+  loadingChildren?: React.ReactNode;
   isLoading?: boolean;
   sparkleColor?: string;
   baseColor?: string;
@@ -19,6 +20,7 @@ import { Slot } from "@radix-ui/react-slot";
 
 export function SparkleButton({
   children,
+  loadingChildren,
   className,
   containerClassName,
   isLoading,
@@ -58,8 +60,10 @@ export function SparkleButton({
           "sparkle-button relative inline-flex items-center justify-center px-8 py-4 font-bold transition-all duration-300 overflow-hidden shadow-2xl",
           pill ? "rounded-full" : "rounded-xl",
           "bg-zinc-950 border border-white/10",
-          isLoading && "opacity-80 cursor-wait",
+          isLoading && !loadingChildren && "opacity-80 cursor-wait",
+          isLoading && loadingChildren && "bg-destructive/10 border-destructive/20 text-destructive shadow-[0_0_20px_rgba(239,68,68,0.2)]",
           active && "scale-[1.02] shadow-[0_0_30px_rgba(6,182,212,0.4)]",
+          active && isLoading && loadingChildren && "shadow-[0_0_30px_rgba(239,68,68,0.4)]",
           className
         )}
         {...props}
@@ -71,7 +75,9 @@ export function SparkleButton({
               "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none",
               pill ? "rounded-full" : "rounded-xl",
               "after:content-[''] after:absolute after:inset-[-200%] after:animate-[spin_3s_linear_infinite]",
-              "after:bg-[conic-gradient(from_0deg,transparent_0%,transparent_30%,#fff_50%,transparent_70%,transparent_100%)]"
+              isLoading && loadingChildren 
+                ? "after:bg-[conic-gradient(from_0deg,transparent_0%,transparent_30%,#ef4444_50%,transparent_70%,transparent_100%)]"
+                : "after:bg-[conic-gradient(from_0deg,transparent_0%,transparent_30%,#fff_50%,transparent_70%,transparent_100%)]"
             )}
             style={{ 
               maskImage: 'linear-gradient(black, black), linear-gradient(black, black)',
@@ -84,7 +90,9 @@ export function SparkleButton({
           {/* Backdrop Glow */}
           <div className={cn(
             "absolute inset-0 transition-opacity duration-500 pointer-events-none",
-            "bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.2)_0%,transparent_75%)]",
+            isLoading && loadingChildren
+              ? "bg-[radial-gradient(circle_at_center,rgba(239,68,68,0.1)_0%,transparent_75%)]"
+              : "bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.2)_0%,transparent_75%)]",
             active ? "opacity-100" : "opacity-0"
           )} />
 
@@ -108,7 +116,10 @@ export function SparkleButton({
                     repeat: Infinity, 
                     repeatDelay: 0.5 
                   }}
-                  className="absolute w-3 h-3 text-cyan-400 fill-current"
+                  className={cn(
+                    "absolute w-3 h-3 fill-current",
+                    isLoading && loadingChildren ? "text-red-400" : "text-cyan-400"
+                  )}
                   style={{
                     top: i === 2 ? '20%' : '50%',
                     left: i === 0 ? '15%' : i === 1 ? '80%' : '48%',
@@ -122,13 +133,31 @@ export function SparkleButton({
           </div>
 
           {/* Content */}
-          <span className="relative z-50 flex items-center lg:gap-3 gap-0 tracking-[0.2em] uppercase font-black text-white">
+          <span className={cn(
+            "relative z-50 flex items-center lg:gap-3 gap-0 tracking-[0.2em] uppercase font-black",
+            isLoading && loadingChildren ? "text-red-500" : "text-white"
+          )}>
             {isLoading ? (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
-              />
+              loadingChildren ? (
+                <motion.span
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2"
+                >
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="w-4 h-4 border-2 border-red-500/30 border-t-red-500 rounded-full"
+                  />
+                  {loadingChildren}
+                </motion.span>
+              ) : (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
+                />
+              )
             ) : (
               <>
                 {icon && (

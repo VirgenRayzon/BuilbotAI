@@ -282,7 +282,8 @@ const PART_SLOTS = [
 
 export function AddPrebuiltDialog({ children, onSave, parts, initialData, title }: AddPrebuiltDialogProps) {
     const [open, setOpen] = useState(false);
-    const [isAiPending, startAiTransition] = useTransition();
+    const [isAiPending, setIsAiPending] = useState(false);
+    const aiAbortRef = useRef(false);
     // Track which PartSelector dropdown is open
     const [openSlot, setOpenSlot] = useState<string | null>(null);
     const { toast } = useToast();
@@ -354,7 +355,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
         }
     }, [open, initialData, form]);
 
-    const handleAiAssist = () => {
+    const handleAiAssist = async () => {
         if (isAiKillSwitch) {
             toast({
                 title: "AI Disabled",
@@ -364,7 +365,6 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
             return;
         }
 
-        // More robust part lookup with trimming and type safety
         const getPartName = (id?: string) => {
             if (!id || id.trim() === "") return undefined;
             const targetId = id.trim();
@@ -383,7 +383,6 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
             cooler: getPartName(form.getValues("cooler")),
         };
 
-        // Check if we actually found any component names to send to AI
         const hasComponents = Object.values(selectedComponents).some(c => 
             Array.isArray(c) ? c.length > 0 : !!c
         );
@@ -397,64 +396,77 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
             return;
         }
 
-        startAiTransition(async () => {
-            try {
-                const result = await getAiPrebuiltSuggestions({ 
-                    components: {
-                        ...selectedComponents,
-                        ram: (selectedComponents.ram as string[]).join(", "),
-                        storage: (selectedComponents.storage as string[]).join(", ")
-                    }, 
-                    tier: form.getValues("tier") || undefined 
-                });
+        setIsAiPending(true);
+        aiAbortRef.current = false;
 
-                if (result && "systemName" in result) {
-                    const currentName = form.getValues("name");
-                    const currentDesc = form.getValues("description");
-                    const currentPrice = form.getValues("price");
-                    const currentTier = form.getValues("tier");
+        try {
+            const result = await getAiPrebuiltSuggestions({ 
+                components: {
+                    ...selectedComponents,
+                    ram: (selectedComponents.ram as string[]).join(", "),
+                    storage: (selectedComponents.storage as string[]).join(", ")
+                }, 
+                tier: form.getValues("tier") || undefined 
+            });
 
-                    let fieldsUpdated = [];
+            if (aiAbortRef.current) return;
 
-                    // Simplify logic entirely, mimicking AddPartDialog
-                    if (result.systemName && !form.getValues("name")) {
-                        form.setValue("name", result.systemName, { shouldValidate: true, shouldDirty: true });
-                        fieldsUpdated.push("Name");
-                    }
-                    if (result.description && !form.getValues("description")) {
-                        form.setValue("description", result.description, { shouldValidate: true, shouldDirty: true });
-                        fieldsUpdated.push("Description");
-                    }
-                    if (result.price !== undefined && (!form.getValues("price") || form.getValues("price") === 0)) {
-                        form.setValue("price", Math.round(result.price * 100) / 100, { shouldValidate: true, shouldDirty: true });
-                        fieldsUpdated.push("Price");
-                    }
-                    if (!form.getValues("tier")) {
-                        form.setValue("tier", result.tier || "Mid-Range", { shouldValidate: true, shouldDirty: true });
-                        fieldsUpdated.push("Tier");
-                    }
+            if (result && "systemName" in result) {
+                const currentName = form.getValues("name");
+                const currentDesc = form.getValues("description");
+                const currentPrice = form.getValues("price");
+                const currentTier = form.getValues("tier");
 
-                    // Image is now handled via file upload, no auto-fill needed
-                    
-                    if (fieldsUpdated.length > 0) {
-                        toast({ title: "AI Suggestions Applied", description: `Successfully filled: ${fieldsUpdated.join(", ")}.` });
-                    } else {
-                        toast({ title: "Assist Complete", description: "Identity fields were already filled and were not overwritten." });
-                    }
-                } else {
-                    toast({ 
-                        variant: "destructive", 
-                        title: "AI Response Error", 
-                        description: (result as any)?.error || "The AI returned an empty response. Please try again." 
-                    });
+                let fieldsUpdated = [];
+
+                if (result.systemName && !form.getValues("name")) {
+                    form.setValue("name", result.systemName, { shouldValidate: true, shouldDirty: true });
+                    fieldsUpdated.push("Name");
                 }
-            } catch (err: any) {
+                if (result.description && !form.getValues("description")) {
+                    form.setValue("description", result.description, { shouldValidate: true, shouldDirty: true });
+                    fieldsUpdated.push("Description");
+                }
+                if (result.price !== undefined && (!form.getValues("price") || form.getValues("price") === 0)) {
+                    form.setValue("price", Math.round(result.price * 100) / 100, { shouldValidate: true, shouldDirty: true });
+                    fieldsUpdated.push("Price");
+                }
+                if (!form.getValues("tier")) {
+                    form.setValue("tier", result.tier || "Mid-Range", { shouldValidate: true, shouldDirty: true });
+                    fieldsUpdated.push("Tier");
+                }
+                
+                if (fieldsUpdated.length > 0) {
+                    toast({ title: "AI Suggestions Applied", description: `Successfully filled: ${fieldsUpdated.join(", ")}.` });
+                } else {
+                    toast({ title: "Assist Complete", description: "Identity fields were already filled and were not overwritten." });
+                }
+            } else {
+                toast({ 
+                    variant: "destructive", 
+                    title: "AI Response Error", 
+                    description: (result as any)?.error || "The AI returned an empty response. Please try again." 
+                });
+            }
+        } catch (err: any) {
+            if (!aiAbortRef.current) {
                 toast({ 
                     variant: "destructive", 
                     title: "AI Assist Failed", 
                     description: err.message || "An unexpected error occurred while communicating with the AI." 
                 });
             }
+        } finally {
+            setIsAiPending(false);
+        }
+    };
+
+    const handleCancelAiAssist = () => {
+        aiAbortRef.current = true;
+        setIsAiPending(false);
+        toast({
+            title: "AI Assist Cancelled",
+            description: "The AI suggestion generation has been aborted.",
         });
     };
 
@@ -492,8 +504,9 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                     <div className="ml-auto">
                         <SparkleButton
                             type="button"
-                            onClick={handleAiAssist}
+                            onClick={isAiPending ? handleCancelAiAssist : handleAiAssist}
                             isLoading={isAiPending}
+                            loadingChildren="CANCEL"
                             icon={<Sparkles className="h-4 w-4" />}
                             className="h-11 px-6 shadow-lg transition-all duration-300 text-xs font-black uppercase tracking-widest"
                         >
