@@ -9,6 +9,9 @@ let csvCache: Record<string, { headers: string, lines: string[] }> | null = null
  * Searches for a query string in all CSV files within a directory.
  */
 export async function searchLocalDatabase(query: string): Promise<string[]> {
+    const timestamp = new Date().toLocaleTimeString();
+    console.log(`\n[${timestamp}] 🔎 CSV GROUNDING: Searching Local Inventory`);
+    console.log(`   Query: "${query}"`);
     const potentialPaths = [
         path.join(process.cwd(), 'src', 'database'),
         path.join(process.cwd(), 'database'),
@@ -75,6 +78,12 @@ export async function searchLocalDatabase(query: string): Promise<string[]> {
         lineMatches.sort((a, b) => b.score - a.score);
         results.push(...lineMatches.slice(0, 3).map(m => m.content));
         if (results.length >= 10) break;
+    }
+
+    if (results.length > 0) {
+        console.log(`   ✅ Success: Found ${results.length} relevant entries in CSV database.`);
+    } else {
+        console.log(`   ⚠️ Notice: No matches found in local CSV database.`);
     }
 
     return results.slice(0, 10);

@@ -58,7 +58,6 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
 
   // 1. Try Local CSV Database (Highest Priority)
   try {
-    logDebug(`Checking local database for: ${input.partName}...`);
     const localResults = await searchLocalDatabase(input.partName);
 
     if (localResults.length > 0) {

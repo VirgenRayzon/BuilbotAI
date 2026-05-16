@@ -92,7 +92,11 @@ export async function retrieveLocalKnowledge(query: string): Promise<string[]> {
     
     if (uniqueResults.length > 0) {
         const sources = [...new Set(uniqueResults.map(r => r.split('\n')[0].replace('[Source: ', '').replace(']', '')))];
-        console.log(`[Knowledge Base] Retrieved ${uniqueResults.length} sections from: ${sources.join(', ')}`);
+        const timestamp = new Date().toLocaleTimeString();
+        console.log(`\n[${timestamp}] 📚 KNOWLEDGE RETRIEVAL: Active`);
+        console.log(`   Query: "${query}"`);
+        console.log(`   Result: Found ${uniqueResults.length} relevant sections from: ${sources.join(', ')}`);
+        console.log('--------------------------------------------------');
     }
 
     return uniqueResults;
