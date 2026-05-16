@@ -84,8 +84,12 @@ const formSchema = z.object({
     cpu: z.string().optional(),
     gpu: z.string().optional(),
     motherboard: z.string().optional(),
-    ram: z.array(z.string()).min(1, "At least one RAM module is required."),
-    storage: z.array(z.string()).min(1, "At least one storage drive is required."),
+    ram: z.array(z.string().optional().or(z.literal(""))).refine(items => items.filter(Boolean).length > 0, {
+        message: "At least one RAM module is required."
+    }),
+    storage: z.array(z.string().optional().or(z.literal(""))).refine(items => items.filter(Boolean).length > 0, {
+        message: "At least one storage drive is required."
+    }),
     psu: z.string().optional(),
     case: z.string().optional(),
     cooler: z.string().optional(),
@@ -145,7 +149,7 @@ function PartSelector({
     const selectedPart = items.find((p) => p.id === value);
 
     return (
-        <Popover open={isOpen} onOpenChange={onOpenChange}>
+        <Popover open={isOpen} onOpenChange={onOpenChange} modal={true}>
             <PopoverTrigger asChild>
                 <Button
                     variant="outline"
@@ -435,6 +439,13 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                     form.setValue("tier", result.tier || "Mid-Range", { shouldValidate: true, shouldDirty: true });
                     fieldsUpdated.push("Tier");
                 }
+
+                // Add placeholder image if empty
+                if (!form.getValues("imageUrl")) {
+                    // Using a high-quality Unsplash image of a premium PC build for better aesthetics
+                    form.setValue("imageUrl", `https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=800&auto=format&fit=crop`, { shouldValidate: true, shouldDirty: true });
+                    fieldsUpdated.push("Image Placeholder");
+                }
                 
                 if (fieldsUpdated.length > 0) {
                     toast({ title: "AI Suggestions Applied", description: `Successfully filled: ${fieldsUpdated.join(", ")}.` });
@@ -470,11 +481,73 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
         });
     };
 
-    const onSubmit = (values: AddPrebuiltFormSchema) => {
-        onSave(values);
-        toast({ title: initialData ? "Prebuilt Updated!" : "Prebuilt System Added!", description: `${values.name} has been ${initialData ? 'updated' : 'added'}.` });
-        if (!initialData) form.reset();
-        setOpen(false);
+    useEffect(() => {
+        const rawRamIds = form.getValues("ram") || [];
+        const ramIds = rawRamIds.filter(Boolean);
+        if (rawRamIds.length !== ramIds.length) {
+            form.setValue("ram", ramIds);
+        }
+    }, [form.watch("ram")]);
+
+    const onSubmit = async (values: AddPrebuiltFormSchema) => {
+        try {
+            const mobo = inventory["Motherboard"]?.find(m => m.id === values.motherboard);
+            const rSlots = mobo ? parseInt(mobo.specifications?.['Memory Slots']?.toString() || "4") : 4;
+            const nSlots = mobo ? parseInt(mobo.specifications?.['NVMe Slots']?.toString() || "1") : 1;
+            const sSlots = mobo ? parseInt(mobo.specifications?.['SATA Slots']?.toString() || "2") : 1;
+            
+            let currentSticks = 0;
+            const validRam = [];
+            for (const rId of values.ram) {
+                if (!rId) continue;
+                const part = inventory["RAM"]?.find(r => r.id === rId);
+                const sticks = part ? parseInt(part.specifications?.['Stick Count']?.toString() || "1") : 1;
+                if (currentSticks + sticks <= rSlots) {
+                    validRam.push(rId);
+                    currentSticks += sticks;
+                } else {
+                    break;
+                }
+            }
+            values.ram = validRam;
+            values.storage = values.storage.slice(0, nSlots + sSlots).filter(Boolean);
+
+            await onSave(values);
+            toast({ title: initialData ? "Prebuilt Updated!" : "Prebuilt System Added!", description: `${values.name} has been ${initialData ? 'updated' : 'added'}.` });
+            if (!initialData) form.reset();
+            setOpen(false);
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Save Failed",
+                description: error.message || "An unexpected error occurred while saving."
+            });
+        }
+    };
+
+    const onFormError = (errors: any) => {
+        console.error("Form Validation Errors:", errors);
+        
+        // Handle nested errors (like arrays) or standard field errors
+        const getErrorMessage = (err: any): string | null => {
+            if (!err) return null;
+            if (err.message) return err.message;
+            if (Array.isArray(err)) return getErrorMessage(err.find(Boolean));
+            if (typeof err === 'object') {
+                const firstKey = Object.keys(err)[0];
+                return getErrorMessage(err[firstKey]);
+            }
+            return "Invalid field";
+        };
+
+        const errorMsg = getErrorMessage(errors);
+        if (errorMsg) {
+            toast({
+                variant: "destructive",
+                title: "Validation Error",
+                description: errorMsg
+            });
+        }
     };
 
     const handleOpenChange = (isOpen: boolean) => {
@@ -482,6 +555,43 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
         setOpen(isOpen);
         if (!isOpen) { form.reset(); }
     };
+
+    const selectedMoboId = form.watch("motherboard");
+    const selectedMobo = inventory["Motherboard"]?.find(m => m.id === selectedMoboId);
+    
+    const ramSlots = selectedMobo ? parseInt(selectedMobo.specifications?.['Memory Slots']?.toString() || "4") : 4;
+    const nvmeSlots = selectedMobo ? parseInt(selectedMobo.specifications?.['NVMe Slots']?.toString() || "1") : 1;
+    const sataSlots = selectedMobo ? parseInt(selectedMobo.specifications?.['SATA Slots']?.toString() || "2") : 1;
+    const totalStorageSlots = nvmeSlots + sataSlots;
+
+    const ramIds = (form.watch("ram") || []).filter(Boolean);
+    const ramFields = [];
+    let currentSticks = 0;
+    
+    for (let i = 0; i < ramIds.length; i++) {
+        const id = ramIds[i];
+        const part = inventory["RAM"]?.find(r => r.id === id);
+        const sticks = part ? parseInt(part.specifications?.['Stick Count']?.toString() || "1") : 1;
+        
+        if (currentSticks + sticks <= ramSlots) {
+            ramFields.push({ fieldIndex: i, isPlaceholder: false, part, sticks, isEmpty: false, isBlocked: false });
+            currentSticks += sticks;
+            for (let s = 1; s < sticks; s++) {
+                ramFields.push({ fieldIndex: i, isPlaceholder: true, part, sticks, isEmpty: false, isBlocked: false });
+            }
+        }
+    }
+    
+    const nextFieldIndex = ramIds.length;
+    if (currentSticks < ramSlots) {
+        ramFields.push({ fieldIndex: nextFieldIndex, isPlaceholder: false, isEmpty: true, isBlocked: false });
+        currentSticks++;
+    }
+    
+    while (currentSticks < ramSlots) {
+        ramFields.push({ fieldIndex: -1, isPlaceholder: true, isEmpty: false, isBlocked: true });
+        currentSticks++;
+    }
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -537,7 +647,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                 )}
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col">
+                    <form onSubmit={form.handleSubmit(onSubmit, onFormError)} className="flex flex-col">
 
                         {/* ── Scrollable Body ── */}
                         <ScrollArea className="h-[70vh]">
@@ -852,53 +962,59 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                             <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
                                                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">RAM Configuration</FormLabel>
-                                                    <Button 
-                                                        type="button" 
-                                                        variant="ghost" 
-                                                        size="sm" 
-                                                        className="h-7 rounded-lg text-[10px] uppercase tracking-widest text-primary hover:bg-primary/10 font-bold"
-                                                        onClick={() => {
-                                                            const current = form.getValues("ram");
-                                                            form.setValue("ram", [...current, ""]);
-                                                        }}
-                                                    >
-                                                        <Plus className="h-3 w-3 mr-1.5" /> Add Module
-                                                    </Button>
+                                                    <span className="text-[10px] font-bold text-primary">{ramSlots} Slots Available</span>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-4">
-                                                    {form.watch("ram").map((_, index) => (
-                                                        <FormField
-                                                            key={`ram-${index}`}
-                                                            control={form.control}
-                                                            name={`ram.${index}` as any}
-                                                            render={({ field }) => (
-                                                                <div className="relative group">
-                                                                    <PartSelector
-                                                                        category={`RAM Module ${index + 1}`}
-                                                                        items={inventory["RAM"] || []}
-                                                                        value={field.value || ""}
-                                                                        onChange={field.onChange}
-                                                                        isOpen={openSlot === `ram-${index}`}
-                                                                        onOpenChange={(o) => setOpenSlot(o ? `ram-${index}` : null)}
-                                                                    />
-                                                                    {form.watch("ram").length > 1 && (
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                const current = form.getValues("ram");
-                                                                                const next = [...current];
-                                                                                next.splice(index, 1);
-                                                                                form.setValue("ram", next);
-                                                                            }}
-                                                                            className="absolute -right-2 -top-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-20"
-                                                                        >
-                                                                            <X className="h-3 w-3" />
-                                                                        </button>
-                                                                    )}
+                                                    {ramFields.map((fieldData, visualIndex) => {
+                                                        if (fieldData.isBlocked) {
+                                                            return (
+                                                                <div key={`ram-blocked-${visualIndex}`} className="flex items-center justify-center h-10 rounded-lg border border-dashed border-muted bg-muted/10">
+                                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">Unavailable</span>
                                                                 </div>
-                                                            )}
-                                                        />
-                                                    ))}
+                                                            );
+                                                        }
+                                                        if (fieldData.isPlaceholder) {
+                                                            return (
+                                                                <div key={`ram-placeholder-${visualIndex}`} className="flex items-center justify-center h-10 px-3 rounded-lg border border-primary/20 bg-primary/5 overflow-hidden">
+                                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-primary/70 truncate">Occupied by {fieldData.part?.name}</span>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return (
+                                                            <FormField
+                                                                key={`ram-${fieldData.fieldIndex}`}
+                                                                control={form.control}
+                                                                name={`ram.${fieldData.fieldIndex}` as any}
+                                                                render={({ field }) => (
+                                                                    <div className="relative group">
+                                                                        <PartSelector
+                                                                            category={`RAM Module ${fieldData.fieldIndex + 1}`}
+                                                                            items={inventory["RAM"] || []}
+                                                                            value={field.value || ""}
+                                                                            onChange={field.onChange}
+                                                                            isOpen={openSlot === `ram-${fieldData.fieldIndex}`}
+                                                                            onOpenChange={(o) => setOpenSlot(o ? `ram-${fieldData.fieldIndex}` : null)}
+                                                                        />
+                                                                        {field.value && (
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    field.onChange("");
+                                                                                    const current = form.getValues("ram");
+                                                                                    const next = [...current];
+                                                                                    next.splice(fieldData.fieldIndex, 1);
+                                                                                    form.setValue("ram", next);
+                                                                                }}
+                                                                                className="absolute -right-2 -top-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-20"
+                                                                            >
+                                                                                <X className="h-3 w-3" />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            />
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
 
@@ -906,21 +1022,13 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                             <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
                                                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Storage Array</FormLabel>
-                                                    <Button 
-                                                        type="button" 
-                                                        variant="ghost" 
-                                                        size="sm" 
-                                                        className="h-7 rounded-lg text-[10px] uppercase tracking-widest text-primary hover:bg-primary/10 font-bold"
-                                                        onClick={() => {
-                                                            const current = form.getValues("storage");
-                                                            form.setValue("storage", [...current, ""]);
-                                                        }}
-                                                    >
-                                                        <Plus className="h-3 w-3 mr-1.5" /> Add Drive
-                                                    </Button>
+                                                    <span className="text-[10px] font-bold text-primary">{totalStorageSlots} Slots Available</span>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-4">
-                                                    {form.watch("storage").map((_, index) => (
+                                                    {Array.from({ length: totalStorageSlots }).map((_, index) => {
+                                                        const isNvme = index < nvmeSlots;
+                                                        const slotLabel = isNvme ? `NVMe M.2 Slot ${index + 1}` : `SATA Slot ${index - nvmeSlots + 1}`;
+                                                        return (
                                                         <FormField
                                                             key={`storage-${index}`}
                                                             control={form.control}
@@ -928,22 +1036,21 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                             render={({ field }) => (
                                                                 <div className="relative group">
                                                                     <PartSelector
-                                                                        category={`Drive ${index + 1}`}
-                                                                        items={inventory["Storage"] || []}
+                                                                        category={slotLabel}
+                                                                        items={inventory["Storage"]?.filter(s => {
+                                                                            if (!s.specifications) return true;
+                                                                            const isPartNvme = s.specifications['Type']?.toString().toLowerCase().includes('nvme') || s.name.toLowerCase().includes('nvme');
+                                                                            return isNvme ? isPartNvme : !isPartNvme;
+                                                                        }) || []}
                                                                         value={field.value || ""}
                                                                         onChange={field.onChange}
                                                                         isOpen={openSlot === `storage-${index}`}
                                                                         onOpenChange={(o) => setOpenSlot(o ? `storage-${index}` : null)}
                                                                     />
-                                                                    {form.watch("storage").length > 1 && (
+                                                                    {field.value && (
                                                                         <button
                                                                             type="button"
-                                                                            onClick={() => {
-                                                                                const current = form.getValues("storage");
-                                                                                const next = [...current];
-                                                                                next.splice(index, 1);
-                                                                                form.setValue("storage", next);
-                                                                            }}
+                                                                            onClick={() => field.onChange("")}
                                                                             className="absolute -right-2 -top-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-20"
                                                                         >
                                                                             <X className="h-3 w-3" />
@@ -952,7 +1059,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                                 </div>
                                                             )}
                                                         />
-                                                    ))}
+                                                    )})}
                                                 </div>
                                             </div>
                                         </div>

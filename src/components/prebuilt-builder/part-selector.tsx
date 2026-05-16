@@ -53,7 +53,7 @@ export function PartSelector({
     const selectedPart = items.find((p) => p.id === value);
 
     return (
-        <Popover open={isOpen} onOpenChange={onOpenChange}>
+        <Popover open={isOpen} onOpenChange={onOpenChange} modal={true}>
             <PopoverTrigger asChild>
                 <Button
                     variant="outline"
