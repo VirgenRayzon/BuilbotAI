@@ -9,6 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, X } from "lucide-react";
 import { CATEGORY_SPECS } from "@/lib/constants/category-specs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface PartSpecificationsSectionProps {
   form: UseFormReturn<AddPartFormSchema>;
@@ -60,12 +67,34 @@ export function PartSpecificationsSection({ form, setSpecValue }: PartSpecificat
             <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 group-focus-within:text-primary transition-colors">
               {spec.key}
             </Label>
-            <Input
-              value={getSpecValue(spec.key)}
-              onChange={(e) => setSpecValue(spec.key, e.target.value)}
-              placeholder={spec.placeholder}
-              className="bg-muted/30 border-border/40 h-10 rounded-xl focus:bg-background transition-all shadow-sm"
-            />
+            {spec.options ? (
+              <Select
+                value={getSpecValue(spec.key)}
+                onValueChange={(val) => setSpecValue(spec.key, val)}
+              >
+                <SelectTrigger className="bg-muted/30 border-border/40 h-10 rounded-xl focus:bg-background transition-all shadow-sm">
+                  <SelectValue placeholder={spec.placeholder} />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-primary/20 bg-background/95 backdrop-blur-xl">
+                  {spec.options.map((opt) => (
+                    <SelectItem 
+                      key={opt} 
+                      value={opt}
+                      className="text-xs font-bold uppercase tracking-widest hover:bg-primary/10 focus:bg-primary/10"
+                    >
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                value={getSpecValue(spec.key)}
+                onChange={(e) => setSpecValue(spec.key, e.target.value)}
+                placeholder={spec.placeholder}
+                className="bg-muted/30 border-border/40 h-10 rounded-xl focus:bg-background transition-all shadow-sm"
+              />
+            )}
           </div>
         ))}
       </div>

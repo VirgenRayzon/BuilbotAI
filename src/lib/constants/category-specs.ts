@@ -3,7 +3,7 @@ export const componentCategories = [
   "Monitor", "Keyboard", "Mouse", "Headset",
 ];
 
-export const CATEGORY_SPECS: Record<string, { key: string; placeholder: string }[]> = {
+export const CATEGORY_SPECS: Record<string, { key: string; placeholder: string; options?: string[] }[]> = {
   CPU: [
     { key: "Architecture", placeholder: "e.g., Zen 4" },
     { key: "Cores", placeholder: "e.g., 8" },
@@ -50,7 +50,7 @@ export const CATEGORY_SPECS: Record<string, { key: string; placeholder: string }
     { key: "Write Speed", placeholder: "e.g., 6500 MB/s" },
     { key: "TBW Rating", placeholder: "e.g., 600 TBW" },
     { key: "Form Factor", placeholder: "e.g., M.2 2280" },
-    { key: "Type", placeholder: "e.g., NVMe SSD" },
+    { key: "Type", placeholder: "Select drive type", options: ["SATA", "NVME"] },
   ],
   PSU: [
     { key: "Wattage (W)", placeholder: "e.g., 850 W" },

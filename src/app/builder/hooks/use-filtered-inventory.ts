@@ -40,8 +40,14 @@ export function useFilteredInventory(allParts: Part[], build: any, getCountInBui
             const selectedCount = prev.filter(c => c.selected).length;
             const isAlreadyOnlySelected = selectedCount === 1 && prev.find(c => c.name === categoryName)?.selected;
 
-            if (isAlreadyOnlySelected) {
-                // Reset to all selected (remove filter)
+            // If it's already the only one selected, stay on it (remove toggle-off behavior)
+            // unless explicitly unselected (e.g., from a checkbox)
+            if (isAlreadyOnlySelected && selected !== false) {
+                return prev;
+            }
+
+            // If explicitly unselecting the only active category, reset to all
+            if (isAlreadyOnlySelected && selected === false) {
                 return prev.map(cat => ({ ...cat, selected: true }));
             }
 
