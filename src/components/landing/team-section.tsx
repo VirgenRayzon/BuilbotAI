@@ -8,9 +8,9 @@ import { Code, FileText, UserCheck, Palette, Github, Linkedin, Twitter } from 'l
 
 const teamMembers = [
   {
-    role: "Developer",
+    role: "Lead Developer",
     name: "Rayzon Virgen",
-    description: "Engineered the core neural architecture and real-time validation systems of BuildbotAI.",
+    description: "Responsible for full-stack development, implementing the core logic, AI integrations, and real-time validation systems.",
     image: "/team/developer_m.png",
     icon: Code,
     color: "text-cyan-400",
@@ -18,9 +18,9 @@ const teamMembers = [
     bgColor: "bg-cyan-500/10",
   },
   {
-    role: "Documentation",
+    role: "Technical Documentation",
     name: "Robert Codilla",
-    description: "Authored the technical specifications and user guidance for the entire platform.",
+    description: "Managed technical specifications, hardware research, and authored the comprehensive documentation for the platform.",
     image: "/team/documentation_m.png",
     icon: FileText,
     color: "text-blue-400",
@@ -30,7 +30,7 @@ const teamMembers = [
   {
     role: "Project Manager",
     name: "John Vincent Dela Rosa",
-    description: "Orchestrated the development lifecycle and strategic roadmap of the project.",
+    description: "Coordinated development timelines, managed team resources, and ensured the project aligned with capstone objectives.",
     image: "/team/pm_m.png",
     icon: UserCheck,
     color: "text-purple-400",
@@ -40,7 +40,7 @@ const teamMembers = [
   {
     role: "UI/UX Designer",
     name: "John Christian Gripon",
-    description: "Crafted the immersive, high-fidelity interface and visual identity of the architect matrix.",
+    description: "Designed the high-fidelity user interface and interactive experience, focusing on modern aesthetics and usability.",
     image: "/team/ui_m.png",
     icon: Palette,
     color: "text-pink-400",
@@ -58,9 +58,9 @@ export function TeamSection() {
 
       <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8 relative z-10">
         <SectionHeader
-          badge="The 4 Horsemen"
+          badge="BSIT Capstone Project"
           title="Meet The Team"
-          subtitle="The visionary minds behind BuildbotAI's neural PC architecture and immersive experience."
+          subtitle="Building the future of PC assembly. A Capstone Project by STI College BSIT students, dedicated to simplifying hardware selection through innovation."
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
