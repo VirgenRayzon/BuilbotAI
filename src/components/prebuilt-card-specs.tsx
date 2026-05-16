@@ -158,13 +158,13 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
     }
 
     const allSpecs = [
+        { label: 'Case', value: specs.case, icon: Case },
+        { label: 'Mobo', value: specs.motherboard, icon: CircuitBoard },
         { label: 'CPU', value: specs.cpu, icon: Cpu },
         { label: 'GPU', value: specs.gpu, icon: Gpu },
-        { label: 'Mobo', value: specs.motherboard, icon: CircuitBoard },
         { label: 'RAM', value: specs.ram, icon: MemoryStick },
         { label: 'Disk', value: specs.storage, icon: HardDrive },
         { label: 'PSU', value: specs.psu, icon: Psu },
-        { label: 'Case', value: specs.case, icon: Case },
         { label: 'Fan', value: specs.cooler, icon: Cooler },
     ].filter(s => s.value && s.value !== "N/A");
 

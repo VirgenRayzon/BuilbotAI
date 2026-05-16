@@ -45,12 +45,12 @@ export function ComponentFields({ form, inventory, openSlot, setOpenSlot }: Comp
 
             <div className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 rounded-xl border border-primary/10 bg-primary/5">
                 <div className="space-y-4">
-                    {renderSingleSlot("cpu", "CPU", "CPU")}
+                    {renderSingleSlot("case", "Case", "Case")}
                     {renderSingleSlot("motherboard", "Motherboard", "Motherboard")}
                 </div>
                 <div className="space-y-4">
+                    {renderSingleSlot("cpu", "CPU", "CPU")}
                     {renderSingleSlot("gpu", "GPU", "GPU")}
-                    {renderSingleSlot("cooler", "Cooler", "Cooler")}
                 </div>
 
                 <div className="col-span-2 space-y-4 pt-2">
@@ -78,7 +78,7 @@ export function ComponentFields({ form, inventory, openSlot, setOpenSlot }: Comp
 
                 <div className="col-span-2 grid grid-cols-2 gap-4 pt-2 border-t border-primary/10 mt-2">
                     {renderSingleSlot("psu", "PSU", "PSU")}
-                    {renderSingleSlot("case", "Case", "Case")}
+                    {renderSingleSlot("cooler", "Cooler", "Cooler")}
                 </div>
             </div>
         </div>

@@ -16,13 +16,13 @@ export const prebuiltFormSchema = z.object({
     description: z.string().optional(),
     price: z.coerce.number().min(0, "Price must be a positive number."),
     imageUrl: z.string().optional().or(z.literal("")),
+    case: z.string().optional(),
+    motherboard: z.string().optional(),
     cpu: z.string().optional(),
     gpu: z.string().optional(),
-    motherboard: z.string().optional(),
     ram: z.array(z.string()).min(1, "At least one RAM module is required."),
     storage: z.array(z.string()).min(1, "At least one storage drive is required."),
     psu: z.string().optional(),
-    case: z.string().optional(),
     cooler: z.string().optional(),
 });
 
@@ -55,13 +55,13 @@ export function usePrebuiltForm({ parts, initialData, onSave, onClose }: UsePreb
             description: initialData?.description || "",
             price: initialData?.price || 0,
             imageUrl: initialData?.imageUrl || "",
+            case: initialData?.components.case || "",
+            motherboard: initialData?.components.motherboard || "",
             cpu: initialData?.components.cpu || "",
             gpu: initialData?.components.gpu || "",
-            motherboard: initialData?.components.motherboard || "",
             ram: initialData?.components.ram || [],
             storage: initialData?.components.storage || [],
             psu: initialData?.components.psu || "",
-            case: initialData?.components.case || "",
             cooler: initialData?.components.cooler || "",
         },
     });
@@ -74,19 +74,19 @@ export function usePrebuiltForm({ parts, initialData, onSave, onClose }: UsePreb
                 description: initialData.description,
                 price: Math.round((initialData.price || 0) * 100) / 100,
                 imageUrl: initialData.imageUrl,
+                case: initialData.components.case,
+                motherboard: initialData.components.motherboard,
                 cpu: initialData.components.cpu,
                 gpu: initialData.components.gpu,
-                motherboard: initialData.components.motherboard,
                 ram: initialData.components.ram || [],
                 storage: initialData.components.storage || [],
                 psu: initialData.components.psu,
-                case: initialData.components.case,
                 cooler: initialData.components.cooler,
             });
         } else {
             form.reset({
                 name: "", tier: "", description: "", price: 0, imageUrl: "",
-                cpu: "", gpu: "", motherboard: "", ram: [], storage: [], psu: "", case: "", cooler: "",
+                case: "", motherboard: "", cpu: "", gpu: "", ram: [], storage: [], psu: "", cooler: "",
             });
         }
     }, [initialData, form]);

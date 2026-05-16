@@ -83,7 +83,7 @@ export function YourBuild({
     const { toast } = useToast();
     const router = useRouter();
 
-    const mandatoryCategories = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler'];
+    const mandatoryCategories = ['Case', 'Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
     const isBuildComplete = mandatoryCategories.every(cat => {
         const val = build[cat];
         return Array.isArray(val) ? val.length > 0 : !!val;

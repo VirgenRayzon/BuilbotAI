@@ -270,13 +270,13 @@ function PartSelector({
 }
 
 const PART_SLOTS = [
+    { key: "case", label: "Case" },
+    { key: "motherboard", label: "Motherboard" },
     { key: "cpu", label: "CPU" },
     { key: "gpu", label: "GPU" },
-    { key: "motherboard", label: "Motherboard" },
     { key: "ram", label: "RAM" },
     { key: "storage", label: "Storage" },
     { key: "psu", label: "PSU" },
-    { key: "case", label: "Case" },
     { key: "cooler", label: "Cooler" },
 ] as const;
 
@@ -736,18 +736,18 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                         <span className="inline-block flex-1 h-px bg-primary/10" />
                                     </p>
                                     <div className="grid grid-cols-2 gap-x-8 gap-y-6 p-6 rounded-3xl border border-primary/10 bg-primary/5">
-                                        {/* Row 1: CPU & Motherboard */}
+                                        {/* Row 1: Case & Motherboard */}
                                         <div className="space-y-5">
-                                            <FormField control={form.control} name="cpu" render={({ field }) => (
+                                            <FormField control={form.control} name="case" render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">CPU</FormLabel>
+                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Chassis / Case</FormLabel>
                                                     <PartSelector
-                                                        category="CPU"
-                                                        items={inventory["CPU"] || []}
+                                                        category="Case"
+                                                        items={inventory["Case"] || []}
                                                         value={field.value || ""}
                                                         onChange={field.onChange}
-                                                        isOpen={openSlot === "cpu"}
-                                                        onOpenChange={(o) => setOpenSlot(o ? "cpu" : null)}
+                                                        isOpen={openSlot === "case"}
+                                                        onOpenChange={(o) => setOpenSlot(o ? "case" : null)}
                                                     />
                                                     <FormMessage />
                                                 </FormItem>
@@ -768,8 +768,22 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                             )} />
                                         </div>
                                         
-                                        {/* Row 1b: GPU & Cooler */}
+                                        {/* Row 2: CPU & GPU */}
                                         <div className="space-y-5">
+                                            <FormField control={form.control} name="cpu" render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">CPU</FormLabel>
+                                                    <PartSelector
+                                                        category="CPU"
+                                                        items={inventory["CPU"] || []}
+                                                        value={field.value || ""}
+                                                        onChange={field.onChange}
+                                                        isOpen={openSlot === "cpu"}
+                                                        onOpenChange={(o) => setOpenSlot(o ? "cpu" : null)}
+                                                    />
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )} />
                                             <FormField control={form.control} name="gpu" render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">GPU</FormLabel>
@@ -784,23 +798,9 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />
-                                            <FormField control={form.control} name="cooler" render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Cooler</FormLabel>
-                                                    <PartSelector
-                                                        category="Cooler"
-                                                        items={inventory["Cooler"] || []}
-                                                        value={field.value || ""}
-                                                        onChange={field.onChange}
-                                                        isOpen={openSlot === "cooler"}
-                                                        onOpenChange={(o) => setOpenSlot(o ? "cooler" : null)}
-                                                    />
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )} />
                                         </div>
 
-                                        {/* Row 2: PSU & Case */}
+                                        {/* Row 3: PSU & Cooler */}
                                         <div className="space-y-5">
                                             <FormField control={form.control} name="psu" render={({ field }) => (
                                                 <FormItem>
@@ -818,16 +818,16 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                             )} />
                                         </div>
                                         <div className="space-y-5">
-                                            <FormField control={form.control} name="case" render={({ field }) => (
+                                            <FormField control={form.control} name="cooler" render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Chassis / Case</FormLabel>
+                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Cooler</FormLabel>
                                                     <PartSelector
-                                                        category="Case"
-                                                        items={inventory["Case"] || []}
+                                                        category="Cooler"
+                                                        items={inventory["Cooler"] || []}
                                                         value={field.value || ""}
                                                         onChange={field.onChange}
-                                                        isOpen={openSlot === "case"}
-                                                        onOpenChange={(o) => setOpenSlot(o ? "case" : null)}
+                                                        isOpen={openSlot === "cooler"}
+                                                        onOpenChange={(o) => setOpenSlot(o ? "cooler" : null)}
                                                     />
                                                     <FormMessage />
                                                 </FormItem>
