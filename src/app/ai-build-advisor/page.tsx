@@ -44,11 +44,11 @@ export default function AiBuildAdvisorPage() {
 
     // Logic Layers
     const {
-        critiqueAnalysis, critiqueLoading, critiqueError, handleCritique
+        critiqueAnalysis, critiqueLoading, critiqueError, handleCritique, handleCancelCritique
     } = useCritiqueLogic(isAiKillSwitch);
 
     const {
-        build, totalPrice, isPending, handleGetRecommendations,
+        build, totalPrice, isPending, handleGetRecommendations, handleCancelRecommendations,
         elapsedTime, finalResponseTime, error
     } = useRecommendationLogic(isAiKillSwitch, collections);
 
@@ -103,6 +103,7 @@ export default function AiBuildAdvisorPage() {
                                 critiqueLoading={critiqueLoading}
                                 critiqueError={critiqueError}
                                 handleCritique={handleCritique}
+                                handleCancelCritique={handleCancelCritique}
                                 handleRemovePart={handleRemovePart}
                                 handleClearBuild={handleClearBuild}
                                 resolution={resolution}
@@ -116,6 +117,7 @@ export default function AiBuildAdvisorPage() {
                                 isDark={isDark}
                                 isPending={isPending}
                                 handleGetRecommendations={handleGetRecommendations}
+                                handleCancelRecommendations={handleCancelRecommendations}
                                 build={build}
                                 elapsedTime={elapsedTime}
                                 finalResponseTime={finalResponseTime}
@@ -129,6 +131,7 @@ export default function AiBuildAdvisorPage() {
                         isDark={isDark}
                         isPending={isPending}
                         handleGetRecommendations={handleGetRecommendations}
+                        handleCancelRecommendations={handleCancelRecommendations}
                         build={build}
                         elapsedTime={elapsedTime}
                         finalResponseTime={finalResponseTime}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { getAiBuildCritique } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 
@@ -12,6 +12,28 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
     const [critiqueAnalysis, setCritiqueAnalysis] = useState<any>(null);
     const [critiqueLoading, setCritiqueLoading] = useState(false);
     const [critiqueError, setCritiqueError] = useState<string | null>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    // Cleanup abort controller on unmount
+    useEffect(() => {
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, []);
+
+    const handleCancelCritique = useCallback(() => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
+        setCritiqueLoading(false);
+        toast({
+            title: "Analysis Cancelled",
+            description: "The diagnostics sequence has been terminated.",
+        });
+    }, [toast]);
 
     const getBuildKey = (state: any) => {
         if (!state) return "";
@@ -50,6 +72,10 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
 
         setCritiqueLoading(true);
         setCritiqueError(null);
+
+        // Initialize new abort controller
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
 
         const buildData: any = {};
         Object.entries(builderState).forEach(([key, val]) => {
@@ -90,6 +116,8 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
                 performanceLevel: preferences?.performanceLevel,
                 additionalNotes: preferences?.additionalNotes
             });
+            
+            if (controller.signal.aborted) return;
             if ('error' in result) {
                 setCritiqueError(result.error as string);
             } else {
@@ -103,10 +131,17 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
                     localStorage.setItem('pc_critique_cache', JSON.stringify(parsedCache));
                 } catch (e) {}
             }
-        } catch (err) {
+        } catch (err: any) {
+            if (err.name === 'AbortError' || err.message === 'ABORTED') {
+                console.log("Critique aborted by user.");
+                return;
+            }
             setCritiqueError("An unexpected error occurred during analysis.");
         } finally {
-            setCritiqueLoading(false);
+            if (abortControllerRef.current === controller) {
+                abortControllerRef.current = null;
+                setCritiqueLoading(false);
+            }
         }
     }, [isAiKillSwitch, toast]);
 
@@ -116,6 +151,7 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
         critiqueLoading,
         critiqueError,
         handleCritique,
+        handleCancelCritique,
         getBuildKey
     };
 }

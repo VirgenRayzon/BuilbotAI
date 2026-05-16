@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useRef, useCallback } from 'react';
 import { getAiRecommendations } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import type { Build, AiRecommendation } from "@/lib/types";
@@ -23,6 +23,27 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, collections: any
     const [elapsedTime, setElapsedTime] = useState(0);
     const [finalResponseTime, setFinalResponseTime] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    const handleCancelRecommendations = useCallback(() => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
+        toast({
+            title: "Recommendation Cancelled",
+            description: "The architect has been recalled. Generation stopped.",
+        });
+    }, [toast]);
+
+    // Cleanup abort controller on unmount
+    useEffect(() => {
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, []);
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -44,8 +65,16 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, collections: any
             return;
         }
         setError(null);
+
+        // Initialize new abort controller
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
         startTransition(async () => {
             const result = await getAiRecommendations(data);
+
+            if (controller.signal.aborted) return;
+            
             if (!result || "error" in result) {
                 const errorMsg = (result as any)?.error || "Failed to get recommendations.";
                 setError(errorMsg);
@@ -97,12 +126,16 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, collections: any
             const total = Object.values(newBuild).filter(v => typeof v === 'object' && v !== null && 'price' in v)
                 .reduce((acc, curr: any) => acc + (curr.price || 0), 0);
             setTotalPrice(total);
+
+            if (abortControllerRef.current === controller) {
+                abortControllerRef.current = null;
+            }
         });
     };
 
     return {
         build, setBuild, totalPrice, setTotalPrice,
-        isPending, handleGetRecommendations,
+        isPending, handleGetRecommendations, handleCancelRecommendations,
         elapsedTime, finalResponseTime, error
     };
 }

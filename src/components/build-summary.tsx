@@ -3,6 +3,7 @@
 import React from "react";
 import type { Build } from "@/lib/types";
 import { ComponentCard } from "./component-card";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThumbsUp, Sparkles, AlertTriangle, MonitorPlay, Gamepad2, Zap, Bot, Info, Loader2, DollarSign, Wallet, Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils";
 interface BuildSummaryProps {
   build: Build | null;
   isPending: boolean;
+  onCancel?: () => void;
   elapsedTime?: number;
   finalResponseTime?: number | null;
   totalPrice?: number;
@@ -35,7 +37,7 @@ const LOADING_STEPS = [
     { title: "FINALIZING BUILD", sub: "Sourcing best market prices..." }
 ];
 
-export function BuildSummary({ build, isPending, elapsedTime, finalResponseTime, totalPrice, error }: BuildSummaryProps) {
+export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalResponseTime, totalPrice, error }: BuildSummaryProps) {
   const [loadingStep, setLoadingStep] = React.useState(0);
 
   React.useEffect(() => {
@@ -78,10 +80,10 @@ export function BuildSummary({ build, isPending, elapsedTime, finalResponseTime,
                         exit={{ opacity: 0 }}
                         className="flex flex-col items-center justify-center py-12 space-y-8"
                     >
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full animate-pulse" />
-                            <div className="relative z-10 p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-xl">
-                                <Loader2 className="h-12 w-12 animate-spin text-emerald-500" />
+                        <div className="relative group">
+                            <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full animate-pulse group-hover:bg-red-500/20 transition-colors" />
+                            <div className="relative z-10 p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-xl group-hover:border-red-500/20 transition-colors">
+                                <Loader2 className="h-12 w-12 animate-spin text-emerald-500 group-hover:text-red-500 transition-colors" />
                             </div>
                         </div>
 
@@ -109,6 +111,24 @@ export function BuildSummary({ build, isPending, elapsedTime, finalResponseTime,
                                 </motion.div>
                             </AnimatePresence>
                         </div>
+
+                        {onCancel && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.5 }}
+                            >
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={onCancel}
+                                    className="h-9 px-6 rounded-full border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white transition-all font-bold uppercase tracking-widest text-[10px]"
+                                >
+                                    <Zap className="h-3 w-3 mr-2 fill-current" />
+                                    Recall Architect
+                                </Button>
+                            </motion.div>
+                        )}
 
                         {/* Component Ghost Grid Removed per Anti-Skeleton Policy */}
                     </motion.div>

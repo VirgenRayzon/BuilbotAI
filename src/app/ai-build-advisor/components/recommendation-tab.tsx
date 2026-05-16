@@ -11,6 +11,7 @@ interface RecommendationTabProps {
     isDark: boolean;
     isPending: boolean;
     handleGetRecommendations: (data: any) => void;
+    handleCancelRecommendations: () => void;
     build: any;
     elapsedTime: number;
     finalResponseTime: number | null;
@@ -22,6 +23,7 @@ export function RecommendationTab({
     isDark,
     isPending,
     handleGetRecommendations,
+    handleCancelRecommendations,
     build,
     elapsedTime,
     finalResponseTime,
@@ -87,6 +89,7 @@ export function RecommendationTab({
                 <BuildSummary 
                     build={build} 
                     isPending={isPending} 
+                    onCancel={handleCancelRecommendations}
                     elapsedTime={elapsedTime} 
                     finalResponseTime={finalResponseTime} 
                     totalPrice={totalPrice} 

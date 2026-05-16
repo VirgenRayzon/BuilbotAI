@@ -11,6 +11,7 @@ export type ProgressPhase = 'init' | 'ai-requesting' | 'ai-complete' | 'ai-forma
 interface AIProgressModalProps {
     isOpen: boolean;
     onComplete?: () => void;
+    onCancel?: () => void;
     title?: string;
     currentPhase?: ProgressPhase;
 }
@@ -27,7 +28,7 @@ const PHASE_CONFIG: Record<ProgressPhase, { text: string; icon: React.ComponentT
 
 const PHASE_ORDER: ProgressPhase[] = ['init', 'ai-requesting', 'ai-complete', 'ai-formatting', 'image-fetch', 'saving', 'done'];
 
-export function AIProgressModal({ isOpen, onComplete, title = "Architecting Prebuilt", currentPhase = 'init' }: AIProgressModalProps) {
+export function AIProgressModal({ isOpen, onComplete, onCancel, title = "Architecting Prebuilt", currentPhase = 'init' }: AIProgressModalProps) {
     const [logs, setLogs] = useState<{ text: string; type: 'info' | 'success'; timestamp: string }[]>([]);
     const [elapsedTime, setElapsedTime] = useState(0);
     const startTimeRef = useRef<number>(Date.now());
@@ -108,14 +109,25 @@ export function AIProgressModal({ isOpen, onComplete, title = "Architecting Preb
                                         </p>
                                     </div>
                                 </div>
-                                <div className={cn(
-                                    "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-colors",
-                                    isFinished ? "bg-emerald-500/20 border-emerald-500/30" : "bg-emerald-500/10 border-emerald-500/20"
-                                )}>
-                                    <div className={cn("w-2 h-2 rounded-full bg-emerald-500", !isFinished && "animate-pulse")} />
-                                    <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
-                                        {isFinished ? `COMPLETED IN ${elapsedTime}s` : `${elapsedTime}s elapsed`}
-                                    </span>
+                                <div className="flex items-center gap-3">
+                                    {!isFinished && onCancel && (
+                                        <button
+                                            onClick={onCancel}
+                                            className="px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-[10px] font-black uppercase tracking-widest hover:bg-destructive hover:text-white transition-all active:scale-95 flex items-center gap-2"
+                                        >
+                                            <CloseIcon className="w-3 h-3" />
+                                            Stop
+                                        </button>
+                                    )}
+                                    <div className={cn(
+                                        "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-colors",
+                                        isFinished ? "bg-emerald-500/20 border-emerald-500/30" : "bg-emerald-500/10 border-emerald-500/20"
+                                    )}>
+                                        <div className={cn("w-2 h-2 rounded-full bg-emerald-500", !isFinished && "animate-pulse")} />
+                                        <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
+                                            {isFinished ? `COMPLETED IN ${elapsedTime}s` : `${elapsedTime}s elapsed`}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 

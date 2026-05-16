@@ -15,6 +15,7 @@ interface CritiqueTabProps {
     critiqueLoading: boolean;
     critiqueError: string | null;
     handleCritique: (state: any, force?: boolean, preferences?: { intendedUse?: string; performanceLevel?: string; additionalNotes?: string }) => void;
+    handleCancelCritique: () => void;
     handleRemovePart: (cat: string, idx?: number) => void;
     handleClearBuild: () => void;
     resolution: any;
@@ -30,6 +31,7 @@ export function CritiqueTab({
     critiqueLoading,
     critiqueError,
     handleCritique,
+    handleCancelCritique,
     handleRemovePart,
     handleClearBuild,
     resolution,
@@ -75,6 +77,7 @@ export function CritiqueTab({
                                 intendedUse: workload, 
                                 performanceLevel: resolution 
                             })}
+                            onCancel={handleCancelCritique}
                             intendedUse={workload}
                             performanceLevel={resolution}
                         />

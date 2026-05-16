@@ -37,6 +37,7 @@ interface AIBuildCritiqueProps {
     externalLoading?: boolean;
     externalError?: string | null;
     onRefresh?: () => void;
+    onCancel?: () => void;
     intendedUse?: string;
     performanceLevel?: string;
     additionalNotes?: string;
@@ -48,6 +49,7 @@ export function AIBuildCritique({
     externalLoading, 
     externalError, 
     onRefresh,
+    onCancel,
     intendedUse,
     performanceLevel,
     additionalNotes
@@ -213,9 +215,9 @@ export function AIBuildCritique({
 
                 {loading && (
                     <div className="flex flex-col items-center justify-center py-10 space-y-6">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse" />
-                            <AnimatedBotIcon className="h-12 w-12 text-primary relative z-10" size={48} active />
+                        <div className="relative group">
+                            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse group-hover:bg-red-500/20 transition-colors" />
+                            <AnimatedBotIcon className="h-12 w-12 text-primary relative z-10 group-hover:text-red-500 transition-colors" size={48} active />
                         </div>
                         <div className="text-center h-12 flex flex-col items-center justify-center overflow-hidden">
                             <AnimatePresence mode="wait">
@@ -241,6 +243,24 @@ export function AIBuildCritique({
                                 </motion.div>
                             </AnimatePresence>
                         </div>
+
+                        {onCancel && (
+                             <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.5 }}
+                             >
+                                 <Button
+                                     variant="outline"
+                                     size="sm"
+                                     onClick={onCancel}
+                                     className="h-9 px-6 rounded-full border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white transition-all font-bold uppercase tracking-widest text-[10px]"
+                                 >
+                                     <Zap className="h-3 w-3 mr-2 fill-current" />
+                                     Stop Diagnostics
+                                 </Button>
+                             </motion.div>
+                        )}
                     </div>
                 )}
 

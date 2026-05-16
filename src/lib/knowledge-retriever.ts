@@ -36,7 +36,9 @@ export async function retrieveLocalKnowledge(query: string): Promise<string[]> {
         for (const file of files) {
             const filePath = path.join(knowledgeDir, file);
             const content = fs.readFileSync(filePath, 'utf-8');
-            const sections = content.split('\n\n').filter(s => s.trim().length > 0);
+            
+            // Split by markdown headers or double newlines to get logical chunks
+            const sections = content.split(/(?=^## )|\n\n+/m).filter(s => s.trim().length > 10);
 
             for (const section of sections) {
                 newCache.push({
@@ -55,17 +57,32 @@ export async function retrieveLocalKnowledge(query: string): Promise<string[]> {
     const normalizedQueryWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
     if (normalizedQueryWords.length === 0) return results;
 
+    // Weighting: core concepts like 'bottleneck' or 'compatibility' are important
+    const coreWords = ['bottleneck', 'compatibility', 'tier', 'hierarchy', 'guide'];
+
     for (const section of knowledgeCache) {
         let score = 0;
+        let coreMatch = false;
+
         for (const word of normalizedQueryWords) {
             if (section.normalized.includes(word)) {
-                score++;
+                // Higher weight for component model matches (numbers/X-suffix)
+                if (/\d+/.test(word) || word.endsWith('x')) {
+                    score += 1.5;
+                } else {
+                    score += 1;
+                }
+                
+                if (coreWords.includes(word)) coreMatch = true;
             }
         }
 
-        const threshold = Math.max(1, Math.floor(normalizedQueryWords.length * 0.3));
+        // More liberal threshold: 
+        // 1. If it matches a core word (bottleneck/compatibility) AND at least one other word
+        // 2. Or if it meets a low % threshold
+        const threshold = Math.max(1.5, normalizedQueryWords.length * 0.15);
 
-        if (score >= threshold) {
+        if (score >= threshold || (coreMatch && score >= 2)) {
             results.push(`[Source: ${section.source}]\n${section.text}`);
         }
     }

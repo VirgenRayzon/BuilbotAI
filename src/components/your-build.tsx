@@ -125,6 +125,7 @@ export function YourBuild({
         aiPhase,
         isAiPending,
         handleAddPrebuiltWithAi,
+        handleCancelAi,
         handleCheckout,
         handleAnalyze,
     } = useBuildActions({
@@ -320,6 +321,7 @@ export function YourBuild({
             <AIProgressModal
                 isOpen={showLocalAiProgress}
                 onComplete={() => setShowLocalAiProgress(false)}
+                onCancel={handleCancelAi}
                 title="Architecting Prebuilt"
                 currentPhase={aiPhase}
             />

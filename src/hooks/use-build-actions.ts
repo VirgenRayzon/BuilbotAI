@@ -5,7 +5,7 @@
  */
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { getAiPrebuiltSuggestions } from "@/app/actions";
@@ -39,8 +39,30 @@ export function useBuildActions({
   const [showLocalAiProgress, setShowLocalAiProgress] = useState(false);
   const [aiPhase, setAiPhase] = useState<ProgressPhase>('init');
   const [isAiPending, startAiTransition] = useTransition();
+  const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const router = useRouter();
+
+  // Cleanup abort controller on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  const handleCancelAi = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setShowLocalAiProgress(false);
+    toast({
+      title: "AI Generation Stopped",
+      description: "The architect has been recalled. Generation cancelled.",
+    });
+  };
 
   const handleAddPrebuiltWithAi = () => {
     if (!onAddPrebuilt) return;
@@ -57,9 +79,21 @@ export function useBuildActions({
     setAiPhase('init');
     setShowLocalAiProgress(true);
 
+    // Initialize new abort controller
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     startAiTransition(async () => {
       try {
+        // Helper to check for abort
+        const checkAbort = () => {
+          if (controller.signal.aborted) {
+            throw new Error("ABORTED");
+          }
+        };
+
         await new Promise(r => setTimeout(r, 400));
+        checkAbort();
         setAiPhase('ai-requesting');
 
         const selectedComponents = {
@@ -81,12 +115,15 @@ export function useBuildActions({
           components: selectedComponents
         });
 
+        checkAbort();
         setAiPhase('ai-complete');
         await new Promise(r => setTimeout(r, 300));
+        checkAbort();
         setAiPhase('ai-formatting');
 
         if (result && "systemName" in result) {
           await new Promise(r => setTimeout(r, 300));
+          checkAbort();
           setAiPhase('image-fetch');
 
           const randomNum = Math.floor(Math.random() * 1000);
@@ -110,9 +147,11 @@ export function useBuildActions({
           };
 
           await new Promise(r => setTimeout(r, 300));
+          checkAbort();
           setAiPhase('saving');
 
           await onAddPrebuilt(finalData);
+          checkAbort();
           setAiPhase('done');
         } else {
           setShowLocalAiProgress(false);
@@ -123,12 +162,20 @@ export function useBuildActions({
           });
         }
       } catch (error: any) {
+        if (error.message === "ABORTED") {
+          console.log("AI Generation aborted by user.");
+          return;
+        }
         setShowLocalAiProgress(false);
         toast({
           variant: "destructive",
           title: "Error",
           description: error.message || "An unexpected error occurred."
         });
+      } finally {
+        if (abortControllerRef.current === controller) {
+          abortControllerRef.current = null;
+        }
       }
     });
   };
@@ -228,6 +275,7 @@ export function useBuildActions({
     aiPhase,
     isAiPending,
     handleAddPrebuiltWithAi,
+    handleCancelAi,
     handleCheckout,
     handleAnalyze,
     handleApplySuggestion,

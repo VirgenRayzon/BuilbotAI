@@ -6,12 +6,16 @@ import { getAdminFirestore } from "@/firebase/server-init";
 const CATEGORY_MAP: Record<string, string> = {
     'cpu': 'CPU',
     'gpu': 'GPU',
+    'graphics card': 'GPU',
     'motherboard': 'Motherboard',
     'ram': 'RAM',
+    'memory': 'RAM',
     'storage': 'Storage',
     'psu': 'PSU',
+    'power supply': 'PSU',
     'case': 'Case',
     'cooler': 'Cooler',
+    'cpu cooler': 'Cooler',
     'monitor': 'Monitor',
     'keyboard': 'Keyboard',
     'mouse': 'Mouse',
@@ -36,12 +40,18 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
         // Note: Firestore doesn't support native partial string search without an external indexer (like Algolia),
         // but we can limit and then filter in memory for small-medium collections.
         // We'll increase the limit slightly if a search term is present to ensure enough candidates.
-        const snapshot = await query.limit(searchTerm ? limitCount * 2 : limitCount).get();
+        let snapshot = await query.limit(searchTerm ? limitCount * 2 : limitCount).get();
+        
+        // Fallback: If no results with isArchived == false, try fetching without that filter 
+        // (some items might be missing the isArchived field entirely)
+        if (snapshot.empty && !searchTerm) {
+            snapshot = await db.collection(collectionName).limit(limitCount).get();
+        }
         
         let docs = snapshot.docs;
 
         // 3. Manual filtering if searchTerm is provided
-        if (searchTerm) {
+        if (searchTerm && searchTerm !== "undefined") {
             const term = searchTerm.toLowerCase();
             docs = docs.filter(doc => {
                 const data = doc.data();
@@ -58,7 +68,7 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
         }
         
         if (docs.length === 0) {
-            console.log(`[Inventory] No results found for category: ${category}, searchTerm: ${searchTerm}`);
+            console.log(`[Inventory] No results found for category: ${category}${searchTerm && searchTerm !== "undefined" ? `, searchTerm: ${searchTerm}` : ''}`);
         }
 
         return docs.map(doc => {
