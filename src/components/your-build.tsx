@@ -168,7 +168,7 @@ export function YourBuild({
             />
             <CardFooter className="flex-none flex flex-col items-stretch gap-4 pb-6">
                 <div className="flex flex-row lg:flex-col gap-3 w-full items-center justify-end lg:justify-center">
-                    {(!isManagerMode || onAnalysisUpdate) && (
+                    {!isManagerMode && (
                         <SparkleButton
                             icon={<Sparkles className="h-4 w-4" />}
                             containerClassName="order-1 flex-none lg:w-full"
