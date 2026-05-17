@@ -86,7 +86,7 @@ export function InventoryView({
             {loading ? null : paginatedParts.length > 0 ? (
                 view === 'grid' ? (
                     <>
-                        <div className="grid gap-3 md:gap-6 grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
+                        <div className="grid gap-3 md:gap-6 grid-cols-2 lg:grid-cols-4">
                             {paginatedParts.map(part => (
                                 <PartCard
                                     key={part.id}

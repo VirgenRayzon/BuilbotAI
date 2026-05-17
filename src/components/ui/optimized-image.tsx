@@ -84,8 +84,6 @@ export function OptimizedImage({
                     className
                 )}
                 onLoad={() => setIsLoading(false)}
-                // Backup for different Next.js versions/scenarios
-                onLoadingComplete={() => setIsLoading(false)}
                 onError={() => {
                     setIsLoading(false);
                     setError(true);

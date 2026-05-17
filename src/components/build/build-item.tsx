@@ -32,24 +32,25 @@ export function BuildItem({
     return (
       <div 
         className={cn(
-          "flex items-center gap-4 py-1.5 opacity-40 grayscale group transition-all hover:opacity-100 hover:grayscale-0 rounded-lg px-2 -mx-2",
+          "flex items-center gap-3 py-2 rounded-xl px-3 -mx-1 transition-all duration-300 border border-dashed",
           onSelect ? "cursor-pointer" : "cursor-default",
-          isActiveFilter && "opacity-100 grayscale-0 bg-primary/5 border border-primary/20 shadow-[0_0_15px_rgba(34,211,238,0.1)]"
+          isActiveFilter 
+            ? "opacity-100 bg-primary/5 border-primary/30 shadow-[0_0_15px_rgba(34,211,238,0.1)]"
+            : "opacity-50 border-border/30 hover:opacity-80 hover:border-primary/20 hover:bg-primary/[0.02]"
         )}
         onClick={() => onSelect?.(name)}
       >
         <div className={cn(
-          "p-2 bg-secondary/80 rounded flex items-center justify-center transition-colors",
-          isActiveFilter && "bg-primary/20 text-primary"
+          "p-1.5 rounded-lg flex items-center justify-center transition-colors",
+          isActiveFilter ? "bg-primary/20 text-primary" : "bg-muted/50 text-muted-foreground/50"
         )}>
-          <Icon className={cn("w-4 h-4", isActiveFilter ? "text-primary" : "text-muted-foreground")} />
+          <Icon className={cn("w-3.5 h-3.5", isActiveFilter && "text-primary")} />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <p className={cn(
-            "text-xs font-bold uppercase tracking-wider leading-none mb-1",
-            isActiveFilter ? "text-primary" : "text-muted-foreground"
+            "text-[10px] font-bold uppercase tracking-wider leading-none",
+            isActiveFilter ? "text-primary" : "text-muted-foreground/60"
           )}>{label || name}</p>
-          <p className="text-[10px] text-muted-foreground/80 italic font-medium">Click to add</p>
         </div>
       </div>
     );

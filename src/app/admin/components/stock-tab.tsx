@@ -226,7 +226,7 @@ export function StockTab({
             </div>
 
             {activeView === 'grid' ? (
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-6">
                     {partsLoading ? null : (
                         currentParts.map((part) => (
                             <InventoryPartCard

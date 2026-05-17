@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import type { Part, ComponentData, Build } from '@/lib/types';
+import type { Part, ComponentData, Build, FavoriteBuild } from '@/lib/types';
 import { checkCompatibility } from "@/lib/compatibility";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -36,6 +36,12 @@ export function useBuilderLogic(allParts: Part[]) {
             } catch (e) {
                 console.error("Failed to parse saved build", e);
             }
+        }
+        // Check for a favorite to load
+        const favData = localStorage.getItem('pc_builder_load_favorite');
+        if (favData) {
+            localStorage.removeItem('pc_builder_load_favorite');
+            // We'll handle loading after allParts are available via the event listener below
         }
         setIsLoaded(true);
     }, []);
@@ -302,6 +308,95 @@ export function useBuilderLogic(allParts: Part[]) {
             delete (window as any).__BOT_ADD_PART__;
         };
     }, [allParts, handlePartToggle, toast]);
+
+    // Favorite loading handler
+    const loadFavoriteBuild = useCallback((favorite: FavoriteBuild) => {
+        if (!allParts.length) return;
+
+        const newBuild: Record<string, ComponentData | ComponentData[] | null> = {
+            CPU: null, GPU: null, Motherboard: null, RAM: [], Storage: [], PSU: null, Case: null, Cooler: null,
+            Monitor: null, Keyboard: null, Mouse: null, Headset: null,
+        };
+        const skipped: string[] = [];
+        const outOfStock: string[] = [];
+
+        for (const favPart of favorite.parts) {
+            const livePart = allParts.find(p => p.id === favPart.partId);
+            if (!livePart) {
+                skipped.push(favPart.name);
+                continue;
+            }
+            if (livePart.stock <= 0 || livePart.isArchived) {
+                outOfStock.push(favPart.name);
+                continue;
+            }
+
+            const componentData: ComponentData = {
+                id: livePart.id,
+                model: livePart.name,
+                price: livePart.price,
+                description: Object.entries(livePart.specifications || {}).slice(0, 2).map(([k, v]) => `${k}: ${v}`).join(' | '),
+                image: livePart.imageUrl,
+                imageHint: livePart.name.toLowerCase().split(' ').slice(0, 2).join(' '),
+                icon: componentIcons[favPart.category],
+                wattage: livePart.wattage,
+                socket: livePart.socket || livePart.specifications?.['Socket']?.toString(),
+                ramType: livePart.ramType || livePart.specifications?.['Memory Type']?.toString(),
+                performanceScore: livePart.performanceScore,
+                performanceTier: livePart.performanceTier,
+                specifications: livePart.specifications,
+                dimensions: livePart.dimensions,
+            };
+
+            if (favPart.category === 'RAM' || favPart.category === 'Storage') {
+                const arr = newBuild[favPart.category] as ComponentData[];
+                arr.push(componentData);
+                newBuild[favPart.category] = arr;
+            } else {
+                newBuild[favPart.category] = componentData;
+            }
+        }
+
+        setBuild(newBuild);
+
+        if (skipped.length > 0) {
+            toast({
+                variant: 'destructive',
+                title: `${skipped.length} part(s) no longer available`,
+                description: skipped.join(', '),
+            });
+        }
+        if (outOfStock.length > 0) {
+            toast({
+                title: `${outOfStock.length} part(s) out of stock`,
+                description: outOfStock.join(', '),
+            });
+        }
+    }, [allParts, setBuild, toast]);
+
+    // Listen for load-favorite-build event
+    useEffect(() => {
+        const handleLoadFavorite = (e: any) => {
+            loadFavoriteBuild(e.detail as FavoriteBuild);
+        };
+
+        window.addEventListener('load-favorite-build', handleLoadFavorite);
+
+        // Also check if there's a pending favorite in localStorage (from profile page redirect)
+        if (allParts.length > 0) {
+            const pending = localStorage.getItem('pc_builder_load_favorite');
+            if (pending) {
+                localStorage.removeItem('pc_builder_load_favorite');
+                try {
+                    loadFavoriteBuild(JSON.parse(pending));
+                } catch (e) { /* ignore parse errors */ }
+            }
+        }
+
+        return () => {
+            window.removeEventListener('load-favorite-build', handleLoadFavorite);
+        };
+    }, [allParts, loadFavoriteBuild]);
 
     return {
         build,

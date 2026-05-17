@@ -5,9 +5,12 @@ import type { Build } from "@/lib/types";
 import { ComponentCard } from "./component-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ThumbsUp, Sparkles, AlertTriangle, MonitorPlay, Gamepad2, Zap, Bot, Info, Loader2, DollarSign, Wallet, Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind } from "lucide-react";
+import { ThumbsUp, Sparkles, AlertTriangle, MonitorPlay, Gamepad2, Zap, Bot, Info, Loader2, DollarSign, Wallet, Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind, Heart } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useUser, useFirestore } from "@/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 
 interface BuildSummaryProps {
   build: Build | null;
@@ -39,6 +42,51 @@ const LOADING_STEPS = [
 
 export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalResponseTime, totalPrice, error }: BuildSummaryProps) {
   const [loadingStep, setLoadingStep] = React.useState(0);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [isSaved, setIsSaved] = React.useState(false);
+  const user = useUser();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+
+  // Reset saved state when build changes
+  React.useEffect(() => {
+    setIsSaved(false);
+  }, [build]);
+
+  const handleSaveToFavorites = async () => {
+    if (!user || !firestore || !build) return;
+    setIsSaving(true);
+    try {
+      const categoryMap: Record<string, string> = {
+        cpu: 'CPU', gpu: 'GPU', motherboard: 'Motherboard', ram: 'RAM',
+        storage: 'Storage', psu: 'PSU', case: 'Case', cooler: 'Cooler'
+      };
+      const parts = Object.entries(categoryMap).map(([key, category]) => {
+        const comp = (build as any)[key];
+        return comp ? {
+          category,
+          partId: comp.id || `ai-${key}`,
+          name: comp.model || '',
+          price: comp.price || 0,
+        } : null;
+      }).filter(Boolean);
+
+      await addDoc(collection(firestore, "users", user.uid, "favorites"), {
+        name: `AI Build — ${new Date().toLocaleDateString()}`,
+        parts,
+        totalPrice: totalPrice || 0,
+        source: 'advisor',
+        createdAt: serverTimestamp(),
+      });
+      setIsSaved(true);
+      toast({ title: "Saved to Favorites", description: "AI build has been added to your favorites." });
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error", description: "Failed to save build.", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   React.useEffect(() => {
     if (!isPending) return;
@@ -172,6 +220,51 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                         animate={{ opacity: 1, y: 0 }}
                         className="space-y-8"
                     >
+                        {/* Top Panel Grid: Price Total & Save Control */}
+                        <div className="grid md:grid-cols-2 gap-6">
+                            {totalPrice && (
+                                <div className="bg-slate-900/30 border border-white/5 p-6 rounded-2xl backdrop-blur-xl flex items-center gap-6 shadow-inner">
+                                    <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 w-16 h-16 flex items-center justify-center select-none shrink-0">
+                                        <span className="text-3xl font-black font-sans text-primary leading-none">₱</span>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mb-1">Estimated Configuration Total</p>
+                                        <p className="text-4xl font-black font-headline tracking-tighter text-primary">
+                                            ₱{totalPrice.toLocaleString()}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="bg-slate-900/30 border border-white/5 p-6 rounded-2xl backdrop-blur-xl flex flex-col justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20 shrink-0">
+                                        <Sparkles className="h-5 w-5 text-emerald-500" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-headline font-bold uppercase tracking-wider text-sm">Build Design Ready</h4>
+                                        <p className="text-[11px] text-muted-foreground">Architect has formulated your customized system blueprint.</p>
+                                    </div>
+                                </div>
+                                {user && (
+                                    <Button
+                                        variant="outline"
+                                        className={cn(
+                                            "h-10 px-5 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all w-full",
+                                            isSaved
+                                                ? "border-rose-500/40 text-rose-500 bg-rose-500/10"
+                                                : "border-rose-500/20 text-rose-500 hover:bg-rose-500/10"
+                                        )}
+                                        onClick={handleSaveToFavorites}
+                                        disabled={isSaving || isSaved}
+                                    >
+                                        <Heart className={cn("h-3.5 w-3.5 mr-2", isSaved && "fill-rose-500")} />
+                                        {isSaving ? "Saving..." : isSaved ? "Saved to Favorites" : "Save to Favorites"}
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+
                         {/* Summary Section */}
                         <div className="bg-emerald-500/10 rounded-2xl p-6 border border-emerald-500/20 relative overflow-hidden group">
                             <div className="flex items-center gap-3 mb-4 text-emerald-600 dark:text-emerald-400">
@@ -212,10 +305,10 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
 
                         {/* Price Footer */}
                         {totalPrice && (
-                            <div className="flex items-center justify-center pt-8 border-t border-border/50">
+                            <div className="flex flex-col items-center gap-6 pt-8 border-t border-border/50">
                                 <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6 flex items-center gap-6 max-w-lg w-full shadow-inner">
-                                    <div className="p-4 rounded-xl bg-primary/10 border border-primary/20">
-                                        <DollarSign className="w-8 h-8 text-primary" />
+                                    <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 w-16 h-16 flex items-center justify-center select-none">
+                                        <span className="text-3xl font-black font-sans text-primary leading-none">₱</span>
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mb-1">Estimated Configuration Total</p>

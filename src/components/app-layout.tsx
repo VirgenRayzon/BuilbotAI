@@ -51,6 +51,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isLandingPage = pathname === '/';
   const shouldShowFooter = isLandingPage || showFooterRoutes.some(route => pathname === route);
 
+  const isHeaderHidden = mounted && !loading && !authUser && ['/', '/signin', '/signup', '/system-access'].includes(pathname);
+
   return (
     <>
       <AnimatePresence>
@@ -62,7 +64,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       ) : (
         <div className={cn("flex flex-col min-h-screen overflow-x-hidden transition-opacity duration-1000", showGlobalLoader ? "opacity-0" : "opacity-100")}>
           <Header />
-          <main className={cn("flex-1 min-h-[calc(100vh-4rem)]", isMaintenanceMode && !isSuperAdmin && "grayscale-[0.5] contrast-125")}>
+          <main className={cn(
+            "flex-1 min-h-[calc(100vh-4rem)]", 
+            !isHeaderHidden && "pt-16",
+            isMaintenanceMode && !isSuperAdmin && "grayscale-[0.5] contrast-125"
+          )}>
             {children}
           </main>
           {mounted && shouldShowFooter && <Footer />}

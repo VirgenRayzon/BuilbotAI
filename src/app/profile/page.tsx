@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useLoading } from "@/context/loading-context";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { User as UserIcon, Package, Shield, ChevronRight, FileText, LayoutDashboard, Settings, Database, Activity } from "lucide-react";
+import { User as UserIcon, Package, Shield, ChevronRight, FileText, LayoutDashboard, Settings, Database, Activity, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RouteGuard } from "@/components/auth/route-guard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,6 +18,7 @@ import { useReservations } from "./hooks/use-reservations";
 import { useEmergencyControls } from "./hooks/use-emergency-controls";
 import { useAdminKeys } from "./hooks/use-admin-keys";
 import { useAuditLogs } from "./hooks/use-audit-logs";
+import { useFavorites } from "./hooks/use-favorites";
 
 // Components
 import { ProfileHero } from "./components/profile-hero";
@@ -26,6 +27,7 @@ import { ReservationsList } from "./components/reservations-list";
 import { SuperAdminSettings } from "@/components/super-admin-settings";
 import { AboutManagement } from "@/components/about-management";
 import { AuditLogsSection } from "./components/audit-logs-section";
+import { FavoritesList } from "./components/favorites-list";
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle 
@@ -48,6 +50,7 @@ export default function ProfilePage() {
     const emergency = useEmergencyControls();
     const adminKeys = useAdminKeys();
     const audit = useAuditLogs();
+    const favoritesHook = useFavorites();
 
     const [confirmAction, setConfirmAction] = useState<{ id: string, type: 'cancel' | 'delete' } | null>(null);
 
@@ -95,12 +98,25 @@ export default function ProfilePage() {
                                     isDark ? "border-white/5" : "border-slate-200"
                                 )}>
                                     {(!profile?.isManager && !profile?.isSuperAdmin) && (
-                                        <TabsTrigger 
-                                            value="overview" 
-                                            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg px-6 py-2.5 transition-all flex items-center gap-2"
-                                        >
-                                            <LayoutDashboard className="h-4 w-4" /> Overview
-                                        </TabsTrigger>
+                                        <>
+                                            <TabsTrigger 
+                                                value="overview" 
+                                                className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg px-6 py-2.5 transition-all flex items-center gap-2"
+                                            >
+                                                <LayoutDashboard className="h-4 w-4" /> Overview
+                                            </TabsTrigger>
+                                            <TabsTrigger 
+                                                value="favorites" 
+                                                className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg px-6 py-2.5 transition-all flex items-center gap-2"
+                                            >
+                                                <Heart className="h-4 w-4" /> Favorites
+                                                {favoritesHook.favorites.length > 0 && (
+                                                    <Badge variant="secondary" className="h-5 w-5 p-0 flex items-center justify-center text-[9px] font-bold bg-rose-500/20 text-rose-500 border-rose-500/30">
+                                                        {favoritesHook.favorites.length}
+                                                    </Badge>
+                                                )}
+                                            </TabsTrigger>
+                                        </>
                                     )}
                                     
                                     {profile?.isSuperAdmin && (
@@ -132,6 +148,7 @@ export default function ProfilePage() {
 
                                 {/* Overview Tab: Reservations (Standard Users Only) */}
                                 {(!profile?.isManager && !profile?.isSuperAdmin) && (
+                                    <>
                                     <TabsContent value="overview" className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                                         <div className="flex items-end justify-between px-1">
                                             <div className="space-y-1">
@@ -153,6 +170,27 @@ export default function ProfilePage() {
                                             onConfirm={setConfirmAction}
                                         />
                                     </TabsContent>
+
+                                    <TabsContent value="favorites" className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <div className="flex items-end justify-between px-1">
+                                            <div className="space-y-1">
+                                                <h2 className="text-2xl font-headline font-bold flex items-center gap-3">
+                                                    <Heart className="h-6 w-6 text-rose-500" /> Favorite Builds
+                                                </h2>
+                                                <p className="text-sm text-muted-foreground">Saved PC builds from the Builder and AI Advisor. Load them instantly.</p>
+                                            </div>
+                                            <Badge variant="secondary" className="mb-1">
+                                                {favoritesHook.favorites.length} saved
+                                            </Badge>
+                                        </div>
+                                        <FavoritesList
+                                            favorites={favoritesHook.favorites}
+                                            loading={favoritesHook.loading}
+                                            onDelete={favoritesHook.deleteFavorite}
+                                            onRename={favoritesHook.renameFavorite}
+                                        />
+                                    </TabsContent>
+                                    </>
                                 )}
 
                                 {/* Management Tab: Super Admin Only */}

@@ -114,6 +114,24 @@ export default function BuilderPage() {
                 <BuilderHeader />
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">
+                    {/* Your Build — Left Column (Primary Feature) */}
+                    <aside className="hidden lg:block lg:col-span-3 self-start">
+                        <YourBuild 
+                            build={build} 
+                            onRemovePart={handleRemovePart} 
+                            onClearBuild={handleClearBuild}
+                            resolution={resolution}
+                            onResolutionChange={setResolution}
+                            workload={workload}
+                            onWorkloadChange={setWorkload}
+                            analysis={analysis}
+                            onAnalysisUpdate={setAnalysis}
+                            onCategorySelect={handleCategoryChange}
+                            categories={categories}
+                        />
+                    </aside>
+
+                    {/* Inventory — Right Column */}
                     <InventoryView 
                         loading={inventoryLoading}
                         paginatedParts={paginatedParts}
@@ -136,21 +154,6 @@ export default function BuilderPage() {
                         isSelected={isSelected}
                         itemCount={sortedAndFilteredParts.length}
                     />
-                    <aside className="hidden lg:block lg:col-span-3 sticky top-24 self-start">
-                        <YourBuild 
-                            build={build} 
-                            onRemovePart={handleRemovePart} 
-                            onClearBuild={handleClearBuild}
-                            resolution={resolution}
-                            onResolutionChange={setResolution}
-                            workload={workload}
-                            onWorkloadChange={setWorkload}
-                            analysis={analysis}
-                            onAnalysisUpdate={setAnalysis}
-                            onCategorySelect={handleCategoryChange}
-                            categories={categories}
-                        />
-                    </aside>
                 </div>
             </main>
 

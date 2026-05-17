@@ -18,6 +18,10 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, update, delete: if request.auth.uid == userId || isManager();
       allow create: if request.auth.uid == userId;
+
+      match /favorites/{favoriteId} {
+        allow read, write: if request.auth.uid == userId;
+      }
     }
 
     match /authKeys/{keyId} {

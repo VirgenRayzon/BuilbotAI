@@ -104,8 +104,12 @@ export function Header() {
     ? [...mainLinks, ...commonLinks]
     : [...adminLinks, ...commonLinks];
 
+  if (mounted && !loading && !authUser && ['/', '/signin', '/signup', '/system-access'].includes(pathname)) {
+    return null;
+  }
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/60 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/40 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+    <header className="fixed top-0 z-50 w-full border-b border-border/40 bg-background/60 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/40 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent z-20 opacity-50"></div>
       
       <div className="flex h-16 max-w-[1800px] w-full mx-auto items-center px-4 md:px-12">

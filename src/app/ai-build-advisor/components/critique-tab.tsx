@@ -43,6 +43,33 @@ export function CritiqueTab({
 
     return (
         <div className="grid lg:grid-cols-12 gap-8 h-full">
+            {/* Sidebar Column - Left (Consistent with main Builder Page) */}
+            <div className="lg:col-span-3">
+                <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="flex flex-col gap-6 pb-4"
+                >
+                    <YourBuild
+                        build={builderState}
+                        onClearBuild={handleClearBuild}
+                        onRemovePart={handleRemovePart}
+                        onAnalyze={() => handleCritique(builderState, false, { 
+                            intendedUse: workload, 
+                            performanceLevel: resolution 
+                        })}
+                        resolution={resolution}
+                        onResolutionChange={setResolution}
+                        workload={workload}
+                        onWorkloadChange={setWorkload}
+                        showSystemBalance={false}
+                        analysis={critiqueAnalysis}
+                        onCategorySelect={(cat) => router.push(`/builder?category=${cat}`)}
+                    />
+                </motion.div>
+            </div>
+
+            {/* Performance Diagnostics Column - Right */}
             <div className="lg:col-span-9">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.98 }}
@@ -82,31 +109,6 @@ export function CritiqueTab({
                             performanceLevel={resolution}
                         />
                     </div>
-                </motion.div>
-            </div>
-
-            <div className="lg:col-span-3">
-                <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="flex flex-col gap-6 pb-4"
-                >
-                    <YourBuild
-                        build={builderState}
-                        onClearBuild={handleClearBuild}
-                        onRemovePart={handleRemovePart}
-                        onAnalyze={() => handleCritique(builderState, false, { 
-                            intendedUse: workload, 
-                            performanceLevel: resolution 
-                        })}
-                        resolution={resolution}
-                        onResolutionChange={setResolution}
-                        workload={workload}
-                        onWorkloadChange={setWorkload}
-                        showSystemBalance={false}
-                        analysis={critiqueAnalysis}
-                        onCategorySelect={(cat) => router.push(`/builder?category=${cat}`)}
-                    />
                 </motion.div>
             </div>
         </div>

@@ -5,11 +5,12 @@
  */
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SparkleButton } from "./ui/sparkle-button";
 import type { ComponentData } from "@/lib/types";
-import { X as CloseIcon, BrainCircuit, ShieldCheck, CheckCircle2, Sparkles } from "lucide-react";
+import { X as CloseIcon, BrainCircuit, ShieldCheck, CheckCircle2, Sparkles, Heart, FolderOpen, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -21,6 +22,9 @@ import { Separator } from "@/components/ui/separator";
 import { useUser, useFirestore, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { collection, addDoc, query, onSnapshot, orderBy, serverTimestamp } from "firebase/firestore";
+import type { FavoriteBuild, FavoriteBuildPart } from "@/lib/types";
 import { type PrebuiltBuilderAddFormSchema } from "./prebuilt-builder-add-dialog";
 import { AIProgressModal } from "./ai-progress-modal";
 import { AnimatedIconButton, AnimatedRotateIcon, AnimatedShieldIcon, AnimatedCaseIcon } from "./ui/animated-icons";
@@ -68,6 +72,11 @@ export function YourBuild({
     categories
 }: YourBuildProps) {
     const [isCheckoutDialogOpen, setIsCheckoutDialogOpen] = useState(false);
+    const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+    const [saveName, setSaveName] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+    const [showFavoritesDropdown, setShowFavoritesDropdown] = useState(false);
+    const [favorites, setFavorites] = useState<FavoriteBuild[]>([]);
     const desktopCardRef = useRef<HTMLDivElement>(null);
     const prevSelectedPartsRef = useRef(0);
 
@@ -152,6 +161,70 @@ export function YourBuild({
         return selected?.length === 1 ? selected[0].name : null;
     }, [categories]);
 
+    // Listen for favorites (non-manager only)
+    useEffect(() => {
+        if (isManagerMode || !user || !firestore) return;
+        const q = query(
+            collection(firestore, "users", user.uid, "favorites"),
+            orderBy("createdAt", "desc")
+        );
+        const unsub = onSnapshot(q, (snap) => {
+            const data: FavoriteBuild[] = [];
+            snap.forEach(d => data.push({ id: d.id, ...d.data() } as FavoriteBuild));
+            setFavorites(data);
+        });
+        return () => unsub();
+    }, [isManagerMode, user, firestore]);
+
+    // Extract parts array from current build for saving
+    const extractBuildParts = (): FavoriteBuildPart[] => {
+        const parts: FavoriteBuildPart[] = [];
+        const categories = ['Case', 'Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler', 'Monitor', 'Keyboard', 'Mouse', 'Headset'];
+        categories.forEach(cat => {
+            const val = build[cat];
+            if (Array.isArray(val)) {
+                val.forEach(v => {
+                    if (v) parts.push({ category: cat, partId: v.id, name: v.model, price: v.price || 0 });
+                });
+            } else if (val) {
+                parts.push({ category: cat, partId: val.id, name: val.model, price: val.price || 0 });
+            }
+        });
+        return parts;
+    };
+
+    const handleSaveFavorite = async () => {
+        if (!user || !firestore || !saveName.trim()) return;
+        setIsSaving(true);
+        try {
+            const parts = extractBuildParts();
+            await addDoc(collection(firestore, "users", user.uid, "favorites"), {
+                name: saveName.trim(),
+                parts,
+                totalPrice,
+                source: 'builder',
+                createdAt: serverTimestamp(),
+            });
+            toast({ title: "Build Saved", description: `"${saveName.trim()}" added to favorites.` });
+            setIsSaveDialogOpen(false);
+            setSaveName("");
+        } catch (err) {
+            console.error(err);
+            toast({ title: "Error", description: "Failed to save favorite.", variant: "destructive" });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleLoadFavorite = (favorite: FavoriteBuild) => {
+        // Store the favorite in localStorage so the builder page can load it on mount
+        localStorage.setItem('pc_builder_load_favorite', JSON.stringify(favorite));
+        // Trigger a custom event so the builder hook picks it up immediately
+        window.dispatchEvent(new CustomEvent('load-favorite-build', { detail: favorite }));
+        setShowFavoritesDropdown(false);
+        toast({ title: "Favorite Loaded", description: `"${favorite.name}" loaded into your build.` });
+    };
+
     const renderBuildContent = () => (
         <>
             <BuildContent
@@ -188,6 +261,84 @@ export function YourBuild({
                     >
                         <span className="hidden lg:inline">Clear Build</span>
                     </AnimatedIconButton>
+
+                    {/* Save to Favorites (non-manager only) */}
+                    {!isManagerMode && (
+                        <div className="order-4 flex-none w-full flex gap-2">
+                            <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className="flex-1 h-8 text-[9px] font-bold uppercase tracking-widest border-rose-500/20 text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 transition-all hidden lg:flex items-center justify-center gap-1.5"
+                                        disabled={selectedParts === 0}
+                                    >
+                                        <Heart className="h-3 w-3" /> Save
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-sm">
+                                    <DialogHeader>
+                                        <DialogTitle className="flex items-center gap-2">
+                                            <Heart className="h-5 w-5 text-rose-500 fill-rose-500" />
+                                            Save to Favorites
+                                        </DialogTitle>
+                                        <DialogDescription>Give your build a name for easy access later.</DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
+                                        <Input
+                                            value={saveName}
+                                            onChange={(e) => setSaveName(e.target.value)}
+                                            placeholder="e.g. My Dream 4K Build"
+                                            onKeyDown={(e) => e.key === 'Enter' && handleSaveFavorite()}
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <Button variant="outline" className="flex-1" onClick={() => setIsSaveDialogOpen(false)}>Cancel</Button>
+                                        <Button
+                                            className="flex-1 bg-rose-600 hover:bg-rose-700 text-white"
+                                            onClick={handleSaveFavorite}
+                                            disabled={!saveName.trim() || isSaving}
+                                        >
+                                            {isSaving ? "Saving..." : "Save Build"}
+                                        </Button>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                            <Button
+                                variant="outline"
+                                className="flex-1 h-8 text-[9px] font-bold uppercase tracking-widest border-primary/20 text-primary hover:bg-primary/10 hover:text-primary/80 transition-all hidden lg:flex items-center justify-center gap-1.5"
+                                disabled={favorites.length === 0}
+                                onClick={() => setShowFavoritesDropdown(!showFavoritesDropdown)}
+                            >
+                                <FolderOpen className="h-3 w-3" /> Load {favorites.length > 0 && `(${favorites.length})`}
+                            </Button>
+                        </div>
+                    )}
+
+                    {/* Favorites Dropdown */}
+                    {!isManagerMode && showFavoritesDropdown && favorites.length > 0 && (
+                        <div className="order-5 w-full hidden lg:block">
+                            <div className="bg-background/80 border border-border/40 rounded-xl overflow-hidden backdrop-blur-sm">
+                                <ScrollArea className="max-h-[200px]">
+                                    <div className="divide-y divide-border/30">
+                                        {favorites.map((fav) => (
+                                            <button
+                                                key={fav.id}
+                                                className="w-full p-3 text-left hover:bg-muted/40 transition-colors flex items-center justify-between gap-2"
+                                                onClick={() => handleLoadFavorite(fav)}
+                                            >
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-xs font-bold truncate">{fav.name}</p>
+                                                    <p className="text-[9px] text-muted-foreground">{fav.parts.length} parts • {formatCurrency(fav.totalPrice)}</p>
+                                                </div>
+                                                <Heart className="h-3 w-3 text-rose-500 fill-rose-500 flex-none" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </ScrollArea>
+                            </div>
+                        </div>
+                    )}
 
                     {isManagerMode ? (
                         <SparkleButton
@@ -271,12 +422,44 @@ export function YourBuild({
     return (
         <>
             <div ref={desktopCardRef} className="hidden lg:block">
-            <Card className={`flex flex-col border-primary/20 shadow-[0_0_40px_rgba(34,211,238,0.05)] overflow-hidden relative glass-panel sticky top-24 ${className || ""}`}>
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
-                <CardHeader className="flex flex-row items-center justify-between py-5 bg-muted/20 border-b border-border/40 flex-none">
-                    <CardTitle className="font-headline text-xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent uppercase">Your Build</CardTitle>
-                    <div className="flex flex-col gap-2 items-end">
+            <Card className={`flex flex-col overflow-hidden relative glass-panel sticky top-20 border-primary/30 shadow-[0_0_30px_rgba(34,211,238,0.08),0_0_60px_rgba(34,211,238,0.04)] ${className || ""}`}>
+                {/* Animated top accent */}
+                <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent z-20" />
+                
+                {/* Subtle corner glow accents */}
+                <div className="absolute -top-6 -left-6 w-32 h-32 bg-primary/10 rounded-full blur-[40px] pointer-events-none z-0" />
+                <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-purple-500/8 rounded-full blur-[30px] pointer-events-none z-0" />
+
+                <CardHeader className="flex flex-col gap-3 py-5 bg-muted/20 border-b border-border/40 flex-none relative z-10">
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="font-headline text-xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent uppercase">Your Build</CardTitle>
                         <Badge variant="secondary" className="font-headline font-bold text-[10px] px-2 py-0.5 whitespace-nowrap bg-primary/20 text-primary border-primary/30 uppercase tracking-widest">{selectedParts}/{totalParts} PARTS</Badge>
+                    </div>
+                    {/* Build Progress Bar */}
+                    <div className="w-full">
+                        <div className="h-1.5 w-full bg-muted/40 rounded-full overflow-hidden">
+                            <motion.div
+                                className="h-full rounded-full"
+                                initial={{ width: 0 }}
+                                animate={{ width: `${(selectedParts / totalParts) * 100}%` }}
+                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                style={{
+                                    background: selectedParts === totalParts
+                                        ? 'linear-gradient(90deg, #10b981, #06b6d4)'
+                                        : selectedParts > 0
+                                            ? 'linear-gradient(90deg, #06b6d4, #8b5cf6)'
+                                            : 'transparent',
+                                }}
+                            />
+                        </div>
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 mt-1.5">
+                            {selectedParts === 0 
+                                ? "Select components to begin" 
+                                : selectedParts === totalParts 
+                                    ? "Build complete — Ready for analysis" 
+                                    : `${totalParts - selectedParts} slots remaining`
+                            }
+                        </p>
                     </div>
                 </CardHeader>
                 {renderBuildContent()}

@@ -159,3 +159,19 @@ export type AuditLog = {
   details?: string;
   createdAt: any; // Firestore Timestamp
 };
+
+export type FavoriteBuildPart = {
+  category: string;
+  partId: string;
+  name: string;
+  price: number;
+};
+
+export type FavoriteBuild = {
+  id: string;
+  name: string;
+  parts: FavoriteBuildPart[];
+  totalPrice: number;
+  source: 'builder' | 'advisor';
+  createdAt: any; // Firestore Timestamp
+};

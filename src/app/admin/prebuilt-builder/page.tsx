@@ -525,6 +525,28 @@ export default function PrebuiltBuilderPage() {
 
                 <div className="grid lg:grid-cols-12 gap-6 xl:gap-8">
 
+                    {/* Your Build — Left Column (Primary Feature) */}
+                    <div className="lg:col-span-3">
+                        <div className="flex flex-col gap-6 pb-4">
+                            <YourBuild
+                                build={build}
+                                onRemovePart={handleRemovePart}
+                                onClearBuild={handleClearBuild}
+                                resolution={resolution}
+                                onResolutionChange={setResolution}
+                                workload={workload}
+                                onWorkloadChange={setWorkload}
+                                isManagerMode={true}
+                                onAddPrebuilt={handleAddPrebuilt}
+                                onCategorySelect={(cat) => handleCategoryChange(cat, true)}
+                                categories={categories}
+                                analysis={analysis}
+                                onAnalysisUpdate={setAnalysis}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Inventory — Right Column */}
                     <div className={cn(
                         "flex flex-col gap-6 lg:col-span-9"
                     )}>
@@ -635,26 +657,6 @@ export default function PrebuiltBuilderPage() {
                                 </CardContent>
                             </Card>
                         )}
-                    </div>
-
-                    <div className="lg:col-span-3">
-                        <div className="flex flex-col gap-6 pb-4 pr-2">
-                            <YourBuild
-                                build={build}
-                                onRemovePart={handleRemovePart}
-                                onClearBuild={handleClearBuild}
-                                resolution={resolution}
-                                onResolutionChange={setResolution}
-                                workload={workload}
-                                onWorkloadChange={setWorkload}
-                                isManagerMode={true}
-                                onAddPrebuilt={handleAddPrebuilt}
-                                onCategorySelect={(cat) => handleCategoryChange(cat, true)}
-                                categories={categories}
-                                analysis={analysis}
-                                onAnalysisUpdate={setAnalysis}
-                            />
-                        </div>
                     </div>
                 </div>
 
