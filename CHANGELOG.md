@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [2026-05-23]
 
 ### Features
+- Configure dynamic grid columns (4 vs 5) for builder variants and expand test builder 2 containers to fit window ([1b10089](https://github.com/VirgenRayzon/BuilbotAI/commit/1b10089))
 - Implement test builder 1 (FAB/Pinning) and test builder 2 (standalone/browse) A/B layout pages with super admin guard and automated cleanup script ([35a78d2](https://github.com/VirgenRayzon/BuilbotAI/commit/35a78d2))
 - **security**: Implement secure server-side RBAC and key validation ([ce5d550](https://github.com/VirgenRayzon/BuilbotAI/commit/ce5d550))
 
