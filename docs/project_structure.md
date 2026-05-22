@@ -166,6 +166,7 @@ BuilbotAI
 │   └── project_structure.md
 ├── execution
 │   ├── consolidate_collections.ts
+│   ├── delete-test-builders.js
 │   ├── generate_project_structure.js
 │   ├── ingest_website.py
 │   ├── migrate_audit_logs.ts
@@ -292,6 +293,16 @@ BuilbotAI
 │   │   ├── system-access
 │   │   │   └── page.tsx
 │   │   ├── team
+│   │   │   └── page.tsx
+│   │   ├── test-builder-1
+│   │   │   └── page.tsx
+│   │   ├── test-builder-2
+│   │   │   ├── browse
+│   │   │   │   └── page.tsx
+│   │   │   ├── components
+│   │   │   │   ├── build-content-standalone.tsx
+│   │   │   │   ├── build-item-standalone.tsx
+│   │   │   │   └── your-build-standalone.tsx
 │   │   │   └── page.tsx
 │   │   ├── actions.ts
 │   │   ├── checkout-actions.ts

@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [2026-05-23]
 
 ### Features
+- Implement test builder 1 (FAB/Pinning) and test builder 2 (standalone/browse) A/B layout pages with super admin guard and automated cleanup script ([35a78d2](https://github.com/VirgenRayzon/BuilbotAI/commit/35a78d2))
 - **security**: Implement secure server-side RBAC and key validation ([ce5d550](https://github.com/VirgenRayzon/BuilbotAI/commit/ce5d550))
 
 ## [2026-05-18]
