@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import type { Part } from '@/lib/types';
 import { checkCompatibility } from "@/lib/compatibility";
 
@@ -29,7 +29,7 @@ export function useFilteredInventory(allParts: Part[], build: any, getCountInBui
         { name: "Headset", selected: true },
     ]);
 
-    const handleCategoryChange = (categoryName: string, selected?: boolean) => {
+    const handleCategoryChange = useCallback((categoryName: string, selected?: boolean) => {
         setCurrentPage(1);
         setSelectedBrands([]);
         setCategories(prev => {
@@ -59,7 +59,7 @@ export function useFilteredInventory(allParts: Part[], build: any, getCountInBui
                 selected: cat.name === categoryName
             }));
         });
-    };
+    }, []);
 
     const sortedAndFilteredParts = useMemo(() => {
         const selectedCategories = categories.filter(c => c.selected).map(c => c.name);

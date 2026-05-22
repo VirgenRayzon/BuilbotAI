@@ -8,10 +8,11 @@ import { Label } from '@/components/ui/label';
 import { useFirestore } from '@/firebase';
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc, onSnapshot, updateDoc, serverTimestamp, limit, arrayUnion } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Check, X, RefreshCw, Mail, Key, Shield } from 'lucide-react';
+import { Loader2, Check, X, RefreshCw, Mail, Key, Shield, Layout, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useUserProfile } from '@/context/user-profile';
 import { createAuditLog } from '@/firebase/audit';
+import Link from 'next/link';
 
 export function SuperAdminSettings() {
     const [managerKey, setManagerKey] = useState('');
@@ -384,6 +385,64 @@ export function SuperAdminSettings() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* TEST_BUILDERS_AB_TESTING_START */}
+            <Card className="border-primary/20 bg-background/50 backdrop-blur-xl">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Layout className="h-5 w-5 text-primary" />
+                        Layout A/B Testing
+                    </CardTitle>
+                    <CardDescription>
+                        Evaluate alternative designs for the PC Builder user interface. (Super Admin Only)
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 md:grid-cols-2">
+                    <div className="flex flex-col justify-between p-5 border border-border/40 rounded-2xl bg-card/40 hover:bg-card/70 transition-all group">
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors">Test Builder 1</h3>
+                                <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30 text-[9px] font-bold uppercase tracking-wider">FAB + Pinning</Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                Hides the "Your Build" sidebar panel by default, expanding the parts inventory list to full width. 
+                                Adds a Floating Action Button (FAB) at the bottom-right that opens "Your Build" in a sliding drawer. 
+                                Offers a "Pin to Sidebar" action to lock it in place as a docked left column (matching the default layout).
+                            </p>
+                        </div>
+                        <div className="pt-5">
+                            <Button asChild size="sm" className="w-full rounded-xl font-bold uppercase tracking-widest text-[9px]">
+                                <Link href="/test-builder-1" className="flex items-center justify-center gap-1.5">
+                                    Open Test Builder 1 <ExternalLink className="h-3 w-3" />
+                                </Link>
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col justify-between p-5 border border-border/40 rounded-2xl bg-card/40 hover:bg-card/70 transition-all group">
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors">Test Builder 2</h3>
+                                <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30 text-[9px] font-bold uppercase tracking-wider">Standalone + Browse</Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                Transforms "Your Build" into a standalone, dedicated status page. 
+                                Each empty component category displays an explicit "+ Add" button. 
+                                Clicking it navigates to a dedicated search page to filter and select components. 
+                                Retains the exact same compatibility checks, power analysis, and reservation system.
+                            </p>
+                        </div>
+                        <div className="pt-5">
+                            <Button asChild size="sm" className="w-full rounded-xl font-bold uppercase tracking-widest text-[9px]">
+                                <Link href="/test-builder-2" className="flex items-center justify-center gap-1.5">
+                                    Open Test Builder 2 <ExternalLink className="h-3 w-3" />
+                                </Link>
+                            </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+            {/* TEST_BUILDERS_AB_TESTING_END */}
         </div>
     );
 }

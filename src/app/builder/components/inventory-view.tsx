@@ -38,6 +38,7 @@ interface InventoryViewProps {
     availableBrands?: string[];
     selectedBrands?: string[];
     onBrandChange?: (brands: string[]) => void;
+    className?: string;
 }
 
 export function InventoryView({
@@ -63,13 +64,17 @@ export function InventoryView({
     itemCount,
     availableBrands,
     selectedBrands,
-    onBrandChange
+    onBrandChange,
+    className
 }: InventoryViewProps) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-6 rounded-3xl border shadow-2xl transition-all duration-500 glass-panel lg:col-span-9"
+            className={cn(
+                "p-6 rounded-3xl border shadow-2xl transition-all duration-500 glass-panel",
+                className ? className : "lg:col-span-9"
+            )}
         >
             <div className="mb-8">
                 <InventoryToolbar
