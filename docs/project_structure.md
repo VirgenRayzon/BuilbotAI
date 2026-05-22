@@ -162,11 +162,14 @@ BuilbotAI
 ├── docs
 │   ├── backend.json
 │   ├── blueprint.md
+│   ├── database_scalability_plan.md
 │   └── project_structure.md
 ├── execution
+│   ├── consolidate_collections.ts
 │   ├── generate_project_structure.js
 │   ├── ingest_website.py
-│   └── migrate_audit_logs.ts
+│   ├── migrate_audit_logs.ts
+│   └── update_changelog.js
 ├── public
 │   ├── assets
 │   │   └── blueprints
@@ -187,11 +190,20 @@ BuilbotAI
 │   ├── hero-pc.png
 │   └── landing-hero.png
 ├── scratch
+│   ├── app.spec.ts
+│   ├── build_summary_diff.txt
 │   ├── check-firestore-schema.js
 │   ├── check-inventory.ts
 │   ├── check-models.js
 │   ├── find-bad-data.js
-│   └── list-models.js
+│   ├── list-models.js
+│   ├── print-raw-response.js
+│   ├── screenshot-home.png
+│   ├── screenshot-system-access.png
+│   ├── test-chat.js
+│   ├── test-fetch.ts
+│   ├── verify-rbac.ts
+│   └── verify-server-actions.ts
 ├── src
 │   ├── ai
 │   │   ├── flows
@@ -469,6 +481,8 @@ BuilbotAI
 │       ├── spec-retriever.ts
 │       ├── types.ts
 │       └── utils.ts
+├── test-results
+│   └── .last-run.json
 ├── .env
 ├── .eslintrc.json
 ├── .firebaserc
@@ -476,6 +490,7 @@ BuilbotAI
 ├── .modified
 ├── agents.md
 ├── apphosting.yaml
+├── CHANGELOG.md
 ├── CLAUDE.md
 ├── components.json
 ├── debug-response.json
