@@ -14,6 +14,42 @@ let knowledgeCache: CachedSection[] | null = null;
 const CACHE_TTL = 1000 * 60 * 60 * 24; // 24 hour cache TTL for static knowledge
 let cacheTimestamp = 0;
 
+export function initializeKnowledgeCache(): void {
+    const knowledgeDir = path.join(process.cwd(), 'src', 'knowledge');
+    if (!fs.existsSync(knowledgeDir)) {
+        console.warn(`Knowledge directory not found at ${knowledgeDir}`);
+        return;
+    }
+
+    console.log("[Knowledge Base] Pre-indexing cache...");
+    const files = fs.readdirSync(knowledgeDir).filter(f => f.endsWith('.md') || f.endsWith('.txt'));
+    const newCache: CachedSection[] = [];
+
+    for (const file of files) {
+        const filePath = path.join(knowledgeDir, file);
+        const content = fs.readFileSync(filePath, 'utf-8');
+        
+        // Split by markdown headers or double newlines to get logical chunks
+        const sections = content.split(/(?=^## )|\n\n+/m).filter(s => s.trim().length > 10);
+
+        for (const section of sections) {
+            newCache.push({
+                source: file,
+                text: section.trim(),
+                normalized: section.toLowerCase()
+            });
+        }
+    }
+    knowledgeCache = newCache;
+    cacheTimestamp = Date.now();
+    console.log(`[Knowledge Base] Cached ${knowledgeCache.length} sections from ${files.length} files.`);
+}
+
+// Call on startup
+if (typeof window === 'undefined') {
+    setTimeout(initializeKnowledgeCache, 0);
+}
+
 /**
  * Reads all markdown files in the src/knowledge/ directory
  * and performs a simple keyword-based search to find relevant paragraphs.
@@ -29,29 +65,10 @@ export async function retrieveLocalKnowledge(query: string): Promise<string[]> {
 
     // 1. Initialize or Refresh Cache
     if (!knowledgeCache || (Date.now() - cacheTimestamp > CACHE_TTL)) {
-        console.log("[Knowledge Base] Initializing/Refreshing cache...");
-        const files = fs.readdirSync(knowledgeDir).filter(f => f.endsWith('.md') || f.endsWith('.txt'));
-        const newCache: CachedSection[] = [];
-
-        for (const file of files) {
-            const filePath = path.join(knowledgeDir, file);
-            const content = fs.readFileSync(filePath, 'utf-8');
-            
-            // Split by markdown headers or double newlines to get logical chunks
-            const sections = content.split(/(?=^## )|\n\n+/m).filter(s => s.trim().length > 10);
-
-            for (const section of sections) {
-                newCache.push({
-                    source: file,
-                    text: section.trim(),
-                    normalized: section.toLowerCase()
-                });
-            }
-        }
-        knowledgeCache = newCache;
-        cacheTimestamp = Date.now();
-        console.log(`[Knowledge Base] Cached ${knowledgeCache.length} sections from ${files.length} files.`);
+        initializeKnowledgeCache();
     }
+
+    if (!knowledgeCache) return results;
 
     // 2. Perform search on cache
     const normalizedQueryWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);

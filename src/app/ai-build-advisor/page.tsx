@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTheme } from "@/context/theme-provider";
 import { useRouter } from "next/navigation";
 import { useUserProfile } from "@/context/user-profile";
@@ -32,9 +32,10 @@ export default function AiBuildAdvisorPage() {
     const { authUser, profile, loading: userLoading } = useUserProfile();
     const router = useRouter();
     const { setIsPageLoading } = useLoading();
+    const lastLoadedKeyRef = useRef<string>("");
 
     // Data Layer
-    const { allParts, isAiKillSwitch, collections, loading: dataLoading } = useAdvisorData();
+    const { allParts, isAiKillSwitch, loading: dataLoading } = useAdvisorData();
 
     // State Layer
     const {
@@ -44,13 +45,14 @@ export default function AiBuildAdvisorPage() {
 
     // Logic Layers
     const {
-        critiqueAnalysis, critiqueLoading, critiqueError, handleCritique, handleCancelCritique
+        critiqueAnalysis, critiqueDuration, setCritiqueAnalysis, setCritiqueDuration,
+        critiqueLoading, critiqueError, handleCritique, handleCancelCritique, getBuildKey
     } = useCritiqueLogic(isAiKillSwitch);
 
     const {
         build, totalPrice, isPending, handleGetRecommendations, handleCancelRecommendations,
         elapsedTime, finalResponseTime, error
-    } = useRecommendationLogic(isAiKillSwitch, collections);
+    } = useRecommendationLogic(isAiKillSwitch, allParts);
 
     // Route Protection handled by RouteGuard wrapper in return
 
@@ -63,6 +65,39 @@ export default function AiBuildAdvisorPage() {
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
+
+    // Automatically load or reset critique when state changes
+    useEffect(() => {
+        if (!builderState) {
+            setCritiqueAnalysis(null);
+            setCritiqueDuration(null);
+            lastLoadedKeyRef.current = "";
+            return;
+        }
+        const buildKey = getBuildKey(builderState) + workload + resolution;
+
+        // Guard: If this key has already been processed (either loaded or cleared), do nothing
+        if (lastLoadedKeyRef.current === buildKey) {
+            return;
+        }
+
+        const cache = localStorage.getItem('pc_critique_cache');
+        if (cache) {
+            try {
+                const parsedCache = JSON.parse(cache);
+                if (parsedCache[buildKey]) {
+                    // Call critique logic to load from cache
+                    handleCritique(builderState, false, { intendedUse: workload, performanceLevel: resolution });
+                    lastLoadedKeyRef.current = buildKey;
+                    return;
+                }
+            } catch (e) {}
+        }
+        // If not in cache, clear any stale state
+        setCritiqueAnalysis(null);
+        setCritiqueDuration(null);
+        lastLoadedKeyRef.current = buildKey;
+    }, [builderState, workload, resolution, handleCritique, getBuildKey, setCritiqueAnalysis, setCritiqueDuration]);
 
     return (
         <RouteGuard requiredPermission="isClientOnly">
@@ -100,6 +135,7 @@ export default function AiBuildAdvisorPage() {
                                 isDark={isDark}
                                 builderState={builderState}
                                 critiqueAnalysis={critiqueAnalysis}
+                                critiqueDuration={critiqueDuration}
                                 critiqueLoading={critiqueLoading}
                                 critiqueError={critiqueError}
                                 handleCritique={handleCritique}

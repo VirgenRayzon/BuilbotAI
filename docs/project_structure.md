@@ -262,18 +262,22 @@ BuilbotAI
 │   │   │   ├── components
 │   │   │   │   ├── account-details.tsx
 │   │   │   │   ├── audit-logs-section.tsx
+│   │   │   │   ├── favorites-list.tsx
 │   │   │   │   ├── profile-hero.tsx
 │   │   │   │   └── reservations-list.tsx
 │   │   │   ├── hooks
 │   │   │   │   ├── use-admin-keys.ts
 │   │   │   │   ├── use-audit-logs.ts
 │   │   │   │   ├── use-emergency-controls.ts
+│   │   │   │   ├── use-favorites.ts
 │   │   │   │   ├── use-profile-state.ts
 │   │   │   │   └── use-reservations.ts
 │   │   │   └── page.tsx
 │   │   ├── signin
 │   │   │   └── page.tsx
 │   │   ├── signup
+│   │   │   └── page.tsx
+│   │   ├── system-access
 │   │   │   └── page.tsx
 │   │   ├── team
 │   │   │   └── page.tsx
@@ -476,7 +480,6 @@ BuilbotAI
 ├── components.json
 ├── debug-response.json
 ├── DESIGN.md
-├── firebase-debug.log
 ├── firebase.json
 ├── firestore.rules
 ├── GEMINI.md

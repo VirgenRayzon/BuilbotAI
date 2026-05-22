@@ -4,7 +4,7 @@
  * Includes image upload pipeline (local base64 and remote URL proxy via server actions).
  */
 
-import { addDoc, collection, deleteDoc, doc, Firestore, setDoc, updateDoc, writeBatch } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, Firestore, getDoc, setDoc, updateDoc, writeBatch } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
 import type { AddPartFormSchema } from "@/hooks/use-part-form";
@@ -118,6 +118,29 @@ function cleanData(obj: any): any {
     return obj;
 }
 
+function generateSearchKeywords(name: string, brand: string, category: string, model?: string, series?: string): string[] {
+    const keywordsSet = new Set<string>();
+
+    const processString = (str: string) => {
+        if (!str) return;
+        const parts = str.toLowerCase().split(/[\s\-_/,\(\)]+/);
+        parts.forEach(part => {
+            const cleaned = part.replace(/[^a-z0-9]/g, '').trim();
+            if (cleaned.length > 0) {
+                keywordsSet.add(cleaned);
+            }
+        });
+    };
+
+    processString(name);
+    processString(brand);
+    processString(category);
+    if (model) processString(model);
+    if (series) processString(series);
+
+    return Array.from(keywordsSet);
+}
+
 // Parts
 export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
     const specificationsMap = part.specifications.reduce((acc: Record<string, string>, spec: { key: string; value: string }) => {
@@ -129,6 +152,14 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
 
     const imageUrl = part.imageUrl || "";
     const persistedImageUrl = imageUrl ? await uploadToStorageClient(imageUrl, `parts/${part.category.toLowerCase()}`, part.partName) : "";
+
+    const keywords = generateSearchKeywords(
+        part.partName,
+        part.brand,
+        part.category,
+        specificationsMap.Model,
+        specificationsMap.Series
+    );
 
     const partData = {
         name: part.partName,
@@ -142,14 +173,19 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
         wattage: resolvedWattage,
         performanceScore: part.performanceScore,
         dimensions: part.dimensions,
-        packageType: part.packageType
+        packageType: part.packageType,
+        category: part.category,
+        searchKeywords: keywords,
+        isArchived: false
     };
 
-    await addDoc(collection(firestore, part.category), cleanData(partData));
+    await addDoc(collection(firestore, "parts"), cleanData(partData));
 }
 
 
 export async function updatePart(firestore: Firestore, category: Part['category'], partId: string, data: Partial<Omit<Part, 'id' | 'category'>>) {
+    const docRef = doc(firestore, "parts", partId);
+
     // If specifications are being updated but not wattage, try to re-resolve wattage
     if (data.specifications && data.wattage === undefined) {
         data.wattage = resolveWattage(category, undefined, data.specifications);
@@ -159,21 +195,45 @@ export async function updatePart(firestore: Firestore, category: Part['category'
         data.imageUrl = await uploadToStorageClient(data.imageUrl, `parts/${category.toLowerCase()}`, data.name);
     }
 
-    await updateDoc(doc(firestore, category, partId), cleanData(data));
+    const cleanedData = cleanData(data);
+
+    // Regenerate search keywords if name, brand, or specifications are modified
+    if (data.name !== undefined || data.brand !== undefined || data.specifications !== undefined) {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const currentData = docSnap.data();
+            const updatedName = data.name !== undefined ? data.name : (currentData.name || '');
+            const updatedBrand = data.brand !== undefined ? data.brand : (currentData.brand || '');
+            
+            const specs = data.specifications || currentData.specifications || {};
+            const updatedModel = specs.Model || currentData.model;
+            const updatedSeries = specs.Series || currentData.series;
+
+            cleanedData.searchKeywords = generateSearchKeywords(
+                updatedName,
+                updatedBrand,
+                category,
+                updatedModel,
+                updatedSeries
+            );
+        }
+    }
+
+    await updateDoc(docRef, cleanedData);
 }
 
 export async function deletePart(firestore: Firestore, partId: string, category: Part['category']) {
-    await deleteDoc(doc(firestore, category, partId));
+    await deleteDoc(doc(firestore, "parts", partId));
 }
 
 export async function archivePart(firestore: Firestore, partId: string, category: Part['category'], isArchived: boolean = true) {
-    await updateDoc(doc(firestore, category, partId), { isArchived });
+    await updateDoc(doc(firestore, "parts", partId), { isArchived });
 }
 
 export async function bulkArchiveParts(firestore: Firestore, items: { id: string, category: Part['category'] }[], isArchived: boolean = true) {
     const batch = writeBatch(firestore);
     items.forEach(item => {
-        const partRef = doc(firestore, item.category, item.id);
+        const partRef = doc(firestore, "parts", item.id);
         batch.update(partRef, { isArchived });
     });
     await batch.commit();
@@ -182,7 +242,7 @@ export async function bulkArchiveParts(firestore: Firestore, items: { id: string
 export async function bulkDeleteParts(firestore: Firestore, items: { id: string, category: Part['category'] }[]) {
     const batch = writeBatch(firestore);
     items.forEach(item => {
-        const partRef = doc(firestore, item.category, item.id);
+        const partRef = doc(firestore, "parts", item.id);
         batch.delete(partRef);
     });
     await batch.commit();
@@ -205,8 +265,8 @@ export async function addPrebuiltSystem(firestore: Firestore, system: AddPrebuil
             cpu,
             gpu,
             motherboard,
-            ram,
-            storage,
+            ram: ram?.filter((r): r is string => !!r) || [],
+            storage: storage?.filter((s): s is string => !!s) || [],
             psu,
             case: caseComponent,
             cooler
@@ -236,8 +296,8 @@ export async function updatePrebuiltSystem(firestore: Firestore, systemId: strin
             cpu,
             gpu,
             motherboard,
-            ram,
-            storage,
+            ram: ram?.filter((r): r is string => !!r),
+            storage: storage?.filter((s): s is string => !!s),
             psu,
             case: caseComponent,
             cooler
@@ -299,7 +359,7 @@ export async function resetSalesMetrics(
     
     // 2. Reset popularity for all parts
     parts.forEach(part => {
-        const partRef = doc(firestore, part.category, part.id);
+        const partRef = doc(firestore, "parts", part.id);
         batch.update(partRef, { popularity: 0 });
     });
     
@@ -396,7 +456,7 @@ export async function ingestDummySalesData(
 
     // Update part popularity
     popularityMap.forEach((data, id) => {
-        const partRef = doc(firestore, data.category, id);
+        const partRef = doc(firestore, "parts", id);
         batch.update(partRef, { popularity: data.count });
     });
 

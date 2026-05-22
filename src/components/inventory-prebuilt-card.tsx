@@ -63,7 +63,7 @@ export function InventoryPrebuiltCard({
         <div className="relative group/card-wrapper h-full">
             <Card 
                 className={cn(
-                    "flex flex-col h-full transform transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] relative group overflow-hidden border-border/50 cursor-pointer bg-card/40 backdrop-blur-sm",
+                    "flex flex-col h-full transform transition-all duration-300 ease-out relative group overflow-hidden border-border/50 cursor-pointer bg-card/40 backdrop-blur-sm",
                     isExpanded ? "ring-2 ring-primary/40 shadow-[0_0_30px_rgba(var(--primary-rgb),0.15)] bg-card/60 -translate-y-1.5" : "hover:-translate-y-1 hover:shadow-xl hover:border-primary/30",
                     isSelected && "border-primary border-2 shadow-primary/20 bg-primary/[0.05]"
                 )}

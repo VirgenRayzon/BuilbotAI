@@ -23,6 +23,7 @@ import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/context/user-profile';
 import React, { useEffect } from 'react';
+import { syncUserClaimsAction, authenticateSystemAccessAction } from '@/app/actions';
 import {
   Dialog,
   DialogContent,
@@ -78,90 +79,23 @@ export default function SystemAccessPage() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setLoading(true);
     setError(null);
-    if (!auth || !firestore) return;
+    if (!auth) return;
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      const userDocRef = doc(firestore, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
+      const idToken = await user.getIdToken();
+      const result = await authenticateSystemAccessAction(idToken, values.roleKey, activeTab);
 
-      let effectiveProfile: any = null;
-
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        effectiveProfile = userData;
-        
-        // Tab Validation
-        if (activeTab === "manager") {
-           const hasManagerAccess = userData.isManager || userData.isAdmin;
-           if (!hasManagerAccess) {
-             await signOut(auth);
-             form.setError('roleKey', { message: 'This account does not have manager privileges.' });
-             setLoading(false);
-             return;
-           }
-           
-           // Migration: If user was an old Admin but doesn't have the isManager flag, add it now
-           if (userData.isAdmin && !userData.isManager) {
-             await updateDoc(userDocRef, { isManager: true });
-             effectiveProfile.isManager = true;
-           }
-           const keyStr = values.roleKey || "none";
-           
-           // Individual Key Validation
-           if (userData.activeManagerKey) {
-             if (userData.activeManagerKey !== keyStr) {
-               await signOut(auth);
-               form.setError('roleKey', { message: 'Incorrect manager key.' });
-               setLoading(false);
-               return;
-             }
-           } else {
-             // Migration Path: Check legacy unified key
-             const keyDocSnap = await getDoc(doc(firestore, 'authKeys', keyStr)).catch(() => null);
-             const isLegacyKey = (keyDocSnap?.exists() && keyDocSnap.data()?.role === "manager") || keyStr === "00216764";
-             
-             if (!isLegacyKey) {
-               await signOut(auth);
-               form.setError('roleKey', { message: 'Incorrect manager key.' });
-               setLoading(false);
-               return;
-             }
-             
-             // Adopt the key into the user profile
-             await updateDoc(userDocRef, { activeManagerKey: keyStr });
-             effectiveProfile.activeManagerKey = keyStr;
-           }
-        } else if (activeTab === "superadmin") {
-           if (!userData.isSuperAdmin) {
-             await signOut(auth);
-             form.setError('roleKey', { message: 'This account does not have super admin privileges.' });
-             setLoading(false);
-             return;
-           }
-           const keyStr = values.roleKey || "none";
-           const keyDocSnap = await getDoc(doc(firestore, 'authKeys', keyStr)).catch(() => null);
-           const isDbKey = keyDocSnap?.exists() && keyDocSnap.data()?.role === "superadmin";
-           if (!isDbKey && keyStr !== "SUPER_ADMIN_123") {
-             await signOut(auth);
-             form.setError('roleKey', { message: 'Incorrect super admin key.' });
-             setLoading(false);
-             return;
-           }
-        }
-      } else {
-        // If profile is missing in Firestore but user exists in Auth, create a basic profile
-        const newProfile = {
-          email: user.email,
-          isManager: activeTab === "manager" || activeTab === "superadmin",
-          isSuperAdmin: activeTab === "superadmin",
-          createdAt: new Date().toISOString()
-        };
-        await setDoc(userDocRef, newProfile);
-        effectiveProfile = newProfile;
+      if (result.error) {
+        await signOut(auth);
+        form.setError('roleKey', { message: result.error });
+        setLoading(false);
+        return;
       }
+
+      await user.getIdToken(true);
 
       toast({
         title: 'System Access Granted',
@@ -170,7 +104,18 @@ export default function SystemAccessPage() {
 
       router.push('/admin');
     } catch (err: any) {
-      setError(err.message || 'An error occurred during system access authentication.');
+      try {
+        await signOut(auth);
+      } catch (signOutErr) {
+        console.error('Error signing out after authentication failure:', signOutErr);
+      }
+      
+      const errMsg = err.message || 'An error occurred during system access authentication.';
+      if (errMsg.includes('auth/invalid-credential') || errMsg.includes('auth/user-not-found') || errMsg.includes('auth/wrong-password')) {
+        setError('Invalid admin credentials.');
+      } else {
+        setError(errMsg);
+      }
     } finally {
       setLoading(false);
     }

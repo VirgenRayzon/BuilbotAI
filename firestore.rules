@@ -4,20 +4,22 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     function isManager() {
-      return request.auth != null && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isManager', false) == true;
+      return request.auth != null && request.auth.token.isManager == true;
     }
 
     function isSuperAdmin() {
-      return request.auth != null && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isSuperAdmin', false) == true;
+      return request.auth != null && request.auth.token.isSuperAdmin == true;
     }
 
     match /users/{userId} {
-      allow read, update, delete: if request.auth.uid == userId || isManager();
-      allow create: if request.auth.uid == userId;
+      allow read, delete: if request.auth.uid == userId || isManager();
+      allow create: if request.auth.uid == userId 
+                    && request.resource.data.get('isManager', false) == false
+                    && request.resource.data.get('isSuperAdmin', false) == false;
+      allow update: if (request.auth.uid == userId && (
+                      !request.resource.data.diff(resource.data).affectedKeys()
+                        .hasAny(['isManager', 'isSuperAdmin', 'activeManagerKey', 'deprecatedKeys'])
+                    )) || isSuperAdmin();
 
       match /favorites/{favoriteId} {
         allow read, write: if request.auth.uid == userId;
@@ -55,6 +57,13 @@ service cloud.firestore {
 
     match /system_notifications/{notifId} {
       allow read, write: if isManager();
+    }
+
+    match /parts/{partId} {
+      allow read: if true;
+      allow update: if request.auth != null && 
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock', 'popularity']);
+      allow write: if isManager();
     }
 
     // Broad match for part categories only

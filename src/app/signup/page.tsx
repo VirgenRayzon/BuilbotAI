@@ -16,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, Terminal, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { createUserProfile } from '@/firebase/database';
+import { syncUserClaimsAction } from '@/app/actions';
 import { UnifiedBackground } from '@/components/landing/unified-background';
 import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';
@@ -71,6 +72,10 @@ export default function SignUpPage() {
         isManager: false,
         isSuperAdmin: false,
       });
+
+      const idToken = await user.getIdToken();
+      await syncUserClaimsAction(idToken);
+      await user.getIdToken(true);
 
       toast({
         title: 'Account Created',

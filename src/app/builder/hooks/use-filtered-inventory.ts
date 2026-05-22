@@ -11,6 +11,7 @@ export function useFilteredInventory(allParts: Part[], build: any, getCountInBui
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState('Date Added');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+    const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(12);
     const [categories, setCategories] = useState([
@@ -30,6 +31,7 @@ export function useFilteredInventory(allParts: Part[], build: any, getCountInBui
 
     const handleCategoryChange = (categoryName: string, selected?: boolean) => {
         setCurrentPage(1);
+        setSelectedBrands([]);
         setCategories(prev => {
             if (categoryName === 'All') {
                 const anyUnselected = prev.some(cat => !cat.selected);
@@ -63,13 +65,18 @@ export function useFilteredInventory(allParts: Part[], build: any, getCountInBui
         const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
         const searchLower = searchQuery.toLowerCase();
 
-        return (allParts?.filter(part => {
+        const baseFilteredParts = allParts?.filter(part => {
             const matchesCategory = selectedCategories.includes(part.category);
             const matchesSearch = part.name.toLowerCase().includes(searchLower) ||
                 (part.brand?.toLowerCase() || '').includes(searchLower) ||
                 part.category.toLowerCase().includes(searchLower);
             return matchesCategory && matchesSearch;
-        }) ?? [])
+        }) ?? [];
+
+        return baseFilteredParts.filter(part => {
+            if (selectedBrands.length === 0) return true;
+            return part.brand && selectedBrands.includes(part.brand);
+        })
         .sort((a, b) => {
             let compare = 0;
             const compA = checkCompatibility(a, build).compatible;
@@ -98,6 +105,25 @@ export function useFilteredInventory(allParts: Part[], build: any, getCountInBui
         return sortedAndFilteredParts.slice(startIndex, startIndex + itemsPerPage);
     }, [sortedAndFilteredParts, currentPage, itemsPerPage]);
 
+    const availableBrands = useMemo(() => {
+        const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
+        const searchLower = searchQuery.toLowerCase();
+        
+        const baseFilteredParts = allParts?.filter(part => {
+            const matchesCategory = selectedCategories.includes(part.category);
+            const matchesSearch = part.name.toLowerCase().includes(searchLower) ||
+                (part.brand?.toLowerCase() || '').includes(searchLower) ||
+                part.category.toLowerCase().includes(searchLower);
+            return matchesCategory && matchesSearch;
+        }) ?? [];
+
+        const brands = new Set<string>();
+        baseFilteredParts.forEach(part => {
+            if (part.brand) brands.add(part.brand);
+        });
+        return Array.from(brands).sort();
+    }, [allParts, categories, searchQuery]);
+
     return {
         searchQuery, setSearchQuery,
         sortBy, setSortBy,
@@ -108,6 +134,9 @@ export function useFilteredInventory(allParts: Part[], build: any, getCountInBui
         handleCategoryChange,
         sortedAndFilteredParts,
         paginatedParts,
-        totalPages
+        totalPages,
+        availableBrands,
+        selectedBrands,
+        setSelectedBrands
     };
 }

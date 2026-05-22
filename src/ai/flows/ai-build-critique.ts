@@ -178,11 +178,44 @@ ${analysisContext}
 If the build is completely empty, kindly invite the user to start picking out parts.`;
 
     try {
-        // CONSOLIDATED STAGE: Analyze, Search, and Format in one call
+        // Step 1: Plain-text research call WITH googleSearchRetrieval (no structured output)
+        console.log("[AI Build Critique] Step 1: Running web search pre-research for benchmarks...");
+        const researchResponse = await ai.generate({
+            model: 'googleai/gemini-2.5-flash',
+            prompt: `You are a PC hardware benchmark researcher. Research the following PC build and provide benchmark data, FPS estimates, and component analysis:
+
+Current Build:
+${buildContext}
+
+User Preferences:
+- Intended Use: ${intendedUse || "Not specified"}
+- Target Performance: ${performanceLevel || "Not specified"}
+- Additional Notes: ${additionalNotes || "None"}
+
+Search for:
+1. Real-world benchmark FPS data for this GPU+CPU combo in 6 popular games (choose games relevant to the user's intended use).
+2. Known bottleneck issues between these components.
+3. Current market alternatives that offer better value.
+4. Any compatibility concerns.
+
+Provide detailed findings with specific numbers.`,
+            config: {
+                temperature: 0.3,
+                googleSearchRetrieval: {},
+            },
+        });
+        const webResearchContext = researchResponse.text;
+        console.log("[AI Build Critique] Step 1 complete. Research context obtained.");
+
+        // Step 2: Structured output prompt WITHOUT googleSearchRetrieval
+        console.log("[AI Build Critique] Step 2: Generating structured critique...");
         const consolidatedPrompt = `${prompt}
         
+WEB SEARCH RESEARCH CONTEXT (Use this data for accurate FPS estimates and component analysis):
+${webResearchContext}
+
 RESEARCH & ANALYSIS INSTRUCTIONS:
-- Use Google Search if you need benchmarks, specific component capabilities, or market data to provide a better critique.
+- Use the web research context above for accurate benchmarks and FPS data.
 - Analyze the build for pros, cons, bottleneck balance, and FPS estimates as described above.
 - Format your final findings strictly into the requested JSON schema.
 
@@ -196,19 +229,18 @@ REQUIRED OUTPUT SCHEMA:
 Output strictly the JSON object.`;
 
         const response = await ai.generate({
-            model: 'googleai/gemini-3-flash-preview',
+            model: 'googleai/gemini-2.5-flash',
             prompt: consolidatedPrompt,
             output: {
                 schema: aiBuildCritiqueOutputSchema,
             },
             config: {
                 temperature: 0.2,
-                googleSearchRetrieval: {}
             },
         });
 
         if (!response.output) {
-            throw new Error("AI returned empty output during consolidated build critique.");
+            throw new Error("AI returned empty output during build critique.");
         }
 
         return response.output;

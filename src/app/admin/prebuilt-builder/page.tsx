@@ -73,48 +73,13 @@ export default function PrebuiltBuilderPage() {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
 
-    // Fetch collections
-    const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
-    const { data: cpus, loading: cpusLoading } = useCollection<PartWithoutCategory>(cpuQuery);
-    const gpuQuery = useMemo(() => firestore ? collection(firestore, 'GPU') : null, [firestore]);
-    const { data: gpus, loading: gpusLoading } = useCollection<PartWithoutCategory>(gpuQuery);
-    const motherboardQuery = useMemo(() => firestore ? collection(firestore, 'Motherboard') : null, [firestore]);
-    const { data: motherboards, loading: motherboardsLoading } = useCollection<PartWithoutCategory>(motherboardQuery);
-    const ramQuery = useMemo(() => firestore ? collection(firestore, 'RAM') : null, [firestore]);
-    const { data: rams, loading: ramsLoading } = useCollection<PartWithoutCategory>(ramQuery);
-    const storageQuery = useMemo(() => firestore ? collection(firestore, 'Storage') : null, [firestore]);
-    const { data: storages, loading: storagesLoading } = useCollection<PartWithoutCategory>(storageQuery);
-    const psuQuery = useMemo(() => firestore ? collection(firestore, 'PSU') : null, [firestore]);
-    const { data: psus, loading: psusLoading } = useCollection<PartWithoutCategory>(psuQuery);
-    const caseQuery = useMemo(() => firestore ? collection(firestore, 'Case') : null, [firestore]);
-    const { data: cases, loading: casesLoading } = useCollection<PartWithoutCategory>(caseQuery);
-    const coolerQuery = useMemo(() => firestore ? collection(firestore, 'Cooler') : null, [firestore]);
-    const { data: coolers, loading: coolersLoading } = useCollection<PartWithoutCategory>(coolerQuery);
-    const monitorQuery = useMemo(() => firestore ? collection(firestore, 'Monitor') : null, [firestore]);
-    const { data: monitors, loading: monitorsLoading } = useCollection<PartWithoutCategory>(monitorQuery);
-    const keyboardQuery = useMemo(() => firestore ? collection(firestore, 'Keyboard') : null, [firestore]);
-    const { data: keyboards, loading: keyboardsLoading } = useCollection<PartWithoutCategory>(keyboardQuery);
-    const mouseQuery = useMemo(() => firestore ? collection(firestore, 'Mouse') : null, [firestore]);
-    const { data: mice, loading: miceLoading } = useCollection<PartWithoutCategory>(mouseQuery);
-    const headsetQuery = useMemo(() => firestore ? collection(firestore, 'Headset') : null, [firestore]);
-    const { data: headsets, loading: headsetsLoading } = useCollection<PartWithoutCategory>(headsetQuery);
+    // Fetch unified parts collection
+    const partsQuery = useMemo(() => firestore ? collection(firestore, 'parts') : null, [firestore]);
+    const { data: rawParts, loading: partsLoading } = useCollection<Part>(partsQuery);
 
     const allParts = useMemo(() => {
-        const parts: Part[] = [];
-        cpus?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'CPU' }));
-        gpus?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'GPU' }));
-        motherboards?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'Motherboard' }));
-        rams?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'RAM' }));
-        storages?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'Storage' }));
-        psus?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'PSU' }));
-        cases?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'Case' }));
-        coolers?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'Cooler' }));
-        monitors?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'Monitor' }));
-        keyboards?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'Keyboard' }));
-        mice?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'Mouse' }));
-        headsets?.filter(p => !p.isArchived).forEach(p => parts.push({ ...p, category: 'Headset' }));
-        return parts;
-    }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers, monitors, keyboards, mice, headsets]);
+        return (rawParts || []).filter(p => !p.isArchived);
+    }, [rawParts]);
 
     const [build, setBuild] = useState<Record<string, ComponentData | ComponentData[] | null>>({
         Case: null, Motherboard: null, CPU: null, GPU: null, RAM: [], Storage: [], PSU: null, Cooler: null,
@@ -162,48 +127,48 @@ export default function PrebuiltBuilderPage() {
     };
 
     const handleRemovePart = (category: string, index?: number) => {
-        setBuild(prev => {
-            const next = { ...prev };
-            if ((category === 'Storage' || category === 'RAM') && typeof index === 'number') {
-                const currentItems = [...(next[category] as ComponentData[])];
-                currentItems.splice(index, 1);
-                next[category] = currentItems;
-            } else {
-                next[category] = null;
+        const next = { ...build };
+        let toastToFire: { title: string, description: string } | null = null;
+        if ((category === 'Storage' || category === 'RAM') && typeof index === 'number') {
+            const currentItems = [...(next[category] as ComponentData[])];
+            currentItems.splice(index, 1);
+            next[category] = currentItems;
+        } else {
+            next[category] = null;
 
-                // Destructive removal logic
-                if (category === 'Case') {
-                    const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
-                    dependentParts.forEach(key => {
-                        if (key === 'RAM' || key === 'Storage') next[key] = [];
-                        else next[key] = null;
-                    });
-                    toast({ title: 'Build Reset', description: 'Removing the case removes all internal components.' });
-                } else if (category === 'Motherboard') {
-                    const dependentParts = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
-                    dependentParts.forEach(key => {
-                        if (key === 'RAM' || key === 'Storage') next[key] = [];
-                        else next[key] = null;
-                    });
-                    toast({ title: 'Components Removed', description: 'Removing the motherboard removes all dependent internal parts.' });
-                }
-
-                const currentCooler = next['Cooler'] as ComponentData | null;
-                if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
-                    next['Cooler'] = null;
-                    toast({ title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' });
-                }
+            // Destructive removal logic
+            if (category === 'Case') {
+                const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                dependentParts.forEach(key => {
+                    if (key === 'RAM' || key === 'Storage') next[key] = [];
+                    else next[key] = null;
+                });
+                toastToFire = { title: 'Build Reset', description: 'Removing the case removes all internal components.' };
+            } else if (category === 'Motherboard') {
+                const dependentParts = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                dependentParts.forEach(key => {
+                    if (key === 'RAM' || key === 'Storage') next[key] = [];
+                    else next[key] = null;
+                });
+                toastToFire = { title: 'Components Removed', description: 'Removing the motherboard removes all dependent internal parts.' };
             }
-            return next;
-        });
+
+            const currentCooler = next['Cooler'] as ComponentData | null;
+            if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
+                next['Cooler'] = null;
+                toastToFire = { title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' };
+            }
+        }
+        setBuild(next);
+        if (toastToFire) toast(toastToFire);
     };
 
     const [categories, setCategories] = useState(
         componentCategories.map(c => ({ name: c.name, selected: true }))
     );
 
-
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
     const [sortBy, setSortBy] = useState('Date Added');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
     const [view, setView] = useState<'grid' | 'list'>('grid');
@@ -224,6 +189,7 @@ export default function PrebuiltBuilderPage() {
 
     const handleCategoryChange = (categoryName: string, selected: boolean) => {
         setCurrentPage(1);
+        setSelectedBrands([]);
         setCategories(prev => {
             if (categoryName === 'All') {
                 const anyUnselected = prev.some(cat => !cat.selected);
@@ -242,24 +208,7 @@ export default function PrebuiltBuilderPage() {
         // Determine if we are removing an existing single-slot part
         const isCurrentlySelected = category !== 'Storage' && category !== 'RAM' && (build[category] as ComponentData)?.model === part.name;
 
-        // Sequence Validation (Only enforce when adding new parts)
-        if (!isCurrentlySelected) {
-            if (category !== 'Case' && !build['Case']) {
-                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a Case first to establish physical dimensions.' });
-                return;
-            }
-            if (category !== 'Case' && category !== 'Motherboard' && !build['Motherboard']) {
-                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a Motherboard next to establish socket compatibility.' });
-                return;
-            }
-            // For accessories like monitors, you might not strictly need a CPU, but for core components it makes sense. 
-            // We'll enforce CPU next for all internal components.
-            const internalComponents = ['GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
-            if (internalComponents.includes(category) && !build['CPU']) {
-                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a CPU next to establish core performance baseline.' });
-                return;
-            }
-        }
+        // Sequence Validation (Removed)
 
         const { compatible, message } = checkCompatibility(part, build);
 
@@ -296,47 +245,46 @@ export default function PrebuiltBuilderPage() {
                 dimensions: part.dimensions,
             };
 
-            setBuild(prevBuild => {
-                const currentItems = Array.isArray(prevBuild[category]) ? (prevBuild[category] as ComponentData[]) : (prevBuild[category] ? [prevBuild[category] as ComponentData] : []);
-                return {
-                    ...prevBuild,
-                    [category]: [...currentItems, componentData]
-                };
+            const currentItems = Array.isArray(build[category]) ? (build[category] as ComponentData[]) : (build[category] ? [build[category] as ComponentData] : []);
+            setBuild({
+                ...build,
+                [category]: [...currentItems, componentData]
             });
             toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
             return;
         }
 
         if (isCurrentlySelected) {
-            setBuild(prev => {
-                const next = { ...prev };
-                next[category] = null;
-                if (category === 'Case') {
-                    const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
-                    dependentParts.forEach(key => {
-                        if (key === 'RAM' || key === 'Storage') next[key] = [];
-                        else next[key] = null;
-                    });
-                    toast({ title: 'Build Reset', description: 'Case removed.' });
-                } else if (category === 'Motherboard') {
-                    const dependentParts = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
-                    dependentParts.forEach(key => {
-                        if (key === 'RAM' || key === 'Storage') next[key] = [];
-                        else next[key] = null;
-                    });
-                    toast({ title: 'Components Removed', description: 'Motherboard removed.' });
-                }
+            const next = { ...build };
+            next[category] = null;
+            const toastsToShow: { title: string, description: string }[] = [];
+            
+            if (category === 'Case') {
+                const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                dependentParts.forEach(key => {
+                    if (key === 'RAM' || key === 'Storage') next[key] = [];
+                    else next[key] = null;
+                });
+                toastsToShow.push({ title: 'Build Reset', description: 'Case removed.' });
+            } else if (category === 'Motherboard') {
+                const dependentParts = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                dependentParts.forEach(key => {
+                    if (key === 'RAM' || key === 'Storage') next[key] = [];
+                    else next[key] = null;
+                });
+                toastsToShow.push({ title: 'Components Removed', description: 'Motherboard removed.' });
+            }
 
-                // Handle CPU stock cooler logic
-                const currentCooler = next['Cooler'] as ComponentData | null;
-                if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
-                    next['Cooler'] = null;
-                    toast({ title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' });
-                }
+            // Handle CPU stock cooler logic
+            const currentCooler = next['Cooler'] as ComponentData | null;
+            if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
+                next['Cooler'] = null;
+                toastsToShow.push({ title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' });
+            }
 
-                return next;
-            });
-            toast({ title: 'Part Removed', description: `${part.name} has been removed from your build.` });
+            setBuild(next);
+            toastsToShow.push({ title: 'Part Removed', description: `${part.name} has been removed from your build.` });
+            toastsToShow.forEach(t => toast(t));
         } else {
             if (!compatible) {
                 toast({
@@ -370,29 +318,27 @@ export default function PrebuiltBuilderPage() {
                 dimensions: part.dimensions,
             };
 
-            setBuild(prev => {
-                const next = { ...prev };
-                const prevPart = next[category] as ComponentData | null;
-                next[category] = componentData;
+            const next = { ...build };
+            const prevPart = next[category] as ComponentData | null;
+            next[category] = componentData;
+            const toastsToShow: { title: string, description: string }[] = [];
 
-                if (category === 'Case' && prevPart && prevPart.id !== componentData.id) {
-                    const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
-                    dependentParts.forEach(key => {
-                        if (key === 'RAM' || key === 'Storage') next[key] = [];
-                        else next[key] = null;
-                    });
-                    toast({ title: 'Build Updated', description: 'Case changed.' });
-                } else if (category === 'Motherboard' && prevPart && prevPart.id !== componentData.id) {
-                    const dependentParts = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
-                    dependentParts.forEach(key => {
-                        if (key === 'RAM' || key === 'Storage') next[key] = [];
-                        else next[key] = null;
-                    });
-                    toast({ title: 'Build Updated', description: 'Motherboard changed.' });
-                }
-                return next;
-            });
-            toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
+            if (category === 'Case' && prevPart && prevPart.id !== componentData.id) {
+                const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                dependentParts.forEach(key => {
+                    if (key === 'RAM' || key === 'Storage') next[key] = [];
+                    else next[key] = null;
+                });
+                toastsToShow.push({ title: 'Build Updated', description: 'Case changed.' });
+            } else if (category === 'Motherboard' && prevPart && prevPart.id !== componentData.id) {
+                const dependentParts = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+                dependentParts.forEach(key => {
+                    if (key === 'RAM' || key === 'Storage') next[key] = [];
+                    else next[key] = null;
+                });
+                toastsToShow.push({ title: 'Build Updated', description: 'Motherboard changed.' });
+            }
+            toastsToShow.push({ title: 'Part Added', description: `${part.name} has been added to your build.` });
 
             // Handle CPU stock cooler logic
             if (category === 'CPU') {
@@ -402,30 +348,26 @@ export default function PrebuiltBuilderPage() {
                     const isAmd = part.name.toLowerCase().includes('amd');
                     const coolerModel = isIntel ? "Intel Laminar RM1 CPU Cooler" : isAmd ? "AMD Wraith MAX CPU Cooler with RGB LED" : "Stock Cooler";
                     
-                    setBuild(prev => ({
-                        ...prev,
-                        Cooler: {
-                            id: isAmd ? 'uGiAh2JerLwnDe5VW431' : 'included-stock-cooler',
-                            model: coolerModel,
-                            price: 0,
-                            description: `Bundled cooler.`,
-                            image: "https://picsum.photos/seed/stockcooler/800/600",
-                            imageHint: "included cooler",
-                            icon: Wind,
-                            wattage: 0,
-                            specifications: { "Type": "Air (Stock)" }
-                        }
-                    }));
+                    next['Cooler'] = {
+                        id: isAmd ? 'uGiAh2JerLwnDe5VW431' : 'included-stock-cooler',
+                        model: coolerModel,
+                        price: 0,
+                        description: `Bundled cooler.`,
+                        image: "https://picsum.photos/seed/stockcooler/800/600",
+                        imageHint: "included cooler",
+                        icon: Wind,
+                        wattage: 0,
+                        specifications: { "Type": "Air (Stock)" }
+                    };
                 } else {
                     // If tray and currently have stock cooler, remove it
-                    setBuild(prev => {
-                        if ((prev.Cooler as ComponentData)?.id === 'included-stock-cooler') {
-                            return { ...prev, Cooler: null };
-                        }
-                        return prev;
-                    });
+                    if ((next['Cooler'] as ComponentData)?.id === 'included-stock-cooler') {
+                        next['Cooler'] = null;
+                    }
                 }
             }
+            setBuild(next);
+            toastsToShow.forEach(t => toast(t));
         }
     };
 
@@ -434,14 +376,18 @@ export default function PrebuiltBuilderPage() {
         const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
         const searchLower = searchQuery.toLowerCase();
 
-        const parts = (allParts?.filter(part => {
+        const baseFilteredParts = allParts?.filter(part => {
             const matchesCategory = selectedCategories.includes(part.category);
             const matchesSearch = part.name.toLowerCase().includes(searchLower) ||
                 (part.brand?.toLowerCase() || '').includes(searchLower) ||
                 part.category.toLowerCase().includes(searchLower);
             return matchesCategory && matchesSearch;
-        }) ?? [])
-            .sort((a, b) => {
+        }) ?? [];
+
+        return baseFilteredParts.filter(part => {
+            if (selectedBrands.length === 0) return true;
+            return part.brand && selectedBrands.includes(part.brand);
+        }).sort((a, b) => {
                 let compare = 0;
                 if (sortBy === 'Name') compare = (a.name || '').localeCompare(b.name || '');
                 else if (sortBy === 'Price') compare = (a.price || 0) - (b.price || 0);
@@ -451,9 +397,7 @@ export default function PrebuiltBuilderPage() {
                     compare = new Date(dateA).getTime() - new Date(dateB).getTime();
                 }
                 return sortDirection === 'asc' ? compare : -compare;
-            });
-
-        return parts.map(part => {
+            }).map(part => {
             const effectiveStock = part.stock - getCountInBuild(part.name);
             return {
                 ...part,
@@ -461,7 +405,26 @@ export default function PrebuiltBuilderPage() {
                 compatibility: checkCompatibility(part, build)
             };
         });
-    }, [allParts, categories, sortBy, sortDirection, build, searchQuery]);
+    }, [allParts, categories, sortBy, sortDirection, build, searchQuery, selectedBrands]);
+
+    const availableBrands = useMemo(() => {
+        const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
+        const searchLower = searchQuery.toLowerCase();
+        
+        const baseFilteredParts = allParts?.filter(part => {
+            const matchesCategory = selectedCategories.includes(part.category);
+            const matchesSearch = part.name.toLowerCase().includes(searchLower) ||
+                (part.brand?.toLowerCase() || '').includes(searchLower) ||
+                part.category.toLowerCase().includes(searchLower);
+            return matchesCategory && matchesSearch;
+        }) ?? [];
+
+        const brands = new Set<string>();
+        baseFilteredParts.forEach(part => {
+            if (part.brand) brands.add(part.brand);
+        });
+        return Array.from(brands).sort();
+    }, [allParts, categories, searchQuery]);
 
     const totalPages = Math.ceil(sortedAndFilteredParts.length / itemsPerPage);
     const paginatedParts = useMemo(() => {
@@ -491,7 +454,7 @@ export default function PrebuiltBuilderPage() {
         });
     };
 
-    const isBuilderLoading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading || monitorsLoading || keyboardsLoading || miceLoading || headsetsLoading || authLoading;
+    const isBuilderLoading = partsLoading || authLoading;
 
     // Sync with global layout loading
     useEffect(() => {
@@ -564,6 +527,9 @@ export default function PrebuiltBuilderPage() {
                             showViewToggle={true}
                             searchQuery={searchQuery}
                             onSearchQueryChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
+                            availableBrands={availableBrands}
+                            selectedBrands={selectedBrands}
+                            onBrandChange={setSelectedBrands}
                         />
 
                         {isBuilderLoading ? null : sortedAndFilteredParts.length > 0 ? (

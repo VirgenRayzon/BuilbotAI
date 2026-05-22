@@ -58,6 +58,7 @@ export function StockTab({
     setConfirmAction
 }: StockTabProps) {
     const [partSearchQuery, setPartSearchQuery] = useState('');
+    const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
     const [partSortBy, setPartSortBy] = useState('Date Added');
     const [partSortDirection, setPartSortDirection] = useState<'asc' | 'desc'>('desc');
     const [activeView, setActiveView] = useState<'grid' | 'table'>('grid');
@@ -66,14 +67,19 @@ export function StockTab({
 
     const filteredAndSortedParts = useMemo(() => {
         const selectedCategories = partCategories.filter(c => c.selected).map(c => c.name);
-        return (parts?.filter(part => {
+        
+        const baseFilteredParts = parts?.filter(part => {
             const matchesCategory = selectedCategories.includes(part.category);
             const matchesSearch = part.name.toLowerCase().includes(partSearchQuery.toLowerCase()) ||
                 part.brand.toLowerCase().includes(partSearchQuery.toLowerCase());
             const isNotArchived = !part.isArchived;
             return matchesCategory && matchesSearch && isNotArchived;
-        }) ?? [])
-            .sort((a, b) => {
+        }) ?? [];
+
+        return baseFilteredParts.filter(part => {
+            if (selectedBrands.length === 0) return true;
+            return part.brand && selectedBrands.includes(part.brand);
+        }).sort((a, b) => {
                 let compare = 0;
                 if (partSortBy === 'Name') compare = a.name.localeCompare(b.name);
                 else if (partSortBy === 'Price') compare = a.price - b.price;
@@ -86,7 +92,25 @@ export function StockTab({
                 }
                 return partSortDirection === 'asc' ? compare : -compare;
             });
-    }, [parts, partCategories, partSortBy, partSortDirection, partSearchQuery]);
+    }, [parts, partCategories, partSortBy, partSortDirection, partSearchQuery, selectedBrands]);
+
+    const availableBrands = useMemo(() => {
+        const selectedCategories = partCategories.filter(c => c.selected).map(c => c.name);
+        
+        const baseFilteredParts = parts?.filter(part => {
+            const matchesCategory = selectedCategories.includes(part.category);
+            const matchesSearch = part.name.toLowerCase().includes(partSearchQuery.toLowerCase()) ||
+                part.brand.toLowerCase().includes(partSearchQuery.toLowerCase());
+            const isNotArchived = !part.isArchived;
+            return matchesCategory && matchesSearch && isNotArchived;
+        }) ?? [];
+
+        const brands = new Set<string>();
+        baseFilteredParts.forEach(part => {
+            if (part.brand) brands.add(part.brand);
+        });
+        return Array.from(brands).sort();
+    }, [parts, partCategories, partSearchQuery]);
 
     const partTotalPages = Math.ceil(filteredAndSortedParts.length / partItemsPerPage);
     const currentParts = useMemo(() => {
@@ -116,9 +140,10 @@ export function StockTab({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
                             <DropdownMenuCheckboxItem
-                                checked={partCategories.every(c => c.selected)}
+                                    checked={partCategories.every(c => c.selected)}
                                 onCheckedChange={() => {
                                     const anyUnselected = partCategories.some(cat => !cat.selected);
+                                    setSelectedBrands([]);
                                     onSetCategories(partCategories.map(c => ({ ...c, selected: anyUnselected })));
                                 }}
                             >
@@ -130,6 +155,7 @@ export function StockTab({
                                     key={category.name}
                                     checked={category.selected && !partCategories.every(c => c.selected)}
                                     onCheckedChange={() => {
+                                        setSelectedBrands([]);
                                         // STRICT SINGLE-SELECT: Clicking any category selects ONLY that one.
                                         onSetCategories(partCategories.map(c => ({
                                             ...c,
@@ -142,6 +168,41 @@ export function StockTab({
                             ))}
                         </DropdownMenuContent>
                     </DropdownMenu>
+
+                    {availableBrands.length > 0 && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30">
+                                    <Filter className="h-4 w-4" />
+                                    Brands
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
+                                <DropdownMenuCheckboxItem
+                                    checked={selectedBrands.length === 0}
+                                    onCheckedChange={() => setSelectedBrands([])}
+                                >
+                                    All Brands
+                                </DropdownMenuCheckboxItem>
+                                <Separator className="my-1 opacity-50" />
+                                {availableBrands.map((brand) => (
+                                    <DropdownMenuCheckboxItem
+                                        key={brand}
+                                        checked={selectedBrands.includes(brand)}
+                                        onCheckedChange={(checked) => {
+                                            if (checked) {
+                                                setSelectedBrands([...selectedBrands, brand]);
+                                            } else {
+                                                setSelectedBrands(selectedBrands.filter((b) => b !== brand));
+                                            }
+                                        }}
+                                    >
+                                        {brand}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">

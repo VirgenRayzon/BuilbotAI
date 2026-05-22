@@ -58,3 +58,8 @@ export function getAdminStorage() {
     initializeAdmin();
     return admin.storage();
 }
+
+export function getAdminAuth() {
+    initializeAdmin();
+    return admin.auth();
+}

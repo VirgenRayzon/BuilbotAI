@@ -1,4 +1,43 @@
-node execution/generate_project_structure.js
-git add docs/project_structure.md
-# Commit the changes if there are any
-git diff-index --quiet HEAD || git commit -m "chore: update project structure [skip ci]"
+#!/bin/sh
+
+# Read stdin to check if we are pushing to main
+is_main=false
+while read local_ref local_sha remote_ref remote_sha
+do
+  if [ "$remote_ref" = "refs/heads/main" ]; then
+    is_main=true
+  fi
+done
+
+if [ "$is_main" = true ]; then
+  echo "Pre-push: Pushing to main branch. Running auto-generation tasks..."
+  
+  # Run changelog and project structure updates
+  node execution/update_changelog.js
+  node execution/generate_project_structure.js
+  
+  # Stage the generated files
+  git add CHANGELOG.md docs/project_structure.md
+  
+  # If there are changes, commit them and push HEAD:refs/heads/main with --no-verify, then cancel original push
+  if ! git diff-index --quiet HEAD; then
+    echo "Pre-push: Changes to docs/changelog detected. Committing..."
+    git commit -m "chore: update changelog and project structure [skip ci]" --no-verify
+    
+    # We push to the remote specified in the first argument ($1)
+    echo "Pre-push: Pushing the updated branch to $1..."
+    git push "$1" HEAD:refs/heads/main --no-verify
+    
+    # Abort the original push command so we don't push the outdated commit/ref
+    echo "Pre-push: Original push aborted in favor of the updated push."
+    exit 1
+  else
+    echo "Pre-push: No document updates required."
+  fi
+else
+  # Pushing to non-main branch. Update project structure locally
+  echo "Pre-push: Pushing to non-main branch. Updating project structure locally..."
+  node execution/generate_project_structure.js
+  git add docs/project_structure.md
+  git diff-index --quiet HEAD || git commit -m "chore: update project structure [skip ci]"
+fi

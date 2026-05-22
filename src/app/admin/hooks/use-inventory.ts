@@ -16,7 +16,7 @@ import {
 import { createAuditLog } from '@/firebase/audit';
 import { AddPartFormSchema } from '@/hooks/use-part-form';
 import { AddPrebuiltFormSchema } from '@/components/add-prebuilt-dialog';
-import { logAdminAction } from '@/app/actions';
+import { logAdminAction, clearCatalogCache } from '@/app/actions';
 
 type PartWithoutCategory = Omit<Part, 'category'>;
 
@@ -43,52 +43,15 @@ export function useInventory(profile: any) {
     const { toast } = useToast();
 
     // Data Fetching
-    const cpuQuery = useMemo(() => firestore ? collection(firestore, 'CPU') : null, [firestore]);
-    const { data: cpus, loading: cpusLoading } = useCollection<PartWithoutCategory>(cpuQuery);
-    const gpuQuery = useMemo(() => firestore ? collection(firestore, 'GPU') : null, [firestore]);
-    const { data: gpus, loading: gpusLoading } = useCollection<PartWithoutCategory>(gpuQuery);
-    const motherboardQuery = useMemo(() => firestore ? collection(firestore, 'Motherboard') : null, [firestore]);
-    const { data: motherboards, loading: motherboardsLoading } = useCollection<PartWithoutCategory>(motherboardQuery);
-    const ramQuery = useMemo(() => firestore ? collection(firestore, 'RAM') : null, [firestore]);
-    const { data: rams, loading: ramsLoading } = useCollection<PartWithoutCategory>(ramQuery);
-    const storageQuery = useMemo(() => firestore ? collection(firestore, 'Storage') : null, [firestore]);
-    const { data: storages, loading: storagesLoading } = useCollection<PartWithoutCategory>(storageQuery);
-    const psuQuery = useMemo(() => firestore ? collection(firestore, 'PSU') : null, [firestore]);
-    const { data: psus, loading: psusLoading } = useCollection<PartWithoutCategory>(psuQuery);
-    const caseQuery = useMemo(() => firestore ? collection(firestore, 'Case') : null, [firestore]);
-    const { data: cases, loading: casesLoading } = useCollection<PartWithoutCategory>(caseQuery);
-    const coolerQuery = useMemo(() => firestore ? collection(firestore, 'Cooler') : null, [firestore]);
-    const { data: coolers, loading: coolersLoading } = useCollection<PartWithoutCategory>(coolerQuery);
-    const monitorQuery = useMemo(() => firestore ? collection(firestore, 'Monitor') : null, [firestore]);
-    const { data: monitors, loading: monitorsLoading } = useCollection<PartWithoutCategory>(monitorQuery);
-    const keyboardQuery = useMemo(() => firestore ? collection(firestore, 'Keyboard') : null, [firestore]);
-    const { data: keyboards, loading: keyboardsLoading } = useCollection<PartWithoutCategory>(keyboardQuery);
-    const mouseQuery = useMemo(() => firestore ? collection(firestore, 'Mouse') : null, [firestore]);
-    const { data: mice, loading: miceLoading } = useCollection<PartWithoutCategory>(mouseQuery);
-    const headsetQuery = useMemo(() => firestore ? collection(firestore, 'Headset') : null, [firestore]);
-    const { data: headsets, loading: headsetsLoading } = useCollection<PartWithoutCategory>(headsetQuery);
+    const partsQuery = useMemo(() => firestore ? collection(firestore, 'parts') : null, [firestore]);
+    const { data: rawParts, loading: partsLoading } = useCollection<Part>(partsQuery);
 
     const prebuiltSystemsQuery = useMemo(() => firestore ? collection(firestore, 'prebuiltSystems') : null, [firestore]);
     const { data: prebuiltSystems, loading: prebuiltsLoading } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);
 
     const parts = useMemo(() => {
-        const allParts: Part[] = [];
-        cpus?.forEach(p => allParts.push({ ...p, category: 'CPU' }));
-        gpus?.forEach(p => allParts.push({ ...p, category: 'GPU' }));
-        motherboards?.forEach(p => allParts.push({ ...p, category: 'Motherboard' }));
-        rams?.forEach(p => allParts.push({ ...p, category: 'RAM' }));
-        storages?.forEach(p => allParts.push({ ...p, category: 'Storage' }));
-        psus?.forEach(p => allParts.push({ ...p, category: 'PSU' }));
-        cases?.forEach(p => allParts.push({ ...p, category: 'Case' }));
-        coolers?.forEach(p => allParts.push({ ...p, category: 'Cooler' }));
-        monitors?.forEach(p => allParts.push({ ...p, category: 'Monitor' }));
-        keyboards?.forEach(p => allParts.push({ ...p, category: 'Keyboard' }));
-        mice?.forEach(p => allParts.push({ ...p, category: 'Mouse' }));
-        headsets?.forEach(p => allParts.push({ ...p, category: 'Headset' }));
-        return allParts;
-    }, [cpus, gpus, motherboards, rams, storages, psus, cases, coolers, monitors, keyboards, mice, headsets]);
-
-    const partsLoading = cpusLoading || gpusLoading || motherboardsLoading || ramsLoading || storagesLoading || psusLoading || casesLoading || coolersLoading || monitorsLoading || keyboardsLoading || miceLoading || headsetsLoading;
+        return rawParts || [];
+    }, [rawParts]);
 
     // Handlers
     const handleAddPart = async (newPartData: AddPartFormSchema) => {
@@ -104,10 +67,11 @@ export function useInventory(profile: any) {
             actorId: profile?.id || 'unknown',
             actorName: profile?.name || profile?.email || 'Unknown User',
             actorEmail: profile?.email,
-            resourceType: 'Part',
+            scope: 'Part',
             resourceName: newPartData.partName,
             details: `Added new part in category ${newPartData.category}`
         });
+        await clearCatalogCache();
     };
 
     const handleUpdatePart = async (partId: string, category: Part['category'], data: AddPartFormSchema) => {
@@ -130,11 +94,12 @@ export function useInventory(profile: any) {
             actorId: profile?.id || 'unknown',
             actorName: profile?.name || profile?.email || 'Unknown User',
             actorEmail: profile?.email,
-            resourceType: 'Part',
+            scope: 'Part',
             resourceName: data.partName,
             resourceId: partId,
             details: `Updated part in category ${category}`
         });
+        await clearCatalogCache();
     };
 
     const handleUpdatePartStock = async (partId: string, category: Part['category'], newStock: number) => {
@@ -146,11 +111,12 @@ export function useInventory(profile: any) {
             actorId: profile?.id || 'unknown',
             actorName: profile?.name || profile?.email || 'Unknown User',
             actorEmail: profile?.email,
-            resourceType: 'Part',
+            scope: 'Part',
             resourceName: partName,
             resourceId: partId,
             details: `Updated stock to ${newStock} for part in category ${category}`
         });
+        await clearCatalogCache();
     };
 
     const handleDeletePart = async (partId: string, category: Part['category']) => {
@@ -166,11 +132,12 @@ export function useInventory(profile: any) {
             actorId: profile?.id || 'unknown',
             actorName: profile?.name || profile?.email || 'Unknown User',
             actorEmail: profile?.email,
-            resourceType: 'Part',
+            scope: 'Part',
             resourceName: partName,
             resourceId: partId,
             details: `Deleted part in category ${category}`
         });
+        await clearCatalogCache();
     };
 
     const handleArchivePart = async (partId: string, category: Part['category'], isArchived: boolean = true) => {
@@ -193,11 +160,12 @@ export function useInventory(profile: any) {
                 actorId: profile?.id || 'unknown',
                 actorName: profile?.name || profile?.email || 'Unknown User',
                 actorEmail: profile?.email,
-                resourceType: 'Part',
+                scope: 'Part',
                 resourceName: partName,
                 resourceId: partId,
                 details: `${isArchived ? 'Archived' : 'Restored'} part in category ${category}`
             });
+            await clearCatalogCache();
             toast({ title: isArchived ? "Item Archived" : "Item Restored", description: `${isArchived ? "Moved to archive." : "Restored to stock."}` });
         } catch (error) {
             console.error("Archive error:", error);
@@ -214,10 +182,11 @@ export function useInventory(profile: any) {
             actorId: profile?.id || 'unknown',
             actorName: profile?.name || profile?.email || 'Unknown User',
             actorEmail: profile?.email,
-            resourceType: 'Prebuilt',
+            scope: 'Prebuilt',
             resourceName: newPrebuiltData.name,
             details: `Added new prebuilt system`
         });
+        await clearCatalogCache();
     };
 
     const handleUpdatePrebuilt = async (systemId: string, data: AddPrebuiltFormSchema) => {
@@ -228,11 +197,12 @@ export function useInventory(profile: any) {
             actorId: profile?.id || 'unknown',
             actorName: profile?.name || profile?.email || 'Unknown User',
             actorEmail: profile?.email,
-            resourceType: 'Prebuilt',
+            scope: 'Prebuilt',
             resourceName: data.name,
             resourceId: systemId,
             details: `Updated prebuilt system`
         });
+        await clearCatalogCache();
     };
 
     const handleDeletePrebuilt = async (systemId: string) => {
@@ -248,11 +218,12 @@ export function useInventory(profile: any) {
             actorId: profile?.id || 'unknown',
             actorName: profile?.name || profile?.email || 'Unknown User',
             actorEmail: profile?.email,
-            resourceType: 'Prebuilt',
+            scope: 'Prebuilt',
             resourceName: systemName,
             resourceId: systemId,
             details: `Deleted prebuilt system`
         });
+        await clearCatalogCache();
     };
 
     const handleArchivePrebuilt = async (systemId: string, isArchived: boolean = true) => {
@@ -275,11 +246,12 @@ export function useInventory(profile: any) {
                 actorId: profile?.id || 'unknown',
                 actorName: profile?.name || profile?.email || 'Unknown User',
                 actorEmail: profile?.email,
-                resourceType: 'Prebuilt',
+                scope: 'Prebuilt',
                 resourceName: systemName,
                 resourceId: systemId,
                 details: `${isArchived ? 'Archived' : 'Restored'} prebuilt system`
             });
+            await clearCatalogCache();
             toast({ title: isArchived ? "Prebuilt Archived" : "Prebuilt Restored", description: `${isArchived ? "Moved to archive." : "Restored to systems."}` });
         } catch (error) {
             console.error("Archive error:", error);

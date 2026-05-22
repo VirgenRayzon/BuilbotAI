@@ -54,6 +54,10 @@ interface InventoryToolbarProps {
 
   showDetails?: boolean;
   onShowDetailsChange?: (value: boolean) => void;
+
+  availableBrands?: string[];
+  selectedBrands?: string[];
+  onBrandChange?: (brands: string[]) => void;
 }
 
 export function InventoryToolbar({
@@ -72,6 +76,9 @@ export function InventoryToolbar({
   onSearchQueryChange,
   showDetails,
   onShowDetailsChange,
+  availableBrands = [],
+  selectedBrands = [],
+  onBrandChange,
 }: InventoryToolbarProps) {
   const hasIcons = React.useMemo(() => categories.some(c => c.icon), [categories]);
 
@@ -158,6 +165,44 @@ export function InventoryToolbar({
                     onCheckedChange={(checked) => onCategoryChange(cat.name, !!checked)}
                   >
                     {cat.name}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {availableBrands.length > 0 && onBrandChange && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="h-9">
+                  <Filter className="mr-2 h-4 w-4" />
+                  Brands
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="start">
+                <DropdownMenuLabel>Filter by Brand</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem
+                  checked={selectedBrands.length === 0}
+                  onCheckedChange={() => onBrandChange([])}
+                  className="font-bold"
+                >
+                  All Brands
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuSeparator />
+                {availableBrands.map((brand) => (
+                  <DropdownMenuCheckboxItem
+                    key={brand}
+                    checked={selectedBrands.includes(brand)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        onBrandChange([...selectedBrands, brand]);
+                      } else {
+                        onBrandChange(selectedBrands.filter((b) => b !== brand));
+                      }
+                    }}
+                  >
+                    {brand}
                   </DropdownMenuCheckboxItem>
                 ))}
               </DropdownMenuContent>

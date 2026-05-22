@@ -108,11 +108,16 @@ export async function aiBuildAdvisorRecommendations(
 // Prompt Definition
 const aiBuildAdvisorRecommendationsPrompt = ai.definePrompt({
   name: 'aiBuildAdvisorRecommendationsPrompt',
-  input: { schema: AiBuildAdvisorRecommendationsInputSchema.extend({ knowledgeContext: z.string().optional(), storeInventory: z.string().optional() }) },
+  input: { schema: AiBuildAdvisorRecommendationsInputSchema.extend({ knowledgeContext: z.string().optional(), storeInventory: z.string().optional(), webSearchContext: z.string().optional() }) },
   output: { schema: AiBuildAdvisorRecommendationsOutputSchema },
-  model: 'googleai/gemini-3-flash-preview',
+  model: 'googleai/gemini-2.5-flash',
   config: { temperature: 0.1 },
   prompt: `You are an expert PC building advisor specializing in the Philippine market. Your goal is to recommend a set of compatible core components (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, Cooler) for a user based on their specific needs.
+
+{{#if webSearchContext}}
+WEB SEARCH RESEARCH CONTEXT (Use this data for current market pricing and availability):
+{{{webSearchContext}}}
+{{/if}}
 
 {{#if knowledgeContext}}
 EXPERT KNOWLEDGE BASE CONTEXT:
@@ -228,25 +233,52 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
     const knowledgeContext = knowledgeResults.join('\n\n');
 
     let storeInventory = '';
-    if (!input.allowWebSearch) {
+    let webSearchContext: string | undefined;
+
+    if (input.allowWebSearch) {
+      // Step 1: Plain-text research call WITH googleSearchRetrieval (no structured output)
+      console.log('[AI Recommendations] Step 1: Running web search pre-research...');
+      const researchResponse = await ai.generate({
+        model: 'googleai/gemini-2.5-flash',
+        prompt: `You are a PC hardware market researcher specializing in the Philippine market.
+Research the following and provide a detailed summary of current pricing and availability in PHP:
+
+User Requirements:
+- Intended Use: ${input.intendedUse}
+- Budget: ${input.budget} (PHP)
+- Performance Level: ${input.performanceLevel}
+${input.additionalNotes ? `- Additional Notes: ${input.additionalNotes}` : ''}
+
+Search for:
+1. Best CPU options in the Philippines for this budget and use case, with current PHP prices.
+2. Best GPU options in the Philippines for this budget and use case, with current PHP prices.
+3. Compatible motherboard, RAM, storage, PSU, case, and cooler options with PHP prices.
+4. Current market availability and any ongoing deals or promotions.
+
+Provide specific model names and realistic PHP prices from Philippine retailers (Dynaquest, PCHub, EasyPC, etc.).`,
+        config: {
+          temperature: 0.3,
+          googleSearchRetrieval: {},
+        },
+      });
+      webSearchContext = researchResponse.text;
+      console.log('[AI Recommendations] Step 1 complete. Research context obtained.');
+    } else {
       // Fetch store inventory exclusively from Live Firestore if web search is off
       const categoriesToFetch = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'];
       const inventoryResults = await Promise.all(
-          categoriesToFetch.map(cat => getInventoryFromFirestore(cat, undefined, 20))
+          categoriesToFetch.map(cat => getInventoryFromFirestore(cat, undefined, 10))
       );
       storeInventory = inventoryResults.flat().join('\n');
     }
 
+    // Step 2: Structured output prompt WITHOUT googleSearchRetrieval
     const { output } = await aiBuildAdvisorRecommendationsPrompt(
       {
         ...input,
         knowledgeContext,
-        storeInventory: storeInventory || undefined
-      },
-      {
-        config: {
-          googleSearchRetrieval: input.allowWebSearch ? {} : undefined
-        }
+        storeInventory: storeInventory || undefined,
+        webSearchContext,
       }
     );
 

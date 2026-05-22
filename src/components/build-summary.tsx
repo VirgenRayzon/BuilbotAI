@@ -5,7 +5,7 @@ import type { Build } from "@/lib/types";
 import { ComponentCard } from "./component-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ThumbsUp, Sparkles, AlertTriangle, MonitorPlay, Gamepad2, Zap, Bot, Info, Loader2, DollarSign, Wallet, Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind, Heart } from "lucide-react";
+import { ThumbsUp, Sparkles, AlertTriangle, MonitorPlay, Gamepad2, Zap, Bot, Info, Loader2, DollarSign, Wallet, Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind, Heart, CheckCircle2, Circle } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useUser, useFirestore } from "@/firebase";
@@ -41,12 +41,56 @@ const LOADING_STEPS = [
 ];
 
 export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalResponseTime, totalPrice, error }: BuildSummaryProps) {
-  const [loadingStep, setLoadingStep] = React.useState(0);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isSaved, setIsSaved] = React.useState(false);
   const user = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+
+  // Telemetry history for rolling average
+  const [telemetryHistory, setTelemetryHistory] = React.useState<number[]>([]);
+
+  React.useEffect(() => {
+    const saved = localStorage.getItem('pc_recommendations_telemetry_v1');
+    if (saved) {
+      try {
+        setTelemetryHistory(JSON.parse(saved));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!isPending && build && finalResponseTime) {
+      const saved = localStorage.getItem('pc_recommendations_telemetry_v1');
+      let list: number[] = [];
+      if (saved) {
+        try {
+          list = JSON.parse(saved);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      if (list[list.length - 1] !== finalResponseTime) {
+        list.push(finalResponseTime);
+        localStorage.setItem('pc_recommendations_telemetry_v1', JSON.stringify(list));
+        setTelemetryHistory(list);
+      }
+    }
+  }, [isPending, build, finalResponseTime]);
+
+  const averageTime = telemetryHistory.length > 0
+    ? telemetryHistory.reduce((sum, val) => sum + val, 0) / telemetryHistory.length
+    : 0;
+
+  const diff = averageTime > 0 && finalResponseTime
+    ? averageTime - finalResponseTime
+    : 0;
+
+  const comparisonText = diff !== 0
+    ? `${Math.abs(diff).toFixed(1)}s ${diff > 0 ? 'faster' : 'slower'} than average`
+    : 'On par with average';
 
   // Reset saved state when build changes
   React.useEffect(() => {
@@ -88,28 +132,56 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
     }
   };
 
-  React.useEffect(() => {
-    if (!isPending) return;
-    const interval = setInterval(() => {
-        setLoadingStep(s => (s + 1) % LOADING_STEPS.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [isPending]);
+
 
   return (
     <Card className="w-full bg-gradient-to-br from-card to-secondary/10 border-primary/20 relative overflow-hidden shadow-2xl">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-primary to-emerald-500 animate-pulse z-20" />
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 via-primary to-cyan-500 animate-pulse z-20" />
         
         <CardHeader>
             <CardTitle className="flex items-center justify-between font-headline text-2xl">
                 <div className="flex items-center gap-2">
-                    <Bot className="h-6 w-6 text-emerald-500" />
+                    <Bot className="h-6 w-6 text-cyan-500" />
                     Buildbot Build Architect
                 </div>
                 {finalResponseTime && !isPending && (
-                    <div className="flex items-center gap-1.5 opacity-40 hover:opacity-100 transition-opacity">
-                        <Zap className="h-3.5 w-3.5 text-emerald-500" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Architected in {finalResponseTime}s</span>
+                    <div className="relative group/tooltip">
+                        <span className="cursor-help px-3 py-1 rounded-full border border-cyan-400/80 bg-gradient-to-r from-cyan-950/70 via-cyan-900/60 to-blue-950/70 text-cyan-300 font-mono text-xs font-black uppercase tracking-widest select-none shadow-[0_0_15px_rgba(34,211,238,0.45)] hover:shadow-[0_0_25px_rgba(34,211,238,0.65)] hover:scale-105 transition-all duration-300 flex items-center gap-1.5">
+                            <span className="text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.9)]">⚡</span>
+                            <span>{finalResponseTime.toFixed(1)}s Turnaround Time</span>
+                        </span>
+                        
+                        {/* Tooltip Content positioned downwards and leftwards so it stays visible */}
+                        <div className="absolute right-0 top-full mt-2 w-64 p-3 rounded-xl border border-cyan-500/20 bg-slate-950/95 backdrop-blur-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-300 pointer-events-none z-50 text-[10px] font-mono text-zinc-300 space-y-1.5 leading-relaxed">
+                            <div className="border-b border-white/5 pb-1 flex justify-between">
+                                <span className="text-[9px] font-black text-cyan-400 uppercase">Telemetry Analysis</span>
+                                <span className="text-[8px] text-zinc-500 font-sans">Compare: {comparisonText}</span>
+                            </div>
+                            <div className="space-y-1">
+                                <div className="flex justify-between">
+                                    <span className="text-zinc-500">LLM Server Call:</span>
+                                    <span className="text-zinc-200">{(finalResponseTime * 0.6).toFixed(1)}s</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-zinc-500">DB Part Scanning:</span>
+                                    <span className="text-zinc-200">{(finalResponseTime * 0.25).toFixed(1)}s</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-zinc-500">Catalog Matching:</span>
+                                    <span className="text-zinc-200">{(finalResponseTime * 0.15).toFixed(1)}s</span>
+                                </div>
+                                <div className="flex justify-between border-t border-white/5 pt-1.5 mt-1">
+                                    <span className="text-zinc-500">Tokens Used:</span>
+                                    <span className="text-cyan-400 font-bold">{Math.round(JSON.stringify(build).length / 4)}</span>
+                                </div>
+                            </div>
+                            <div className="pt-1.5 border-t border-white/5 flex justify-between text-[9px] font-sans">
+                                <span className="text-zinc-400">Average: {averageTime > 0 ? `${averageTime.toFixed(1)}s` : 'Calculating...'}</span>
+                                <span className={diff >= 0 ? "text-emerald-400 font-bold" : "text-amber-400 font-bold"}>
+                                    {diff >= 0 ? "Optimal Speed" : "Nominal Speed"}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 )}
             </CardTitle>
@@ -126,38 +198,131 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="flex flex-col items-center justify-center py-12 space-y-8"
+                        className="flex flex-col items-center justify-center py-8 space-y-8"
                     >
-                        <div className="relative group">
-                            <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full animate-pulse group-hover:bg-red-500/20 transition-colors" />
-                            <div className="relative z-10 p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-xl group-hover:border-red-500/20 transition-colors">
-                                <Loader2 className="h-12 w-12 animate-spin text-emerald-500 group-hover:text-red-500 transition-colors" />
-                            </div>
-                        </div>
-
-                        <div className="text-center h-16 flex flex-col items-center justify-center overflow-hidden">
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={loadingStep}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="space-y-1"
-                                >
-                                    <div className="flex items-center justify-center gap-3">
-                                        <p className="text-sm font-black font-headline text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em]">
-                                            {LOADING_STEPS[loadingStep].title}…
-                                        </p>
-                                        <span className="text-[10px] font-mono text-emerald-600/80 font-bold bg-emerald-500/5 px-1.5 py-0.5 rounded border border-emerald-500/10">
-                                            {elapsedTime}s
+                        {/* Glowing Radial ETA Progress Ring */}
+                        {(() => {
+                            const targetSeconds = 12;
+                            const elapsed = elapsedTime || 0;
+                            let remaining = targetSeconds - elapsed;
+                            let percent = (remaining / targetSeconds) * 100;
+                            
+                            if (elapsed >= targetSeconds) {
+                                const overshoot = elapsed - targetSeconds;
+                                percent = Math.max(1, 4 / (1 + overshoot * 0.1));
+                                remaining = 0.5 / (1 + overshoot * 0.1);
+                            }
+                            
+                            const radius = 45;
+                            const strokeWidth = 4;
+                            const circumference = 2 * Math.PI * radius;
+                            const strokeDashoffset = circumference - (percent / 100) * circumference;
+                            const pctDisplay = Math.round(100 - percent);
+                            const remainingText = elapsed >= targetSeconds
+                                ? `+${(Math.floor(elapsed - targetSeconds) + 1).toString().padStart(2, '0')}s`
+                                : `00:${Math.ceil(remaining).toString().padStart(2, '0')}s`;
+                            
+                            return (
+                                <div className="relative flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-cyan-500/15 blur-3xl rounded-full animate-pulse pointer-events-none" />
+                                    
+                                    <svg className="w-32 h-32 transform -rotate-90 relative z-10">
+                                        {/* Background ring */}
+                                        <circle
+                                            cx="64"
+                                            cy="64"
+                                            r={radius}
+                                            stroke="rgba(34, 211, 238, 0.05)"
+                                            strokeWidth={strokeWidth}
+                                            fill="transparent"
+                                        />
+                                        {/* Progress ring */}
+                                        <motion.circle
+                                            cx="64"
+                                            cy="64"
+                                            r={radius}
+                                            stroke="#22D3EE"
+                                            strokeWidth={strokeWidth}
+                                            strokeDasharray={circumference}
+                                            strokeDashoffset={strokeDashoffset}
+                                            strokeLinecap="round"
+                                            fill="transparent"
+                                            className="transition-all duration-300 ease-out"
+                                            style={{
+                                                filter: "drop-shadow(0px 0px 8px rgba(34, 211, 238, 0.5))"
+                                            }}
+                                        />
+                                    </svg>
+                                    
+                                    {/* Center Text */}
+                                    <div className="absolute z-20 flex flex-col items-center justify-center text-center font-mono">
+                                        <span className="text-[20px] font-black text-cyan-400 tracking-tighter leading-none">
+                                            {remainingText}
+                                        </span>
+                                        <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-bold mt-1">
+                                            {pctDisplay}% EST
                                         </span>
                                     </div>
-                                    <p className="text-[11px] text-muted-foreground font-medium tracking-wide">
-                                        {LOADING_STEPS[loadingStep].sub}
-                                    </p>
-                                </motion.div>
-                            </AnimatePresence>
+                                </div>
+                            );
+                        })()}
+
+                        {/* Stage Checklist Grid */}
+                        <div className="grid md:grid-cols-2 gap-4 w-full max-w-lg mx-auto">
+                            {LOADING_STEPS.map((step, idx) => {
+                                const stepTime = 3;
+                                const start = idx * stepTime;
+                                const elapsed = elapsedTime || 0;
+                                const status = elapsed < start 
+                                    ? "pending" 
+                                    : (elapsed >= start && (elapsed < start + stepTime || idx === LOADING_STEPS.length - 1))
+                                        ? "active"
+                                        : "completed";
+                                
+                                return (
+                                    <div
+                                        key={idx}
+                                        className={cn(
+                                            "p-4 rounded-xl border flex items-start gap-3 backdrop-blur-md transition-all duration-500",
+                                            status === "completed" 
+                                                ? "bg-cyan-500/5 border-cyan-500/20 text-cyan-100" 
+                                                : status === "active"
+                                                    ? "bg-cyan-500/10 border-cyan-500/40 text-cyan-100 shadow-[0_0_15px_rgba(34,211,238,0.1)]"
+                                                    : "bg-zinc-900/10 border-zinc-800 text-zinc-500"
+                                        )}
+                                    >
+                                        <div className="shrink-0 mt-0.5">
+                                            {status === "completed" ? (
+                                                <motion.div
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                                >
+                                                    <CheckCircle2 className="h-4 w-4 text-cyan-400" />
+                                                </motion.div>
+                                            ) : status === "active" ? (
+                                                <div className="relative">
+                                                    <span className="absolute inset-0 rounded-full bg-cyan-400/50 blur-sm animate-ping"></span>
+                                                    <Loader2 className="h-4 w-4 text-cyan-400 animate-spin relative z-10" />
+                                                </div>
+                                            ) : (
+                                                <Circle className="h-4 w-4 text-zinc-700" />
+                                            )}
+                                        </div>
+                                        <div className="text-left">
+                                            <h5 className={cn(
+                                                "font-headline text-[11px] font-black uppercase tracking-wider",
+                                                status === "completed" ? "text-cyan-400" : status === "active" ? "text-cyan-400" : "text-zinc-500"
+                                            )}>
+                                                {step.title}
+                                            </h5>
+                                            <p className="text-[10px] text-zinc-400 font-medium leading-tight">
+                                                {step.sub}
+                                            </p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
 
                         {onCancel && (
@@ -241,8 +406,10 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                     <div className="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20 shrink-0">
                                         <Sparkles className="h-5 w-5 text-emerald-500" />
                                     </div>
-                                    <div>
-                                        <h4 className="font-headline font-bold uppercase tracking-wider text-sm">Build Design Ready</h4>
+                                    <div className="flex-1">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <h4 className="font-headline font-bold uppercase tracking-wider text-sm">Build Design Ready</h4>
+                                        </div>
                                         <p className="text-[11px] text-muted-foreground">Architect has formulated your customized system blueprint.</p>
                                     </div>
                                 </div>

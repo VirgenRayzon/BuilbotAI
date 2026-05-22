@@ -48,6 +48,8 @@ interface UsePartFormProps {
 
 export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormProps) {
   const [isAiPending, setIsAiPending] = useState(false);
+  const [aiDuration, setAiDuration] = useState<number | null>(null);
+  const [tokensUsed, setTokensUsed] = useState<number | null>(null);
   const aiAbortRef = useRef(false);
   const { toast } = useToast();
 
@@ -72,6 +74,7 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
   });
 
   useEffect(() => {
+    setAiDuration(null);
     if (open && initialData) {
       form.reset({
         partName: initialData.name,
@@ -146,7 +149,9 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
       return copy;
     }
     return [...specs, { key, value }];
-  };  const handleGetAiDetails = async () => {
+  };
+
+  const handleGetAiDetails = async () => {
     if (isAiKillSwitch) {
       toast({
         title: "AI Disabled",
@@ -162,12 +167,18 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
       return;
     }
     setIsAiPending(true);
+    setAiDuration(null);
+    setTokensUsed(null);
     aiAbortRef.current = false;
+    const startTime = performance.now();
 
     try {
       const result = (await getAiPartDetails({ partName })) as any;
       if (aiAbortRef.current) return;
+      const endTime = performance.now();
+      setAiDuration((endTime - startTime) / 1000);
       if (result && !("error" in result)) {
+        setTokensUsed(Math.round(JSON.stringify(result).length / 4));
         form.setValue("partName", result.partName, { shouldValidate: true });
         form.setValue("category", result.category, { shouldValidate: true });
         form.setValue("brand", result.brand, { shouldValidate: true });
@@ -291,6 +302,8 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
   const handleCancelAiDetails = () => {
     aiAbortRef.current = true;
     setIsAiPending(false);
+    setAiDuration(null);
+    setTokensUsed(null);
     toast({
       title: "AI Generation Cancelled",
       description: "The AI detail extraction has been aborted.",
@@ -300,6 +313,8 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
   return {
     form,
     isAiPending,
+    aiDuration,
+    tokensUsed,
     handleGetAiDetails,
     handleCancelAiDetails,
     setSpecValue,

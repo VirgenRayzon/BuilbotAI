@@ -153,7 +153,7 @@ export type AuditLog = {
   actorId: string;
   actorName: string;
   actorEmail?: string;
-  resourceType: 'Part' | 'Prebuilt' | 'Order' | 'User' | 'System';
+  scope: 'Part' | 'Prebuilt' | 'Order' | 'User' | 'System';
   resourceName: string;
   resourceId?: string;
   details?: string;

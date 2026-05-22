@@ -5,11 +5,25 @@ import { getAiBuildCritique } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 
 /**
+ * Helper to generate a unique key for a given build state.
+ */
+export function getBuildKey(state: any) {
+    if (!state) return "";
+    const partIds: string[] = [];
+    Object.values(state).forEach(val => {
+        if (Array.isArray(val)) val.forEach((v: any) => partIds.push(v.id));
+        else if (val) partIds.push((val as any).id);
+    });
+    return partIds.sort().join('|');
+}
+
+/**
  * Hook to handle AI build critique logic, including caching and error management.
  */
 export function useCritiqueLogic(isAiKillSwitch: boolean) {
     const { toast } = useToast();
     const [critiqueAnalysis, setCritiqueAnalysis] = useState<any>(null);
+    const [critiqueDuration, setCritiqueDuration] = useState<number | null>(null);
     const [critiqueLoading, setCritiqueLoading] = useState(false);
     const [critiqueError, setCritiqueError] = useState<string | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -35,16 +49,6 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
         });
     }, [toast]);
 
-    const getBuildKey = (state: any) => {
-        if (!state) return "";
-        const partIds: string[] = [];
-        Object.values(state).forEach(val => {
-            if (Array.isArray(val)) val.forEach((v: any) => partIds.push(v.id));
-            else if (val) partIds.push((val as any).id);
-        });
-        return partIds.sort().join('|');
-    };
-
     const handleCritique = useCallback(async (
         builderState: any, 
         forceRefresh: boolean = false,
@@ -62,8 +66,16 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
             if (cache) {
                 try {
                     const parsedCache = JSON.parse(cache);
-                    if (parsedCache[buildKey]) {
-                        setCritiqueAnalysis(parsedCache[buildKey]);
+                    const cachedEntry = parsedCache[buildKey];
+                    if (cachedEntry) {
+                        if (cachedEntry && typeof cachedEntry === 'object' && 'analysis' in cachedEntry) {
+                            setCritiqueAnalysis(cachedEntry.analysis);
+                            setCritiqueDuration(cachedEntry.duration ?? null);
+                        } else {
+                            // Backward compatibility fallback for flat cache
+                            setCritiqueAnalysis(cachedEntry);
+                            setCritiqueDuration(null);
+                        }
                         return;
                     }
                 } catch (e) {}
@@ -109,6 +121,7 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
             }
         });
 
+        const startTime = Date.now();
         try {
             const result = await getAiBuildCritique({
                 build: buildData,
@@ -121,11 +134,16 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
             if ('error' in result) {
                 setCritiqueError(result.error as string);
             } else {
+                const duration = (Date.now() - startTime) / 1000;
                 setCritiqueAnalysis(result);
+                setCritiqueDuration(duration);
                 const cache = localStorage.getItem('pc_critique_cache') || '{}';
                 try {
                     const parsedCache = JSON.parse(cache);
-                    parsedCache[buildKey] = result;
+                    parsedCache[buildKey] = {
+                        analysis: result,
+                        duration: duration
+                    };
                     const keys = Object.keys(parsedCache);
                     if (keys.length > 10) delete parsedCache[keys[0]];
                     localStorage.setItem('pc_critique_cache', JSON.stringify(parsedCache));
@@ -148,6 +166,8 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
     return {
         critiqueAnalysis,
         setCritiqueAnalysis,
+        critiqueDuration,
+        setCritiqueDuration,
         critiqueLoading,
         critiqueError,
         handleCritique,

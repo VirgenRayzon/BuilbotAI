@@ -11,7 +11,44 @@ interface CachedCsv {
 }
 
 const csvCache: Record<string, CachedCsv> = {};
-const CACHE_TTL = 1000 * 60 * 60; // 1 hour cache TTL
+const CACHE_TTL = 1000 * 60 * 60 * 24; // 24 hour cache TTL
+
+export function initializeCsvCache(): void {
+    const dbDir = path.join(process.cwd(), 'src', 'database');
+    if (!fs.existsSync(dbDir)) {
+        console.warn(`[CSV Grounding] Database directory not found at ${dbDir}`);
+        return;
+    }
+
+    console.log("[CSV Grounding] Pre-indexing CSV cache...");
+    const files = fs.readdirSync(dbDir).filter(f => f.endsWith('.csv'));
+
+    for (const file of files) {
+        const filePath = path.join(dbDir, file);
+        try {
+            const content = fs.readFileSync(filePath, 'utf-8');
+            const allLines = content.split('\n');
+            if (allLines.length < 2) continue;
+            
+            const headers = allLines[0].split(',').map(h => h.trim());
+            const lines = allLines.slice(1);
+
+            csvCache[file] = {
+                headers,
+                lines,
+                timestamp: Date.now()
+            };
+            console.log(`[CSV Grounding] Cached ${file} (${lines.length} lines)`);
+        } catch (error) {
+            console.error(`[CSV Grounding] Error reading ${file}:`, error);
+        }
+    }
+}
+
+// Call on startup
+if (typeof window === 'undefined') {
+    setTimeout(initializeCsvCache, 0);
+}
 
 /**
  * Searches the local CSV database for detailed part specifications.
@@ -31,8 +68,6 @@ export async function retrieveCsvSpecs(query: string): Promise<string[]> {
     if (queryTerms.length === 0) return results;
 
     for (const file of files) {
-        const filePath = path.join(dbDir, file);
-        
         let headers: string[];
         let lines: string[];
 
@@ -43,6 +78,9 @@ export async function retrieveCsvSpecs(query: string): Promise<string[]> {
             lines = cached.lines;
         } else {
             // Cache miss or expired: read and parse
+            const filePath = path.join(dbDir, file);
+            if (!fs.existsSync(filePath)) continue;
+            
             const content = fs.readFileSync(filePath, 'utf-8');
             const allLines = content.split('\n');
             if (allLines.length < 2) continue;

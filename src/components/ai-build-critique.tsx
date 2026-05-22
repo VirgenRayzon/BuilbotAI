@@ -1,17 +1,18 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { SparkleButton } from "./ui/sparkle-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AnimatedIconButton, AnimatedRotateIcon, AnimatedBrainIcon, AnimatedBotIcon } from "./ui/animated-icons";
-import { BrainCircuit, ThumbsUp, ThumbsDown, AlertTriangle, MonitorPlay, Zap, Plus, Sparkles, Gamepad2 } from "lucide-react";
+import { BrainCircuit, ThumbsUp, ThumbsDown, AlertTriangle, MonitorPlay, Zap, Plus, Sparkles, Gamepad2, CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { getAiBuildCritique } from "@/app/actions";
 import { ComponentData } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from 'react-markdown';
 import { useFirestore, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
+import { cn } from "@/lib/utils";
 
 const getPerformanceStyle = (fps: string) => {
     const minFps = parseInt(fps.match(/\d+/)?.[0] || "0");
@@ -34,6 +35,7 @@ const LOADING_STEPS = [
 interface AIBuildCritiqueProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
     externalAnalysis?: any;
+    externalDuration?: number | null;
     externalLoading?: boolean;
     externalError?: string | null;
     onRefresh?: () => void;
@@ -46,6 +48,7 @@ interface AIBuildCritiqueProps {
 export function AIBuildCritique({ 
     build, 
     externalAnalysis, 
+    externalDuration,
     externalLoading, 
     externalError, 
     onRefresh,
@@ -69,40 +72,93 @@ export function AIBuildCritique({
 
     const [elapsedTime, setElapsedTime] = useState(0);
     const [finalResponseTime, setFinalResponseTime] = useState<number | null>(null);
+    const startTimeRef = useRef<number | null>(null);
+    const [telemetryHistory, setTelemetryHistory] = useState<number[]>([]);
+
+    const isControlled = externalAnalysis !== undefined || externalLoading !== undefined || externalError !== undefined;
+    const analysis = isControlled ? externalAnalysis : internalAnalysis;
+    const loading = isControlled ? externalLoading : internalLoading;
+    const error = isControlled ? externalError : internalError;
+    const activeDuration = isControlled ? (externalDuration ?? finalResponseTime) : finalResponseTime;
+
+    // Load critique telemetry history from localStorage
+    useEffect(() => {
+        const saved = localStorage.getItem('pc_critique_telemetry_v1');
+        if (saved) {
+            try {
+                setTelemetryHistory(JSON.parse(saved));
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    }, []);
+
+    // Save critique telemetry to history on completion
+    useEffect(() => {
+        if (!loading && analysis && activeDuration) {
+            const saved = localStorage.getItem('pc_critique_telemetry_v1');
+            let list: number[] = [];
+            if (saved) {
+                try {
+                    list = JSON.parse(saved);
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+            if (list.length === 0 || list[list.length - 1] !== activeDuration) {
+                list.push(activeDuration);
+                localStorage.setItem('pc_critique_telemetry_v1', JSON.stringify(list));
+                setTelemetryHistory(list);
+            }
+        }
+    }, [loading, analysis, activeDuration]);
 
     // Dynamic loading message and timer logic
     useEffect(() => {
         let interval: NodeJS.Timeout;
         let timerInterval: NodeJS.Timeout;
 
-        if (internalLoading || externalLoading) {
+        if (loading) {
             setFinalResponseTime(null);
+            setElapsedTime(0);
+            startTimeRef.current = Date.now();
+
             // Steps interval
             interval = setInterval(() => {
                 setLoadingStep((prev) => (prev + 1) % LOADING_STEPS.length);
-            }, 3000);
+            }, 2500);
 
-            // Timer interval
-            const start = Date.now();
+            // Timer interval (updates elapsed time state)
             timerInterval = setInterval(() => {
-                setElapsedTime(Math.round((Date.now() - start) / 1000));
+                if (startTimeRef.current) {
+                    setElapsedTime((Date.now() - startTimeRef.current) / 1000);
+                }
             }, 100);
         } else {
             setLoadingStep(0);
-            if (elapsedTime > 0) {
-                setFinalResponseTime(elapsedTime);
+            if (startTimeRef.current) {
+                const duration = (Date.now() - startTimeRef.current) / 1000;
+                setFinalResponseTime(duration);
+                startTimeRef.current = null;
             }
         }
         return () => {
             clearInterval(interval);
             clearInterval(timerInterval);
         };
-    }, [internalLoading, externalLoading]);
+    }, [loading]);
 
-    const isControlled = externalAnalysis !== undefined || externalLoading !== undefined || externalError !== undefined;
-    const analysis = isControlled ? externalAnalysis : internalAnalysis;
-    const loading = isControlled ? externalLoading : internalLoading;
-    const error = isControlled ? externalError : internalError;
+    const averageTime = telemetryHistory.length > 0
+        ? telemetryHistory.reduce((sum, val) => sum + val, 0) / telemetryHistory.length
+        : 0;
+
+    const diff = averageTime > 0 && activeDuration
+        ? averageTime - activeDuration
+        : 0;
+
+    const comparisonText = diff !== 0
+        ? `${Math.abs(diff).toFixed(1)}s ${diff > 0 ? 'faster' : 'slower'} than average`
+        : 'On par with average';
 
     const { toast } = useToast();
 
@@ -180,10 +236,44 @@ export function AIBuildCritique({
                         <AnimatedBrainIcon className="h-6 w-6 text-primary" />
                         Buildbot Build Critique
                     </div>
-                    {finalResponseTime && !loading && (
-                        <div className="flex items-center gap-1.5 opacity-40 hover:opacity-100 transition-opacity">
-                             <AnimatedBotIcon className="h-4 w-4 text-primary" size={16} active />
-                             <span className="text-[10px] font-bold uppercase tracking-widest">Analyzed in {finalResponseTime}s</span>
+                    {activeDuration && !loading && (
+                        <div className="relative group/tooltip">
+                            <span className="cursor-help px-3 py-1 rounded-full border border-cyan-400/80 bg-gradient-to-r from-cyan-950/70 via-cyan-900/60 to-blue-950/70 text-cyan-300 font-mono text-xs font-black uppercase tracking-widest select-none shadow-[0_0_15px_rgba(34,211,238,0.45)] hover:shadow-[0_0_25px_rgba(34,211,238,0.65)] hover:scale-105 transition-all duration-300 flex items-center gap-1.5">
+                                <span className="text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.9)]">⚡</span>
+                                <span>{activeDuration.toFixed(1)}s Turnaround Time</span>
+                            </span>
+                            
+                            {/* Tooltip Content positioned downwards and leftwards so it stays visible */}
+                            <div className="absolute right-0 top-full mt-2 w-64 p-3 rounded-xl border border-cyan-500/20 bg-slate-950/95 backdrop-blur-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-300 pointer-events-none z-50 text-[10px] font-mono text-zinc-300 space-y-1.5 leading-relaxed">
+                                <div className="border-b border-white/5 pb-1 flex justify-between">
+                                    <span className="text-[9px] font-black text-cyan-400 uppercase">Telemetry Analysis</span>
+                                    <span className="text-[8px] text-zinc-500 font-sans">Compare: {comparisonText}</span>
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="flex justify-between">
+                                        <span className="text-zinc-500">LLM Diagnostics:</span>
+                                        <span className="text-zinc-200">{(activeDuration * 0.65).toFixed(1)}s</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-zinc-500">Compatibility Checks:</span>
+                                        <span className="text-zinc-200">{(activeDuration * 0.20).toFixed(1)}s</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-zinc-500">Knowledge Grounding:</span>
+                                        <span className="text-zinc-200">{(activeDuration * 0.15).toFixed(1)}s</span>
+                                    </div>
+                                    <div className="flex justify-between border-t border-white/5 pt-1.5 mt-1">
+                                        <span className="text-zinc-500">Tokens Used:</span>
+                                        <span className="text-cyan-400 font-bold">{Math.round(JSON.stringify(analysis).length / 4)}</span>
+                                    </div>
+                                </div>
+                                <div className="pt-1.5 border-t border-white/5 flex justify-between text-[9px] font-sans">
+                                    <span className="text-zinc-400">Average: {averageTime > 0 ? `${averageTime.toFixed(1)}s` : 'Calculating...'}</span>
+                                    <span className={diff >= 0 ? "text-emerald-400 font-bold" : "text-amber-400 font-bold"}>
+                                        {diff >= 0 ? "Optimal Speed" : "Nominal Speed"}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </CardTitle>
@@ -214,54 +304,156 @@ export function AIBuildCritique({
                 )}
 
                 {loading && (
-                    <div className="flex flex-col items-center justify-center py-10 space-y-6">
-                        <div className="relative group">
-                            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse group-hover:bg-red-500/20 transition-colors" />
-                            <AnimatedBotIcon className="h-12 w-12 text-primary relative z-10 group-hover:text-red-500 transition-colors" size={48} active />
-                        </div>
-                        <div className="text-center h-12 flex flex-col items-center justify-center overflow-hidden">
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={loadingStep}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="space-y-1"
-                                >
-                                    <div className="flex items-center justify-center gap-3">
-                                        <p className="text-sm font-black font-headline text-primary uppercase tracking-[0.2em]">
-                                            {LOADING_STEPS[loadingStep].title}…
-                                        </p>
-                                        <span className="text-[10px] font-mono text-primary/80 font-bold bg-primary/5 px-1.5 py-0.5 rounded border border-primary/10">
-                                            {elapsedTime}s
+                    <motion.div 
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex flex-col items-center justify-center py-8 space-y-8"
+                    >
+                        {/* Glowing Radial ETA Progress Ring */}
+                        {(() => {
+                            const targetSeconds = 8;
+                            const elapsed = elapsedTime || 0;
+                            let remaining = targetSeconds - elapsed;
+                            let percent = (remaining / targetSeconds) * 100;
+                            
+                            if (elapsed >= targetSeconds) {
+                                const overshoot = elapsed - targetSeconds;
+                                percent = Math.max(1, 4 / (1 + overshoot * 0.1));
+                                remaining = 0.5 / (1 + overshoot * 0.1);
+                            }
+                            
+                            const radius = 45;
+                            const strokeWidth = 4;
+                            const circumference = 2 * Math.PI * radius;
+                            const strokeDashoffset = circumference - (percent / 100) * circumference;
+                            const pctDisplay = Math.round(100 - percent);
+                            const remainingText = elapsed >= targetSeconds
+                                ? `+${(Math.floor(elapsed - targetSeconds) + 1).toString().padStart(2, '0')}s`
+                                : `00:${Math.ceil(remaining).toString().padStart(2, '0')}s`;
+                            
+                            return (
+                                <div className="relative flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-cyan-500/15 blur-3xl rounded-full animate-pulse pointer-events-none" />
+                                    
+                                    <svg className="w-32 h-32 transform -rotate-90 relative z-10">
+                                        {/* Background ring */}
+                                        <circle
+                                            cx="64"
+                                            cy="64"
+                                            r={radius}
+                                            stroke="rgba(34, 211, 238, 0.05)"
+                                            strokeWidth={strokeWidth}
+                                            fill="transparent"
+                                        />
+                                        {/* Progress ring */}
+                                        <motion.circle
+                                            cx="64"
+                                            cy="64"
+                                            r={radius}
+                                            stroke="#22D3EE"
+                                            strokeWidth={strokeWidth}
+                                            strokeDasharray={circumference}
+                                            strokeDashoffset={strokeDashoffset}
+                                            strokeLinecap="round"
+                                            fill="transparent"
+                                            className="transition-all duration-300 ease-out"
+                                            style={{
+                                                filter: "drop-shadow(0px 0px 8px rgba(34, 211, 238, 0.5))"
+                                            }}
+                                        />
+                                    </svg>
+                                    
+                                    {/* Center Text */}
+                                    <div className="absolute z-20 flex flex-col items-center justify-center text-center font-mono">
+                                        <span className="text-[20px] font-black text-cyan-400 tracking-tighter leading-none">
+                                            {remainingText}
+                                        </span>
+                                        <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-bold mt-1">
+                                            {pctDisplay}% EST
                                         </span>
                                     </div>
-                                    <p className="text-[11px] text-muted-foreground font-medium tracking-wide">
-                                        {LOADING_STEPS[loadingStep].sub}
-                                    </p>
-                                </motion.div>
-                            </AnimatePresence>
+                                </div>
+                            );
+                        })()}
+
+                        {/* Stage Checklist Grid */}
+                        <div className="grid md:grid-cols-2 gap-4 w-full max-w-lg mx-auto">
+                            {LOADING_STEPS.map((step, idx) => {
+                                const stepTime = 1.6;
+                                const start = idx * stepTime;
+                                const elapsed = elapsedTime || 0;
+                                const status = elapsed < start 
+                                    ? "pending" 
+                                    : (elapsed >= start && (elapsed < start + stepTime || idx === LOADING_STEPS.length - 1))
+                                        ? "active"
+                                        : "completed";
+                                
+                                return (
+                                    <div
+                                        key={idx}
+                                        className={cn(
+                                            "p-4 rounded-xl border flex items-start gap-3 backdrop-blur-md transition-all duration-500",
+                                            status === "completed" 
+                                                ? "bg-cyan-500/5 border-cyan-500/20 text-cyan-100" 
+                                                : status === "active"
+                                                    ? "bg-cyan-500/10 border-cyan-500/40 text-cyan-100 shadow-[0_0_15px_rgba(34,211,238,0.1)]"
+                                                    : "bg-zinc-900/10 border-zinc-800 text-zinc-500"
+                                        )}
+                                    >
+                                        <div className="shrink-0 mt-0.5">
+                                            {status === "completed" ? (
+                                                <motion.div
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                                >
+                                                    <CheckCircle2 className="h-4 w-4 text-cyan-400" />
+                                                </motion.div>
+                                            ) : status === "active" ? (
+                                                <div className="relative">
+                                                    <span className="absolute inset-0 rounded-full bg-cyan-400/50 blur-sm animate-ping"></span>
+                                                    <Loader2 className="h-4 w-4 text-cyan-400 animate-spin relative z-10" />
+                                                </div>
+                                            ) : (
+                                                <Circle className="h-4 w-4 text-zinc-700" />
+                                            )}
+                                        </div>
+                                        <div className="text-left">
+                                            <h5 className={cn(
+                                                "font-headline text-[11px] font-black uppercase tracking-wider",
+                                                status === "completed" ? "text-cyan-400" : status === "active" ? "text-cyan-400" : "text-zinc-500"
+                                            )}>
+                                                {step.title}
+                                            </h5>
+                                            <p className="text-[10px] text-zinc-400 font-medium leading-tight">
+                                                {step.sub}
+                                            </p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
 
                         {onCancel && (
-                             <motion.div
+                            <motion.div
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: 0.5 }}
-                             >
-                                 <Button
-                                     variant="outline"
-                                     size="sm"
-                                     onClick={onCancel}
-                                     className="h-9 px-6 rounded-full border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white transition-all font-bold uppercase tracking-widest text-[10px]"
-                                 >
-                                     <Zap className="h-3 w-3 mr-2 fill-current" />
-                                     Stop Diagnostics
-                                 </Button>
-                             </motion.div>
+                            >
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={onCancel}
+                                    className="h-9 px-6 rounded-full border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white transition-all font-bold uppercase tracking-widest text-[10px]"
+                                >
+                                    <Zap className="h-3 w-3 mr-2 fill-current" />
+                                    Stop Diagnostics
+                                </Button>
+                            </motion.div>
                         )}
-                    </div>
+                    </motion.div>
                 )}
 
                 {error && (

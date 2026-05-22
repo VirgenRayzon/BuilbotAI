@@ -153,7 +153,7 @@ export function SuperAdminSettings() {
                 actorId: profile?.id || 'unknown',
                 actorName: profile?.name || profile?.email || 'Unknown User',
                 actorEmail: profile?.email,
-                resourceType: 'User',
+                scope: 'User',
                 resourceName: request.email,
                 details: `Approved key reset request for manager`
             });
@@ -189,7 +189,7 @@ export function SuperAdminSettings() {
                 actorId: profile?.id || 'unknown',
                 actorName: profile?.name || profile?.email || 'Unknown User',
                 actorEmail: profile?.email,
-                resourceType: 'User',
+                scope: 'User',
                 resourceName: manager.email,
                 resourceId: manager.id,
                 details: `Super Admin manually reset manager key`

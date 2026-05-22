@@ -80,11 +80,39 @@ ${buildContext}
 `;
 
     try {
-        // CONSOLIDATED STAGE: Analyze, Search, and Format in one call
+        // Step 1: Plain-text research call WITH googleSearchRetrieval (no structured output)
+        console.log("[AI Prebuilt Performance] Step 1: Running web search pre-research for component capabilities...");
+        const researchResponse = await ai.generate({
+            model: 'googleai/gemini-2.5-flash',
+            prompt: `You are a PC hardware expert and technology journalist. Research the following prebuilt PC build and provide an enthusiastic analysis of its strengths and capabilities:
+
+Current Build:
+${buildContext}
+
+Search for:
+1. The specific capabilities and market position of each component.
+2. What makes this combination of components particularly powerful or well-suited.
+3. Benchmark highlights and real-world performance data.
+4. Any notable features or technologies these components support.
+
+Provide detailed, enthusiastic findings focusing ONLY on the strengths and positive aspects.`,
+            config: {
+                temperature: 0.3,
+                googleSearchRetrieval: {},
+            },
+        });
+        const webResearchContext = researchResponse.text;
+        console.log("[AI Prebuilt Performance] Step 1 complete. Research context obtained.");
+
+        // Step 2: Structured output prompt WITHOUT googleSearchRetrieval
+        console.log("[AI Prebuilt Performance] Step 2: Generating structured strengths...");
         const consolidatedPrompt = `${prompt}
-        
+
+WEB RESEARCH CONTEXT (Use this data to provide accurate, specific strengths):
+${webResearchContext}
+
 RESEARCH & ANALYSIS INSTRUCTIONS:
-- Use Google Search if you need to verify specific component capabilities or market positions.
+- Use the web research context above to verify specific component capabilities and market positions.
 - Analyze the prebuilt for its absolute best strengths.
 - Format your final findings strictly into the requested JSON schema.
 
@@ -94,19 +122,18 @@ REQUIRED OUTPUT SCHEMA:
 Output strictly the JSON object.`;
 
         const response = await ai.generate({
-            model: 'googleai/gemini-3-flash-preview',
+            model: 'googleai/gemini-2.5-flash',
             prompt: consolidatedPrompt,
             output: {
                 schema: aiPrebuiltPerformanceOutputSchema,
             },
             config: {
                 temperature: 0.3,
-                googleSearchRetrieval: {}
             },
         });
 
         if (!response.output) {
-            throw new Error("AI returned empty output during consolidated prebuilt performance analysis.");
+            throw new Error("AI returned empty output during prebuilt performance analysis.");
         }
 
         return response.output;

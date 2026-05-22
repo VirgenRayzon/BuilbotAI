@@ -25,17 +25,17 @@ export async function migrateNotificationsToAuditLogs(firestore: Firestore) {
 
     for (const notif of notifications) {
         let actionName: AuditLog['actionName'] = 'other';
-        let resourceType: AuditLog['resourceType'] = 'System';
+        let scope: AuditLog['scope'] = 'System';
         
         if (notif.type === 'item_archived') {
             actionName = notif.title.includes('Restored') ? 'restored' : 'archived';
-            resourceType = notif.title.includes('Prebuilt') ? 'Prebuilt' : 'Part';
+            scope = notif.title.includes('Prebuilt') ? 'Prebuilt' : 'Part';
         } else if (notif.type === 'status_changed') {
             actionName = 'status_changed';
-            resourceType = 'Order';
+            scope = 'Order';
         } else if (notif.type === 'user_cancelled') {
             actionName = 'status_changed'; // user cancelling is essentially an order status change
-            resourceType = 'Order';
+            scope = 'Order';
         }
 
         // We try to extract resource name from the message if possible
@@ -58,7 +58,7 @@ export async function migrateNotificationsToAuditLogs(firestore: Firestore) {
             actionName,
             actorId: notif.actorId || 'system',
             actorName: notif.actorName || 'System',
-            resourceType,
+            scope,
             resourceName,
             resourceId: notif.targetId,
             details: notif.message,

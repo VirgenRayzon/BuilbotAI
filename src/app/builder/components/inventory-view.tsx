@@ -35,6 +35,9 @@ interface InventoryViewProps {
     onTogglePart: (part: Part) => void;
     isSelected: (part: Part) => boolean;
     itemCount: number;
+    availableBrands?: string[];
+    selectedBrands?: string[];
+    onBrandChange?: (brands: string[]) => void;
 }
 
 export function InventoryView({
@@ -57,7 +60,10 @@ export function InventoryView({
     onSortDirectionChange,
     onTogglePart,
     isSelected,
-    itemCount
+    itemCount,
+    availableBrands,
+    selectedBrands,
+    onBrandChange
 }: InventoryViewProps) {
     return (
         <motion.div
@@ -80,6 +86,9 @@ export function InventoryView({
                     showViewToggle={true}
                     searchQuery={searchQuery}
                     onSearchQueryChange={onSearchQueryChange}
+                    availableBrands={availableBrands}
+                    selectedBrands={selectedBrands}
+                    onBrandChange={onBrandChange}
                 />
             </div>
 

@@ -23,7 +23,7 @@ interface AuditLogsSectionProps {
 export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterUser, setFilterUser] = useState('all');
-    const [filterResourceType, setFilterResourceType] = useState('all');
+    const [filterScope, setFilterScope] = useState('all');
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     
     const [currentPage, setCurrentPage] = useState(1);
@@ -63,7 +63,7 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
             const matchesUser = filterUser === 'all' || log.actorName === filterUser;
             
             // Resource Type filter
-            const matchesType = filterResourceType === 'all' || log.resourceType === filterResourceType;
+            const matchesType = filterScope === 'all' || log.scope === filterScope;
             
             // Date Range Filter
             let matchesDate = true;
@@ -81,7 +81,7 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
 
             return matchesSearch && matchesUser && matchesType && matchesDate;
         });
-    }, [logs, searchQuery, filterUser, filterResourceType, dateRange]);
+    }, [logs, searchQuery, filterUser, filterScope, dateRange]);
 
     const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
     const currentLogs = useMemo(() => {
@@ -139,7 +139,7 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
                         </SelectContent>
                     </Select>
 
-                    <Select value={filterResourceType} onValueChange={(val) => { setFilterResourceType(val); setCurrentPage(1); }}>
+                    <Select value={filterScope} onValueChange={(val) => { setFilterScope(val); setCurrentPage(1); }}>
                         <SelectTrigger className="h-10 w-[180px] bg-background/50 border-white/10">
                             <SelectValue placeholder="All Resources" />
                         </SelectTrigger>
@@ -198,13 +198,13 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
                         </PopoverContent>
                     </Popover>
                     
-                    {(searchQuery || filterUser !== 'all' || filterResourceType !== 'all' || dateRange) && (
+                    {(searchQuery || filterUser !== 'all' || filterScope !== 'all' || dateRange) && (
                         <Button 
                             variant="ghost" 
                             onClick={() => {
                                 setSearchQuery('');
                                 setFilterUser('all');
-                                setFilterResourceType('all');
+                                setFilterScope('all');
                                 setDateRange(undefined);
                                 setCurrentPage(1);
                             }}
@@ -222,7 +222,7 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
                                 <TableHead className="w-[180px]">Date & Time</TableHead>
                                 <TableHead className="w-[120px]">Action</TableHead>
                                 <TableHead className="w-[180px]">User</TableHead>
-                                <TableHead className="w-[120px]">Resource Type</TableHead>
+                                <TableHead className="w-[120px]">Scope</TableHead>
                                 <TableHead>Resource Details</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -258,7 +258,7 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant="secondary" className="bg-white/5 font-normal">
-                                                {log.resourceType}
+                                                {log.scope}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>

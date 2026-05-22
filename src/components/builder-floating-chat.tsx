@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 import { SparkleButton } from "./ui/sparkle-button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { BrainCircuit, Send, Bot, User, MessageSquare, X, PlusCircle, RotateCcw } from "lucide-react";
+import { BrainCircuit, Send, Bot, User, MessageSquare, X, PlusCircle, RotateCcw, Cpu, Monitor, HardDrive, Zap } from "lucide-react";
 import { useTheme } from "@/context/theme-provider";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import type { ComponentData } from "@/lib/types";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, UIMessage } from "ai";
+import { DefaultChatTransport, UIMessage, isToolUIPart, getToolName } from "ai";
 import { useUserProfile } from "@/context/user-profile";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -35,6 +35,122 @@ import {
 
 interface BuilderFloatingChatProps {
     build?: Record<string, ComponentData | ComponentData[] | null>;
+}
+
+interface TelemetryInfo {
+    kbLookupMs: number;
+    ttftMs: number;
+    tatMs: number;
+    tokensPerSecond: number;
+    tokensUsed: number;
+    timestamp: number;
+}
+
+function TelemetryDrawer({ telemetry, msgId, isDark, allTelemetry }: { telemetry: TelemetryInfo; msgId: string; isDark: boolean; allTelemetry: TelemetryInfo[] }) {
+    const [isExpanded, setIsExpanded] = useState(false);
+    
+    // Calculate average TAT
+    const averageTat = allTelemetry.length > 0 
+        ? allTelemetry.reduce((sum, item) => sum + item.tatMs, 0) / allTelemetry.length 
+        : 0;
+        
+    const tatSeconds = telemetry.tatMs / 1000;
+    const ttftSeconds = telemetry.ttftMs / 1000;
+    const diff = averageTat > 0 ? (averageTat - telemetry.tatMs) / 1000 : 0;
+    
+    const isFaster = diff > 0;
+    const diffText = diff !== 0 
+        ? `${Math.abs(diff).toFixed(1)}s ${isFaster ? 'faster' : 'slower'} than average` 
+        : 'On par with average';
+
+    return (
+        <div className="mt-2 w-full max-w-[85%] sm:max-w-[80%] text-[11px] font-sans">
+            <button
+                type="button"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className={cn(
+                    "flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-all duration-300 font-mono tracking-wider text-[10px]",
+                    isDark 
+                        ? "bg-black/30 border-cyan-500/20 hover:border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/5"
+                        : "bg-cyan-50/50 border-cyan-500/20 hover:border-cyan-500/50 text-cyan-700 hover:bg-cyan-50"
+                )}
+            >
+                <span className="inline-block text-cyan-400">⚡</span>
+                <span>Turnaround Time: {tatSeconds.toFixed(2)}s</span>
+                <span className="opacity-50 font-sans">•</span>
+                <span>{telemetry.tokensPerSecond} tok/s</span>
+                <span className={cn("ml-1 transform transition-transform duration-200", isExpanded ? "rotate-180" : "")}>▼</span>
+            </button>
+
+            <AnimatePresence>
+                {isExpanded && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="overflow-hidden mt-1.5"
+                    >
+                        <div className={cn(
+                            "p-3 rounded-xl border backdrop-blur-md font-mono text-[10px] space-y-1.5 shadow-md",
+                            isDark
+                                ? "bg-black/60 border-cyan-500/20 text-zinc-300 shadow-[0_0_15px_rgba(34,211,238,0.05)]"
+                                : "bg-white/95 border-cyan-500/10 text-zinc-600 shadow-sm"
+                        )}>
+                            <div className="flex justify-between items-center border-b border-white/5 pb-1">
+                                <span className="text-[10px] uppercase font-bold text-cyan-400/80">Diagnostic Metrics</span>
+                                <span className={cn(
+                                    "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider",
+                                    isFaster 
+                                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
+                                        : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                )}>
+                                    {isFaster ? "Optimal" : "Nominal"}
+                                </span>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 py-1">
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] text-zinc-500 uppercase">TTFT (First Token)</span>
+                                    <span className="font-semibold text-zinc-200">{ttftSeconds.toFixed(2)}s</span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] text-zinc-500 uppercase">DB Lookup Delay</span>
+                                    <span className="font-semibold text-zinc-200">{telemetry.kbLookupMs}ms</span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] text-zinc-500 uppercase">Total Execution (Turnaround Time)</span>
+                                    <span className="font-semibold text-zinc-200">{tatSeconds.toFixed(2)}s</span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] text-zinc-500 uppercase">Generation Speed</span>
+                                    <span className="font-semibold text-zinc-200">{telemetry.tokensPerSecond} tokens/s</span>
+                                </div>
+                                <div className="flex flex-col col-span-2 border-t border-white/5 pt-1.5 mt-0.5">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[8px] text-zinc-500 uppercase">Tokens Used</span>
+                                        <span className="font-semibold text-cyan-400">
+                                            {telemetry.tokensUsed !== undefined 
+                                                ? telemetry.tokensUsed 
+                                                : Math.max(1, Math.round(telemetry.tokensPerSecond * Math.max(0.1, (telemetry.tatMs - telemetry.ttftMs) / 1000)))
+                                            }
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="pt-1.5 border-t border-white/5 flex items-center gap-1 text-[9px] text-zinc-400 font-sans">
+                                <span className={isFaster ? "text-emerald-400" : "text-amber-400"}>
+                                    {isFaster ? "▲" : "▼"}
+                                </span>
+                                <span>{diffText}</span>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
 }
 
 export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
@@ -63,8 +179,15 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
     const [timerActive, setTimerActive] = useState(false);
     const { theme } = useTheme();
     const isDark = theme === "dark";
-    const { authUser, loading } = useUserProfile();
+    const { authUser, profile, loading } = useUserProfile();
     const { toast } = useToast();
+
+    // Refs for telemetry measurement
+    const requestStartRef = useRef<number>(0);
+    const ttftRef = useRef<number>(0);
+    const kbTimeRef = useRef<number>(0);
+
+    const [telemetryState, setTelemetryState] = useState<Record<string, TelemetryInfo>>({});
 
     const firestore = useFirestore();
     const settingsDocRef = useMemo(() => {
@@ -83,13 +206,69 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
         transport: new DefaultChatTransport({
             api: "/api/chat",
             body: {
-                buildContext: build
+                userProfile: profile ? {
+                    displayName: profile.name || "Architect",
+                    email: profile.email,
+                    experienceLevel: (profile as any).experienceLevel || "Intermediate",
+                    preferences: (profile as any).preferences || "None provided"
+                } : null
+            },
+            fetch: async (api, options) => {
+                const response = await fetch(api, options);
+                if (requestStartRef.current > 0 && !ttftRef.current) {
+                    ttftRef.current = Date.now() - requestStartRef.current;
+                }
+                const kbHeader = response.headers.get('x-kb-lookup-ms');
+                if (kbHeader) {
+                    kbTimeRef.current = parseInt(kbHeader, 10);
+                }
+                return response;
             }
         }),
         onFinish: ({ messages: updatedMessages }) => {
             console.log("Chat finished, saving history...");
             localStorage.setItem('pc_chat_history_v2', JSON.stringify(updatedMessages));
             setTimerActive(false);
+
+            // Compute and record telemetry
+            const tat = requestStartRef.current > 0 ? Date.now() - requestStartRef.current : elapsedTime * 1000;
+            const ttft = ttftRef.current || Math.min(2000, tat * 0.3);
+            const kbTime = kbTimeRef.current || 0;
+
+            const lastAssistantMessage = updatedMessages.filter(m => m.role === 'assistant').pop();
+            if (lastAssistantMessage) {
+                const msgId = lastAssistantMessage.id;
+                const text = lastAssistantMessage.parts
+                    ?.filter(p => p.type === 'text')
+                    .map(p => (p as any).text || '')
+                    .join('') || '';
+                const charCount = text.length;
+                const tokenEst = Math.max(1, Math.round(charCount / 4));
+                const generationDurationSeconds = Math.max(0.1, (tat - ttft) / 1000);
+                const tokensPerSec = parseFloat((tokenEst / generationDurationSeconds).toFixed(1));
+
+                const newTelemetry: TelemetryInfo = {
+                    kbLookupMs: kbTime,
+                    ttftMs: ttft,
+                    tatMs: tat,
+                    tokensPerSecond: tokensPerSec,
+                    tokensUsed: tokenEst,
+                    timestamp: Date.now()
+                };
+
+                const savedTelemetry = localStorage.getItem('pc_chat_telemetry_v1');
+                let telemetryMap: Record<string, TelemetryInfo> = {};
+                if (savedTelemetry) {
+                    try {
+                        telemetryMap = JSON.parse(savedTelemetry);
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+                telemetryMap[msgId] = newTelemetry;
+                localStorage.setItem('pc_chat_telemetry_v1', JSON.stringify(telemetryMap));
+                setTelemetryState(telemetryMap);
+            }
         },
         onError: (err) => {
             console.error("Chat error:", err);
@@ -134,6 +313,15 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
     }, [authUser, loading, setMessages]);
 
     useEffect(() => {
+        const savedTelemetry = localStorage.getItem('pc_chat_telemetry_v1');
+        if (savedTelemetry) {
+            try {
+                setTelemetryState(JSON.parse(savedTelemetry));
+            } catch (e) {
+                console.error("Failed to parse telemetry history", e);
+            }
+        }
+
         const saved = localStorage.getItem('pc_chat_history_v2');
         if (saved) {
             try {
@@ -154,14 +342,24 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
         }
     }, [setMessages]);
 
-    // Trigger streaming greeting when chat is first opened and empty
+    // Render local welcome greeting when chat is first opened and empty
     useEffect(() => {
-        if (isOpen && messages.length === 0 && !isLoading && authUser && !isAiKillSwitch) {
-            sendMessage({
-                text: 'SYSTEM_TRIGGER_GREETING'
-            });
+        if (isOpen && messages.length === 0 && !isLoading && !isAiKillSwitch) {
+            const SLEEK_GREETINGS = [
+                "System initialized. Welcome, Architect. I am Buildbot AI, your hardware synthesis consultant. How shall we optimize your build today?",
+                "Liaison active. Buildbot AI online. Ready to analyze compatibility, bottleneck constraints, and recommend peak-tier hardware configurations. What component are we looking for?",
+                "Interface online. I am Buildbot AI, your dedicated PC builder consultant. Ready to assist in selecting compatible components and resolving bottleneck anomalies. How can I help you build today?"
+            ];
+            const randomGreeting = SLEEK_GREETINGS[Math.floor(Math.random() * SLEEK_GREETINGS.length)];
+            const welcomeMsg: UIMessage = {
+                id: `welcome-${Date.now()}`,
+                role: 'assistant',
+                parts: [{ type: 'text', text: randomGreeting }],
+            };
+            setMessages([welcomeMsg]);
+            localStorage.setItem('pc_chat_history_v2', JSON.stringify([welcomeMsg]));
         }
-    }, [isOpen, messages.length, isLoading, sendMessage, authUser]);
+    }, [isOpen, messages.length, isLoading, setMessages, isAiKillSwitch]);
 
     const handleClearChat = () => {
         setMessages([]);
@@ -184,9 +382,25 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
 
         setElapsedTime(0);
         setTimerActive(true);
+        requestStartRef.current = Date.now();
+        ttftRef.current = 0;
+        kbTimeRef.current = 0;
         sendMessage({ text: input });
         setInput("");
     };
+
+    const handlePresetClick = (presetText: string) => {
+        if (isLoading || isAiKillSwitch) return;
+        setElapsedTime(0);
+        setTimerActive(true);
+        requestStartRef.current = Date.now();
+        ttftRef.current = 0;
+        kbTimeRef.current = 0;
+        sendMessage({ text: presetText });
+    };
+
+    // Show presets only when chat is fresh (just the welcome message, no user messages)
+    const hasUserMessages = messages.some(m => m.role === 'user');
 
     return (
         <div className={cn(
@@ -242,7 +456,7 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                 isDark ? "bg-gradient-to-b from-transparent to-black/20" : "bg-gradient-to-b from-transparent to-muted/20"
                             )}>
                                 <ScrollArea className="flex-1 w-full min-w-0">
-                                    <div className="flex flex-col gap-8 py-4 max-w-full overflow-x-hidden">
+                                    <div className="flex flex-col gap-8 pt-4 pb-12 max-w-full overflow-x-hidden">
                                         {messages
                                             .filter(msg => {
                                                 const text = msg.parts?.find(p => p.type === 'text')?.text;
@@ -285,25 +499,15 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                                                                 "prose prose-p:leading-snug prose-sm max-w-full break-words overflow-hidden prose-pre:whitespace-pre-wrap prose-pre:break-words transition-colors",
                                                                                 isDark ? "prose-invert prose-a:text-cyan-400 prose-strong:text-blue-300" : "prose-slate prose-a:text-blue-600 prose-strong:text-blue-800"
                                                                             )}>
-                                                                                {(() => {
-                                                                                    const regex = /(?:^[ \t]*[-*+][ \t]+)?\*{0,2}\[[^\]]*\]\((?:add(?:-part(?::[^)]*)?)?)?\)?\*{0,2}(?:\s*-\s*)?/gm;
-                                                                                    const cleanText = part.text
-                                                                                        .replace(regex, '')
-                                                                                        .replace(/\n\s*\n/g, '\n\n')
-                                                                                        .trim();
-
-                                                                                    return (
-                                                                                        <ReactMarkdown
-                                                                                            urlTransform={(url) => url}
-                                                                                            components={{
-                                                                                                p: ({ children }) => <div className="mb-4 last:mb-0 leading-relaxed">{children}</div>,
-                                                                                                a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
-                                                                                            }}
-                                                                                        >
-                                                                                            {cleanText}
-                                                                                        </ReactMarkdown>
-                                                                                    );
-                                                                                })()}
+                                                                                <ReactMarkdown
+                                                                                    urlTransform={(url) => url}
+                                                                                    components={{
+                                                                                        p: ({ children }) => <div className="mb-4 last:mb-0 leading-relaxed">{children}</div>,
+                                                                                        a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
+                                                                                    }}
+                                                                                >
+                                                                                    {part.text}
+                                                                                </ReactMarkdown>
 
                                                                                 {isLoading && i === messages.length - 1 && partIdx === msg.parts!.length - 1 && (
                                                                                     <span className="inline-block w-1.5 h-4 ml-1 bg-cyan-400 animate-pulse align-middle" />
@@ -311,9 +515,20 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                                                             </div>
                                                                         </div>
                                                                     );
-                                                                } else if (part.type === 'tool-invocation') {
+                                                                } else if (isToolUIPart(part)) {
                                                                     const partAny = part as any;
-                                                                    const isComplete = (partAny.state || partAny.toolInvocation?.state) === 'result';
+                                                                    const toolName = getToolName(partAny);
+                                                                    const isComplete = partAny.state === 'output-available';
+                                                                    
+                                                                    let statusLabel = 'Processing request...';
+                                                                    if (toolName === 'searchInventory') {
+                                                                        statusLabel = !isComplete ? 'Searching live catalog...' : 'Catalog search complete.';
+                                                                    } else if (toolName === 'queryCompatibilityGuides') {
+                                                                        statusLabel = !isComplete ? 'Checking compatibility guides...' : 'Compatibility rules loaded.';
+                                                                    } else if (toolName === 'queryPartSpecifications') {
+                                                                        statusLabel = !isComplete ? 'Retrieving hardware specifications...' : 'Part specifications loaded.';
+                                                                    }
+
                                                                     return (
                                                                         <div key={partIdx} className={cn(
                                                                             "py-2 px-4 rounded-xl text-xs shadow-sm w-fit flex items-center gap-2 border transition-colors",
@@ -326,105 +541,120 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                                                                     <div className="w-1.5 h-1.5 rounded-full bg-cyan-400"></div>
                                                                                 </div>
                                                                             )}
-                                                                            <span className="opacity-80 italic">{!isComplete ? 'Searching inventory database...' : 'Database scan complete.'}</span>
+                                                                            <span className="opacity-80 italic">{statusLabel}</span>
                                                                         </div>
                                                                     );
                                                                 }
                                                                 return null;
                                                             })}
+                                                            {msg.role === 'assistant' && telemetryState[msg.id] && (
+                                                                <TelemetryDrawer
+                                                                    telemetry={telemetryState[msg.id]}
+                                                                    msgId={msg.id}
+                                                                    isDark={isDark}
+                                                                    allTelemetry={Object.values(telemetryState)}
+                                                                />
+                                                            )}
                                                         </div>
                                                     </div>
 
                                                     {/* Full-Width Recommendations Row (Outside the Indented Bubble Column) */}
                                                     {msg.parts?.map((part, partIdx) => {
-                                                        if (part.type === 'text') {
-                                                            const carouselRegex = /\[([^\]]+)\]\(add-part:([^)]+)\)/g;
-                                                            const matches = Array.from(part.text.matchAll(carouselRegex)).slice(0, 4);
+                                                        const partAny = part as any;
+                                                        if (isToolUIPart(part) && getToolName(partAny) === 'searchInventory' && partAny.state === 'output-available') {
+                                                             const partsList = partAny.output;
+                                                             
+                                                             if (partsList && !partsList.error && Array.isArray(partsList) && partsList.length > 0) {
+                                                                 const recommendations = partsList.slice(0, 4);
+                                                                 return (
+                                                                     <div key={`carousel-${partIdx}`} className="mt-3 mb-1 relative w-[94%] mx-auto min-w-0 px-1">
+                                                                         <Carousel className="w-full">
+                                                                             <CarouselContent className="-ml-2">
+                                                                                 {recommendations.map((partItem: any, idx) => {
+                                                                                     const partName = partItem.name;
+                                                                                     const partId = partItem.id;
+                                                                                     const partPrice = partItem.price;
+                                                                                     const category = partItem.category || '';
+                                                                                     const formattedPrice = typeof partPrice === 'number'
+                                                                                         ? partPrice.toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+                                                                                         : partPrice;
 
-                                                            if (matches.length > 0) {
-                                                                return (
-                                                                    <div key={`carousel-${partIdx}`} className="mt-2 relative w-full max-w-full min-w-0">
-                                                                        <Carousel className="w-full">
-                                                                            <CarouselContent className="-ml-2">
-                                                                                {matches.map((match, idx) => {
-                                                                                    const partName = match[1];
-                                                                                    const href = match[2];
-                                                                                    const rawData = decodeURIComponent(href);
-                                                                                    const dataParts = rawData.split('|');
-                                                                                    const category = dataParts[0] || '';
-                                                                                    const partId = dataParts[1] || undefined;
-                                                                                    const partPrice = dataParts[2] || '';
-                                                                                    const formattedPrice = !isNaN(Number(partPrice))
-                                                                                        ? Number(partPrice).toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
-                                                                                        : partPrice;
+                                                                                     let partImageUrl = partItem.imageUrl || undefined;
+                                                                                     if (partImageUrl && partImageUrl.includes('firebasestorage.googleapis.com') && partImageUrl.includes('/o/') && partImageUrl.includes('?')) {
+                                                                                         const urlParts = partImageUrl.split('/o/');
+                                                                                         const afterO = urlParts[1].split('?');
+                                                                                         const path = afterO[0];
+                                                                                         const query = afterO[1];
+                                                                                         if (path.includes('/')) {
+                                                                                             const encodedPath = path.split('/').join('%2F');
+                                                                                             partImageUrl = `${urlParts[0]}/o/${encodedPath}?${query}`;
+                                                                                         }
+                                                                                     }
 
-                                                                                    let partImageUrl = dataParts[3]?.trim().replace(/^["']|["']$/g, '') || undefined;
-                                                                                    if (partImageUrl && partImageUrl.includes('firebasestorage.googleapis.com') && partImageUrl.includes('/o/') && partImageUrl.includes('?')) {
-                                                                                        const urlParts = partImageUrl.split('/o/');
-                                                                                        const afterO = urlParts[1].split('?');
-                                                                                        const path = afterO[0];
-                                                                                        const query = afterO[1];
-                                                                                        if (path.includes('/')) {
-                                                                                            const encodedPath = path.split('/').join('%2F');
-                                                                                            partImageUrl = `${urlParts[0]}/o/${encodedPath}?${query}`;
-                                                                                        }
-                                                                                    }
+                                                                                     const placeholderImage = PlaceHolderImages.find(p => p.id.toLowerCase() === category.toLowerCase())?.imageUrl || PlaceHolderImages.find(p => p.id === 'case')?.imageUrl;
+                                                                                     const finalImage = partImageUrl && partImageUrl.startsWith('http') ? partImageUrl : placeholderImage;
 
-                                                                                    const placeholderImage = PlaceHolderImages.find(p => p.id.toLowerCase() === category.toLowerCase())?.imageUrl || PlaceHolderImages.find(p => p.id === 'case')?.imageUrl;
-                                                                                    const finalImage = partImageUrl && partImageUrl.startsWith('http') ? partImageUrl : placeholderImage;
-
-                                                                                    return (
-                                                                                        <CarouselItem key={idx} className="pl-2 basis-[85%] sm:basis-[220px] shrink-0">
-                                                                                            <div className={cn(
-                                                                                                "rounded-3xl overflow-hidden shadow-2xl group/card transition-all flex flex-col h-full mb-2 border",
-                                                                                                isDark ? "bg-white/5 border-white/10 hover:border-cyan-500/40 hover:shadow-cyan-500/10" : "bg-card border-border/60 hover:border-cyan-500/40 hover:shadow-cyan-500/10"
-                                                                                            )}>
-                                                                                                <div className={cn(
-                                                                                                    "relative aspect-video w-full overflow-hidden transition-colors",
-                                                                                                    isDark ? "bg-white/5" : "bg-muted/20"
-                                                                                                )}>
-                                                                                                    <img src={finalImage} alt={category} className={cn(
-                                                                                                        "w-full h-full object-contain p-4 transition-transform duration-700 group-hover/card:scale-110 opacity-90",
-                                                                                                        isDark ? "mix-blend-screen" : "mix-blend-multiply"
-                                                                                                    )} />
-                                                                                                    <div className="absolute top-3 right-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 text-[10px] font-black text-cyan-400 uppercase tracking-widest">{category}</div>
-                                                                                                </div>
-                                                                                                <div className="p-4 flex flex-col gap-3 flex-1">
-                                                                                                    <div className="flex flex-col gap-1">
-                                                                                                        <h3 className={cn(
-                                                                                                            "text-[13px] font-bold leading-tight line-clamp-2 min-h-[32px] transition-colors",
-                                                                                                            isDark ? "text-white" : "text-foreground"
-                                                                                                        )}>{partName}</h3>
-                                                                                                        {partPrice && (
-                                                                                                            <div className="text-[14px] font-black text-cyan-400 flex items-center gap-1">
-                                                                                                                <span className="text-[10px] opacity-60 font-medium uppercase tracking-tighter">Price:</span>₱{formattedPrice}
-                                                                                                            </div>
-                                                                                                        )}
-                                                                                                    </div>
-                                                                                                    <div className="flex flex-col gap-2 mt-auto">
-                                                                                                        <Button variant="secondary" size="sm" className="h-10 w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white border-none rounded-2xl shadow-lg shadow-blue-500/20 text-[12px] font-black uppercase tracking-wider flex items-center gap-2 transition-all active:scale-95 justify-center" onClick={(e) => { e.preventDefault(); const event = new CustomEvent('add-suggestion', { detail: { model: partName?.toString(), id: partId } }); window.dispatchEvent(event); }}>
-                                                                                                            <PlusCircle className="w-4 h-4" /> Quick Add
-                                                                                                        </Button>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        </CarouselItem>
-                                                                                    );
-                                                                                })}
-                                                                            </CarouselContent>
-                                                                            {matches.length > 1 && (
-                                                                                <>
-                                                                                    <CarouselPrevious className="absolute -left-0.5 top-1/2 -translate-y-1/2 h-8 w-8 bg-black/60 border-white/10 hover:bg-cyan-500/20 hover:text-cyan-400 hover:border-cyan-500/40 backdrop-blur-xl shadow-2xl z-20" />
-                                                                                    <CarouselNext className="absolute -right-0.5 top-1/2 -translate-y-1/2 h-8 w-8 bg-black/60 border-white/10 hover:bg-cyan-500/20 hover:text-cyan-400 hover:border-cyan-500/40 backdrop-blur-xl shadow-2xl z-20" />
-                                                                                </>
-                                                                            )}
-                                                                        </Carousel>
-                                                                    </div>
-                                                                );
-                                                            }
-                                                        }
-                                                        return null;
-                                                    })}
+                                                                                     return (
+                                                                                         <CarouselItem key={idx} className="pl-2 basis-[80%] sm:basis-[200px] shrink-0 h-full">
+                                                                                             <div className={cn(
+                                                                                                 "rounded-xl overflow-hidden shadow-lg group/card transition-all duration-300 flex flex-col h-[260px] border relative cursor-pointer",
+                                                                                                 isDark 
+                                                                                                     ? "bg-gradient-to-b from-white/[0.06] to-white/[0.02] border-white/10 hover:border-cyan-500/50 hover:shadow-[0_0_24px_rgba(6,182,212,0.2)]" 
+                                                                                                     : "bg-gradient-to-b from-card to-muted/30 border-border/60 hover:border-cyan-500/40 hover:shadow-[0_0_20px_rgba(6,182,212,0.1)]"
+                                                                                             )}>
+                                                                                                 {/* Premium gloss shine sweep animation */}
+                                                                                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent -translate-x-full group-hover/card:animate-shinesweep pointer-events-none z-10"></div>
+                                                                                                 <div className={cn(
+                                                                                                     "relative w-full h-[150px] overflow-hidden flex items-center justify-center shrink-0",
+                                                                                                     isDark ? "bg-white/[0.03]" : "bg-muted/20"
+                                                                                                 )}>
+                                                                                                     <img src={finalImage} alt={partName || category} className={cn(
+                                                                                                         "max-w-full max-h-full object-contain p-2 transition-transform duration-500 group-hover/card:scale-110",
+                                                                                                         isDark ? "opacity-95" : "opacity-90 mix-blend-multiply"
+                                                                                                     )} />
+                                                                                                     {/* Bottom gradient vignette for depth */}
+                                                                                                     <div className={cn(
+                                                                                                         "absolute inset-x-0 bottom-0 h-8 pointer-events-none",
+                                                                                                         isDark ? "bg-gradient-to-t from-black/40 to-transparent" : "bg-gradient-to-t from-white/60 to-transparent"
+                                                                                                     )}></div>
+                                                                                                     <div className="absolute top-1.5 right-1.5 px-1.5 py-px bg-black/70 backdrop-blur-sm rounded-md border border-white/10 text-[8px] font-black text-cyan-400 uppercase tracking-widest">{category}</div>
+                                                                                                 </div>
+                                                                                                 
+                                                                                                 {/* Info section — compact and clean */}
+                                                                                                 <div className="px-2.5 pt-2 pb-2 flex flex-col gap-1.5 flex-1 justify-between min-h-0">
+                                                                                                     <div className="flex flex-col gap-0.5 min-h-0">
+                                                                                                         <h3 className={cn(
+                                                                                                             "text-[11px] font-bold leading-tight line-clamp-2 min-h-[28px] transition-colors",
+                                                                                                             isDark ? "text-zinc-200 group-hover/card:text-white" : "text-zinc-800 group-hover/card:text-foreground"
+                                                                                                         )} title={partName}>{partName}</h3>
+                                                                                                         
+                                                                                                         {partPrice > 0 && (
+                                                                                                             <div className="text-[13px] font-black text-cyan-400 tabular-nums tracking-tight">₱{formattedPrice}</div>
+                                                                                                         )}
+                                                                                                     </div>
+                                                                                                     
+                                                                                                     <Button variant="secondary" size="sm" className="h-7 w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white border-none rounded-lg shadow-md shadow-cyan-500/15 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all duration-200 hover:scale-[1.02] active:scale-95 justify-center" onClick={(e) => { e.preventDefault(); const event = new CustomEvent('add-suggestion', { detail: { model: partName?.toString(), id: partId } }); window.dispatchEvent(event); }}>
+                                                                                                         <PlusCircle className="w-3 h-3" /> Add
+                                                                                                     </Button>
+                                                                                                 </div>
+                                                                                             </div>
+                                                                                         </CarouselItem>
+                                                                                     );
+                                                                                 })}
+                                                                             </CarouselContent>
+                                                                             {recommendations.length > 1 && (
+                                                                                 <>
+                                                                                     <CarouselPrevious className="absolute -left-4 top-1/2 -translate-y-1/2 h-8 w-8 bg-black/60 border-white/10 hover:bg-cyan-500/20 hover:text-cyan-400 hover:border-cyan-500/40 backdrop-blur-xl shadow-2xl z-20 flex items-center justify-center rounded-full" />
+                                                                                     <CarouselNext className="absolute -right-4 top-1/2 -translate-y-1/2 h-8 w-8 bg-black/60 border-white/10 hover:bg-cyan-500/20 hover:text-cyan-400 hover:border-cyan-500/40 backdrop-blur-xl shadow-2xl z-20 flex items-center justify-center rounded-full" />
+                                                                                 </>
+                                                                             )}
+                                                                         </Carousel>
+                                                                     </div>
+                                                                 );
+                                                             }
+                                                         }
+                                                         return null;
+                                                     })}
                                                 </motion.div>
                                             ))}
 
@@ -445,18 +675,52 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                                         isDark ? "bg-white/5 border-cyan-500/30" : "bg-muted border-cyan-500/20"
                                                     )}>
                                                         <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce shadow-[0_0_10px_rgba(6,182,212,0.8)]" style={{ animationDelay: '0ms' }}></span>
-                                                        <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce shadow-[0_0_10_rgba(6,182,212,0.8)]" style={{ animationDelay: '150ms' }}></span>
-                                                        <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce shadow-[0_0_10_rgba(6,182,212,0.8)]" style={{ animationDelay: '300ms' }}></span>
+                                                        <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce shadow-[0_0_10px_rgba(6,182,212,0.8)]" style={{ animationDelay: '150ms' }}></span>
+                                                        <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce shadow-[0_0_10px_rgba(6,182,212,0.8)]" style={{ animationDelay: '300ms' }}></span>
                                                     </div>
-                                                    <div className="px-1 flex items-center gap-2">
-                                                        <span className="text-[10px] uppercase tracking-[0.2em] font-black text-cyan-400/60 animate-pulse">
-                                                            {messages[messages.length - 1]?.role === 'assistant' ? 'Researching...' : 'Thinking...'}
-                                                        </span>
-                                                        {timerActive && (
-                                                            <span className="text-[9px] font-mono text-cyan-500/80 font-bold bg-cyan-500/5 px-1.5 py-0.5 rounded border border-cyan-500/10">
-                                                                {elapsedTime}s
+                                                    <div className="px-1 flex flex-col gap-2 mt-2 w-full max-w-[85%]">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[10px] uppercase tracking-[0.2em] font-black text-cyan-400/60">
+                                                                {messages[messages.length - 1]?.role === 'assistant' ? 'Researching...' : 'Thinking...'}
                                                             </span>
-                                                        )}
+                                                            {timerActive && (
+                                                                <span className="text-[9px] font-mono text-cyan-500/80 font-bold bg-cyan-500/5 px-1.5 py-0.5 rounded border border-cyan-500/10">
+                                                                    {elapsedTime}s
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-[9px] font-mono border border-cyan-500/10 bg-cyan-500/5 rounded-lg p-2 backdrop-blur-md max-w-full overflow-x-auto">
+                                                            {[
+                                                                { label: "Connecting", icon: "⚡" },
+                                                                { label: "Ingesting Context", icon: "🔍" },
+                                                                { label: "Scanning Catalog", icon: "📚" },
+                                                                { label: "Streaming Advice", icon: "✍️" }
+                                                            ].map((step, idx) => {
+                                                                const activeStepIndex = status === 'streaming' 
+                                                                    ? 3 
+                                                                    : elapsedTime < 1.5 
+                                                                        ? 0 
+                                                                        : elapsedTime < 3.0 
+                                                                            ? 1 
+                                                                            : 2;
+                                                                const isActive = idx === activeStepIndex;
+                                                                const isCompleted = idx < activeStepIndex;
+                                                                return (
+                                                                    <div key={idx} className="flex items-center gap-1 shrink-0">
+                                                                        <span className={cn(
+                                                                            "w-1.5 h-1.5 rounded-full transition-all duration-300",
+                                                                            isActive ? "bg-cyan-400 animate-pulse shadow-[0_0_8px_#22d3ee]" : isCompleted ? "bg-cyan-500" : "bg-zinc-700"
+                                                                        )} />
+                                                                        <span className={cn(
+                                                                            "transition-colors duration-300 text-[8px]",
+                                                                            isActive ? "text-cyan-400 font-bold" : isCompleted ? "text-cyan-500/80 hidden sm:inline" : "text-zinc-600 hidden sm:inline"
+                                                                        )}>
+                                                                            {step.label}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </motion.div>
@@ -467,9 +731,47 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                             </CardContent>
 
                             <CardFooter className={cn(
-                                "p-4 backdrop-blur-xl flex-none border-t relative z-10 transition-colors",
+                                "p-4 backdrop-blur-xl flex-none border-t relative z-10 transition-colors flex flex-col gap-3",
                                 isDark ? "bg-black/40 border-white/10 shadow-[0_-10px_30px_rgba(0,0,0,0.4)]" : "bg-muted/80 border-border/40 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]"
                             )}>
+                                {/* Preset message chips — shown only when conversation is fresh */}
+                                <AnimatePresence>
+                                    {!hasUserMessages && !isLoading && !isAiKillSwitch && (
+                                        <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            transition={{ duration: 0.25, ease: 'easeOut' }}
+                                            className="w-full overflow-hidden"
+                                        >
+                                            <div className="flex flex-wrap gap-1.5 w-full">
+                                                {[
+                                                    { text: "Recommend me a GPU", icon: <Monitor className="w-3 h-3" /> },
+                                                    { text: "Best CPU for gaming?", icon: <Cpu className="w-3 h-3" /> },
+                                                    { text: "SSD vs HDD for my build", icon: <HardDrive className="w-3 h-3" /> },
+                                                    { text: "Check part compatibility", icon: <Zap className="w-3 h-3" /> },
+                                                ].map((preset, idx) => (
+                                                    <motion.button
+                                                        key={preset.text}
+                                                        initial={{ opacity: 0, y: 8 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ delay: idx * 0.06, duration: 0.2 }}
+                                                        onClick={() => handlePresetClick(preset.text)}
+                                                        className={cn(
+                                                            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium border transition-all duration-200 hover:scale-[1.03] active:scale-95 cursor-pointer",
+                                                            isDark
+                                                                ? "bg-white/[0.04] border-white/10 text-zinc-300 hover:bg-cyan-500/10 hover:border-cyan-500/30 hover:text-cyan-300"
+                                                                : "bg-white border-border/60 text-zinc-600 hover:bg-cyan-50 hover:border-cyan-400/40 hover:text-cyan-700"
+                                                        )}
+                                                    >
+                                                        {preset.icon}
+                                                        {preset.text}
+                                                    </motion.button>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                                 <form onSubmit={handleSendMessage} className="flex w-full gap-2 relative group">
                                     <Input
                                         value={input}

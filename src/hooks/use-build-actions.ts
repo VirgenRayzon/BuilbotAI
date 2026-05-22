@@ -5,7 +5,7 @@
  */
 "use client";
 
-import { useState, useTransition, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { getAiPrebuiltSuggestions } from "@/app/actions";
@@ -38,7 +38,8 @@ export function useBuildActions({
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [showLocalAiProgress, setShowLocalAiProgress] = useState(false);
   const [aiPhase, setAiPhase] = useState<ProgressPhase>('init');
-  const [isAiPending, startAiTransition] = useTransition();
+  const [isAiPending, setIsAiPending] = useState(false);
+  const [tokensUsed, setTokensUsed] = useState<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const router = useRouter();
@@ -78,12 +79,14 @@ export function useBuildActions({
 
     setAiPhase('init');
     setShowLocalAiProgress(true);
+    setIsAiPending(true);
+    setTokensUsed(null);
 
     // Initialize new abort controller
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    startAiTransition(async () => {
+    (async () => {
       try {
         // Helper to check for abort
         const checkAbort = () => {
@@ -153,6 +156,7 @@ export function useBuildActions({
           await onAddPrebuilt(finalData);
           checkAbort();
           setAiPhase('done');
+          setTokensUsed(Math.round(JSON.stringify(result).length / 4));
         } else {
           setShowLocalAiProgress(false);
           toast({
@@ -173,11 +177,12 @@ export function useBuildActions({
           description: error.message || "An unexpected error occurred."
         });
       } finally {
+        setIsAiPending(false);
         if (abortControllerRef.current === controller) {
           abortControllerRef.current = null;
         }
       }
-    });
+    })();
   };
 
   const handleCheckout = async (onSuccess?: () => void) => {
@@ -274,6 +279,7 @@ export function useBuildActions({
     setShowLocalAiProgress,
     aiPhase,
     isAiPending,
+    tokensUsed,
     handleAddPrebuiltWithAi,
     handleCancelAi,
     handleCheckout,

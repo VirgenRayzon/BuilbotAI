@@ -62,7 +62,7 @@ Return your response strictly adhering to the JSON schema.
 `;
 
         const response = await ai.generate({
-            model: 'googleai/gemini-3-flash-preview',
+            model: 'googleai/gemini-2.5-flash',
             prompt: prompt,
             output: {
                 schema: z.object({

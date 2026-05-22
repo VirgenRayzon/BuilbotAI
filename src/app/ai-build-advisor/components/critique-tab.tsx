@@ -12,6 +12,7 @@ interface CritiqueTabProps {
     isDark: boolean;
     builderState: any;
     critiqueAnalysis: any;
+    critiqueDuration: number | null;
     critiqueLoading: boolean;
     critiqueError: string | null;
     handleCritique: (state: any, force?: boolean, preferences?: { intendedUse?: string; performanceLevel?: string; additionalNotes?: string }) => void;
@@ -28,6 +29,7 @@ export function CritiqueTab({
     isDark,
     builderState,
     critiqueAnalysis,
+    critiqueDuration,
     critiqueLoading,
     critiqueError,
     handleCritique,
@@ -98,6 +100,7 @@ export function CritiqueTab({
                         <AIBuildCritique
                             build={builderState}
                             externalAnalysis={critiqueAnalysis}
+                            externalDuration={critiqueDuration}
                             externalLoading={critiqueLoading}
                             externalError={critiqueError}
                             onRefresh={() => handleCritique(builderState, true, { 

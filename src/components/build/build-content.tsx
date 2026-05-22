@@ -39,7 +39,7 @@ const componentIcons: Record<string, React.ComponentType<{ className?: string }>
   headset: Headphones,
 };
 
-const mainCategories = ['Case', 'Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+const mainCategories = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler', 'Case'];
 const accessoryCategories = ['Monitor', 'Keyboard', 'Mouse', 'Headset'];
 
 export function BuildContent({

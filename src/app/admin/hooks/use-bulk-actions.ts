@@ -9,6 +9,7 @@ import {
     bulkArchivePrebuilts, bulkDeletePrebuilts,
     createSystemNotification
 } from '@/firebase/database';
+import { clearCatalogCache } from '@/app/actions';
 
 /**
  * Hook to manage multi-select and bulk actions for parts and prebuilts.
@@ -150,6 +151,7 @@ export function useBulkActions(profile: any) {
             else if (type === 'restore') await handleBulkArchivePrebuilts(false);
             else if (type === 'delete') await handleBulkDeletePrebuilts();
         }
+        await clearCatalogCache();
         setConfirmAction(prev => ({ ...prev, isOpen: false }));
     };
 

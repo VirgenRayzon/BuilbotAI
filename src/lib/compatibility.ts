@@ -131,6 +131,9 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
 
   // RAM Validation
   if (category === 'RAM') {
+    if (!mobo) {
+      return { compatible: false, message: 'Please add a Motherboard before selecting RAM.' };
+    }
     if (mobo) {
       const moboRamType = normalize(mobo.ramType || mobo.specifications?.['Memory Type'] || mobo.specifications?.['RAM Type'] || mobo.specifications?.['Memory'] || mobo.specifications?.['Generation'] || mobo.specifications?.['Type']);
       if (moboRamType && partRamType) {
@@ -152,6 +155,9 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
 
   // Storage Validation
   if (category === 'Storage') {
+    if (!mobo) {
+      return { compatible: false, message: 'Please add a Motherboard before selecting Storage.' };
+    }
     if (mobo) {
       const storageType = normalize(part.specifications?.['Type']);
       const storageData = currentBuild['Storage'];

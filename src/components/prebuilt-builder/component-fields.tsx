@@ -25,19 +25,7 @@ export function ComponentFields({ form, inventory, openSlot, setOpenSlot }: Comp
             const currentMobo = form.getValues('motherboard');
             const currentCpu = form.getValues('cpu');
             
-            if (category !== 'Case' && !currentCase) {
-                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a Case first to establish physical dimensions.' });
-                return;
-            }
-            if (category !== 'Case' && category !== 'Motherboard' && !currentMobo) {
-                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a Motherboard next to establish socket compatibility.' });
-                return;
-            }
-            const internalComponents = ['GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
-            if (internalComponents.includes(category) && !currentCpu) {
-                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a CPU next to establish core performance baseline.' });
-                return;
-            }
+            // Sequence Validation (Removed)
         }
         setOpenSlot(isOpen ? slotName : null);
     };

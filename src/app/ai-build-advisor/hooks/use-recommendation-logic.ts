@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, useRef, useCallback } from 'react';
 import { getAiRecommendations } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
-import type { Build, AiRecommendation } from "@/lib/types";
+import type { Build, AiRecommendation, Part } from "@/lib/types";
 import type { AiBuildAdvisorRecommendationsInput } from "@/ai/flows/ai-build-advisor-recommendations";
 import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind } from "lucide-react";
 
@@ -15,7 +15,7 @@ const componentIcons: Record<string, any> = {
 /**
  * Hook to handle AI build recommendations and processing.
  */
-export function useRecommendationLogic(isAiKillSwitch: boolean, collections: any) {
+export function useRecommendationLogic(isAiKillSwitch: boolean, allParts: Part[]) {
     const { toast } = useToast();
     const [build, setBuild] = useState<Build | null>(null);
     const [totalPrice, setTotalPrice] = useState(0);
@@ -59,7 +59,7 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, collections: any
         return () => clearInterval(interval);
     }, [isPending]);
 
-    const handleGetRecommendations = (data: AiBuildAdvisorRecommendationsInput) => {
+    const handleGetRecommendations = useCallback((data: AiBuildAdvisorRecommendationsInput) => {
         if (isAiKillSwitch) {
             toast({ title: "AI Disabled", description: "AI is disabled by Administrator.", variant: "destructive" });
             return;
@@ -86,7 +86,7 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, collections: any
                 let price = component.estimatedPrice || 0;
                 let modelName = component.model || "";
                 let description = component.description || "";
-                let collection = (collections as any)[`${type}s`] || [];
+                const collection = allParts.filter(p => p.category.toLowerCase() === type.toLowerCase());
 
                 const match = collection.find((p: any) => {
                     const pModel = (p.model || "").toLowerCase();
@@ -94,7 +94,7 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, collections: any
                     const normalized = modelName.toLowerCase();
                     return (pModel && (normalized.includes(pModel) || pModel.includes(normalized))) ||
                            (pName && (normalized.includes(pName) || pName.includes(normalized)));
-                });
+                }) as any;
 
                 return {
                     model: match ? (match.model || match.name) : modelName,
@@ -131,7 +131,7 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, collections: any
                 abortControllerRef.current = null;
             }
         });
-    };
+    }, [isAiKillSwitch, allParts, toast]);
 
     return {
         build, setBuild, totalPrice, setTotalPrice,

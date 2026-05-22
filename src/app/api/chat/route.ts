@@ -2,14 +2,15 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { streamText, tool, convertToModelMessages, stepCountIs } from 'ai';
 import { retrieveLocalKnowledge } from "@/lib/knowledge-retriever";
 import { retrieveCsvSpecs } from "@/lib/spec-retriever";
-import { getInventoryFromFirestore } from "@/lib/inventory-fetcher";
+import { getStructuredInventory } from "@/lib/inventory-fetcher";
 import { z } from 'zod';
 
 export const maxDuration = 120;
 
 export async function POST(req: Request) {
+    const startTime = Date.now();
     try {
-        const { messages, buildContext } = await req.json();
+        const { messages, userProfile } = await req.json();
 
         if (!messages || !Array.isArray(messages) || messages.length === 0) {
             return new Response(JSON.stringify({ error: "No messages provided" }), { status: 400 });
@@ -28,43 +29,9 @@ export async function POST(req: Request) {
             messageText = lastMessage.content || lastMessage.text || "";
         }
 
-        // Handle trigger greeting for streaming start
-        if (messageText === 'SYSTEM_TRIGGER_GREETING') {
-            const greetingPrompt = "Initialize sequence... Hello Architect. Please introduce yourself as Buildbot AI and offer to help me build my PC. Keep it professional, welcoming, and high-tech.";
-            lastMessage.content = greetingPrompt;
-            if (lastMessage.parts) {
-                lastMessage.parts = [{ type: 'text', text: greetingPrompt }];
-            }
-        }
-
-        // Context formatting
-        const formattedContext = buildContext
-            ? `\nCURRENT BUILD CONTEXT:\n${Object.entries(buildContext)
-                .map(([cat, parts]) => {
-                    if (!parts || (Array.isArray(parts) && parts.length === 0)) return `${cat}: None selected`;
-                    if (Array.isArray(parts)) return `${cat}: ${parts.map((p: any) => `${p.brand || ''} ${p.model}`).join(', ')}`;
-                    const singlePart = parts as any;
-                    return `${cat}: ${singlePart.brand || ''} ${singlePart.model}`;
-                })
-                .join('\n')}`
-            : '\nCURRENT BUILD CONTEXT: No build context provided yet.';
-
-        // Retrieve background knowledge & specs
-        const queryTerms = messageText || "PC components";
-        const [localKnowledge, csvSpecs] = await Promise.all([
-            retrieveLocalKnowledge(queryTerms),
-            retrieveCsvSpecs(queryTerms)
-        ]);
-
-        const knowledgeText = (localKnowledge.length > 0 || csvSpecs.length > 0)
-            ? `\n\nEXPERT KNOWLEDGE BASE:\n${localKnowledge.join('\n\n')}\n\nTECHNICAL SPECIFICATIONS:\n${csvSpecs.join('\n\n')}`
-            : '';
-
+        // Prepare static system instructions
         const systemInstruction = `You are a helpful, expert PC building assistant named "Buildbot AI".
 You are chatting with a user who is currently building a PC.
-IMPORTANT: The user's current build selections are listed below. Always acknowledge these selections when giving advice.
-${formattedContext}
-${knowledgeText}
 
 ### INSTRUCTIONS & ROLE PROMPTING
 
@@ -73,31 +40,26 @@ Your name is BuildbotAI. You are a world-class expert and highly experienced onl
 Our platform provides a comprehensive PC building experience, curating high-quality components like CPUs, GPUs, motherboards, RAM, storage, and cooling solutions. We value our customers, and our goal is to solve their pain points—such as hardware incompatibility, performance bottlenecks, and budget constraints. Your role is to provide top-tier customer service, understand the user's specific computing needs, and recommend optimal, compatible products that meet those requirements. Both the administration team and our customers greatly value your technical assistance and recommendations.
 
 **[Token & Formatting Constraints - CRITICAL]**
-- **Save Tokens:** Keep all answers concise and informative. Your responses are capped at 1,000 tokens, so ensure you finish your thoughts without being overly wordy. Use Markdown clearly (e.g., bolding part names).
+- **Extreme Brevity:** Keep ALL answers short and punchy. Maximum 2-3 short sentences per response. Never use filler phrases like "Here are some top picks" or "These options offer great performance". Get straight to the point.
 - **Hard Cap:** You MUST recommend a maximum of 4 items at a time. Do not overwhelm the user.
 - **Full Builds:** When the user asks for a complete PC build (especially based on a budget), you MUST decline the request. Politely state that you cannot build a full PC from scratch in the chat, and highly recommend that they use the dedicated "Build Advisor" tool on the platform instead.
-- **Brief Explanations:** If recommending single parts, briefly state why it fits (maximum one sentence) to save tokens.
-- **Speech Bubbles:** To keep things readable and UI minimalist, break your thoughts into logical steps. Provide recommendations in a new logical step after receiving tool results.
+- **Speech Bubbles:** Keep responses to 1-2 short sentences maximum per thought.
 
 **[Technical & Tool Directives - STRICT]**
-- **Knowledge Base:** Review the EXPERT KNOWLEDGE BASE for any specific info on parts or topics the user asks about (bottlenecks, tier lists, etc.).
+- **Lazy Grounding:**
+  - If the user asks about compatibility, PC bottlenecks, tier lists, or guidelines, you MUST call \`queryCompatibilityGuides\` to retrieve relevant rules.
+  - If the user asks for detailed specifications of a component (e.g., ports, sockets, frequencies, socket compatibility, sizes), you MUST call \`queryPartSpecifications\` to check specs.
+  - You MUST NOT guess technical specifications or compatibility rules.
 - **Inventory Check:** If the user asks for a recommendation or you want to suggest a part, you MUST use the \`searchInventory\` tool to fetch real parts from the store first. Do not make up parts. Ensure they are in stock.
 - **Currency:** The \`searchInventory\` tool returns the current Price of the items in Philippine Pesos (₱/PHP). Use this price to filter and provide accurate recommendations when the user mentions a specific budget (e.g., "around 20k" means ₱20,000).
-- **Tool Execution:** When using a tool, you MUST finish your current sentence or introductory thought COMPLETELY in a text part before the tool invocation. Do not stop mid-sentence.
-- **Output Formatting:** If you suggest a specific part for the user to add to their build, you MUST use the exact Image URL provided by the \`searchInventory\` tool. DO NOT use placeholders.
-  - OUTPUT FORMAT: \`[Part Name](add-part:Category|ID|Price|ImageURL)\`
-  - Example: If the tool says \`Image: "https://firebasestorage.com/.../o/parts%2Fgpu%2F..."\`, your link MUST be \`[Part Name](add-part:Category|ID|Price|https://firebasestorage.com/.../o/parts%2Fgpu%2F...)\`.
-  - **CRITICAL URL RULE:** Never decode or 'fix' the image URL. Slashes MUST remain exactly as \`%2F\` in the URL.
-
-**[Consultation Steps]**
-Before answering any query, take a deep breath and think through it step-by-step.
-1. Greet the customer warmly (friendly tone).
-2. Identify needs: ask what kind of PC parts they are looking for (gaming, office, productivity, etc.).
-3. Gather details: ask about their specific use case and budget.
-4. Suggest products based on the customer's needs and available products in the store via your tools.
-5. If you cannot find the right product, encourage them to search the site themselves.
-6. If you do not know the answer to a query, say: "I don't have an answer, please ask the store clerk for assistance."
-7. Let them know they can reach out for further assistance after their purchase.
+- **Tool Execution:** When using a tool, you MUST finish your current sentence COMPLETELY in a text part before the tool invocation. Do not stop mid-sentence.
+- **Output Formatting for Recommendations - STRICT:**
+  - DO NOT output custom markdown recommendation links (e.g., \`[Part Name](add-part:...)\`) or custom HTML.
+  - The UI will automatically render an interactive card carousel from the \`searchInventory\` tool results with images, prices, and quick add buttons.
+  - **DO NOT list individual part names, prices, or specs in your text response.** The carousel handles all visual presentation. Just write a brief 1-sentence summary like "Here are some options within your budget" or "I found a few GPUs that match." That's it.
+  - **NEVER write bullet points or numbered lists of recommended parts.** The cards are the recommendation.
+- **General Rules:**
+  - If you do not know the answer to a query, say: "I don't have an answer, please ask the store clerk for assistance."
 `;
 
         const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
@@ -115,11 +77,32 @@ Before answering any query, take a deep breath and think through it step-by-step
             apiKey: apiKey,
         });
 
+        // Slice to get last 10 messages for context
         const recentMessages = messages.slice(-10);
 
+        // Inject userProfile context immediately prior to the final user prompt
+        // NOTE: Google provider only allows system messages at the start, so we inject as a 'user' message with a context tag.
+        if (userProfile) {
+            const displayName = userProfile.displayName || "Architect";
+            const experienceLevel = userProfile.experienceLevel || "Intermediate";
+            const preferences = userProfile.preferences || "None provided";
+            const profilePrompt = `[SYSTEM CONTEXT — DO NOT REPLY TO THIS MESSAGE DIRECTLY]
+USER PROFILE DETAILS (FYI):
+- User Name: ${displayName}
+- Hardware Experience Level: ${experienceLevel}
+- Specific Preferences/Wishes: ${preferences}
+Use this context to customize your tone and hardware tier selections if applicable.`;
+            
+            recentMessages.splice(recentMessages.length - 1, 0, {
+                id: `profile-${Date.now()}`,
+                role: 'user',
+                parts: [{ type: 'text', text: profilePrompt }]
+            } as any);
+        }
+
         const result = await streamText({
-            model: googleProvider('gemini-3-flash-preview'),
-            maxOutputTokens: 1000,
+            model: googleProvider('gemini-2.5-flash'),
+            maxOutputTokens: 350,
             messages: await convertToModelMessages(recentMessages),
             system: systemInstruction,
             tools: {
@@ -130,10 +113,9 @@ Before answering any query, take a deep breath and think through it step-by-step
                         searchTerm: z.string().optional().describe("Keep this EMPTY to get all items in the category."),
                     }),
                     execute: async ({ category, searchTerm }) => {
-                        // Clean up literal "undefined" strings that the AI sometimes sends
                         const cleanTerm = (searchTerm === "undefined" || searchTerm === "") ? undefined : searchTerm;
                         console.log(`[Tool: searchInventory] Searching for ${category} with term: ${cleanTerm ? `"${cleanTerm}"` : "none"}`);
-                        const inventory = await getInventoryFromFirestore(category, cleanTerm);
+                        const inventory = await getStructuredInventory(category, cleanTerm);
 
                         if (!inventory || inventory.length === 0) {
                             return { error: `No parts found in category ${category} matching term '${cleanTerm}'. Try searching again with an EMPTY searchTerm to see all available parts.` };
@@ -141,12 +123,37 @@ Before answering any query, take a deep breath and think through it step-by-step
                         return inventory;
                     },
                 }),
+                queryCompatibilityGuides: tool({
+                    description: "Search the local markdown guides for PC component compatibility rules, tier lists, bottlenecks, and recommendations.",
+                    inputSchema: z.object({
+                        query: z.string().describe("Specific search keywords or terms (e.g. 'ram speed', 'psu tier', 'bottleneck cpu', 'motherboard size').")
+                    }),
+                    execute: async ({ query }) => {
+                        console.log(`[Tool: queryCompatibilityGuides] Query: "${query}"`);
+                        const guides = await retrieveLocalKnowledge(query);
+                        return { guides };
+                    }
+                }),
+                queryPartSpecifications: tool({
+                    description: "Search the local specifications database (CSVs) for detailed hardware specifications (frequencies, ports, sockets, dimensions, power limits).",
+                    inputSchema: z.object({
+                        query: z.string().describe("Part name or brand keywords to lookup (e.g., 'Ryzen 5 7600X', 'RTX 4070', 'Corsair RM850x').")
+                    }),
+                    execute: async ({ query }) => {
+                        console.log(`[Tool: queryPartSpecifications] Query: "${query}"`);
+                        const specs = await retrieveCsvSpecs(query);
+                        return { specs };
+                    }
+                })
             },
             stopWhen: stepCountIs(5), // Allow for tool calling loops automatically
             abortSignal: AbortSignal.timeout(120000), // 120 second timeout
         });
 
         return result.toUIMessageStreamResponse({
+            headers: {
+                'x-server-start': startTime.toString(),
+            },
             onError: (error: unknown) => {
                 if (error == null) return 'unknown error';
                 if (typeof error === 'string') return error;
@@ -160,4 +167,3 @@ Before answering any query, take a deep breath and think through it step-by-step
         return new Response(JSON.stringify({ error: "Failed to process chat request" }), { status: 500 });
     }
 }
-

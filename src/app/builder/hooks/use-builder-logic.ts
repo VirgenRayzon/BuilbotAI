@@ -120,23 +120,7 @@ export function useBuilderLogic(allParts: Part[]) {
             ? false 
             : (build[category] as ComponentData)?.model === part.name;
 
-        // Sequence Validation (Only enforce when adding new parts)
-        if (!isCurrentlySelected) {
-            if (category !== 'Case' && !build['Case']) {
-                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a Case first to establish physical dimensions.' });
-                return;
-            }
-            if (category !== 'Case' && category !== 'Motherboard' && !build['Motherboard']) {
-                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a Motherboard next to establish socket compatibility.' });
-                return;
-            }
-            // Enforce CPU next for all internal performance components
-            const internalComponents = ['GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
-            if (internalComponents.includes(category) && !build['CPU']) {
-                toast({ variant: 'destructive', title: 'Sequence Required', description: 'Please select a CPU next to establish core performance baseline.' });
-                return;
-            }
-        }
+        // Sequence Validation (Removed)
 
         const { compatible, message } = checkCompatibility(part, build);
 

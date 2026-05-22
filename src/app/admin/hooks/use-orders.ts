@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { useFirestore } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, doc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
 import type { Order } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
 import { updateReservationStatus } from '@/app/checkout-actions';
@@ -16,7 +16,16 @@ export function useOrders(profile: any) {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    const ordersQuery = useMemo(() => firestore ? collection(firestore, 'orders') : null, [firestore]);
+    const ordersQuery = useMemo(() => {
+        if (!firestore) return null;
+        const twelveMonthsAgo = new Date();
+        twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+        return query(
+            collection(firestore, 'orders'),
+            where('createdAt', '>=', twelveMonthsAgo),
+            orderBy('createdAt', 'desc')
+        );
+    }, [firestore]);
     const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersQuery);
 
     const handleDeleteOrder = async (orderId: string) => {
@@ -30,7 +39,7 @@ export function useOrders(profile: any) {
                 actorId: profile?.id || 'unknown',
                 actorName: profile?.name || profile?.email || 'Unknown User',
                 actorEmail: profile?.email,
-                resourceType: 'Order',
+                scope: 'Order',
                 resourceName: `Order ${orderId.substring(0, 8)}`,
                 resourceId: orderId,
                 details: 'Deleted reservation'
@@ -66,7 +75,7 @@ export function useOrders(profile: any) {
                     actorId: profile?.id || 'unknown',
                     actorName: profile?.name || profile?.email || 'Unknown User',
                     actorEmail: profile?.email,
-                    resourceType: 'Order',
+                    scope: 'Order',
                     resourceName: `Order ${orderId.substring(0, 8)}`,
                     resourceId: orderId,
                     details: `Status changed to ${newStatus}`

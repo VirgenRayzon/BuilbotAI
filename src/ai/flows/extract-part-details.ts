@@ -76,19 +76,52 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
   }
 
   try {
-    // CONSOLIDATED STAGE: Research & Format in one call
-    logDebug("Consolidated Stage: Researching and formatting part details...");
+    let webResearchContext = '';
+
+    // Step 1: If no local database context, run a plain-text search to gather specs and pricing
+    if (!groundedContext) {
+      logDebug("Step 1: No local context found. Running web search pre-research...");
+      console.log(`[Extract Part Details] Step 1: Running web search for: ${input.partName}`);
+      const researchResponse = await ai.generate({
+        model: 'googleai/gemini-2.5-flash',
+        prompt: `You are a PC hardware specification researcher.
+Research the following PC component and provide detailed specifications and current pricing:
+
+Component: ${input.partName}
+
+Provide:
+1. Full official name and brand.
+2. All key specifications (architecture, cores, clock speeds, memory, TDP, dimensions, etc.)
+3. Current street price in USD and estimated PHP price (multiply USD by 56).
+4. Category (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, or Cooler).
+5. Performance score relative to modern high-end standards (0-100).
+
+Be as specific and detailed as possible with exact numbers.`,
+        config: {
+          temperature: 0,
+          googleSearchRetrieval: {},
+        },
+      });
+      webResearchContext = researchResponse.text;
+      logDebug("Step 1 complete. Web research context obtained.");
+      console.log(`[Extract Part Details] Step 1 complete. Research context obtained.`);
+    }
+
+    // Step 2: Structured output prompt WITHOUT googleSearchRetrieval
+    logDebug("Step 2: Formatting part details into structured output...");
 
     const researcherPrompt = `You are an expert PC hardware researcher and data formatter.
     
 GROUNDING CONTEXT FROM LOCAL DATABASE:
 ${groundedContext || "NONE - Part not found in local database."}
 
+${webResearchContext ? `WEB SEARCH RESEARCH CONTEXT:\n${webResearchContext}` : ''}
+
 User is asking for details on: ${input.partName}
 
 LOGIC RULES:
 1. FIRST, check the GROUNDING CONTEXT above. If it is for the requested part (${input.partName}), use its details.
-2. If the context is NONE or for the wrong part, you MUST use the 'googleSearch' tool to find the accurate specs and current street price in USD.
+2. If the context is NONE or for the wrong part, use the WEB SEARCH RESEARCH CONTEXT above for accurate specs and pricing.
 3. Once you have the data, format it strictly into the requested JSON schema.
 4. For prices: Convert USD street price to PHP by multiplying by 56 (e.g., $1000 = ₱56,000).
 
@@ -104,25 +137,22 @@ SPECIFICATION RULES (Ensure these keys appear in the JSON 'specifications' array
 
 Output strictly the JSON object matching the schema.`;
 
-    const searchConfig = groundedContext ? {} : { googleSearchRetrieval: {} };
-
     const response = await ai.generate({
-      model: 'googleai/gemini-3-flash-preview',
+      model: 'googleai/gemini-2.5-flash',
       prompt: researcherPrompt,
       output: {
         schema: ExtractPartDetailsOutputSchema,
       },
       config: {
         temperature: 0,
-        ...searchConfig
       },
     });
 
     if (!response.output) {
-      throw new Error("AI returned empty output during consolidated research and formatting.");
+      throw new Error("AI returned empty output during part details extraction.");
     }
 
-    logDebug(`Successfully consolidated research and formatting for: ${input.partName}`);
+    logDebug(`Successfully extracted and formatted details for: ${input.partName}`);
     return response.output;
 
   } catch (error: any) {

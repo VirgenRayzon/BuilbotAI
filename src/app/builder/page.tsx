@@ -53,7 +53,10 @@ export default function BuilderPage() {
         handleCategoryChange,
         sortedAndFilteredParts,
         paginatedParts,
-        totalPages
+        totalPages,
+        availableBrands,
+        selectedBrands,
+        setSelectedBrands
     } = useFilteredInventory(allParts, build, getCountInBuild);
 
     const [view, setView] = useState<'grid' | 'list'>('grid');
@@ -153,6 +156,9 @@ export default function BuilderPage() {
                         onTogglePart={handlePartToggle}
                         isSelected={isSelected}
                         itemCount={sortedAndFilteredParts.length}
+                        availableBrands={availableBrands}
+                        selectedBrands={selectedBrands}
+                        onBrandChange={setSelectedBrands}
                     />
                 </div>
             </main>

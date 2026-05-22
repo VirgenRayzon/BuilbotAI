@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition, useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -36,7 +36,10 @@ interface UsePrebuiltFormParams {
 }
 
 export function usePrebuiltForm({ parts, initialData, onSave, onClose }: UsePrebuiltFormParams) {
-    const [isAiPending, startAiTransition] = useTransition();
+    const [isAiPending, setIsAiPending] = useState(false);
+    const [tokensUsed, setTokensUsed] = useState<number | null>(null);
+    const aiAbortRef = useRef(false);
+    const [aiDuration, setAiDuration] = useState<number | null>(null);
     const { toast } = useToast();
     const firestore = useFirestore();
 
@@ -67,6 +70,7 @@ export function usePrebuiltForm({ parts, initialData, onSave, onClose }: UsePreb
     });
 
     useEffect(() => {
+        setAiDuration(null);
         if (initialData) {
             form.reset({
                 name: initialData.name,
@@ -131,8 +135,13 @@ export function usePrebuiltForm({ parts, initialData, onSave, onClose }: UsePreb
             });
             return;
         }
+        setAiDuration(null);
+        setTokensUsed(null);
+        setIsAiPending(true);
+        aiAbortRef.current = false;
+        const startTime = performance.now();
 
-        startAiTransition(async () => {
+        (async () => {
             try {
                 const result = await getAiPrebuiltSuggestions({
                     components: {
@@ -143,7 +152,11 @@ export function usePrebuiltForm({ parts, initialData, onSave, onClose }: UsePreb
                     tier: form.getValues("tier") || undefined
                 });
 
+                const endTime = performance.now();
+                setAiDuration((endTime - startTime) / 1000);
+
                 if (result && "systemName" in result) {
+                    setTokensUsed(Math.round(JSON.stringify(result).length / 4));
                     let fieldsUpdated = [];
                     if (result.systemName && !form.getValues("name")) {
                         form.setValue("name", result.systemName, { shouldValidate: true, shouldDirty: true });
@@ -169,13 +182,17 @@ export function usePrebuiltForm({ parts, initialData, onSave, onClose }: UsePreb
                     }
                 }
             } catch (err: any) {
-                toast({
-                    variant: "destructive",
-                    title: "AI Assist Failed",
-                    description: err.message || "An unexpected error occurred."
-                });
+                if (!aiAbortRef.current) {
+                    toast({
+                        variant: "destructive",
+                        title: "AI Assist Failed",
+                        description: err.message || "An unexpected error occurred."
+                    });
+                }
+            } finally {
+                setIsAiPending(false);
             }
-        });
+        })();
     };
 
     const onSubmit = (values: PrebuiltBuilderAddFormSchema) => {
@@ -192,6 +209,8 @@ export function usePrebuiltForm({ parts, initialData, onSave, onClose }: UsePreb
     return {
         form,
         isAiPending,
+        aiDuration,
+        tokensUsed,
         handleAiAssist,
         onSubmit,
         isAiKillSwitch

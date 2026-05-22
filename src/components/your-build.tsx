@@ -92,7 +92,7 @@ export function YourBuild({
     const { toast } = useToast();
     const router = useRouter();
 
-    const mandatoryCategories = ['Case', 'Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
+    const mandatoryCategories = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler', 'Case'];
     const isBuildComplete = mandatoryCategories.every(cat => {
         const val = build[cat];
         return Array.isArray(val) ? val.length > 0 : !!val;
@@ -133,6 +133,7 @@ export function YourBuild({
         setShowLocalAiProgress,
         aiPhase,
         isAiPending,
+        tokensUsed,
         handleAddPrebuiltWithAi,
         handleCancelAi,
         handleCheckout,
@@ -149,11 +150,7 @@ export function YourBuild({
     });
 
     useEffect(() => {
-        const prevCount = prevSelectedPartsRef.current;
         prevSelectedPartsRef.current = selectedParts;
-        if (prevCount === 0 && selectedParts > 0 && desktopCardRef.current) {
-            desktopCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
     }, [selectedParts]);
 
     const activeFilter = useMemo(() => {
@@ -179,7 +176,7 @@ export function YourBuild({
     // Extract parts array from current build for saving
     const extractBuildParts = (): FavoriteBuildPart[] => {
         const parts: FavoriteBuildPart[] = [];
-        const categories = ['Case', 'Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler', 'Monitor', 'Keyboard', 'Mouse', 'Headset'];
+        const categories = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler', 'Case', 'Monitor', 'Keyboard', 'Mouse', 'Headset'];
         categories.forEach(cat => {
             const val = build[cat];
             if (Array.isArray(val)) {
@@ -376,7 +373,7 @@ export function YourBuild({
                                 <div className="space-y-4 py-4">
                                     <ScrollArea className="max-h-[30vh]">
                                         <div className="space-y-2">
-                                            {['Case', 'Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler', 'Monitor', 'Keyboard', 'Mouse', 'Headset'].map((category) => {
+                                            {['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler', 'Case', 'Monitor', 'Keyboard', 'Mouse', 'Headset'].map((category) => {
                                                 const val = build[category];
                                                 const components = Array.isArray(val) ? val : (val ? [val] : []);
                                                 return components.map((c, idx) => (
@@ -514,6 +511,7 @@ export function YourBuild({
                 onCancel={handleCancelAi}
                 title="Architecting Prebuilt"
                 currentPhase={aiPhase}
+                tokensUsed={tokensUsed || undefined}
             />
         </>
     )
