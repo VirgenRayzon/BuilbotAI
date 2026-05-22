@@ -58,83 +58,76 @@ if (fs.existsSync(adminSettingsPath)) {
     console.log(`[SKIPPED] File not found: ${adminSettingsPath}`);
 }
 
-// 3. Clean up src/app/builder/components/inventory-view.tsx
-const inventoryViewPath = path.join(__dirname, '../src/app/builder/components/inventory-view.tsx');
-if (fs.existsSync(inventoryViewPath)) {
-    try {
-        let content = fs.readFileSync(inventoryViewPath, 'utf8');
-        
-        // Revert props interface
-        content = content.replace(
-            "    onBrandChange?: (brands: string[]) => void;\r\n    className?: string;",
-            "    onBrandChange?: (brands: string[]) => void;"
-        );
-        content = content.replace(
-            "    onBrandChange?: (brands: string[]) => void;\n    className?: string;",
-            "    onBrandChange?: (brands: string[]) => void;"
-        );
-
-        // Revert function signature and class bindings
-        const functionSignatureTarget = `    onBrandChange,\r\n    className\r\n}: InventoryViewProps) {\r\n    return (\r\n        <motion.div\r\n            initial={{ opacity: 0, y: 20 }}\r\n            animate={{ opacity: 1, y: 0 }}\r\n            className={cn(\r\n                "p-6 rounded-3xl border shadow-2xl transition-all duration-500 glass-panel",\r\n                className ? className : "lg:col-span-9"\r\n            )}\r\n        >`;
-        const functionSignatureTargetLf = `    onBrandChange,\n    className\n}: InventoryViewProps) {\n    return (\n        <motion.div\n            initial={{ opacity: 0, y: 20 }}\n            animate={{ opacity: 1, y: 0 }}\n            className={cn(\n                "p-6 rounded-3xl border shadow-2xl transition-all duration-500 glass-panel",\n                className ? className : "lg:col-span-9"\n            )}\n        >`;
-
-        const cleanSignature = `    onBrandChange\n}: InventoryViewProps) {\n    return (\n        <motion.div\n            initial={{ opacity: 0, y: 20 }}\n            animate={{ opacity: 1, y: 0 }}\n            className="p-6 rounded-3xl border shadow-2xl transition-all duration-500 glass-panel lg:col-span-9"\n        >`;
-
-        if (content.includes(functionSignatureTarget)) {
-            content = content.replace(functionSignatureTarget, cleanSignature);
-            console.log("[REMOVED] className custom rendering from inventory-view.tsx (CRLF)");
-        } else if (content.includes(functionSignatureTargetLf)) {
-            content = content.replace(functionSignatureTargetLf, cleanSignature);
-            console.log("[REMOVED] className custom rendering from inventory-view.tsx (LF)");
-        }
-
-        fs.writeFileSync(inventoryViewPath, content, 'utf8');
-        console.log(`[RESTORED] Cleaned inventory-view.tsx`);
-    } catch (err) {
-        console.error(`[ERROR] Failed to clean inventory-view.tsx:`, err);
-    }
-} else {
-    console.log(`[SKIPPED] File not found: ${inventoryViewPath}`);
-}
-
-// 4. Clean up src/app/builder/hooks/use-filtered-inventory.ts
-const useFilteredInventoryPath = path.join(__dirname, '../src/app/builder/hooks/use-filtered-inventory.ts');
-if (fs.existsSync(useFilteredInventoryPath)) {
-    try {
-        let content = fs.readFileSync(useFilteredInventoryPath, 'utf8');
-        
-        // Revert import
-        content = content.replace(
-            "import { useState, useMemo, useCallback } from 'react';",
-            "import { useState, useMemo } from 'react';"
-        );
-
-        // Revert useCallback wrapping
-        const targetStart = "    const handleCategoryChange = useCallback((categoryName: string, selected?: boolean) => {";
-        const cleanStart = "    const handleCategoryChange = (categoryName: string, selected?: boolean) => {";
-
-        if (content.includes(targetStart)) {
-            // Find the end of useCallback wrapping (which ends with }, []); before const sortedAndFilteredParts)
-            const targetEndLf = "        });\n    }, [];\n\n    const sortedAndFilteredParts";
-            const targetEndCrlf = "        });\r\n    }, [];\r\n\r\n    const sortedAndFilteredParts";
+// 3. Revert modified workspace files (inventory-view.tsx and use-filtered-inventory.ts)
+// We try git checkout first since it's 100% precise.
+try {
+    const { execSync } = require('child_process');
+    execSync('git checkout HEAD -- src/app/builder/components/inventory-view.tsx');
+    execSync('git checkout HEAD -- src/app/builder/hooks/use-filtered-inventory.ts');
+    console.log("[RESTORED] Reverted modified components (inventory-view.tsx, use-filtered-inventory.ts) to HEAD via git");
+} catch (gitErr) {
+    console.log("[FALLBACK] Git checkout failed, executing manual string replacement reverts...");
+    
+    // Fallback revert for inventory-view.tsx
+    const inventoryViewPath = path.join(__dirname, '../src/app/builder/components/inventory-view.tsx');
+    if (fs.existsSync(inventoryViewPath)) {
+        try {
+            let content = fs.readFileSync(inventoryViewPath, 'utf8');
             
-            const cleanEndLf = "        });\n    };\n\n    const sortedAndFilteredParts";
-            const cleanEndCrlf = "        });\r\n    };\r\n\r\n    const sortedAndFilteredParts";
+            // Revert interface
+            content = content.replace(/gridCols\??:\s*number;?/g, '');
+            content = content.replace(
+                "    className?: string;\n",
+                "    className?: string;"
+            );
+            content = content.replace(
+                "    className?: string;\r\n",
+                "    className?: string;"
+            );
 
-            content = content.replace(targetStart, cleanStart);
-            content = content.replace(targetEndLf, cleanEndLf);
-            content = content.replace(targetEndCrlf, cleanEndCrlf);
-            
-            console.log("[REMOVED] useCallback wrapper from handleCategoryChange in use-filtered-inventory.ts");
+            // Revert signature and class
+            content = content.replace(/,\r\n\s*gridCols/g, '');
+            content = content.replace(/,\n\s*gridCols/g, '');
+            content = content.replace(/const gridColsClass = [\s\S]*?;\r\n\r\n/g, '');
+            content = content.replace(/const gridColsClass = [\s\S]*?;\n\n/g, '');
+            content = content.replace(/gridColsClass/g, '"grid-cols-2 lg:grid-cols-4"');
+
+            fs.writeFileSync(inventoryViewPath, content, 'utf8');
+            console.log(`[RESTORED] Cleaned inventory-view.tsx (Fallback)`);
+        } catch (err) {
+            console.error(`[ERROR] Failed to clean inventory-view.tsx fallback:`, err);
         }
-
-        fs.writeFileSync(useFilteredInventoryPath, content, 'utf8');
-        console.log(`[RESTORED] Cleaned use-filtered-inventory.ts`);
-    } catch (err) {
-        console.error(`[ERROR] Failed to clean use-filtered-inventory.ts:`, err);
     }
-} else {
-    console.log(`[SKIPPED] File not found: ${useFilteredInventoryPath}`);
+
+    // Fallback revert for use-filtered-inventory.ts
+    const useFilteredInventoryPath = path.join(__dirname, '../src/app/builder/hooks/use-filtered-inventory.ts');
+    if (fs.existsSync(useFilteredInventoryPath)) {
+        try {
+            let content = fs.readFileSync(useFilteredInventoryPath, 'utf8');
+            content = content.replace(
+                "import { useState, useMemo, useCallback } from 'react';",
+                "import { useState, useMemo } from 'react';"
+            );
+            const targetStart = "    const handleCategoryChange = useCallback((categoryName: string, selected?: boolean) => {";
+            const cleanStart = "    const handleCategoryChange = (categoryName: string, selected?: boolean) => {";
+
+            if (content.includes(targetStart)) {
+                const targetEndLf = "        });\n    }, [];\n\n    const sortedAndFilteredParts";
+                const targetEndCrlf = "        });\r\n    }, [];\r\n\r\n    const sortedAndFilteredParts";
+                
+                const cleanEndLf = "        });\n    };\n\n    const sortedAndFilteredParts";
+                const cleanEndCrlf = "        });\r\n    };\r\n\r\n    const sortedAndFilteredParts";
+
+                content = content.replace(targetStart, cleanStart);
+                content = content.replace(targetEndLf, cleanEndLf);
+                content = content.replace(targetEndCrlf, cleanEndCrlf);
+            }
+            fs.writeFileSync(useFilteredInventoryPath, content, 'utf8');
+            console.log(`[RESTORED] Cleaned use-filtered-inventory.ts (Fallback)`);
+        } catch (err) {
+            console.error(`[ERROR] Failed to clean use-filtered-inventory.ts fallback:`, err);
+        }
+    }
 }
 
 console.log("===============================================");

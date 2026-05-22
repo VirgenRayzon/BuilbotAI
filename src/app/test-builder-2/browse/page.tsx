@@ -116,7 +116,7 @@ export default function TestBuilder2BrowsePage() {
                     isDark ? "invert" : ""
                 )} style={{ backgroundImage: 'radial-gradient(currentColor 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-                <main className="w-full max-w-[1400px] mx-auto px-4 md:px-8 py-8 md:py-12 pb-24 pt-24 md:pt-32 relative z-10">
+                <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pb-24 pt-24 md:pt-32 relative z-10">
                     
                     {/* Floating Header Navigation Bar */}
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-5 rounded-2xl bg-muted/20 border border-border/40 mb-8 backdrop-blur-xl">
@@ -153,6 +153,7 @@ export default function TestBuilder2BrowsePage() {
                         {/* Catalog Inventory view full width */}
                         <InventoryView 
                             className="col-span-12"
+                            gridCols={5}
                             loading={inventoryLoading}
                             paginatedParts={paginatedParts}
                             totalPages={totalPages}

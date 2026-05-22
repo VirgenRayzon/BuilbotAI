@@ -218,6 +218,7 @@ export default function TestBuilder1Page() {
                         {/* Inventory — Expands to full screen if sidebar is unpinned */}
                         <InventoryView 
                             className={isPinned ? "lg:col-span-9" : "col-span-12 lg:col-span-12"}
+                            gridCols={isPinned ? 4 : 5}
                             loading={inventoryLoading}
                             paginatedParts={paginatedParts}
                             totalPages={totalPages}

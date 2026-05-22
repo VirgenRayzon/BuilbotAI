@@ -39,6 +39,7 @@ interface InventoryViewProps {
     selectedBrands?: string[];
     onBrandChange?: (brands: string[]) => void;
     className?: string;
+    gridCols?: number;
 }
 
 export function InventoryView({
@@ -65,8 +66,13 @@ export function InventoryView({
     availableBrands,
     selectedBrands,
     onBrandChange,
-    className
+    className,
+    gridCols
 }: InventoryViewProps) {
+    const gridColsClass = gridCols === 5
+        ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
+        : "grid-cols-2 lg:grid-cols-4";
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -100,7 +106,7 @@ export function InventoryView({
             {loading ? null : paginatedParts.length > 0 ? (
                 view === 'grid' ? (
                     <>
-                        <div className="grid gap-3 md:gap-6 grid-cols-2 lg:grid-cols-4">
+                        <div className={cn("grid gap-3 md:gap-6", gridColsClass)}>
                             {paginatedParts.map(part => (
                                 <PartCard
                                     key={part.id}
