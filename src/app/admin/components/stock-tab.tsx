@@ -191,9 +191,9 @@ export function StockTab({
                                         checked={selectedBrands.includes(brand)}
                                         onCheckedChange={(checked) => {
                                             if (checked) {
-                                                setSelectedBrands([...selectedBrands, brand]);
+                                                setSelectedBrands([brand]);
                                             } else {
-                                                setSelectedBrands(selectedBrands.filter((b) => b !== brand));
+                                                setSelectedBrands([]);
                                             }
                                         }}
                                     >

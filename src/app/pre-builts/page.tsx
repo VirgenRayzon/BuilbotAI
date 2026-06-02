@@ -107,17 +107,11 @@ export default function PreBuiltsPage() {
     }, [showAllDetails, filteredAndSortedSystems]);
 
     const [mounted, setMounted] = useState(false);
-    const { setIsPageLoading } = useLoading();
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
-    // Sync with global layout loading
-    useEffect(() => {
-        setIsPageLoading(!mounted || authLoading || loading);
-        return () => setIsPageLoading(false);
-    }, [mounted, authLoading, loading, setIsPageLoading]);
 
     return (
         <RouteGuard requiredPermission="isClientOnly">

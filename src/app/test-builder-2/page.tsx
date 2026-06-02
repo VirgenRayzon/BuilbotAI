@@ -25,7 +25,6 @@ export default function TestBuilder2Page() {
     const isDark = theme === "dark";
     const { authUser, profile, loading: authLoading } = useUserProfile();
     const router = useRouter();
-    const { setIsPageLoading } = useLoading();
 
     // Data Layer
     const { allParts, loading: inventoryLoading } = useInventoryQuery();
@@ -52,11 +51,6 @@ export default function TestBuilder2Page() {
         setMounted(true);
     }, []);
 
-    // Sync with global layout loading
-    useEffect(() => {
-        setIsPageLoading(!mounted || authLoading || !isLoaded || inventoryLoading);
-        return () => setIsPageLoading(false);
-    }, [mounted, authLoading, isLoaded, inventoryLoading, setIsPageLoading]);
 
     // Handle redirection to browse page on slot select
     const handleCategorySelect = (category: string) => {

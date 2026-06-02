@@ -16,7 +16,8 @@ import {
 import {
     TrendingUp, TrendingDown, DollarSign, Package,
     ArrowUpRight, ArrowDownRight, Activity, PieChart as PieIcon,
-    BarChart3, Calendar, ChevronDown
+    BarChart3, Calendar, ChevronDown,
+    Cpu, HardDrive, Zap, Wind, Monitor, Keyboard, Headphones, Box, Grid, Layers
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Order, Part, PrebuiltSystem } from '@/lib/types';
@@ -520,6 +521,25 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
 
                             if (topParts.length === 0) return null;
 
+                            const getCategoryIcon = (cat: string) => {
+                                const lower = cat.toLowerCase();
+                                if (lower.includes('cpu')) return <Cpu className="w-4.5 h-4.5 text-cyan-400" />;
+                                if (lower.includes('gpu')) return <Cpu className="w-4.5 h-4.5 text-purple-400" />;
+                                if (lower.includes('ram') || lower.includes('memory')) return <Layers className="w-4.5 h-4.5 text-emerald-400" />;
+                                if (lower.includes('motherboard')) return <Grid className="w-4.5 h-4.5 text-pink-400" />;
+                                if (lower.includes('psu') || lower.includes('power')) return <Zap className="w-4.5 h-4.5 text-amber-400" />;
+                                if (lower.includes('storage') || lower.includes('ssd') || lower.includes('hdd')) return <HardDrive className="w-4.5 h-4.5 text-blue-400" />;
+                                if (lower.includes('case')) return <Box className="w-4.5 h-4.5 text-indigo-400" />;
+                                if (lower.includes('cooler') || lower.includes('fan')) return <Wind className="w-4.5 h-4.5 text-teal-400" />;
+                                if (lower.includes('monitor')) return <Monitor className="w-4.5 h-4.5 text-rose-400" />;
+                                if (lower.includes('keyboard')) return <Keyboard className="w-4.5 h-4.5 text-orange-400" />;
+                                if (lower.includes('mouse')) return <Zap className="w-4.5 h-4.5 text-violet-400" />;
+                                if (lower.includes('headset') || lower.includes('headphones')) return <Headphones className="w-4.5 h-4.5 text-green-400" />;
+                                return <Package className="w-4.5 h-4.5 text-muted-foreground" />;
+                            };
+
+                            const maxPopularity = topParts[0] ? ((topParts[0] as any).popularity || 1) : 1;
+
                             return (
                                 <motion.div
                                     key={category}
@@ -527,11 +547,11 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                     animate={{ opacity: 1, scale: 1 }}
                                     transition={{ duration: 0.4 }}
                                 >
-                                    <Card className="bg-background/40 backdrop-blur-xl border-border/50 shadow-xl overflow-hidden h-full group">
+                                    <Card className="bg-background/40 backdrop-blur-xl border-border/50 shadow-xl overflow-hidden h-full group hover:border-primary/30 transition-colors duration-300">
                                         <CardHeader className="pb-3 border-b border-border bg-muted/20">
-
                                             <div className="flex items-center justify-between">
-                                                <CardTitle className="text-sm font-headline font-bold uppercase tracking-[0.2em] text-primary">
+                                                <CardTitle className="text-sm font-headline font-bold uppercase tracking-[0.2em] text-primary flex items-center gap-2">
+                                                    {getCategoryIcon(category)}
                                                     {category}
                                                 </CardTitle>
                                                 <Badge variant="outline" className="text-[10px] border-primary/20 text-primary/60">
@@ -541,29 +561,60 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                         </CardHeader>
                                         <CardContent className="p-0">
                                             <div className="divide-y divide-border">
-
-                                                {topParts.map((item, index) => (
-                                                    <div key={item.id} className="p-3 flex items-center gap-3 hover:bg-primary/5 transition-all group/item">
-                                                        <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center font-bold text-[10px] text-primary shrink-0 border border-primary/20 group-hover/item:scale-110 transition-transform">
-                                                            #{index + 1}
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="font-bold text-sm truncate leading-tight group-hover/item:text-primary transition-colors">
-                                                                {item.name}
-                                                            </p>
-                                                            <p className="text-[9px] text-muted-foreground uppercase tracking-widest mt-0.5">
-                                                                {item.brand}
-                                                            </p>
-                                                        </div>
-                                                        <div className="text-right shrink-0">
-                                                            <div className="flex items-center gap-1.5 justify-end">
-                                                                <span className="font-mono font-bold text-sm">{(item as any).popularity || 0}</span>
-                                                                <Activity className="w-3 h-3 text-primary/40" />
+                                                {topParts.map((item, index) => {
+                                                    const relativeStrength = (((item as any).popularity || 0) / maxPopularity) * 100;
+                                                    return (
+                                                        <div key={item.id} className="p-4 flex flex-col hover:bg-primary/5 transition-all duration-300 group/item relative border-b border-border last:border-b-0">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={cn(
+                                                                    "w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border transition-all duration-300 group-hover/item:scale-105",
+                                                                    index === 0 ? "bg-amber-500/10 text-amber-400 border-amber-500/30 font-extrabold shadow-[0_0_10px_rgba(245,158,11,0.15)]" :
+                                                                    index === 1 ? "bg-slate-300/10 text-slate-300 border-slate-300/30" :
+                                                                    index === 2 ? "bg-orange-500/10 text-orange-400 border-orange-500/30" :
+                                                                    "bg-muted/30 text-muted-foreground border-border"
+                                                                )}>
+                                                                    #{index + 1}
+                                                                </div>
+                                                                
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="font-bold text-sm truncate leading-tight text-foreground group-hover/item:text-primary transition-colors">
+                                                                        {item.name}
+                                                                    </p>
+                                                                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-0.5 font-medium">
+                                                                        {item.brand}
+                                                                    </p>
+                                                                </div>
+                                                                
+                                                                <div className="text-right shrink-0">
+                                                                    <div className="flex items-center gap-1.5 justify-end">
+                                                                        <span className="font-mono font-bold text-sm text-foreground">{(item as any).popularity || 0}</span>
+                                                                        <Activity className="w-3.5 h-3.5 text-primary/60" />
+                                                                    </div>
+                                                                    <p className="text-[9px] text-muted-foreground uppercase tracking-tighter opacity-60">Purchases</p>
+                                                                </div>
                                                             </div>
-                                                            <p className="text-[8px] text-muted-foreground uppercase tracking-tighter opacity-60">Purchases</p>
+
+                                                            <div className="mt-2.5 flex items-center gap-2">
+                                                                <span className="text-[8px] text-muted-foreground/60 uppercase font-mono">Relative Demand</span>
+                                                                <div className="flex-1 h-1 bg-muted/40 rounded-full overflow-hidden relative">
+                                                                    <motion.div 
+                                                                        className={cn(
+                                                                            "h-full rounded-full",
+                                                                            index === 0 ? "bg-gradient-to-r from-amber-500 to-amber-300" :
+                                                                            index === 1 ? "bg-gradient-to-r from-slate-400 to-slate-200" :
+                                                                            index === 2 ? "bg-gradient-to-r from-orange-500 to-orange-300" :
+                                                                            "bg-gradient-to-r from-primary/50 to-primary/80"
+                                                                        )} 
+                                                                        initial={{ width: 0 }}
+                                                                        animate={{ width: `${relativeStrength}%` }}
+                                                                        transition={{ duration: 0.8, delay: index * 0.1 }}
+                                                                    />
+                                                                </div>
+                                                                <span className="text-[8px] font-mono text-muted-foreground font-bold shrink-0">{Math.round(relativeStrength)}%</span>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         </CardContent>
                                     </Card>

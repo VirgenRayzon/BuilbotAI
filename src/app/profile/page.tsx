@@ -42,7 +42,6 @@ export default function ProfilePage() {
     const { theme } = useTheme();
     const isDark = theme === "dark";
     const router = useRouter();
-    const { setIsPageLoading } = useLoading();
 
     // Logic Layers
     const profileState = useProfileState();
@@ -55,10 +54,6 @@ export default function ProfilePage() {
     const [confirmAction, setConfirmAction] = useState<{ id: string, type: 'cancel' | 'delete' } | null>(null);
 
     // Initial Effects
-    useEffect(() => {
-        setIsPageLoading(userLoading || reservations.loading);
-        return () => setIsPageLoading(false);
-    }, [userLoading, reservations.loading, setIsPageLoading]);
 
     return (
         <RouteGuard requiredPermission="isRegisteredUser">

@@ -43,13 +43,7 @@ export default function AdminPage() {
     } = useInventory(profile);
     
     const { orders, ordersLoading, handleDeleteOrder, handleUpdateOrder, stats } = useOrders(profile);
-    const { setIsPageLoading } = useLoading();
 
-    // Sync global loading state
-    useEffect(() => {
-        setIsPageLoading(partsLoading || prebuiltsLoading || ordersLoading);
-        return () => setIsPageLoading(false);
-    }, [partsLoading, prebuiltsLoading, ordersLoading, setIsPageLoading]);
     
     const { 
         selectedPartIds, setSelectedPartIds, selectedPrebuiltIds, setSelectedPrebuiltIds,

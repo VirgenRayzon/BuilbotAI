@@ -31,7 +31,6 @@ export default function BuilderPage() {
     const { authUser, profile, loading: authLoading } = useUserProfile();
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { setIsPageLoading } = useLoading();
 
     // Data Layer
     const { allParts, loading: inventoryLoading } = useInventoryQuery();
@@ -84,11 +83,6 @@ export default function BuilderPage() {
         }
     }, [searchParams]);
 
-    // Sync with global layout loading
-    useEffect(() => {
-        setIsPageLoading(!mounted || authLoading || !isLoaded || inventoryLoading);
-        return () => setIsPageLoading(false);
-    }, [mounted, authLoading, isLoaded, inventoryLoading, setIsPageLoading]);
 
     const isSelected = (part: Part) => {
         if (part.category === 'Storage' || part.category === 'RAM') {

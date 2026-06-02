@@ -31,7 +31,6 @@ export default function AiBuildAdvisorPage() {
     const isDark = theme === "dark";
     const { authUser, profile, loading: userLoading } = useUserProfile();
     const router = useRouter();
-    const { setIsPageLoading } = useLoading();
     const lastLoadedKeyRef = useRef<string>("");
 
     // Data Layer
@@ -56,11 +55,6 @@ export default function AiBuildAdvisorPage() {
 
     // Route Protection handled by RouteGuard wrapper in return
 
-    // Page Loading Sync
-    useEffect(() => {
-        setIsPageLoading(userLoading || dataLoading);
-        return () => setIsPageLoading(false);
-    }, [userLoading, dataLoading, setIsPageLoading]);
 
     useEffect(() => {
         window.scrollTo(0, 0);

@@ -74,6 +74,13 @@ export function ArchiveTab({
         { name: "Headset", selected: true },
     ]);
 
+    const [expandedPrebuiltIds, setExpandedPrebuiltIds] = useState<string[]>([]);
+    const togglePrebuiltExpand = (id: string) => {
+        setExpandedPrebuiltIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
     const archivedParts = parts?.filter(p => p.isArchived && archivePartCategories.find(c => c.name === p.category)?.selected) || [];
     const archivedPrebuilts = prebuiltSystems?.filter(s => s.isArchived) || [];
 
@@ -210,8 +217,8 @@ export function ArchiveTab({
                             onDelete={onDeletePrebuilt}
                             onArchive={onArchivePrebuilt}
                             onUpdate={onUpdatePrebuilt}
-                            expandedIds={[]}
-                            onToggleExpand={() => { }}
+                            expandedIds={expandedPrebuiltIds}
+                            onToggleExpand={togglePrebuiltExpand}
                             selectedIds={selectedPrebuiltIds}
                             onToggleSelection={togglePrebuiltSelection}
                             onToggleSelectAll={() => toggleAllPrebuiltsSelection(prebuiltSystems?.filter(s => s.isArchived) || [])}

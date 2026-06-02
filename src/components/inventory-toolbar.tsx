@@ -196,9 +196,9 @@ export function InventoryToolbar({
                     checked={selectedBrands.includes(brand)}
                     onCheckedChange={(checked) => {
                       if (checked) {
-                        onBrandChange([...selectedBrands, brand]);
+                        onBrandChange([brand]);
                       } else {
-                        onBrandChange(selectedBrands.filter((b) => b !== brand));
+                        onBrandChange([]);
                       }
                     }}
                   >

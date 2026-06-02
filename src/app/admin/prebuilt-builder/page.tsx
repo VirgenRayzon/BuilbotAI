@@ -69,7 +69,6 @@ export default function PrebuiltBuilderPage() {
     const { toast } = useToast();
     const { authUser, profile, loading: authLoading } = useUserProfile();
     const router = useRouter();
-    const { setIsPageLoading } = useLoading();
     const { theme } = useTheme();
     const isDark = theme === 'dark';
 
@@ -456,11 +455,6 @@ export default function PrebuiltBuilderPage() {
 
     const isBuilderLoading = partsLoading || authLoading;
 
-    // Sync with global layout loading
-    useEffect(() => {
-        setIsPageLoading(isBuilderLoading);
-        return () => setIsPageLoading(false);
-    }, [isBuilderLoading, setIsPageLoading]);
 
     return (
         <RouteGuard requiredPermission="canAccessAdmin">
