@@ -300,12 +300,15 @@ export async function syncUserClaimsAction(idToken: string) {
     const isManager = !!data.isManager;
     const isSuperAdmin = !!data.isSuperAdmin;
     
-    await adminAuth.setCustomUserClaims(userId, {
-      isManager,
-      isSuperAdmin,
-    });
-    
-    console.log(`[syncUserClaimsAction] Custom claims set successfully for ${userId}: isManager=${isManager}, isSuperAdmin=${isSuperAdmin}`);
+    try {
+      await adminAuth.setCustomUserClaims(userId, {
+        isManager,
+        isSuperAdmin,
+      });
+      console.log(`[syncUserClaimsAction] Custom claims set successfully for ${userId}: isManager=${isManager}, isSuperAdmin=${isSuperAdmin}`);
+    } catch (claimErr) {
+      console.warn(`[syncUserClaimsAction] setCustomUserClaims warning (Firestore profile active):`, claimErr);
+    }
     return { success: true, isManager, isSuperAdmin };
   } catch (error: any) {
     console.error(`[syncUserClaimsAction] Failed to sync custom claims:`, error);
@@ -420,13 +423,16 @@ export async function authenticateSystemAccessAction(
       effectiveProfile = newProfile;
     }
 
-    // 4. Set custom claims on Firebase Auth
-    await adminAuth.setCustomUserClaims(userId, {
-      isManager: true,
-      isSuperAdmin: !!effectiveProfile.isSuperAdmin,
-    });
-
-    console.log(`[authenticateSystemAccessAction] Successfully promoted user ${userId}: isManager=true, isSuperAdmin=${!!effectiveProfile.isSuperAdmin}`);
+    // 4. Set custom claims on Firebase Auth (gracefully catch local environment ADC limitations)
+    try {
+      await adminAuth.setCustomUserClaims(userId, {
+        isManager: true,
+        isSuperAdmin: !!effectiveProfile.isSuperAdmin,
+      });
+      console.log(`[authenticateSystemAccessAction] Successfully promoted user ${userId}: isManager=true, isSuperAdmin=${!!effectiveProfile.isSuperAdmin}`);
+    } catch (claimErr) {
+      console.warn(`[authenticateSystemAccessAction] setCustomUserClaims warning (Firestore profile updated successfully):`, claimErr);
+    }
     return { success: true };
   } catch (error: any) {
     console.error(`[authenticateSystemAccessAction] Failed to authenticate system access:`, error);

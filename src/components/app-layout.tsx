@@ -31,6 +31,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: settings } = useDoc<any>(settingsDocRef);
   const isMaintenanceMode = settings?.isMaintenanceMode || false;
   const isSuperAdmin = profile?.isSuperAdmin || false;
+  const isManager = profile?.isManager || false;
+  const isAdmin = isSuperAdmin || isManager;
 
   useEffect(() => {
     setMounted(true);
@@ -42,9 +44,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   // Global loading state: Not mounted yet, or landing redirect, or page-specific loading
   const showGlobalLoader = !mounted || isLandingRedirect || isPageLoading;
 
-  // Kill Switch Logic: Only block PUBLIC users and MANAGERS
-  // Only Super Admins can bypass to keep working
-  const showMaintenance = isMaintenanceMode && !isSuperAdmin && !loading;
+  // Routes exempt from maintenance screen (admin pages & system access login)
+  const isAdminRoute = pathname.startsWith('/admin') || pathname === '/system-access';
+
+  // Kill Switch Logic: Only block PUBLIC non-admin users on non-admin routes
+  // Admins (Super Admin & Manager) and Admin routes are exempted from maintenance mode
+  const showMaintenance = isMaintenanceMode && !isAdmin && !loading && !isAdminRoute;
 
   // Routes where the global footer SHOULD appear (Whitelist)
   const showFooterRoutes = ['/about', '/faq', '/contact', '/team'];
@@ -67,7 +72,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <main className={cn(
             "flex-1 min-h-[calc(100vh-4rem)]", 
             !isHeaderHidden && "pt-16",
-            isMaintenanceMode && !isSuperAdmin && "grayscale-[0.5] contrast-125"
+            isMaintenanceMode && !isAdmin && !isAdminRoute && "grayscale-[0.5] contrast-125"
           )}>
             {children}
           </main>
