@@ -49,9 +49,9 @@ export default function PreBuiltsPage() {
     const [view, setView] = useState<'grid' | 'list'>('grid');
     const [expandedIds, setExpandedIds] = useState<string[]>([]);
     const [showAllDetails, setShowAllDetails] = useState(false);
-    
+
     const toggleExpand = (id: string) => {
-        setExpandedIds(prev => 
+        setExpandedIds(prev =>
             prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
         );
     };
@@ -119,107 +119,107 @@ export default function PreBuiltsPage() {
                 "min-h-screen transition-colors duration-500 overflow-x-hidden",
                 isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
             )}>
-            {/* Circuit Pattern Background */}
-            <div className={cn(
-                "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
-                isDark ? "invert" : ""
-            )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+                {/* Circuit Pattern Background */}
+                <div className={cn(
+                    "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
+                    isDark ? "invert" : ""
+                )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-            <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pt-24 md:pt-32 relative z-10">
-            <div className="relative mb-12">
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="relative z-10"
-                >
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="h-px w-8 bg-primary" />
-                        <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary italic">Deploy Now</span>
+                <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pt-24 md:pt-32 relative z-10">
+                    <div className="relative mb-12">
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="relative z-10"
+                        >
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="h-px w-8 bg-primary" />
+                                <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary italic">Deploy Now</span>
+                            </div>
+                            <h1 className="text-5xl md:text-7xl font-headline font-black uppercase tracking-tighter leading-none mb-6">
+                                Pre-Built <span className="text-primary italic">Systems</span>
+                            </h1>
+                            <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed font-medium">
+                                PC builds curated for absolute performance. Checked and Validated for ultimate reliability and stability.
+                            </p>
+                        </motion.div>
+
+                        {/* Background Accent */}
+                        <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
                     </div>
-                    <h1 className="text-5xl md:text-7xl font-headline font-black uppercase tracking-tighter leading-none mb-6">
-                        Battle-Ready <span className="text-primary italic">Systems</span>
-                    </h1>
-                    <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed font-medium">
-                        Expertly crafted builds engineered for absolute performance. Validated by Buildbot AI for ultimate reliability and stability.
-                    </p>
-                </motion.div>
-                
-                {/* Background Accent */}
-                <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-            </div>
 
-            <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={cn(
-                  "p-6 rounded-3xl border backdrop-blur-xl shadow-2xl transition-all duration-500",
-                  isDark ? "bg-slate-900/40 border-white/5 shadow-black/40" : "bg-white/60 border-slate-200 shadow-slate-200/50"
-                )}
-            >
-                <div className="mb-8">
-                    <InventoryToolbar
-                        categories={categories}
-                        onCategoryChange={handleCategoryChange}
-                        itemCount={filteredAndSortedSystems.length}
-                        sortBy={sortBy}
-                        onSortByChange={setSortBy}
-                        sortDirection={sortDirection}
-                        onSortDirectionChange={setSortDirection}
-                        supportedSorts={['Date Added', 'Name', 'Price', 'Tier']}
-                        view={view}
-                        onViewChange={setView}
-                        showViewToggle={true}
-                        searchQuery={searchQuery}
-                        onSearchQueryChange={setSearchQuery}
-                        showDetails={showAllDetails}
-                        onShowDetailsChange={setShowAllDetails}
-                    />
-                </div>
-
-                {loading ? null : filteredAndSortedSystems.length > 0 ? (
-                    view === 'grid' ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
-                            {filteredAndSortedSystems.map(system => (
-                                <PrebuiltSystemCard 
-                                    key={system.id} 
-                                    system={system} 
-                                    expanded={showAllDetails}
-                                    onToggle={() => setShowAllDetails(!showAllDetails)}
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="overflow-hidden rounded-2xl border border-border/50 bg-background/20">
-                            <PrebuiltsTable 
-                                systems={filteredAndSortedSystems} 
-                                showActions={false} 
-                                expandedIds={expandedIds}
-                                onToggleExpand={toggleExpand}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={cn(
+                            "p-6 rounded-3xl border backdrop-blur-xl shadow-2xl transition-all duration-500",
+                            isDark ? "bg-slate-900/40 border-white/5 shadow-black/40" : "bg-white/60 border-slate-200 shadow-slate-200/50"
+                        )}
+                    >
+                        <div className="mb-8">
+                            <InventoryToolbar
+                                categories={categories}
+                                onCategoryChange={handleCategoryChange}
+                                itemCount={filteredAndSortedSystems.length}
+                                sortBy={sortBy}
+                                onSortByChange={setSortBy}
+                                sortDirection={sortDirection}
+                                onSortDirectionChange={setSortDirection}
+                                supportedSorts={['Date Added', 'Name', 'Price', 'Tier']}
+                                view={view}
+                                onViewChange={setView}
+                                showViewToggle={true}
+                                searchQuery={searchQuery}
+                                onSearchQueryChange={setSearchQuery}
+                                showDetails={showAllDetails}
+                                onShowDetailsChange={setShowAllDetails}
                             />
                         </div>
-                    )
-                ) : (
-                    <div className="min-h-[400px] flex flex-col items-center justify-center text-center p-12">
-                        <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-6">
-                            {searchQuery ? (
-                                <SearchX className="h-8 w-8 text-muted-foreground opacity-20" />
+
+                        {loading ? null : filteredAndSortedSystems.length > 0 ? (
+                            view === 'grid' ? (
+                                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
+                                    {filteredAndSortedSystems.map(system => (
+                                        <PrebuiltSystemCard
+                                            key={system.id}
+                                            system={system}
+                                            expanded={showAllDetails}
+                                            onToggle={() => setShowAllDetails(!showAllDetails)}
+                                        />
+                                    ))}
+                                </div>
                             ) : (
-                                <MonitorOff className="h-8 w-8 text-muted-foreground opacity-20" />
-                            )}
-                        </div>
-                        <div className="space-y-2">
-                            <h3 className="text-xl font-headline font-bold uppercase tracking-tight">Zero Diagnostics Found</h3>
-                            <p className="max-w-md mx-auto text-muted-foreground text-sm">
-                                {searchQuery
-                                    ? `No systems found matching "${searchQuery}". Reset filters to restart scanning.`
-                                    : "No pre-built rigs match the currently selected criteria."}
-                            </p>
-                        </div>
-                    </div>
-                )}
-            </motion.div>
-        </main>
-        </div>
+                                <div className="overflow-hidden rounded-2xl border border-border/50 bg-background/20">
+                                    <PrebuiltsTable
+                                        systems={filteredAndSortedSystems}
+                                        showActions={false}
+                                        expandedIds={expandedIds}
+                                        onToggleExpand={toggleExpand}
+                                    />
+                                </div>
+                            )
+                        ) : (
+                            <div className="min-h-[400px] flex flex-col items-center justify-center text-center p-12">
+                                <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-6">
+                                    {searchQuery ? (
+                                        <SearchX className="h-8 w-8 text-muted-foreground opacity-20" />
+                                    ) : (
+                                        <MonitorOff className="h-8 w-8 text-muted-foreground opacity-20" />
+                                    )}
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-xl font-headline font-bold uppercase tracking-tight">Zero Diagnostics Found</h3>
+                                    <p className="max-w-md mx-auto text-muted-foreground text-sm">
+                                        {searchQuery
+                                            ? `No systems found matching "${searchQuery}". Reset filters to restart scanning.`
+                                            : "No pre-built rigs match the currently selected criteria."}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </motion.div>
+                </main>
+            </div>
         </RouteGuard>
     )
 }

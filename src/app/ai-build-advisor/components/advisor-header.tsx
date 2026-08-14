@@ -44,7 +44,7 @@ export function AdvisorHeader({ isAiKillSwitch }: AdvisorHeaderProps) {
                         AI Build <span className="text-primary italic">Advisor</span>
                     </h1>
                     <p className="text-muted-foreground mt-4 max-w-2xl text-lg leading-relaxed">
-                        Get intelligent hardware recommendations and professional critiques for your custom build through our neural-trained AI model.
+                        Get hardware recommendations and critiques for your custom build through AI-enhanced suggestions.
                     </p>
                 </motion.div>
                 <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />

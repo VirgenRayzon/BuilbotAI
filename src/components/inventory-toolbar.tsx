@@ -23,6 +23,7 @@ import {
   ArrowUpAZ,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import React from "react";
 import { Layers, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -182,29 +183,31 @@ export function InventoryToolbar({
               <DropdownMenuContent className="w-56" align="start">
                 <DropdownMenuLabel>Filter by Brand</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem
-                  checked={selectedBrands.length === 0}
-                  onCheckedChange={() => onBrandChange([])}
-                  className="font-bold"
-                >
-                  All Brands
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuSeparator />
-                {availableBrands.map((brand) => (
+                <ScrollArea className="max-h-[300px]">
                   <DropdownMenuCheckboxItem
-                    key={brand}
-                    checked={selectedBrands.includes(brand)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        onBrandChange([brand]);
-                      } else {
-                        onBrandChange([]);
-                      }
-                    }}
+                    checked={selectedBrands.length === 0}
+                    onCheckedChange={() => onBrandChange([])}
+                    className="font-bold"
                   >
-                    {brand}
+                    All Brands
                   </DropdownMenuCheckboxItem>
-                ))}
+                  <DropdownMenuSeparator />
+                  {availableBrands.map((brand) => (
+                    <DropdownMenuCheckboxItem
+                      key={brand}
+                      checked={selectedBrands.includes(brand)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          onBrandChange([brand]);
+                        } else {
+                          onBrandChange([]);
+                        }
+                      }}
+                    >
+                      {brand}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </ScrollArea>
               </DropdownMenuContent>
             </DropdownMenu>
           )}

@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-06-03]
+
+### Miscellaneous
+- UI updates and bug fixes ([51a6334](https://github.com/VirgenRayzon/BuilbotAI/commit/51a6334))
+
 ## [2026-05-23]
 
 ### Features
