@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-08-11]
+
+### Bug Fixes
+- **maintenance**: Exempt admin routes and admin users from maintenance mode ([a370e53](https://github.com/VirgenRayzon/BuilbotAI/commit/a370e53))
+
 ## [2026-06-03]
 
 ### Miscellaneous
