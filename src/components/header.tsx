@@ -50,12 +50,12 @@ export function Header() {
     setMounted(true);
   }, []);
 
-  const logoHref = !mounted 
-    ? "/" 
-    : loading 
-      ? "#" 
-      : authUser 
-        ? (profile?.isManager ? "/admin" : "/builder") 
+  const logoHref = !mounted
+    ? "/"
+    : loading
+      ? "#"
+      : authUser
+        ? (profile?.isManager ? "/admin" : "/builder")
         : "/";
 
   const handleSignOut = async () => {
@@ -82,17 +82,17 @@ export function Header() {
   ];
 
   const adminLinks: NavLink[] = [
-    { 
-      href: "/admin", 
-      label: "Dashboard", 
+    {
+      href: "/admin",
+      label: "Dashboard",
       role: profile?.isSuperAdmin ? "Super Admin" : "Manager",
-      admin: true 
+      admin: true
     },
-    { 
-      href: "/admin/prebuilt-builder", 
-      label: "Prebuilt Builder", 
+    {
+      href: "/admin/prebuilt-builder",
+      label: "Prebuilt Builder",
       role: profile?.isSuperAdmin ? "Super Admin" : "Manager",
-      admin: true 
+      admin: true
     },
   ];
 
@@ -111,7 +111,7 @@ export function Header() {
   return (
     <header className="fixed top-0 z-50 w-full border-b border-border/40 bg-background/60 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/40 shadow-[0_4px_30px_rgba(0,0,0,0.1)] pr-[var(--removed-body-scroll-bar-size,0px)]">
       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent z-20 opacity-50"></div>
-      
+
       <div className="flex h-16 max-w-[1800px] w-full mx-auto items-center px-4 md:px-12">
         {/* Left: Logo */}
         <div className="flex-none">
@@ -121,8 +121,8 @@ export function Header() {
             className="p-1 px-4 border-none bg-transparent hover:bg-white/5 shadow-none"
             sparkleColor="#06b6d4"
           >
-            <Link 
-              href={logoHref} 
+            <Link
+              href={logoHref}
               className="flex items-center"
             >
               <Logo />
@@ -147,11 +147,11 @@ export function Header() {
                   <span className="relative z-10 flex items-center gap-2">
                     {link.label}
                     {link.role && (
-                      <Badge 
-                        variant="outline" 
+                      <Badge
+                        variant="outline"
                         className={cn(
                           "ml-1 px-1.5 py-0 text-[8px] uppercase tracking-tighter transition-all duration-300 whitespace-nowrap",
-                          isActive 
+                          isActive
                             ? (profile?.isSuperAdmin ? "bg-primary/20 text-primary border-primary/30" : "bg-amber-500/20 text-amber-500 border-amber-500/30")
                             : "bg-muted/50 text-muted-foreground border-border/50"
                         )}
@@ -202,7 +202,7 @@ export function Header() {
                   {profile?.name || authUser?.displayName || authUser?.email?.split('@')[0] || "User"}
                 </span>
                 <span className="text-[8px] font-bold uppercase tracking-widest text-primary/80 -mt-0.5">
-                  {profile?.isSuperAdmin ? "Neural Administrator" : profile?.isManager ? "System Manager" : "Citizen Architect"}
+                  {profile?.isSuperAdmin ? "Administrator Access" : profile?.isManager ? "Manager Access" : "Customer Access"}
                 </span>
               </div>
 
@@ -211,12 +211,12 @@ export function Header() {
                 {profile?.isManager && <NotificationCenter />}
                 <ThemeToggle />
               </div>
-              
+
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="hidden sm:flex rounded-xl h-9 px-4 text-[10px] font-bold uppercase tracking-widest border border-destructive/20 hover:bg-destructive/10 hover:text-destructive transition-all duration-300 group"
                   >
                     <LogOut className="mr-2 h-3.5 w-3.5 transition-transform group-hover:-translate-x-1" />
@@ -232,7 +232,7 @@ export function Header() {
                   </AlertDialogHeader>
                   <AlertDialogFooter className="mt-4 gap-2">
                     <AlertDialogCancel className="rounded-xl border-border/40 hover:bg-muted/50 font-bold uppercase tracking-widest text-[10px]">Cancel</AlertDialogCancel>
-                    <AlertDialogAction 
+                    <AlertDialogAction
                       onClick={handleSignOut}
                       className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-destructive/20"
                     >
@@ -268,7 +268,7 @@ export function Header() {
                             {profile?.name || authUser?.displayName || authUser?.email?.split('@')[0] || "User"}
                           </span>
                           <span className="text-[9px] font-bold uppercase tracking-widest text-primary/80">
-                            {profile?.isSuperAdmin ? "Neural Administrator" : profile?.isManager ? "System Manager" : "Citizen Architect"}
+                            {profile?.isSuperAdmin ? "Administrator Access" : profile?.isManager ? "Manager Access" : "Customer Access"}
                           </span>
                         </div>
                       </div>
@@ -281,16 +281,16 @@ export function Header() {
                               href={link.href}
                               className={cn(
                                 "flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-widest transition-all",
-                                isActive 
-                                  ? "bg-primary/10 text-primary border border-primary/20" 
+                                isActive
+                                  ? "bg-primary/10 text-primary border border-primary/20"
                                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground border border-transparent"
                               )}
                             >
                               <span className="flex items-center gap-2">
                                 {link.label}
                                 {link.role && (
-                                  <Badge 
-                                    variant="outline" 
+                                  <Badge
+                                    variant="outline"
                                     className={cn(
                                       "px-2 py-0 text-[8px] uppercase tracking-tighter whitespace-nowrap",
                                       profile?.isSuperAdmin ? "bg-primary/10 text-primary border-primary/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"
@@ -308,14 +308,14 @@ export function Header() {
                       </nav>
                       <div className="mt-auto space-y-4">
                         <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/40 border border-border/20">
-                           {!profile?.isManager && <UserNotifications />}
-                           {profile?.isManager && <NotificationCenter />}
-                           <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Notifications</span>
+                          {!profile?.isManager && <UserNotifications />}
+                          {profile?.isManager && <NotificationCenter />}
+                          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Notifications</span>
                         </div>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               className="w-full justify-start rounded-xl h-12 px-4 text-xs font-bold uppercase tracking-widest border border-destructive/20 text-destructive hover:bg-destructive/10"
                             >
                               <LogOut className="mr-3 h-4 w-4" />
@@ -331,7 +331,7 @@ export function Header() {
                             </AlertDialogHeader>
                             <AlertDialogFooter className="mt-4 flex flex-row gap-2 sm:flex-row">
                               <AlertDialogCancel className="flex-1 rounded-xl border-border/40 font-bold uppercase tracking-widest text-[10px] m-0">No</AlertDialogCancel>
-                              <AlertDialogAction 
+                              <AlertDialogAction
                                 onClick={handleSignOut}
                                 className="flex-1 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold uppercase tracking-widest text-[10px] m-0"
                               >

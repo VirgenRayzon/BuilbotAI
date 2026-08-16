@@ -72,47 +72,22 @@ export function CritiqueTab({
             </div>
 
             {/* Performance Diagnostics Column - Right */}
-            <div className="lg:col-span-9">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className={cn(
-                        "rounded-3xl border backdrop-blur-xl h-full min-h-[600px] overflow-hidden shadow-2xl",
-                        isDark ? "bg-slate-900/40 border-white/5 shadow-black/40" : "bg-white/60 border-slate-200 shadow-slate-200/50"
-                    )}
-                >
-                    <div className="p-8 border-b border-border/50 bg-background/20">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <LayoutPanelLeft className="w-6 h-6 text-primary" />
-                                <h2 className="text-xl font-headline font-bold uppercase tracking-tight">Performance Diagnostics</h2>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg bg-primary/10 border border-primary/20 text-[10px] font-bold text-primary uppercase tracking-widest">
-                                    <CircuitBoard className="w-3 h-3" />
-                                    Live Analysis
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="p-2 md:p-6">
-                        <AIBuildCritique
-                            build={builderState}
-                            externalAnalysis={critiqueAnalysis}
-                            externalDuration={critiqueDuration}
-                            externalLoading={critiqueLoading}
-                            externalError={critiqueError}
-                            onRefresh={() => handleCritique(builderState, true, { 
-                                intendedUse: workload, 
-                                performanceLevel: resolution 
-                            })}
-                            onCancel={handleCancelCritique}
-                            intendedUse={workload}
-                            performanceLevel={resolution}
-                        />
-                    </div>
-                </motion.div>
+            <div className="lg:col-span-9 h-full">
+                <AIBuildCritique
+                    build={builderState}
+                    externalAnalysis={critiqueAnalysis}
+                    externalDuration={critiqueDuration}
+                    externalLoading={critiqueLoading}
+                    externalError={critiqueError}
+                    onRefresh={() => handleCritique(builderState, true, { 
+                        intendedUse: workload, 
+                        performanceLevel: resolution 
+                    })}
+                    onCancel={handleCancelCritique}
+                    intendedUse={workload}
+                    performanceLevel={resolution}
+                    className="mt-0"
+                />
             </div>
         </div>
     );

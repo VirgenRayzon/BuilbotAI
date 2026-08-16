@@ -99,7 +99,7 @@ export default function BuilderPage() {
         <RouteGuard requiredPermission="isClientOnly">
             <div className={cn(
                 "min-h-screen transition-colors duration-500 overflow-x-hidden",
-                isDark ? "bg-background text-foreground" : "bg-white text-slate-900"
+                isDark ? "bg-[#0c0f14] text-slate-50" : "bg-slate-50 text-slate-900"
             )}>
             {/* Circuit Pattern Background */}
             <div className={cn(

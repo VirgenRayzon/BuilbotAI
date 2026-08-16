@@ -43,6 +43,7 @@ interface AIBuildCritiqueProps {
     intendedUse?: string;
     performanceLevel?: string;
     additionalNotes?: string;
+    className?: string;
 }
 
 export function AIBuildCritique({ 
@@ -55,7 +56,8 @@ export function AIBuildCritique({
     onCancel,
     intendedUse,
     performanceLevel,
-    additionalNotes
+    additionalNotes,
+    className
 }: AIBuildCritiqueProps) {
     const [internalAnalysis, setInternalAnalysis] = useState<any>(null);
     const [internalLoading, setInternalLoading] = useState(false);
@@ -228,7 +230,7 @@ export function AIBuildCritique({
     };
 
     return (
-        <Card className="w-full mt-6 bg-gradient-to-br from-card to-secondary/10 border-primary/20 relative overflow-hidden">
+        <Card className={cn("w-full bg-gradient-to-br from-card to-secondary/10 border-primary/20 relative overflow-hidden", className !== undefined ? className : "mt-6")}>
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
             <CardHeader>
                 <CardTitle className="flex items-center justify-between font-headline text-2xl">
