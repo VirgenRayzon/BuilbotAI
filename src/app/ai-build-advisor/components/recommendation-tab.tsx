@@ -43,7 +43,7 @@ export function RecommendationTab({
                 )}>
                     {/* Animated top accent */}
                     <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent z-20" />
-                    
+
                     {/* Subtle corner glow accents */}
                     <div className="absolute -top-6 -left-6 w-32 h-32 bg-primary/10 rounded-full blur-[40px] pointer-events-none z-0" />
                     <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-purple-500/8 rounded-full blur-[30px] pointer-events-none z-0" />
@@ -60,46 +60,24 @@ export function RecommendationTab({
                                 <h2 className="text-2xl font-headline font-bold tracking-tight">
                                     Buildbot Advisor
                                 </h2>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
-                                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Neural Engine Active</span>
-                                </div>
                             </div>
                         </div>
-
-                        <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
-                            Describe your hardware requirements, budget, or preferred games. Our neural engine will architect the perfect build for you.
-                        </p>
-
                         <ChatForm
                             getRecommendations={handleGetRecommendations}
                             isPending={isPending}
                         />
-
-                        <div className="mt-8 pt-8 border-t border-border/50">
-                            <div className="flex items-center gap-4 text-xs text-muted-foreground font-mono">
-                                <div className="flex items-center gap-1.5">
-                                    <CircuitBoard className="w-3 h-3" />
-                                    V2.4.0-CORE
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                    <Database className="w-3 h-3" />
-                                    LIVE INVENTORY
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </aside>
 
             <div className="lg:col-span-8">
-                <BuildSummary 
-                    build={build} 
-                    isPending={isPending} 
+                <BuildSummary
+                    build={build}
+                    isPending={isPending}
                     onCancel={handleCancelRecommendations}
-                    elapsedTime={elapsedTime} 
-                    finalResponseTime={finalResponseTime} 
-                    totalPrice={totalPrice} 
+                    elapsedTime={elapsedTime}
+                    finalResponseTime={finalResponseTime}
+                    totalPrice={totalPrice}
                     error={error}
                 />
             </div>

@@ -46,12 +46,12 @@ interface AIBuildCritiqueProps {
     className?: string;
 }
 
-export function AIBuildCritique({ 
-    build, 
-    externalAnalysis, 
+export function AIBuildCritique({
+    build,
+    externalAnalysis,
     externalDuration,
-    externalLoading, 
-    externalError, 
+    externalLoading,
+    externalError,
     onRefresh,
     onCancel,
     intendedUse,
@@ -236,7 +236,7 @@ export function AIBuildCritique({
                 <CardTitle className="flex items-center justify-between font-headline text-2xl">
                     <div className="flex items-center gap-2">
                         <AnimatedBrainIcon className="h-6 w-6 text-primary" />
-                        Buildbot Build Critique
+                        Buildbot Build Review
                     </div>
                     {activeDuration && !loading && (
                         <div className="relative group/tooltip">
@@ -244,7 +244,7 @@ export function AIBuildCritique({
                                 <span className="text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.9)]">⚡</span>
                                 <span>{activeDuration.toFixed(1)}s Turnaround Time</span>
                             </span>
-                            
+
                             {/* Tooltip Content positioned downwards and leftwards so it stays visible */}
                             <div className="absolute right-0 top-full mt-2 w-64 p-3 rounded-xl border border-cyan-500/20 bg-slate-950/95 backdrop-blur-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-300 pointer-events-none z-50 text-[10px] font-mono text-zinc-300 space-y-1.5 leading-relaxed">
                                 <div className="border-b border-white/5 pb-1 flex justify-between">
@@ -279,23 +279,20 @@ export function AIBuildCritique({
                         </div>
                     )}
                 </CardTitle>
-                <CardDescription>
-                    Get an expert AI analysis of your current parts selection.
-                </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 {!analysis && !loading && !error && (
                     <div className="flex flex-col items-center justify-center py-16 px-8 border-2 border-dashed border-muted-foreground/20 rounded-xl bg-muted/10 space-y-6">
-                         <AnimatedBotIcon className="h-20 w-20 text-muted-foreground/30" size={80} />
+                        <AnimatedBotIcon className="h-20 w-20 text-muted-foreground/30" size={80} />
                         <div className="text-center space-y-3">
-                            <h3 className="text-2xl font-headline font-semibold tracking-tight">Your build awaits</h3>
+                            <h3 className="text-2xl font-headline font-semibold tracking-tight">Buildbot Idle...</h3>
                             <p className="text-muted-foreground max-w-sm mx-auto text-lg leading-relaxed">
-                                Use the Buildbot Advisor to generate your personalized PC component list, or start adding parts to your build.
+                                Use the Build Advisor to review your PC component selection.
                             </p>
                         </div>
                         {!isControlled && (
-                            <SparkleButton 
-                                onClick={handleAnalyze} 
+                            <SparkleButton
+                                onClick={handleAnalyze}
                                 icon={<Sparkles className="h-4 w-4" />}
                                 className="mt-6 px-10 text-xs font-black uppercase tracking-widest"
                             >
@@ -306,7 +303,7 @@ export function AIBuildCritique({
                 )}
 
                 {loading && (
-                    <motion.div 
+                    <motion.div
                         key="loading"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -319,13 +316,13 @@ export function AIBuildCritique({
                             const elapsed = elapsedTime || 0;
                             let remaining = targetSeconds - elapsed;
                             let percent = (remaining / targetSeconds) * 100;
-                            
+
                             if (elapsed >= targetSeconds) {
                                 const overshoot = elapsed - targetSeconds;
                                 percent = Math.max(1, 4 / (1 + overshoot * 0.1));
                                 remaining = 0.5 / (1 + overshoot * 0.1);
                             }
-                            
+
                             const radius = 45;
                             const strokeWidth = 4;
                             const circumference = 2 * Math.PI * radius;
@@ -334,11 +331,11 @@ export function AIBuildCritique({
                             const remainingText = elapsed >= targetSeconds
                                 ? `+${(Math.floor(elapsed - targetSeconds) + 1).toString().padStart(2, '0')}s`
                                 : `00:${Math.ceil(remaining).toString().padStart(2, '0')}s`;
-                            
+
                             return (
                                 <div className="relative flex items-center justify-center">
                                     <div className="absolute inset-0 bg-cyan-500/15 blur-3xl rounded-full animate-pulse pointer-events-none" />
-                                    
+
                                     <svg className="w-32 h-32 transform -rotate-90 relative z-10">
                                         {/* Background ring */}
                                         <circle
@@ -366,7 +363,7 @@ export function AIBuildCritique({
                                             }}
                                         />
                                     </svg>
-                                    
+
                                     {/* Center Text */}
                                     <div className="absolute z-20 flex flex-col items-center justify-center text-center font-mono">
                                         <span className="text-[20px] font-black text-cyan-400 tracking-tighter leading-none">
@@ -386,19 +383,19 @@ export function AIBuildCritique({
                                 const stepTime = 1.6;
                                 const start = idx * stepTime;
                                 const elapsed = elapsedTime || 0;
-                                const status = elapsed < start 
-                                    ? "pending" 
+                                const status = elapsed < start
+                                    ? "pending"
                                     : (elapsed >= start && (elapsed < start + stepTime || idx === LOADING_STEPS.length - 1))
                                         ? "active"
                                         : "completed";
-                                
+
                                 return (
                                     <div
                                         key={idx}
                                         className={cn(
                                             "p-4 rounded-xl border flex items-start gap-3 backdrop-blur-md transition-all duration-500",
-                                            status === "completed" 
-                                                ? "bg-cyan-500/5 border-cyan-500/20 text-cyan-100" 
+                                            status === "completed"
+                                                ? "bg-cyan-500/5 border-cyan-500/20 text-cyan-100"
                                                 : status === "active"
                                                     ? "bg-cyan-500/10 border-cyan-500/40 text-cyan-100 shadow-[0_0_15px_rgba(34,211,238,0.1)]"
                                                     : "bg-zinc-900/10 border-zinc-800 text-zinc-500"
@@ -572,10 +569,10 @@ export function AIBuildCritique({
                         )}
 
                         <div className="pt-4 pb-2">
-                             <AnimatedIconButton 
+                            <AnimatedIconButton
                                 icon={<AnimatedRotateIcon className="h-4 w-4" />}
-                                className="w-full h-11" 
-                                onClick={isControlled && onRefresh ? onRefresh : handleAnalyze} 
+                                className="w-full h-11"
+                                onClick={isControlled && onRefresh ? onRefresh : handleAnalyze}
                                 disabled={loading}
                                 isLoading={loading}
                             >

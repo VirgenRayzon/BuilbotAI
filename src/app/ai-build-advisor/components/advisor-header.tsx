@@ -40,7 +40,7 @@ export function AdvisorHeader({ isAiKillSwitch }: AdvisorHeaderProps) {
                         <div className="h-px w-8 bg-primary" />
                         <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary">System Advisor</span>
                     </div>
-                    <h1 className="text-5xl md:text-6xl font-headline font-black uppercase tracking-tighter leading-none">
+                    <h1 className="text-5xl md:text-7xl font-headline font-black uppercase tracking-tighter leading-none mb-6">
                         Build <span className="text-primary italic">Advisor</span>
                     </h1>
                     <p className="text-muted-foreground mt-4 max-w-2xl text-lg leading-relaxed">

@@ -46,18 +46,18 @@ interface ChatFormProps {
 }
 
 const SUGGESTIONS = [
-  { 
-    label: "1080p Esports", 
+  {
+    label: "1080p Esports",
     icon: Gamepad2,
     values: { intendedUse: "Gaming", budget: "₱50,000", performanceLevel: "Mid-range (1080p/1440p gaming)", additionalNotes: "Focus on high FPS for Valorant." }
   },
-  { 
-    label: "AAA 4K Beast", 
+  {
+    label: "AAA 4K Beast",
     icon: Zap,
     values: { intendedUse: "Gaming", budget: "₱150,000", performanceLevel: "High-end (4K, max settings)", additionalNotes: "Ray tracing enabled." }
   },
-  { 
-    label: "Workstation", 
+  {
+    label: "Workstation",
     icon: Laptop,
     values: { intendedUse: "Video Editing", budget: "₱100,000", performanceLevel: "High-end (4K, max settings)", additionalNotes: "Heavy rendering workloads." }
   },
@@ -236,9 +236,9 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
               </FormItem>
             )}
           />
-          <SparkleButton 
-            type="submit" 
-            className="w-full h-12" 
+          <SparkleButton
+            type="submit"
+            className="w-full h-12"
             isLoading={isPending}
             icon={<Sparkles className="h-4 w-4" />}
           >

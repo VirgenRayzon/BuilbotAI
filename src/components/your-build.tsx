@@ -250,10 +250,10 @@ export function YourBuild({
                         </SparkleButton>
                     )}
 
-                    <AnimatedIconButton 
+                    <AnimatedIconButton
                         icon={<AnimatedRotateIcon className="h-4 w-4" />}
-                        className="order-2 flex-none w-12 lg:w-full text-muted-foreground hover:text-destructive h-12 lg:h-8 text-[9px] font-bold uppercase tracking-widest transition-all bg-transparent lg:bg-transparent border-border/20 lg:border-transparent hover:bg-destructive/5 px-0 lg:px-4" 
-                        onClick={onClearBuild} 
+                        className="order-2 flex-none w-12 lg:w-full text-muted-foreground hover:text-destructive h-12 lg:h-8 text-[9px] font-bold uppercase tracking-widest transition-all bg-transparent lg:bg-transparent border-border/20 lg:border-transparent hover:bg-destructive/5 px-0 lg:px-4"
+                        onClick={onClearBuild}
                         disabled={selectedParts === 0}
                     >
                         <span className="hidden lg:inline">Clear Build</span>
@@ -397,9 +397,9 @@ export function YourBuild({
                                 </div>
                                 <div className="flex gap-3">
                                     <Button variant="outline" className="flex-1" onClick={() => setIsCheckoutDialogOpen(false)}>Cancel</Button>
-                                    <AnimatedIconButton 
-                                        className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 text-white border-none" 
-                                        onClick={() => handleCheckout(() => setIsCheckoutDialogOpen(false))} 
+                                    <AnimatedIconButton
+                                        className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 text-white border-none"
+                                        onClick={() => handleCheckout(() => setIsCheckoutDialogOpen(false))}
                                         disabled={isCheckingOut}
                                         isLoading={isCheckingOut}
                                         icon={<AnimatedShieldIcon className="h-4 w-4" />}
@@ -419,54 +419,54 @@ export function YourBuild({
     return (
         <>
             <div ref={desktopCardRef} className="hidden lg:block">
-            <Card className={`flex flex-col overflow-hidden relative glass-panel sticky top-20 border-primary/30 shadow-[0_0_30px_rgba(34,211,238,0.08),0_0_60px_rgba(34,211,238,0.04)] ${className || ""}`}>
-                {/* Animated top accent */}
-                <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent z-20" />
-                
-                {/* Subtle corner glow accents */}
-                <div className="absolute -top-6 -left-6 w-32 h-32 bg-primary/10 rounded-full blur-[40px] pointer-events-none z-0" />
-                <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-purple-500/8 rounded-full blur-[30px] pointer-events-none z-0" />
+                <Card className={`flex flex-col overflow-hidden relative glass-panel sticky top-20 border-primary/30 shadow-[0_0_30px_rgba(34,211,238,0.08),0_0_60px_rgba(34,211,238,0.04)] ${className || ""}`}>
+                    {/* Animated top accent */}
+                    <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent z-20" />
 
-                <CardHeader className="flex flex-col gap-3 py-5 bg-muted/20 border-b border-border/40 flex-none relative z-10">
-                    <div className="flex items-center justify-between">
-                        <CardTitle className="font-headline text-xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent uppercase">Your Build</CardTitle>
-                        <Badge variant="secondary" className="font-headline font-bold text-[10px] px-2 py-0.5 whitespace-nowrap bg-primary/20 text-primary border-primary/30 uppercase tracking-widest">{selectedParts}/{totalParts} PARTS</Badge>
-                    </div>
-                    {/* Build Progress Bar */}
-                    <div className="w-full">
-                        <div className="h-1.5 w-full bg-muted/40 rounded-full overflow-hidden">
-                            <motion.div
-                                className="h-full rounded-full"
-                                initial={{ width: 0 }}
-                                animate={{ width: `${(selectedParts / totalParts) * 100}%` }}
-                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                style={{
-                                    background: selectedParts === totalParts
-                                        ? 'linear-gradient(90deg, #10b981, #06b6d4)'
-                                        : selectedParts > 0
-                                            ? 'linear-gradient(90deg, #06b6d4, #8b5cf6)'
-                                            : 'transparent',
-                                }}
-                            />
+                    {/* Subtle corner glow accents */}
+                    <div className="absolute -top-6 -left-6 w-32 h-32 bg-primary/10 rounded-full blur-[40px] pointer-events-none z-0" />
+                    <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-purple-500/8 rounded-full blur-[30px] pointer-events-none z-0" />
+
+                    <CardHeader className="flex flex-col gap-3 py-5 bg-muted/20 border-b border-border/40 flex-none relative z-10">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="font-headline text-xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent uppercase">Your Build</CardTitle>
+                            <Badge variant="secondary" className="font-headline font-bold text-[10px] px-2 py-0.5 whitespace-nowrap bg-primary/20 text-primary border-primary/30 uppercase tracking-widest">{selectedParts}/{totalParts} PARTS</Badge>
                         </div>
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 mt-1.5">
-                            {selectedParts === 0 
-                                ? "Select components to begin" 
-                                : selectedParts === totalParts 
-                                    ? "Build complete — Ready for analysis" 
-                                    : `${totalParts - selectedParts} slots remaining`
-                            }
-                        </p>
-                    </div>
-                </CardHeader>
-                {renderBuildContent()}
-            </Card>
+                        {/* Build Progress Bar */}
+                        <div className="w-full">
+                            <div className="h-1.5 w-full bg-muted/40 rounded-full overflow-hidden">
+                                <motion.div
+                                    className="h-full rounded-full"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${(selectedParts / totalParts) * 100}%` }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                    style={{
+                                        background: selectedParts === totalParts
+                                            ? 'linear-gradient(90deg, #10b981, #06b6d4)'
+                                            : selectedParts > 0
+                                                ? 'linear-gradient(90deg, #06b6d4, #8b5cf6)'
+                                                : 'transparent',
+                                    }}
+                                />
+                            </div>
+                            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 mt-1.5">
+                                {selectedParts === 0
+                                    ? "Select components to begin"
+                                    : selectedParts === totalParts
+                                        ? "Build complete — Ready for analysis"
+                                        : `${totalParts - selectedParts} slots remaining`
+                                }
+                            </p>
+                        </div>
+                    </CardHeader>
+                    {renderBuildContent()}
+                </Card>
             </div>
 
             <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/80 backdrop-blur-xl border-t border-border shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
                 <Sheet>
                     <SheetTrigger asChild>
-                        <AnimatedIconButton 
+                        <AnimatedIconButton
                             className="w-full h-14 shadow-2xl bg-primary text-primary-foreground hover:bg-primary/90 border-none px-4"
                             icon={<AnimatedCaseIcon className="w-5 h-5 shrink-0" />}
                         >
