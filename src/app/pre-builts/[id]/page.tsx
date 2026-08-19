@@ -290,7 +290,7 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                 isDark ? "invert" : ""
             )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-            <main className="w-full max-w-[1800px] mx-auto p-4 md:p-8 pt-24 md:pt-32 animate-in fade-in duration-700 relative z-10">
+            <main className="w-full max-w-[1800px] mx-auto p-4 md:p-8 pt-10 md:pt-20 animate-in fade-in duration-700 relative z-10">
                 {/* Top Navigation */}
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
@@ -357,9 +357,9 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                             )}
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-                            <CardContent className="p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+                            <CardContent className="p-8 md:p-6 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
                                 <div>
-                                    <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground font-black mb-2">Architected Configuration Value</p>
+                                    <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground font-black mb-2">Estimated Build Total</p>
                                     <p className="text-5xl md:text-6xl font-black font-headline text-primary tracking-tighter">{formatCurrency(system.price)}</p>
                                 </div>
                                 <div className="flex-shrink-0 w-full md:w-auto">
@@ -475,9 +475,9 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                         <div className="inline-flex items-center justify-center p-4 bg-primary/10 rounded-3xl mb-6">
                             <Sparkles className="h-10 w-10 text-primary animate-pulse" />
                         </div>
-                        <h2 className="text-4xl md:text-5xl font-headline font-black uppercase tracking-tighter mb-6">Buildbot Diagnostics</h2>
+                        <h2 className="text-4xl md:text-5xl font-headline font-black uppercase tracking-tighter mb-6">Buildbot Review</h2>
                         <p className="text-muted-foreground max-w-3xl mx-auto text-xl leading-relaxed font-medium">
-                            Our diagnostics analyze how every component interacts to provide an accurate performance profile and technical benchmarks for this specific hardware configuration.
+                            Buildbot analyzes every component to provide a performance review and technical benchmarks for this specific build.
                         </p>
                     </motion.div>
 
@@ -500,8 +500,8 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                                             <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-6">
                                                 <Sparkles className="h-10 w-10 text-muted-foreground/30" />
                                             </div>
-                                            <h3 className="text-2xl font-headline font-bold uppercase tracking-tight mb-2">Diagnostic Data Unavailable</h3>
-                                            <p className="text-muted-foreground max-w-md">The performance architectural report for this system has not been authorized yet.</p>
+                                            <h3 className="text-2xl font-headline font-bold uppercase tracking-tight mb-2">Review Data Unavailable</h3>
+                                            <p className="text-muted-foreground max-w-md">The performance review for this system has not been generated yet.</p>
                                         </div>
                                     )}
                                 </CardContent>
@@ -517,7 +517,7 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                                     </div>
                                 </div>
                                 <div className="text-center space-y-2">
-                                    <p className="text-2xl font-headline font-black uppercase tracking-widest text-primary animate-pulse">Running Diagnostics</p>
+                                    <p className="text-2xl font-headline font-black uppercase tracking-widest text-primary animate-pulse">Running Review</p>
                                     <p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.3em]">Processing Hardware Synergy Vectors...</p>
                                 </div>
                             </div>
@@ -526,7 +526,7 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                         {analysisError && (
                             <div className="bg-destructive/10 border border-destructive/20 text-destructive p-12 rounded-3xl max-w-2xl mx-auto text-center shadow-2xl backdrop-blur-md">
                                 <AlertCircle className="h-16 w-16 mx-auto mb-6 opacity-80" />
-                                <h3 className="text-2xl font-headline font-black uppercase tracking-tight mb-3">Diagnostic Failure</h3>
+                                <h3 className="text-2xl font-headline font-black uppercase tracking-tight mb-3">Review Failed</h3>
                                 <p className="mb-8 text-lg font-medium">{analysisError}</p>
                                 {canGenerateReport && (
                                     <SparkleButton
@@ -571,7 +571,7 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                                                         animate={{ opacity: 1, x: 0 }}
                                                         transition={{ delay: 0.1 * idx }}
                                                         className={cn(
-                                                            "p-6 rounded-3xl border flex gap-5 group transition-all duration-300",
+                                                            "p-3 rounded-3xl border flex gap-5 group transition-all duration-300",
                                                             isDark ? "bg-slate-900/30 border-white/5 hover:border-emerald-500/40" : "bg-white/40 border-slate-100 hover:border-emerald-500/30"
                                                         )}
                                                     >

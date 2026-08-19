@@ -28,11 +28,11 @@ export default function TestBuilder2Page() {
 
     // Data Layer
     const { allParts, loading: inventoryLoading } = useInventoryQuery();
-    
+
     // Logic Layer
-    const { 
-        build, handlePartToggle, handleRemovePart, 
-        handleClearBuild, getCountInBuild, isLoaded 
+    const {
+        build, handlePartToggle, handleRemovePart,
+        handleClearBuild, getCountInBuild, isLoaded
     } = useBuilderLogic(allParts);
 
     const [resolution, setResolution] = useState<Resolution>('1080p');
@@ -41,8 +41,8 @@ export default function TestBuilder2Page() {
     const [mounted, setMounted] = useState(false);
 
     const handleApplySuggestion = (category: string, partId: string) => {
-        const event = new CustomEvent('add-suggestion', { 
-            detail: { id: partId, category } 
+        const event = new CustomEvent('add-suggestion', {
+            detail: { id: partId, category }
         });
         window.dispatchEvent(event);
     };
@@ -69,7 +69,7 @@ export default function TestBuilder2Page() {
                     isDark ? "invert" : ""
                 )} style={{ backgroundImage: 'radial-gradient(currentColor 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-                <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pb-24 lg:pb-12 pt-24 md:pt-32 relative z-10">
+                <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pb-24 lg:pb-12 pt-10 md:pt-20 relative z-10">
                     <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-6">
                         <div>
                             <div className="flex items-center gap-2">
@@ -95,9 +95,9 @@ export default function TestBuilder2Page() {
                         </div>
                     </div>
 
-                    <YourBuildStandalone 
-                        build={build} 
-                        onRemovePart={handleRemovePart} 
+                    <YourBuildStandalone
+                        build={build}
+                        onRemovePart={handleRemovePart}
                         onClearBuild={handleClearBuild}
                         resolution={resolution}
                         onResolutionChange={setResolution}
@@ -110,8 +110,8 @@ export default function TestBuilder2Page() {
                 </main>
 
                 {/* Floating UI Elements */}
-                <BuilderFloatingAnalytics 
-                    build={build} 
+                <BuilderFloatingAnalytics
+                    build={build}
                     resolution={resolution}
                     onResolutionChange={setResolution}
                     workload={workload}

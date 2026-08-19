@@ -30,7 +30,7 @@ export function AdvisorHeader({ isAiKillSwitch }: AdvisorHeaderProps) {
                 </motion.div>
             )}
 
-            <div className="relative mb-12">
+            <div className="relative mb-5">
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}

@@ -230,13 +230,13 @@ export function AIBuildCritique({
     };
 
     return (
-        <Card className={cn("w-full bg-gradient-to-br from-card to-secondary/10 border-primary/20 relative overflow-hidden", className !== undefined ? className : "mt-6")}>
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse z-20"></div>
+        <Card className={cn("w-full bg-gradient-to-br from-card to-secondary/10 border-primary/20 relative overflow-hidden shadow-2xl", className !== undefined ? className : "mt-6")}>
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 via-primary to-cyan-500 animate-pulse z-20" />
             <CardHeader>
                 <CardTitle className="flex items-center justify-between font-headline text-2xl">
                     <div className="flex items-center gap-2">
                         <AnimatedBrainIcon className="h-6 w-6 text-primary" />
-                        Buildbot Build Review
+                        Build Overview
                     </div>
                     {activeDuration && !loading && (
                         <div className="relative group/tooltip">
@@ -287,7 +287,7 @@ export function AIBuildCritique({
                         <div className="text-center space-y-3">
                             <h3 className="text-2xl font-headline font-semibold tracking-tight">Buildbot Idle...</h3>
                             <p className="text-muted-foreground max-w-sm mx-auto text-lg leading-relaxed">
-                                Use the Build Advisor to review your PC component selection.
+                                Click the "Analyze Build" button to review your PC component selection.
                             </p>
                         </div>
                         {!isControlled && (

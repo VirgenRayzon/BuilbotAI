@@ -34,11 +34,11 @@ export default function BuilderPage() {
 
     // Data Layer
     const { allParts, loading: inventoryLoading } = useInventoryQuery();
-    
+
     // Logic Layer
-    const { 
-        build, handlePartToggle, handleRemovePart, 
-        handleClearBuild, getCountInBuild, isLoaded 
+    const {
+        build, handlePartToggle, handleRemovePart,
+        handleClearBuild, getCountInBuild, isLoaded
     } = useBuilderLogic(allParts);
 
     // Filter Layer
@@ -65,8 +65,8 @@ export default function BuilderPage() {
     const [mounted, setMounted] = useState(false);
 
     const handleApplySuggestion = (category: string, partId: string) => {
-        const event = new CustomEvent('add-suggestion', { 
-            detail: { id: partId, category } 
+        const event = new CustomEvent('add-suggestion', {
+            detail: { id: partId, category }
         });
         window.dispatchEvent(event);
     };
@@ -101,74 +101,74 @@ export default function BuilderPage() {
                 "min-h-screen transition-colors duration-500 overflow-x-hidden",
                 isDark ? "bg-[#0c0f14] text-slate-50" : "bg-slate-50 text-slate-900"
             )}>
-            {/* Circuit Pattern Background */}
-            <div className={cn(
-                "fixed inset-0 opacity-[0.05] pointer-events-none z-0",
-                isDark ? "invert" : ""
-            )} style={{ backgroundImage: 'radial-gradient(currentColor 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+                {/* Circuit Pattern Background */}
+                <div className={cn(
+                    "fixed inset-0 opacity-[0.05] pointer-events-none z-0",
+                    isDark ? "invert" : ""
+                )} style={{ backgroundImage: 'radial-gradient(currentColor 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-            <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pb-24 lg:pb-12 pt-24 md:pt-32 relative z-10">
-                <BuilderHeader />
+                <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pb-24 lg:pb-12 pt-10 md:pt-20  relative z-10">
+                    <BuilderHeader />
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">
-                    {/* Your Build — Left Column (Primary Feature) */}
-                    <aside className="hidden lg:block lg:col-span-3 self-start">
-                        <YourBuild 
-                            build={build} 
-                            onRemovePart={handleRemovePart} 
-                            onClearBuild={handleClearBuild}
-                            resolution={resolution}
-                            onResolutionChange={setResolution}
-                            workload={workload}
-                            onWorkloadChange={setWorkload}
-                            analysis={analysis}
-                            onAnalysisUpdate={setAnalysis}
-                            onCategorySelect={handleCategoryChange}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">
+                        {/* Your Build — Left Column (Primary Feature) */}
+                        <aside className="hidden lg:block lg:col-span-3 self-start">
+                            <YourBuild
+                                build={build}
+                                onRemovePart={handleRemovePart}
+                                onClearBuild={handleClearBuild}
+                                resolution={resolution}
+                                onResolutionChange={setResolution}
+                                workload={workload}
+                                onWorkloadChange={setWorkload}
+                                analysis={analysis}
+                                onAnalysisUpdate={setAnalysis}
+                                onCategorySelect={handleCategoryChange}
+                                categories={categories}
+                            />
+                        </aside>
+
+                        {/* Inventory — Right Column */}
+                        <InventoryView
+                            loading={inventoryLoading}
+                            paginatedParts={paginatedParts}
+                            totalPages={totalPages}
+                            currentPage={currentPage}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={setCurrentPage}
+                            onItemsPerPageChange={setItemsPerPage}
+                            view={view}
+                            onViewChange={setView}
                             categories={categories}
+                            onCategoryChange={handleCategoryChange}
+                            searchQuery={searchQuery}
+                            onSearchQueryChange={setSearchQuery}
+                            sortBy={sortBy}
+                            onSortByChange={(val) => { setSortBy(val); setCurrentPage(1); }}
+                            sortDirection={sortDirection}
+                            onSortDirectionChange={(val) => { setSortDirection(val); setCurrentPage(1); }}
+                            onTogglePart={handlePartToggle}
+                            isSelected={isSelected}
+                            itemCount={sortedAndFilteredParts.length}
+                            availableBrands={availableBrands}
+                            selectedBrands={selectedBrands}
+                            onBrandChange={setSelectedBrands}
                         />
-                    </aside>
+                    </div>
+                </main>
 
-                    {/* Inventory — Right Column */}
-                    <InventoryView 
-                        loading={inventoryLoading}
-                        paginatedParts={paginatedParts}
-                        totalPages={totalPages}
-                        currentPage={currentPage}
-                        itemsPerPage={itemsPerPage}
-                        onPageChange={setCurrentPage}
-                        onItemsPerPageChange={setItemsPerPage}
-                        view={view}
-                        onViewChange={setView}
-                        categories={categories}
-                        onCategoryChange={handleCategoryChange}
-                        searchQuery={searchQuery}
-                        onSearchQueryChange={setSearchQuery}
-                        sortBy={sortBy}
-                        onSortByChange={(val) => { setSortBy(val); setCurrentPage(1); }}
-                        sortDirection={sortDirection}
-                        onSortDirectionChange={(val) => { setSortDirection(val); setCurrentPage(1); }}
-                        onTogglePart={handlePartToggle}
-                        isSelected={isSelected}
-                        itemCount={sortedAndFilteredParts.length}
-                        availableBrands={availableBrands}
-                        selectedBrands={selectedBrands}
-                        onBrandChange={setSelectedBrands}
-                    />
-                </div>
-            </main>
-
-            {/* Floating UI Elements */}
-            <BuilderFloatingAnalytics 
-                build={build} 
-                resolution={resolution}
-                onResolutionChange={setResolution}
-                workload={workload}
-                onWorkloadChange={setWorkload}
-                analysis={analysis}
-                onApplySuggestion={handleApplySuggestion}
-            />
-            <BuilderFloatingChat build={build} />
-        </div>
-    </RouteGuard>
+                {/* Floating UI Elements */}
+                <BuilderFloatingAnalytics
+                    build={build}
+                    resolution={resolution}
+                    onResolutionChange={setResolution}
+                    workload={workload}
+                    onWorkloadChange={setWorkload}
+                    analysis={analysis}
+                    onApplySuggestion={handleApplySuggestion}
+                />
+                <BuilderFloatingChat build={build} />
+            </div>
+        </RouteGuard>
     );
 }

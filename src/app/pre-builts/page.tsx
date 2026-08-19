@@ -125,8 +125,8 @@ export default function PreBuiltsPage() {
                     isDark ? "invert" : ""
                 )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-                <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pt-24 md:pt-32 relative z-10">
-                    <div className="relative mb-12">
+                <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pt-10 md:pt-20 relative z-10">
+                    <div className="relative mb-5">
                         <motion.div
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -152,11 +152,11 @@ export default function PreBuiltsPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className={cn(
-                            "p-6 rounded-3xl border backdrop-blur-xl shadow-2xl transition-all duration-500",
+                            "p-3 rounded-3xl border backdrop-blur-xl shadow-2xl transition-all duration-500",
                             isDark ? "bg-slate-900/40 border-white/5 shadow-black/40" : "bg-white/60 border-slate-200 shadow-slate-200/50"
                         )}
                     >
-                        <div className="mb-8">
+                        <div className="mb-5">
                             <InventoryToolbar
                                 categories={categories}
                                 onCategoryChange={handleCategoryChange}

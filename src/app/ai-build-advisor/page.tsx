@@ -85,7 +85,7 @@ export default function AiBuildAdvisorPage() {
                     lastLoadedKeyRef.current = buildKey;
                     return;
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
         // If not in cache, clear any stale state
         setCritiqueAnalysis(null);
@@ -99,90 +99,90 @@ export default function AiBuildAdvisorPage() {
                 "min-h-screen transition-colors duration-500 overflow-x-hidden relative",
                 isDark ? "bg-[#0c0f14] text-slate-50" : "bg-slate-50 text-slate-900"
             )}>
-            <main className="flex-1 w-full max-w-[1800px] mx-auto p-4 md:p-8 pt-24 md:pt-32 relative z-10">
-                <AdvisorHeader isAiKillSwitch={isAiKillSwitch} />
+                <main className="flex-1 w-full max-w-[1800px] mx-auto p-4 md:p-8 pt-10 md:pt-20 relative z-10">
+                    <AdvisorHeader isAiKillSwitch={isAiKillSwitch} />
 
-                {builderState ? (
-                    <Tabs defaultValue="critique" className="w-full h-full">
-                        <div className="flex justify-center mb-12">
-                            <TabsList className={cn(
-                                "p-1 h-14 rounded-2xl border backdrop-blur-md",
-                                isDark ? "bg-slate-900/60 border-white/5" : "bg-white/60 border-slate-200"
-                            )}>
-                                <TabsTrigger
-                                    value="critique"
-                                    className="rounded-xl px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300 font-bold uppercase tracking-widest text-[10px]"
-                                >
-                                    Review Current Build
-                                </TabsTrigger>
-                                <TabsTrigger
-                                    value="generate"
-                                    className="rounded-xl px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300 font-bold uppercase tracking-widest text-[10px]"
-                                >
-                                    Generate New Build
-                                </TabsTrigger>
-                            </TabsList>
-                        </div>
+                    {builderState ? (
+                        <Tabs defaultValue="critique" className="w-full h-full">
+                            <div className="flex justify-center mb-5">
+                                <TabsList className={cn(
+                                    "p-1 h-14 rounded-2xl border backdrop-blur-md",
+                                    isDark ? "bg-slate-900/60 border-white/5" : "bg-white/60 border-slate-200"
+                                )}>
+                                    <TabsTrigger
+                                        value="critique"
+                                        className="rounded-xl px-5 h-full data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300 font-bold uppercase tracking-widest text-[10px]"
+                                    >
+                                        Review Current Build
+                                    </TabsTrigger>
+                                    <TabsTrigger
+                                        value="generate"
+                                        className="rounded-xl px-5 h-full data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300 font-bold uppercase tracking-widest text-[10px]"
+                                    >
+                                        Create New Build
+                                    </TabsTrigger>
+                                </TabsList>
+                            </div>
 
-                        <TabsContent value="critique" className="mt-0 h-full">
-                            <CritiqueTab 
-                                isDark={isDark}
-                                builderState={builderState}
-                                critiqueAnalysis={critiqueAnalysis}
-                                critiqueDuration={critiqueDuration}
-                                critiqueLoading={critiqueLoading}
-                                critiqueError={critiqueError}
-                                handleCritique={handleCritique}
-                                handleCancelCritique={handleCancelCritique}
-                                handleRemovePart={handleRemovePart}
-                                handleClearBuild={handleClearBuild}
-                                resolution={resolution}
-                                setResolution={setResolution}
-                                workload={workload}
-                                setWorkload={setWorkload}
-                            />
-                        </TabsContent>
-                        <TabsContent value="generate" className="mt-0 h-full">
-                            <RecommendationTab 
-                                isDark={isDark}
-                                isPending={isPending}
-                                handleGetRecommendations={handleGetRecommendations}
-                                handleCancelRecommendations={handleCancelRecommendations}
-                                build={build}
-                                elapsedTime={elapsedTime}
-                                finalResponseTime={finalResponseTime}
-                                totalPrice={totalPrice}
-                                error={error}
-                            />
-                        </TabsContent>
-                    </Tabs>
-                ) : (
-                    <RecommendationTab 
-                        isDark={isDark}
-                        isPending={isPending}
-                        handleGetRecommendations={handleGetRecommendations}
-                        handleCancelRecommendations={handleCancelRecommendations}
-                        build={build}
-                        elapsedTime={elapsedTime}
-                        finalResponseTime={finalResponseTime}
-                        totalPrice={totalPrice}
-                        error={error}
+                            <TabsContent value="critique" className="mt-0 h-full">
+                                <CritiqueTab
+                                    isDark={isDark}
+                                    builderState={builderState}
+                                    critiqueAnalysis={critiqueAnalysis}
+                                    critiqueDuration={critiqueDuration}
+                                    critiqueLoading={critiqueLoading}
+                                    critiqueError={critiqueError}
+                                    handleCritique={handleCritique}
+                                    handleCancelCritique={handleCancelCritique}
+                                    handleRemovePart={handleRemovePart}
+                                    handleClearBuild={handleClearBuild}
+                                    resolution={resolution}
+                                    setResolution={setResolution}
+                                    workload={workload}
+                                    setWorkload={setWorkload}
+                                />
+                            </TabsContent>
+                            <TabsContent value="generate" className="mt-0 h-full">
+                                <RecommendationTab
+                                    isDark={isDark}
+                                    isPending={isPending}
+                                    handleGetRecommendations={handleGetRecommendations}
+                                    handleCancelRecommendations={handleCancelRecommendations}
+                                    build={build}
+                                    elapsedTime={elapsedTime}
+                                    finalResponseTime={finalResponseTime}
+                                    totalPrice={totalPrice}
+                                    error={error}
+                                />
+                            </TabsContent>
+                        </Tabs>
+                    ) : (
+                        <RecommendationTab
+                            isDark={isDark}
+                            isPending={isPending}
+                            handleGetRecommendations={handleGetRecommendations}
+                            handleCancelRecommendations={handleCancelRecommendations}
+                            build={build}
+                            elapsedTime={elapsedTime}
+                            finalResponseTime={finalResponseTime}
+                            totalPrice={totalPrice}
+                            error={error}
+                        />
+                    )}
+
+                    <BuilderFloatingAnalytics
+                        build={builderState || {}}
+                        resolution={resolution}
+                        onResolutionChange={setResolution}
+                        workload={workload}
+                        onWorkloadChange={setWorkload}
                     />
-                )}
 
-                <BuilderFloatingAnalytics
-                    build={builderState || {}}
-                    resolution={resolution}
-                    onResolutionChange={setResolution}
-                    workload={workload}
-                    onWorkloadChange={setWorkload}
-                />
-
-                <BuilderFloatingChat 
-                    build={builderState || {}} 
-                />
-            </main>
-        </div>
+                    <BuilderFloatingChat
+                        build={builderState || {}}
+                    />
+                </main>
+            </div>
         </RouteGuard>
     );
 }

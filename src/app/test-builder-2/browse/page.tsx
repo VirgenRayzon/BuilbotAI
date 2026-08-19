@@ -30,10 +30,10 @@ export default function TestBuilder2BrowsePage() {
 
     // Data Layer
     const { allParts, loading: inventoryLoading } = useInventoryQuery();
-    
+
     // Logic Layer
-    const { 
-        build, handlePartToggle, getCountInBuild, isLoaded 
+    const {
+        build, handlePartToggle, getCountInBuild, isLoaded
     } = useBuilderLogic(allParts);
 
     // Filter Layer
@@ -110,14 +110,14 @@ export default function TestBuilder2BrowsePage() {
                     isDark ? "invert" : ""
                 )} style={{ backgroundImage: 'radial-gradient(currentColor 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-                <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pb-24 pt-24 md:pt-32 relative z-10">
-                    
+                <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pb-24 pt-10 md:pt-20 relative z-10">
+
                     {/* Floating Header Navigation Bar */}
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-5 rounded-2xl bg-muted/20 border border-border/40 mb-8 backdrop-blur-xl">
                         <div className="flex items-center gap-4">
-                            <Button 
-                                onClick={() => router.push('/test-builder-2')} 
-                                variant="outline" 
+                            <Button
+                                onClick={() => router.push('/test-builder-2')}
+                                variant="outline"
                                 className="rounded-xl h-10 text-[10px] uppercase font-bold tracking-widest border-primary/20 text-primary hover:bg-primary/10 transition-all flex items-center gap-1.5"
                             >
                                 <ChevronLeft className="h-4 w-4" /> Back to Build
@@ -145,7 +145,7 @@ export default function TestBuilder2BrowsePage() {
 
                     <div className="grid grid-cols-1 gap-6 items-start">
                         {/* Catalog Inventory view full width */}
-                        <InventoryView 
+                        <InventoryView
                             className="col-span-12"
                             gridCols={5}
                             loading={inventoryLoading}

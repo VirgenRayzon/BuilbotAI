@@ -10,13 +10,13 @@ interface FullPageLoaderProps {
   message?: string;
 }
 
-export function FullPageLoader({ 
-  label = "Initializing", 
+export function FullPageLoader({
+  label = "Initializing",
   subtitle = "Masterpiece Architect",
-  message = "Stabilizing Neural Link..."
+  message = "Loading..."
 }: FullPageLoaderProps) {
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 1 }}
       exit={{ opacity: 0, transition: { duration: 0.5, delay: 1 } }}
       className="fixed inset-0 z-[999] flex items-center justify-center bg-[#0c0f14] overflow-hidden"
@@ -24,22 +24,22 @@ export function FullPageLoader({
       {/* Dynamic Background */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.08),transparent_70%)] animate-pulse" />
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-             style={{ backgroundImage: 'radial-gradient(#fff 0.5px, transparent 0.5px)', backgroundSize: '32px 32px' }} />
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          style={{ backgroundImage: 'radial-gradient(#fff 0.5px, transparent 0.5px)', backgroundSize: '32px 32px' }} />
       </div>
-      
+
       <div className="relative flex flex-col items-center gap-10">
         <div className="relative">
           {/* Main Visual Core */}
-          <motion.div 
-            animate={{ 
+          <motion.div
+            animate={{
               scale: [1, 1.1, 1],
               opacity: [0.3, 0.6, 0.3]
             }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
             className="absolute inset-0 bg-primary/30 rounded-full blur-3xl"
           />
-          
+
           <div className="relative w-32 h-32">
             {/* Outer Tech Ring */}
             <svg className="w-full h-full rotate-[-90deg]">
@@ -67,7 +67,7 @@ export function FullPageLoader({
             </svg>
 
             {/* Middle Rotating Hexagon-ish shape */}
-            <motion.div 
+            <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
               className="absolute inset-4 border border-primary/20 rounded-2xl"
@@ -75,8 +75,8 @@ export function FullPageLoader({
 
             {/* Inner Glowing Point */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <motion.div 
-                animate={{ 
+              <motion.div
+                animate={{
                   scale: [1, 1.5, 1],
                   boxShadow: [
                     "0 0 20px rgba(34,211,238,0.5)",
@@ -90,7 +90,7 @@ export function FullPageLoader({
             </div>
           </div>
         </div>
-        
+
         <div className="flex flex-col items-center gap-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -107,21 +107,21 @@ export function FullPageLoader({
 
           {/* Precision Loading Bar */}
           <div className="w-64 h-[2px] bg-white/5 rounded-full overflow-hidden relative">
-            <motion.div 
-              animate={{ 
+            <motion.div
+              animate={{
                 x: ["-100%", "100%"],
                 width: ["20%", "40%", "20%"]
               }}
-              transition={{ 
-                duration: 2.5, 
-                repeat: Infinity, 
-                ease: "easeInOut" 
+              transition={{
+                duration: 2.5,
+                repeat: Infinity,
+                ease: "easeInOut"
               }}
               className="absolute h-full bg-gradient-to-r from-transparent via-primary to-transparent"
             />
           </div>
-          
-          <motion.p 
+
+          <motion.p
             animate={{ opacity: [0.3, 0.7, 0.3] }}
             transition={{ duration: 2, repeat: Infinity }}
             className="text-[9px] font-mono text-primary/60 uppercase tracking-widest mt-2"

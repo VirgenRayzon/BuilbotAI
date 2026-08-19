@@ -17,7 +17,7 @@ export default function TeamPage() {
       isDark ? "text-foreground" : "text-slate-900"
     )}>
       <UnifiedBackground />
-      
+
       <div className="relative z-10">
         <TeamSection />
       </div>
@@ -30,7 +30,7 @@ export default function TeamPage() {
           viewport={{ once: true }}
           className="max-w-3xl mx-auto"
         >
-          <div className="h-px w-24 bg-primary/30 mx-auto mb-12" />
+          <div className="h-px w-24 bg-primary/30 mx-auto mb-5" />
           <h2 className="text-3xl font-black font-headline uppercase tracking-tight mb-6">
             Join the Revolution
           </h2>
@@ -38,7 +38,7 @@ export default function TeamPage() {
             "text-lg font-medium leading-relaxed",
             isDark ? "text-slate-400" : "text-slate-600"
           )}>
-            Our team is constantly expanding the boundaries of neural PC architecture. 
+            Our team is constantly expanding the boundaries of neural PC architecture.
             Want to be part of the future of hardware synthesis?
           </p>
         </motion.div>

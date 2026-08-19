@@ -106,8 +106,8 @@ export function PrebuiltSystemCard({ system, expanded = false, onToggle }: Prebu
     fetchStock();
   }, [firestore, system.components, isComplete]);
 
-  const isInStock = isComplete && Object.keys(partsStock).length > 0 && 
-                    Object.values(partsStock).every(stock => stock > 0);
+  const isInStock = isComplete && Object.keys(partsStock).length > 0 &&
+    Object.values(partsStock).every(stock => stock > 0);
 
   const openCheckoutDialog = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -275,7 +275,7 @@ export function PrebuiltSystemCard({ system, expanded = false, onToggle }: Prebu
                     <div className="cursor-not-allowed">
                       <Button size="sm" variant="outline" disabled className="w-full h-full opacity-50 bg-destructive/10 border-destructive/20 text-destructive text-[8px] md:text-[10px] uppercase font-bold tracking-widest">
                         <AlertCircle className="mr-1 md:mr-2 h-3 md:h-3.5 w-3 md:w-3.5" />
-                        Diagnostics Failed
+                        Review Failed
                       </Button>
                     </div>
                   </TooltipTrigger>
@@ -285,10 +285,10 @@ export function PrebuiltSystemCard({ system, expanded = false, onToggle }: Prebu
                 </Tooltip>
               </TooltipProvider>
             ) : (
-              <Button 
-                size="sm" 
-                onClick={openCheckoutDialog} 
-                disabled={loadingStock || isReserving} 
+              <Button
+                size="sm"
+                onClick={openCheckoutDialog}
+                disabled={loadingStock || isReserving}
                 className="w-full h-full group/btn text-[8px] md:text-[10px] uppercase font-bold tracking-widest"
               >
                 {isReserving ? (
@@ -305,52 +305,52 @@ export function PrebuiltSystemCard({ system, expanded = false, onToggle }: Prebu
 
       <Dialog open={isCheckoutDialogOpen} onOpenChange={setIsCheckoutDialogOpen}>
         <DialogContent className="max-w-md" onClick={(e) => e.stopPropagation()}>
-            <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                    <ShieldCheck className="h-6 w-6 text-emerald-600" />
-                    Confirm Reservation
-                </DialogTitle>
-                <DialogDescription>
-                    Review the components for <span className="text-emerald-400 font-semibold">{system.name}</span> before reserving this build.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-                <ScrollArea className="max-h-[30vh]">
-                    <div className="space-y-2">
-                        {Object.entries(resolvedParts).map(([category, part]) => (
-                            part && (
-                                <div key={category} className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">
-                                        <span className="capitalize mr-1">
-                                            {category === 'cpu' || category === 'gpu' || category === 'psu' || category === 'ram' 
-                                                ? category.toUpperCase() 
-                                                : category}:
-                                        </span>
-                                        {part.name}
-                                    </span>
-                                    <span className="font-medium">{formatCurrency(part.price || 0)}</span>
-                                </div>
-                            )
-                        ))}
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-6 w-6 text-emerald-600" />
+              Confirm Reservation
+            </DialogTitle>
+            <DialogDescription>
+              Review the components for <span className="text-emerald-400 font-semibold">{system.name}</span> before reserving this build.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <ScrollArea className="max-h-[30vh]">
+              <div className="space-y-2">
+                {Object.entries(resolvedParts).map(([category, part]) => (
+                  part && (
+                    <div key={category} className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        <span className="capitalize mr-1">
+                          {category === 'cpu' || category === 'gpu' || category === 'psu' || category === 'ram'
+                            ? category.toUpperCase()
+                            : category}:
+                        </span>
+                        {part.name}
+                      </span>
+                      <span className="font-medium">{formatCurrency(part.price || 0)}</span>
                     </div>
-                </ScrollArea>
-                <Separator />
-                <div className="flex justify-between items-center font-bold text-lg">
-                    <span>Total Price</span>
-                    <span className="text-primary">{formatCurrency(system.price)}</span>
-                </div>
-                <div className="bg-muted/30 p-3 rounded-lg text-xs text-muted-foreground flex gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                    By confirming, your reservation will be processed and stock will be held for you.
-                </div>
+                  )
+                ))}
+              </div>
+            </ScrollArea>
+            <Separator />
+            <div className="flex justify-between items-center font-bold text-lg">
+              <span>Total Price</span>
+              <span className="text-primary">{formatCurrency(system.price)}</span>
             </div>
-            <div className="flex gap-3">
-                <Button variant="outline" className="flex-1" onClick={(e) => { e.stopPropagation(); setIsCheckoutDialogOpen(false); }}>Cancel</Button>
-                <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={(e) => { e.stopPropagation(); handleReserve(); }} disabled={isReserving}>
-                    {isReserving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                    Confirm Reservation
-                </Button>
+            <div className="bg-muted/30 p-3 rounded-lg text-xs text-muted-foreground flex gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+              By confirming, your reservation will be processed and stock will be held for you.
             </div>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" className="flex-1" onClick={(e) => { e.stopPropagation(); setIsCheckoutDialogOpen(false); }}>Cancel</Button>
+            <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={(e) => { e.stopPropagation(); handleReserve(); }} disabled={isReserving}>
+              {isReserving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Confirm Reservation
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </Link>

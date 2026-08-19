@@ -75,13 +75,13 @@ export function HeroSection({ isDark }: HeroSectionProps) {
               "max-w-xl text-lg md:text-2xl mb-10 md:mb-14 leading-relaxed font-medium opacity-90",
               isDark ? "text-slate-300" : "text-slate-600"
             )}>
-              Build your high-performance PC with AI-powered bottleneck diagnostics, intelligent hardware critique, and precision part matching.
+              Build your high-performance PC with the help of AI bottleneck checking, hardware review, and part matching.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-start gap-4 md:gap-8">
               <Button asChild size="lg" className="w-full sm:w-auto h-16 md:h-20 px-8 md:px-12 text-lg md:text-xl rounded-xl md:rounded-2xl font-black uppercase tracking-widest shadow-[0_20px_50px_rgba(34,211,238,0.3)] transition-all hover:scale-[1.05] active:scale-[0.95] bg-primary hover:bg-primary/90 text-white border-none">
                 <Link href="/signin" className="flex items-center gap-4">
-                  Initialize Builder <LayoutPanelLeft className="w-5 h-5 md:w-6 md:h-6" />
+                  Launch Builder <LayoutPanelLeft className="w-5 h-5 md:w-6 md:h-6" />
                 </Link>
               </Button>
               <SparkleButton

@@ -42,7 +42,7 @@ export default function ContactPage() {
               Get in <span className="text-primary">Touch</span>
             </h1>
 
-            <p className="text-xl text-muted-foreground mb-12 max-w-lg font-medium leading-relaxed">
+            <p className="text-xl text-muted-foreground mb-5 max-w-lg font-medium leading-relaxed">
               Have a custom request or need technical guidance? Our neural engineers and hardware specialists are standing by to assist with your next masterpiece.
             </p>
 

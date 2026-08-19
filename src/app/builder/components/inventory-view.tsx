@@ -78,11 +78,11 @@ export function InventoryView({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-                "p-6 rounded-3xl border shadow-2xl transition-all duration-500 glass-panel",
+                "p-3 rounded-3xl border shadow-2xl transition-all duration-500 glass-panel",
                 className ? className : "lg:col-span-9"
             )}
         >
-            <div className="mb-8">
+            <div className="mb-5">
                 <InventoryToolbar
                     categories={categories}
                     onCategoryChange={onCategoryChange}
@@ -106,7 +106,7 @@ export function InventoryView({
             {loading ? null : paginatedParts.length > 0 ? (
                 view === 'grid' ? (
                     <>
-                        <div className={cn("grid gap-3 md:gap-6", gridColsClass)}>
+                        <div className={cn("grid gap-3 md:gap-3", gridColsClass)}>
                             {paginatedParts.map(part => (
                                 <PartCard
                                     key={part.id}
@@ -118,7 +118,7 @@ export function InventoryView({
                                 />
                             ))}
                         </div>
-                        <div className="mt-12">
+                        <div className="mt-5">
                             <PaginationControls
                                 currentPage={currentPage}
                                 totalPages={totalPages}
@@ -133,9 +133,9 @@ export function InventoryView({
                         <Table>
                             <TableHeader className="bg-muted/30">
                                 <TableRow>
-                                    <TableHead className="uppercase text-[10px] font-bold tracking-widest">Component Identity</TableHead>
-                                    <TableHead className="uppercase text-[10px] font-bold tracking-widest">Inventory State</TableHead>
-                                    <TableHead className="text-right uppercase text-[10px] font-bold tracking-widest">Value (PHP)</TableHead>
+                                    <TableHead className="uppercase text-[10px] font-bold tracking-widest">Part Name</TableHead>
+                                    <TableHead className="uppercase text-[10px] font-bold tracking-widest">Stocks</TableHead>
+                                    <TableHead className="text-right uppercase text-[10px] font-bold tracking-widest">Price</TableHead>
                                     <TableHead className="w-[80px]"></TableHead>
                                 </TableRow>
                             </TableHeader>

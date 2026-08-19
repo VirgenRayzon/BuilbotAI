@@ -38,7 +38,7 @@ export function RecommendationTab({
         >
             <aside className="lg:col-span-4 lg:sticky lg:top-24 self-start">
                 <div className={cn(
-                    "p-8 rounded-3xl border transition-all duration-500 relative overflow-hidden glass-panel border-primary/30 shadow-[0_0_30px_rgba(34,211,238,0.08),0_0_60px_rgba(34,211,238,0.04)]",
+                    "p-5 rounded-3xl border transition-all duration-500 relative overflow-hidden glass-panel border-primary/30 shadow-[0_0_30px_rgba(34,211,238,0.08),0_0_60px_rgba(34,211,238,0.04)]",
                     isDark ? "bg-slate-900/40" : "bg-white/60"
                 )}>
                     {/* Animated top accent */}

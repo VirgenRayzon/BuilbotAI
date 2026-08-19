@@ -38,11 +38,11 @@ export default function TestBuilder1Page() {
 
     // Data Layer
     const { allParts, loading: inventoryLoading } = useInventoryQuery();
-    
+
     // Logic Layer
-    const { 
-        build, handlePartToggle, handleRemovePart, 
-        handleClearBuild, getCountInBuild, isLoaded 
+    const {
+        build, handlePartToggle, handleRemovePart,
+        handleClearBuild, getCountInBuild, isLoaded
     } = useBuilderLogic(allParts);
 
     // Filter Layer
@@ -69,8 +69,8 @@ export default function TestBuilder1Page() {
     const [mounted, setMounted] = useState(false);
 
     const handleApplySuggestion = (category: string, partId: string) => {
-        const event = new CustomEvent('add-suggestion', { 
-            detail: { id: partId, category } 
+        const event = new CustomEvent('add-suggestion', {
+            detail: { id: partId, category }
         });
         window.dispatchEvent(event);
     };
@@ -136,7 +136,7 @@ export default function TestBuilder1Page() {
                     isDark ? "invert" : ""
                 )} style={{ backgroundImage: 'radial-gradient(currentColor 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-                <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pb-24 lg:pb-12 pt-24 md:pt-32 relative z-10">
+                <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pb-24 lg:pb-12 pt-10 md:pt-20 relative z-10">
                     <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6">
                         <div>
                             <div className="flex items-center gap-2">
@@ -184,18 +184,18 @@ export default function TestBuilder1Page() {
                                         <Pin className="h-3.5 w-3.5 text-primary rotate-45" />
                                         <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Docked Sidebar</span>
                                     </div>
-                                    <Button 
-                                        onClick={() => handlePinToggle(false)} 
-                                        size="sm" 
-                                        variant="ghost" 
+                                    <Button
+                                        onClick={() => handlePinToggle(false)}
+                                        size="sm"
+                                        variant="ghost"
                                         className="h-6 px-2 text-[9px] uppercase font-bold text-destructive hover:bg-destructive/10"
                                     >
                                         Unpin Sidebar
                                     </Button>
                                 </div>
-                                <YourBuild 
-                                    build={build} 
-                                    onRemovePart={handleRemovePart} 
+                                <YourBuild
+                                    build={build}
+                                    onRemovePart={handleRemovePart}
                                     onClearBuild={handleClearBuild}
                                     resolution={resolution}
                                     onResolutionChange={setResolution}
@@ -210,7 +210,7 @@ export default function TestBuilder1Page() {
                         )}
 
                         {/* Inventory — Expands to full screen if sidebar is unpinned */}
-                        <InventoryView 
+                        <InventoryView
                             className={isPinned ? "lg:col-span-9" : "col-span-12 lg:col-span-12"}
                             gridCols={isPinned ? 4 : 5}
                             loading={inventoryLoading}
@@ -243,8 +243,8 @@ export default function TestBuilder1Page() {
                 {/* Floating Action Button (FAB) (Visible only when unpinned) */}
                 {!isPinned && (
                     <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 items-end">
-                        <Button 
-                            onClick={() => setIsOpen(true)} 
+                        <Button
+                            onClick={() => setIsOpen(true)}
                             className="h-14 px-6 rounded-2xl bg-gradient-to-r from-primary to-cyan-500 hover:from-primary/95 hover:to-cyan-500/95 text-white font-bold tracking-widest uppercase text-xs shadow-[0_8px_30px_rgb(6,182,212,0.3)] hover:shadow-[0_8px_30px_rgb(6,182,212,0.5)] border-none transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-2"
                         >
                             <Briefcase className="h-5 w-5 animate-pulse" />
@@ -263,10 +263,10 @@ export default function TestBuilder1Page() {
                                 <SheetTitle className="font-headline text-lg font-bold tracking-tight uppercase">Floating Build Panel</SheetTitle>
                                 <p className="text-[9px] uppercase tracking-widest text-muted-foreground/60 mt-0.5">Quick access dashboard</p>
                             </div>
-                            <Button 
-                                onClick={() => handlePinToggle(true)} 
-                                size="sm" 
-                                variant="outline" 
+                            <Button
+                                onClick={() => handlePinToggle(true)}
+                                size="sm"
+                                variant="outline"
                                 className="h-8 rounded-lg text-[9px] uppercase font-bold tracking-wider border-primary/30 text-primary hover:bg-primary/10 mr-4"
                             >
                                 <Pin className="h-3 w-3 mr-1" /> Pin to Sidebar
@@ -274,9 +274,9 @@ export default function TestBuilder1Page() {
                         </SheetHeader>
                         <ScrollArea className="flex-1 w-full h-full">
                             <div className="p-1">
-                                <YourBuild 
-                                    build={build} 
-                                    onRemovePart={handleRemovePart} 
+                                <YourBuild
+                                    build={build}
+                                    onRemovePart={handleRemovePart}
                                     onClearBuild={handleClearBuild}
                                     resolution={resolution}
                                     onResolutionChange={setResolution}
@@ -294,8 +294,8 @@ export default function TestBuilder1Page() {
                 </Sheet>
 
                 {/* Floating UI Elements */}
-                <BuilderFloatingAnalytics 
-                    build={build} 
+                <BuilderFloatingAnalytics
+                    build={build}
                     resolution={resolution}
                     onResolutionChange={setResolution}
                     workload={workload}

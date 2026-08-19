@@ -142,7 +142,7 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                 <CardTitle className="flex items-center justify-between font-headline text-2xl">
                     <div className="flex items-center gap-2">
                         <Bot className="h-6 w-6 text-cyan-500" />
-                        Buildbot Build Architect
+                        Build Overview
                     </div>
                     {finalResponseTime && !isPending && (
                         <div className="relative group/tooltip">
@@ -384,30 +384,27 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                         >
                             {/* Top Panel Grid: Price Total & Save Control */}
                             <div className="grid md:grid-cols-2 gap-6">
-                                {totalPrice && (
-                                    <div className="bg-slate-900/30 border border-white/5 p-6 rounded-2xl backdrop-blur-xl flex items-center gap-6 shadow-inner">
-                                        <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 w-16 h-16 flex items-center justify-center select-none shrink-0">
-                                            <span className="text-3xl font-black font-sans text-primary leading-none">₱</span>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mb-1">Estimated Configuration Total</p>
-                                            <p className="text-4xl font-black font-headline tracking-tighter text-primary">
-                                                ₱{totalPrice.toLocaleString()}
-                                            </p>
-                                        </div>
+                                <div className="h-fit self-start bg-slate-900/30 border border-white/5 p-5 rounded-2xl backdrop-blur-xl flex items-center gap-6 shadow-inner">
+                                    <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 w-16 h-16 flex items-center justify-center select-none shrink-0">
+                                        <span className="text-3xl font-black font-sans text-primary leading-none">₱</span>
                                     </div>
-                                )}
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mb-1">Estimated Build Total</p>
+                                        <p className="text-4xl font-black font-headline tracking-tighter text-primary">
+                                            ₱{(totalPrice || 0).toLocaleString()}
+                                        </p>
+                                    </div>
+                                </div>
 
-                                <div className="bg-slate-900/30 border border-white/5 p-6 rounded-2xl backdrop-blur-xl flex flex-col justify-between gap-4">
+                                <div className="bg-slate-900/30 border border-white/5 p-2 rounded-2xl backdrop-blur-xl flex flex-col gap-2">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20 shrink-0">
                                             <Sparkles className="h-5 w-5 text-emerald-500" />
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex flex-wrap items-center gap-2">
-                                                <h4 className="font-headline font-bold uppercase tracking-wider text-sm">Build Design Ready</h4>
+                                                <h4 className="font-headline font-bold uppercase tracking-wider text-sm">Build Ready</h4>
                                             </div>
-                                            <p className="text-[11px] text-muted-foreground">Architect has formulated your customized system blueprint.</p>
                                         </div>
                                     </div>
                                     {user && (
@@ -430,10 +427,10 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                             </div>
 
                             {/* Summary Section */}
-                            <div className="bg-emerald-500/10 rounded-2xl p-6 border border-emerald-500/20 relative overflow-hidden group">
+                            <div className="bg-emerald-500/10 rounded-2xl p-4 border border-emerald-500/20 relative overflow-hidden group">
                                 <div className="flex items-center gap-3 mb-4 text-emerald-600 dark:text-emerald-400">
                                     <Sparkles className="h-5 w-5" />
-                                    <h4 className="font-headline font-bold uppercase tracking-widest text-sm">Architect's Summary</h4>
+                                    <h4 className="font-headline font-bold uppercase tracking-widest text-sm">Buildbot's Summary</h4>
                                 </div>
                                 <p className="text-base text-foreground/90 leading-relaxed italic pl-4 border-l-2 border-emerald-500/40">
                                     "{build.summary}"
@@ -466,23 +463,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                     </motion.div>
                                 ))}
                             </div>
-
-                            {/* Price Footer */}
-                            {totalPrice && (
-                                <div className="flex flex-col items-center gap-6 pt-8 border-t border-border/50">
-                                    <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6 flex items-center gap-6 max-w-lg w-full shadow-inner">
-                                        <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 w-16 h-16 flex items-center justify-center select-none">
-                                            <span className="text-3xl font-black font-sans text-primary leading-none">₱</span>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mb-1">Estimated Configuration Total</p>
-                                            <p className="text-4xl font-black font-headline tracking-tighter text-primary">
-                                                ₱{totalPrice.toLocaleString()}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
                         </motion.div>
                     )}
                 </AnimatePresence>
