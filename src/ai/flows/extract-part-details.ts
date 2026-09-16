@@ -10,7 +10,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import fs from 'fs';
-import { searchLocalDatabase } from '@/lib/local-db';
+import { retrieveHardwareVectorSpecs } from '@/lib/vector-retriever';
 
 const DEBUG_LOG = 'grounding-debug.log';
 
@@ -56,21 +56,21 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
 
   let groundedContext = "";
 
-  // 1. Try Local CSV Database (Highest Priority)
+  // 1. Try Hardware Vector Storage (buildbot_hardware_vector in Firestore)
   try {
-    const localResults = await searchLocalDatabase(input.partName);
+    const vectorResults = await retrieveHardwareVectorSpecs(input.partName, { limit: 1 });
 
-    if (localResults.length > 0) {
-      groundedContext = localResults.join('\n\n');
-      logDebug("Successfully retrieved grounded context from Local Database.");
+    if (vectorResults.length > 0) {
+      groundedContext = vectorResults.join('\n\n');
+      logDebug("Successfully retrieved grounded context from Hardware Vector Store.");
     } else {
-      logDebug("Local database returned no matches.");
+      logDebug("Hardware Vector Store returned no matches.");
     }
   } catch (error: any) {
-    logDebug(`Local database search failed: ${error.message}`);
+    logDebug(`Vector store search failed: ${error.message}`);
   }
 
-  // 2. Fallback to general knowledge if grounded context is empty
+  // 2. Fallback notice if grounded context is empty
   if (!groundedContext) {
     logDebug("No grounded context found. Falling back to general AI knowledge.");
   }

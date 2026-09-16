@@ -1,7 +1,7 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { streamText, tool, convertToModelMessages, stepCountIs } from 'ai';
 import { retrieveLocalKnowledge } from "@/lib/knowledge-retriever";
-import { retrieveCsvSpecs } from "@/lib/spec-retriever";
+import { retrieveHardwareVectorSpecs } from "@/lib/vector-retriever";
 import { getStructuredInventory } from "@/lib/inventory-fetcher";
 import { z } from 'zod';
 
@@ -135,13 +135,13 @@ Use this context to customize your tone and hardware tier selections if applicab
                     }
                 }),
                 queryPartSpecifications: tool({
-                    description: "Search the local specifications database (CSVs) for detailed hardware specifications (frequencies, ports, sockets, dimensions, power limits).",
+                    description: "Search the hardware vector database (Firestore buildbot_hardware_vector) for detailed hardware specifications (frequencies, ports, sockets, dimensions, power limits).",
                     inputSchema: z.object({
                         query: z.string().describe("Part name or brand keywords to lookup (e.g., 'Ryzen 5 7600X', 'RTX 4070', 'Corsair RM850x').")
                     }),
                     execute: async ({ query }) => {
                         console.log(`[Tool: queryPartSpecifications] Query: "${query}"`);
-                        const specs = await retrieveCsvSpecs(query);
+                        const specs = await retrieveHardwareVectorSpecs(query);
                         return { specs };
                     }
                 })

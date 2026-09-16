@@ -196,13 +196,21 @@ BuilbotAI
 │   ├── check-firestore-schema.js
 │   ├── check-inventory.ts
 │   ├── check-models.js
+│   ├── check-vector-details.js
+│   ├── count-vector-categories.js
 │   ├── find-bad-data.js
+│   ├── inspect-vector-collection.js
 │   ├── list-models.js
 │   ├── print-raw-response.js
 │   ├── screenshot-home.png
 │   ├── screenshot-system-access.png
 │   ├── test-chat.js
+│   ├── test-dimensionality.js
+│   ├── test-embedding-models.js
+│   ├── test-embedding.js
 │   ├── test-fetch.ts
+│   ├── test-sparkle-flow.js
+│   ├── test-vector-search.js
 │   ├── verify-rbac.ts
 │   └── verify-server-actions.ts
 ├── src
@@ -426,19 +434,6 @@ BuilbotAI
 │   │   ├── site-settings-context.tsx
 │   │   ├── theme-provider.tsx
 │   │   └── user-profile.tsx
-│   ├── database
-│   │   ├── case.csv
-│   │   ├── cooler.csv
-│   │   ├── cpu.csv
-│   │   ├── gpu.csv
-│   │   ├── headset.csv
-│   │   ├── keyboard.csv
-│   │   ├── monitor.csv
-│   │   ├── motherboard.csv
-│   │   ├── mouse.csv
-│   │   ├── psu.csv
-│   │   ├── ram.csv
-│   │   └── storage.csv
 │   ├── firebase
 │   │   ├── auth
 │   │   │   └── use-user.tsx
@@ -486,12 +481,11 @@ BuilbotAI
 │       ├── fps-estimator.ts
 │       ├── inventory-fetcher.ts
 │       ├── knowledge-retriever.ts
-│       ├── local-db.ts
 │       ├── placeholder-images.ts
 │       ├── prebuilt-utils.ts
-│       ├── spec-retriever.ts
 │       ├── types.ts
-│       └── utils.ts
+│       ├── utils.ts
+│       └── vector-retriever.ts
 ├── test-results
 │   └── .last-run.json
 ├── .env
@@ -507,6 +501,7 @@ BuilbotAI
 ├── debug-response.json
 ├── DESIGN.md
 ├── firebase.json
+├── firestore.indexes.json
 ├── firestore.rules
 ├── GEMINI.md
 ├── grounding-debug.log
