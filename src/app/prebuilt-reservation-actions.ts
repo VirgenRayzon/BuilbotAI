@@ -4,6 +4,7 @@
 import { getAdminFirestore } from "@/firebase/server-init";
 import * as admin from 'firebase-admin';
 import { PrebuiltSystem, OrderItem } from "@/lib/types";
+import { pruneUserNotifications } from "@/app/checkout-actions";
 
 export async function reservePrebuiltSystem(
     userId: string, 
@@ -75,8 +76,8 @@ export async function reservePrebuiltSystem(
             };
             transaction.set(orderRef, orderData);
 
-            // 4. Create user notification
-            const notificationRef = firestore.collection("notifications").doc();
+            // 4. Create user notification in their subcollection
+            const notificationRef = firestore.collection("users").doc(userId).collection("notifications").doc();
             transaction.set(notificationRef, {
                 id: notificationRef.id,
                 userId: userId,
@@ -101,7 +102,24 @@ export async function reservePrebuiltSystem(
                 readBy: [],
                 createdAt: admin.firestore.Timestamp.now()
             });
+
+            // 6. Create user audit log in user_auditLogs
+            const userAuditRef = firestore.collection("user_auditLogs").doc();
+            transaction.set(userAuditRef, {
+                id: userAuditRef.id,
+                userId: userId,
+                userEmail: userEmail,
+                actionName: 'created',
+                scope: 'Order',
+                resourceName: `Prebuilt: ${system.name}`,
+                resourceId: orderRef.id,
+                details: `Reserved pre-built system "${system.name}" for ₱${system.price.toLocaleString()}`,
+                createdAt: admin.firestore.Timestamp.now()
+            });
         });
+
+        // Prune old notifications for this user in background
+        pruneUserNotifications(firestore, userId).catch(() => {});
 
         return { success: true };
     } catch (error) {

@@ -124,30 +124,17 @@ BuilbotAI
 │       │   └── SKILL.md
 │       └── threejs-interaction
 │           └── SKILL.md
+├── .firebase
+│   └── studio-3150054754-c7d0b
+│       └── functions
+│           └── .env
 ├── .husky
-│   ├── _
-│   │   ├── .gitignore
-│   │   ├── applypatch-msg
-│   │   ├── commit-msg
-│   │   ├── h
-│   │   ├── husky.sh
-│   │   ├── post-applypatch
-│   │   ├── post-checkout
-│   │   ├── post-commit
-│   │   ├── post-merge
-│   │   ├── post-rewrite
-│   │   ├── pre-applypatch
-│   │   ├── pre-auto-gc
-│   │   ├── pre-commit
-│   │   ├── pre-merge-commit
-│   │   ├── pre-push
-│   │   ├── pre-rebase
-│   │   └── prepare-commit-msg
 │   ├── pre-commit
 │   └── pre-push
 ├── .idx
 │   ├── dev.nix
 │   └── icon.png
+├── .tmp
 ├── .vscode
 │   └── settings.json
 ├── design_mocks
@@ -172,8 +159,6 @@ BuilbotAI
 │   ├── migrate_audit_logs.ts
 │   └── update_changelog.js
 ├── public
-│   ├── assets
-│   │   └── blueprints
 │   ├── team
 │   │   ├── developer_m.png
 │   │   ├── developer.png
@@ -196,21 +181,13 @@ BuilbotAI
 │   ├── check-firestore-schema.js
 │   ├── check-inventory.ts
 │   ├── check-models.js
-│   ├── check-vector-details.js
-│   ├── count-vector-categories.js
 │   ├── find-bad-data.js
-│   ├── inspect-vector-collection.js
 │   ├── list-models.js
 │   ├── print-raw-response.js
 │   ├── screenshot-home.png
 │   ├── screenshot-system-access.png
 │   ├── test-chat.js
-│   ├── test-dimensionality.js
-│   ├── test-embedding-models.js
-│   ├── test-embedding.js
 │   ├── test-fetch.ts
-│   ├── test-sparkle-flow.js
-│   ├── test-vector-search.js
 │   ├── verify-rbac.ts
 │   └── verify-server-actions.ts
 ├── src
@@ -240,7 +217,6 @@ BuilbotAI
 │   │   │   │   ├── use-inventory.ts
 │   │   │   │   └── use-orders.ts
 │   │   │   ├── prebuilt-builder
-│   │   │   │   ├── components
 │   │   │   │   └── page.tsx
 │   │   │   └── page.tsx
 │   │   ├── ai-build-advisor
@@ -255,8 +231,6 @@ BuilbotAI
 │   │   │   │   └── use-recommendation-logic.ts
 │   │   │   └── page.tsx
 │   │   ├── api
-│   │   │   ├── ai
-│   │   │   │   └── extract-details
 │   │   │   └── chat
 │   │   │       └── route.ts
 │   │   ├── builder
@@ -277,7 +251,6 @@ BuilbotAI
 │   │   ├── pre-builts
 │   │   │   ├── [id]
 │   │   │   │   └── page.tsx
-│   │   │   ├── components
 │   │   │   └── page.tsx
 │   │   ├── profile
 │   │   │   ├── components
@@ -285,14 +258,16 @@ BuilbotAI
 │   │   │   │   ├── audit-logs-section.tsx
 │   │   │   │   ├── favorites-list.tsx
 │   │   │   │   ├── profile-hero.tsx
-│   │   │   │   └── reservations-list.tsx
+│   │   │   │   ├── reservations-list.tsx
+│   │   │   │   └── user-audit-logs-section.tsx
 │   │   │   ├── hooks
 │   │   │   │   ├── use-admin-keys.ts
 │   │   │   │   ├── use-audit-logs.ts
 │   │   │   │   ├── use-emergency-controls.ts
 │   │   │   │   ├── use-favorites.ts
 │   │   │   │   ├── use-profile-state.ts
-│   │   │   │   └── use-reservations.ts
+│   │   │   │   ├── use-reservations.ts
+│   │   │   │   └── use-user-audit-logs.ts
 │   │   │   └── page.tsx
 │   │   ├── signin
 │   │   │   └── page.tsx
@@ -488,6 +463,12 @@ BuilbotAI
 │       └── vector-retriever.ts
 ├── test-results
 │   └── .last-run.json
+├── tmp
+│   ├── test_knowledge_tools.ts
+│   ├── test_local_extraction.ts
+│   ├── test_search.ts
+│   ├── verify_google_search.ts
+│   └── verify_local_db.ts
 ├── .env
 ├── .eslintrc.json
 ├── .firebaserc

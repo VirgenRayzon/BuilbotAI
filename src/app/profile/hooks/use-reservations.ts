@@ -7,6 +7,7 @@ import { collection, query, where, onSnapshot, deleteDoc, doc } from "firebase/f
 import { Order } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { updateReservationStatus } from "@/app/checkout-actions";
+import { createUserAuditLog } from "@/firebase/audit";
 
 /**
  * Hook to manage user reservations (fetching, cancelling, deleting).
@@ -70,9 +71,18 @@ export function useReservations() {
     };
 
     const handleDeleteReservation = async (reservationId: string) => {
-        if (!firestore) return;
+        if (!firestore || !authUser) return;
         try {
             await deleteDoc(doc(firestore, "orders", reservationId));
+            await createUserAuditLog(firestore, {
+                userId: authUser.uid,
+                userEmail: authUser.email || undefined,
+                actionName: 'deleted',
+                scope: 'Order',
+                resourceName: `Reservation #${reservationId.substring(0, 8)}`,
+                resourceId: reservationId,
+                details: 'Permanently removed cancelled reservation from your history'
+            });
             toast({ title: "Reservation Removed", description: "Order record deleted." });
         } catch (error) {
             console.error("Error deleting reservation:", error);

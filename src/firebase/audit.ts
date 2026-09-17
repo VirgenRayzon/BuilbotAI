@@ -1,5 +1,5 @@
 import { collection, doc, Firestore, setDoc, getDocs, writeBatch } from "firebase/firestore";
-import type { AuditLog, SystemNotification } from "@/lib/types";
+import type { AuditLog, UserAuditLog, SystemNotification } from "@/lib/types";
 
 export async function createAuditLog(firestore: Firestore, data: Omit<AuditLog, 'id' | 'createdAt'>) {
     const auditRef = doc(collection(firestore, 'auditLogs'));
@@ -9,6 +9,16 @@ export async function createAuditLog(firestore: Firestore, data: Omit<AuditLog, 
         createdAt: new Date()
     };
     await setDoc(auditRef, auditLog);
+}
+
+export async function createUserAuditLog(firestore: Firestore, data: Omit<UserAuditLog, 'id' | 'createdAt'>) {
+    const logRef = doc(collection(firestore, 'user_auditLogs'));
+    const userLog: UserAuditLog = {
+        ...data,
+        id: logRef.id,
+        createdAt: new Date()
+    };
+    await setDoc(logRef, userLog);
 }
 
 /**

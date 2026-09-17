@@ -54,13 +54,13 @@ if (typeof window === 'undefined') {
  * Reads all markdown files in the src/knowledge/ directory
  * and performs a simple keyword-based search to find relevant paragraphs.
  */
-export async function retrieveLocalKnowledge(query: string): Promise<string[]> {
+export async function retrieveLocalKnowledge(query: string, maxResults: number = 4): Promise<string[]> {
     const knowledgeDir = path.join(process.cwd(), 'src', 'knowledge');
-    const results: string[] = [];
+    const scoredResults: { text: string; score: number }[] = [];
 
     if (!fs.existsSync(knowledgeDir)) {
         console.warn(`Knowledge directory not found at ${knowledgeDir}`);
-        return results;
+        return [];
     }
 
     // 1. Initialize or Refresh Cache
@@ -68,11 +68,11 @@ export async function retrieveLocalKnowledge(query: string): Promise<string[]> {
         initializeKnowledgeCache();
     }
 
-    if (!knowledgeCache) return results;
+    if (!knowledgeCache) return [];
 
     // 2. Perform search on cache
     const normalizedQueryWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
-    if (normalizedQueryWords.length === 0) return results;
+    if (normalizedQueryWords.length === 0) return [];
 
     // Weighting: core concepts like 'bottleneck' or 'compatibility' are important
     const coreWords = ['bottleneck', 'compatibility', 'tier', 'hierarchy', 'guide'];
@@ -94,25 +94,37 @@ export async function retrieveLocalKnowledge(query: string): Promise<string[]> {
             }
         }
 
-        // More liberal threshold: 
+        // Relevance threshold: 
         // 1. If it matches a core word (bottleneck/compatibility) AND at least one other word
-        // 2. Or if it meets a low % threshold
+        // 2. Or if it meets a % threshold based on query length
         const threshold = Math.max(1.5, normalizedQueryWords.length * 0.15);
 
         if (score >= threshold || (coreMatch && score >= 2)) {
-            results.push(`[Source: ${section.source}]\n${section.text}`);
+            scoredResults.push({
+                text: `[Source: ${section.source}]\n${section.text}`,
+                score
+            });
         }
     }
 
-    // 3. Deduplicate and limit
-    const uniqueResults = [...new Set(results)].slice(0, 10);
+    // 3. Sort by score descending, deduplicate, and limit to maxResults
+    scoredResults.sort((a, b) => b.score - a.score);
+    const seen = new Set<string>();
+    const uniqueResults: string[] = [];
+    for (const item of scoredResults) {
+        if (!seen.has(item.text)) {
+            seen.add(item.text);
+            uniqueResults.push(item.text);
+            if (uniqueResults.length >= maxResults) break;
+        }
+    }
     
     if (uniqueResults.length > 0) {
         const sources = [...new Set(uniqueResults.map(r => r.split('\n')[0].replace('[Source: ', '').replace(']', '')))];
         const timestamp = new Date().toLocaleTimeString();
         console.log(`\n[${timestamp}] 📚 KNOWLEDGE RETRIEVAL: Active`);
-        console.log(`   Query: "${query}"`);
-        console.log(`   Result: Found ${uniqueResults.length} relevant sections from: ${sources.join(', ')}`);
+        console.log(`   Query: "${query.length > 120 ? query.substring(0, 120) + '...' : query}"`);
+        console.log(`   Result: Found ${uniqueResults.length} relevant sections (top-ranked) from: ${sources.join(', ')}`);
         console.log('--------------------------------------------------');
     }
 

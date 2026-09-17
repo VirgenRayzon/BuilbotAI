@@ -6,6 +6,7 @@ import { useFirestore } from "@/firebase";
 import { collection, query, onSnapshot, addDoc, deleteDoc, updateDoc, doc, serverTimestamp, orderBy } from "firebase/firestore";
 import type { FavoriteBuild, FavoriteBuildPart } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { createUserAuditLog } from "@/firebase/audit";
 
 /**
  * Hook to manage user favorite builds (CRUD operations for the favorites subcollection).
@@ -56,12 +57,21 @@ export function useFavorites() {
         const totalPrice = parts.reduce((sum, p) => sum + (p.price || 0), 0);
 
         try {
-            await addDoc(collection(firestore, "users", authUser.uid, "favorites"), {
+            const docRef = await addDoc(collection(firestore, "users", authUser.uid, "favorites"), {
                 name,
                 parts,
                 totalPrice,
                 source,
                 createdAt: serverTimestamp(),
+            });
+            await createUserAuditLog(firestore, {
+                userId: authUser.uid,
+                userEmail: authUser.email || undefined,
+                actionName: 'created',
+                scope: 'Favorite',
+                resourceName: name,
+                resourceId: docRef.id,
+                details: `Saved favorite build "${name}" (${parts.length} parts, ₱${totalPrice.toLocaleString()})`
             });
             toast({ title: "Build Saved", description: `"${name}" has been added to your favorites.` });
         } catch (error) {
@@ -76,14 +86,26 @@ export function useFavorites() {
     const deleteFavorite = useCallback(async (favoriteId: string) => {
         if (!authUser || !firestore) return;
 
+        const target = favorites.find(f => f.id === favoriteId);
+        const favoriteName = target?.name || 'Favorite Build';
+
         try {
             await deleteDoc(doc(firestore, "users", authUser.uid, "favorites", favoriteId));
+            await createUserAuditLog(firestore, {
+                userId: authUser.uid,
+                userEmail: authUser.email || undefined,
+                actionName: 'deleted',
+                scope: 'Favorite',
+                resourceName: favoriteName,
+                resourceId: favoriteId,
+                details: `Removed favorite build "${favoriteName}"`
+            });
             toast({ title: "Favorite Removed", description: "Build has been removed from your favorites." });
         } catch (error) {
             console.error("Error deleting favorite:", error);
             toast({ title: "Error", description: "Failed to remove favorite build.", variant: "destructive" });
         }
-    }, [authUser, firestore, toast]);
+    }, [authUser, firestore, favorites, toast]);
 
     /**
      * Rename a favorite build.
@@ -91,14 +113,26 @@ export function useFavorites() {
     const renameFavorite = useCallback(async (favoriteId: string, newName: string) => {
         if (!authUser || !firestore) return;
 
+        const target = favorites.find(f => f.id === favoriteId);
+        const oldName = target?.name || 'Favorite Build';
+
         try {
             await updateDoc(doc(firestore, "users", authUser.uid, "favorites", favoriteId), { name: newName });
+            await createUserAuditLog(firestore, {
+                userId: authUser.uid,
+                userEmail: authUser.email || undefined,
+                actionName: 'updated',
+                scope: 'Favorite',
+                resourceName: newName,
+                resourceId: favoriteId,
+                details: `Renamed favorite build from "${oldName}" to "${newName}"`
+            });
             toast({ title: "Renamed", description: `Favorite renamed to "${newName}".` });
         } catch (error) {
             console.error("Error renaming favorite:", error);
             toast({ title: "Error", description: "Failed to rename favorite.", variant: "destructive" });
         }
-    }, [authUser, firestore, toast]);
+    }, [authUser, firestore, favorites, toast]);
 
     return {
         favorites,

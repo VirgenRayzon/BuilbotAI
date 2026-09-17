@@ -18,6 +18,7 @@ import { useReservations } from "./hooks/use-reservations";
 import { useEmergencyControls } from "./hooks/use-emergency-controls";
 import { useAdminKeys } from "./hooks/use-admin-keys";
 import { useAuditLogs } from "./hooks/use-audit-logs";
+import { useUserAuditLogs } from "./hooks/use-user-audit-logs";
 import { useFavorites } from "./hooks/use-favorites";
 
 // Components
@@ -27,6 +28,7 @@ import { ReservationsList } from "./components/reservations-list";
 import { SuperAdminSettings } from "@/components/super-admin-settings";
 import { AboutManagement } from "@/components/about-management";
 import { AuditLogsSection } from "./components/audit-logs-section";
+import { UserAuditLogsSection } from "./components/user-audit-logs-section";
 import { FavoritesList } from "./components/favorites-list";
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
@@ -49,6 +51,7 @@ export default function ProfilePage() {
     const emergency = useEmergencyControls();
     const adminKeys = useAdminKeys();
     const audit = useAuditLogs();
+    const userAudit = useUserAuditLogs();
     const favoritesHook = useFavorites();
 
     const [confirmAction, setConfirmAction] = useState<{ id: string, type: 'cancel' | 'delete' } | null>(null);
@@ -91,7 +94,7 @@ export default function ProfilePage() {
                                 <TabsList className={cn(
                                     "flex flex-wrap h-auto p-1 bg-transparent border-b border-white/5 rounded-none mb-8 w-full justify-start gap-4",
                                     isDark ? "border-white/5" : "border-slate-200"
-                                )}>
+                                    )}>
                                     {(!profile?.isManager && !profile?.isSuperAdmin) && (
                                         <>
                                             <TabsTrigger 
@@ -108,6 +111,17 @@ export default function ProfilePage() {
                                                 {favoritesHook.favorites.length > 0 && (
                                                     <Badge variant="secondary" className="h-5 w-5 p-0 flex items-center justify-center text-[9px] font-bold bg-rose-500/20 text-rose-500 border-rose-500/30">
                                                         {favoritesHook.favorites.length}
+                                                    </Badge>
+                                                )}
+                                            </TabsTrigger>
+                                            <TabsTrigger 
+                                                value="activity" 
+                                                className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg px-6 py-2.5 transition-all flex items-center gap-2"
+                                            >
+                                                <Activity className="h-4 w-4" /> Activity Log
+                                                {userAudit.logs.length > 0 && (
+                                                    <Badge variant="secondary" className="h-5 w-5 p-0 flex items-center justify-center text-[9px] font-bold bg-primary/20 text-primary border-primary/30">
+                                                        {userAudit.logs.length}
                                                     </Badge>
                                                 )}
                                             </TabsTrigger>
@@ -184,6 +198,10 @@ export default function ProfilePage() {
                                             onDelete={favoritesHook.deleteFavorite}
                                             onRename={favoritesHook.renameFavorite}
                                         />
+                                    </TabsContent>
+
+                                    <TabsContent value="activity" className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <UserAuditLogsSection logs={userAudit.logs} loading={userAudit.loading} />
                                     </TabsContent>
                                     </>
                                 )}

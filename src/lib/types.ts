@@ -160,6 +160,18 @@ export type AuditLog = {
   createdAt: any; // Firestore Timestamp
 };
 
+export type UserAuditLog = {
+  id: string;
+  userId: string;
+  userEmail?: string;
+  actionName: 'created' | 'updated' | 'deleted' | 'restored' | 'status_changed' | 'auth_update' | 'other';
+  scope: 'Order' | 'Favorite' | 'Profile' | 'System';
+  resourceName: string;
+  resourceId?: string;
+  details?: string;
+  createdAt: any; // Firestore Timestamp
+};
+
 export type FavoriteBuildPart = {
   category: string;
   partId: string;

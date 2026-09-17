@@ -4,7 +4,7 @@
 import { useState, useMemo } from "react";
 import { useUserProfile } from "@/context/user-profile";
 import { useFirestore } from "@/firebase";
-import { collection, query, where, orderBy, doc, updateDoc, writeBatch } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, updateDoc, deleteDoc, writeBatch } from "firebase/firestore";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import { Bell, BellRing, Check, Trash2, Clock, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,8 +26,9 @@ export function UserNotifications() {
     const notificationsQuery = useMemo(() => {
         if (!firestore || !authUser) return null;
         return query(
-            collection(firestore, "notifications"),
-            where("userId", "==", authUser.uid)
+            collection(firestore, "users", authUser.uid, "notifications"),
+            orderBy("createdAt", "desc"),
+            limit(30)
         );
     }, [firestore, authUser]);
 
@@ -47,9 +48,9 @@ export function UserNotifications() {
     }, [notifications]);
 
     const markAsRead = async (id: string) => {
-        if (!firestore) return;
+        if (!firestore || !authUser) return;
         try {
-            await updateDoc(doc(firestore, "notifications", id), {
+            await updateDoc(doc(firestore, "users", authUser.uid, "notifications", id), {
                 read: true
             });
         } catch (error) {
@@ -70,14 +71,14 @@ export function UserNotifications() {
     };
 
     const markAllAsRead = async () => {
-        if (!firestore || !notifications) return;
+        if (!firestore || !authUser || !notifications) return;
         try {
             const unread = notifications.filter(n => !n.read);
             if (unread.length === 0) return;
 
             const batch = writeBatch(firestore);
             unread.forEach(n => {
-                batch.update(doc(firestore, "notifications", n.id), { read: true });
+                batch.update(doc(firestore, "users", authUser.uid, "notifications", n.id), { read: true });
             });
             await batch.commit();
         } catch (error) {
@@ -86,9 +87,12 @@ export function UserNotifications() {
     };
 
     const deleteNotification = async (id: string) => {
-        // We could implement deletion, but for now we just mark as read/hide
-        // Or we can actually delete from Firestore
-        // For this implementation, let's stick to mark as read
+        if (!firestore || !authUser) return;
+        try {
+            await deleteDoc(doc(firestore, "users", authUser.uid, "notifications", id));
+        } catch (error) {
+            console.error("Error deleting notification:", error);
+        }
     };
 
     if (!authUser || loading) return null;
@@ -154,12 +158,13 @@ export function UserNotifications() {
                                             <div className="h-2 w-2 rounded-full bg-primary mt-1 shrink-0" />
                                         )}
                                     </div>
-                                    <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                         {!notification.read && (
                                             <Button 
                                                 variant="ghost" 
                                                 size="icon" 
                                                 className="h-6 w-6 text-muted-foreground hover:text-primary"
+                                                title="Mark as read"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     markAsRead(notification.id);
@@ -168,6 +173,18 @@ export function UserNotifications() {
                                                 <Check className="h-3 w-3" />
                                             </Button>
                                         )}
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                            title="Delete notification"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                deleteNotification(notification.id);
+                                            }}
+                                        >
+                                            <Trash2 className="h-3 w-3" />
+                                        </Button>
                                     </div>
                                 </div>
                             ))}

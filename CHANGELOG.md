@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-09-16]
+
+### Features
+- **ai**: Migrate hardware specs from local CSVs to Firestore vector store ([d9dc5f9](https://github.com/VirgenRayzon/BuilbotAI/commit/d9dc5f9))
+
+## [2026-08-19]
+
+### Miscellaneous
+- Update UI components and loader ([d4ed74b](https://github.com/VirgenRayzon/BuilbotAI/commit/d4ed74b))
+
+## [2026-08-16]
+
+### Miscellaneous
+- Wording and aesthetic adjustments ([c51ca55](https://github.com/VirgenRayzon/BuilbotAI/commit/c51ca55))
+- Align Build Advisor aesthetic and fix builder page background ([34499c7](https://github.com/VirgenRayzon/BuilbotAI/commit/34499c7))
+
 ## [2026-08-11]
 
 ### Bug Fixes

@@ -24,14 +24,6 @@ const getPerformanceStyle = (fps: string) => {
     return { color: "bg-red-500", text: "text-red-500", percent: 15, label: "Low" };
 };
 
-const LOADING_STEPS = [
-    { title: "Reviewing Components", sub: "Checking build compatibility..." },
-    { title: "Performing Analysis", sub: "Identifying potential bottlenecks..." },
-    { title: "Grounding Knowledge", sub: "Searching for real-world benchmarks..." },
-    { title: "Evaluating Value", sub: "Analyzing performance-to-value ratio..." },
-    { title: "Finalizing Critique", sub: "Generating expert suggestions..." }
-];
-
 interface AIBuildCritiqueProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
     externalAnalysis?: any;
@@ -62,7 +54,6 @@ export function AIBuildCritique({
     const [internalAnalysis, setInternalAnalysis] = useState<any>(null);
     const [internalLoading, setInternalLoading] = useState(false);
     const [internalError, setInternalError] = useState<string | null>(null);
-    const [loadingStep, setLoadingStep] = useState(0);
 
     const firestore = useFirestore();
     const settingsDocRef = useMemo(() => {
@@ -115,9 +106,8 @@ export function AIBuildCritique({
         }
     }, [loading, analysis, activeDuration]);
 
-    // Dynamic loading message and timer logic
+    // Timer logic (counts up elapsed seconds)
     useEffect(() => {
-        let interval: NodeJS.Timeout;
         let timerInterval: NodeJS.Timeout;
 
         if (loading) {
@@ -125,19 +115,12 @@ export function AIBuildCritique({
             setElapsedTime(0);
             startTimeRef.current = Date.now();
 
-            // Steps interval
-            interval = setInterval(() => {
-                setLoadingStep((prev) => (prev + 1) % LOADING_STEPS.length);
-            }, 2500);
-
-            // Timer interval (updates elapsed time state)
             timerInterval = setInterval(() => {
                 if (startTimeRef.current) {
                     setElapsedTime((Date.now() - startTimeRef.current) / 1000);
                 }
             }, 100);
         } else {
-            setLoadingStep(0);
             if (startTimeRef.current) {
                 const duration = (Date.now() - startTimeRef.current) / 1000;
                 setFinalResponseTime(duration);
@@ -145,7 +128,6 @@ export function AIBuildCritique({
             }
         }
         return () => {
-            clearInterval(interval);
             clearInterval(timerInterval);
         };
     }, [loading]);
@@ -305,149 +287,74 @@ export function AIBuildCritique({
                 {loading && (
                     <motion.div
                         key="loading"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="flex flex-col items-center justify-center py-8 space-y-8"
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.96 }}
+                        className="flex flex-col items-center justify-center py-14 space-y-7"
                     >
-                        {/* Glowing Radial ETA Progress Ring */}
-                        {(() => {
-                            const targetSeconds = 8;
-                            const elapsed = elapsedTime || 0;
-                            let remaining = targetSeconds - elapsed;
-                            let percent = (remaining / targetSeconds) * 100;
+                        {/* Glowing Radial Elapsed Timer (Counting UP) */}
+                        <div className="relative flex items-center justify-center">
+                            <div className="absolute inset-0 bg-cyan-500/15 blur-3xl rounded-full animate-pulse pointer-events-none" />
 
-                            if (elapsed >= targetSeconds) {
-                                const overshoot = elapsed - targetSeconds;
-                                percent = Math.max(1, 4 / (1 + overshoot * 0.1));
-                                remaining = 0.5 / (1 + overshoot * 0.1);
-                            }
+                            <svg className="w-36 h-36 transform -rotate-90 relative z-10">
+                                {/* Subtle background ring */}
+                                <circle
+                                    cx="72"
+                                    cy="72"
+                                    r="52"
+                                    stroke="rgba(34, 211, 238, 0.08)"
+                                    strokeWidth="4"
+                                    fill="transparent"
+                                />
+                                {/* Smooth rotating active ring */}
+                                <motion.circle
+                                    cx="72"
+                                    cy="72"
+                                    r="52"
+                                    stroke="#22D3EE"
+                                    strokeWidth="4"
+                                    strokeDasharray="80 180"
+                                    strokeLinecap="round"
+                                    fill="transparent"
+                                    animate={{ rotate: 360 }}
+                                    transition={{ repeat: Infinity, duration: 1.8, ease: "linear" }}
+                                    style={{
+                                        transformOrigin: "72px 72px",
+                                        filter: "drop-shadow(0px 0px 10px rgba(34, 211, 238, 0.55))"
+                                    }}
+                                />
+                            </svg>
 
-                            const radius = 45;
-                            const strokeWidth = 4;
-                            const circumference = 2 * Math.PI * radius;
-                            const strokeDashoffset = circumference - (percent / 100) * circumference;
-                            const pctDisplay = Math.round(100 - percent);
-                            const remainingText = elapsed >= targetSeconds
-                                ? `+${(Math.floor(elapsed - targetSeconds) + 1).toString().padStart(2, '0')}s`
-                                : `00:${Math.ceil(remaining).toString().padStart(2, '0')}s`;
-
-                            return (
-                                <div className="relative flex items-center justify-center">
-                                    <div className="absolute inset-0 bg-cyan-500/15 blur-3xl rounded-full animate-pulse pointer-events-none" />
-
-                                    <svg className="w-32 h-32 transform -rotate-90 relative z-10">
-                                        {/* Background ring */}
-                                        <circle
-                                            cx="64"
-                                            cy="64"
-                                            r={radius}
-                                            stroke="rgba(34, 211, 238, 0.05)"
-                                            strokeWidth={strokeWidth}
-                                            fill="transparent"
-                                        />
-                                        {/* Progress ring */}
-                                        <motion.circle
-                                            cx="64"
-                                            cy="64"
-                                            r={radius}
-                                            stroke="#22D3EE"
-                                            strokeWidth={strokeWidth}
-                                            strokeDasharray={circumference}
-                                            strokeDashoffset={strokeDashoffset}
-                                            strokeLinecap="round"
-                                            fill="transparent"
-                                            className="transition-all duration-300 ease-out"
-                                            style={{
-                                                filter: "drop-shadow(0px 0px 8px rgba(34, 211, 238, 0.5))"
-                                            }}
-                                        />
-                                    </svg>
-
-                                    {/* Center Text */}
-                                    <div className="absolute z-20 flex flex-col items-center justify-center text-center font-mono">
-                                        <span className="text-[20px] font-black text-cyan-400 tracking-tighter leading-none">
-                                            {remainingText}
-                                        </span>
-                                        <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-bold mt-1">
-                                            {pctDisplay}% EST
-                                        </span>
-                                    </div>
-                                </div>
-                            );
-                        })()}
-
-                        {/* Stage Checklist Grid */}
-                        <div className="grid md:grid-cols-2 gap-4 w-full max-w-lg mx-auto">
-                            {LOADING_STEPS.map((step, idx) => {
-                                const stepTime = 1.6;
-                                const start = idx * stepTime;
-                                const elapsed = elapsedTime || 0;
-                                const status = elapsed < start
-                                    ? "pending"
-                                    : (elapsed >= start && (elapsed < start + stepTime || idx === LOADING_STEPS.length - 1))
-                                        ? "active"
-                                        : "completed";
-
-                                return (
-                                    <div
-                                        key={idx}
-                                        className={cn(
-                                            "p-4 rounded-xl border flex items-start gap-3 backdrop-blur-md transition-all duration-500",
-                                            status === "completed"
-                                                ? "bg-cyan-500/5 border-cyan-500/20 text-cyan-100"
-                                                : status === "active"
-                                                    ? "bg-cyan-500/10 border-cyan-500/40 text-cyan-100 shadow-[0_0_15px_rgba(34,211,238,0.1)]"
-                                                    : "bg-zinc-900/10 border-zinc-800 text-zinc-500"
-                                        )}
-                                    >
-                                        <div className="shrink-0 mt-0.5">
-                                            {status === "completed" ? (
-                                                <motion.div
-                                                    initial={{ scale: 0 }}
-                                                    animate={{ scale: 1 }}
-                                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                                                >
-                                                    <CheckCircle2 className="h-4 w-4 text-cyan-400" />
-                                                </motion.div>
-                                            ) : status === "active" ? (
-                                                <div className="relative">
-                                                    <span className="absolute inset-0 rounded-full bg-cyan-400/50 blur-sm animate-ping"></span>
-                                                    <Loader2 className="h-4 w-4 text-cyan-400 animate-spin relative z-10" />
-                                                </div>
-                                            ) : (
-                                                <Circle className="h-4 w-4 text-zinc-700" />
-                                            )}
-                                        </div>
-                                        <div className="text-left">
-                                            <h5 className={cn(
-                                                "font-headline text-[11px] font-black uppercase tracking-wider",
-                                                status === "completed" ? "text-cyan-400" : status === "active" ? "text-cyan-400" : "text-zinc-500"
-                                            )}>
-                                                {step.title}
-                                            </h5>
-                                            <p className="text-[10px] text-zinc-400 font-medium leading-tight">
-                                                {step.sub}
-                                            </p>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                            {/* Center Elapsed Counter */}
+                            <div className="absolute z-20 flex flex-col items-center justify-center text-center font-mono">
+                                <span className="text-[22px] font-black text-cyan-400 tracking-tight leading-none">
+                                    {(() => {
+                                        const mins = Math.floor(elapsedTime / 60);
+                                        const secs = Math.floor(elapsedTime % 60);
+                                        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}s`;
+                                    })()}
+                                </span>
+                                <span className="text-[9px] uppercase tracking-widest text-zinc-400 font-bold mt-2 flex items-center gap-1.5">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-ping inline-block" />
+                                    ANALYZING
+                                </span>
+                            </div>
                         </div>
 
+                        {/* Stop Diagnostics Button */}
                         {onCancel && (
                             <motion.div
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 0.5 }}
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.15 }}
                             >
                                 <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={onCancel}
-                                    className="h-9 px-6 rounded-full border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white transition-all font-bold uppercase tracking-widest text-[10px]"
+                                    className="h-9 px-6 rounded-full border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white transition-all font-bold uppercase tracking-widest text-[10px] shadow-sm hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]"
                                 >
-                                    <Zap className="h-3 w-3 mr-2 fill-current" />
+                                    <Zap className="h-3.5 w-3.5 mr-2 fill-current" />
                                     Stop Diagnostics
                                 </Button>
                             </motion.div>

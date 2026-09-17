@@ -5,6 +5,7 @@ import { useUserProfile } from "@/context/user-profile";
 import { useFirestore } from "@/firebase";
 import { updateDoc, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { createUserAuditLog } from "@/firebase/audit";
 
 /**
  * Hook to manage profile editing state and updates.
@@ -33,6 +34,14 @@ export function useProfileState() {
             await updateDoc(doc(firestore, "users", authUser.uid), {
                 name,
                 email
+            });
+            await createUserAuditLog(firestore, {
+                userId: authUser.uid,
+                userEmail: email || authUser.email || undefined,
+                actionName: 'updated',
+                scope: 'Profile',
+                resourceName: 'Account Details',
+                details: `Updated name to "${name}" and email to "${email}"`
             });
             toast({
                 title: "Profile Updated",

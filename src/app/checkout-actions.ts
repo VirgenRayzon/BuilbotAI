@@ -5,6 +5,26 @@ import { getAdminFirestore } from "@/firebase/server-init";
 import * as admin from 'firebase-admin';
 import { Order, OrderItem } from "@/lib/types";
 
+/**
+ * Prunes notifications for a given user, maintaining a maximum limit (default: 30)
+ * to keep user subcollections fast and lightweight.
+ */
+export async function pruneUserNotifications(firestore: admin.firestore.Firestore, userId: string, maxKeep: number = 30) {
+    if (!userId) return;
+    try {
+        const notifsRef = firestore.collection("users").doc(userId).collection("notifications");
+        const snapshot = await notifsRef.orderBy("createdAt", "desc").get();
+        if (snapshot.size > maxKeep) {
+            const batch = firestore.batch();
+            const docsToDelete = snapshot.docs.slice(maxKeep);
+            docsToDelete.forEach(docSnap => batch.delete(docSnap.ref));
+            await batch.commit();
+        }
+    } catch (err) {
+        console.warn(`[Notifications] Failed to prune notifications for user ${userId}:`, err);
+    }
+}
+
 export async function processCheckout(userId: string, userEmail: string, items: OrderItem[]) {
     const firestore = getAdminFirestore();
     const totalPrice = items.reduce((acc, item) => acc + item.price, 0);
@@ -52,8 +72,8 @@ export async function processCheckout(userId: string, userEmail: string, items: 
             };
             transaction.set(orderRef, orderData);
 
-            // 4. Create initial notification
-            const notificationRef = firestore.collection("notifications").doc();
+            // 4. Create initial notification in user's subcollection
+            const notificationRef = firestore.collection("users").doc(userId).collection("notifications").doc();
             transaction.set(notificationRef, {
                 id: notificationRef.id,
                 userId: userId,
@@ -78,7 +98,24 @@ export async function processCheckout(userId: string, userEmail: string, items: 
                 readBy: [],
                 createdAt: admin.firestore.Timestamp.now()
             });
+
+            // 6. Create user audit log in user_auditLogs
+            const userAuditRef = firestore.collection("user_auditLogs").doc();
+            transaction.set(userAuditRef, {
+                id: userAuditRef.id,
+                userId: userId,
+                userEmail: userEmail,
+                actionName: 'created',
+                scope: 'Order',
+                resourceName: 'Custom PC Reservation',
+                resourceId: orderRef.id,
+                details: `Reserved custom build with ${items.length} parts totaling ₱${totalPrice.toLocaleString()}`,
+                createdAt: admin.firestore.Timestamp.now()
+            });
         });
+
+        // Prune old notifications for this user in the background
+        pruneUserNotifications(firestore, userId).catch(() => {});
 
         return { success: true };
     } catch (error) {
@@ -97,6 +134,8 @@ export async function updateReservationStatus(
 ) {
     const firestore = getAdminFirestore();
 
+    let targetUserId: string | null = null;
+
     try {
         await firestore.runTransaction(async (transaction) => {
             const orderRef = firestore.collection("orders").doc(orderId);
@@ -108,6 +147,7 @@ export async function updateReservationStatus(
 
             const orderData = orderSnap.data() as Order;
             const currentStatus = orderData.status;
+            targetUserId = orderData.userId;
 
             // Prevent redundant processing if status is already the same
             if (currentStatus === newStatus) {
@@ -131,8 +171,8 @@ export async function updateReservationStatus(
                 updatedAt: admin.firestore.Timestamp.now()
             });
 
-            // Create notification for the user
-            const notificationRef = firestore.collection("notifications").doc();
+            // Create notification for the user in their subcollection
+            const notificationRef = firestore.collection("users").doc(orderData.userId).collection("notifications").doc();
             let title = "Order Update";
             let message = `Your order status has been updated to ${newStatus}.`;
 
@@ -189,7 +229,28 @@ export async function updateReservationStatus(
                     createdAt: admin.firestore.Timestamp.now()
                 });
             }
+
+            // 7. Create user audit log in user_auditLogs
+            const userAuditRef = firestore.collection("user_auditLogs").doc();
+            transaction.set(userAuditRef, {
+                id: userAuditRef.id,
+                userId: orderData.userId,
+                userEmail: orderData.userEmail,
+                actionName: newStatus === 'cancelled' ? 'deleted' : 'status_changed',
+                scope: 'Order',
+                resourceName: (orderData as any).prebuiltName ? `Prebuilt: ${(orderData as any).prebuiltName}` : `Reservation #${orderId.substring(0, 8)}`,
+                resourceId: orderId,
+                details: newStatus === 'cancelled' 
+                    ? (actor?.isManager ? `Reservation cancelled by manager ${actor.name}` : 'Reservation cancelled by you')
+                    : `Status updated to ${newStatus}`,
+                createdAt: admin.firestore.Timestamp.now()
+            });
         });
+
+        // Prune old notifications for this user in background
+        if (targetUserId) {
+            pruneUserNotifications(firestore, targetUserId).catch(() => {});
+        }
 
         return { success: true };
     } catch (error) {

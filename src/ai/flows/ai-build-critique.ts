@@ -63,6 +63,52 @@ const aiBuildCritiqueOutputSchema = z.object({
     suggestions: z.array(SuggestionSchema)
 });
 
+import { estimateFPS } from "@/lib/fps-estimator";
+import { Resolution, WorkloadType } from "@/lib/types";
+
+const CRITIQUE_CACHE_COLLECTION = 'ai_critique_cache_v1';
+const BENCHMARK_RESEARCH_CACHE_COLLECTION = 'ai_benchmark_research_cache_v1';
+
+/**
+ * Generate a cache key for the entire critique output.
+ */
+function generateCritiqueCacheKey(input: AiBuildCritiqueInput): string {
+    const partModels: string[] = [];
+    Object.values(input.build || {}).forEach(val => {
+        if (Array.isArray(val)) {
+            val.forEach(p => p && partModels.push((p.model || '').trim().toLowerCase()));
+        } else if (val) {
+            partModels.push(((val as any).model || '').trim().toLowerCase());
+        }
+    });
+    const sortedParts = Array.from(new Set(partModels)).sort().join('|');
+    const intent = (input.intendedUse || 'default').toLowerCase().trim();
+    const perf = (input.performanceLevel || 'default').toLowerCase().trim();
+    const notes = (input.additionalNotes || '').toLowerCase().trim();
+    return `${sortedParts}__${intent}__${perf}__${notes}`.replace(/[\/.]/g, '_').substring(0, 800);
+}
+
+/**
+ * Generate a cache key for the CPU+GPU benchmark web research context.
+ */
+function generateBenchmarkCacheKey(build: any, intendedUse?: string): string {
+    const cpu = (build['CPU'] as any)?.model || '';
+    const gpu = (build['GPU'] as any)?.model || '';
+    const intent = (intendedUse || 'balanced').toLowerCase().trim();
+    return `${cpu}_${gpu}_${intent}`.toLowerCase().replace(/[^a-z0-9_]/gi, '_').substring(0, 300);
+}
+
+/**
+ * Clean redundant marketing boilerplate for focused knowledge retrieval.
+ */
+function cleanPartName(name: string): string {
+    return name
+        .replace(/\b(80\s*Plus\s*(Bronze|Gold|Platinum|Silver|Titanium))\b/gi, '')
+        .replace(/\b(Gaming Desktop Memory|Desktop Memory|GDDR[567X]*|Twin Edge|OC Edition|M\.2 NVMe|NVMe PCIe|PCIe M\.2)\b/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 export const aiBuildCritique = ai.defineFlow(
     {
         name: "aiBuildCritique",
@@ -81,9 +127,9 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
     }
 
     const { build, intendedUse, performanceLevel, additionalNotes } = input;
+    const db = getAdminFirestore();
 
     // 0. Check Maintenance Mode (Kill Switch)
-    const db = getAdminFirestore();
     try {
         const settingsSnap = await db.collection('siteSettings').doc('main').get();
         if (settingsSnap.exists && settingsSnap.data()?.isMaintenanceMode) {
@@ -94,9 +140,47 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
         console.warn("Failed to check maintenance mode:", e);
     }
 
-    // 1. Perform deterministic analysis
+    // 1. Tier 1 Cache Check: Full Critique Cache
+    const critiqueCacheKey = generateCritiqueCacheKey(input);
+    if (critiqueCacheKey.length > 5) {
+        try {
+            const critiqueSnap = await db.collection(CRITIQUE_CACHE_COLLECTION).doc(critiqueCacheKey).get();
+            if (critiqueSnap.exists) {
+                const cacheData = critiqueSnap.data();
+                const ageInDays = (Date.now() - (cacheData?.timestamp || 0)) / (1000 * 60 * 60 * 24);
+                if (ageInDays < 7 && cacheData?.output) {
+                    console.log(`[AI Critique Cache] Hit for key: ${critiqueCacheKey}`);
+                    return cacheData.output;
+                }
+            }
+        } catch (e) {
+            console.warn("[AI Critique Cache] Read error:", e);
+        }
+    }
+
+    // 2. Perform deterministic local analysis
     const bottleneck = calculateBottleneck(build as any);
     const compatibilityIssues = checkFullBuildCompatibility(build as any);
+
+    // Deterministic FPS Baseline Calculation (Anchors for AI)
+    const normRes: Resolution = (performanceLevel === '4K' || performanceLevel === '1080p' || performanceLevel === '1440p')
+        ? performanceLevel
+        : '1440p';
+    const normWorkload: WorkloadType = (intendedUse === 'Esports' || intendedUse === 'AAA')
+        ? intendedUse
+        : 'Balanced';
+
+    const fps1080 = estimateFPS(build as any, '1080p', normWorkload);
+    const fps1440 = estimateFPS(build as any, '1440p', normWorkload);
+    const fps4K = estimateFPS(build as any, '4K', normWorkload);
+
+    const deterministicFpsContext = fps1440 ? `
+DETERMINISTIC FPS BASELINES (Computed from hardware specifications & bottleneck multipliers):
+- 1080p: ~${fps1080?.averageFps ?? 'N/A'} FPS avg (1% Low: ~${fps1080?.lowsFps ?? 'N/A'}, Peak: ~${fps1080?.peakFps ?? 'N/A'})
+- 1440p: ~${fps1440?.averageFps ?? 'N/A'} FPS avg (1% Low: ~${fps1440?.lowsFps ?? 'N/A'}, Peak: ~${fps1440?.peakFps ?? 'N/A'})
+- 4K: ~${fps4K?.averageFps ?? 'N/A'} FPS avg (1% Low: ~${fps4K?.lowsFps ?? 'N/A'}, Peak: ~${fps4K?.peakFps ?? 'N/A'})
+CRITICAL: Use these deterministic baseline numbers as reference anchors for your 6 game FPS estimates.
+` : '';
 
     const buildContext = Object.entries(build)
         .map(([category, partData]) => {
@@ -109,17 +193,21 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
         })
         .join('\n');
 
-    // 2. Retrieve local knowledge based on the components
-    const componentNames = Object.values(build)
-        .flat()
-        .filter(p => p !== null)
-        .map((p: any) => p.model)
-        .join(' ');
-
-    const knowledgeResults = await retrieveLocalKnowledge(`bottleneck compatibility ${componentNames}`);
+    // 3. Deduplicated & Cleaned Local Knowledge Retrieval (Top 4 ranked sections)
+    const uniqueCleanModels = Array.from(
+        new Set(
+            Object.values(build)
+                .flat()
+                .filter(Boolean)
+                .map((p: any) => cleanPartName(p.model || ''))
+                .filter((m: string) => m.length > 2)
+        )
+    );
+    const cleanKnowledgeQuery = `bottleneck compatibility ${uniqueCleanModels.join(' ')}`;
+    const knowledgeResults = await retrieveLocalKnowledge(cleanKnowledgeQuery, 4);
     const knowledgeContext = knowledgeResults.join('\n\n');
 
-    // 3. Fetch store inventory exclusively from Live Firestore
+    // 4. Fetch store inventory exclusively from Live Firestore
     const buildCategories = Object.keys(build);
     const inventoryResults = await Promise.all(
         buildCategories.map(cat => getInventoryFromFirestore(cat, undefined, 5))
@@ -132,7 +220,9 @@ DETERMINISTIC ANALYSIS RESULTS:
 - Bottleneck Message: ${bottleneck.message}
 - Compatibility Issues: ${compatibilityIssues.length > 0 ? compatibilityIssues.map(i => `[${i.severity.toUpperCase()}] ${i.message}`).join('; ') : 'None detected'}
 
-${knowledgeContext ? `EXPERT LOCAL KNOWLEDGE BASE:\n${knowledgeContext}` : ''}
+${deterministicFpsContext}
+
+${knowledgeContext ? `EXPERT LOCAL KNOWLEDGE BASE (TOP RELEVANT SECTIONS):\n${knowledgeContext}` : ''}
 
 STORE_INVENTORY_MENU (MANDATORY SOURCE FOR SUGGESTIONS):
 The following parts are EXACTLY what is available in our store. 
@@ -178,11 +268,33 @@ ${analysisContext}
 If the build is completely empty, kindly invite the user to start picking out parts.`;
 
     try {
-        // Step 1: Plain-text research call WITH googleSearchRetrieval (no structured output)
-        console.log("[AI Build Critique] Step 1: Running web search pre-research for benchmarks...");
-        const researchResponse = await ai.generate({
-            model: 'googleai/gemini-2.5-flash',
-            prompt: `You are a PC hardware benchmark researcher. Research the following PC build and provide benchmark data, FPS estimates, and component analysis:
+        // Step 1: Benchmark Web Research with Tier 2 Cache Check
+        let webResearchContext = '';
+        const benchmarkCacheKey = generateBenchmarkCacheKey(build, intendedUse);
+        let isBenchmarkCached = false;
+
+        if (benchmarkCacheKey && benchmarkCacheKey.length > 5) {
+            try {
+                const benchSnap = await db.collection(BENCHMARK_RESEARCH_CACHE_COLLECTION).doc(benchmarkCacheKey).get();
+                if (benchSnap.exists) {
+                    const benchData = benchSnap.data();
+                    const ageInDays = (Date.now() - (benchData?.timestamp || 0)) / (1000 * 60 * 60 * 24);
+                    if (ageInDays < 14 && benchData?.webResearchContext) {
+                        console.log(`[AI Benchmark Cache] Hit for: ${benchmarkCacheKey}. Skipping Step 1 web search!`);
+                        webResearchContext = benchData.webResearchContext;
+                        isBenchmarkCached = true;
+                    }
+                }
+            } catch (e) {
+                console.warn("[AI Benchmark Cache] Read error:", e);
+            }
+        }
+
+        if (!isBenchmarkCached) {
+            console.log("[AI Build Critique] Step 1: Running web search pre-research for benchmarks...");
+            const researchResponse = await ai.generate({
+                model: 'googleai/gemini-2.5-flash',
+                prompt: `You are a PC hardware benchmark researcher. Research the following PC build and provide benchmark data, FPS estimates, and component analysis:
 
 Current Build:
 ${buildContext}
@@ -199,13 +311,28 @@ Search for:
 4. Any compatibility concerns.
 
 Provide detailed findings with specific numbers.`,
-            config: {
-                temperature: 0.3,
-                googleSearchRetrieval: {},
-            },
-        });
-        const webResearchContext = researchResponse.text;
-        console.log("[AI Build Critique] Step 1 complete. Research context obtained.");
+                config: {
+                    temperature: 0.3,
+                    googleSearchRetrieval: {},
+                },
+            });
+            webResearchContext = researchResponse.text;
+            console.log("[AI Build Critique] Step 1 complete. Research context obtained.");
+
+            // Save to benchmark cache
+            if (benchmarkCacheKey && benchmarkCacheKey.length > 5) {
+                try {
+                    await db.collection(BENCHMARK_RESEARCH_CACHE_COLLECTION).doc(benchmarkCacheKey).set({
+                        benchmarkCacheKey,
+                        webResearchContext,
+                        timestamp: Date.now(),
+                    });
+                    console.log(`[AI Benchmark Cache] Saved benchmark context for: ${benchmarkCacheKey}`);
+                } catch (e) {
+                    console.warn("[AI Benchmark Cache] Write error:", e);
+                }
+            }
+        }
 
         // Step 2: Structured output prompt WITHOUT googleSearchRetrieval
         console.log("[AI Build Critique] Step 2: Generating structured critique...");
@@ -241,6 +368,20 @@ Output strictly the JSON object.`;
 
         if (!response.output) {
             throw new Error("AI returned empty output during build critique.");
+        }
+
+        // Save to full critique cache (Tier 1)
+        if (critiqueCacheKey.length > 5) {
+            try {
+                await db.collection(CRITIQUE_CACHE_COLLECTION).doc(critiqueCacheKey).set({
+                    input,
+                    output: response.output,
+                    timestamp: Date.now(),
+                });
+                console.log(`[AI Critique Cache] Saved new entry for: ${critiqueCacheKey}`);
+            } catch (e) {
+                console.warn("[AI Critique Cache] Write error:", e);
+            }
         }
 
         return response.output;
