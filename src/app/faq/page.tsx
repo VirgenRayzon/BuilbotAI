@@ -49,6 +49,10 @@ const faqData = [
       {
         question: "How can I track my order?",
         answer: "Once your build leaves our synthesis lab, you will receive a tracking number via email. You can also track the real-time assembly progress through your User Dashboard."
+      },
+      {
+        question: "How do I cancel or modify my reservation?",
+        answer: "To cancel or modify an active reservation, you must contact a BuildbotAI representative first. Because components are immediately allocated and reserved from our warehouse inventory upon booking, direct online self-cancellation is restricted. Please reach out to our team via our Contact page or support channels with your Order ID, and our representative will assist you."
       }
     ]
   },

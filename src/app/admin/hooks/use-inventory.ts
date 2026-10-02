@@ -82,6 +82,7 @@ export function useInventory(profile: any) {
             price: data.price,
             stock: data.stockCount,
             imageUrl: data.imageUrl,
+            images: data.images,
             wattage: data.wattage,
             performanceScore: data.performanceScore,
             dimensions: data.dimensions,

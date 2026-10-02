@@ -13,6 +13,7 @@ const ComponentDataSchema = z.object({
     model: z.string(),
     price: z.number(),
     brand: z.string().optional(),
+    description: z.string().optional(),
     category: z.string().optional(),
     wattage: z.number().optional(),
     performanceScore: z.number().optional(),
@@ -67,7 +68,6 @@ import { estimateFPS } from "@/lib/fps-estimator";
 import { Resolution, WorkloadType } from "@/lib/types";
 
 const CRITIQUE_CACHE_COLLECTION = 'ai_critique_cache_v1';
-const BENCHMARK_RESEARCH_CACHE_COLLECTION = 'ai_benchmark_research_cache_v1';
 
 /**
  * Generate a cache key for the entire critique output.
@@ -86,16 +86,6 @@ function generateCritiqueCacheKey(input: AiBuildCritiqueInput): string {
     const perf = (input.performanceLevel || 'default').toLowerCase().trim();
     const notes = (input.additionalNotes || '').toLowerCase().trim();
     return `${sortedParts}__${intent}__${perf}__${notes}`.replace(/[\/.]/g, '_').substring(0, 800);
-}
-
-/**
- * Generate a cache key for the CPU+GPU benchmark web research context.
- */
-function generateBenchmarkCacheKey(build: any, intendedUse?: string): string {
-    const cpu = (build['CPU'] as any)?.model || '';
-    const gpu = (build['GPU'] as any)?.model || '';
-    const intent = (intendedUse || 'balanced').toLowerCase().trim();
-    return `${cpu}_${gpu}_${intent}`.toLowerCase().replace(/[^a-z0-9_]/gi, '_').substring(0, 300);
 }
 
 /**
@@ -185,13 +175,21 @@ CRITICAL: Use these deterministic baseline numbers as reference anchors for your
     const buildContext = Object.entries(build)
         .map(([category, partData]) => {
             if (!partData) return `${category}: None selected`;
+            const formatPart = (p: any) => {
+                const brandModel = `${p.brand || ''} ${p.model}`.trim();
+                const priceStr = typeof p.price === 'number' ? `₱${p.price.toLocaleString()}` : (p.price ? `₱${p.price}` : '');
+                let text = `${brandModel} (${priceStr})`;
+                if (p.description && p.description.trim()) {
+                    text += `\n  Product Highlights:\n  ${p.description.trim().split('\n').join('\n  ')}`;
+                }
+                return text;
+            };
             if (Array.isArray(partData)) {
-                return `${category}: ${partData.map((p: any) => `${p.brand || ''} ${p.model} ($${p.price})`).join(', ')}`;
+                return `${category}:\n${partData.map(p => ` - ${formatPart(p)}`).join('\n')}`;
             }
-            const singlePart = partData as any;
-            return `${category}: ${singlePart.brand || ''} ${singlePart.model} ($${singlePart.price})`;
+            return `${category}: ${formatPart(partData)}`;
         })
-        .join('\n');
+        .join('\n\n');
 
     // 3. Deduplicated & Cleaned Local Knowledge Retrieval (Top 4 ranked sections)
     const uniqueCleanModels = Array.from(
@@ -235,12 +233,12 @@ You are an encouraging and expert PC building mentor. Analyze the PC build provi
 Since some users are beginners, your tone should be supportive and optimistic.
 
 PROS (EXPRESSED WITH EXPERTISE):
-- Highlight the synergy and longevity of the build.
+- Highlight the synergy, longevity, power delivery, VRM quality, and connectivity features of the build using the provided Product Highlights.
 
 CONS & CONSIDERATIONS (CONSTRUCTIVE & SOFTENED):
-- Frame issues as "Optimization Opportunities."
+- Frame issues as "Optimization Opportunities" (e.g. overspending on certain parts, thermal/clearance considerations, or bandwidth balance).
 
-Current Build:
+Current Build (With Official Hardware Product Highlights):
 ${buildContext}
 
 User Preferences:
@@ -250,101 +248,21 @@ User Preferences:
 
 ${analysisContext}
 
-1. Pros and Cons: Provide a detailed list.
-2. Bottleneck Analysis: Explain the bottleneck balance.
-3. FPS Estimates: Provide estimates for 6 different games. 
-   DIVERSITY RULE: DO NOT always pick the same games (e.g., avoid always using Cyberpunk 2077, COD, or Forza). 
-   Select games that are RELEVANT to the user's Intended Use (e.g., if 'E-sports', pick Valorant or CS2; if 'Content Creation', pick relevant benchmarks; if 'General', pick a varied mix). 
-   Try to include at least one recent blockbuster and one popular multiplayer title.
+INSTRUCTIONS:
+1. Pros and Cons: Provide a detailed list. Directly reference specific hardware features (e.g. VRM power stages, USB/networking ports, PCIe 5.0 lanes, cache) from the provided Product Highlights.
+2. Bottleneck Analysis: Explain the bottleneck balance between CPU and GPU.
+3. FPS Estimates: Provide realistic estimates for 6 different games using the deterministic baseline FPS anchors above.
+   DIVERSITY RULE: DO NOT always pick the same games. Select games relevant to the user's Intended Use (e.g., if 'E-sports', pick Valorant, CS2, Apex; if 'AAA', pick Cyberpunk 2077, Black Myth: Wukong, Alan Wake 2; if 'General', pick a balanced mix).
 4. Suggestions: Recommend alternatives that provide better value or perfect the build.
    MANDATORY RULE FOR SUGGESTIONS: 
    - You MUST ONLY suggest parts that are listed in the STORE_INVENTORY_MENU provided above. 
    - OPTIMIZATION RULE: If a component is already top-of-the-line (e.g., flagship CPUs/GPUs) or perfectly balanced for the build's budget/purpose, DO NOT provide a suggestion for that category. 
-   - EMPTY SUGGESTIONS: If the entire build is already well-optimized or enthusiasts-grade with no meaningful upgrades available in the menu, return an EMPTY suggestions array []. Do not suggest lateral moves (e.g., suggesting a different brand of the same spec) unless there is a clear price or compatibility advantage.
+   - EMPTY SUGGESTIONS: If the entire build is already well-optimized or enthusiast-grade with no meaningful upgrades available in the menu, return an EMPTY suggestions array []. Do not suggest lateral moves unless there is a clear price or compatibility advantage.
    
-   For the 'suggestedComponent' field, you MUST use the EXACT string provided in the 'Name' field. 
-   For the 'suggestedPartId' field, you MUST provide the exact string found after 'ID: '.
+   For 'suggestedComponent', use the EXACT string provided in the 'Name' field. 
+   For 'suggestedPartId', provide the exact string found after 'ID: '.
 
-If the build is completely empty, kindly invite the user to start picking out parts.`;
-
-    try {
-        // Step 1: Benchmark Web Research with Tier 2 Cache Check
-        let webResearchContext = '';
-        const benchmarkCacheKey = generateBenchmarkCacheKey(build, intendedUse);
-        let isBenchmarkCached = false;
-
-        if (benchmarkCacheKey && benchmarkCacheKey.length > 5) {
-            try {
-                const benchSnap = await db.collection(BENCHMARK_RESEARCH_CACHE_COLLECTION).doc(benchmarkCacheKey).get();
-                if (benchSnap.exists) {
-                    const benchData = benchSnap.data();
-                    const ageInDays = (Date.now() - (benchData?.timestamp || 0)) / (1000 * 60 * 60 * 24);
-                    if (ageInDays < 14 && benchData?.webResearchContext) {
-                        console.log(`[AI Benchmark Cache] Hit for: ${benchmarkCacheKey}. Skipping Step 1 web search!`);
-                        webResearchContext = benchData.webResearchContext;
-                        isBenchmarkCached = true;
-                    }
-                }
-            } catch (e) {
-                console.warn("[AI Benchmark Cache] Read error:", e);
-            }
-        }
-
-        if (!isBenchmarkCached) {
-            console.log("[AI Build Critique] Step 1: Running web search pre-research for benchmarks...");
-            const researchResponse = await ai.generate({
-                model: 'googleai/gemini-2.5-flash',
-                prompt: `You are a PC hardware benchmark researcher. Research the following PC build and provide benchmark data, FPS estimates, and component analysis:
-
-Current Build:
-${buildContext}
-
-User Preferences:
-- Intended Use: ${intendedUse || "Not specified"}
-- Target Performance: ${performanceLevel || "Not specified"}
-- Additional Notes: ${additionalNotes || "None"}
-
-Search for:
-1. Real-world benchmark FPS data for this GPU+CPU combo in 6 popular games (choose games relevant to the user's intended use).
-2. Known bottleneck issues between these components.
-3. Current market alternatives that offer better value.
-4. Any compatibility concerns.
-
-Provide detailed findings with specific numbers.`,
-                config: {
-                    temperature: 0.3,
-                    googleSearchRetrieval: {},
-                },
-            });
-            webResearchContext = researchResponse.text;
-            console.log("[AI Build Critique] Step 1 complete. Research context obtained.");
-
-            // Save to benchmark cache
-            if (benchmarkCacheKey && benchmarkCacheKey.length > 5) {
-                try {
-                    await db.collection(BENCHMARK_RESEARCH_CACHE_COLLECTION).doc(benchmarkCacheKey).set({
-                        benchmarkCacheKey,
-                        webResearchContext,
-                        timestamp: Date.now(),
-                    });
-                    console.log(`[AI Benchmark Cache] Saved benchmark context for: ${benchmarkCacheKey}`);
-                } catch (e) {
-                    console.warn("[AI Benchmark Cache] Write error:", e);
-                }
-            }
-        }
-
-        // Step 2: Structured output prompt WITHOUT googleSearchRetrieval
-        console.log("[AI Build Critique] Step 2: Generating structured critique...");
-        const consolidatedPrompt = `${prompt}
-        
-WEB SEARCH RESEARCH CONTEXT (Use this data for accurate FPS estimates and component analysis):
-${webResearchContext}
-
-RESEARCH & ANALYSIS INSTRUCTIONS:
-- Use the web research context above for accurate benchmarks and FPS data.
-- Analyze the build for pros, cons, bottleneck balance, and FPS estimates as described above.
-- Format your final findings strictly into the requested JSON schema.
+If the build is completely empty, kindly invite the user to start picking out parts.
 
 REQUIRED OUTPUT SCHEMA:
 - pros: string[]
@@ -355,14 +273,17 @@ REQUIRED OUTPUT SCHEMA:
 
 Output strictly the JSON object.`;
 
+    try {
+        console.log("[AI Build Critique] Generating fast critique using Product Highlights...");
         const response = await ai.generate({
             model: 'googleai/gemini-2.5-flash',
-            prompt: consolidatedPrompt,
+            prompt,
             output: {
                 schema: aiBuildCritiqueOutputSchema,
             },
             config: {
                 temperature: 0.2,
+                thinkingConfig: { thinkingBudget: 0 },
             },
         });
 

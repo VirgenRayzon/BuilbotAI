@@ -7,10 +7,12 @@ import { useRouter } from "next/navigation";
 import { useLoading } from "@/context/loading-context";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { User as UserIcon, Package, Shield, ChevronRight, FileText, LayoutDashboard, Settings, Database, Activity, Heart } from "lucide-react";
+import { User as UserIcon, Package, Shield, ChevronRight, FileText, LayoutDashboard, Settings, Database, Activity, Heart, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RouteGuard } from "@/components/auth/route-guard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatCurrency } from "@/lib/utils";
+import type { Order } from "@/lib/types";
 
 // Custom Hooks
 import { useProfileState } from "./hooks/use-profile-state";
@@ -34,6 +36,9 @@ import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle 
 } from "@/components/ui/alert-dialog";
+import {
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
+} from "@/components/ui/dialog";
 
 /**
  * Profile Page Orchestrator
@@ -54,7 +59,8 @@ export default function ProfilePage() {
     const userAudit = useUserAuditLogs();
     const favoritesHook = useFavorites();
 
-    const [confirmAction, setConfirmAction] = useState<{ id: string, type: 'cancel' | 'delete' } | null>(null);
+    const [cancelModalOrder, setCancelModalOrder] = useState<Order | null>(null);
+    const [deleteActionId, setDeleteActionId] = useState<string | null>(null);
 
     // Initial Effects
 
@@ -174,9 +180,19 @@ export default function ProfilePage() {
                                         <ReservationsList 
                                             reservations={reservations.reservations}
                                             loading={reservations.loading}
-                                            onCancel={reservations.handleCancelReservation}
-                                            onDelete={reservations.handleDeleteReservation}
-                                            onConfirm={setConfirmAction}
+                                            onCancel={(id) => {
+                                                const target = reservations.reservations.find(r => r.id === id);
+                                                if (target) setCancelModalOrder(target);
+                                            }}
+                                            onDelete={(id) => setDeleteActionId(id)}
+                                            onConfirm={({ id, type, order }) => {
+                                                if (type === 'cancel') {
+                                                    const target = order || reservations.reservations.find(r => r.id === id);
+                                                    if (target) setCancelModalOrder(target);
+                                                } else {
+                                                    setDeleteActionId(id);
+                                                }
+                                            }}
                                         />
                                     </TabsContent>
 
@@ -243,33 +259,105 @@ export default function ProfilePage() {
                     </div>
                 </main>
 
-                <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
+                {/* Cancel Reservation Modal (Matches Reservation Dialog Layout) */}
+                <Dialog open={!!cancelModalOrder} onOpenChange={(open) => !open && setCancelModalOrder(null)}>
+                    <DialogContent className="sm:max-w-xl md:max-w-2xl max-h-[92vh] overflow-y-auto bg-[#0e131f]/95 border border-white/10 text-white rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-xl">
+                        <DialogHeader className="space-y-2">
+                            <div className="flex items-center gap-2.5 text-emerald-400">
+                                <ShieldCheck className="h-6 w-6 text-emerald-400" />
+                                <DialogTitle className="text-xl md:text-2xl font-bold font-headline tracking-tight text-white">
+                                    Cancel Reservation
+                                </DialogTitle>
+                            </div>
+                            <DialogDescription className="text-xs md:text-sm text-slate-400">
+                                Review your components before requesting cancellation of this build.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        {cancelModalOrder && (
+                            <div className="space-y-6 my-2">
+                                {/* Components List - Clean expansion without inner scroll */}
+                                <div className="space-y-2.5 py-1 divide-y divide-white/5">
+                                    {cancelModalOrder.items.map((item, idx) => (
+                                        <div key={idx} className="flex justify-between items-start text-xs pt-2 gap-4">
+                                            <span className="text-slate-300 font-medium">
+                                                <span className="text-slate-500 font-bold mr-1">{(item as any).category || 'Part'}:</span>
+                                                {item.name}
+                                            </span>
+                                            <span className="font-mono font-bold text-white shrink-0">
+                                                {formatCurrency(item.price)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Total Price */}
+                                <div className="flex justify-between items-center pt-4 border-t border-white/10">
+                                    <span className="text-base md:text-lg font-bold text-white">Total Price</span>
+                                    <span className="text-xl md:text-2xl font-headline font-bold text-cyan-400">
+                                        {formatCurrency(cancelModalOrder.totalPrice)}
+                                    </span>
+                                </div>
+
+                                {/* Reservation Notice Box */}
+                                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/30 p-4 flex items-start gap-3">
+                                    <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+                                    <p className="text-xs text-slate-300 leading-relaxed">
+                                        To cancel this reservation, please contact our representative. As hardware components are held and allocated in stock upon reservation, cancellations must be processed by our team.
+                                    </p>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="grid grid-cols-2 gap-3 pt-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="h-12 rounded-xl border-white/10 bg-slate-800/80 hover:bg-slate-700 hover:text-white text-slate-300 font-semibold text-xs uppercase tracking-wider"
+                                        onClick={() => setCancelModalOrder(null)}
+                                    >
+                                        Close
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider gap-2 shadow-lg shadow-emerald-900/30"
+                                        onClick={() => {
+                                            const orderId = cancelModalOrder.id;
+                                            setCancelModalOrder(null);
+                                            router.push(`/contact?subject=Cancellation+Request+for+Order+%23${orderId.substring(0, 8).toUpperCase()}`);
+                                        }}
+                                    >
+                                        <ShieldCheck className="h-4 w-4" />
+                                        Contact Representative
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </DialogContent>
+                </Dialog>
+
+                {/* Delete Cancelled Record Confirmation */}
+                <AlertDialog open={!!deleteActionId} onOpenChange={(open) => !open && setDeleteActionId(null)}>
                     <AlertDialogContent className="bg-slate-900 border-white/10 rounded-2xl">
                         <AlertDialogHeader>
                             <AlertDialogTitle className="text-xl font-bold font-headline uppercase">
-                                {confirmAction?.type === 'cancel' ? "Cancel Reservation?" : "Remove Reservation?"}
+                                Remove Reservation Record?
                             </AlertDialogTitle>
                             <AlertDialogDescription className="text-muted-foreground">
-                                {confirmAction?.type === 'cancel' 
-                                    ? "This will cancel your reservation request. This action is permanent." 
-                                    : "This will remove the reservation record from your history."}
+                                This will remove the reservation record from your history.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel className="rounded-xl border-white/10 hover:bg-white/5">Stay</AlertDialogCancel>
+                            <AlertDialogCancel className="rounded-xl border-white/10 hover:bg-white/5">Cancel</AlertDialogCancel>
                             <AlertDialogAction 
                                 onClick={() => {
-                                    if (!confirmAction) return;
-                                    if (confirmAction.type === 'cancel') {
-                                        reservations.handleCancelReservation(confirmAction.id);
-                                    } else {
-                                        reservations.handleDeleteReservation(confirmAction.id);
+                                    if (deleteActionId) {
+                                        reservations.handleDeleteReservation(deleteActionId);
+                                        setDeleteActionId(null);
                                     }
-                                    setConfirmAction(null);
                                 }}
                                 className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl"
                             >
-                                {confirmAction?.type === 'cancel' ? "Confirm Cancellation" : "Delete Record"}
+                                Delete Record
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>

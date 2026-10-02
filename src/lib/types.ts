@@ -16,6 +16,7 @@ export type ComponentData = {
   price: number;
   usdSrp?: number;
   image: string;
+  images?: string[];
   imageHint: string;
   icon: React.ComponentType<{ className?: string }>;
   wattage?: number;
@@ -55,6 +56,7 @@ export type Part = {
   usdSrp?: number;
   stock: number;
   imageUrl: string;
+  images?: string[];
   specifications: Record<string, string | number>;
   wattage?: number;
   performanceTier?: number; // 1-4 (Entry=1, Mid=2, High=3, Enthusiast=4)

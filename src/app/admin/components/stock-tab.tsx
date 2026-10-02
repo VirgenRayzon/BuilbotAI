@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, CheckSquare, PackageCheck, Archive, Trash2, LayoutGrid, Table as TableIcon, Plus } from 'lucide-react';
+import { Search, Filter, CheckSquare, PackageCheck, Archive, Trash2, LayoutGrid, Table as TableIcon, Plus, ArrowUpDown, ArrowUpAZ, ArrowDownAZ } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
@@ -203,6 +203,46 @@ export function StockTab({
                             </DropdownMenuContent>
                         </DropdownMenu>
                     )}
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30">
+                                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                                <span>Sort by {partSortBy}</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-48 bg-background/95 backdrop-blur-xl border-white/10">
+                            {['Date Added', 'Name', 'Price'].map((option) => (
+                                <DropdownMenuCheckboxItem
+                                    key={option}
+                                    checked={partSortBy === option}
+                                    onCheckedChange={() => {
+                                        setPartSortBy(option);
+                                        setPartCurrentPage(1);
+                                    }}
+                                >
+                                    {option}
+                                </DropdownMenuCheckboxItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <Button
+                        variant="outline"
+                        className="h-11 gap-1.5 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30 text-xs font-semibold px-3"
+                        onClick={() => {
+                            setPartSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+                            setPartCurrentPage(1);
+                        }}
+                        title={partSortDirection === 'asc' ? "Ascending order" : "Descending order"}
+                    >
+                        {partSortDirection === 'asc' ? (
+                            <ArrowUpAZ className="h-4 w-4 text-primary" />
+                        ) : (
+                            <ArrowDownAZ className="h-4 w-4 text-primary" />
+                        )}
+                        <span>{partSortDirection.toUpperCase()}</span>
+                    </Button>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">

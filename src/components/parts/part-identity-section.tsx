@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bold, Italic, List, Heading1, Heading2, Code, Type } from "lucide-react";
-import { ImageUpload } from "../image-upload";
+import { MultiImageUpload } from "./multi-image-upload";
 import { componentCategories } from "@/lib/constants/category-specs";
 import { UseFormReturn } from "react-hook-form";
 import { AddPartFormSchema } from "@/hooks/use-part-form";
@@ -18,6 +18,12 @@ interface PartIdentitySectionProps {
 
 export function PartIdentitySection({ form, onCategoryChange }: PartIdentitySectionProps) {
   const selectedCategory = form.watch("category");
+  const watchedImages = form.watch("images");
+  const watchedImageUrl = form.watch("imageUrl");
+  const images: string[] = (watchedImages && watchedImages.length > 0)
+    ? watchedImages.filter((img): img is string => typeof img === "string" && img.length > 0)
+    : (watchedImageUrl ? [watchedImageUrl] : []);
+  const coverImage = watchedImageUrl || "";
 
   return (
     <div className="grid grid-cols-12 gap-8 items-start">
@@ -28,18 +34,20 @@ export function PartIdentitySection({ form, onCategoryChange }: PartIdentitySect
           Visual Identity
         </p>
         <div className="p-2 rounded-3xl border border-primary/10 bg-primary/5 shadow-inner">
-          <FormField control={form.control} name="imageUrl" render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <ImageUpload
-                  value={field.value || ""}
-                  onChange={field.onChange}
-                  variant="large"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
+          <MultiImageUpload
+            images={images}
+            coverImage={coverImage}
+            onImagesChange={(imgs) => {
+              form.setValue("images", imgs, { shouldValidate: true });
+              const currentCover = form.getValues("imageUrl");
+              if (!currentCover || !imgs.includes(currentCover)) {
+                form.setValue("imageUrl", imgs[0] || "", { shouldValidate: true });
+              }
+            }}
+            onCoverImageChange={(cover) => {
+              form.setValue("imageUrl", cover, { shouldValidate: true });
+            }}
+          />
         </div>
       </div>
 

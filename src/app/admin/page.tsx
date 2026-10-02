@@ -68,7 +68,7 @@ export default function AdminPage() {
     };
 
     return (
-        <RouteGuard requiredPermission="canAccessAdmin">
+        <RouteGuard requiredPermission="canAccessAdmin" fallbackPath="/system-access">
             <div className={cn(
                 "min-h-screen transition-colors duration-500 overflow-x-hidden",
                 isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"

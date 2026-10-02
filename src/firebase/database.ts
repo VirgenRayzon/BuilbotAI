@@ -151,7 +151,28 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
     const resolvedWattage = resolveWattage(part.category, part.wattage, specificationsMap);
 
     const imageUrl = part.imageUrl || "";
-    const persistedImageUrl = imageUrl ? await uploadToStorageClient(imageUrl, `parts/${part.category.toLowerCase()}`, part.partName) : "";
+    const rawImages = part.images && part.images.length > 0 ? part.images : (imageUrl ? [imageUrl] : []);
+
+    const persistedImages: string[] = [];
+    for (let i = 0; i < rawImages.length; i++) {
+        const img = rawImages[i];
+        if (img) {
+            const uploaded = await uploadToStorageClient(img, `parts/${part.category.toLowerCase()}`, `${part.partName}-${i}`);
+            persistedImages.push(uploaded);
+        }
+    }
+
+    let persistedCoverImageUrl = "";
+    if (imageUrl) {
+        const coverIndex = rawImages.indexOf(imageUrl);
+        if (coverIndex !== -1 && persistedImages[coverIndex]) {
+            persistedCoverImageUrl = persistedImages[coverIndex];
+        } else {
+            persistedCoverImageUrl = await uploadToStorageClient(imageUrl, `parts/${part.category.toLowerCase()}`, `${part.partName}-cover`);
+        }
+    } else if (persistedImages.length > 0) {
+        persistedCoverImageUrl = persistedImages[0];
+    }
 
     const keywords = generateSearchKeywords(
         part.partName,
@@ -166,7 +187,8 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
         brand: part.brand,
         price: part.price,
         stock: part.stockCount,
-        imageUrl: persistedImageUrl,
+        imageUrl: persistedCoverImageUrl,
+        images: persistedImages,
         specifications: specificationsMap,
         description: part.description,
         createdAt: new Date(),
@@ -191,7 +213,29 @@ export async function updatePart(firestore: Firestore, category: Part['category'
         data.wattage = resolveWattage(category, undefined, data.specifications);
     }
 
-    if (data.imageUrl) {
+    if (data.images && data.images.length > 0) {
+        const rawImages = [...data.images];
+        const persistedImages: string[] = [];
+        for (let i = 0; i < rawImages.length; i++) {
+            const img = rawImages[i];
+            if (img) {
+                const uploaded = await uploadToStorageClient(img, `parts/${category.toLowerCase()}`, `${data.name || 'part'}-${i}`);
+                persistedImages.push(uploaded);
+            }
+        }
+        data.images = persistedImages;
+
+        if (data.imageUrl) {
+            const coverIndex = rawImages.indexOf(data.imageUrl);
+            if (coverIndex !== -1 && persistedImages[coverIndex]) {
+                data.imageUrl = persistedImages[coverIndex];
+            } else {
+                data.imageUrl = await uploadToStorageClient(data.imageUrl, `parts/${category.toLowerCase()}`, `${data.name || 'part'}-cover`);
+            }
+        } else if (persistedImages.length > 0) {
+            data.imageUrl = persistedImages[0];
+        }
+    } else if (data.imageUrl) {
         data.imageUrl = await uploadToStorageClient(data.imageUrl, `parts/${category.toLowerCase()}`, data.name);
     }
 

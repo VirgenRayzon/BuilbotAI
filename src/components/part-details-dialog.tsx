@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatToPHP, getOptimizedStorageUrl } from "@/lib/utils";
 import type { Part } from "@/lib/types";
-import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind, Monitor, Keyboard, Mouse, Headphones, Info, Plus, CheckCircle2 } from "lucide-react";
+import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind, Monitor, Keyboard, Mouse, Headphones, Info, Plus, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import React from "react";
 import { Button } from "./ui/button";
@@ -39,6 +39,31 @@ const iconMap: Record<string, any> = {
 export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisabled }: PartDetailsDialogProps) {
     const Icon = iconMap[part.category] || Info;
 
+    const allImages = React.useMemo(() => {
+        if (part.images && part.images.length > 0) {
+            return part.images;
+        }
+        return part.imageUrl ? [part.imageUrl] : [];
+    }, [part.images, part.imageUrl]);
+
+    const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
+
+    React.useEffect(() => {
+        setCurrentImageIndex(0);
+    }, [part.id]);
+
+    const handlePrev = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setCurrentImageIndex((prev) => (prev === 0 ? allImages.length - 1 : prev - 1));
+    };
+
+    const handleNext = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setCurrentImageIndex((prev) => (prev === allImages.length - 1 ? 0 : prev + 1));
+    };
+
     return (
         <Dialog>
             <DialogTrigger asChild>
@@ -50,18 +75,50 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
                     <div className="w-full md:w-[40%] flex flex-col bg-muted/30 relative">
                         <div className="flex-1 relative aspect-square md:aspect-auto">
                             <Image
-                                src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"}
-                                alt={part.name}
+                                src={getOptimizedStorageUrl(allImages[currentImageIndex] || part.imageUrl) || "/placeholder-part.png"}
+                                alt={`${part.name} - Photo ${currentImageIndex + 1}`}
                                 fill
                                 unoptimized
-                                className="object-contain p-8"
+                                className="object-contain p-8 transition-all duration-300"
                                 sizes="(max-width: 768px) 100vw, 40vw"
                             />
-                            <div className="absolute top-4 left-4">
+                            <div className="absolute top-4 left-4 z-10">
                                 <Badge variant="secondary" className="bg-background/80 backdrop-blur-md border-primary/20 text-primary px-3 py-1 font-headline font-bold uppercase tracking-wider text-xs">
                                     {part.category}
                                 </Badge>
                             </div>
+
+                            {/* Carousel Left and Right Navigation Buttons */}
+                            {allImages.length > 1 && (
+                                <>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={handlePrev}
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-background/80 hover:bg-background/95 border-white/10 text-white shadow-xl backdrop-blur-md transition-transform hover:scale-105 active:scale-95"
+                                        aria-label="Previous photo"
+                                    >
+                                        <ChevronLeft className="h-5 w-5" />
+                                    </Button>
+
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={handleNext}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-background/80 hover:bg-background/95 border-white/10 text-white shadow-xl backdrop-blur-md transition-transform hover:scale-105 active:scale-95"
+                                        aria-label="Next photo"
+                                    >
+                                        <ChevronRight className="h-5 w-5" />
+                                    </Button>
+
+                                    {/* Photo Counter Indicator */}
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full bg-background/80 border border-white/10 backdrop-blur-md text-[10px] font-bold tracking-widest text-white/90">
+                                        {currentImageIndex + 1} / {allImages.length}
+                                    </div>
+                                </>
+                            )}
                         </div>
 
                         {onToggle && (

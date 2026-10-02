@@ -60,11 +60,16 @@ export function Header() {
 
   const handleSignOut = async () => {
     if (auth) {
+      const isStaff = Boolean(profile?.isSuperAdmin || profile?.isManager);
+      const destination = isStaff ? "/system-access" : "/signin";
       localStorage.removeItem('pc_chat_history_v2');
       localStorage.removeItem('pc_builder_state');
       localStorage.removeItem('admin_pc_builder_state');
-      await signOut(auth);
-      router.push("/");
+      try {
+        await signOut(auth);
+      } finally {
+        window.location.replace(destination);
+      }
     }
   };
 

@@ -12,6 +12,7 @@ export function useFilteredInventory(allParts: Part[], build: any, getCountInBui
     const [sortBy, setSortBy] = useState('Date Added');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
     const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+    const [hideIncompatible, setHideIncompatible] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(12);
     const [categories, setCategories] = useState([
@@ -74,8 +75,14 @@ export function useFilteredInventory(allParts: Part[], build: any, getCountInBui
         }) ?? [];
 
         return baseFilteredParts.filter(part => {
-            if (selectedBrands.length === 0) return true;
-            return part.brand && selectedBrands.includes(part.brand);
+            if (selectedBrands.length > 0 && (!part.brand || !selectedBrands.includes(part.brand))) {
+                return false;
+            }
+            if (hideIncompatible) {
+                const comp = checkCompatibility(part, build);
+                if (!comp.compatible) return false;
+            }
+            return true;
         })
         .sort((a, b) => {
             let compare = 0;
@@ -97,7 +104,7 @@ export function useFilteredInventory(allParts: Part[], build: any, getCountInBui
             effectiveStock: part.stock - getCountInBuild(part.name),
             compatibility: checkCompatibility(part, build)
         }));
-    }, [allParts, categories, sortBy, sortDirection, build, searchQuery, getCountInBuild]);
+    }, [allParts, categories, sortBy, sortDirection, build, searchQuery, selectedBrands, hideIncompatible, getCountInBuild]);
 
     const totalPages = Math.ceil(sortedAndFilteredParts.length / itemsPerPage);
     const paginatedParts = useMemo(() => {
@@ -137,6 +144,8 @@ export function useFilteredInventory(allParts: Part[], build: any, getCountInBui
         totalPages,
         availableBrands,
         selectedBrands,
-        setSelectedBrands
+        setSelectedBrands,
+        hideIncompatible,
+        setHideIncompatible
     };
 }

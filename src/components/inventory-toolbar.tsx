@@ -21,6 +21,7 @@ import {
   ArrowUpDown,
   ArrowDownAZ,
   ArrowUpAZ,
+  CheckCircle2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -59,6 +60,9 @@ interface InventoryToolbarProps {
   availableBrands?: string[];
   selectedBrands?: string[];
   onBrandChange?: (brands: string[]) => void;
+
+  hideIncompatible?: boolean;
+  onHideIncompatibleChange?: (value: boolean) => void;
 }
 
 export function InventoryToolbar({
@@ -80,6 +84,8 @@ export function InventoryToolbar({
   availableBrands = [],
   selectedBrands = [],
   onBrandChange,
+  hideIncompatible,
+  onHideIncompatibleChange,
 }: InventoryToolbarProps) {
   const hasIcons = React.useMemo(() => categories.some(c => c.icon), [categories]);
 
@@ -240,6 +246,23 @@ export function InventoryToolbar({
             )}
             {sortDirection.toUpperCase()}
           </Button>
+
+          {onHideIncompatibleChange !== undefined && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onHideIncompatibleChange(!hideIncompatible)}
+              className={cn(
+                "h-9 text-xs font-medium transition-all gap-1.5 border-border/60",
+                hideIncompatible
+                  ? "bg-primary/20 border-primary/50 text-primary font-semibold shadow-[0_0_12px_rgba(var(--primary-rgb),0.2)]"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <CheckCircle2 className={cn("h-4 w-4", hideIncompatible ? "text-primary" : "text-muted-foreground")} />
+              <span>Hide Incompatible</span>
+            </Button>
+          )}
         </div>
 
         <div className="flex items-center gap-4 text-[10px] uppercase font-bold tracking-widest text-muted-foreground">

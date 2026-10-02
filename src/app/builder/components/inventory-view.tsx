@@ -38,6 +38,8 @@ interface InventoryViewProps {
     availableBrands?: string[];
     selectedBrands?: string[];
     onBrandChange?: (brands: string[]) => void;
+    hideIncompatible?: boolean;
+    onHideIncompatibleChange?: (val: boolean) => void;
     className?: string;
     gridCols?: number;
 }
@@ -66,6 +68,8 @@ export function InventoryView({
     availableBrands,
     selectedBrands,
     onBrandChange,
+    hideIncompatible,
+    onHideIncompatibleChange,
     className,
     gridCols
 }: InventoryViewProps) {
@@ -100,6 +104,8 @@ export function InventoryView({
                     availableBrands={availableBrands}
                     selectedBrands={selectedBrands}
                     onBrandChange={onBrandChange}
+                    hideIncompatible={hideIncompatible}
+                    onHideIncompatibleChange={onHideIncompatibleChange}
                 />
             </div>
 

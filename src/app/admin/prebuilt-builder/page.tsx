@@ -168,6 +168,7 @@ export default function PrebuiltBuilderPage() {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+    const [hideIncompatible, setHideIncompatible] = useState(false);
     const [sortBy, setSortBy] = useState('Date Added');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
     const [view, setView] = useState<'grid' | 'list'>('grid');
@@ -384,10 +385,20 @@ export default function PrebuiltBuilderPage() {
         }) ?? [];
 
         return baseFilteredParts.filter(part => {
-            if (selectedBrands.length === 0) return true;
-            return part.brand && selectedBrands.includes(part.brand);
+            if (selectedBrands.length > 0 && (!part.brand || !selectedBrands.includes(part.brand))) {
+                return false;
+            }
+            if (hideIncompatible) {
+                const comp = checkCompatibility(part, build);
+                if (!comp.compatible) return false;
+            }
+            return true;
         }).sort((a, b) => {
             let compare = 0;
+            const compA = checkCompatibility(a, build).compatible;
+            const compB = checkCompatibility(b, build).compatible;
+            if (compA !== compB) return compA ? -1 : 1;
+
             if (sortBy === 'Name') compare = (a.name || '').localeCompare(b.name || '');
             else if (sortBy === 'Price') compare = (a.price || 0) - (b.price || 0);
             else if (sortBy === 'Date Added') {
@@ -404,7 +415,7 @@ export default function PrebuiltBuilderPage() {
                 compatibility: checkCompatibility(part, build)
             };
         });
-    }, [allParts, categories, sortBy, sortDirection, build, searchQuery, selectedBrands]);
+    }, [allParts, categories, sortBy, sortDirection, build, searchQuery, selectedBrands, hideIncompatible]);
 
     const availableBrands = useMemo(() => {
         const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
@@ -457,7 +468,7 @@ export default function PrebuiltBuilderPage() {
 
 
     return (
-        <RouteGuard requiredPermission="canAccessAdmin">
+        <RouteGuard requiredPermission="canAccessAdmin" fallbackPath="/system-access">
             <div className={cn(
                 "min-h-screen transition-colors duration-500 overflow-x-hidden",
                 isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
@@ -524,6 +535,8 @@ export default function PrebuiltBuilderPage() {
                                 availableBrands={availableBrands}
                                 selectedBrands={selectedBrands}
                                 onBrandChange={setSelectedBrands}
+                                hideIncompatible={hideIncompatible}
+                                onHideIncompatibleChange={setHideIncompatible}
                             />
 
                             {isBuilderLoading ? null : sortedAndFilteredParts.length > 0 ? (

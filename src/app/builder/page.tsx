@@ -55,7 +55,9 @@ export default function BuilderPage() {
         totalPages,
         availableBrands,
         selectedBrands,
-        setSelectedBrands
+        setSelectedBrands,
+        hideIncompatible,
+        setHideIncompatible
     } = useFilteredInventory(allParts, build, getCountInBuild);
 
     const [view, setView] = useState<'grid' | 'list'>('grid');
@@ -153,6 +155,8 @@ export default function BuilderPage() {
                             availableBrands={availableBrands}
                             selectedBrands={selectedBrands}
                             onBrandChange={setSelectedBrands}
+                            hideIncompatible={hideIncompatible}
+                            onHideIncompatibleChange={setHideIncompatible}
                         />
                     </div>
                 </main>

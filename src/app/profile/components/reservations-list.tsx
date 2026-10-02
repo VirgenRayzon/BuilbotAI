@@ -16,7 +16,7 @@ interface ReservationsListProps {
     loading: boolean;
     onCancel: (id: string) => void;
     onDelete: (id: string) => void;
-    onConfirm: (action: { id: string, type: 'cancel' | 'delete' }) => void;
+    onConfirm: (action: { id: string, type: 'cancel' | 'delete', order?: Order }) => void;
 }
 
 export function ReservationsList({
@@ -83,7 +83,7 @@ export function ReservationsList({
                                                 variant="outline"
                                                 size="sm"
                                                 className="relative z-30 h-8 text-[10px] font-bold uppercase tracking-wider text-rose-500 border-rose-500/20 hover:bg-rose-500/10"
-                                                onClick={() => onConfirm({ id: reservation.id, type: 'cancel' })}
+                                                onClick={() => onConfirm({ id: reservation.id, type: 'cancel', order: reservation })}
                                             >
                                                 Cancel Order
                                             </Button>
@@ -97,7 +97,7 @@ export function ReservationsList({
                                                     ? "text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10"
                                                     : "text-muted-foreground/20 cursor-not-allowed"
                                             )}
-                                            onClick={() => reservation.status === 'cancelled' && onConfirm({ id: reservation.id, type: 'delete' })}
+                                            onClick={() => reservation.status === 'cancelled' && onConfirm({ id: reservation.id, type: 'delete', order: reservation })}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>

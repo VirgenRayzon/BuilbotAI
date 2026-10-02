@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth, useUser } from '@/firebase';
+import { useUserProfile } from '@/context/user-profile';
 import { signOut } from 'firebase/auth';
 import {
   AlertDialog,
@@ -22,6 +23,7 @@ const WARNING_MS = 25 * 60 * 1000;
 export function SessionTimeout() {
   const user = useUser();
   const auth = useAuth();
+  const { profile } = useUserProfile();
   const router = useRouter();
   const [showWarning, setShowWarning] = useState(false);
   const [isTimedOut, setIsTimedOut] = useState(false);
@@ -32,18 +34,23 @@ export function SessionTimeout() {
   const handleLogout = useCallback(async () => {
     if (auth && user) {
       try {
+        const isStaff = Boolean(profile?.isSuperAdmin || profile?.isManager);
+        const destination = isStaff ? '/system-access' : '/signin';
         localStorage.removeItem('pc_chat_history_v2');
         localStorage.removeItem('pc_builder_state');
         localStorage.removeItem('admin_pc_builder_state');
-        await signOut(auth);
         setIsTimedOut(true);
         setShowWarning(false);
-        router.push('/');
+        try {
+          await signOut(auth);
+        } finally {
+          window.location.replace(destination);
+        }
       } catch (error) {
         console.error('Logout failed:', error);
       }
     }
-  }, [auth, user, router]);
+  }, [auth, user, profile, router]);
 
   const resetTimers = useCallback(() => {
     if (warningTimerRef.current) clearTimeout(warningTimerRef.current);

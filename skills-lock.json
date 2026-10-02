@@ -6,6 +6,12 @@
       "sourceType": "github",
       "computedHash": "537377453af25180f60838621fd5edb3773794193469b64988196e19b524ea9d"
     },
+    "ai-elements": {
+      "source": "vercel/ai-elements",
+      "sourceType": "github",
+      "skillPath": "skills/ai-elements/SKILL.md",
+      "computedHash": "6d7ccc65b98adb04d6c47632746dbfea55528903de9b027f6b39b80983d5aa55"
+    },
     "ai-sdk": {
       "source": "vercel/ai",
       "sourceType": "github",

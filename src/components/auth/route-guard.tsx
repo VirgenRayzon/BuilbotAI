@@ -54,6 +54,9 @@ export function RouteGuard({
                 const isStaff = (role as any) === 'manager' || (role as any) === 'superadmin';
                 if (isStaff && requiredPermission === 'isClientOnly') {
                     router.replace('/admin');
+                } else if (!authUser && fallbackPath === '/') {
+                    // For protected routes, unauthenticated users should go to signin
+                    router.replace('/signin');
                 } else {
                     router.replace(fallbackPath);
                 }
