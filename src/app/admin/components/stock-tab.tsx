@@ -26,6 +26,7 @@ interface StockTabProps {
     onDeletePart: (id: string, category: Part['category']) => Promise<void>;
     onArchivePart: (id: string, category: Part['category'], isArchived?: boolean) => Promise<void>;
     onUpdatePartStock: (id: string, category: Part['category'], stock: number) => Promise<void>;
+    onAddPartStock?: (id: string, category: Part['category'], amount: number) => Promise<void>;
     
     // Bulk state from useBulkActions
     isPartSelectionMode: boolean;
@@ -49,6 +50,7 @@ export function StockTab({
     onDeletePart,
     onArchivePart,
     onUpdatePartStock,
+    onAddPartStock,
     isPartSelectionMode,
     setIsPartSelectionMode,
     selectedPartIds,
@@ -336,6 +338,7 @@ export function StockTab({
                                 onDelete={onDeletePart}
                                 onArchive={onArchivePart}
                                 onUpdateStock={onUpdatePartStock}
+                                onAddStock={onAddPartStock}
                                 onUpdatePart={onUpdatePart}
                                 isSelected={selectedPartIds.some(p => p.id === part.id)}
                                 onToggleSelection={togglePartSelection}
@@ -352,6 +355,7 @@ export function StockTab({
                         onDelete={onDeletePart}
                         onArchive={onArchivePart}
                         onUpdateStock={onUpdatePartStock}
+                        onAddStock={onAddPartStock}
                         onUpdatePart={onUpdatePart}
                         selectedIds={selectedPartIds}
                         onToggleSelection={togglePartSelection}

@@ -6,7 +6,6 @@ import { Separator } from "@/components/ui/separator";
 import { cn, formatCurrency } from "@/lib/utils";
 import { ComponentData, Resolution } from "@/lib/types";
 import { BuildItemStandalone } from "./build-item-standalone";
-import { BottleneckMeter } from "@/components/build/bottleneck-meter";
 import { PowerMeter } from "@/components/ui/power-meter";
 import { calculateSynergyScore } from "@/lib/bottleneck";
 import { motion, AnimatePresence } from "framer-motion";
@@ -282,7 +281,6 @@ export function BuildContentStandalone({
 
       <div className="pt-4 flex-none space-y-4">
         <Separator className="opacity-50" />
-        {showSystemBalance !== false && <BottleneckMeter build={build} resolution={resolution} />}
         
         {totalWattage > 0 && (
           <PowerMeter value={totalWattage} max={psuWattage} className="mt-2" />

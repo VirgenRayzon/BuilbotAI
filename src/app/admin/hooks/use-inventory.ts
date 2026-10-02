@@ -103,20 +103,89 @@ export function useInventory(profile: any) {
         await clearCatalogCache();
     };
 
-    const handleUpdatePartStock = async (partId: string, category: Part['category'], newStock: number) => {
-        if (!firestore) return;
+    const handleAddPartStock = async (partId: string, category: Part['category'], amountToAdd: number) => {
+        if (!firestore || amountToAdd <= 0) return;
+        const currentPart = parts.find(p => p.id === partId);
+        const currentStock = currentPart?.stock ?? 0;
+        const newStock = currentStock + amountToAdd;
+        const partName = currentPart?.name || partId;
+        const actorName = profile?.name || profile?.email || 'Admin';
+
+        // 1. Update stock in Firestore
         await updatePart(firestore, category, partId, { stock: newStock });
-        const partName = parts.find(p => p.id === partId)?.name || partId;
+
+        // 2. Create Audit Log (e.g. Admin added 10 stocks of Ryzen 7 7700X)
         await createAuditLog(firestore, {
             actionName: 'updated',
             actorId: profile?.id || 'unknown',
-            actorName: profile?.name || profile?.email || 'Unknown User',
+            actorName: actorName,
             actorEmail: profile?.email,
             scope: 'Part',
             resourceName: partName,
             resourceId: partId,
-            details: `Updated stock to ${newStock} for part in category ${category}`
+            details: `${actorName} added ${amountToAdd} stocks of ${partName} (Stock: ${currentStock} -> ${newStock})`
         });
+
+        // 3. Create System Notification for other admins/managers (excluding the actor, non-admins never see system_notifications)
+        await createSystemNotification(
+            firestore,
+            {
+                type: 'stock_added',
+                actorId: profile?.id || 'unknown',
+                actorName: actorName,
+                title: 'Stock Added',
+                message: `${actorName} added ${amountToAdd} stocks of ${partName}. Total stock is now ${newStock}.`,
+                targetId: partId
+            },
+            profile?.id ? [profile.id] : []
+        );
+
+        await clearCatalogCache();
+        toast({
+            title: "Stock Added",
+            description: `Successfully added ${amountToAdd} stock(s) to ${partName}. New stock: ${newStock}.`,
+        });
+    };
+
+    const handleUpdatePartStock = async (partId: string, category: Part['category'], newStock: number) => {
+        if (!firestore) return;
+        const currentPart = parts.find(p => p.id === partId);
+        const currentStock = currentPart?.stock ?? 0;
+        const diff = newStock - currentStock;
+        await updatePart(firestore, category, partId, { stock: newStock });
+        const partName = currentPart?.name || partId;
+        const actorName = profile?.name || profile?.email || 'Admin';
+
+        const details = diff > 0 
+            ? `${actorName} added ${diff} stocks of ${partName} (Stock: ${currentStock} -> ${newStock})`
+            : `Updated stock to ${newStock} for part in category ${category}`;
+
+        await createAuditLog(firestore, {
+            actionName: 'updated',
+            actorId: profile?.id || 'unknown',
+            actorName: actorName,
+            actorEmail: profile?.email,
+            scope: 'Part',
+            resourceName: partName,
+            resourceId: partId,
+            details
+        });
+
+        if (diff > 0) {
+            await createSystemNotification(
+                firestore,
+                {
+                    type: 'stock_added',
+                    actorId: profile?.id || 'unknown',
+                    actorName: actorName,
+                    title: 'Stock Added',
+                    message: `${actorName} added ${diff} stocks of ${partName}. Total stock is now ${newStock}.`,
+                    targetId: partId
+                },
+                profile?.id ? [profile.id] : []
+            );
+        }
+
         await clearCatalogCache();
     };
 
@@ -267,6 +336,7 @@ export function useInventory(profile: any) {
         handleAddPart,
         handleUpdatePart,
         handleUpdatePartStock,
+        handleAddPartStock,
         handleDeletePart,
         handleArchivePart,
         handleAddPrebuilt,

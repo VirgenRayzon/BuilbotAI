@@ -377,12 +377,16 @@ export async function createUserProfile(firestore: Firestore, userId: string, da
     await setDoc(doc(firestore, 'users', userId), data);
 }
 // System Notifications
-export async function createSystemNotification(firestore: Firestore, notification: Omit<SystemNotification, 'id' | 'createdAt' | 'readBy'>) {
+export async function createSystemNotification(
+    firestore: Firestore, 
+    notification: Omit<SystemNotification, 'id' | 'createdAt' | 'readBy'>,
+    readBy: string[] = []
+) {
     const notificationRef = doc(collection(firestore, 'system_notifications'));
     await setDoc(notificationRef, {
         ...notification,
         id: notificationRef.id,
-        readBy: [],
+        readBy,
         createdAt: new Date()
     });
 }

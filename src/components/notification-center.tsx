@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Check, Archive, ShieldCheck, History, Info, X } from 'lucide-react';
+import { Bell, Check, Archive, ShieldCheck, History, Info, X, PackageCheck } from 'lucide-react';
 import {
     Popover,
     PopoverContent,
@@ -84,6 +84,7 @@ export function NotificationCenter() {
             case 'reservation_received': return <ShieldCheck className="h-4 w-4 text-emerald-500" />;
             case 'item_archived': return <Archive className="h-4 w-4 text-orange-500" />;
             case 'status_changed': return <History className="h-4 w-4 text-blue-500" />;
+            case 'stock_added': return <PackageCheck className="h-4 w-4 text-emerald-500" />;
             case 'user_cancelled': return <X className="h-4 w-4 text-rose-500" />;
             default: return <Info className="h-4 w-4 text-primary" />;
         }

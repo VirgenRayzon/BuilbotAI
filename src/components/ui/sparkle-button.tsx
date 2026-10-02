@@ -56,6 +56,7 @@ export function SparkleButton({
       onMouseLeave={() => setActive(false)}
     >
       <Comp
+        suppressHydrationWarning
         className={cn(
           "sparkle-button relative inline-flex items-center justify-center px-8 py-4 font-bold transition-all duration-300 overflow-hidden shadow-2xl",
           pill ? "rounded-full" : "rounded-xl",
@@ -133,10 +134,13 @@ export function SparkleButton({
           </div>
 
           {/* Content */}
-          <span className={cn(
-            "relative z-50 flex items-center lg:gap-3 gap-0 tracking-[0.2em] uppercase font-black",
-            isLoading && loadingChildren ? "text-red-500" : "text-white"
-          )}>
+          <span 
+            suppressHydrationWarning
+            className={cn(
+              "relative z-50 flex items-center justify-center gap-2 sm:gap-2.5 tracking-wider uppercase font-black whitespace-nowrap",
+              isLoading && loadingChildren ? "text-red-500" : "text-white"
+            )}
+          >
             {isLoading ? (
               loadingChildren ? (
                 <motion.span

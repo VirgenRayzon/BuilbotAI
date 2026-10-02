@@ -8,9 +8,9 @@ import { useTheme } from "@/context/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, getOptimizedStorageUrl, cn } from "@/lib/utils";
-import type { PrebuiltSystem, Part } from "@/lib/types";
-import { getMissingParts } from "@/lib/prebuilt-utils";
-import { Sparkles, ShieldCheck, Loader2, AlertCircle, ThumbsUp, ThumbsDown, MonitorPlay, Zap, ExternalLink, Gamepad2, ArrowLeft, ChevronLeft, CircuitBoard, Database, Box } from "lucide-react";
+import type { PrebuiltSystem, Part, FavoriteBuild, FavoriteBuildPart } from "@/lib/types";
+import { getMissingParts, checkSystemStock } from "@/lib/prebuilt-utils";
+import { Sparkles, ShieldCheck, Loader2, AlertCircle, ThumbsUp, ThumbsDown, MonitorPlay, Zap, ExternalLink, Gamepad2, ArrowLeft, ChevronLeft, CircuitBoard, Database, Box, Wrench, SlidersHorizontal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getAiPrebuiltPerformance } from "@/app/actions";
 import { doc, getDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
@@ -21,8 +21,9 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { useUserProfile } from "@/context/user-profile";
 import { reservePrebuiltSystem } from "@/app/prebuilt-reservation-actions";
-import { checkSystemStock } from "@/lib/prebuilt-utils";
 import { SparkleButton } from "@/components/ui/sparkle-button";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+import { PartDetailsDialog } from "@/components/part-details-dialog";
 
 const getPerformanceStyle = (fps: string) => {
     const minFps = parseInt(fps.match(/\d+/)?.[0] || "0");
@@ -216,6 +217,49 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
         }
     };
 
+    const handleCustomizePrebuilt = () => {
+        if (!system) return;
+
+        // Build list of FavoriteBuildPart from resolved components or system components
+        const parts: FavoriteBuildPart[] = [];
+        const categoryMap: Record<string, string> = {
+            cpu: 'CPU', gpu: 'GPU', motherboard: 'Motherboard',
+            ram: 'RAM', storage: 'Storage', psu: 'PSU',
+            case: 'Case', cooler: 'Cooler',
+        };
+
+        Object.entries(components).forEach(([key, part]) => {
+            if (part) {
+                const category = categoryMap[key.toLowerCase()] || part.category || key.toUpperCase();
+                parts.push({
+                    category,
+                    partId: part.id,
+                    name: part.name,
+                    price: part.price
+                });
+            }
+        });
+
+        const prebuiltBuildPayload: FavoriteBuild = {
+            id: system.id,
+            name: `${system.name} (Customized)`,
+            parts,
+            totalPrice: system.price,
+            source: 'builder',
+            createdAt: new Date().toISOString()
+        };
+
+        // Save to localStorage for instant load on the builder page
+        localStorage.setItem('pc_builder_load_favorite', JSON.stringify(prebuiltBuildPayload));
+
+        toast({
+            title: "Prebuilt Loaded",
+            description: `Transferring ${system.name} components into the PC Builder...`,
+        });
+
+        router.push('/builder');
+    };
+
     const handleAnalyze = async () => {
         if (!system || !firestore || !systemId) return;
         setLoadingAnalysis(true);
@@ -357,29 +401,43 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                             )}
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-                            <CardContent className="p-8 md:p-6 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-                                <div>
-                                    <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground font-black mb-2">Estimated Build Total</p>
-                                    <p className="text-5xl md:text-6xl font-black font-headline text-primary tracking-tighter">{formatCurrency(system.price)}</p>
+                            <CardContent className="p-6 md:p-8 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 relative z-10">
+                                <div className="shrink-0">
+                                    <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground font-black mb-1.5">Estimated Build Total</p>
+                                    <p className="text-4xl sm:text-5xl md:text-6xl font-black font-headline text-primary tracking-tighter">{formatCurrency(system.price)}</p>
                                 </div>
-                                <div className="flex-shrink-0 w-full md:w-auto">
-                                    <SparkleButton
-                                        onClick={handleReserve}
-                                        isLoading={isReserving}
-                                        disabled={!isComplete || loadingParts || !isInStock || isReserving}
-                                        icon={<Zap className="h-6 w-6" />}
-                                        className="px-12 h-16 text-lg shadow-2xl"
-                                    >
-                                        {loadingParts ? "Validating Stock..." : !isInStock ? "Diagnostics Failed" : "Reserve this Prebuilt"}
-                                    </SparkleButton>
+                                <div className="w-full xl:w-auto flex flex-col items-stretch xl:items-end gap-3">
+                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
+                                        {!(profile?.isManager || profile?.isSuperAdmin) && (
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={handleCustomizePrebuilt}
+                                                disabled={loadingParts || Object.keys(components).length === 0}
+                                                className="h-14 px-5 text-xs sm:text-sm font-bold uppercase tracking-wider rounded-2xl border-white/10 hover:border-primary/50 hover:bg-primary/10 transition-all flex items-center justify-center gap-2 group/custom whitespace-nowrap"
+                                            >
+                                                <SlidersHorizontal className="h-4 w-4 text-primary group-hover/custom:rotate-45 transition-transform duration-300" />
+                                                <span>Customize this Prebuilt</span>
+                                            </Button>
+                                        )}
+                                        <SparkleButton
+                                            onClick={handleReserve}
+                                            isLoading={isReserving}
+                                            disabled={!isComplete || loadingParts || !isInStock || isReserving}
+                                            icon={<Zap className="h-4 w-4 sm:h-5 sm:w-5" />}
+                                            className="h-14 px-6 sm:px-8 text-xs sm:text-sm font-black tracking-wider shadow-2xl rounded-2xl whitespace-nowrap"
+                                        >
+                                            {loadingParts ? "Validating Stock..." : !isInStock ? "Diagnostics Failed" : "Reserve this Prebuilt"}
+                                        </SparkleButton>
+                                    </div>
                                     {!isComplete && (
-                                        <div className="mt-4 flex items-center justify-center md:justify-end gap-2 text-destructive">
+                                        <div className="flex items-center justify-center xl:justify-end gap-2 text-destructive">
                                             <AlertCircle className="h-4 w-4" />
                                             <span className="text-[10px] font-black uppercase tracking-widest">Critical: Missing {missingParts.length} Components</span>
                                         </div>
                                     )}
                                     {isComplete && !loadingParts && !isInStock && (
-                                        <div className="mt-4 flex items-center justify-center md:justify-end gap-2 text-destructive">
+                                        <div className="flex items-center justify-center xl:justify-end gap-2 text-destructive">
                                             <AlertCircle className="h-4 w-4" />
                                             <span className="text-[10px] font-black uppercase tracking-widest">One or more components are out of stock</span>
                                         </div>
@@ -411,53 +469,100 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                                     <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground animate-pulse">Running Component Validation...</p>
                                 </div>
                             ) : (
-                                <div className="grid gap-4">
-                                    {Object.entries(components).map(([category, part], idx) => (
-                                        <motion.div
-                                            key={category}
-                                            initial={{ opacity: 0, x: -10 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: 0.1 * idx }}
-                                            className={cn(
-                                                "flex flex-col sm:flex-row sm:items-center gap-4 p-5 rounded-2xl border transition-all duration-300 group",
-                                                isDark
-                                                    ? "bg-slate-900/40 border-white/5 hover:border-primary/40 hover:bg-slate-900/60"
-                                                    : "bg-white/60 border-slate-200 hover:border-primary/30 hover:bg-white/80"
-                                            )}
-                                        >
-                                            <div className="w-full sm:w-28 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] shrink-0">
-                                                {category}
-                                            </div>
-                                            <div className="flex-1">
-                                                {part ? (
-                                                    <div className="flex items-center justify-between gap-6">
-                                                        <div>
-                                                            <p className="font-bold text-lg leading-none mb-1 group-hover:text-primary transition-colors">{part.name}</p>
-                                                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">{part.brand}</p>
-                                                        </div>
-                                                        <div className="text-right shrink-0 hidden sm:block">
-                                                            <p className="font-mono font-bold text-sm mb-1">{formatCurrency(part.price)}</p>
-                                                            {part.stock > 0 ? (
-                                                                <div className="flex items-center justify-end gap-1.5 text-emerald-500">
-                                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                                                    <span className="text-[9px] font-black uppercase tracking-widest">In Stock</span>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="flex items-center justify-end gap-1.5 text-destructive">
-                                                                    <div className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                                                                    <span className="text-[9px] font-black uppercase tracking-widest">Depleted</span>
-                                                                </div>
-                                                            )}
-                                                        </div>
+                                <div className="grid gap-3 sm:gap-4">
+                                    {Object.entries(components).map(([category, part], idx) => {
+                                        if (!part) {
+                                            return (
+                                                <motion.div
+                                                    key={category}
+                                                    initial={{ opacity: 0, x: -10 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    transition={{ delay: 0.05 * idx }}
+                                                    className={cn(
+                                                        "flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl border transition-all duration-300",
+                                                        isDark ? "bg-slate-900/40 border-white/5" : "bg-white/60 border-slate-200"
+                                                    )}
+                                                >
+                                                    <div className="w-full sm:w-24 md:w-28 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] shrink-0">
+                                                        {category}
                                                     </div>
-                                                ) : (
                                                     <div className="flex items-center gap-3 text-destructive/80 font-bold uppercase tracking-widest text-[10px] py-1">
                                                         <AlertCircle className="h-4 w-4" /> Component Missing From Configuration
                                                     </div>
-                                                )}
-                                            </div>
-                                        </motion.div>
-                                    ))}
+                                                </motion.div>
+                                            );
+                                        }
+
+                                        return (
+                                            <PartDetailsDialog
+                                                key={category}
+                                                part={part}
+                                                isAdded={true}
+                                                onToggle={() => {
+                                                    toast({
+                                                        title: "Integrated Component",
+                                                        description: `${part.name} is pre-configured in this build. Click "Customize this Prebuilt" to modify components in the PC Builder.`,
+                                                    });
+                                                }}
+                                            >
+                                                <motion.div
+                                                    initial={{ opacity: 0, x: -10 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    transition={{ delay: 0.05 * idx }}
+                                                    className={cn(
+                                                        "flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl border transition-all duration-300 group cursor-pointer text-left select-none",
+                                                        isDark
+                                                            ? "bg-slate-900/40 border-white/5 hover:border-primary/40 hover:bg-slate-900/60 shadow-lg hover:shadow-primary/5"
+                                                            : "bg-white/60 border-slate-200 hover:border-primary/30 hover:bg-white/80 shadow-sm hover:shadow-md"
+                                                    )}
+                                                >
+                                                    <div className="w-full sm:w-24 md:w-28 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] shrink-0">
+                                                        {category}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-4">
+                                                            {/* Part Photo Thumbnail */}
+                                                            <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 bg-slate-950/20 dark:bg-white/5 border border-white/10 p-1 flex items-center justify-center group-hover:border-primary/40 group-hover:scale-105 transition-all duration-300 shadow-inner">
+                                                                <OptimizedImage
+                                                                    src={getOptimizedStorageUrl(part.imageUrl) || '/placeholder-part.png'}
+                                                                    alt={part.name}
+                                                                    fill
+                                                                    sizes="(max-width: 640px) 56px, 64px"
+                                                                    className="object-contain p-1"
+                                                                />
+                                                            </div>
+
+                                                            {/* Part Details */}
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="font-bold text-base sm:text-lg leading-tight mb-1 group-hover:text-primary transition-colors line-clamp-2">
+                                                                    {part.name}
+                                                                </p>
+                                                                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
+                                                                    {part.brand}
+                                                                </p>
+                                                            </div>
+
+                                                            {/* Part Price & Stock */}
+                                                            <div className="text-right shrink-0">
+                                                                <p className="font-mono font-bold text-sm sm:text-base mb-1">{formatCurrency(part.price)}</p>
+                                                                {part.stock > 0 ? (
+                                                                    <div className="flex items-center justify-end gap-1.5 text-emerald-500">
+                                                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                                        <span className="text-[9px] font-black uppercase tracking-widest">In Stock</span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="flex items-center justify-end gap-1.5 text-destructive">
+                                                                        <div className="w-1.5 h-1.5 rounded-full bg-destructive" />
+                                                                        <span className="text-[9px] font-black uppercase tracking-widest">Depleted</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            </PartDetailsDialog>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </motion.div>

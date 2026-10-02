@@ -14,10 +14,11 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Trash2, Archive, RotateCcw } from "lucide-react";
+import { Trash2, Archive, RotateCcw, Plus } from "lucide-react";
 import { formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
 import type { Part } from "@/lib/types";
 import { AddPartDialog } from "./add-part-dialog";
+import { AddStockDialog } from "./add-stock-dialog";
 import { type AddPartFormSchema } from "@/hooks/use-part-form";
 import {
   AlertDialog,
@@ -39,6 +40,7 @@ interface InventoryTableProps {
   onDelete: (partId: string, category: Part['category']) => void;
   onArchive: (partId: string, category: Part['category'], isArchived?: boolean) => void;
   onUpdateStock: (partId: string, category: Part['category'], newStock: number) => void;
+  onAddStock?: (partId: string, category: Part['category'], amount: number) => Promise<void> | void;
   onUpdatePart: (partId: string, category: Part['category'], data: AddPartFormSchema) => Promise<void>;
   selectedIds: { id: string, category: Part['category'] }[];
   onToggleSelection: (id: string, category: Part['category']) => void;
@@ -51,7 +53,8 @@ export function InventoryTable({
   parts, 
   onDelete, 
   onArchive,
-  onUpdateStock, 
+  onUpdateStock,
+  onAddStock,
   onUpdatePart,
   selectedIds,
   onToggleSelection,
@@ -111,14 +114,30 @@ export function InventoryTable({
             </TableCell>
             <TableCell>{part.category}</TableCell>
             <TableCell>{part.brand}</TableCell>
-            <TableCell className="w-[150px] text-center">
+            <TableCell className="w-[170px] text-center">
               {isArchiveView ? (
                 <span className="font-mono text-muted-foreground">{part.stock}</span>
               ) : (
-                <StockEditor
-                  stock={part.stock}
-                  onStockChange={(newStock) => onUpdateStock(part.id, part.category, newStock)}
-                />
+                <div className="flex items-center justify-center gap-1.5">
+                  <StockEditor
+                    stock={part.stock}
+                    onStockChange={(newStock) => onUpdateStock(part.id, part.category, newStock)}
+                  />
+                  <AddStockDialog
+                    part={part}
+                    onAddStock={onAddStock || ((id, cat, amt) => onUpdateStock(id, cat, part.stock + amt))}
+                  >
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/10 shrink-0"
+                      title="Add Stock"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                  </AddStockDialog>
+                </div>
               )}
             </TableCell>
             <TableCell className="text-right">

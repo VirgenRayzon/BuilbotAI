@@ -139,7 +139,7 @@ export type Notification = {
 };
 export type SystemNotification = {
   id: string;
-  type: 'reservation_received' | 'item_archived' | 'status_changed' | 'user_cancelled';
+  type: 'reservation_received' | 'item_archived' | 'status_changed' | 'user_cancelled' | 'stock_added';
   actorId: string;
   actorName: string;
   title: string;

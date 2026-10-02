@@ -13,10 +13,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, getOptimizedStorageUrl } from '@/lib/utils';
 import type { Part } from '@/lib/types';
-import { Trash2, Info, AlertTriangle, Archive, RotateCcw, Check } from 'lucide-react';
+import { Trash2, Info, AlertTriangle, Archive, RotateCcw, Check, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useSiteSettings } from '@/context/site-settings-context';
+import { AddStockDialog } from './add-stock-dialog';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -44,6 +45,7 @@ interface InventoryPartCardProps {
     onDelete: (partId: string, category: Part['category']) => void;
     onArchive: (partId: string, category: Part['category'], isArchived?: boolean) => void;
     onUpdateStock: (partId: string, category: Part['category'], newStock: number) => void;
+    onAddStock?: (partId: string, category: Part['category'], amount: number) => Promise<void> | void;
     onUpdatePart: (partId: string, category: Part['category'], data: AddPartFormSchema) => Promise<void>;
     isSelected?: boolean;
     onToggleSelection?: (id: string, category: Part['category']) => void;
@@ -71,7 +73,8 @@ export function InventoryPartCard({
     part, 
     onDelete, 
     onArchive,
-    onUpdateStock, 
+    onUpdateStock,
+    onAddStock,
     onUpdatePart,
     isSelected = false,
     onToggleSelection = () => {},
@@ -223,8 +226,19 @@ export function InventoryPartCard({
                             </AddPartDialog>
                         )}
 
-                        <div className="flex justify-between items-center">
+                        <div className="flex justify-between items-center gap-2">
                             <p className="text-sm md:text-xl font-bold font-headline tracking-tight">{formatCurrency(part.price)}</p>
+                            <Badge 
+                                variant={part.stock > 0 ? "outline" : "destructive"} 
+                                className={cn(
+                                    "text-[9px] md:text-[11px] font-mono font-bold px-2 py-0.5 shrink-0",
+                                    part.stock > 5 ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10" :
+                                    part.stock > 0 ? "border-amber-500/30 text-amber-400 bg-amber-500/10" :
+                                    "border-destructive/30 text-destructive bg-destructive/10"
+                                )}
+                            >
+                                {part.stock > 0 ? `${part.stock} in stock` : 'Out of stock'}
+                            </Badge>
                         </div>
 
                         <Separator className="bg-border/40" />
@@ -243,11 +257,19 @@ export function InventoryPartCard({
                     </div>
 
                     <div className="mt-auto p-2 md:p-3 pt-0 z-20" onClick={(e) => e.stopPropagation()}>
-                        <StockEditor
-                            stock={part.stock}
-                            onStockChange={(newStock) => onUpdateStock(part.id, part.category, newStock)}
-                            className="h-7 md:h-9"
-                        />
+                        <AddStockDialog
+                            part={part}
+                            onAddStock={onAddStock || ((id, cat, amt) => onUpdateStock(id, cat, part.stock + amt))}
+                        >
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full h-8 md:h-9 text-xs md:text-sm font-semibold border-primary/20 hover:border-primary/50 hover:bg-primary/10 transition-all gap-1.5 shadow-sm"
+                            >
+                                <Plus className="h-3.5 w-3.5 text-primary" />
+                                <span>Add Stock</span>
+                            </Button>
+                        </AddStockDialog>
                     </div>
                 </Card>
             </div>

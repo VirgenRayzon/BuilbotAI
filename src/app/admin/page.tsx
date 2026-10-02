@@ -37,7 +37,7 @@ export default function AdminPage() {
     
     const { 
         parts, partsLoading, prebuiltSystems, prebuiltsLoading,
-        handleAddPart, handleUpdatePart, handleUpdatePartStock, handleDeletePart, handleArchivePart,
+        handleAddPart, handleUpdatePart, handleUpdatePartStock, handleAddPartStock, handleDeletePart, handleArchivePart,
         handleAddPrebuilt, handleUpdatePrebuilt, handleDeletePrebuilt, handleArchivePrebuilt,
         componentCategories: initialCategories
     } = useInventory(profile);
@@ -137,6 +137,7 @@ export default function AdminPage() {
                                 onDeletePart={handleDeletePart}
                                 onArchivePart={handleArchivePart}
                                 onUpdatePartStock={handleUpdatePartStock}
+                                onAddPartStock={handleAddPartStock}
                                 isPartSelectionMode={isPartSelectionMode}
                                 setIsPartSelectionMode={setIsPartSelectionMode}
                                 selectedPartIds={selectedPartIds}

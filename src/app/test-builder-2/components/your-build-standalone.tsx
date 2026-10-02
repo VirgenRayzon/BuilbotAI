@@ -7,10 +7,19 @@ import { Card, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SparkleButton } from "@/components/ui/sparkle-button";
 import type { ComponentData } from "@/lib/types";
-import { X as CloseIcon, BrainCircuit, ShieldCheck, CheckCircle2, Sparkles, Heart, FolderOpen } from "lucide-react";
+import { X as CloseIcon, BrainCircuit, ShieldCheck, CheckCircle2, Sparkles, Heart, FolderOpen, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Resolution, WorkloadType, Part } from "@/lib/types";
 import { Separator } from "@/components/ui/separator";
@@ -68,6 +77,7 @@ export function YourBuildStandalone({
     categories
 }: YourBuildProps) {
     const [isCheckoutDialogOpen, setIsCheckoutDialogOpen] = useState(false);
+    const [isIncompleteAlertOpen, setIsIncompleteAlertOpen] = useState(false);
     const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
     const [saveName, setSaveName] = useState("");
     const [isSaving, setIsSaving] = useState(false);
@@ -87,10 +97,13 @@ export function YourBuildStandalone({
     const { toast } = useToast();
 
     const mandatoryCategories = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler', 'Case'];
-    const isBuildComplete = mandatoryCategories.every(cat => {
-        const val = build[cat];
-        return Array.isArray(val) ? val.length > 0 : !!val;
-    });
+    const missingMandatoryCategories = useMemo(() => {
+        return mandatoryCategories.filter(cat => {
+            const val = build[cat];
+            return Array.isArray(val) ? val.length === 0 : !val;
+        });
+    }, [build]);
+    const isBuildComplete = missingMandatoryCategories.length === 0;
 
     const selectedParts = Object.entries(build).reduce((acc, [name, value]) => {
         if (Array.isArray(value)) return acc + value.length;
@@ -324,67 +337,136 @@ export function YourBuildStandalone({
                         </div>
                     )}
 
-                    <Dialog open={isCheckoutDialogOpen} onOpenChange={setIsCheckoutDialogOpen}>
-                        <DialogTrigger asChild>
-                            <AnimatedIconButton
-                                icon={<AnimatedShieldIcon className="h-5 w-5" />}
-                                className="w-full h-12 text-xs font-black uppercase tracking-widest bg-emerald-600/20 hover:bg-emerald-600/30 border-emerald-500/30 hover:border-emerald-500/50 text-emerald-500 px-8"
-                                disabled={!isBuildComplete}
-                                glowColor="rgba(16, 185, 129, 0.5)"
-                            >
-                                Reserve Build
-                            </AnimatedIconButton>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-md">
-                            <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2">
-                                    <ShieldCheck className="h-6 w-6 text-emerald-600" />
-                                    Confirm Reservation
-                                </DialogTitle>
-                                <DialogDescription>
-                                    Review your components before reserving this build.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <ScrollArea className="max-h-[30vh]">
-                                    <div className="space-y-2">
-                                        {['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler', 'Case', 'Monitor', 'Keyboard', 'Mouse', 'Headset'].map((category) => {
-                                            const val = build[category];
-                                            const components = Array.isArray(val) ? val : (val ? [val] : []);
-                                            return components.map((c, idx) => (
-                                                <div key={`${category}-${idx}`} className="flex justify-between text-sm">
-                                                    <span className="text-muted-foreground">{category}: {(c as any).name || c.model}</span>
-                                                    <span className="font-medium">{formatCurrency(c.price)}</span>
-                                                </div>
-                                            ));
-                                        })}
-                                    </div>
-                                </ScrollArea>
-                                <Separator />
-                                <div className="flex justify-between items-center font-bold text-lg">
-                                    <span>Total Price</span>
-                                    <span className="text-primary">{formatCurrency(totalPrice)}</span>
-                                </div>
-                                <div className="bg-muted/30 p-3 rounded-lg text-xs text-muted-foreground flex gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                                    By confirming, your reservation will be processed and stock will be held for you.
-                                </div>
+                    {/* Missing Parts Guide Banner when build is incomplete */}
+                    {!isBuildComplete && (
+                        <div className="w-full p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-left space-y-1.5 animate-in fade-in-50 duration-300">
+                            <div className="flex items-center gap-1.5 text-amber-500 font-bold text-xs uppercase tracking-wider">
+                                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                <span>Incomplete Build</span>
                             </div>
-                            <div className="flex gap-3">
-                                <Button variant="outline" className="flex-1" onClick={() => setIsCheckoutDialogOpen(false)}>Cancel</Button>
-                                <AnimatedIconButton 
-                                    className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 text-white border-none" 
-                                    onClick={() => handleCheckout(() => setIsCheckoutDialogOpen(false))} 
-                                    disabled={isCheckingOut}
-                                    isLoading={isCheckingOut}
-                                    icon={<AnimatedShieldIcon className="h-4 w-4" />}
-                                    glowColor="rgba(255, 255, 255, 0.3)"
+                            <p className="text-[11px] text-muted-foreground leading-snug">
+                                Complete these required parts before reserving:
+                            </p>
+                            <div className="flex flex-wrap gap-1 pt-0.5">
+                                {missingMandatoryCategories.map((cat) => (
+                                    <button
+                                        key={cat}
+                                        type="button"
+                                        onClick={() => onCategorySelect?.(cat)}
+                                        className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border border-amber-500/30 transition-colors cursor-pointer"
+                                    >
+                                        + {cat}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {isBuildComplete ? (
+                        <Dialog open={isCheckoutDialogOpen} onOpenChange={setIsCheckoutDialogOpen}>
+                            <DialogTrigger asChild>
+                                <AnimatedIconButton
+                                    icon={<AnimatedShieldIcon className="h-5 w-5" />}
+                                    className="w-full h-12 text-xs font-black uppercase tracking-widest bg-emerald-600/20 hover:bg-emerald-600/30 border-emerald-500/30 hover:border-emerald-500/50 text-emerald-500 px-8"
+                                    glowColor="rgba(16, 185, 129, 0.5)"
                                 >
-                                    Confirm Reservation
+                                    Reserve Build
                                 </AnimatedIconButton>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md">
+                                <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-2">
+                                        <ShieldCheck className="h-6 w-6 text-emerald-600" />
+                                        Confirm Reservation
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                        Review your components before reserving this build.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                    <ScrollArea className="max-h-[30vh]">
+                                        <div className="space-y-2">
+                                            {['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler', 'Case', 'Monitor', 'Keyboard', 'Mouse', 'Headset'].map((category) => {
+                                                const val = build[category];
+                                                const components = Array.isArray(val) ? val : (val ? [val] : []);
+                                                return components.map((c, idx) => (
+                                                    <div key={`${category}-${idx}`} className="flex justify-between text-sm">
+                                                        <span className="text-muted-foreground">{category}: {(c as any).name || c.model}</span>
+                                                        <span className="font-medium">{formatCurrency(c.price)}</span>
+                                                    </div>
+                                                ));
+                                            })}
+                                        </div>
+                                    </ScrollArea>
+                                    <Separator />
+                                    <div className="flex justify-between items-center font-bold text-lg">
+                                        <span>Total Price</span>
+                                        <span className="text-primary">{formatCurrency(totalPrice)}</span>
+                                    </div>
+                                    <div className="bg-muted/30 p-3 rounded-lg text-xs text-muted-foreground flex gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                                        By confirming, your reservation will be processed and stock will be held for you.
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <Button variant="outline" className="flex-1" onClick={() => setIsCheckoutDialogOpen(false)}>Cancel</Button>
+                                    <AnimatedIconButton 
+                                        className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 text-white border-none"
+                                        onClick={() => handleCheckout(() => setIsCheckoutDialogOpen(false))}
+                                        disabled={isCheckingOut}
+                                        isLoading={isCheckingOut}
+                                        icon={<AnimatedShieldIcon className="h-4 w-4" />}
+                                        glowColor="rgba(255, 255, 255, 0.3)"
+                                    >
+                                        Confirm Reservation
+                                    </AnimatedIconButton>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    ) : (
+                        <AnimatedIconButton
+                            icon={<AnimatedShieldIcon className="h-5 w-5" />}
+                            className="w-full h-12 text-xs font-black uppercase tracking-widest bg-emerald-600/10 hover:bg-emerald-600/20 border-emerald-500/20 hover:border-emerald-500/40 text-emerald-500/70 hover:text-emerald-500 px-8 cursor-pointer"
+                            onClick={() => setIsIncompleteAlertOpen(true)}
+                            glowColor="rgba(16, 185, 129, 0.3)"
+                        >
+                            Reserve Build
+                        </AnimatedIconButton>
+                    )}
+
+                    <AlertDialog open={isIncompleteAlertOpen} onOpenChange={setIsIncompleteAlertOpen}>
+                        <AlertDialogContent className="max-w-md border-amber-500/30 bg-background/95 backdrop-blur-xl">
+                            <AlertDialogHeader>
+                                <AlertDialogTitle className="flex items-center gap-2 text-amber-500">
+                                    <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+                                    Required Parts Missing
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="text-left text-sm text-muted-foreground">
+                                    You haven&apos;t chosen all the necessary parts to complete your PC build. Please choose the following components before reserving:
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 my-2">
+                                <div className="flex flex-wrap gap-1.5">
+                                    {missingMandatoryCategories.map((cat) => (
+                                        <Badge
+                                            key={cat}
+                                            variant="outline"
+                                            className="border-amber-500/40 text-amber-400 bg-amber-500/10 font-bold text-xs cursor-pointer hover:bg-amber-500/20"
+                                            onClick={() => {
+                                                setIsIncompleteAlertOpen(false);
+                                                onCategorySelect?.(cat);
+                                            }}
+                                        >
+                                            + Choose {cat}
+                                        </Badge>
+                                    ))}
+                                </div>
                             </div>
-                        </DialogContent>
-                    </Dialog>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel className="w-full sm:w-auto">Understood</AlertDialogCancel>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </div>
             </CardFooter>
         </>
