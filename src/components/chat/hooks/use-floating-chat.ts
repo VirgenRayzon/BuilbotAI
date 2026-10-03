@@ -77,15 +77,16 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
         return () => window.removeEventListener('floating-action-open', handleOpen);
     }, []);
 
+    // NOTE: Side effects (event dispatch) must stay OUTSIDE the setState updater.
+    // Updaters run during render, so dispatching there triggers setState in other
+    // floating components (e.g. BuilderFloatingAnalytics) mid-render.
     const toggleOpen = useCallback(() => {
-        setIsOpen((prev) => {
-            const next = !prev;
-            if (next) {
-                window.dispatchEvent(new CustomEvent('floating-action-open', { detail: { type: 'chat' } }));
-            }
-            return next;
-        });
-    }, []);
+        const next = !isOpen;
+        setIsOpen(next);
+        if (next) {
+            window.dispatchEvent(new CustomEvent('floating-action-open', { detail: { type: 'chat' } }));
+        }
+    }, [isOpen]);
 
     const {
         messages,

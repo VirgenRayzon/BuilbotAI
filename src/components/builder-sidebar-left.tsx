@@ -1,21 +1,32 @@
 /**
  * BuilderSidebarLeft — Left-side analytics panel for the Builder page.
- * Displays FPS estimation charts (via Recharts) and bottleneck analysis
+ * Displays FPS estimation charts (via Recharts), synergy score, and bottleneck analysis
  * based on the user's current hardware build, resolution, and workload preset.
+ * Built with Mantine UI primitives, high-contrast light/dark theming, and smooth animations.
  */
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, Gauge } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    Paper,
+    Badge,
+    Select,
+    Text,
+    Group,
+    Stack,
+    Box,
+    ActionIcon,
+    ThemeIcon,
+    Button as MantineButton,
+    SimpleGrid,
+    Divider,
+} from "@mantine/core";
+import { Activity, Gauge, Monitor, Zap, X, Sparkles, ArrowRight, Info } from "lucide-react";
 import type { ComponentData, Resolution, WorkloadType } from "@/lib/types";
 import { calculateBottleneck, calculateSynergyScore } from "@/lib/bottleneck";
 import { estimateFPS } from "@/lib/fps-estimator";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
-import { Sparkles, CheckCircle2, ArrowRight, Zap, X, Monitor } from "lucide-react";
-import { formatCurrency, cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
+import { useTheme } from "@/context/theme-provider";
 
 interface BuilderSidebarLeftProps {
     build: Record<string, ComponentData | ComponentData[] | null>;
@@ -47,44 +58,88 @@ function CountUp({ value }: { value: number }) {
 function SynergyMeter({ build, resolution }: { build: Record<string, ComponentData | ComponentData[] | null>, resolution: Resolution }) {
     const result = calculateSynergyScore(build, resolution);
 
+    const breakdownItems = [
+        { key: 'balance', label: 'Balance', val: result.breakdown.balance, max: 35 },
+        { key: 'power', label: 'Power', val: result.breakdown.power, max: 20 },
+        { key: 'completeness', label: 'Complete', val: result.breakdown.completeness, max: 25 },
+        { key: 'tierConsistency', label: 'Tier Match', val: result.breakdown.tierConsistency, max: 20 },
+    ];
+
+    const getStatusBadgeColor = (status: string, score: number) => {
+        if (status === 'Incomplete') return 'red';
+        if (score >= 80) return 'teal';
+        if (score >= 65) return 'cyan';
+        if (score >= 40) return 'yellow';
+        return 'red';
+    };
+
     return (
-        <div className="space-y-4 mb-6">
-            <div className="flex justify-between items-center px-1">
-                <span className="text-xs font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Synergy Rating</span>
-                <Badge className={cn("text-[11px] font-bold px-2 py-0.5", result.score < 40 ? "bg-destructive/20 text-destructive" : "bg-primary/20 text-primary dark:text-primary")}>
+        <Paper
+            radius="md"
+            p="sm"
+            withBorder
+            className="bg-slate-50/70 dark:bg-slate-900/50 border-slate-200 dark:border-white/10 shadow-sm"
+        >
+            <Group justify="space-between" align="center" className="mb-2.5">
+                <Text size="xs" fw={800} className="tracking-[0.18em] font-headline uppercase text-slate-800 dark:text-slate-200">
+                    Synergy Rating
+                </Text>
+                <Badge
+                    color={getStatusBadgeColor(result.status, result.score)}
+                    variant={result.status === 'Incomplete' ? 'light' : 'filled'}
+                    size="sm"
+                    radius="md"
+                    fw={700}
+                    className={cn(
+                        "tracking-wider text-[10px] uppercase font-bold",
+                        result.status === 'Incomplete' && "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30"
+                    )}
+                >
                     {result.status}
                 </Badge>
-            </div>
+            </Group>
             
-            <div className="relative h-4 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden border border-slate-200 dark:border-white/5 shadow-inner">
+            {/* Animated Progress Bar Container with High-Contrast Score */}
+            <div className="relative h-6 bg-slate-200/90 dark:bg-slate-800/90 rounded-full overflow-hidden border border-slate-300 dark:border-white/10 shadow-inner">
                 <motion.div 
                     initial={{ width: 0 }}
-                    animate={{ width: `${result.score}%` }}
-                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-600 via-cyan-400 to-blue-600"
+                    animate={{ width: `${Math.max(result.score, 0)}%` }}
+                    transition={{ duration: 0.9, ease: "easeOut" }}
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-600 via-cyan-400 to-emerald-400 rounded-full"
                     style={{ 
-                        boxShadow: `0 0 15px ${result.color}80`,
-                        backgroundColor: result.color 
+                        boxShadow: result.score > 0 ? `0 0 16px rgba(34,211,238,0.6)` : "none",
                     }}
                 />
-                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-white/60 tracking-widest mix-blend-difference">
-                    {result.score}/100
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <span className="text-[11px] font-black tracking-widest font-mono text-slate-900 dark:text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+                        {result.score}
+                        <span className="text-[10px] font-semibold opacity-80">/100</span>
+                    </span>
                 </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-1">
-                {Object.entries(result.breakdown).map(([key, val]) => (
-                    <div key={key} className="flex flex-col items-center gap-1">
-                        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                            <div 
-                                className="h-full bg-cyan-500/50" 
-                                style={{ width: `${(val / (key === 'balance' ? 35 : key === 'completeness' ? 25 : 20)) * 100}%` }} 
-                            />
-                        </div>
-                        <span className="text-[9px] uppercase font-bold text-zinc-500 dark:text-zinc-300 tracking-tighter">{key}</span>
-                    </div>
-                ))}
-            </div>
-        </div>
+            {/* Breakdown Sub-metrics */}
+            <SimpleGrid cols={4} spacing="xs" className="mt-3 pt-2 border-t border-slate-200/80 dark:border-white/5">
+                {breakdownItems.map((item) => {
+                    const pct = Math.min(100, Math.max(0, Math.round((item.val / item.max) * 100)));
+                    return (
+                        <Box key={item.key} className="flex flex-col items-center gap-1.5">
+                            <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-300/40 dark:border-white/5">
+                                <motion.div 
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${pct}%` }}
+                                    transition={{ duration: 0.9, ease: "easeOut" }}
+                                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full" 
+                                />
+                            </div>
+                            <Text size="9px" fw={700} className="tracking-tight uppercase text-slate-700 dark:text-slate-300 text-center leading-none">
+                                {item.label}
+                            </Text>
+                        </Box>
+                    );
+                })}
+            </SimpleGrid>
+        </Paper>
     );
 }
 
@@ -92,95 +147,134 @@ function OptimizationSuggestions({ analysis, onApply }: { analysis: any, onApply
     if (!analysis?.suggestions || analysis.suggestions.length === 0) return null;
 
     return (
-        <div className="space-y-3 mt-6">
-            <div className="flex items-center gap-2 px-1 mb-2">
-                <Sparkles className="w-3 h-3 text-cyan-400" />
-                <span className="text-xs font-black text-cyan-400 uppercase tracking-[0.2em]">AI Optimization Swaps</span>
-            </div>
+        <Paper
+            radius="md"
+            p="sm"
+            withBorder
+            className="bg-cyan-50/40 dark:bg-cyan-950/20 border-cyan-200 dark:border-cyan-500/30 shadow-sm space-y-3"
+        >
+            <Group gap={6} align="center">
+                <ThemeIcon size="xs" variant="transparent" color="cyan">
+                    <Sparkles size={14} className="text-cyan-600 dark:text-cyan-400" />
+                </ThemeIcon>
+                <Text size="xs" fw={800} className="text-cyan-700 dark:text-cyan-400 uppercase tracking-[0.18em]">
+                    AI Optimization Swaps
+                </Text>
+            </Group>
             <div className="space-y-2">
                 {analysis.suggestions.map((suggestion: any, idx: number) => (
-                    <div key={idx} className="group p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/20 hover:bg-cyan-500/10 transition-all">
-                        <div className="flex flex-col gap-2">
+                    <Paper
+                        key={idx}
+                        radius="sm"
+                        p="xs"
+                        withBorder
+                        className="bg-white/80 dark:bg-slate-900/60 border-cyan-500/20 hover:border-cyan-500/40 transition-all"
+                    >
+                        <div className="flex flex-col gap-1.5">
                             <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-1.5 min-w-0">
-                                    <span className="text-xs font-bold text-zinc-400 line-through truncate">{suggestion.originalComponent}</span>
-                                    <ArrowRight className="w-3 h-3 text-cyan-500 shrink-0" />
-                                    <span className="text-sm font-bold text-cyan-400 truncate">{suggestion.suggestedComponent}</span>
+                                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 line-through truncate">
+                                        {suggestion.originalComponent}
+                                    </span>
+                                    <ArrowRight className="w-3.5 h-3.5 text-cyan-500 shrink-0" />
+                                    <span className="text-xs font-bold text-cyan-700 dark:text-cyan-400 truncate">
+                                        {suggestion.suggestedComponent}
+                                    </span>
                                 </div>
                                 {suggestion.suggestedPartId && onApply && (
-                                    <Button 
-                                        size="sm" 
-                                        variant="ghost" 
-                                        className="h-6 px-2 bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-400 border-none text-[9px] font-black uppercase tracking-wider rounded-lg shrink-0"
-                                        onClick={() => {
-                                            // Extract category from original component name if possible, or heuristic
-                                            // The AI flow should ideally provide category. For now we assume the AI 
-                                            // identifies the component correctly.
-                                            // We'll pass the ID and the parent will handle it.
-                                            onApply("", suggestion.suggestedPartId);
-                                        }}
+                                    <MantineButton 
+                                        size="xs" 
+                                        variant="light" 
+                                        color="cyan"
+                                        radius="md"
+                                        className="h-6 px-2 text-[10px] font-black uppercase tracking-wider shrink-0"
+                                        leftSection={<Zap size={11} />}
+                                        onClick={() => onApply("", suggestion.suggestedPartId)}
                                     >
-                                        <Zap className="w-2.5 h-2.5 mr-1" /> Swap
-                                    </Button>
+                                        Swap
+                                    </MantineButton>
                                 )}
                             </div>
-                            <p className="text-[10px] text-zinc-300 leading-tight italic">
+                            <Text size="11px" className="text-slate-700 dark:text-slate-300 italic leading-tight">
                                 "{suggestion.reason}"
-                            </p>
+                            </Text>
                         </div>
-                    </div>
+                    </Paper>
                 ))}
             </div>
-        </div>
+        </Paper>
     );
 }
 
-function FpsMeter({ build, resolution, workload }: { build: Record<string, ComponentData | ComponentData[] | null>, resolution: Resolution, workload: WorkloadType }) {
+function FpsMeter({ build, resolution, workload, isDark }: { build: Record<string, ComponentData | ComponentData[] | null>, resolution: Resolution, workload: WorkloadType, isDark: boolean }) {
     const fpsData = estimateFPS(build, resolution, workload);
 
     if (!fpsData) return null;
 
+    const gridStroke = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
+    const tickColor = isDark ? "#94a3b8" : "#475569";
+
     return (
-        <div className="space-y-1 mb-6 bg-slate-50 dark:bg-[#1a1c23] p-4 rounded-xl border border-slate-200 dark:border-white/5 relative shadow-inner">
-            {/* Header matches mockup: "Estimated FPS Performance" and right cyan pill + ellipsis */}
-            <div className="flex justify-between items-center mb-1">
-                <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-200 font-sans tracking-wide">
+        <Paper
+            radius="md"
+            p="sm"
+            withBorder
+            className="bg-slate-50/70 dark:bg-slate-900/50 border-slate-200 dark:border-white/10 shadow-sm relative"
+        >
+            {/* Header */}
+            <Group justify="space-between" align="center" className="mb-2">
+                <Text size="xs" fw={800} className="tracking-wide uppercase font-headline text-slate-800 dark:text-slate-200">
                     Estimated FPS Performance
-                </span>
-                <div className="flex items-center gap-2">
-                    <div className="w-5 h-1.5 bg-cyan-400 rounded-full shadow-[0_0_8px_rgba(34,211,238,0.8)]"></div>
-                    <span className="text-muted-foreground/70 tracking-[2px] leading-none mb-2">...</span>
+                </Text>
+                <div className="flex items-center gap-1.5">
+                    <div className="w-4 h-1.5 bg-cyan-400 rounded-full shadow-[0_0_8px_rgba(34,211,238,0.8)] animate-pulse" />
                 </div>
-            </div>
+            </Group>
 
             {/* Primary Metrics Summary */}
-            <div className="flex items-center gap-6 mb-6 px-1">
-                <div className="flex flex-col">
-                    <span className="text-3xl font-bold font-sans text-cyan-500 dark:text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)] tracking-tight">
-                        <CountUp value={fpsData.averageFps} />+ <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400 drop-shadow-none tracking-normal">avg</span>
-                    </span>
-                </div>
-                <div className="h-8 w-[1px] bg-slate-200 dark:bg-white/10" />
-                <div className="flex flex-col">
-                    <span className="text-sm font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] mb-0.5">1% Lows</span>
-                    <span className="text-lg font-bold font-sans text-fuchsia-600 dark:text-fuchsia-400/90 tracking-tight">
-                        <CountUp value={fpsData.lowsFps} /> <span className="text-[10px] font-normal text-zinc-500 uppercase tracking-widest">fps</span>
-                    </span>
-                </div>
-                <div className="flex flex-col">
-                    <span className="text-sm font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] mb-0.5">Peak</span>
-                    <span className="text-lg font-bold font-sans text-amber-600 dark:text-amber-400/90 tracking-tight">
-                        <CountUp value={fpsData.peakFps} /> <span className="text-[10px] font-normal text-zinc-500 uppercase tracking-widest">fps</span>
-                    </span>
-                </div>
-            </div>
+            <Paper radius="sm" p="xs" withBorder className="bg-white/80 dark:bg-slate-950/40 border-slate-200/80 dark:border-white/5 mb-3 shadow-none">
+                <Group justify="space-around" align="center" gap="xs">
+                    {/* Average */}
+                    <Stack gap={0} align="center">
+                        <Text size="9px" fw={800} className="tracking-widest uppercase text-cyan-700 dark:text-cyan-400">
+                            Average
+                        </Text>
+                        <Text fw={900} className="text-2xl font-sans tracking-tight text-cyan-600 dark:text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.4)]">
+                            <CountUp value={fpsData.averageFps} />+ <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-normal">avg</span>
+                        </Text>
+                    </Stack>
+                    
+                    <Divider orientation="vertical" className="border-slate-200 dark:border-white/10 h-7" />
+                    
+                    {/* 1% Lows */}
+                    <Stack gap={0} align="center">
+                        <Text size="9px" fw={800} className="tracking-widest uppercase text-fuchsia-700 dark:text-fuchsia-400">
+                            1% Lows
+                        </Text>
+                        <Text fw={900} className="text-lg font-sans tracking-tight text-fuchsia-600 dark:text-fuchsia-400">
+                            <CountUp value={fpsData.lowsFps} /> <span className="text-[10px] font-semibold text-slate-500 uppercase">fps</span>
+                        </Text>
+                    </Stack>
+                    
+                    <Divider orientation="vertical" className="border-slate-200 dark:border-white/10 h-7" />
+                    
+                    {/* Peak */}
+                    <Stack gap={0} align="center">
+                        <Text size="9px" fw={800} className="tracking-widest uppercase text-amber-700 dark:text-amber-400">
+                            Peak
+                        </Text>
+                        <Text fw={900} className="text-lg font-sans tracking-tight text-amber-600 dark:text-amber-400">
+                            <CountUp value={fpsData.peakFps} /> <span className="text-[10px] font-semibold text-slate-500 uppercase">fps</span>
+                        </Text>
+                    </Stack>
+                </Group>
+            </Paper>
 
             {/* Chart Area */}
-            <div className="h-[240px] w-full -ml-3">
+            <div className="h-[210px] w-full -ml-3">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={fpsData.chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                         <defs>
-                            {/* Neon Glow Filters */}
                             <filter id="neonGlowCyan" x="-20%" y="-20%" width="140%" height="140%">
                                 <feGaussianBlur stdDeviation="4" result="blur" />
                                 <feComposite in="SourceGraphic" in2="blur" operator="over" />
@@ -194,36 +288,33 @@ function FpsMeter({ build, resolution, workload }: { build: Record<string, Compo
                                 <feComposite in="SourceGraphic" in2="blur" operator="over" />
                             </filter>
 
-                            {/* Area Fill Gradient for Cyan */}
                             <linearGradient id="colorAverage" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.15} />
+                                <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.22} />
                                 <stop offset="95%" stopColor="#22d3ee" stopOpacity={0.0} />
                             </linearGradient>
                             <linearGradient id="colorLows" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#d946ef" stopOpacity={0.10} />
+                                <stop offset="5%" stopColor="#d946ef" stopOpacity={0.15} />
                                 <stop offset="95%" stopColor="#d946ef" stopOpacity={0.0} />
                             </linearGradient>
                             <linearGradient id="colorPeak" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.10} />
+                                <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.15} />
                                 <stop offset="95%" stopColor="#fbbf24" stopOpacity={0.0} />
                             </linearGradient>
                         </defs>
 
-                        {/* Faint Horizontal Grid Lines */}
-                        <CartesianGrid strokeDasharray="0" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                        <CartesianGrid strokeDasharray="0" vertical={false} stroke={gridStroke} />
 
-                        {/* Axes matching mockup styled faint */}
                         <XAxis
                             dataKey="resolution"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: "#71717a", fontSize: 10 }}
-                            dy={10}
+                            tick={{ fill: tickColor, fontSize: 10, fontWeight: 600 }}
+                            dy={8}
                         />
                         <YAxis
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: "#71717a", fontSize: 10 }}
+                            tick={{ fill: tickColor, fontSize: 10, fontWeight: 600 }}
                             domain={[0, 400]}
                             ticks={[0, 100, 200, 300, 400]}
                         />
@@ -232,20 +323,22 @@ function FpsMeter({ build, resolution, workload }: { build: Record<string, Compo
                             content={({ active, payload }) => {
                                 if (active && payload && payload.length) {
                                     return (
-                                        <div className="bg-white/90 dark:bg-[#1a1c23]/90 backdrop-blur-md border border-slate-200 dark:border-white/10 p-3 rounded-lg shadow-2xl">
-                                            <div className="text-[10px] text-zinc-500 font-bold mb-2 tracking-widest uppercase border-b border-slate-100 dark:border-white/5 pb-1">Performance Details</div>
-                                            <div className="space-y-1.5">
+                                        <div className="bg-white/95 dark:bg-[#151922]/95 backdrop-blur-md border border-slate-300 dark:border-white/15 p-3 rounded-xl shadow-2xl">
+                                            <div className="text-[10px] text-slate-600 dark:text-slate-400 font-bold mb-2 tracking-widest uppercase border-b border-slate-200 dark:border-white/10 pb-1">
+                                                Performance Details
+                                            </div>
+                                            <div className="space-y-1.5 min-w-[130px]">
                                                 <div className="flex items-center justify-between gap-4">
-                                                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase">Peak</span>
-                                                    <span className="text-sm font-black text-amber-600 dark:text-amber-400">{payload[2].value} FPS</span>
+                                                    <span className="text-[10px] text-slate-600 dark:text-slate-400 font-bold uppercase">Peak</span>
+                                                    <span className="text-xs font-black text-amber-600 dark:text-amber-400">{payload[2]?.value} FPS</span>
                                                 </div>
                                                 <div className="flex items-center justify-between gap-4">
-                                                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase">Avg</span>
-                                                    <span className="text-sm font-black text-cyan-600 dark:text-cyan-400">{payload[1].value} FPS</span>
+                                                    <span className="text-[10px] text-slate-600 dark:text-slate-400 font-bold uppercase">Avg</span>
+                                                    <span className="text-xs font-black text-cyan-600 dark:text-cyan-400">{payload[1]?.value} FPS</span>
                                                 </div>
                                                 <div className="flex items-center justify-between gap-4">
-                                                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase">Lows</span>
-                                                    <span className="text-sm font-black text-fuchsia-600 dark:text-fuchsia-400">{payload[0].value} FPS</span>
+                                                    <span className="text-[10px] text-slate-600 dark:text-slate-400 font-bold uppercase">Lows</span>
+                                                    <span className="text-xs font-black text-fuchsia-600 dark:text-fuchsia-400">{payload[0]?.value} FPS</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -253,10 +346,9 @@ function FpsMeter({ build, resolution, workload }: { build: Record<string, Compo
                                 }
                                 return null;
                             }}
-                            cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
+                            cursor={{ stroke: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)', strokeWidth: 1 }}
                         />
 
-                        {/* Lows Line (Magenta) */}
                         <Area
                             type="monotone"
                             dataKey="lows"
@@ -269,7 +361,6 @@ function FpsMeter({ build, resolution, workload }: { build: Record<string, Compo
                             style={{ filter: "url(#neonGlowMagenta)" }}
                         />
 
-                        {/* Average Line (Cyan) */}
                         <Area
                             type="monotone"
                             dataKey="average"
@@ -282,7 +373,6 @@ function FpsMeter({ build, resolution, workload }: { build: Record<string, Compo
                             style={{ filter: "url(#neonGlowCyan)" }}
                         />
 
-                        {/* Peak Line (Gold) */}
                         <Area
                             type="monotone"
                             dataKey="peak"
@@ -294,35 +384,26 @@ function FpsMeter({ build, resolution, workload }: { build: Record<string, Compo
                             animationDuration={1500}
                             style={{ filter: "url(#neonGlowGold)" }}
                         />
-
                     </AreaChart>
                 </ResponsiveContainer>
             </div>
 
-            {/* Axes Labels */}
-            <div className="absolute -left-1 bottom-1/2 -rotate-90 origin-center text-[10px] font-semibold text-zinc-400 tracking-widest">
-                FPS
-            </div>
-            <div className="text-center text-[10px] font-semibold text-zinc-400 tracking-widest mt-2">
-                RESOLUTION
-            </div>
-
             {/* Legend Section */}
-            <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-slate-200 dark:border-white/5">
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-1 bg-fuchsia-500 rounded-full shadow-[0_0_8px_rgba(232,121,249,0.8)]"></div>
-                    <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-tighter">1% Lows</span>
+            <div className="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-white/10">
+                <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-1.5 bg-fuchsia-500 rounded-full shadow-[0_0_6px_rgba(232,121,249,0.8)]" />
+                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-tight">1% Lows</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-1 bg-cyan-400 rounded-full shadow-[0_0_8px_rgba(34,211,238,0.8)]"></div>
-                    <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-tighter">Average</span>
+                <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-1.5 bg-cyan-400 rounded-full shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-tight">Average</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-1 bg-amber-400 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.8)]"></div>
-                    <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-tighter">Peak FPS</span>
+                <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-1.5 bg-amber-400 rounded-full shadow-[0_0_6px_rgba(251,191,36,0.8)]" />
+                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-tight">Peak FPS</span>
                 </div>
             </div>
-        </div>
+        </Paper>
     );
 }
 
@@ -331,104 +412,158 @@ function BottleneckMeter({ build, resolution }: { build: Record<string, Componen
 
     if (result.status === 'Incomplete') {
         return (
-            <div className="p-4 border rounded-md bg-secondary/10 border-border/50 text-center mt-2">
-                <p className="text-xs text-muted-foreground">Add CPU and GPU to analyze bottleneck and estimate FPS.</p>
-            </div>
+            <Paper
+                radius="md"
+                p="sm"
+                withBorder
+                className="bg-slate-50/70 dark:bg-slate-900/50 border-slate-200 dark:border-white/10 text-center shadow-sm"
+            >
+                <Group justify="center" gap="xs">
+                    <ThemeIcon size="xs" variant="transparent" color="gray">
+                        <Info size={14} className="text-slate-500 dark:text-slate-400" />
+                    </ThemeIcon>
+                    <Text size="xs" fw={600} className="text-slate-700 dark:text-slate-300">
+                        Add CPU and GPU to analyze bottleneck and estimate FPS.
+                    </Text>
+                </Group>
+            </Paper>
         );
     }
 
-    // Adapt color for neon aesthetic
-    let glowColor = "rgba(6, 182, 212, 0.5)"; // cyan
-    let textColor = "text-cyan-400";
-    if (result.status.includes('High')) {
-        glowColor = "rgba(239, 68, 68, 0.5)"; // red
-        textColor = "text-red-400";
-    } else if (result.status.includes('Moderate')) {
-        glowColor = "rgba(217, 70, 239, 0.5)"; // fuchsia
-        textColor = "text-fuchsia-400";
-    }
+    const isBalanced = result.status === 'Balanced';
+    const isSevere = result.status.includes('Severe');
+    const statusColor = isSevere ? 'red' : isBalanced ? 'teal' : 'yellow';
 
     return (
-        <div
-            className="p-3 border rounded-md bg-slate-50 dark:bg-background/50 transition-colors duration-300 relative overflow-hidden group shadow-sm dark:shadow-none"
-            style={{ borderColor: result.color, boxShadow: `0 0 15px ${glowColor} inset` }}
+        <Paper
+            radius="md"
+            p="sm"
+            withBorder
+            className={cn(
+                "transition-all relative overflow-hidden group shadow-sm",
+                isBalanced && "bg-teal-500/5 border-teal-500/30 dark:bg-teal-950/20 dark:border-teal-500/30",
+                !isBalanced && !isSevere && "bg-amber-500/5 border-amber-500/30 dark:bg-amber-950/20 dark:border-amber-500/30",
+                isSevere && "bg-red-500/5 border-red-500/30 dark:bg-red-950/20 dark:border-red-500/30",
+            )}
         >
-            <div className="relative z-10">
-                <h4 className={`font-headline font-bold text-base mb-1 flex items-center gap-1 ${textColor}`}>
-                    <Gauge className="w-4 h-4" /> {result.status}
-                </h4>
-                <p className="text-xs text-muted-foreground leading-relaxed">
+            <div className="relative z-10 space-y-1">
+                <Group justify="space-between" align="center">
+                    <Group gap={6} align="center">
+                        <ThemeIcon size="sm" radius="md" variant="light" color={statusColor}>
+                            <Gauge size={14} />
+                        </ThemeIcon>
+                        <Text size="xs" fw={800} className={cn(
+                            "tracking-wider uppercase",
+                            isSevere && "text-red-700 dark:text-red-400",
+                            isBalanced && "text-teal-700 dark:text-teal-300",
+                            !isBalanced && !isSevere && "text-amber-700 dark:text-amber-300"
+                        )}>
+                            {result.status}
+                        </Text>
+                    </Group>
+                    <Badge size="xs" radius="sm" color={statusColor} variant="light" fw={700}>
+                        {isBalanced ? "Optimal Match" : "Mismatch Alert"}
+                    </Badge>
+                </Group>
+                <Text size="xs" fw={500} className="text-slate-700 dark:text-slate-300 leading-relaxed pl-1">
                     {result.message}
-                </p>
+                </Text>
             </div>
-        </div>
+        </Paper>
     );
 }
 
 export function BuilderSidebarLeft({ build, resolution, onResolutionChange, workload, onWorkloadChange, analysis, onApplySuggestion, onClose, className }: BuilderSidebarLeftProps) {
-    return (
-        <div className={`flex flex-col gap-4 ${className || ""}`}>
-            {/* Analytics Dashboard */}
-            <Card className="flex-none border-slate-200 dark:border-primary/20 shadow-xl dark:shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden bg-white dark:bg-[#0f1115] relative">
-                <CardHeader className="py-5 px-6 bg-slate-50/80 dark:bg-white/5 flex flex-col gap-4 overflow-x-auto no-scrollbar border-b border-slate-200 dark:border-white/5 relative">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary animate-pulse"></div>
-                    
-                    <div className="relative flex items-center justify-center w-full">
-                        <CardTitle className="font-headline text-base font-black flex items-center gap-3 text-primary tracking-[0.3em] uppercase">
-                            <Activity className="w-5 h-5" /> ANALYTICS
-                        </CardTitle>
-                        {onClose && (
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={onClose} 
-                                className="absolute right-0 h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
-                            >
-                                <X className="h-5 w-5" />
-                            </Button>
-                        )}
-                    </div>
+    const { theme } = useTheme();
+    const isDark = theme === "dark";
 
-                    <div className="flex items-center gap-4 w-full">
-                        <div className="flex-1">
-                            <Select value={resolution} onValueChange={(val: any) => onResolutionChange(val)}>
-                                <SelectTrigger className="h-9 text-xs font-bold w-full bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 transition-all rounded-xl gap-3 px-4">
-                                    <Monitor className="w-4 h-4 text-primary/70" />
-                                    <SelectValue placeholder="Resolution" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-white dark:bg-[#1a1c23] border-slate-200 dark:border-white/10 shadow-2xl rounded-xl">
-                                    <SelectItem value="1080p" className="text-xs hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">1080p Full HD</SelectItem>
-                                    <SelectItem value="1440p" className="text-xs hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">1440p Quad HD</SelectItem>
-                                    <SelectItem value="4K" className="text-xs hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">4K Ultra HD</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+    return (
+        <div className={cn("flex flex-col gap-4", className)}>
+            <Paper
+                radius="lg"
+                withBorder
+                shadow="xl"
+                className="overflow-hidden bg-white/95 dark:bg-[#0d1117]/95 border-slate-200 dark:border-cyan-500/20 backdrop-blur-xl relative shadow-xl dark:shadow-[0_0_35px_rgba(0,0,0,0.6)]"
+            >
+                {/* Header Container */}
+                <Box className="p-4 bg-slate-50/90 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/10 relative">
+                    {/* Title + Close */}
+                    <Group justify="space-between" align="center" className="mb-3.5">
+                        <Group gap="xs" align="center">
+                            <ThemeIcon size={28} radius="md" variant="light" color="cyan" className="shadow-sm">
+                                <Gauge size={16} className="text-cyan-500 dark:text-cyan-400" />
+                            </ThemeIcon>
+                            <Text fw={900} size="sm" className="font-headline tracking-[0.18em] uppercase text-cyan-700 dark:text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.3)]">
+                                Bottleneck Analyzer
+                            </Text>
+                        </Group>
                         
-                        <div className="flex-1">
-                            <Select value={workload} onValueChange={(val: any) => onWorkloadChange(val)}>
-                                <SelectTrigger className="h-9 text-xs font-bold w-full bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 transition-all rounded-xl gap-3 px-4">
-                                    <Zap className="w-4 h-4 text-amber-500 dark:text-amber-400/70" />
-                                    <SelectValue placeholder="Performance" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-white dark:bg-[#1a1c23] border-slate-200 dark:border-white/10 shadow-2xl rounded-xl">
-                                    <SelectItem value="Balanced" className="text-xs hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2">Balanced</SelectItem>
-                                    <SelectItem value="Esports" className="text-xs hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2">Esports High</SelectItem>
-                                    <SelectItem value="AAA" className="text-xs hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2">AAA Ultra</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-4">
+                        {onClose && (
+                            <ActionIcon
+                                variant="subtle"
+                                color="gray"
+                                size="sm"
+                                radius="md"
+                                onClick={onClose}
+                                aria-label="Close bottleneck analyzer"
+                                className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                            >
+                                <X size={18} />
+                            </ActionIcon>
+                        )}
+                    </Group>
+
+                    {/* Resolution and Workload Selects */}
+                    <Group grow gap="xs">
+                        <Select
+                            value={resolution}
+                            onChange={(val) => val && onResolutionChange(val as Resolution)}
+                            data={[
+                                { value: "1080p", label: "1080p Full HD" },
+                                { value: "1440p", label: "1440p Quad HD" },
+                                { value: "4K", label: "4K Ultra HD" },
+                            ]}
+                            leftSection={<Monitor size={15} className="text-cyan-600 dark:text-cyan-400" />}
+                            allowDeselect={false}
+                            size="xs"
+                            radius="md"
+                            comboboxProps={{ shadow: "md", transitionProps: { transition: "pop", duration: 150 } }}
+                            classNames={{
+                                input: "font-bold bg-white dark:bg-[#151922] border-slate-300 dark:border-white/15 text-slate-800 dark:text-slate-100 focus:border-cyan-500 shadow-sm",
+                            }}
+                        />
+
+                        <Select
+                            value={workload}
+                            onChange={(val) => val && onWorkloadChange(val as WorkloadType)}
+                            data={[
+                                { value: "Balanced", label: "Balanced" },
+                                { value: "Esports", label: "Esports High" },
+                                { value: "AAA", label: "AAA Ultra" },
+                            ]}
+                            leftSection={<Zap size={15} className="text-amber-500" />}
+                            allowDeselect={false}
+                            size="xs"
+                            radius="md"
+                            comboboxProps={{ shadow: "md", transitionProps: { transition: "pop", duration: 150 } }}
+                            classNames={{
+                                input: "font-bold bg-white dark:bg-[#151922] border-slate-300 dark:border-white/15 text-slate-800 dark:text-slate-100 focus:border-cyan-500 shadow-sm",
+                            }}
+                        />
+                    </Group>
+                </Box>
+
+                {/* Body Content */}
+                <Box className="p-4 space-y-3.5">
                     <SynergyMeter build={build} resolution={resolution} />
-                    <FpsMeter build={build} resolution={resolution} workload={workload} />
+                    <FpsMeter build={build} resolution={resolution} workload={workload} isDark={isDark} />
                     <BottleneckMeter build={build} resolution={resolution} />
                     
                     {analysis && (
                         <OptimizationSuggestions analysis={analysis} onApply={onApplySuggestion} />
                     )}
-                </CardContent>
-            </Card>
+                </Box>
+            </Paper>
         </div>
     );
 }

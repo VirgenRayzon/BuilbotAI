@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { SparkleButton } from "./ui/sparkle-button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Paper, Text, Group, ThemeIcon, Box, Stack } from "@mantine/core";
 import { AnimatedIconButton, AnimatedRotateIcon, AnimatedBrainIcon, AnimatedBotIcon } from "./ui/animated-icons";
 import { BrainCircuit, ThumbsUp, ThumbsDown, AlertTriangle, MonitorPlay, Zap, Plus, Sparkles, Gamepad2, CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { getAiBuildCritique } from "@/app/actions";
@@ -214,76 +214,95 @@ export function AIBuildCritique({
     };
 
     return (
-        <Card className={cn("w-full bg-gradient-to-br from-card to-secondary/10 border-primary/20 relative overflow-hidden shadow-2xl", className !== undefined ? className : "mt-6")}>
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 via-primary to-cyan-500 animate-pulse z-20" />
-            <CardHeader>
-                <CardTitle className="flex items-center justify-between font-headline text-2xl">
-                    <div className="flex items-center gap-2">
-                        <AnimatedBrainIcon className="h-6 w-6 text-primary" />
-                        Build Overview
-                    </div>
+        <Paper
+            radius="lg"
+            withBorder
+            shadow="xl"
+            className={cn("w-full overflow-hidden bg-white/95 dark:bg-[#0d1117]/95 border-slate-200 dark:border-cyan-500/20 backdrop-blur-xl relative shadow-xl dark:shadow-[0_0_35px_rgba(0,0,0,0.5)]", className !== undefined ? className : "mt-6")}
+        >
+            <Box className="p-5 md:p-6 bg-slate-50/90 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/10">
+                <Group justify="space-between" align="center">
+                    <Group gap="xs" align="center">
+                        <ThemeIcon size={32} radius="md" variant="light" color="cyan" className="shadow-sm">
+                            <AnimatedBrainIcon className="h-5 w-5 text-cyan-500 dark:text-cyan-400" />
+                        </ThemeIcon>
+                        <Text fw={900} size="xl" className="font-headline tracking-tight text-slate-900 dark:text-white">
+                            Build Overview
+                        </Text>
+                    </Group>
                     {activeDuration && !loading && (
                         <div className="relative group/tooltip">
-                            <span className="cursor-help px-3 py-1 rounded-full border border-cyan-400/80 bg-gradient-to-r from-cyan-950/70 via-cyan-900/60 to-blue-950/70 text-cyan-300 font-mono text-xs font-black uppercase tracking-widest select-none shadow-[0_0_15px_rgba(34,211,238,0.45)] hover:shadow-[0_0_25px_rgba(34,211,238,0.65)] hover:scale-105 transition-all duration-300 flex items-center gap-1.5">
-                                <span className="text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.9)]">⚡</span>
+                            <span className="cursor-help px-3 py-1 rounded-full border border-cyan-300 dark:border-cyan-400/80 bg-cyan-50/80 dark:bg-gradient-to-r dark:from-cyan-950/70 dark:via-cyan-900/60 dark:to-blue-950/70 text-cyan-800 dark:text-cyan-300 font-mono text-xs font-black uppercase tracking-widest select-none shadow-sm dark:shadow-[0_0_15px_rgba(34,211,238,0.45)] hover:shadow-md hover:scale-105 transition-all duration-300 flex items-center gap-1.5">
+                                <span className="text-amber-500 drop-shadow-[0_0_6px_rgba(251,191,36,0.9)]">⚡</span>
                                 <span>{activeDuration.toFixed(1)}s Turnaround Time</span>
                             </span>
 
                             {/* Tooltip Content positioned downwards and leftwards so it stays visible */}
-                            <div className="absolute right-0 top-full mt-2 w-64 p-3 rounded-xl border border-cyan-500/20 bg-slate-950/95 backdrop-blur-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-300 pointer-events-none z-50 text-[10px] font-mono text-zinc-300 space-y-1.5 leading-relaxed">
-                                <div className="border-b border-white/5 pb-1 flex justify-between">
-                                    <span className="text-[9px] font-black text-cyan-400 uppercase">Telemetry Analysis</span>
-                                    <span className="text-[8px] text-zinc-500 font-sans">Compare: {comparisonText}</span>
+                            <div className="absolute right-0 top-full mt-2 w-64 p-3 rounded-xl border border-slate-200 dark:border-cyan-500/20 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-300 pointer-events-none z-50 text-[10px] font-mono text-slate-700 dark:text-zinc-300 space-y-1.5 leading-relaxed">
+                                <div className="border-b border-slate-200 dark:border-white/5 pb-1 flex justify-between">
+                                    <span className="text-[9px] font-black text-cyan-600 dark:text-cyan-400 uppercase">Telemetry Analysis</span>
+                                    <span className="text-[8px] text-slate-500 dark:text-zinc-500 font-sans">Compare: {comparisonText}</span>
                                 </div>
                                 <div className="space-y-1">
                                     <div className="flex justify-between">
-                                        <span className="text-zinc-500">LLM Diagnostics:</span>
-                                        <span className="text-zinc-200">{(activeDuration * 0.65).toFixed(1)}s</span>
+                                        <span className="text-slate-500 dark:text-zinc-500">LLM Diagnostics:</span>
+                                        <span className="text-slate-800 dark:text-zinc-200">{(activeDuration * 0.65).toFixed(1)}s</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-zinc-500">Compatibility Checks:</span>
-                                        <span className="text-zinc-200">{(activeDuration * 0.20).toFixed(1)}s</span>
+                                        <span className="text-slate-500 dark:text-zinc-500">Compatibility Checks:</span>
+                                        <span className="text-slate-800 dark:text-zinc-200">{(activeDuration * 0.20).toFixed(1)}s</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-zinc-500">Knowledge Grounding:</span>
-                                        <span className="text-zinc-200">{(activeDuration * 0.15).toFixed(1)}s</span>
+                                        <span className="text-slate-500 dark:text-zinc-500">Knowledge Grounding:</span>
+                                        <span className="text-slate-800 dark:text-zinc-200">{(activeDuration * 0.15).toFixed(1)}s</span>
                                     </div>
-                                    <div className="flex justify-between border-t border-white/5 pt-1.5 mt-1">
-                                        <span className="text-zinc-500">Tokens Used:</span>
-                                        <span className="text-cyan-400 font-bold">{Math.round(JSON.stringify(analysis).length / 4)}</span>
+                                    <div className="flex justify-between border-t border-slate-200 dark:border-white/5 pt-1.5 mt-1">
+                                        <span className="text-slate-500 dark:text-zinc-500">Tokens Used:</span>
+                                        <span className="text-cyan-600 dark:text-cyan-400 font-bold">{Math.round(JSON.stringify(analysis).length / 4)}</span>
                                     </div>
                                 </div>
-                                <div className="pt-1.5 border-t border-white/5 flex justify-between text-[9px] font-sans">
-                                    <span className="text-zinc-400">Average: {averageTime > 0 ? `${averageTime.toFixed(1)}s` : 'Calculating...'}</span>
-                                    <span className={diff >= 0 ? "text-emerald-400 font-bold" : "text-amber-400 font-bold"}>
+                                <div className="pt-1.5 border-t border-slate-200 dark:border-white/5 flex justify-between text-[9px] font-sans">
+                                    <span className="text-slate-600 dark:text-zinc-400">Average: {averageTime > 0 ? `${averageTime.toFixed(1)}s` : 'Calculating...'}</span>
+                                    <span className={diff >= 0 ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-amber-600 dark:text-amber-400 font-bold"}>
                                         {diff >= 0 ? "Optimal Speed" : "Nominal Speed"}
                                     </span>
                                 </div>
                             </div>
                         </div>
                     )}
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
+                </Group>
+            </Box>
+            <div className="p-5 md:p-6 space-y-6">
                 {!analysis && !loading && !error && (
-                    <div className="flex flex-col items-center justify-center py-16 px-8 border-2 border-dashed border-muted-foreground/20 rounded-xl bg-muted/10 space-y-6">
-                        <AnimatedBotIcon className="h-20 w-20 text-muted-foreground/30" size={80} />
-                        <div className="text-center space-y-3">
-                            <h3 className="text-2xl font-headline font-semibold tracking-tight">Buildbot Idle...</h3>
-                            <p className="text-muted-foreground max-w-sm mx-auto text-lg leading-relaxed">
-                                Click the "Analyze Build" button to review your PC component selection.
-                            </p>
-                        </div>
-                        {!isControlled && (
-                            <SparkleButton
-                                onClick={handleAnalyze}
-                                icon={<Sparkles className="h-4 w-4" />}
-                                className="mt-6 px-10 text-xs font-black uppercase tracking-widest"
-                            >
-                                ANALYZE MY BUILD
-                            </SparkleButton>
-                        )}
-                    </div>
+                    <Paper
+                        radius="md"
+                        p="xl"
+                        withBorder
+                        className="py-14 px-8 border-2 border-dashed border-slate-300 dark:border-white/15 rounded-2xl bg-slate-50/60 dark:bg-slate-900/40 text-center"
+                    >
+                        <Stack align="center" justify="center" gap="md" className="w-full">
+                            <ThemeIcon size={76} radius="xl" variant="light" color="cyan" className="bg-cyan-500/10 dark:bg-cyan-500/10 border border-cyan-500/20">
+                                <AnimatedBotIcon className="h-10 w-10 text-cyan-600 dark:text-cyan-400" size={40} />
+                            </ThemeIcon>
+                            <div className="text-center space-y-2 max-w-md mx-auto w-full">
+                                <Text fw={800} size="xl" className="font-headline tracking-tight text-slate-900 dark:text-slate-100">
+                                    Buildbot Idle...
+                                </Text>
+                                <Text size="sm" className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                                    Click the &quot;Analyze Build&quot; button to review your PC component selection.
+                                </Text>
+                            </div>
+                            {!isControlled && (
+                                <SparkleButton
+                                    onClick={handleAnalyze}
+                                    icon={<Sparkles className="h-4 w-4" />}
+                                    className="mt-2 px-8 text-xs font-black uppercase tracking-widest"
+                                >
+                                    ANALYZE MY BUILD
+                                </SparkleButton>
+                            )}
+                        </Stack>
+                    </Paper>
                 )}
 
                 {loading && (
@@ -490,7 +509,7 @@ export function AIBuildCritique({
                         </div>
                     </div>
                 )}
-            </CardContent>
-        </Card>
+            </div>
+        </Paper>
     );
 }

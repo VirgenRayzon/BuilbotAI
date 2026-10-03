@@ -44,9 +44,9 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
 
     return (
         <TooltipProvider>
-            <PartDetailsDialog 
-                part={part} 
-                isAdded={isSelected} 
+            <PartDetailsDialog
+                part={part}
+                isAdded={isSelected}
                 onToggle={() => {
                     if (currentStock === 0 && !isSelected) return;
                     onToggleBuild(part);
@@ -61,23 +61,23 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                     {/* --- Incompatibility Overlay --- */}
                     {compatibility && !compatibility.compatible && (() => {
                         const isSlotFull = compatibility.message.toLowerCase().includes('slot is full');
-                        const theme = isSlotFull 
-                            ? { 
-                                bg: "bg-amber-500/20", 
-                                border: "border-amber-500/50", 
-                                text: "text-amber-500", 
+                        const theme = isSlotFull
+                            ? {
+                                bg: "bg-amber-500/20",
+                                border: "border-amber-500/50",
+                                text: "text-amber-500",
                                 shadow: "shadow-[0_0_30px_rgba(245,158,11,0.3)]",
                                 ring: "ring-amber-500/30",
                                 title: "SLOTS FULL!"
-                              }
-                            : { 
-                                bg: "bg-red-600/20", 
-                                border: "border-red-500/50", 
-                                text: "text-red-500", 
+                            }
+                            : {
+                                bg: "bg-red-600/20",
+                                border: "border-red-500/50",
+                                text: "text-red-500",
                                 shadow: "shadow-[0_0_30px_rgba(239,68,68,0.3)]",
                                 ring: "ring-red-500/30",
                                 title: "INCOMPATIBLE"
-                              };
+                            };
 
                         return (
                             <div className={cn(
@@ -117,17 +117,17 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                         </div>
 
                         <div className="aspect-square relative w-full overflow-hidden rounded-2xl bg-slate-900/5 dark:bg-white/5 border border-white/5 p-4 group-hover:bg-primary/[0.03] transition-colors duration-500">
-                        <OptimizedImage
-                            src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || '/placeholder-part.png'}
-                            alt={part.name}
-                            fill
-                            unoptimized
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            className={cn(
-                                "transition-transform duration-700",
-                                part.category === 'Headset' ? "object-cover scale-125" : "object-contain"
-                            )}
-                        />
+                            <OptimizedImage
+                                src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || '/placeholder-part.png'}
+                                alt={part.name}
+                                fill
+                                unoptimized
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                className={cn(
+                                    "transition-transform duration-700",
+                                    part.category === 'Headset' ? "object-cover scale-125" : "object-contain"
+                                )}
+                            />
                         </div>
 
                         <div className="flex justify-between items-end">
@@ -178,7 +178,7 @@ export function PartCard({ part, onToggleBuild, isSelected, compatibility, effec
                             ) : (
                                 <div className="flex items-center gap-1.5 md:gap-2">
                                     <Plus className="h-3 w-3 md:h-4 md:w-4" />
-                                    <span>Sync Rig</span>
+                                    <span>Add to Build</span>
                                 </div>
                             )}
                         </Button>

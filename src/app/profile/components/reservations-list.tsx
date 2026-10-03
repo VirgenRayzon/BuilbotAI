@@ -1,146 +1,242 @@
 "use client";
 
-import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-    Package, Calendar, Clock, Truck, CheckCircle2, ServerCrash, 
-    Trash2, ChevronRight, CreditCard 
+import React from "react";
+import {
+  Paper,
+  Title,
+  Text,
+  Group,
+  Stack,
+  Badge,
+  Button,
+  ActionIcon,
+  ThemeIcon,
+  Tooltip,
+} from "@mantine/core";
+import {
+  Package,
+  Calendar,
+  Clock,
+  Truck,
+  CheckCircle2,
+  ServerCrash,
+  Trash2,
+  ChevronRight,
+  CreditCard,
+  XCircle,
+  AlertCircle,
 } from "lucide-react";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import type { Order } from "@/lib/types";
+import Link from "next/link";
 
 interface ReservationsListProps {
-    reservations: Order[];
-    loading: boolean;
-    onCancel: (id: string) => void;
-    onDelete: (id: string) => void;
-    onConfirm: (action: { id: string, type: 'cancel' | 'delete', order?: Order }) => void;
+  reservations: Order[];
+  loading: boolean;
+  onCancel: (id: string) => void;
+  onDelete: (id: string) => void;
+  onConfirm: (action: { id: string; type: "cancel" | "delete"; order?: Order }) => void;
 }
 
 export function ReservationsList({
-    reservations,
-    loading,
-    onCancel,
-    onDelete,
-    onConfirm
+  reservations,
+  loading,
+  onConfirm,
 }: ReservationsListProps) {
-    if (loading) {
-        return null;
-    }
+  if (loading) {
+    return null;
+  }
 
-    if (reservations.length === 0) {
-        return (
-            <Card className="border-dashed border-white/10 bg-transparent">
-                <CardContent className="p-16 flex flex-col items-center justify-center text-center space-y-4">
-                    <div className="h-20 w-20 rounded-full bg-muted/20 flex items-center justify-center border border-white/5">
-                        <Package className="h-10 w-10 text-muted-foreground opacity-30" />
-                    </div>
-                    <div className="space-y-2 max-w-sm">
-                        <h3 className="text-xl font-bold">No active builds</h3>
-                        <p className="text-sm text-muted-foreground">Your reservation list is empty. Start building your custom PC today and reserve it here.</p>
-                    </div>
-                    <Button className="relative z-30 mt-4 shadow-xl shadow-primary/20 group" asChild>
-                        <a href="/builder">
-                            Start a New Build
-                            <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
-                        </a>
-                    </Button>
-                </CardContent>
-            </Card>
-        );
-    }
-
+  if (reservations.length === 0) {
     return (
-        <div className="grid grid-cols-1 gap-6">
-            {reservations.map((reservation) => {
-                const status = getStatusInfo(reservation.status || 'pending');
-                return (
-                    <Card key={reservation.id} className="group border-white/5 bg-muted/5 hover:bg-muted/10 transition-all duration-300 overflow-hidden shadow-inner">
-                        <div className="p-6">
-                            <div className="flex flex-col md:flex-row justify-between gap-6 mb-6">
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-3">
-                                        <p className="text-lg font-bold tracking-tight">Order #{reservation.id.substring(0, 8).toUpperCase()}</p>
-                                        <div className={cn("px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1.5 uppercase tracking-wider", status.bg, status.color, status.border)}>
-                                            {status.icon}
-                                            {status.label}
-                                        </div>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                                        <Calendar className="h-3 w-3" /> Reserved on {reservation.createdAt?.toDate().toLocaleDateString(undefined, { dateStyle: 'long' })}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-3 md:text-right self-start sm:self-center">
-                                    <div className="text-right pr-4 border-r border-white/10 hidden sm:block">
-                                        <p className="text-[10px] text-muted-foreground uppercase font-bold">Total Price</p>
-                                        <p className="text-xl font-headline font-bold text-emerald-500 leading-none">{formatCurrency(reservation.totalPrice)}</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        {(reservation.status === 'pending' || reservation.status === 'building') && (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="relative z-30 h-8 text-[10px] font-bold uppercase tracking-wider text-rose-500 border-rose-500/20 hover:bg-rose-500/10"
-                                                onClick={() => onConfirm({ id: reservation.id, type: 'cancel', order: reservation })}
-                                            >
-                                                Cancel Order
-                                            </Button>
-                                        )}
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className={cn(
-                                                "relative z-30 h-9 w-9 transition-colors",
-                                                reservation.status === 'cancelled'
-                                                    ? "text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10"
-                                                    : "text-muted-foreground/20 cursor-not-allowed"
-                                            )}
-                                            onClick={() => reservation.status === 'cancelled' && onConfirm({ id: reservation.id, type: 'delete', order: reservation })}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-background/40 rounded-xl border border-white/5 overflow-hidden">
-                                <div className="max-h-[160px] overflow-y-auto divide-y divide-white/5">
-                                    {reservation.items.map((item, idx) => (
-                                        <div key={`${reservation.id}-item-${idx}`} className="p-3 px-4 flex justify-between items-center text-sm hover:bg-white/[0.02] transition-colors">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded-lg bg-muted/60 flex items-center justify-center border border-white/5">
-                                                    <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-[9px] font-bold text-primary uppercase tracking-tighter opacity-70">{(item as any).category || 'Component'}</span>
-                                                    <span className="font-medium truncate max-w-[180px] sm:max-w-md">{item.name}</span>
-                                                </div>
-                                            </div>
-                                            <span className="text-muted-foreground font-mono text-xs">{formatCurrency(item.price)}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="p-3 px-4 bg-muted/30 flex justify-between items-center sm:hidden">
-                                    <span className="text-xs font-bold text-muted-foreground">Total</span>
-                                    <span className="font-bold text-emerald-500">{formatCurrency(reservation.totalPrice)}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </Card>
-                );
-            })}
-        </div>
+      <Paper
+        withBorder
+        radius="lg"
+        p="xl"
+        className="bg-white dark:bg-[#111722] border-dashed border-slate-300 dark:border-white/10 text-center py-16"
+      >
+        <Stack align="center" gap="md" className="max-w-md mx-auto">
+          <ThemeIcon size={64} radius="xl" color="cyan" variant="light">
+            <Package size={32} />
+          </ThemeIcon>
+          <div className="space-y-1">
+            <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white">
+              No Active Build Reservations
+            </Title>
+            <Text size="sm" className="text-slate-600 dark:text-slate-400">
+              Your reservation list is currently empty. Design and reserve your dream custom rig or configure a pre-built PC today.
+            </Text>
+          </div>
+          <Button
+            component={Link}
+            href="/builder"
+            color="cyan"
+            size="md"
+            radius="md"
+            rightSection={<ChevronRight size={16} />}
+            className="font-bold uppercase tracking-wider text-xs shadow-lg shadow-cyan-500/20"
+          >
+            Start a New Build
+          </Button>
+        </Stack>
+      </Paper>
     );
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-5">
+      {reservations.map((reservation) => {
+        const status = getStatusInfo(reservation.status || "pending");
+        return (
+          <Paper
+            key={reservation.id}
+            withBorder
+            radius="lg"
+            p="lg"
+            className="bg-white dark:bg-[#121824] border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md transition-all duration-200"
+          >
+            <Stack gap="md">
+              {/* Header: Order info & Actions */}
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-4 border-b border-slate-200 dark:border-white/10">
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <Text className="text-lg font-bold font-headline text-slate-900 dark:text-white tracking-tight">
+                      Order #{reservation.id.substring(0, 8).toUpperCase()}
+                    </Text>
+                    <Badge
+                      color={status.color}
+                      variant="filled"
+                      size="sm"
+                      leftSection={status.icon}
+                      className="font-bold uppercase tracking-wider"
+                    >
+                      {status.label}
+                    </Badge>
+                  </div>
+
+                  <Text size="xs" className="text-slate-600 dark:text-slate-400 flex items-center gap-1.5 font-medium">
+                    <Calendar size={13} className="text-slate-500 dark:text-slate-400" />
+                    <span>
+                      Reserved on{" "}
+                      {reservation.createdAt?.toDate
+                        ? reservation.createdAt.toDate().toLocaleDateString(undefined, { dateStyle: "long" })
+                        : "Recently"}
+                    </span>
+                  </Text>
+                </div>
+
+                <div className="flex items-center justify-between sm:justify-end gap-4">
+                  {/* Price display */}
+                  <div className="text-left sm:text-right pr-4 sm:border-r border-slate-200 dark:border-white/10">
+                    <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      Total Amount
+                    </Text>
+                    <Text className="text-xl font-headline font-bold text-emerald-600 dark:text-emerald-400">
+                      {formatCurrency(reservation.totalPrice)}
+                    </Text>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <Group gap="xs">
+                    {(reservation.status === "pending" || reservation.status === "building") && (
+                      <Button
+                        size="xs"
+                        color="red"
+                        variant="light"
+                        radius="md"
+                        leftSection={<XCircle size={14} />}
+                        onClick={() => onConfirm({ id: reservation.id, type: "cancel", order: reservation })}
+                        className="font-bold uppercase tracking-wider text-[11px]"
+                      >
+                        Cancel Build
+                      </Button>
+                    )}
+
+                    {reservation.status === "cancelled" && (
+                      <Tooltip label="Delete cancelled reservation record" withArrow>
+                        <ActionIcon
+                          size="md"
+                          color="red"
+                          variant="subtle"
+                          radius="md"
+                          onClick={() => onConfirm({ id: reservation.id, type: "delete", order: reservation })}
+                          aria-label="Delete reservation record"
+                        >
+                          <Trash2 size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    )}
+                  </Group>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-black/20 overflow-hidden">
+                <div className="max-h-[180px] overflow-y-auto divide-y divide-slate-200 dark:divide-white/5">
+                  {reservation.items.map((item, idx) => (
+                    <div
+                      key={`${reservation.id}-item-${idx}`}
+                      className="p-3 px-4 flex justify-between items-center text-sm hover:bg-slate-100/60 dark:hover:bg-white/[0.02] transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <ThemeIcon size="sm" radius="md" color="gray" variant="light">
+                          <CreditCard size={14} />
+                        </ThemeIcon>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-cyan-700 dark:text-cyan-400 uppercase tracking-wider">
+                            {(item as any).category || "Component"}
+                          </span>
+                          <span className="font-semibold text-slate-900 dark:text-slate-100 truncate max-w-[200px] sm:max-w-md">
+                            {item.name}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200">
+                        {formatCurrency(item.price)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Stack>
+          </Paper>
+        );
+      })}
+    </div>
+  );
 }
 
 function getStatusInfo(status: string) {
-    switch (status) {
-        case 'pending': return { icon: <Clock className="h-4 w-4" />, color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/20", label: "Pending Approval" };
-        case 'building': return { icon: <Truck className="h-4 w-4" />, color: "text-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/20", label: "Building Phase" };
-        case 'finished building': return { icon: <CheckCircle2 className="h-4 w-4" />, color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/20", label: "Ready for Pickup" };
-        case 'cancelled': return { icon: <ServerCrash className="h-4 w-4" />, color: "text-rose-500", bg: "bg-rose-500/10", border: "border-rose-500/20", label: "Cancelled" };
-        default: return { icon: <Package className="h-4 w-4" />, color: "text-muted-foreground", bg: "bg-muted/50", border: "border-white/5", label: "Processing" };
-    }
+  switch (status) {
+    case "pending":
+      return {
+        icon: <Clock size={12} />,
+        color: "orange",
+        label: "Pending Review",
+      };
+    case "building":
+      return {
+        icon: <Truck size={12} />,
+        color: "blue",
+        label: "Assembly Phase",
+      };
+    case "finished building":
+      return {
+        icon: <CheckCircle2 size={12} />,
+        color: "teal",
+        label: "Ready for Pickup",
+      };
+    case "cancelled":
+      return {
+        icon: <ServerCrash size={12} />,
+        color: "red",
+        label: "Cancelled",
+      };
+    default:
+      return {
+        icon: <Package size={12} />,
+        color: "gray",
+        label: "Processing",
+      };
+  }
 }

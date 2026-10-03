@@ -56,7 +56,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isLandingPage = pathname === '/';
   const shouldShowFooter = isLandingPage || showFooterRoutes.some(route => pathname === route);
 
-  const isHeaderHidden = mounted && !loading && !authUser && ['/', '/signin', '/signup', '/system-access'].includes(pathname);
+  const isHeaderHidden = mounted && !loading && !authUser && ['/signin', '/signup', '/system-access'].includes(pathname);
 
   return (
     <>

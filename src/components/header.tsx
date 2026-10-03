@@ -1,52 +1,69 @@
-
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/logo";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Loader2, Shield, LogOut } from "lucide-react";
+import {
+  Loader2,
+  Shield,
+  ShieldCheck,
+  LogOut,
+  ChevronDown,
+  Package,
+  Heart,
+  History,
+  Settings,
+  Cpu,
+  Database,
+  Sliders,
+  User as UserIcon,
+} from "lucide-react";
 import { useUserProfile } from "@/context/user-profile";
 import { useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { ThemeToggle } from "./theme-toggle";
 import { UserNotifications } from "./user-notifications";
 import { NotificationCenter } from "./notification-center";
-import { motion } from "framer-motion";
-import { Menu } from "lucide-react";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Avatar,
+  Badge,
+  Burger,
+  Button,
+  Divider,
+  Drawer,
+  Group,
+  Menu,
+  Modal,
+  ScrollArea,
+  Stack,
+  Text,
+  ThemeIcon,
+  UnstyledButton,
+} from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import classes from "./header.module.css";
+import { HeaderMegaMenu } from "./header-mega-menu";
 
-import { SparkleButton } from "@/components/ui/sparkle-button";
+interface NavTab {
+  href: string;
+  label: string;
+  role?: string;
+  admin?: boolean;
+}
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { authUser, profile, loading } = useUserProfile();
   const auth = useAuth();
-  const [mounted, setMounted] = React.useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [userMenuOpened, setUserMenuOpened] = useState(false);
+  const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] = useDisclosure(false);
+  const [signOutModalOpen, setSignOutModalOpen] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setMounted(true);
   }, []);
 
@@ -62,9 +79,9 @@ export function Header() {
     if (auth) {
       const isStaff = Boolean(profile?.isSuperAdmin || profile?.isManager);
       const destination = isStaff ? "/system-access" : "/signin";
-      localStorage.removeItem('pc_chat_history_v2');
-      localStorage.removeItem('pc_builder_state');
-      localStorage.removeItem('admin_pc_builder_state');
+      localStorage.removeItem("pc_chat_history_v2");
+      localStorage.removeItem("pc_builder_state");
+      localStorage.removeItem("admin_pc_builder_state");
       try {
         await signOut(auth);
       } finally {
@@ -73,300 +90,581 @@ export function Header() {
     }
   };
 
-  interface NavLink {
-    href: string;
-    label: string;
-    role?: string;
-    admin?: boolean;
-  }
-
-  const mainLinks: NavLink[] = [
+  const mainTabs: NavTab[] = [
     { href: "/builder", label: "Builder" },
     { href: "/ai-build-advisor", label: "Build Advisor" },
     { href: "/pre-builts", label: "Pre-builts" },
   ];
 
-  const adminLinks: NavLink[] = [
+  const adminTabs: NavTab[] = [
     {
       href: "/admin",
       label: "Dashboard",
       role: profile?.isSuperAdmin ? "Super Admin" : "Manager",
-      admin: true
+      admin: true,
     },
     {
       href: "/admin/prebuilt-builder",
       label: "Prebuilt Builder",
       role: profile?.isSuperAdmin ? "Super Admin" : "Manager",
-      admin: true
+      admin: true,
     },
   ];
 
-  const commonLinks: NavLink[] = [
-    { href: "/profile", label: "Profile" },
-  ];
+  const isStaff = Boolean(profile?.isSuperAdmin || profile?.isManager);
 
-  const filteredLinks: NavLink[] = !profile?.isManager
-    ? [...mainLinks, ...commonLinks]
-    : [...adminLinks, ...commonLinks];
+  // Super Admin & Manager only see administrative portals (Dashboard, Prebuilt Builder).
+  // Standard customers see Builder, Build Advisor, and Pre-builts.
+  const tabs: NavTab[] = isStaff ? adminTabs : mainTabs;
 
-  if (mounted && !loading && !authUser && ['/', '/signin', '/signup', '/system-access'].includes(pathname)) {
+  // Hide header on dedicated full-screen authentication pages
+  if (
+    mounted &&
+    !loading &&
+    !authUser &&
+    ["/signin", "/signup", "/system-access"].includes(pathname)
+  ) {
     return null;
   }
 
-  return (
-    <header className="fixed top-0 z-50 w-full border-b border-border/40 bg-background/60 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/40 shadow-[0_4px_30px_rgba(0,0,0,0.1)] pr-[var(--removed-body-scroll-bar-size,0px)]">
-      <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent z-20 opacity-50"></div>
+  // Render HeaderMegaMenu on onboarding/landing page, or for unauthenticated visitors on public pages
+  if (pathname === "/" || (!authUser && ["/about", "/faq", "/team", "/contact"].includes(pathname))) {
+    return <HeaderMegaMenu />;
+  }
 
-      <div className="flex h-16 max-w-[1800px] w-full mx-auto items-center px-4 md:px-12">
-        {/* Left: Logo */}
-        <div className="flex-none">
-          <SparkleButton
-            asChild
-            pill
-            className="p-1 px-4 border-none bg-transparent hover:bg-white/5 shadow-none"
-            sparkleColor="#06b6d4"
-          >
+  const userName =
+    profile?.name ||
+    authUser?.displayName ||
+    authUser?.email?.split("@")[0] ||
+    "User";
+
+  const userEmail = profile?.email || authUser?.email || "";
+
+  const roleLabel = profile?.isSuperAdmin
+    ? "Administrator Access"
+    : profile?.isManager
+      ? "Manager Access"
+      : "Customer Access";
+
+  const roleBadgeColor = profile?.isSuperAdmin
+    ? "cyan"
+    : profile?.isManager
+      ? "amber"
+      : "blue";
+
+  return (
+    <>
+      <header className={classes.header}>
+        <div className={classes.inner}>
+          {/* Left: Brand Logo with Blue Robot Icon */}
+          <div className="flex-none">
             <Link
               href={logoHref}
-              className="flex items-center"
+              className="flex items-center no-underline focus:outline-none"
             >
               <Logo />
             </Link>
-          </SparkleButton>
-        </div>
+          </div>
 
-        {/* Center: Animated Navigation */}
-        <div className="flex-1 flex justify-center">
-          <nav className="hidden md:flex items-center gap-2 p-1 bg-muted/20 rounded-2xl border border-border/40 backdrop-blur-2xl ring-1 ring-ring/5">
-            {authUser && filteredLinks.map((link) => {
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "relative px-4 py-1.5 text-[10px] font-headline font-bold uppercase tracking-widest transition-all duration-300 rounded-xl hover:scale-105 active:scale-95",
-                    isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <span className="relative z-10 flex items-center gap-2">
-                    {link.label}
-                    {link.role && (
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "ml-1 px-1.5 py-0 text-[8px] uppercase tracking-tighter transition-all duration-300 whitespace-nowrap",
-                          isActive
-                            ? (profile?.isSuperAdmin ? "bg-primary/20 text-primary border-primary/30" : "bg-amber-500/20 text-amber-500 border-amber-500/30")
-                            : "bg-muted/50 text-muted-foreground border-border/50"
-                        )}
+          {/* Right Section: Aligned Tabs & User Actions */}
+          <div className="flex items-center gap-3 md:gap-5">
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin text-cyan-500/70" />
+            ) : authUser ? (
+              <>
+                {/* Desktop Tabs aligned with user */}
+                <nav className="hidden sm:flex items-center gap-1.5" aria-label="Main Navigation">
+                  {tabs.map((tab) => {
+                    const isActive = pathname === tab.href;
+                    return (
+                      <Link
+                        key={tab.href}
+                        href={tab.href}
+                        className={classes.tabLink}
+                        data-active={isActive || undefined}
                       >
-                        {link.role}
-                      </Badge>
-                    )}
-                    {link.admin && profile?.isSuperAdmin && !link.role && <Shield className="w-3 h-3" />}
-                  </span>
-                  {isActive && (
-                    <motion.div
-                      layoutId="nav-underline"
-                      className="absolute inset-0 bg-background border border-primary/20 shadow-[0_0_15px_rgba(var(--primary-rgb),0.1)] rounded-xl z-0"
-                      initial={false}
-                      transition={{
-                        type: "spring",
-                        stiffness: 400,
-                        damping: 30,
-                      }}
-                    />
-                  )}
-                  {isActive && (
-                    <motion.div
-                      layoutId="nav-glow"
-                      className="absolute -bottom-[6px] left-1/4 right-1/4 h-[2px] bg-primary rounded-full blur-[2px] z-20"
-                      initial={false}
-                      transition={{
-                        type: "spring",
-                        stiffness: 400,
-                        damping: 30,
-                      }}
-                    />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
+                        <span>{tab.label}</span>
+                        {tab.role && (
+                          <Badge
+                            size="xs"
+                            variant="light"
+                            color={tab.role === "Super Admin" ? "cyan" : "yellow"}
+                            className="text-[9px] uppercase tracking-tighter ml-1"
+                          >
+                            {tab.role}
+                          </Badge>
+                        )}
+                        {tab.admin && profile?.isSuperAdmin && !tab.role && (
+                          <Shield className="w-3 h-3 text-cyan-500" />
+                        )}
+                      </Link>
+                    );
+                  })}
+                </nav>
 
-        {/* Right: Actions */}
-        <div className="flex-none flex items-center gap-3">
-          {loading ? (
-            <Loader2 className="w-5 h-5 animate-spin text-primary/50" />
-          ) : authUser ? (
-            <div className="flex items-center gap-3">
-              <div className="hidden lg:flex flex-col items-end mr-1">
-                <span className="text-[10px] font-headline font-bold uppercase tracking-[0.15em] text-foreground">
-                  {profile?.name || authUser?.displayName || authUser?.email?.split('@')[0] || "User"}
-                </span>
-                <span className="text-[8px] font-bold uppercase tracking-widest text-primary/80 -mt-0.5">
-                  {profile?.isSuperAdmin ? "Administrator Access" : profile?.isManager ? "Manager Access" : "Customer Access"}
-                </span>
-              </div>
+                <Divider
+                  orientation="vertical"
+                  h={24}
+                  className="hidden sm:block border-slate-200 dark:border-white/10"
+                />
 
-              <div className="hidden sm:flex items-center gap-1.5 p-1 bg-muted/40 rounded-xl border border-border/20">
-                {!profile?.isManager && <UserNotifications />}
-                {profile?.isManager && <NotificationCenter />}
-                <ThemeToggle />
-              </div>
+                {/* Notification Center */}
+                <div className="flex items-center gap-1">
+                  {!profile?.isManager && <UserNotifications />}
+                  {profile?.isManager && <NotificationCenter />}
+                  <ThemeToggle />
+                </div>
 
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="hidden sm:flex rounded-xl h-9 px-4 text-[10px] font-bold uppercase tracking-widest border border-destructive/20 hover:bg-destructive/10 hover:text-destructive transition-all duration-300 group"
-                  >
-                    <LogOut className="mr-2 h-3.5 w-3.5 transition-transform group-hover:-translate-x-1" />
-                    Sign Out
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="bg-background/95 backdrop-blur-xl border-border/40 rounded-2xl shadow-2xl">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="text-xl font-bold tracking-tight">Confirm Sign Out</AlertDialogTitle>
-                    <AlertDialogDescription className="text-muted-foreground">
-                      Are you sure you want to sign out? You will need to sign back in to access your saved builds and settings.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter className="mt-4 gap-2">
-                    <AlertDialogCancel className="rounded-xl border-border/40 hover:bg-muted/50 font-bold uppercase tracking-widest text-[10px]">Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleSignOut}
-                      className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-destructive/20"
+                {/* Mantine User Dropdown Menu */}
+                <Menu
+                  width={260}
+                  position="bottom-end"
+                  transitionProps={{ transition: "pop-top-right", duration: 150 }}
+                  onClose={() => setUserMenuOpened(false)}
+                  onOpen={() => setUserMenuOpened(true)}
+                  withinPortal
+                  shadow="md"
+                >
+                  <Menu.Target>
+                    <UnstyledButton
+                      className={cn(classes.user, {
+                        [classes.userActive]: userMenuOpened,
+                      })}
+                      aria-label="User account menu"
                     >
-                      Sign Out
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                      <Group gap={8}>
+                        <Avatar
+                          src={authUser?.photoURL || undefined}
+                          alt={userName}
+                          radius="xl"
+                          size={28}
+                          color="cyan"
+                          variant="light"
+                          className="border border-cyan-500/30"
+                        >
+                          {userName.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <div className="hidden lg:flex flex-col text-left">
+                          <Text fw={600} size="xs" lh={1.2} className="text-slate-900 dark:text-slate-100">
+                            {userName}
+                          </Text>
+                          <Text size="10px" c="dimmed" lh={1.1}>
+                            {profile?.isSuperAdmin ? "Super Admin" : profile?.isManager ? "Manager" : "Customer"}
+                          </Text>
+                        </div>
+                        <ChevronDown
+                          size={13}
+                          className={cn(
+                            "text-slate-400 transition-transform duration-200 hidden sm:block",
+                            userMenuOpened && "rotate-180"
+                          )}
+                        />
+                      </Group>
+                    </UnstyledButton>
+                  </Menu.Target>
 
-              {/* Mobile Menu Trigger */}
-              <div className="md:hidden">
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl border border-border/20 bg-muted/40">
-                      <Menu className="h-5 w-5" />
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="bg-background/95 backdrop-blur-xl border-border/40 w-[280px]">
-                    <SheetHeader className="sr-only">
-                      <SheetTitle>Navigation Menu</SheetTitle>
-                      <SheetDescription>
-                        Access application pages and user settings.
-                      </SheetDescription>
-                    </SheetHeader>
-                    <div className="flex flex-col gap-6 mt-8">
-                      <div className="flex flex-col gap-4">
-                        <div className="flex items-center justify-between">
-                          <Logo />
-                          <ThemeToggle />
-                        </div>
-                        <div className="flex flex-col gap-1 px-4 py-3 bg-muted/30 rounded-2xl border border-border/20">
-                          <span className="text-xs font-headline font-bold uppercase tracking-[0.1em] text-foreground">
-                            {profile?.name || authUser?.displayName || authUser?.email?.split('@')[0] || "User"}
-                          </span>
-                          <span className="text-[9px] font-bold uppercase tracking-widest text-primary/80">
-                            {profile?.isSuperAdmin ? "Administrator Access" : profile?.isManager ? "Manager Access" : "Customer Access"}
-                          </span>
-                        </div>
-                      </div>
-                      <nav className="flex flex-col gap-2">
-                        {filteredLinks.map((link) => {
-                          const isActive = pathname === link.href;
-                          return (
-                            <Link
-                              key={link.href}
-                              href={link.href}
-                              className={cn(
-                                "flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-widest transition-all",
-                                isActive
-                                  ? "bg-primary/10 text-primary border border-primary/20"
-                                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground border border-transparent"
-                              )}
-                            >
-                              <span className="flex items-center gap-2">
-                                {link.label}
-                                {link.role && (
-                                  <Badge
-                                    variant="outline"
-                                    className={cn(
-                                      "px-2 py-0 text-[8px] uppercase tracking-tighter whitespace-nowrap",
-                                      profile?.isSuperAdmin ? "bg-primary/10 text-primary border-primary/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"
-                                    )}
-                                  >
-                                    {link.role}
-                                  </Badge>
-                                )}
-                                {link.admin && profile?.isSuperAdmin && !link.role && <Shield className="w-4 h-4" />}
-                              </span>
-                              {isActive && <div className="h-1.5 w-1.5 rounded-full bg-primary" />}
-                            </Link>
-                          );
-                        })}
-                      </nav>
-                      <div className="mt-auto space-y-4">
-                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/40 border border-border/20">
-                          {!profile?.isManager && <UserNotifications />}
-                          {profile?.isManager && <NotificationCenter />}
-                          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Notifications</span>
-                        </div>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              className="w-full justify-start rounded-xl h-12 px-4 text-xs font-bold uppercase tracking-widest border border-destructive/20 text-destructive hover:bg-destructive/10"
-                            >
-                              <LogOut className="mr-3 h-4 w-4" />
-                              Sign Out
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="bg-background/95 backdrop-blur-xl border-border/40 rounded-2xl w-[90vw] max-w-[350px]">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="text-lg font-bold tracking-tight">Sign Out?</AlertDialogTitle>
-                              <AlertDialogDescription className="text-xs text-muted-foreground">
-                                You will be logged out of your account.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter className="mt-4 flex flex-row gap-2 sm:flex-row">
-                              <AlertDialogCancel className="flex-1 rounded-xl border-border/40 font-bold uppercase tracking-widest text-[10px] m-0">No</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={handleSignOut}
-                                className="flex-1 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold uppercase tracking-widest text-[10px] m-0"
-                              >
-                                Yes
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                  <Menu.Dropdown className="bg-white/95 dark:bg-[#111722]/95 border-slate-200 dark:border-white/10 backdrop-blur-xl shadow-2xl p-1.5 rounded-xl">
+                    {/* User Identity Header */}
+                    <div className="px-3 py-2.5 mb-1 border-b border-slate-100 dark:border-white/10">
+                      <Text fw={600} size="sm" className="text-slate-900 dark:text-slate-100">
+                        {userName}
+                      </Text>
+                      {userEmail && (
+                        <Text size="xs" c="dimmed" truncate>
+                          {userEmail}
+                        </Text>
+                      )}
+                      <div className="mt-2">
+                        <Badge
+                          size="xs"
+                          variant="light"
+                          color={roleBadgeColor}
+                          className="font-bold tracking-wider uppercase text-[9px]"
+                        >
+                          {roleLabel}
+                        </Badge>
                       </div>
                     </div>
-                  </SheetContent>
-                </Sheet>
+
+                    {/* Non-staff Customer Workspaces */}
+                    {!isStaff && (
+                      <>
+                        <Menu.Item
+                          leftSection={<Package size={16} className="text-cyan-500" />}
+                          onClick={() => router.push("/profile?tab=reservations")}
+                          className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
+                        >
+                          Reservations
+                        </Menu.Item>
+
+                        <Menu.Item
+                          leftSection={<Heart size={16} className="text-rose-500" />}
+                          onClick={() => router.push("/profile?tab=favorites")}
+                          className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
+                        >
+                          Saved Favorites
+                        </Menu.Item>
+                      </>
+                    )}
+
+                    {/* Staff Portals: Management Portal & Site Content */}
+                    {isStaff && (
+                      <>
+                        {profile?.isSuperAdmin && (
+                          <Menu.Item
+                            leftSection={<Sliders size={16} className="text-cyan-500" />}
+                            onClick={() => router.push("/profile?tab=management")}
+                            className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
+                          >
+                            Management Portal
+                          </Menu.Item>
+                        )}
+
+                        {profile?.isSuperAdmin && (
+                          <Menu.Item
+                            leftSection={<Database size={16} className="text-teal-500" />}
+                            onClick={() => router.push("/profile?tab=content")}
+                            className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
+                          >
+                            Site Content
+                          </Menu.Item>
+                        )}
+                      </>
+                    )}
+
+                    <Menu.Item
+                      leftSection={<History size={16} className="text-indigo-500" />}
+                      onClick={() => router.push(isStaff ? "/profile?tab=audit" : "/profile?tab=audit-logs")}
+                      className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
+                    >
+                      Audit Logs
+                    </Menu.Item>
+
+                    <Menu.Divider className="my-1 border-slate-100 dark:border-white/10" />
+
+                    {/* Settings Section */}
+                    <Menu.Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      Settings
+                    </Menu.Label>
+
+                    <Menu.Item
+                      leftSection={<Settings size={16} className="text-slate-500 dark:text-slate-400" />}
+                      onClick={() => router.push("/profile?tab=account")}
+                      className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
+                    >
+                      Account Settings
+                    </Menu.Item>
+
+                    {isStaff && (
+                      <>
+                        <Menu.Item
+                          leftSection={<ShieldCheck size={16} className="text-amber-500" />}
+                          onClick={() => router.push("/admin")}
+                          className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
+                        >
+                          Admin Dashboard
+                        </Menu.Item>
+                        <Menu.Item
+                          leftSection={<Cpu size={16} className="text-cyan-500" />}
+                          onClick={() => router.push("/admin/prebuilt-builder")}
+                          className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
+                        >
+                          Prebuilt Builder
+                        </Menu.Item>
+                      </>
+                    )}
+
+                    <Menu.Divider className="my-1 border-slate-100 dark:border-white/10" />
+
+                    {/* Session / Danger Zone Section */}
+                    <Menu.Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      Session
+                    </Menu.Label>
+
+                    <Menu.Item
+                      color="red"
+                      leftSection={<LogOut size={16} />}
+                      onClick={() => setSignOutModalOpen(true)}
+                      className="rounded-lg text-xs font-semibold py-2 hover:bg-red-50 dark:hover:bg-red-950/20"
+                    >
+                      Sign Out
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
+
+                {/* Mobile Hamburger Burger */}
+                <Burger
+                  opened={drawerOpened}
+                  onClick={toggleDrawer}
+                  hiddenFrom="sm"
+                  size="sm"
+                  aria-label="Toggle navigation"
+                  className="text-slate-700 dark:text-slate-200"
+                />
+              </>
+            ) : (
+              /* Public / Logged-out State */
+              <div className="flex items-center gap-2">
+                {pathname === "/signin" || pathname === "/signup" ? (
+                  <Button
+                    component={Link}
+                    href="/"
+                    variant="subtle"
+                    size="sm"
+                    radius="md"
+                    className="text-xs font-semibold"
+                  >
+                    Home
+                  </Button>
+                ) : (
+                  <Button
+                    component={Link}
+                    href="/signin"
+                    variant="filled"
+                    color="blue"
+                    size="sm"
+                    radius="md"
+                    className="text-xs font-semibold shadow-md shadow-blue-500/20"
+                  >
+                    Sign In
+                  </Button>
+                )}
+                <ThemeToggle />
               </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              {(pathname === '/signin' || pathname === '/signup') ? (
-                <Button asChild variant="ghost" size="sm" className="rounded-xl text-[10px] font-bold uppercase tracking-widest px-6 h-9">
-                  <Link href="/">Home</Link>
-                </Button>
-              ) : (
-                <Button asChild size="sm" className="rounded-xl text-[10px] font-bold uppercase tracking-widest px-8 h-9 shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all">
-                  <Link href="/signin">Sign In</Link>
-                </Button>
-              )}
-              <ThemeToggle />
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
-    </header>
+
+        {/* Mobile Navigation Drawer */}
+        <Drawer
+          opened={drawerOpened}
+          onClose={closeDrawer}
+          size="280px"
+          padding="md"
+          position="right"
+          title={
+            <div className="flex items-center gap-2">
+              <Logo showText={false} />
+              <Text fw={700} size="sm" className="font-headline">
+                Navigation
+              </Text>
+            </div>
+          }
+          hiddenFrom="sm"
+          zIndex={100000}
+          classNames={{
+            content: "bg-white dark:bg-[#111722] text-slate-900 dark:text-slate-100",
+            header: "bg-white dark:bg-[#111722] border-b border-slate-200 dark:border-white/10",
+          }}
+        >
+          <ScrollArea h="calc(100vh - 80px)" mx="-md" px="md">
+            {authUser && (
+              <div className="p-3 mb-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                <Group gap="sm">
+                  <Avatar
+                    src={authUser?.photoURL || undefined}
+                    alt={userName}
+                    radius="xl"
+                    size={36}
+                    color="cyan"
+                    variant="light"
+                  >
+                    {userName.charAt(0).toUpperCase()}
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <Text fw={700} size="sm" className="text-slate-900 dark:text-slate-100 leading-tight">
+                      {userName}
+                    </Text>
+                    <Badge size="xs" variant="light" color={roleBadgeColor} className="mt-2">
+                      {roleLabel}
+                    </Badge>
+                  </div>
+                </Group>
+              </div>
+            )}
+
+            <Text size="xs" fw={700} c="dimmed" className="uppercase tracking-wider px-2 mb-2">
+              Navigation
+            </Text>
+
+            <Stack gap={4}>
+              {tabs.map((tab) => {
+                const isActive = pathname === tab.href;
+                return (
+                  <Link
+                    key={tab.href}
+                    href={tab.href}
+                    className={classes.drawerLink}
+                    data-active={isActive || undefined}
+                    onClick={closeDrawer}
+                  >
+                    <span>{tab.label}</span>
+                    {isActive && <div className="h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-cyan-400" />}
+                  </Link>
+                );
+              })}
+            </Stack>
+
+            {authUser && (
+              <>
+                <Divider my="md" className="border-slate-200 dark:border-white/10" />
+
+                <Text size="xs" fw={700} c="dimmed" className="uppercase tracking-wider px-2 mb-2">
+                  My Profile
+                </Text>
+
+                <Stack gap={4}>
+                  {!isStaff && (
+                    <>
+                      <Link
+                        href="/profile?tab=reservations"
+                        className={classes.drawerLink}
+                        onClick={closeDrawer}
+                      >
+                        <span className="flex items-center gap-2">
+                          <Package size={16} className="text-cyan-500" />
+                          Reservations
+                        </span>
+                      </Link>
+
+                      <Link
+                        href="/profile?tab=favorites"
+                        className={classes.drawerLink}
+                        onClick={closeDrawer}
+                      >
+                        <span className="flex items-center gap-2">
+                          <Heart size={16} className="text-rose-500" />
+                          Saved Favorites
+                        </span>
+                      </Link>
+                    </>
+                  )}
+
+                  {isStaff && (
+                    <>
+                      {profile?.isSuperAdmin && (
+                        <Link
+                          href="/profile?tab=management"
+                          className={classes.drawerLink}
+                          onClick={closeDrawer}
+                        >
+                          <span className="flex items-center gap-2">
+                            <Sliders size={16} className="text-cyan-500" />
+                            Management Portal
+                          </span>
+                        </Link>
+                      )}
+
+                      {profile?.isSuperAdmin && (
+                        <Link
+                          href="/profile?tab=content"
+                          className={classes.drawerLink}
+                          onClick={closeDrawer}
+                        >
+                          <span className="flex items-center gap-2">
+                            <Database size={16} className="text-teal-500" />
+                            Site Content
+                          </span>
+                        </Link>
+                      )}
+                    </>
+                  )}
+
+                  <Link
+                    href={isStaff ? "/profile?tab=audit" : "/profile?tab=audit-logs"}
+                    className={classes.drawerLink}
+                    onClick={closeDrawer}
+                  >
+                    <span className="flex items-center gap-2">
+                      <History size={16} className="text-indigo-500" />
+                      Audit Logs
+                    </span>
+                  </Link>
+
+                  <Link
+                    href="/profile?tab=account"
+                    className={classes.drawerLink}
+                    onClick={closeDrawer}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Settings size={16} className="text-slate-500" />
+                      Account Settings
+                    </span>
+                  </Link>
+                </Stack>
+
+                <Divider my="md" className="border-slate-200 dark:border-white/10" />
+
+                <div className="pt-2">
+                  <Button
+                    color="red"
+                    variant="light"
+                    fullWidth
+                    leftSection={<LogOut size={16} />}
+                    onClick={() => {
+                      closeDrawer();
+                      setSignOutModalOpen(true);
+                    }}
+                    radius="md"
+                    className="font-semibold text-xs"
+                  >
+                    Sign Out
+                  </Button>
+                </div>
+              </>
+            )}
+          </ScrollArea>
+        </Drawer>
+      </header>
+
+      {/* Mantine Sign Out Confirmation Modal */}
+      <Modal
+        opened={signOutModalOpen}
+        onClose={() => setSignOutModalOpen(false)}
+        centered
+        radius="lg"
+        size="sm"
+        title={
+          <Group gap="xs">
+            <ThemeIcon size="md" radius="md" color="red" variant="light">
+              <LogOut size={16} />
+            </ThemeIcon>
+            <Text fw={700} size="sm" className="font-headline text-slate-900 dark:text-slate-100">
+              Confirm Sign Out
+            </Text>
+          </Group>
+        }
+        classNames={{
+          content: "bg-white dark:bg-[#111722] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-2xl",
+          header: "bg-white dark:bg-[#111722] border-b border-slate-200 dark:border-white/10 px-5 py-4",
+          body: "!pt-6 !px-6 !pb-6",
+        }}
+      >
+        <Text size="sm" c="dimmed" className="leading-relaxed mt-2">
+          Are you sure you want to sign out? You will need to sign back in to access your saved builds and hardware configurations.
+        </Text>
+
+        <Group justify="flex-end" gap="xs" mt="lg">
+          <Button
+            variant="default"
+            size="xs"
+            radius="md"
+            onClick={() => setSignOutModalOpen(false)}
+            className="text-xs font-semibold"
+          >
+            Cancel
+          </Button>
+          <Button
+            color="red"
+            size="xs"
+            radius="md"
+            onClick={handleSignOut}
+            className="text-xs font-semibold shadow-sm shadow-red-500/20"
+          >
+            Sign Out
+          </Button>
+        </Group>
+      </Modal>
+    </>
   );
 }

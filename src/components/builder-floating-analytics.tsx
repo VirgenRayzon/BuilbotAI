@@ -95,7 +95,7 @@ export function BuilderFloatingAnalytics({
                 
                 {/* Tooltip-like label */}
                 <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1 bg-black/80 backdrop-blur-md rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap hidden sm:block">
-                    <span className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Live Analytics</span>
+                    <span className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">Bottleneck Analyzer</span>
                 </div>
             </div>
         </div>

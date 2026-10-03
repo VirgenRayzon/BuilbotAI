@@ -48,8 +48,24 @@ Deconstruct monolithic components into modular units. If a file exceeds 300 line
 **2. No business logic in components**
 Encapsulate complex state, AI interaction, and data merging into custom hooks. Components should focus on layout and presentation.
 
-**3. Maintain Design Fidelity**
-Always adhere to the "Sleek Tech & Immersive" aesthetic in `DESIGN.md`. Use premium animations, glassmorphism, and the established color palette.
+**3. Maintain Design Fidelity & Mantine UI Aesthetic**
+Always adhere to the "Sleek Tech & Immersive" aesthetic in `DESIGN.md`. Use Mantine UI (`@mantine/core` v8+) for card surfaces (`Paper`), inputs (`TextInput`, `PasswordInput`), segmented controls, and modals. Never add artificial neon light bars (`h-1 bg-gradient-to-r ...`) on top of cards.
+
+**4. Strict Light and Dark Mode Compatibility**
+Every component, card, form input, modal, and button must be 100% legible and polished in BOTH light and dark modes. Never use single-theme hardcoded text colors (e.g. raw `text-white` or `bg-white` without corresponding dark/light variants). Always verify proper contrast:
+- Light: clean white/slate-50 surfaces, `text-slate-900`, `border-slate-200`, `text-slate-600` for muted text.
+- Dark: `dark:bg-[#111722]`, `dark:text-slate-100`, `dark:border-white/10`, `dark:text-slate-400` for muted text.
+
+**5. UI Copywriting & Text Guidelines**
+- Use modern, human, conversational e-commerce SaaS tone (similar to Vercel, Stripe, or PCPartPicker).
+- Prohibited robotic / sci-fi / cyberpunk tropes:
+  - Do NOT use phrases like: "Citizen Access", "Initialize Session", "Neural Link", "Matrix", "Protocol", "Cyber", "Agent Handshake", "Architect Credentials".
+- Standard UI substitutions:
+  - Instead of "Citizen Access" -> Use "Sign In", "Customer Portal", or "Guest Access".
+  - Instead of "Create Identity" / "Citizen Identity" -> Use "Create Account", "Sign Up", or "Register".
+  - Instead of "Initialize Session" / "Register Session" -> Use "Sign In", "Get Started", "Start Building", or "Log In".
+  - Instead of "Neural Diagnostic / Bottleneck Protocol" -> Use "Compatibility Check" or "Performance Analysis".
+- Keep button labels, card headers, and badges concise, accessible, and user-friendly.
 
 ## Self-annealing loop
 

@@ -1,37 +1,46 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth, useFirestore } from '@/firebase';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Terminal, ArrowLeft } from 'lucide-react';
+import {
+  Paper,
+  Title,
+  Text,
+  TextInput,
+  PasswordInput,
+  Button,
+  Alert,
+  ThemeIcon,
+  Stack,
+  Group,
+  Anchor,
+} from '@mantine/core';
+import { LogIn, Mail, Lock, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { UnifiedBackground } from '@/components/landing/unified-background';
 import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/context/user-profile';
-import React, { useEffect } from 'react';
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const isDark = theme === 'dark';
   const router = useRouter();
   const auth = useAuth();
   const firestore = useFirestore();
@@ -49,7 +58,11 @@ export default function SignInPage() {
     }
   }, [authUser, profile, authLoading, router]);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: '',
@@ -57,7 +70,7 @@ export default function SignInPage() {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: FormValues) => {
     setLoading(true);
     setError(null);
     if (!auth || !firestore) return;
@@ -69,30 +82,25 @@ export default function SignInPage() {
       const userDocRef = doc(firestore, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
 
-      let effectiveProfile: any = null;
-
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        effectiveProfile = userData;
 
-        // Prevent Managers/Admins from using the normal sign in
+        // Prevent Managers/Admins from using normal citizen sign in
         if (userData.isManager || userData.isSuperAdmin || userData.isAdmin) {
           await signOut(auth);
           setError('Administrator accounts must use the System Access portal (/system-access).');
           setLoading(false);
           return;
         }
-
       } else {
-        // If profile is missing in Firestore but user exists in Auth, create a basic profile
+        // If profile is missing in Firestore, create basic citizen profile
         const newProfile = {
           email: user.email,
           isManager: false,
           isSuperAdmin: false,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
         };
         await setDoc(userDocRef, newProfile);
-        effectiveProfile = newProfile;
       }
 
       toast({
@@ -109,79 +117,150 @@ export default function SignInPage() {
   };
 
   return (
-    <div className={cn(
-      "relative min-h-[calc(100vh-4rem)] flex items-center justify-center transition-colors duration-1000 overflow-hidden",
-      isDark ? "text-foreground" : "text-slate-900"
-    )}>
+    <div
+      className={cn(
+        'relative min-h-[calc(100vh-4rem)] flex items-center justify-center transition-colors duration-1000 overflow-hidden',
+        isDark ? 'text-foreground' : 'text-slate-900'
+      )}
+    >
       <UnifiedBackground />
 
       <div className="w-full max-w-md mx-4 z-10 flex flex-col gap-3">
-        <Link 
-          href="/" 
-          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-all duration-300 group self-start"
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-cyan-500 transition-all duration-300 group self-start"
         >
           <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
           Back to Home
         </Link>
-        
-        <Card className="w-full glass-panel border-primary/20 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary"></div>
-          <CardHeader>
-            <CardTitle className="text-3xl font-headline font-bold uppercase tracking-tight">Citizen Access</CardTitle>
-            <CardDescription className="font-body text-muted-foreground/80">Initialize your builder session.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                {error && (
-                  <Alert variant="destructive">
-                    <Terminal className="h-4 w-4" />
-                    <AlertTitle>Authentication Error</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-                <FormField
-                  control={form.control}
+
+        <Paper
+          withBorder
+          radius="lg"
+          p="xl"
+          className="w-full bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-2xl relative transition-all"
+        >
+          <Stack gap="lg">
+            {/* Header */}
+            <Group gap="sm" align="center">
+              <ThemeIcon size="lg" radius="md" color="cyan" variant="light">
+                <LogIn size={20} />
+              </ThemeIcon>
+              <div>
+                <Title
+                  order={2}
+                  className="text-2xl font-bold font-headline uppercase tracking-tight text-slate-900 dark:text-slate-100"
+                >
+                  Sign In
+                </Title>
+                <Text size="xs" className="text-slate-500 dark:text-slate-400">
+                  Welcome back! Enter your details to access your builds.
+                </Text>
+              </div>
+            </Group>
+
+            {/* Error Message */}
+            {error && (
+              <Alert
+                color="red"
+                variant="light"
+                radius="md"
+                icon={<AlertCircle size={16} />}
+                title="Authentication Error"
+                className="text-xs"
+              >
+                {error}
+              </Alert>
+            )}
+
+            {/* Form */}
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <Stack gap="md">
+                <Controller
                   name="email"
+                  control={control}
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="name@example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                    <div>
+                      <Text
+                        size="xs"
+                        fw={700}
+                        className="uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1"
+                      >
+                        Email Address
+                      </Text>
+                      <TextInput
+                        type="email"
+                        placeholder="name@example.com"
+                        radius="md"
+                        size="md"
+                        leftSection={<Mail size={16} className="text-slate-400" />}
+                        error={errors.email?.message}
+                        classNames={{
+                          input:
+                            'bg-slate-50 dark:bg-slate-900/50 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium focus:border-cyan-500',
+                        }}
+                        {...field}
+                      />
+                    </div>
                   )}
                 />
-                <FormField
-                  control={form.control}
+
+                <Controller
                   name="password"
+                  control={control}
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                    <div>
+                      <Text
+                        size="xs"
+                        fw={700}
+                        className="uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1"
+                      >
+                        Password
+                      </Text>
+                      <PasswordInput
+                        placeholder="••••••••"
+                        radius="md"
+                        size="md"
+                        leftSection={<Lock size={16} className="text-slate-400" />}
+                        error={errors.password?.message}
+                        classNames={{
+                          input:
+                            'bg-slate-50 dark:bg-slate-900/50 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium focus:border-cyan-500',
+                        }}
+                        {...field}
+                      />
+                    </div>
                   )}
                 />
-                <Button type="submit" className="w-full font-headline font-bold uppercase tracking-[0.2em] h-12 bg-primary hover:bg-primary/90 text-white shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Initialize Session
+
+                <Button
+                  type="submit"
+                  fullWidth
+                  size="md"
+                  radius="md"
+                  color="cyan"
+                  loading={loading}
+                  className="h-12 font-headline font-bold uppercase tracking-[0.18em] text-white shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/35 transition-all mt-1"
+                >
+                  Sign In
                 </Button>
-              </form>
-            </Form>
-            <div className="mt-4 text-center text-sm">
-              Don't have an account?{' '}
-              <Link href="/signup" className="underline hover:text-primary transition-colors">
+              </Stack>
+            </form>
+
+            {/* Footer Links */}
+            <div className="text-center text-xs text-slate-500 dark:text-slate-400">
+              Don&apos;t have an account?{' '}
+              <Anchor
+                component={Link}
+                href="/signup"
+                className="font-bold text-cyan-600 dark:text-cyan-400 hover:underline"
+              >
                 Sign up
-              </Link>
+              </Anchor>
             </div>
-          </CardContent>
-        </Card>
+          </Stack>
+        </Paper>
       </div>
     </div>
   );
 }
-
