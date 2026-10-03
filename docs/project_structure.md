@@ -8,6 +8,138 @@ BuilbotAI
 │   │   │   ├── manifest.yaml
 │   │   │   ├── README.md
 │   │   │   └── SKILL.md
+│   │   ├── ai-elements
+│   │   │   ├── references
+│   │   │   │   ├── agent.md
+│   │   │   │   ├── artifact.md
+│   │   │   │   ├── attachments.md
+│   │   │   │   ├── audio-player.md
+│   │   │   │   ├── canvas.md
+│   │   │   │   ├── chain-of-thought.md
+│   │   │   │   ├── checkpoint.md
+│   │   │   │   ├── code-block.md
+│   │   │   │   ├── commit.md
+│   │   │   │   ├── confirmation.md
+│   │   │   │   ├── connection.md
+│   │   │   │   ├── context.md
+│   │   │   │   ├── controls.md
+│   │   │   │   ├── conversation.md
+│   │   │   │   ├── edge.md
+│   │   │   │   ├── environment-variables.md
+│   │   │   │   ├── file-tree.md
+│   │   │   │   ├── image.md
+│   │   │   │   ├── inline-citation.md
+│   │   │   │   ├── jsx-preview.md
+│   │   │   │   ├── message.md
+│   │   │   │   ├── mic-selector.md
+│   │   │   │   ├── model-selector.md
+│   │   │   │   ├── node.md
+│   │   │   │   ├── open-in-chat.md
+│   │   │   │   ├── package-info.md
+│   │   │   │   ├── panel.md
+│   │   │   │   ├── persona.md
+│   │   │   │   ├── plan.md
+│   │   │   │   ├── prompt-input.md
+│   │   │   │   ├── queue.md
+│   │   │   │   ├── reasoning.md
+│   │   │   │   ├── sandbox.md
+│   │   │   │   ├── schema-display.md
+│   │   │   │   ├── shimmer.md
+│   │   │   │   ├── snippet.md
+│   │   │   │   ├── sources.md
+│   │   │   │   ├── speech-input.md
+│   │   │   │   ├── stack-trace.md
+│   │   │   │   ├── suggestion.md
+│   │   │   │   ├── task.md
+│   │   │   │   ├── terminal.md
+│   │   │   │   ├── test-results.md
+│   │   │   │   ├── tool.md
+│   │   │   │   ├── toolbar.md
+│   │   │   │   ├── transcription.md
+│   │   │   │   ├── voice-selector.md
+│   │   │   │   └── web-preview.md
+│   │   │   ├── scripts
+│   │   │   │   ├── agent.tsx
+│   │   │   │   ├── artifact.tsx
+│   │   │   │   ├── attachments-inline.tsx
+│   │   │   │   ├── attachments-list.tsx
+│   │   │   │   ├── attachments.tsx
+│   │   │   │   ├── audio-player-remote.tsx
+│   │   │   │   ├── audio-player.tsx
+│   │   │   │   ├── chain-of-thought.tsx
+│   │   │   │   ├── checkpoint.tsx
+│   │   │   │   ├── code-block-dark.tsx
+│   │   │   │   ├── code-block.tsx
+│   │   │   │   ├── commit.tsx
+│   │   │   │   ├── confirmation-accepted.tsx
+│   │   │   │   ├── confirmation-rejected.tsx
+│   │   │   │   ├── confirmation-request.tsx
+│   │   │   │   ├── confirmation.tsx
+│   │   │   │   ├── context.tsx
+│   │   │   │   ├── conversation.tsx
+│   │   │   │   ├── environment-variables.tsx
+│   │   │   │   ├── file-tree-basic.tsx
+│   │   │   │   ├── file-tree-expanded.tsx
+│   │   │   │   ├── file-tree-selection.tsx
+│   │   │   │   ├── file-tree.tsx
+│   │   │   │   ├── image.tsx
+│   │   │   │   ├── inline-citation.tsx
+│   │   │   │   ├── jsx-preview.tsx
+│   │   │   │   ├── message.tsx
+│   │   │   │   ├── mic-selector.tsx
+│   │   │   │   ├── model-selector.tsx
+│   │   │   │   ├── open-in-chat.tsx
+│   │   │   │   ├── package-info.tsx
+│   │   │   │   ├── persona-command.tsx
+│   │   │   │   ├── persona-glint.tsx
+│   │   │   │   ├── persona-halo.tsx
+│   │   │   │   ├── persona-mana.tsx
+│   │   │   │   ├── persona-obsidian.tsx
+│   │   │   │   ├── persona-opal.tsx
+│   │   │   │   ├── plan.tsx
+│   │   │   │   ├── prompt-input-cursor.tsx
+│   │   │   │   ├── prompt-input-tooltip.tsx
+│   │   │   │   ├── prompt-input.tsx
+│   │   │   │   ├── queue-prompt-input.tsx
+│   │   │   │   ├── queue.tsx
+│   │   │   │   ├── reasoning.tsx
+│   │   │   │   ├── sandbox.tsx
+│   │   │   │   ├── schema-display-basic.tsx
+│   │   │   │   ├── schema-display-body.tsx
+│   │   │   │   ├── schema-display-nested.tsx
+│   │   │   │   ├── schema-display-params.tsx
+│   │   │   │   ├── schema-display.tsx
+│   │   │   │   ├── shimmer-duration.tsx
+│   │   │   │   ├── shimmer-elements.tsx
+│   │   │   │   ├── shimmer.tsx
+│   │   │   │   ├── snippet-plain.tsx
+│   │   │   │   ├── snippet.tsx
+│   │   │   │   ├── sources-custom.tsx
+│   │   │   │   ├── sources.tsx
+│   │   │   │   ├── speech-input.tsx
+│   │   │   │   ├── stack-trace-collapsed.tsx
+│   │   │   │   ├── stack-trace-no-internal.tsx
+│   │   │   │   ├── stack-trace.tsx
+│   │   │   │   ├── suggestion-input.tsx
+│   │   │   │   ├── suggestion.tsx
+│   │   │   │   ├── task.tsx
+│   │   │   │   ├── terminal-basic.tsx
+│   │   │   │   ├── terminal-clear.tsx
+│   │   │   │   ├── terminal-streaming.tsx
+│   │   │   │   ├── terminal.tsx
+│   │   │   │   ├── test-results-basic.tsx
+│   │   │   │   ├── test-results-errors.tsx
+│   │   │   │   ├── test-results-suites.tsx
+│   │   │   │   ├── test-results.tsx
+│   │   │   │   ├── tool-input-available.tsx
+│   │   │   │   ├── tool-input-streaming.tsx
+│   │   │   │   ├── tool-output-available.tsx
+│   │   │   │   ├── tool-output-error.tsx
+│   │   │   │   ├── tool.tsx
+│   │   │   │   ├── transcription.tsx
+│   │   │   │   ├── voice-selector.tsx
+│   │   │   │   └── web-preview.tsx
+│   │   │   └── SKILL.md
 │   │   ├── ai-sdk
 │   │   │   ├── references
 │   │   │   │   ├── ai-gateway.md
@@ -124,17 +256,30 @@ BuilbotAI
 │       │   └── SKILL.md
 │       └── threejs-interaction
 │           └── SKILL.md
-├── .firebase
-│   └── studio-3150054754-c7d0b
-│       └── functions
-│           └── .env
 ├── .husky
+│   ├── _
+│   │   ├── .gitignore
+│   │   ├── applypatch-msg
+│   │   ├── commit-msg
+│   │   ├── h
+│   │   ├── husky.sh
+│   │   ├── post-applypatch
+│   │   ├── post-checkout
+│   │   ├── post-commit
+│   │   ├── post-merge
+│   │   ├── post-rewrite
+│   │   ├── pre-applypatch
+│   │   ├── pre-auto-gc
+│   │   ├── pre-commit
+│   │   ├── pre-merge-commit
+│   │   ├── pre-push
+│   │   ├── pre-rebase
+│   │   └── prepare-commit-msg
 │   ├── pre-commit
 │   └── pre-push
 ├── .idx
 │   ├── dev.nix
 │   └── icon.png
-├── .tmp
 ├── .vscode
 │   └── settings.json
 ├── design_mocks
@@ -300,6 +445,19 @@ BuilbotAI
 │   │   ├── auth
 │   │   │   ├── route-guard.tsx
 │   │   │   └── session-timeout.tsx
+│   │   ├── chat
+│   │   │   ├── hooks
+│   │   │   │   └── use-floating-chat.ts
+│   │   │   ├── chat-header.tsx
+│   │   │   ├── chat-input-bar.tsx
+│   │   │   ├── chat-loading-indicator.tsx
+│   │   │   ├── chat-message-bubble.tsx
+│   │   │   ├── chat-message-list.tsx
+│   │   │   ├── chat-preset-chips.tsx
+│   │   │   ├── chat-recommendations-carousel.tsx
+│   │   │   ├── chat-telemetry-drawer.tsx
+│   │   │   ├── chat-tool-status.tsx
+│   │   │   └── types.ts
 │   │   ├── landing
 │   │   │   ├── accessories-section.tsx
 │   │   │   ├── cta-section.tsx
@@ -312,6 +470,7 @@ BuilbotAI
 │   │   │   ├── unified-background.tsx
 │   │   │   └── visualizer-preview.tsx
 │   │   ├── parts
+│   │   │   ├── multi-image-upload.tsx
 │   │   │   ├── part-identity-section.tsx
 │   │   │   └── part-specifications-section.tsx
 │   │   ├── prebuilt-builder
@@ -365,6 +524,7 @@ BuilbotAI
 │   │   ├── about-management.tsx
 │   │   ├── add-part-dialog.tsx
 │   │   ├── add-prebuilt-dialog.tsx
+│   │   ├── add-stock-dialog.tsx
 │   │   ├── ai-build-critique.tsx
 │   │   ├── ai-progress-modal.tsx
 │   │   ├── animated-cube-logo.tsx
@@ -450,6 +610,7 @@ BuilbotAI
 │   └── lib
 │       ├── constants
 │       │   └── category-specs.ts
+│       ├── ai-model-resolver.ts
 │       ├── auth-utils.ts
 │       ├── bottleneck.ts
 │       ├── compatibility.ts
@@ -463,12 +624,6 @@ BuilbotAI
 │       └── vector-retriever.ts
 ├── test-results
 │   └── .last-run.json
-├── tmp
-│   ├── test_knowledge_tools.ts
-│   ├── test_local_extraction.ts
-│   ├── test_search.ts
-│   ├── verify_google_search.ts
-│   └── verify_local_db.ts
 ├── .env
 ├── .eslintrc.json
 ├── .firebaserc

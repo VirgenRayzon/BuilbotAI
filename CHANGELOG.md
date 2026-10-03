@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-10-03]
+
+### Features
+- **ai**: Integrate fine-tuned Vertex AI model with dynamic routing and fallback ([a55796b](https://github.com/VirgenRayzon/BuilbotAI/commit/a55796b))
+- Add stock modal with staff notifications and audit logging, customize prebuilt workflow, and missing parts validation guide ([7a36fb1](https://github.com/VirgenRayzon/BuilbotAI/commit/7a36fb1))
+
+## [2026-10-02]
+
+### Features
+- Modularize chatbot components, add telemetry drawer, and improve build performance ([f3b7954](https://github.com/VirgenRayzon/BuilbotAI/commit/f3b7954))
+
+## [2026-09-18]
+
+### Features
+- **ai-critique**: Optimize response time with multi-tier caching and count-up timer ([baf23fc](https://github.com/VirgenRayzon/BuilbotAI/commit/baf23fc))
+
 ## [2026-09-16]
 
 ### Features
