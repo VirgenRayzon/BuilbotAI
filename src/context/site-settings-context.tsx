@@ -13,6 +13,8 @@ import { useUserProfile } from "./user-profile";
 interface SiteSettings {
     isMaintenanceMode: boolean;
     isStorageKillSwitch?: boolean;
+    aiModelProvider?: 'default' | 'finetuned';
+    fineTunedModelId?: string;
     lastUpdated?: string;
     updatedBy?: string;
 }
@@ -22,6 +24,8 @@ interface SiteSettingsContextType {
     isMaintenanceMode: boolean;
     isStorageKillSwitch: boolean;
     shouldCorruptImages: boolean;
+    aiModelProvider: 'default' | 'finetuned';
+    fineTunedModelId: string;
 }
 
 const SiteSettingsContext = createContext<SiteSettingsContextType | undefined>(undefined);
@@ -39,16 +43,20 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
     
     const isMaintenanceMode = settings?.isMaintenanceMode || false;
     const isStorageKillSwitch = settings?.isStorageKillSwitch || false;
+    const aiModelProvider = settings?.aiModelProvider || 'default';
+    const fineTunedModelId = settings?.fineTunedModelId || 'projects/781722135778/locations/us-central1/models/2614243376421142528@1';
     
     // Corrupt images if Storage Kill Switch is ON and the user is NOT a Super Admin
     const shouldCorruptImages = isStorageKillSwitch && !profile?.isSuperAdmin;
 
-    const value = {
+    const value = useMemo(() => ({
         settings: settings as SiteSettings,
         isMaintenanceMode,
         isStorageKillSwitch,
-        shouldCorruptImages
-    };
+        shouldCorruptImages,
+        aiModelProvider,
+        fineTunedModelId
+    }), [settings, isMaintenanceMode, isStorageKillSwitch, shouldCorruptImages, aiModelProvider, fineTunedModelId]);
 
     return (
         <SiteSettingsContext.Provider value={value}>

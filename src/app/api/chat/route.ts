@@ -1,10 +1,10 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { streamText, tool, convertToModelMessages, stepCountIs } from 'ai';
 import { retrieveLocalKnowledge } from "@/lib/knowledge-retriever";
 import { retrieveHardwareVectorSpecs } from "@/lib/vector-retriever";
 import { getStructuredInventory } from "@/lib/inventory-fetcher";
 import { checkFullBuildCompatibility } from "@/lib/compatibility";
 import { calculateBottleneck } from "@/lib/bottleneck";
+import { getLanguageModelForChat, markTunedModelDegraded } from "@/lib/ai-model-resolver";
 import { z } from 'zod';
 
 export const maxDuration = 120;
@@ -70,9 +70,9 @@ Our platform provides a comprehensive PC building experience, curating high-qual
             return new Response(JSON.stringify({ error: "AI service is currently unavailable" }), { status: 500 });
         }
 
-        const googleProvider = createGoogleGenerativeAI({
-            apiKey: apiKey,
-        });
+        // Resolve active AI model (Default vs Fine-Tuned with automated fallback)
+        const resolved = await getLanguageModelForChat();
+        console.log(`[Chat API] Using model: ${resolved.modelId} (isFineTuned: ${resolved.isFineTuned}, isFallback: ${resolved.isFallback})`);
 
         // Slice to get last 10 messages for context
         const recentMessages = messages.slice(-10);
@@ -129,139 +129,162 @@ USER PROFILE:
             } as any);
         }
 
-        const result = await streamText({
-            model: googleProvider('gemini-2.5-flash'),
-            maxOutputTokens: 1200,
-            messages: await convertToModelMessages(recentMessages),
-            system: systemInstruction,
-            tools: {
-                analyzeCurrentBuild: tool({
-                    description: "Analyze the user's currently selected PC build for hardware compatibility issues, socket mismatches, cooler/case clearances, RAM generation match, power supply headroom, and CPU/GPU bottleneck balance. Call this whenever the user asks 'check my build', 'is my build compatible?', 'any bottleneck in my rig?', or asks if their parts work together.",
-                    inputSchema: z.object({
-                        resolutionTarget: z.enum(['1080p', '1440p', '4K']).optional().describe("Target gaming resolution (defaults to 1440p)."),
-                    }),
-                    execute: async ({ resolutionTarget = '1440p' }) => {
-                        console.log(`[Tool: analyzeCurrentBuild] Analyzing build at ${resolutionTarget}`);
-                        if (!currentBuild || Object.keys(currentBuild).length === 0) {
-                            return {
-                                status: "empty",
-                                message: "No components are currently selected in the builder. Recommend selecting a CPU, Motherboard, or GPU first."
-                            };
-                        }
+        const executeStream = async (modelToUse: any, isCurrentlyFineTuned: boolean) => {
+            return streamText({
+                model: modelToUse,
+                maxOutputTokens: 1200,
+                messages: await convertToModelMessages(recentMessages),
+                system: systemInstruction,
+                tools: {
+                    analyzeCurrentBuild: tool({
+                        description: "Analyze the user's currently selected PC build for hardware compatibility issues, socket mismatches, cooler/case clearances, RAM generation match, power supply headroom, and CPU/GPU bottleneck balance. Call this whenever the user asks 'check my build', 'is my build compatible?', 'any bottleneck in my rig?', or asks if their parts work together.",
+                        inputSchema: z.object({
+                            resolutionTarget: z.enum(['1080p', '1440p', '4K']).optional().describe("Target gaming resolution (defaults to 1440p)."),
+                        }),
+                        execute: async ({ resolutionTarget = '1440p' }) => {
+                            console.log(`[Tool: analyzeCurrentBuild] Analyzing build at ${resolutionTarget}`);
+                            if (!currentBuild || Object.keys(currentBuild).length === 0) {
+                                return {
+                                    status: "empty",
+                                    message: "No components are currently selected in the builder. Recommend selecting a CPU, Motherboard, or GPU first."
+                                };
+                            }
 
-                        // Run deterministic compatibility analysis
-                        const compatibilityIssues = checkFullBuildCompatibility(currentBuild);
+                            // Run deterministic compatibility analysis
+                            const compatibilityIssues = checkFullBuildCompatibility(currentBuild);
 
-                        // Run deterministic bottleneck analysis
-                        const bottleneckAnalysis = calculateBottleneck(currentBuild, resolutionTarget);
+                            // Run deterministic bottleneck analysis
+                            const bottleneckAnalysis = calculateBottleneck(currentBuild, resolutionTarget);
 
-                        // Power calculation
-                        let estimatedWattage = 0;
-                        let psuCapacity = 0;
-                        for (const [cat, comp] of Object.entries(currentBuild)) {
-                            if (!comp) continue;
-                            if (Array.isArray(comp)) {
-                                comp.forEach((c: any) => { if (c.wattage) estimatedWattage += c.wattage; });
-                            } else {
-                                const single = comp as any;
-                                if (cat.toLowerCase() === 'psu') {
-                                    if (typeof single.wattage === 'number') {
-                                        psuCapacity = single.wattage;
+                            // Power calculation
+                            let estimatedWattage = 0;
+                            let psuCapacity = 0;
+                            for (const [cat, comp] of Object.entries(currentBuild)) {
+                                if (!comp) continue;
+                                if (Array.isArray(comp)) {
+                                    comp.forEach((c: any) => { if (c.wattage) estimatedWattage += c.wattage; });
+                                } else {
+                                    const single = comp as any;
+                                    if (cat.toLowerCase() === 'psu') {
+                                        if (typeof single.wattage === 'number') {
+                                            psuCapacity = single.wattage;
+                                        }
+                                    } else if (typeof single.wattage === 'number') {
+                                        estimatedWattage += single.wattage;
                                     }
-                                } else if (typeof single.wattage === 'number') {
-                                    estimatedWattage += single.wattage;
                                 }
                             }
+
+                            const powerHeadroom = psuCapacity > 0 ? psuCapacity - estimatedWattage : null;
+                            const powerStatus = psuCapacity === 0
+                                ? "No PSU selected yet"
+                                : powerHeadroom! < 50
+                                    ? "Insufficient (PSU wattage is too close or below total draw)"
+                                    : powerHeadroom! < 150
+                                        ? "Adequate but tight"
+                                        : "Optimal (healthy headroom)";
+
+                            return {
+                                compatibility: {
+                                    hasIssues: compatibilityIssues.length > 0,
+                                    issues: compatibilityIssues.map(i => `[${i.severity.toUpperCase()}] ${i.message}`)
+                                },
+                                bottleneck: {
+                                    status: bottleneckAnalysis.status,
+                                    message: bottleneckAnalysis.message
+                                },
+                                power: {
+                                    estimatedWattage: `${estimatedWattage}W`,
+                                    psuCapacity: psuCapacity > 0 ? `${psuCapacity}W` : 'Not selected',
+                                    status: powerStatus
+                                }
+                            };
                         }
+                    }),
+                    searchInventory: tool({
+                        description: "Search the live store database for PC parts by category. IMPORTANT: To ensure you find results, leave 'searchTerm' empty to fetch all available parts in a category, then pick the best ones yourself. Do NOT pass overly specific terms (like '650W Bronze' or 'ATX Case') as the search is strict. NEVER pass the string 'undefined'.",
+                        inputSchema: z.object({
+                            category: z.enum(['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler', 'monitor', 'keyboard', 'mouse', 'headset']),
+                            searchTerm: z.string().optional().describe("Keep this EMPTY to get all items in the category."),
+                            maxPrice: z.number().optional().describe("Optional maximum budget limit in Philippine Pesos (₱) to filter items within budget.")
+                        }),
+                        execute: async ({ category, searchTerm, maxPrice }) => {
+                            const cleanTerm = (searchTerm === "undefined" || searchTerm === "") ? undefined : searchTerm;
+                            console.log(`[Tool: searchInventory] Searching for ${category} with term: ${cleanTerm ? `"${cleanTerm}"` : "none"}${maxPrice ? `, maxPrice: ₱${maxPrice}` : ""}`);
+                            let inventory = await getStructuredInventory(category, cleanTerm);
 
-                        const powerHeadroom = psuCapacity > 0 ? psuCapacity - estimatedWattage : null;
-                        const powerStatus = psuCapacity === 0
-                            ? "No PSU selected yet"
-                            : powerHeadroom! < 50
-                                ? "Insufficient (PSU wattage is too close or below total draw)"
-                                : powerHeadroom! < 150
-                                    ? "Adequate but tight"
-                                    : "Optimal (healthy headroom)";
-
-                        return {
-                            compatibility: {
-                                hasIssues: compatibilityIssues.length > 0,
-                                issues: compatibilityIssues.map(i => `[${i.severity.toUpperCase()}] ${i.message}`)
-                            },
-                            bottleneck: {
-                                status: bottleneckAnalysis.status,
-                                message: bottleneckAnalysis.message
-                            },
-                            power: {
-                                estimatedWattage: `${estimatedWattage}W`,
-                                psuCapacity: psuCapacity > 0 ? `${psuCapacity}W` : 'Not selected',
-                                status: powerStatus
+                            if (!inventory || inventory.length === 0) {
+                                return { error: `No parts found in category ${category} matching term '${cleanTerm}'. Try searching again with an EMPTY searchTerm to see all available parts.` };
                             }
-                        };
-                    }
-                }),
-                searchInventory: tool({
-                    description: "Search the live store database for PC parts by category. IMPORTANT: To ensure you find results, leave 'searchTerm' empty to fetch all available parts in a category, then pick the best ones yourself. Do NOT pass overly specific terms (like '650W Bronze' or 'ATX Case') as the search is strict. NEVER pass the string 'undefined'.",
-                    inputSchema: z.object({
-                        category: z.enum(['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler', 'monitor', 'keyboard', 'mouse', 'headset']),
-                        searchTerm: z.string().optional().describe("Keep this EMPTY to get all items in the category."),
-                        maxPrice: z.number().optional().describe("Optional maximum budget limit in Philippine Pesos (₱) to filter items within budget.")
-                    }),
-                    execute: async ({ category, searchTerm, maxPrice }) => {
-                        const cleanTerm = (searchTerm === "undefined" || searchTerm === "") ? undefined : searchTerm;
-                        console.log(`[Tool: searchInventory] Searching for ${category} with term: ${cleanTerm ? `"${cleanTerm}"` : "none"}${maxPrice ? `, maxPrice: ₱${maxPrice}` : ""}`);
-                        let inventory = await getStructuredInventory(category, cleanTerm);
 
-                        if (!inventory || inventory.length === 0) {
-                            return { error: `No parts found in category ${category} matching term '${cleanTerm}'. Try searching again with an EMPTY searchTerm to see all available parts.` };
-                        }
-
-                        if (typeof maxPrice === 'number' && maxPrice > 0) {
-                            const filtered = inventory.filter(p => p.price <= maxPrice);
-                            if (filtered.length > 0) {
-                                inventory = filtered;
+                            if (typeof maxPrice === 'number' && maxPrice > 0) {
+                                const filtered = inventory.filter(p => p.price <= maxPrice);
+                                if (filtered.length > 0) {
+                                    inventory = filtered;
+                                }
                             }
+
+                            return inventory;
+                        },
+                    }),
+                    queryCompatibilityGuides: tool({
+                        description: "Search the local markdown guides for PC component compatibility rules, tier lists, bottlenecks, and recommendations.",
+                        inputSchema: z.object({
+                            query: z.string().describe("Specific search keywords or terms (e.g. 'ram speed', 'psu tier', 'bottleneck cpu', 'motherboard size').")
+                        }),
+                        execute: async ({ query }) => {
+                            console.log(`[Tool: queryCompatibilityGuides] Query: "${query}"`);
+                            const guides = await retrieveLocalKnowledge(query);
+                            return { guides };
                         }
-
-                        return inventory;
-                    },
-                }),
-                queryCompatibilityGuides: tool({
-                    description: "Search the local markdown guides for PC component compatibility rules, tier lists, bottlenecks, and recommendations.",
-                    inputSchema: z.object({
-                        query: z.string().describe("Specific search keywords or terms (e.g. 'ram speed', 'psu tier', 'bottleneck cpu', 'motherboard size').")
                     }),
-                    execute: async ({ query }) => {
-                        console.log(`[Tool: queryCompatibilityGuides] Query: "${query}"`);
-                        const guides = await retrieveLocalKnowledge(query);
-                        return { guides };
-                    }
-                }),
-                queryPartSpecifications: tool({
-                    description: "Search the hardware vector database (Firestore buildbot_hardware_vector) for detailed hardware specifications (frequencies, ports, sockets, dimensions, power limits).",
-                    inputSchema: z.object({
-                        query: z.string().describe("Part name or brand keywords to lookup (e.g., 'Ryzen 5 7600X', 'RTX 4070', 'Corsair RM850x').")
-                    }),
-                    execute: async ({ query }) => {
-                        console.log(`[Tool: queryPartSpecifications] Query: "${query}"`);
-                        const specs = await retrieveHardwareVectorSpecs(query);
-                        return { specs };
-                    }
-                })
-            },
-            stopWhen: stepCountIs(5), // Allow for tool calling loops automatically
-            abortSignal: AbortSignal.timeout(120000), // 120 second timeout
-        });
+                    queryPartSpecifications: tool({
+                        description: "Search the hardware vector database (Firestore buildbot_hardware_vector) for detailed hardware specifications (frequencies, ports, sockets, dimensions, power limits).",
+                        inputSchema: z.object({
+                            query: z.string().describe("Part name or brand keywords to lookup (e.g., 'Ryzen 5 7600X', 'RTX 4070', 'Corsair RM850x').")
+                        }),
+                        execute: async ({ query }) => {
+                            console.log(`[Tool: queryPartSpecifications] Query: "${query}"`);
+                            const specs = await retrieveHardwareVectorSpecs(query);
+                            return { specs };
+                        }
+                    })
+                },
+                stopWhen: stepCountIs(5), // Allow for tool calling loops automatically
+                abortSignal: AbortSignal.timeout(120000), // 120 second timeout
+            });
+        };
 
-        return result.toUIMessageStreamResponse({
+        let activeStreamResult;
+        let isFallbackActive = resolved.isFallback;
+
+        try {
+            activeStreamResult = await executeStream(resolved.model, resolved.isFineTuned);
+        } catch (streamInitError: any) {
+            if (resolved.isFineTuned) {
+                console.warn("[Chat API] Fine-tuned model stream creation failed. Falling back to default Gemini:", streamInitError);
+                markTunedModelDegraded(streamInitError.message || "Stream init error");
+                const fallbackResolved = await getLanguageModelForChat({ forceDefault: true });
+                isFallbackActive = true;
+                activeStreamResult = await executeStream(fallbackResolved.model, false);
+            } else {
+                throw streamInitError;
+            }
+        }
+
+        return activeStreamResult.toUIMessageStreamResponse({
             headers: {
                 'x-server-start': startTime.toString(),
+                'x-model-id': resolved.modelId,
+                'x-model-finetuned': resolved.isFineTuned ? 'true' : 'false',
+                'x-model-fallback': isFallbackActive ? 'true' : 'false',
             },
             onError: (error: unknown) => {
-                if (error == null) return 'unknown error';
-                if (typeof error === 'string') return error;
-                if (error instanceof Error) return error.message;
-                return JSON.stringify(error);
+                const msg = error instanceof Error ? error.message : String(error);
+                if (resolved.isFineTuned) {
+                    markTunedModelDegraded(msg);
+                }
+                return msg;
             }
         });
 

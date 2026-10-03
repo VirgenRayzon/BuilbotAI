@@ -5,13 +5,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useFirestore } from '@/firebase';
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc, onSnapshot, updateDoc, serverTimestamp, limit, arrayUnion } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Check, X, RefreshCw, Mail, Key, Shield, Layout, ExternalLink } from 'lucide-react';
+import { Loader2, Check, X, RefreshCw, Mail, Key, Shield, Layout, ExternalLink, Bot, Sparkles, Cpu, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useUserProfile } from '@/context/user-profile';
+import { useSiteSettings } from '@/context/site-settings-context';
 import { createAuditLog } from '@/firebase/audit';
+import { testAiModelConnectionAction, updateSiteSettingsAction, invalidateAiModelCacheAction } from '@/app/actions';
 import Link from 'next/link';
 
 export function SuperAdminSettings() {
@@ -27,6 +30,130 @@ export function SuperAdminSettings() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const { profile } = useUserProfile();
+    const { aiModelProvider: activeAiProvider, fineTunedModelId: activeTunedModelId } = useSiteSettings();
+
+    const [selectedAiProvider, setSelectedAiProvider] = useState<'default' | 'finetuned'>(activeAiProvider || 'default');
+    const [customModelId, setCustomModelId] = useState<string>(activeTunedModelId || 'projects/781722135778/locations/us-central1/models/2614243376421142528@1');
+    const [savingAiSettings, setSavingAiSettings] = useState(false);
+    const [isAiDirty, setIsAiDirty] = useState(false);
+    const [testingConnection, setTestingConnection] = useState(false);
+    const [testResult, setTestResult] = useState<{
+        success: boolean;
+        model?: string;
+        response?: string;
+        latencyMs: number;
+        error?: string;
+        isPermissionError?: boolean;
+        remediation?: {
+            serviceAccount: string;
+            requiredRole: string;
+            project: string;
+            instructions: string;
+        };
+    } | null>(null);
+
+    const handleTestConnection = async () => {
+        setTestingConnection(true);
+        setTestResult(null);
+        try {
+            const result = await testAiModelConnectionAction(selectedAiProvider, customModelId);
+            setTestResult(result);
+            if (result.success) {
+                toast({
+                    title: "Model Connection Succeeded",
+                    description: `${result.model} responded in ${result.latencyMs}ms.`,
+                });
+            } else if (result.isPermissionError) {
+                toast({
+                    title: "IAM Role Required in Google Cloud",
+                    description: `Vertex AI User role needed for ${result.remediation?.serviceAccount}. Platform is operating with automatic fallback.`,
+                    variant: "destructive",
+                });
+            } else {
+                toast({
+                    title: "Connection Test Failed",
+                    description: result.error || "Unable to reach model endpoint",
+                    variant: "destructive",
+                });
+            }
+        } catch (err: any) {
+            toast({
+                title: "Test Failed",
+                description: err.message || "An unexpected error occurred",
+                variant: "destructive",
+            });
+        } finally {
+            setTestingConnection(false);
+        }
+    };
+
+
+    useEffect(() => {
+        if (activeAiProvider) {
+            setSelectedAiProvider(activeAiProvider);
+        }
+    }, [activeAiProvider]);
+
+    useEffect(() => {
+        if (activeTunedModelId) {
+            setCustomModelId(activeTunedModelId);
+        }
+    }, [activeTunedModelId]);
+
+    const handleSaveAiModelSettings = async () => {
+        setSavingAiSettings(true);
+        try {
+            // 1. Guaranteed server-side persistence using Admin SDK
+            await updateSiteSettingsAction({
+                aiModelProvider: selectedAiProvider,
+                fineTunedModelId: customModelId.trim(),
+                updatedBy: profile?.email || 'Super Admin'
+            });
+
+            // 2. Client Firestore write for instant local reactivity
+            if (firestore) {
+                const siteSettingsRef = doc(firestore, 'siteSettings', 'main');
+                await setDoc(siteSettingsRef, {
+                    aiModelProvider: selectedAiProvider,
+                    fineTunedModelId: customModelId.trim(),
+                    lastUpdated: new Date().toISOString(),
+                    updatedBy: profile?.email || 'Super Admin'
+                }, { merge: true }).catch(() => {});
+            }
+
+            // 3. Invalidate server-side model cache
+            await invalidateAiModelCacheAction().catch(() => {});
+
+            // 4. Create audit log
+            if (firestore) {
+                await createAuditLog(firestore, {
+                    actionName: 'updated',
+                    actorId: profile?.id || 'unknown',
+                    actorName: profile?.name || profile?.email || 'Super Admin',
+                    actorEmail: profile?.email,
+                    scope: 'System',
+                    resourceName: 'AI Model Configuration',
+                    details: `Switched active AI model to: ${selectedAiProvider === 'finetuned' ? 'Fine-Tuned Model (' + customModelId.trim() + ')' : 'Default Gemini 2.5 Flash'}`
+                }).catch(() => {});
+            }
+
+            setIsAiDirty(false);
+
+            toast({
+                title: "AI Settings Saved",
+                description: `Active model switched to: ${selectedAiProvider === 'finetuned' ? 'Fine-Tuned Model' : 'Default Gemini 2.5 Flash'}`
+            });
+        } catch (err: any) {
+            console.error("Failed to update AI model settings:", err);
+            toast({
+                title: "Error saving AI settings",
+                description: err?.message || "Failed to update configuration",
+                variant: "destructive"
+            });
+        } finally {
+            setSavingAiSettings(false);
+        }
+    };
 
     useEffect(() => {
         async function fetchKeys() {
@@ -381,6 +508,189 @@ export function SuperAdminSettings() {
                                     </div>
                                 );
                             })}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* AI MODEL CONFIGURATION */}
+            <Card className="border-border/60 bg-background/50 backdrop-blur-xl">
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                            <CardTitle className="flex items-center gap-2">
+                                <Bot className="h-5 w-5 text-primary" />
+                                AI Model Intelligence Configuration
+                            </CardTitle>
+                            <CardDescription>
+                                Switch between the default Gemini AI model and your fine-tuned Vertex AI model for platform intelligence.
+                            </CardDescription>
+                        </div>
+                        <Badge 
+                            variant="outline" 
+                            className={selectedAiProvider === 'finetuned' ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' : 'bg-primary/10 text-primary border-primary/30'}
+                        >
+                            {selectedAiProvider === 'finetuned' ? 'Fine-Tuned Active' : 'Default Model Active'}
+                        </Badge>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <RadioGroup 
+                        value={selectedAiProvider} 
+                        onValueChange={(val: 'default' | 'finetuned') => { setSelectedAiProvider(val); setIsAiDirty(true); }}
+                        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                    >
+                        <div 
+                            onClick={() => { setSelectedAiProvider('default'); setIsAiDirty(true); }}
+                            className={`flex flex-col justify-between p-4 rounded-xl border cursor-pointer transition-all ${
+                                selectedAiProvider === 'default' 
+                                    ? 'border-primary bg-primary/5 shadow-[0_0_20px_rgba(var(--primary-rgb),0.1)]' 
+                                    : 'border-border/40 bg-card/40 hover:bg-card/70'
+                            }`}
+                        >
+                            <div className="flex items-start gap-3">
+                                <RadioGroupItem value="default" id="model-default" className="mt-1" />
+                                <div className="space-y-1">
+                                    <Label htmlFor="model-default" className="font-semibold text-sm cursor-pointer flex items-center gap-1.5">
+                                        <Sparkles className="h-4 w-4 text-primary" />
+                                        Default Gemini API
+                                    </Label>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                        Standard Google Gemini 2.5 Flash model via standard Generative Language API. Fast and cost-effective.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="mt-4 pt-3 border-t border-border/20 flex items-center justify-between text-[11px] text-muted-foreground">
+                                <span>Engine: <span className="text-foreground font-mono">gemini-2.5-flash</span></span>
+                                <Badge variant="secondary" className="text-[9px] uppercase tracking-wider">Standard</Badge>
+                            </div>
+                        </div>
+
+                        <div 
+                            onClick={() => { setSelectedAiProvider('finetuned'); setIsAiDirty(true); }}
+                            className={`flex flex-col justify-between p-4 rounded-xl border cursor-pointer transition-all ${
+                                selectedAiProvider === 'finetuned' 
+                                    ? 'border-amber-500 bg-amber-500/5 shadow-[0_0_20px_rgba(245,158,11,0.15)]' 
+                                    : 'border-border/40 bg-card/40 hover:bg-card/70'
+                            }`}
+                        >
+                            <div className="flex items-start gap-3">
+                                <RadioGroupItem value="finetuned" id="model-finetuned" className="mt-1" />
+                                <div className="space-y-1">
+                                    <Label htmlFor="model-finetuned" className="font-semibold text-sm cursor-pointer flex items-center gap-1.5 text-amber-500">
+                                        <Cpu className="h-4 w-4" />
+                                        Fine-Tuned Vertex Model
+                                    </Label>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                        Specialized fine-tuned model trained on custom hardware and PC building datasets in Google Cloud.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="mt-4 pt-3 border-t border-border/20 flex items-center justify-between text-[11px] text-muted-foreground">
+                                <span>Deployment: <span className="text-amber-500 font-mono">Vertex AI</span></span>
+                                <Badge variant="outline" className="text-[9px] uppercase tracking-wider text-amber-500 border-amber-500/30">Custom</Badge>
+                            </div>
+                        </div>
+                    </RadioGroup>
+
+                    {selectedAiProvider === 'finetuned' && (
+                        <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 space-y-3">
+                            <div className="space-y-1">
+                                <Label htmlFor="custom-model-id" className="text-xs font-semibold uppercase tracking-wider text-amber-500 flex items-center gap-1.5">
+                                    <Cpu className="h-3.5 w-3.5" />
+                                    Vertex AI Model Resource Identifier / Endpoint
+                                </Label>
+                                <p className="text-xs text-muted-foreground">
+                                    The fully-qualified Google Cloud Vertex AI resource path or deployed endpoint.
+                                </p>
+                            </div>
+                            <Input
+                                id="custom-model-id"
+                                value={customModelId}
+                                onChange={(e) => { setCustomModelId(e.target.value); setIsAiDirty(true); }}
+                                placeholder="projects/7817221357778/locations/us-central1/models/..."
+                                className="font-mono text-xs bg-background/80"
+                            />
+                        </div>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleTestConnection}
+                            disabled={testingConnection || savingAiSettings || (selectedAiProvider === 'finetuned' && !customModelId.trim())}
+                            className="text-xs gap-2"
+                        >
+                            {testingConnection ? (
+                                <>
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    Testing Connection...
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                                    Test Model Connection
+                                </>
+                            )}
+                        </Button>
+
+                        <Button 
+                            onClick={handleSaveAiModelSettings} 
+                            disabled={savingAiSettings || (selectedAiProvider === 'finetuned' && !customModelId.trim())}
+                            className="font-semibold"
+                        >
+                            {savingAiSettings ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Applying Model Settings...
+                                </>
+                            ) : (
+                                "Apply AI Settings"
+                            )}
+                        </Button>
+                    </div>
+
+                    {testResult && (
+                        <div className={`p-4 rounded-xl border text-xs space-y-2 ${
+                            testResult.success 
+                                ? 'bg-green-500/10 border-green-500/30 text-green-400' 
+                                : testResult.isPermissionError 
+                                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-300' 
+                                    : 'bg-destructive/10 border-destructive/30 text-destructive-foreground'
+                        }`}>
+                            <div className="flex items-center justify-between">
+                                <span className="font-semibold flex items-center gap-1.5">
+                                    {testResult.success ? <Check className="h-4 w-4 text-green-400" /> : <AlertTriangle className="h-4 w-4 text-amber-400" />}
+                                    {testResult.success ? "Connection Verified" : "Permission Configuration Needed"}
+                                </span>
+                                <Badge variant="outline" className="font-mono text-[10px]">
+                                    {testResult.latencyMs}ms
+                                </Badge>
+                            </div>
+
+                            {testResult.success ? (
+                                <p className="text-muted-foreground font-mono text-[11px]">
+                                    Response: "{testResult.response}"
+                                </p>
+                            ) : (
+                                <div className="space-y-2 text-muted-foreground">
+                                    <p className="text-amber-200">
+                                        {testResult.remediation?.instructions || testResult.error}
+                                    </p>
+                                    {testResult.remediation && (
+                                        <div className="p-2.5 rounded bg-background/60 border border-border/40 font-mono text-[11px] space-y-1">
+                                            <div><span className="text-muted-foreground">Service Account:</span> <code className="text-foreground">{testResult.remediation.serviceAccount}</code></div>
+                                            <div><span className="text-muted-foreground">Required Role:</span> <code className="text-amber-400 font-bold">{testResult.remediation.requiredRole}</code></div>
+                                            <div><span className="text-muted-foreground">Project:</span> <code className="text-foreground">{testResult.remediation.project}</code></div>
+                                        </div>
+                                    )}
+                                    <div className="flex items-center gap-2 pt-1 text-[11px] text-primary">
+                                        <Shield className="h-3.5 w-3.5" />
+                                        <span>Automatic fallback is active: user chats and AI tools will continue using Gemini 2.5 Flash without disruption.</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </CardContent>

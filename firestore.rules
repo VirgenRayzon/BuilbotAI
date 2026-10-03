@@ -11,6 +11,11 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.isSuperAdmin == true;
     }
 
+    match /siteSettings/{settingId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
     match /users/{userId} {
       allow read, delete: if request.auth.uid == userId || isManager();
       allow create: if request.auth.uid == userId 

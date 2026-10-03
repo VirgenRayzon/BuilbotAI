@@ -8,6 +8,7 @@ import { checkFullBuildCompatibility } from "@/lib/compatibility";
 import { retrieveLocalKnowledge } from "@/lib/knowledge-retriever";
 import { getInventoryFromFirestore } from "@/lib/inventory-fetcher";
 import { getAdminFirestore } from "@/firebase/server-init";
+import { getGenkitModelName, safeGenkitGenerate } from '@/lib/ai-model-resolver';
 
 const ComponentDataSchema = z.object({
     model: z.string(),
@@ -274,9 +275,10 @@ REQUIRED OUTPUT SCHEMA:
 Output strictly the JSON object.`;
 
     try {
-        console.log("[AI Build Critique] Generating fast critique using Product Highlights...");
-        const response = await ai.generate({
-            model: 'googleai/gemini-2.5-flash',
+        const dynamicModel = await getGenkitModelName();
+        console.log(`[AI Build Critique] Generating fast critique using Product Highlights with model: ${dynamicModel}...`);
+        const response = await safeGenkitGenerate(ai, {
+            model: dynamicModel,
             prompt,
             output: {
                 schema: aiBuildCritiqueOutputSchema,

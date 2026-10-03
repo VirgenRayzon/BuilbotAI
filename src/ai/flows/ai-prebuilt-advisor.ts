@@ -10,6 +10,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { retrieveLocalKnowledge } from "@/lib/knowledge-retriever";
+import { getGenkitModelName, safeGenkitGenerate } from '@/lib/ai-model-resolver';
 
 const ComponentInputSchema = z.object({
   cpu: z.string().optional(),
@@ -110,10 +111,11 @@ const aiPrebuiltAdvisorFlow = ai.defineFlow(
     const knowledgeContext = knowledgeResults.join('\n\n');
 
     try {
+      const dynamicModel = await getGenkitModelName();
       // Step 1: Plain-text research call WITH googleSearchRetrieval (no structured output)
-      console.log("[aiPrebuiltAdvisorFlow] Step 1: Running web search pre-research for pricing...");
-      const researchResponse = await ai.generate({
-        model: 'googleai/gemini-2.5-flash',
+      console.log(`[aiPrebuiltAdvisorFlow] Step 1: Running web search pre-research for pricing with model ${dynamicModel}...`);
+      const researchResponse = await safeGenkitGenerate(ai, {
+        model: dynamicModel,
         prompt: `You are a PC hardware pricing researcher for the Philippine market.
 Research the current market prices in PHP for each of the following components:
 

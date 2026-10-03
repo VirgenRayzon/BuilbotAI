@@ -11,6 +11,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import fs from 'fs';
 import { retrieveHardwareVectorSpecs } from '@/lib/vector-retriever';
+import { getGenkitModelName, safeGenkitGenerate } from '@/lib/ai-model-resolver';
 
 const DEBUG_LOG = 'grounding-debug.log';
 
@@ -78,12 +79,14 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
   try {
     let webResearchContext = '';
 
+    const dynamicModel = await getGenkitModelName();
+
     // Step 1: If no local database context, run a plain-text search to gather specs and pricing
     if (!groundedContext) {
       logDebug("Step 1: No local context found. Running web search pre-research...");
-      console.log(`[Extract Part Details] Step 1: Running web search for: ${input.partName}`);
-      const researchResponse = await ai.generate({
-        model: 'googleai/gemini-2.5-flash',
+      console.log(`[Extract Part Details] Step 1: Running web search for: ${input.partName} using model ${dynamicModel}`);
+      const researchResponse = await safeGenkitGenerate(ai, {
+        model: dynamicModel,
         prompt: `You are a PC hardware specification researcher.
 Research the following PC component and provide detailed specifications and current pricing:
 
@@ -137,8 +140,8 @@ SPECIFICATION RULES (Ensure these keys appear in the JSON 'specifications' array
 
 Output strictly the JSON object matching the schema.`;
 
-    const response = await ai.generate({
-      model: 'googleai/gemini-2.5-flash',
+    const response = await safeGenkitGenerate(ai, {
+      model: dynamicModel,
       prompt: researcherPrompt,
       output: {
         schema: ExtractPartDetailsOutputSchema,

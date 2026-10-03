@@ -10,6 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { getGenkitModelName, safeGenkitGenerate } from '@/lib/ai-model-resolver';
 
 // Input Schema Definition
 const AiBuildAdvisorRecommendationsInputSchema = z.object({
@@ -236,10 +237,11 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
     let webSearchContext: string | undefined;
 
     if (input.allowWebSearch) {
+      const dynamicModel = await getGenkitModelName();
       // Step 1: Plain-text research call WITH googleSearchRetrieval (no structured output)
-      console.log('[AI Recommendations] Step 1: Running web search pre-research...');
-      const researchResponse = await ai.generate({
-        model: 'googleai/gemini-2.5-flash',
+      console.log(`[AI Recommendations] Step 1: Running web search pre-research with model ${dynamicModel}...`);
+      const researchResponse = await safeGenkitGenerate(ai, {
+        model: dynamicModel,
         prompt: `You are a PC hardware market researcher specializing in the Philippine market.
 Research the following and provide a detailed summary of current pricing and availability in PHP:
 

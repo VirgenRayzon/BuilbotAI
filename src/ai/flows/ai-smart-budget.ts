@@ -2,6 +2,7 @@
 
 import { ai } from "@/ai/genkit";
 import { z } from "genkit";
+import { getGenkitModelName, safeGenkitGenerate } from '@/lib/ai-model-resolver';
 
 const ComponentSchema = z.object({
     id: z.string(),
@@ -61,8 +62,10 @@ Rules:
 Return your response strictly adhering to the JSON schema.
 `;
 
-        const response = await ai.generate({
-            model: 'googleai/gemini-2.5-flash',
+        const dynamicModel = await getGenkitModelName();
+
+        const response = await safeGenkitGenerate(ai, {
+            model: dynamicModel,
             prompt: prompt,
             output: {
                 schema: z.object({

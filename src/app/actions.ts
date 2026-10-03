@@ -1,4 +1,8 @@
 "use server";
+import { generateText } from 'ai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { getVertexAccessToken, markTunedModelHealthy, DEFAULT_TUNED_MODEL_ID } from '@/lib/ai-model-resolver';
+
 
 import {
   aiBuildAdvisorRecommendations,
@@ -472,3 +476,152 @@ export async function migrateAllUsersClaimsAction() {
 }
 
 
+
+
+export async function testAiModelConnectionAction(
+  provider: 'default' | 'finetuned',
+  customModelId?: string
+) {
+  const startTime = Date.now();
+  try {
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+    if (!apiKey) {
+      return {
+        success: false,
+        error: "Missing API Key in .env (GOOGLE_GENERATIVE_AI_API_KEY or GEMINI_API_KEY).",
+        latencyMs: 0
+      };
+    }
+
+    if (provider === 'default') {
+      const google = createGoogleGenerativeAI({ apiKey });
+      const result = await generateText({
+        model: google('gemini-2.5-flash'),
+        prompt: 'Say "Connection successful: Gemini 2.5 Flash is ready."',
+      });
+      return {
+        success: true,
+        model: 'gemini-2.5-flash',
+        provider: 'default',
+        response: result.text.trim(),
+        latencyMs: Date.now() - startTime
+      };
+    }
+
+    // Provider is 'finetuned'
+    const targetModel = (customModelId && customModelId.trim())
+      ? customModelId.trim().replace('7817221357778', '781722135778')
+      : DEFAULT_TUNED_MODEL_ID;
+
+    const token = await getVertexAccessToken();
+    if (!token) {
+      return {
+        success: false,
+        model: targetModel,
+        provider: 'finetuned',
+        error: "No Google Cloud Vertex AI credentials found. FIREBASE_SERVICE_ACCOUNT is required in .env.",
+        latencyMs: Date.now() - startTime
+      };
+    }
+
+    let projectId = '781722135778';
+    let location = 'us-central1';
+    const match = targetModel.match(/projects\/([^\/]+)\/locations\/([^\/]+)/);
+    if (match) {
+      projectId = match[1];
+      location = match[2];
+    }
+
+    const vertexFetch = async (url: string | URL | Request, init?: RequestInit) => {
+      const currentToken = await getVertexAccessToken();
+      let finalUrl = String(url);
+      finalUrl = finalUrl.replace('/models/endpoints/', '/endpoints/');
+      const headers = new Headers(init?.headers);
+      headers.delete('x-goog-api-key');
+      if (currentToken) {
+        headers.set('Authorization', `Bearer ${currentToken}`);
+      }
+      return fetch(finalUrl, { ...init, headers });
+    };
+
+    const vertexProvider = createGoogleGenerativeAI({
+      baseURL: `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/${location}`,
+      apiKey: 'oauth-authenticated',
+      fetch: vertexFetch,
+    });
+
+    let cleanModelName = targetModel;
+    const endpointsIdx = cleanModelName.indexOf('/endpoints/');
+    const modelsIdx = cleanModelName.indexOf('/models/');
+    if (endpointsIdx !== -1) {
+      cleanModelName = `endpoints/${cleanModelName.slice(endpointsIdx + 11)}`;
+    } else if (modelsIdx !== -1) {
+      cleanModelName = `publishers/google/models/${cleanModelName.slice(modelsIdx + 8)}`;
+    } else if (!cleanModelName.startsWith('publishers/') && !cleanModelName.startsWith('endpoints/')) {
+      cleanModelName = `publishers/google/models/${cleanModelName}`;
+    }
+
+    const result = await generateText({
+      model: vertexProvider(cleanModelName),
+      prompt: 'Say "Connection successful: Fine-Tuned Model is ready."',
+    });
+
+    markTunedModelHealthy();
+
+    return {
+      success: true,
+      model: targetModel,
+      provider: 'finetuned',
+      response: result.text.trim(),
+      latencyMs: Date.now() - startTime
+    };
+  } catch (err: any) {
+    const errorMsg = err.message || String(err);
+    const isPermissionError = errorMsg.includes('Permission') || errorMsg.includes('PERMISSION_DENIED') || errorMsg.includes('403');
+
+    return {
+      success: false,
+      model: customModelId || 'Fine-Tuned Model',
+      provider,
+      error: errorMsg,
+      latencyMs: Date.now() - startTime,
+      isPermissionError,
+      remediation: isPermissionError ? {
+        serviceAccount: 'firebase-adminsdk-fbsvc@studio-3150054754-c7d0b.iam.gserviceaccount.com',
+        requiredRole: 'roles/aiplatform.user (Vertex AI User)',
+        project: '781722135778 (studio-3150054754-c7d0b)',
+        instructions: 'Grant the "Vertex AI User" role to this service account in Google Cloud IAM & Admin console to enable inference on this Vertex model endpoint.'
+      } : undefined
+    };
+  }
+}
+
+export async function updateSiteSettingsAction(settings: {
+  aiModelProvider: 'default' | 'finetuned';
+  fineTunedModelId: string;
+  updatedBy?: string;
+}) {
+  try {
+    const db = getAdminFirestore();
+    await db.collection('siteSettings').doc('main').set({
+      aiModelProvider: settings.aiModelProvider,
+      fineTunedModelId: settings.fineTunedModelId,
+      lastUpdated: new Date().toISOString(),
+      updatedBy: settings.updatedBy || 'Super Admin'
+    }, { merge: true });
+    return { success: true };
+  } catch (err: any) {
+    console.error("Failed to update siteSettings via admin action:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function invalidateAiModelCacheAction() {
+  try {
+    const { invalidateAiModelCache } = await import('@/lib/ai-model-resolver');
+    invalidateAiModelCache();
+    return { success: true };
+  } catch {
+    return { success: false };
+  }
+}

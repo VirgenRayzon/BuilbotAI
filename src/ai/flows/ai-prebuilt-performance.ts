@@ -2,6 +2,7 @@
 
 import { ai } from "@/ai/genkit";
 import { z } from "genkit";
+import { getGenkitModelName, safeGenkitGenerate } from '@/lib/ai-model-resolver';
 
 const ComponentDataSchema = z.object({
     model: z.string(),
@@ -80,10 +81,11 @@ ${buildContext}
 `;
 
     try {
+        const dynamicModel = await getGenkitModelName();
         // Step 1: Plain-text research call WITH googleSearchRetrieval (no structured output)
         console.log("[AI Prebuilt Performance] Step 1: Running web search pre-research for component capabilities...");
-        const researchResponse = await ai.generate({
-            model: 'googleai/gemini-2.5-flash',
+        const researchResponse = await safeGenkitGenerate(ai, {
+            model: dynamicModel,
             prompt: `You are a PC hardware expert and technology journalist. Research the following prebuilt PC build and provide an enthusiastic analysis of its strengths and capabilities:
 
 Current Build:
@@ -121,8 +123,8 @@ REQUIRED OUTPUT SCHEMA:
 
 Output strictly the JSON object.`;
 
-        const response = await ai.generate({
-            model: 'googleai/gemini-2.5-flash',
+        const response = await safeGenkitGenerate(ai, {
+            model: dynamicModel,
             prompt: consolidatedPrompt,
             output: {
                 schema: aiPrebuiltPerformanceOutputSchema,
