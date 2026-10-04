@@ -355,17 +355,17 @@ export async function authenticateSystemAccessAction(
 
         // Validate Key
         let isKeyValid = false;
-        if (userData.activeManagerKey) {
-          isKeyValid = (userData.activeManagerKey === roleKey);
+        if (userData.activeManagerKey && userData.activeManagerKey === roleKey) {
+          isKeyValid = true;
         } else {
-          // Check database authKeys
+          // Check database authKeys or default key fallback
           const keyDocSnap = await db.collection('authKeys').doc(roleKey).get();
           const isLegacyKey = (keyDocSnap.exists && keyDocSnap.data()?.role === 'manager') || roleKey === '00216764';
           isKeyValid = isLegacyKey;
         }
 
         if (!isKeyValid) {
-          return { error: 'Incorrect manager key.' };
+          return { error: 'Incorrect manager key. Please verify your manager key and try again.' };
         }
 
         // Apply promotions & key adoption if needed
@@ -373,7 +373,7 @@ export async function authenticateSystemAccessAction(
         if (userData.isAdmin && !userData.isManager) {
           updates.isManager = true;
         }
-        if (!userData.activeManagerKey) {
+        if (!userData.activeManagerKey || userData.activeManagerKey !== roleKey) {
           updates.activeManagerKey = roleKey;
         }
         await userDocRef.update(updates);
@@ -390,7 +390,7 @@ export async function authenticateSystemAccessAction(
         const isHardcodedKey = roleKey === 'SUPER_ADMIN_123'; // Allowed server-side only fallback
 
         if (!isDbKey && !isHardcodedKey) {
-          return { error: 'Incorrect super admin key.' };
+          return { error: 'Incorrect super admin key. Please verify your master key and try again.' };
         }
 
         // Super admins also get manager privileges
@@ -443,6 +443,69 @@ export async function authenticateSystemAccessAction(
     return { error: error.message || 'Server error occurred during authentication.' };
   }
 }
+
+export async function registerManagerAction(
+  idToken: string,
+  managerKey: string
+) {
+  try {
+    const adminAuth = getAdminAuth();
+    const db = getAdminFirestore();
+
+    // 1. Verify idToken
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const userId = decodedToken.uid;
+
+    console.log(`[registerManagerAction] Registering manager account for user ${userId}...`);
+
+    // 2. Validate Default Manager Access Key
+    const keyDocSnap = await db.collection('authKeys').doc(managerKey).get();
+    const isDbKey = keyDocSnap.exists && keyDocSnap.data()?.role === 'manager';
+    const isHardcodedFallback = managerKey === '00216764';
+
+    if (!isDbKey && !isHardcodedFallback) {
+      return { error: 'Invalid manager access key. Please verify the key provided by your administrator.' };
+    }
+
+    // 3. Create or update user profile as Manager in Firestore
+    const userDocRef = db.collection('users').doc(userId);
+    const userDoc = await userDocRef.get();
+
+    if (userDoc.exists) {
+      await userDocRef.update({
+        isManager: true,
+        activeManagerKey: managerKey,
+        updatedAt: new Date().toISOString(),
+      });
+    } else {
+      await userDocRef.set({
+        email: decodedToken.email || '',
+        name: decodedToken.name || '',
+        isManager: true,
+        isSuperAdmin: false,
+        activeManagerKey: managerKey,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    // 4. Set custom claims on Firebase Auth
+    try {
+      await adminAuth.setCustomUserClaims(userId, {
+        isManager: true,
+        isSuperAdmin: false,
+      });
+      console.log(`[registerManagerAction] Successfully assigned manager custom claims to user ${userId}`);
+    } catch (claimErr) {
+      console.warn(`[registerManagerAction] setCustomUserClaims warning:`, claimErr);
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error(`[registerManagerAction] Failed to register manager:`, error);
+    return { error: error.message || 'Server error occurred during manager registration.' };
+  }
+}
+
 
 
 export async function migrateAllUsersClaimsAction() {

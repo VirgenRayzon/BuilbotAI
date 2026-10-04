@@ -52,11 +52,11 @@ export default function RootLayout({
                     <AppLayout>
                       {children}
                     </AppLayout>
+                    <SessionTimeout />
                   </MantineAppProvider>
                 </SiteSettingsProvider>
               </LoadingProvider>
               <Toaster />
-              <SessionTimeout />
             </UserProfileProvider>
           </FirebaseClientProvider>
         </ThemeProvider>

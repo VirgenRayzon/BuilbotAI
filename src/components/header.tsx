@@ -120,9 +120,7 @@ export function Header() {
   // Hide header on dedicated full-screen authentication pages
   if (
     mounted &&
-    !loading &&
-    !authUser &&
-    ["/signin", "/signup", "/system-access"].includes(pathname)
+    ["/signin", "/signup", "/system-access", "/system-access/signup", "/forgot-password"].includes(pathname)
   ) {
     return null;
   }

@@ -69,7 +69,7 @@ export function RequestKeyModal({
 
         <div>
           <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-            Admin Email Address
+            Email Address
           </Text>
           <TextInput
             type="email"

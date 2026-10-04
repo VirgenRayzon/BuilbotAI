@@ -17,7 +17,7 @@ export function SuperAdminSettings() {
     const [managerKey, setManagerKey] = useState('');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    
+
     const [originalManagerDocId, setOriginalManagerDocId] = useState<string | null>(null);
     const [requests, setRequests] = useState<any[]>([]);
     const [managers, setManagers] = useState<any[]>([]);
@@ -33,7 +33,7 @@ export function SuperAdminSettings() {
             try {
                 const keysRef = collection(firestore, 'authKeys');
                 const snapshot = await getDocs(query(keysRef));
-                
+
                 snapshot.forEach((docSnap) => {
                     const data = docSnap.data();
                     if (data.role === 'manager') {
@@ -57,14 +57,14 @@ export function SuperAdminSettings() {
     useEffect(() => {
         if (!firestore) return;
         const q = query(
-            collection(firestore, 'keyRequests'), 
+            collection(firestore, 'keyRequests'),
             where('status', '==', 'pending')
         );
-        
+
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const reqs = snapshot.docs.map(doc => ({ 
-                id: doc.id, 
-                ...doc.data() 
+            const reqs = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
             }));
             reqs.sort((a: any, b: any) => {
                 const dateA = a.requestedAt?.toDate() || 0;
@@ -82,14 +82,14 @@ export function SuperAdminSettings() {
     useEffect(() => {
         if (!firestore) return;
         const q = query(
-            collection(firestore, 'users'), 
+            collection(firestore, 'users'),
             where('isManager', '==', true)
         );
-        
+
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const m = snapshot.docs.map(doc => ({ 
-                id: doc.id, 
-                ...doc.data() 
+            const m = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
             }));
             setManagers(m);
         }, (err) => {
@@ -129,7 +129,7 @@ export function SuperAdminSettings() {
             // Find manager by email
             const managerQuery = query(collection(firestore, 'users'), where('email', '==', request.email), limit(1));
             const managerSnap = await getDocs(managerQuery);
-            
+
             if (!managerSnap.empty) {
                 const managerDoc = managerSnap.docs[0];
                 const managerData = managerDoc.data();
@@ -141,7 +141,7 @@ export function SuperAdminSettings() {
                 }
                 await updateDoc(doc(firestore, 'users', managerDoc.id), updates);
             }
-            
+
             await updateDoc(doc(firestore, 'keyRequests', request.id), {
                 status: 'approved',
                 newKey: newKey,
@@ -157,11 +157,11 @@ export function SuperAdminSettings() {
                 resourceName: request.email,
                 details: `Approved key reset request for manager`
             });
-            
-            toast({ 
-                title: "Request Approved", 
+
+            toast({
+                title: "Request Approved",
                 description: `New Key for ${request.email}: ${newKey}.`,
-                duration: 10000 
+                duration: 10000
             });
         } catch (err) {
             console.error(err);
@@ -183,7 +183,7 @@ export function SuperAdminSettings() {
                 updates.deprecatedKeys = arrayUnion(manager.activeManagerKey);
             }
             await updateDoc(doc(firestore, 'users', manager.id), updates);
-            
+
             await createAuditLog(firestore, {
                 actionName: 'auth_update',
                 actorId: profile?.id || 'unknown',
@@ -195,10 +195,10 @@ export function SuperAdminSettings() {
                 details: `Super Admin manually reset manager key`
             });
 
-            toast({ 
-                title: "Key Reset", 
+            toast({
+                title: "Key Reset",
                 description: `New Key for ${manager.email}: ${newKey}.`,
-                duration: 10000 
+                duration: 10000
             });
         } catch (err) {
             console.error(err);
@@ -239,25 +239,25 @@ export function SuperAdminSettings() {
                 <CardHeader>
                     <CardTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
                         <Key className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                        Access Keys
+                        Default Manger Access Key
                     </CardTitle>
                     <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
-                        Manage the access keys required for new signups.
+                        Manage the access key required for new manager signups.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="space-y-2">
                         <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Manager Key</Label>
                         <div className="flex gap-2">
-                            <Input 
-                                value={managerKey} 
-                                onChange={(e) => setManagerKey(e.target.value)} 
+                            <Input
+                                value={managerKey}
+                                onChange={(e) => setManagerKey(e.target.value)}
                                 placeholder="Enter Manager Key"
                                 type="password"
                                 className="bg-slate-50 dark:bg-slate-900/50 border-slate-300 dark:border-white/10"
                             />
-                            <Button 
-                                onClick={handleSaveManagerKey} 
+                            <Button
+                                onClick={handleSaveManagerKey}
                                 disabled={saving || managerKey === originalManagerDocId}
                                 className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs uppercase tracking-wider"
                             >
@@ -292,8 +292,8 @@ export function SuperAdminSettings() {
                                             <p className="font-bold text-sm text-slate-900 dark:text-white">{manager.email}</p>
                                             <p className="text-xs text-slate-500 font-mono">ID: {manager.id}</p>
                                         </div>
-                                        <Button 
-                                            size="sm" 
+                                        <Button
+                                            size="sm"
                                             variant="outline"
                                             onClick={() => handleResetManagerKey(manager)}
                                             disabled={!!actionLoading}
@@ -366,9 +366,9 @@ export function SuperAdminSettings() {
                                             </p>
                                         </div>
                                         <div className="flex gap-2">
-                                            <Button 
-                                                size="sm" 
-                                                variant="ghost" 
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
                                                 className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20"
                                                 onClick={() => handleRejectRequest(req.id)}
                                                 disabled={!!actionLoading}
@@ -376,8 +376,8 @@ export function SuperAdminSettings() {
                                                 {actionLoading === req.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
                                                 <span className="ml-2 hidden sm:inline">Reject</span>
                                             </Button>
-                                            <Button 
-                                                size="sm" 
+                                            <Button
+                                                size="sm"
                                                 className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
                                                 onClick={() => handleApproveRequest(req)}
                                                 disabled={!!actionLoading}

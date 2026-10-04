@@ -1,145 +1,147 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useAuth, useUser } from '@/firebase';
-import { useUserProfile } from '@/context/user-profile';
-import { signOut } from 'firebase/auth';
+import React from 'react';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { useRouter } from 'next/navigation';
-
-// 30 minutes of inactivity for total timeout
-const TIMEOUT_MS = 30 * 60 * 1000;
-// Show warning 5 minutes before timeout (at 25 minutes)
-const WARNING_MS = 25 * 60 * 1000;
+  Modal,
+  Title,
+  Text,
+  Stack,
+  Group,
+  Button,
+  ThemeIcon,
+  Progress,
+  Paper,
+} from '@mantine/core';
+import { Clock, ShieldAlert, LogOut, CheckCircle2 } from 'lucide-react';
+import { useIdleTimeout } from '@/hooks/use-idle-timeout';
+import { useAdminSessionGuard } from '@/hooks/use-admin-session-guard';
 
 export function SessionTimeout() {
-  const user = useUser();
-  const auth = useAuth();
-  const { profile } = useUserProfile();
-  const router = useRouter();
-  const [showWarning, setShowWarning] = useState(false);
-  const [isTimedOut, setIsTimedOut] = useState(false);
-  
-  const warningTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const logoutTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Enforces administrative tab/window close logout
+  useAdminSessionGuard();
 
-  const handleLogout = useCallback(async () => {
-    if (auth && user) {
-      try {
-        const isStaff = Boolean(profile?.isSuperAdmin || profile?.isManager);
-        const destination = isStaff ? '/system-access' : '/signin';
-        localStorage.removeItem('pc_chat_history_v2');
-        localStorage.removeItem('pc_builder_state');
-        localStorage.removeItem('admin_pc_builder_state');
-        setIsTimedOut(true);
-        setShowWarning(false);
-        try {
-          await signOut(auth);
-        } finally {
-          window.location.replace(destination);
-        }
-      } catch (error) {
-        console.error('Logout failed:', error);
-      }
-    }
-  }, [auth, user, profile, router]);
+  // Core inactivity and heartbeat synchronization
+  const {
+    showWarning,
+    secondsRemaining,
+    totalWarningSeconds,
+    isStaff,
+    stayLoggedIn,
+    logout,
+  } = useIdleTimeout();
 
-  const resetTimers = useCallback(() => {
-    if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
-    if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
-
-    if (user) {
-      warningTimerRef.current = setTimeout(() => {
-        setShowWarning(true);
-      }, WARNING_MS);
-
-      logoutTimerRef.current = setTimeout(() => {
-        handleLogout();
-      }, TIMEOUT_MS);
-    }
-  }, [user, handleLogout]);
-
-  useEffect(() => {
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
-    
-    const activityHandler = () => {
-      // Only reset timers if we aren't already showing the warning or timed out
-      if (!showWarning && !isTimedOut) {
-        resetTimers();
-      }
-    };
-
-    if (user) {
-      resetTimers();
-      events.forEach(event => window.addEventListener(event, activityHandler));
-    }
-
-    return () => {
-      if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
-      if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
-      events.forEach(event => window.removeEventListener(event, activityHandler));
-    };
-  }, [user, resetTimers, showWarning, isTimedOut]);
-
-  const stayLoggedIn = () => {
-    setShowWarning(false);
-    resetTimers();
-  };
-
-  // Only run this logic if a user is logged in
-  if (!user) return null;
+  const minutes = Math.floor(secondsRemaining / 60);
+  const seconds = secondsRemaining % 60;
+  const formattedTime = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  const progressPercent = Math.max(
+    0,
+    Math.min(100, (secondsRemaining / (totalWarningSeconds || 1)) * 100)
+  );
 
   return (
-    <>
-      <AlertDialog open={showWarning} onOpenChange={setShowWarning}>
-        <AlertDialogContent className="border-cyan-500/20 bg-[#0a0a1a] text-white">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-bold text-cyan-400">
+    <Modal
+      opened={showWarning}
+      onClose={stayLoggedIn}
+      radius="lg"
+      centered
+      closeOnClickOutside={false}
+      closeOnEscape={false}
+      withCloseButton={false}
+      overlayProps={{
+        backgroundOpacity: 0.75,
+        blur: 5,
+      }}
+      title={
+        <Group gap="sm">
+          <ThemeIcon
+            size="md"
+            radius="md"
+            color={isStaff ? 'red' : 'cyan'}
+            variant="light"
+          >
+            {isStaff ? <ShieldAlert size={18} /> : <Clock size={18} />}
+          </ThemeIcon>
+          <div>
+            <Title
+              order={4}
+              className="text-base font-bold font-headline uppercase tracking-tight text-slate-900 dark:text-slate-100"
+            >
               Session Timeout Warning
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-300">
-              Your session is about to expire due to inactivity. Would you like to stay logged in?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction 
-              onClick={stayLoggedIn}
-              className="bg-cyan-600 hover:bg-cyan-500 text-white"
-            >
-              Stay Logged In
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Title>
+            <Text size="xs" className="text-slate-500 dark:text-slate-400">
+              Inactivity detected on this workstation
+            </Text>
+          </div>
+        </Group>
+      }
+      classNames={{
+        content:
+          'bg-white dark:bg-[#111722] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-2xl',
+        header:
+          'bg-white dark:bg-[#111722] border-b border-slate-200 dark:border-white/10 pb-3',
+        body: 'pt-4',
+      }}
+    >
+      <Stack gap="md">
+        <Text size="xs" className="text-slate-600 dark:text-slate-300 leading-relaxed">
+          {isStaff
+            ? 'For security compliance, administrative sessions automatically terminate after 15 minutes of inactivity.'
+            : 'To protect your account and active builds, your session will automatically expire due to inactivity.'}
+        </Text>
 
-      <AlertDialog open={isTimedOut} onOpenChange={setIsTimedOut}>
-        <AlertDialogContent className="border-red-500/20 bg-[#0a0a1a] text-white">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-bold text-red-400">
-              Session Expired
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-300">
-              Your session has timed out due to inactivity. Please log in again to continue.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction 
-              onClick={() => setIsTimedOut(false)}
-              className="bg-red-600 hover:bg-red-500 text-white"
-            >
-              OK
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+        {/* Live Countdown Surface */}
+        <Paper
+          withBorder
+          radius="md"
+          p="md"
+          className="bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-white/10 text-center"
+        >
+          <Text size="xs" fw={700} className="uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
+            Automatic Logout In
+          </Text>
+          <div className="font-mono text-3xl font-extrabold tracking-wider text-slate-900 dark:text-white my-1">
+            {formattedTime}
+          </div>
+          <Text size="xs" className="text-slate-400 dark:text-slate-500 mb-3">
+            {secondsRemaining} seconds remaining
+          </Text>
+
+          <Progress
+            value={progressPercent}
+            color={progressPercent < 25 ? 'red' : isStaff ? 'red' : 'cyan'}
+            size="sm"
+            radius="xl"
+            animated
+            className="transition-all duration-300"
+          />
+        </Paper>
+
+        {/* Actions */}
+        <Group justify="space-between" gap="xs" mt="sm">
+          <Button
+            variant="subtle"
+            color="gray"
+            size="sm"
+            radius="md"
+            onClick={logout}
+            leftSection={<LogOut size={14} />}
+            className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-red-500"
+          >
+            Log Out Now
+          </Button>
+
+          <Button
+            color={isStaff ? 'red' : 'cyan'}
+            size="sm"
+            radius="md"
+            onClick={stayLoggedIn}
+            leftSection={<CheckCircle2 size={15} />}
+            className="text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-cyan-600/20"
+          >
+            Stay Signed In
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
   );
 }

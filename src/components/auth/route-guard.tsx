@@ -66,7 +66,7 @@ export function RouteGuard({
 
     // Render loading state while checking
     if (authLoading || isChecking) {
-        return loadingComponent || <FullPageLoader label="BuilbotAI" subtitle="Secure Channel Initializing" />;
+        return loadingComponent || <FullPageLoader label="BuilbotAI" subtitle="Verifying access..." />;
     }
 
     // Only render children if authorized
