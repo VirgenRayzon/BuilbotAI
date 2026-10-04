@@ -1,38 +1,35 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useUserProfile } from "@/context/user-profile";
 import { useTheme } from "@/context/theme-provider";
 import { useRouter } from "next/navigation";
 import { cn, formatCurrency } from "@/lib/utils";
 import {
-  Tabs,
-  TabsList,
-  TabsTab,
-  TabsPanel,
-  SegmentedControl,
   Paper,
   Title,
   Text,
   Badge,
   Group,
-  Stack,
   ThemeIcon,
+  Button,
 } from "@mantine/core";
 import {
+  User,
   Package,
   Shield,
   FileText,
   Settings,
-  Database,
   Activity,
   Heart,
   ShieldCheck,
   CheckCircle2,
   Cpu,
   History,
+  Truck,
+  Bot,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
 import { RouteGuard } from "@/components/auth/route-guard";
 import type { Order } from "@/lib/types";
 
@@ -47,6 +44,7 @@ import { useFavorites } from "./hooks/use-favorites";
 
 // Sub-components
 import { ProfileHero } from "./components/profile-hero";
+import { ProfileSidebar } from "./components/profile-sidebar";
 import { AccountDetails } from "./components/account-details";
 import { EmergencyControlsCard } from "./components/emergency-controls-card";
 import { ReservationsList } from "./components/reservations-list";
@@ -54,6 +52,7 @@ import { FavoritesList } from "./components/favorites-list";
 import { UserAuditLogsSection } from "./components/user-audit-logs-section";
 import { AuditLogsSection } from "./components/audit-logs-section";
 import { SuperAdminSettings } from "@/components/super-admin-settings";
+import { AiModelSettings } from "@/components/ai-model-settings";
 import { AboutManagement } from "@/components/about-management";
 
 import {
@@ -75,9 +74,9 @@ import {
 } from "@/components/ui/dialog";
 
 /**
- * Profile Page Orchestrator (Mantine UI Redesign)
- * Features modular groupings: Profile & Safeguards Sidebar, Grouped Hardware Rig Workspace,
- * and high-contrast styling across light and dark modes.
+ * Profile Page Orchestrator (Facebook & Mantine UI Architecture)
+ * Features a sticky left navigation sidebar, full-bleed right workspace,
+ * smooth framer-motion transitions, and strict RBAC isolation.
  */
 export default function ProfilePage() {
   const { authUser, profile } = useUserProfile();
@@ -97,37 +96,39 @@ export default function ProfilePage() {
   const [cancelModalOrder, setCancelModalOrder] = useState<Order | null>(null);
   const [deleteActionId, setDeleteActionId] = useState<string | null>(null);
 
-  // Grouped sub-tab for hardware builds (Reservations vs Favorites)
-  const [hardwareSubTab, setHardwareSubTab] = useState<string>("reservations");
+  // Role booleans
+  const isSuperAdmin = Boolean(profile?.isSuperAdmin);
+  const isManager = Boolean(profile?.isManager && !profile?.isSuperAdmin);
+  const isRegularUser = !isSuperAdmin && !isManager;
 
-  const defaultTab = profile?.isSuperAdmin
-    ? "management"
-    : profile?.isManager
-      ? "audit"
-      : "hardware";
+  // Define permitted tabs per role
+  const getAllowedTabs = useCallback(() => {
+    if (isSuperAdmin) {
+      return ["account", "reservations", "favorites", "audit", "management", "ai-models", "safeguards", "content"];
+    }
+    if (isManager) {
+      return ["account", "reservations", "favorites", "audit"];
+    }
+    return ["account", "reservations", "favorites", "activity"];
+  }, [isSuperAdmin, isManager]);
 
+  const defaultTab = "account";
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
 
-  React.useEffect(() => {
+  // Synchronize and sanitize URL query params
+  useEffect(() => {
     if (typeof window !== "undefined") {
       const syncTabs = () => {
         const params = new URLSearchParams(window.location.search);
         const tab = params.get("tab");
-        if (tab === "management" && profile?.isSuperAdmin) {
-          setActiveTab("management");
-        } else if (tab === "content" && profile?.isSuperAdmin) {
-          setActiveTab("content");
-        } else if (tab === "reservations" && !profile?.isSuperAdmin && !profile?.isManager) {
-          setActiveTab("hardware");
-          setHardwareSubTab("reservations");
-        } else if (tab === "favorites" && !profile?.isSuperAdmin && !profile?.isManager) {
-          setActiveTab("hardware");
-          setHardwareSubTab("favorites");
-        } else if (tab === "audit-logs" || tab === "audit") {
-          setActiveTab(profile?.isSuperAdmin || profile?.isManager ? "audit" : "activity");
-        } else if (tab === "account") {
-          const el = document.getElementById("account-details-section");
-          if (el) el.scrollIntoView({ behavior: "smooth" });
+        const allowed = getAllowedTabs();
+
+        if (tab && allowed.includes(tab)) {
+          setActiveTab(tab);
+        } else if (tab === "audit-logs" && (isManager || isSuperAdmin)) {
+          setActiveTab("audit");
+        } else {
+          setActiveTab(defaultTab);
         }
       };
 
@@ -135,7 +136,20 @@ export default function ProfilePage() {
       window.addEventListener("popstate", syncTabs);
       return () => window.removeEventListener("popstate", syncTabs);
     }
-  }, [profile]);
+  }, [profile, isSuperAdmin, isManager, getAllowedTabs]);
+
+  // Tab switch handler with URL synchronization
+  const handleTabChange = (tabId: string) => {
+    const allowed = getAllowedTabs();
+    if (!allowed.includes(tabId)) return;
+
+    setActiveTab(tabId);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tabId);
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
 
   return (
     <RouteGuard requiredPermission="isRegisteredUser">
@@ -157,161 +171,167 @@ export default function ProfilePage() {
           }}
         />
 
-        <div className="relative z-10">
-          {/* Hero Section */}
-          <ProfileHero profile={profile} authUser={authUser} stats={reservations.stats} />
+        <div className="relative z-10 pt-6 md:pt-8">
+          {/* Full-Width Prominent User Identity Banner below Header */}
+          <ProfileHero
+            profile={profile}
+            authUser={authUser}
+            stats={reservations.stats}
+          />
 
-          <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 pb-24">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Sidebar: Grouped Profile Details & Safeguards */}
-              <div id="account-details-section" className="lg:col-span-4 space-y-6">
-                {/* 1. Account Details & Credentials */}
-                <AccountDetails
+          <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 pb-12">
+            {/* Facebook / Mantine UI 2-Column Architecture */}
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
+              {/* Left Column: Sticky Navigation Sidebar */}
+              <aside className="w-full lg:w-[325px] shrink-0 lg:sticky lg:top-24">
+                <ProfileSidebar
                   profile={profile}
-                  {...profileState}
-                  {...adminKeys}
+                  authUser={authUser}
+                  activeTab={activeTab}
+                  onTabChange={handleTabChange}
+                  reservationsCount={reservations.reservations.length}
+                  favoritesCount={favoritesHook.favorites.length}
+                  userLogsCount={userAudit.logs.length}
+                  staffLogsCount={audit.auditLogs.length}
                 />
+              </aside>
 
-                {/* 2. Emergency Controls (Super Admin Only) */}
-                {profile?.isSuperAdmin && (
-                  <EmergencyControlsCard emergency={emergency} />
-                )}
-              </div>
-
-              {/* Main Content Area: Grouped Workspaces */}
-              <div className="lg:col-span-8">
-                <Tabs value={activeTab} onChange={(val) => val && setActiveTab(val)} variant="pills" radius="md">
-                  <TabsList className="border-b border-slate-200 dark:border-white/10 pb-4 mb-6 gap-2">
-                    {/* Standard User / Builder Tabs */}
-                    {(!profile?.isManager && !profile?.isSuperAdmin) && (
-                      <>
-                        <TabsTab
-                          value="hardware"
-                          leftSection={<Cpu size={16} />}
-                          className="font-bold text-xs uppercase tracking-wider"
+              {/* Right Column: Full-Bleed Dynamic Workspace */}
+              <section className="flex-1 w-full min-w-0">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-6"
+                  >
+                    {/* TAB 1: Account & Security */}
+                    {activeTab === "account" && (
+                      <div className="space-y-6">
+                        <Paper
+                          withBorder
+                          radius="lg"
+                          p="lg"
+                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
                         >
-                          PC Rig Hub
-                        </TabsTab>
-
-                        <TabsTab
-                          value="activity"
-                          leftSection={<History size={16} />}
-                          className="font-bold text-xs uppercase tracking-wider"
-                        >
-                          Audit Logs
-                          {userAudit.logs.length > 0 && (
-                            <Badge size="xs" color="cyan" variant="light" className="ml-2">
-                              {userAudit.logs.length}
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                              <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
+                                <User className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                                <span>Account & Security</span>
+                              </Title>
+                              <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
+                                Manage your profile identity, contact credentials, and security settings.
+                              </Text>
+                            </div>
+                            <Badge
+                              size="md"
+                              variant={isSuperAdmin ? "filled" : isManager ? "filled" : "light"}
+                              color={isSuperAdmin ? "indigo" : isManager ? "orange" : "cyan"}
+                              className="font-bold uppercase tracking-wider text-[10px]"
+                            >
+                              {isSuperAdmin ? "Super Admin" : isManager ? "Manager" : "Verified Customer"}
                             </Badge>
-                          )}
-                        </TabsTab>
-                      </>
-                    )}
+                          </div>
+                        </Paper>
 
-                    {/* Super Admin Tabs */}
-                    {profile?.isSuperAdmin && (
-                      <>
-                        <TabsTab
-                          value="management"
-                          leftSection={<Settings size={16} />}
-                          className="font-bold text-xs uppercase tracking-wider"
-                        >
-                          Management Portal
-                        </TabsTab>
+                        {/* Regular User Hardware Stats Summary */}
+                        {isRegularUser && (
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <Paper
+                              withBorder
+                              radius="lg"
+                              p="md"
+                              className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
+                            >
+                              <Group justify="space-between" mb={4}>
+                                <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                                  Total Builds
+                                </Text>
+                                <ThemeIcon size="xs" radius="xl" color="cyan" variant="light">
+                                  <Package size={12} />
+                                </ThemeIcon>
+                              </Group>
+                              <Text className="text-2xl font-headline font-bold text-slate-900 dark:text-white">
+                                {reservations.stats.totalBuilds}
+                              </Text>
+                            </Paper>
 
-                        <TabsTab
-                          value="content"
-                          leftSection={<Database size={16} />}
-                          className="font-bold text-xs uppercase tracking-wider"
-                        >
-                          Site Content
-                        </TabsTab>
+                            <Paper
+                              withBorder
+                              radius="lg"
+                              p="md"
+                              className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
+                            >
+                              <Group justify="space-between" mb={4}>
+                                <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                                  Active Orders
+                                </Text>
+                                <ThemeIcon size="xs" radius="xl" color="blue" variant="light">
+                                  <Truck size={12} />
+                                </ThemeIcon>
+                              </Group>
+                              <Text className="text-2xl font-headline font-bold text-cyan-600 dark:text-cyan-400">
+                                {reservations.stats.activeBuilds}
+                              </Text>
+                            </Paper>
 
-                        <TabsTab
-                          value="audit"
-                          leftSection={<Shield size={16} />}
-                          className="font-bold text-xs uppercase tracking-wider"
-                        >
-                          Audit Logs
-                        </TabsTab>
+                            <Paper
+                              withBorder
+                              radius="lg"
+                              p="md"
+                              className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
+                            >
+                              <Group justify="space-between" mb={4}>
+                                <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                                  Hardware Value
+                                </Text>
+                                <ThemeIcon size="xs" radius="xl" color="teal" variant="light">
+                                  <Cpu size={12} />
+                                </ThemeIcon>
+                              </Group>
+                              <Text className="text-xl font-headline font-bold text-emerald-600 dark:text-emerald-400 truncate">
+                                {formatCurrency(reservations.stats.totalValue)}
+                              </Text>
+                            </Paper>
+                          </div>
+                        )}
 
-                        <TabsTab
-                          value="hardware"
-                          leftSection={<Cpu size={16} />}
-                          className="font-bold text-xs uppercase tracking-wider"
-                        >
-                          Personal Rig Hub
-                        </TabsTab>
-                      </>
-                    )}
-
-                    {/* Manager Tabs */}
-                    {profile?.isManager && !profile?.isSuperAdmin && (
-                      <>
-                        <TabsTab
-                          value="audit"
-                          leftSection={<Shield size={16} />}
-                          className="font-bold text-xs uppercase tracking-wider"
-                        >
-                          Staff Audit Logs
-                        </TabsTab>
-
-                        <TabsTab
-                          value="hardware"
-                          leftSection={<Cpu size={16} />}
-                          className="font-bold text-xs uppercase tracking-wider"
-                        >
-                          Personal Rig Hub
-                        </TabsTab>
-                      </>
-                    )}
-                  </TabsList>
-
-                  {/* TAB 1: Hardware Builds Group (Reservations + Saved Favorites) */}
-                  <TabsPanel value="hardware" className="space-y-6">
-                    <Paper
-                      withBorder
-                      radius="lg"
-                      p="md"
-                      className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-                    >
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                          <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white">
-                            Hardware Rig Workspace
-                          </Title>
-                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
-                            Manage your active store reservations and saved builder favorites in one place.
-                          </Text>
-                        </div>
-
-                        {/* Grouping Segmented Control */}
-                        <SegmentedControl
-                          value={hardwareSubTab}
-                          onChange={setHardwareSubTab}
-                          size="sm"
-                          radius="md"
-                          data={[
-                            {
-                              label: `Reservations (${reservations.reservations.length})`,
-                              value: "reservations",
-                            },
-                            {
-                              label: `Saved Favorites (${favoritesHook.favorites.length})`,
-                              value: "favorites",
-                            },
-                          ]}
-                          classNames={{
-                            root: "bg-slate-100 dark:bg-slate-800/80 p-1 border border-slate-200 dark:border-white/10",
-                            label: "font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300",
-                          }}
+                        <AccountDetails
+                          profile={profile}
+                          {...profileState}
+                          {...adminKeys}
                         />
                       </div>
-                    </Paper>
+                    )}
 
-                    {/* Sub-Panel: Reservations */}
-                    {hardwareSubTab === "reservations" && (
-                      <div className="space-y-4">
+                    {/* TAB 2: Store Reservations */}
+                    {activeTab === "reservations" && (
+                      <div className="space-y-6">
+                        <Paper
+                          withBorder
+                          radius="lg"
+                          p="lg"
+                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
+                        >
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                              <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
+                                <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                <span>Store Reservations</span>
+                              </Title>
+                              <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
+                                Track active component reservation tickets, assembly progress, and pick-up readiness.
+                              </Text>
+                            </div>
+                            <Badge size="md" variant="light" color="blue" className="font-mono font-bold">
+                              {reservations.reservations.length} Reserved Rigs
+                            </Badge>
+                          </div>
+                        </Paper>
+
                         <ReservationsList
                           reservations={reservations.reservations}
                           loading={reservations.loading}
@@ -332,9 +352,38 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* Sub-Panel: Favorites */}
-                    {hardwareSubTab === "favorites" && (
-                      <div className="space-y-4">
+                    {/* TAB 3: Saved Rigs & Builds */}
+                    {activeTab === "favorites" && (
+                      <div className="space-y-6">
+                        <Paper
+                          withBorder
+                          radius="lg"
+                          p="lg"
+                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
+                        >
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                              <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
+                                <Heart className="h-5 w-5 text-rose-500" />
+                                <span>Saved Rigs & Builds</span>
+                              </Title>
+                              <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
+                                Access and modify your custom PC builds saved from the PC Builder.
+                              </Text>
+                            </div>
+                            <Button
+                              size="xs"
+                              variant="light"
+                              color="cyan"
+                              onClick={() => router.push("/builder")}
+                              leftSection={<Cpu size={14} />}
+                              className="font-bold uppercase tracking-wider text-xs"
+                            >
+                              Create New Build
+                            </Button>
+                          </div>
+                        </Paper>
+
                         <FavoritesList
                           favorites={favoritesHook.favorites}
                           loading={favoritesHook.loading}
@@ -343,75 +392,151 @@ export default function ProfilePage() {
                         />
                       </div>
                     )}
-                  </TabsPanel>
 
-                  {/* TAB 2: Activity Log (Standard Users) */}
-                  {(!profile?.isManager && !profile?.isSuperAdmin) && (
-                    <TabsPanel value="activity" className="space-y-6">
-                      <UserAuditLogsSection
-                        logs={userAudit.logs}
-                        loading={userAudit.loading}
-                      />
-                    </TabsPanel>
-                  )}
+                    {/* TAB 4: Activity History (Regular Customers Only) */}
+                    {activeTab === "activity" && isRegularUser && (
+                      <div className="space-y-6">
+                        <Paper
+                          withBorder
+                          radius="lg"
+                          p="lg"
+                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
+                        >
+                          <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
+                            <History className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                            <span>Activity History</span>
+                          </Title>
+                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
+                            Review your recent account actions, build updates, and reservation events.
+                          </Text>
+                        </Paper>
 
-                  {/* TAB 3: Management Portal (Super Admin) */}
-                  {profile?.isSuperAdmin && (
-                    <TabsPanel value="management" className="space-y-6">
-                      <Paper
-                        withBorder
-                        radius="lg"
-                        p="lg"
-                        className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm mb-6"
-                      >
-                        <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
-                          <Shield className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                          <span>Management Portal</span>
-                        </Title>
-                        <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
-                          Manage staff credentials, AI model routing, and system parameters.
-                        </Text>
-                      </Paper>
-                      <SuperAdminSettings />
-                    </TabsPanel>
-                  )}
+                        <UserAuditLogsSection
+                          logs={userAudit.logs}
+                          loading={userAudit.loading}
+                        />
+                      </div>
+                    )}
 
-                  {/* TAB 4: Site Content (Super Admin) */}
-                  {profile?.isSuperAdmin && (
-                    <TabsPanel value="content" className="space-y-6">
-                      <Paper
-                        withBorder
-                        radius="lg"
-                        p="lg"
-                        className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm mb-6"
-                      >
-                        <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
-                          <FileText className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
-                          <span>Site Content & Branding</span>
-                        </Title>
-                        <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
-                          Update customer-facing company information and story text.
-                        </Text>
-                      </Paper>
-                      <AboutManagement />
-                    </TabsPanel>
-                  )}
+                    {/* TAB 5: Staff / System Audit Logs (Managers & Super Admins Only) */}
+                    {activeTab === "audit" && (isManager || isSuperAdmin) && (
+                      <div className="space-y-6">
+                        <Paper
+                          withBorder
+                          radius="lg"
+                          p="lg"
+                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
+                        >
+                          <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
+                            <Shield className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                            <span>{isSuperAdmin ? "System Audit Logs" : "Staff Audit Logs"}</span>
+                          </Title>
+                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
+                            Enterprise security audit trail, administrative actions, and system modifications.
+                          </Text>
+                        </Paper>
 
-                  {/* TAB 5: Staff / System Audit Logs (Managers & Super Admins) */}
-                  {(profile?.isManager || profile?.isSuperAdmin) && (
-                    <TabsPanel value="audit" className="space-y-6">
-                      <AuditLogsSection
-                        logs={audit.auditLogs}
-                        loading={audit.auditLogsLoading}
-                      />
-                    </TabsPanel>
-                  )}
-                </Tabs>
-              </div>
+                        <AuditLogsSection
+                          logs={audit.auditLogs}
+                          loading={audit.auditLogsLoading}
+                        />
+                      </div>
+                    )}
+
+                    {/* TAB 6: Management Portal (Super Admin Only) */}
+                    {activeTab === "management" && isSuperAdmin && (
+                      <div className="space-y-6">
+                        <Paper
+                          withBorder
+                          radius="lg"
+                          p="lg"
+                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
+                        >
+                          <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
+                            <Settings className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                            <span>Management Portal</span>
+                          </Title>
+                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
+                            Manage staff credentials, manager keys, and password reset requests.
+                          </Text>
+                        </Paper>
+
+                        <SuperAdminSettings />
+                      </div>
+                    )}
+
+                    {/* TAB 7: AI Model Intelligence (Super Admin Only) */}
+                    {activeTab === "ai-models" && isSuperAdmin && (
+                      <div className="space-y-6">
+                        <Paper
+                          withBorder
+                          radius="lg"
+                          p="lg"
+                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
+                        >
+                          <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
+                            <Bot className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                            <span>AI Model Intelligence Configuration</span>
+                          </Title>
+                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
+                            Switch between default Gemini 2.5 Flash and fine-tuned Vertex AI models for platform recommendations and chat.
+                          </Text>
+                        </Paper>
+
+                        <AiModelSettings />
+                      </div>
+                    )}
+
+                    {/* TAB 8: System Safeguards (Super Admin Only) */}
+                    {activeTab === "safeguards" && isSuperAdmin && (
+                      <div className="space-y-6">
+                        <Paper
+                          withBorder
+                          radius="lg"
+                          p="lg"
+                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
+                        >
+                          <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
+                            <Activity className="h-5 w-5 text-amber-500" />
+                            <span>System Safeguards & Emergency Overrides</span>
+                          </Title>
+                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
+                            Real-time emergency kill switches, maintenance mode locks, and storage fallbacks.
+                          </Text>
+                        </Paper>
+
+                        <EmergencyControlsCard emergency={emergency} />
+                      </div>
+                    )}
+
+                    {/* TAB 8: Site Content & Branding (Super Admin Only) */}
+                    {activeTab === "content" && isSuperAdmin && (
+                      <div className="space-y-6">
+                        <Paper
+                          withBorder
+                          radius="lg"
+                          p="lg"
+                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
+                        >
+                          <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
+                            <FileText className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                            <span>Site Content & Branding</span>
+                          </Title>
+                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
+                            Update customer-facing company information, mission statement, and story.
+                          </Text>
+                        </Paper>
+
+                        <AboutManagement />
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </section>
             </div>
           </main>
 
-          {/* Cancel Reservation Modal with Noticeable Text in Both Modes */}
+          {/* Cancel Reservation Modal */}
           <Dialog
             open={!!cancelModalOrder}
             onOpenChange={(open) => !open && setCancelModalOrder(null)}
@@ -469,14 +594,16 @@ export default function ProfilePage() {
                     <Button
                       type="button"
                       variant="outline"
-                      className="h-11 rounded-xl border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold text-xs uppercase tracking-wider hover:bg-slate-200 dark:hover:bg-slate-700"
+                      color="gray"
+                      className="h-11 rounded-xl font-semibold text-xs uppercase tracking-wider"
                       onClick={() => setCancelModalOrder(null)}
                     >
                       Keep Reservation
                     </Button>
                     <Button
                       type="button"
-                      className="h-11 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider gap-2 shadow-lg shadow-emerald-900/30"
+                      color="teal"
+                      className="h-11 rounded-xl text-white font-bold text-xs uppercase tracking-wider gap-2 shadow-lg shadow-emerald-900/30"
                       onClick={() => {
                         const orderId = cancelModalOrder.id;
                         setCancelModalOrder(null);
@@ -485,7 +612,7 @@ export default function ProfilePage() {
                         );
                       }}
                     >
-                      <ShieldCheck className="h-4 w-4" />
+                      <ShieldCheck className="h-4 w-4 mr-1.5" />
                       Contact Staff
                     </Button>
                   </div>

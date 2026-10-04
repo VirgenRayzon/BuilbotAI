@@ -1,9 +1,18 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Plus, RefreshCcw } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Plus, RefreshCcw, BarChart3, AlertTriangle, Sparkles } from 'lucide-react';
+import {
+    Paper,
+    Title,
+    Text,
+    Button,
+    Group,
+    ThemeIcon,
+    Modal,
+    Stack,
+    Box
+} from '@mantine/core';
 import { SalesAnalytics } from '@/components/sales-analytics';
 import { useFirestore } from '@/firebase';
 import { resetSalesMetrics, ingestDummySalesData } from '@/firebase/database';
@@ -36,11 +45,18 @@ export function SalesTab({
             const ordersToReset = orders?.map(o => ({ id: o.id })) || [];
             const partsToReset = parts?.map(p => ({ id: p.id, category: p.category })) || [];
             await resetSalesMetrics(firestore, ordersToReset, partsToReset);
-            toast({ title: "Sales Metrics Reset", description: "All orders have been deleted and popularity metrics cleared." });
+            toast({
+                title: "Sales Metrics Reset",
+                description: "All orders have been deleted and popularity metrics cleared."
+            });
             setShowResetSalesConfirm(false);
         } catch (error) {
             console.error("Reset error:", error);
-            toast({ title: "Reset Failed", description: "An error occurred while resetting sales data.", variant: "destructive" });
+            toast({
+                title: "Reset Failed",
+                description: "An error occurred while resetting sales data.",
+                variant: "destructive"
+            });
         } finally {
             setIsResettingSales(false);
         }
@@ -69,84 +85,166 @@ export function SalesTab({
     };
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6">
             {/* Sales Control Header Panel */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/50 pb-6">
-                <div>
-                    <h2 className="text-2xl font-headline font-bold uppercase tracking-tight text-foreground">
-                        Sales & Analytics Dashboard
-                    </h2>
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest opacity-60 mt-1">
-                        Track reservations performance, revenue distributions, and component demand
-                    </p>
-                </div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200 dark:border-white/10">
                 <div className="flex items-center gap-3">
-                    <AlertDialog open={showIngestDummyConfirm} onOpenChange={setShowIngestDummyConfirm}>
-                        <Button
-                            variant="outline"
-                            className="bg-primary/10 border-primary/20 text-primary hover:bg-primary/25 hover:text-primary transition-all font-semibold text-xs tracking-wider uppercase px-4 h-9 flex items-center gap-2"
-                            onClick={() => setShowIngestDummyConfirm(true)}
-                        >
-                            <Plus className={cn("h-4 w-4", isIngestingDummyData && "animate-pulse")} />
-                            {isIngestingDummyData ? "Generating..." : "Ingest Dummy Data"}
-                        </Button>
-                        <AlertDialogContent className="bg-background/95 backdrop-blur-2xl border-border max-w-[400px]">
-                            <AlertDialogHeader>
-                                <AlertDialogTitle className="flex items-center gap-2 text-xl font-headline font-bold">
-                                    <Plus className="h-5 w-5 text-primary" />
-                                    Ingest Dummy Data?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription className="text-muted-foreground pt-2">
-                                    This will generate 100 random orders over the last 12 months and update part popularity scores.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter className="pt-6">
-                                <AlertDialogCancel className="bg-transparent border-border hover:bg-muted">Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                    className="bg-primary hover:bg-primary/90 text-white font-bold"
-                                    onClick={handleIngestDummyData}
-                                    disabled={isIngestingDummyData}
-                                >
-                                    {isIngestingDummyData ? "Ingesting..." : "Confirm Ingestion"}
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-
-                    <AlertDialog open={showResetSalesConfirm} onOpenChange={setShowResetSalesConfirm}>
-                        <Button
-                            variant="outline"
-                            className="bg-destructive/10 border-destructive/20 text-destructive hover:bg-destructive/25 hover:text-destructive transition-all font-semibold text-xs tracking-wider uppercase px-4 h-9 flex items-center gap-2"
-                            onClick={() => setShowResetSalesConfirm(true)}
-                        >
-                            <RefreshCcw className={cn("h-4 w-4", isResettingSales && "animate-spin")} />
-                            {isResettingSales ? "Resetting..." : "Reset Sales Analytics"}
-                        </Button>
-                        <AlertDialogContent className="bg-background/95 backdrop-blur-2xl border-border max-w-[400px]">
-                            <AlertDialogHeader>
-                                <AlertDialogTitle className="flex items-center gap-2 text-xl font-headline font-bold">
-                                    <RefreshCcw className="h-5 w-5 text-destructive" />
-                                    Reset Sales Analytics?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription className="text-muted-foreground pt-2">
-                                    This will PERMANENTLY delete all existing orders and reset component popularity metrics.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter className="pt-6">
-                                <AlertDialogCancel className="bg-transparent border-border hover:bg-muted">Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                    className="bg-destructive hover:bg-destructive/90 text-white font-bold"
-                                    onClick={handleResetSales}
-                                    disabled={isResettingSales}
-                                >
-                                    {isResettingSales ? "Resetting..." : "Confirm Full Reset"}
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                    <ThemeIcon size={44} radius="lg" color="cyan" variant="light">
+                        <BarChart3 className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
+                    </ThemeIcon>
+                    <div>
+                        <Title order={2} className="text-2xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white">
+                            Sales & Analytics Dashboard
+                        </Title>
+                        <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
+                            Track reservations performance, revenue distributions, and component demand.
+                        </Text>
+                    </div>
                 </div>
+
+                <Group gap="sm">
+                    <Button
+                        variant="light"
+                        color="cyan"
+                        radius="md"
+                        size="sm"
+                        leftSection={<Plus className={cn("h-4 w-4", isIngestingDummyData && "animate-pulse")} />}
+                        onClick={() => setShowIngestDummyConfirm(true)}
+                        loading={isIngestingDummyData}
+                        className="font-headline font-bold text-xs uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                        Ingest Dummy Data
+                    </Button>
+
+                    <Button
+                        variant="subtle"
+                        color="red"
+                        radius="md"
+                        size="sm"
+                        leftSection={<RefreshCcw className={cn("h-4 w-4", isResettingSales && "animate-spin")} />}
+                        onClick={() => setShowResetSalesConfirm(true)}
+                        loading={isResettingSales}
+                        className="font-headline font-bold text-xs uppercase tracking-wider text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                        Reset Analytics
+                    </Button>
+                </Group>
             </div>
 
+            {/* Ingest Dummy Data Modal */}
+            <Modal
+                opened={showIngestDummyConfirm}
+                onClose={() => setShowIngestDummyConfirm(false)}
+                title={
+                    <Group gap="xs">
+                        <ThemeIcon size="md" color="cyan" variant="light" radius="md">
+                            <Sparkles size={16} />
+                        </ThemeIcon>
+                        <Text fw={700} className="font-headline text-base text-slate-900 dark:text-white uppercase tracking-tight">
+                            Ingest Dummy Sales Data
+                        </Text>
+                    </Group>
+                }
+                centered
+                radius="lg"
+                overlayProps={{ backgroundOpacity: 0.65, blur: 5 }}
+                classNames={{
+                    content: "bg-white dark:bg-[#141a23] border border-slate-200 dark:border-white/10 p-2 shadow-2xl",
+                    header: "bg-transparent border-b border-slate-200 dark:border-white/10 pb-3",
+                }}
+            >
+                <Stack gap="md" className="pt-2">
+                    <Text size="sm" className="text-slate-600 dark:text-slate-300">
+                        This action will generate <strong>100 randomized customer reservations</strong> distributed over the past 12 months, calculating component demand and updating popularity scores.
+                    </Text>
+
+                    <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-800 dark:text-cyan-300">
+                        Ideal for demoing charts, revenue trajectories, and component popularity matrices.
+                    </div>
+
+                    <Group justify="flex-end" gap="sm" className="pt-2">
+                        <Button
+                            variant="subtle"
+                            color="gray"
+                            radius="md"
+                            size="sm"
+                            onClick={() => setShowIngestDummyConfirm(false)}
+                            disabled={isIngestingDummyData}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            color="cyan"
+                            radius="md"
+                            size="sm"
+                            onClick={handleIngestDummyData}
+                            loading={isIngestingDummyData}
+                            className="font-bold uppercase tracking-wider text-xs shadow-md shadow-cyan-500/20 text-white"
+                        >
+                            Confirm Ingestion
+                        </Button>
+                    </Group>
+                </Stack>
+            </Modal>
+
+            {/* Reset Sales Analytics Modal */}
+            <Modal
+                opened={showResetSalesConfirm}
+                onClose={() => setShowResetSalesConfirm(false)}
+                title={
+                    <Group gap="xs">
+                        <ThemeIcon size="md" color="red" variant="light" radius="md">
+                            <AlertTriangle size={16} />
+                        </ThemeIcon>
+                        <Text fw={700} className="font-headline text-base text-slate-900 dark:text-white uppercase tracking-tight">
+                            Reset Sales Analytics?
+                        </Text>
+                    </Group>
+                }
+                centered
+                radius="lg"
+                overlayProps={{ backgroundOpacity: 0.65, blur: 5 }}
+                classNames={{
+                    content: "bg-white dark:bg-[#141a23] border border-slate-200 dark:border-white/10 p-2 shadow-2xl",
+                    header: "bg-transparent border-b border-slate-200 dark:border-white/10 pb-3",
+                }}
+            >
+                <Stack gap="md" className="pt-2">
+                    <Text size="sm" className="text-slate-600 dark:text-slate-300">
+                        Are you sure you want to <strong>permanently delete all existing reservations</strong> and clear all component popularity scores?
+                    </Text>
+
+                    <Text size="xs" c="red" className="font-semibold flex items-center gap-1.5">
+                        <AlertTriangle size={14} />
+                        This action is irreversible and cannot be undone.
+                    </Text>
+
+                    <Group justify="flex-end" gap="sm" className="pt-2">
+                        <Button
+                            variant="subtle"
+                            color="gray"
+                            radius="md"
+                            size="sm"
+                            onClick={() => setShowResetSalesConfirm(false)}
+                            disabled={isResettingSales}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            color="red"
+                            radius="md"
+                            size="sm"
+                            onClick={handleResetSales}
+                            loading={isResettingSales}
+                            className="font-bold uppercase tracking-wider text-xs"
+                        >
+                            Confirm Full Reset
+                        </Button>
+                    </Group>
+                </Stack>
+            </Modal>
+
+            {/* Main Sales Analytics Component */}
             <div className="w-full">
                 <SalesAnalytics
                     orders={orders || []}

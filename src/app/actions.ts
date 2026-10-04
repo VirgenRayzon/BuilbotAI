@@ -480,7 +480,8 @@ export async function migrateAllUsersClaimsAction() {
 
 export async function testAiModelConnectionAction(
   provider: 'default' | 'finetuned',
-  customModelId?: string
+  customModelId?: string,
+  defaultModelId?: string
 ) {
   const startTime = Date.now();
   try {
@@ -494,14 +495,15 @@ export async function testAiModelConnectionAction(
     }
 
     if (provider === 'default') {
+      const targetModel = (defaultModelId && defaultModelId.trim()) || 'gemini-2.5-flash';
       const google = createGoogleGenerativeAI({ apiKey });
       const result = await generateText({
-        model: google('gemini-2.5-flash'),
-        prompt: 'Say "Connection successful: Gemini 2.5 Flash is ready."',
+        model: google(targetModel),
+        prompt: `Say "Connection successful: ${targetModel} is ready."`,
       });
       return {
         success: true,
-        model: 'gemini-2.5-flash',
+        model: targetModel,
         provider: 'default',
         response: result.text.trim(),
         latencyMs: Date.now() - startTime
@@ -513,13 +515,14 @@ export async function testAiModelConnectionAction(
       ? customModelId.trim().replace('7817221357778', '781722135778')
       : DEFAULT_TUNED_MODEL_ID;
 
-    const token = await getVertexAccessToken();
+    // Always refresh token on test click to catch newly granted IAM roles immediately
+    const token = await getVertexAccessToken(true);
     if (!token) {
       return {
         success: false,
         model: targetModel,
         provider: 'finetuned',
-        error: "No Google Cloud Vertex AI credentials found. FIREBASE_SERVICE_ACCOUNT is required in .env.",
+        error: "No Google Cloud Vertex AI credentials found. Set FIREBASE_SERVICE_ACCOUNT (or FB_SERVICE_ACCOUNT) in .env, or run 'gcloud auth application-default login'.",
         latencyMs: Date.now() - startTime
       };
     }
@@ -587,10 +590,10 @@ export async function testAiModelConnectionAction(
       latencyMs: Date.now() - startTime,
       isPermissionError,
       remediation: isPermissionError ? {
-        serviceAccount: 'firebase-adminsdk-fbsvc@studio-3150054754-c7d0b.iam.gserviceaccount.com',
-        requiredRole: 'roles/aiplatform.user (Vertex AI User)',
+        serviceAccount: 'firebase-app-hosting-compute@studio-3150054754-c7d0b.iam.gserviceaccount.com',
+        requiredRole: 'roles/editor (Editor) or roles/aiplatform.user (Vertex AI User)',
         project: '781722135778 (studio-3150054754-c7d0b)',
-        instructions: 'Grant the "Vertex AI User" role to this service account in Google Cloud IAM & Admin console to enable inference on this Vertex model endpoint.'
+        instructions: 'Grant the "Editor" or "Vertex AI User" role to this service account in Google Cloud IAM & Admin console to enable inference on this Vertex model endpoint.'
       } : undefined
     };
   }
@@ -598,17 +601,34 @@ export async function testAiModelConnectionAction(
 
 export async function updateSiteSettingsAction(settings: {
   aiModelProvider: 'default' | 'finetuned';
-  fineTunedModelId: string;
+  fineTunedModelId?: string;
+  defaultGeminiModel?: string;
+  fineTunedProjects?: Array<{ id: string; name: string; endpoint: string; createdAt?: string }>;
+  activeFineTunedProjectId?: string;
   updatedBy?: string;
 }) {
   try {
     const db = getAdminFirestore();
-    await db.collection('siteSettings').doc('main').set({
+    const updatePayload: Record<string, any> = {
       aiModelProvider: settings.aiModelProvider,
-      fineTunedModelId: settings.fineTunedModelId,
       lastUpdated: new Date().toISOString(),
       updatedBy: settings.updatedBy || 'Super Admin'
-    }, { merge: true });
+    };
+
+    if (settings.fineTunedModelId !== undefined) {
+      updatePayload.fineTunedModelId = settings.fineTunedModelId;
+    }
+    if (settings.defaultGeminiModel !== undefined) {
+      updatePayload.defaultGeminiModel = settings.defaultGeminiModel;
+    }
+    if (settings.fineTunedProjects !== undefined) {
+      updatePayload.fineTunedProjects = settings.fineTunedProjects;
+    }
+    if (settings.activeFineTunedProjectId !== undefined) {
+      updatePayload.activeFineTunedProjectId = settings.activeFineTunedProjectId;
+    }
+
+    await db.collection('siteSettings').doc('main').set(updatePayload, { merge: true });
     return { success: true };
   } catch (err: any) {
     console.error("Failed to update siteSettings via admin action:", err);

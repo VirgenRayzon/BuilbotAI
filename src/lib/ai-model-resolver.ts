@@ -77,6 +77,7 @@ export async function getActiveAiModelConfig(): Promise<ActiveAiModelConfig> {
 
     let provider: 'default' | 'finetuned' = 'default';
     let rawModelId = DEFAULT_TUNED_MODEL_ID;
+    let configuredDefaultGeminiModel = DEFAULT_MODEL;
 
     try {
         const firestore = getAdminFirestore();
@@ -89,6 +90,9 @@ export async function getActiveAiModelConfig(): Promise<ActiveAiModelConfig> {
                 rawModelId = data.fineTunedModelId.trim();
             } else if (process.env.GEMINI_FINE_TUNED_MODEL) {
                 rawModelId = process.env.GEMINI_FINE_TUNED_MODEL;
+            }
+            if (data?.defaultGeminiModel?.trim()) {
+                configuredDefaultGeminiModel = data.defaultGeminiModel.trim();
             }
         }
     } catch (error) {
@@ -111,7 +115,7 @@ export async function getActiveAiModelConfig(): Promise<ActiveAiModelConfig> {
 
     cachedConfig = {
         provider,
-        modelId: provider === 'finetuned' ? normalizedId : DEFAULT_MODEL,
+        modelId: provider === 'finetuned' ? normalizedId : configuredDefaultGeminiModel,
         isFineTuned: provider === 'finetuned' && !degraded,
         projectId,
         location,
@@ -134,7 +138,7 @@ export async function getGenkitModelName(): Promise<string> {
         // Vertex AI Genkit plugin supports vertexai/modelName
         return `vertexai/${config.modelId}`;
     }
-    return `googleai/${DEFAULT_MODEL}`;
+    return `googleai/${config.modelId || DEFAULT_MODEL}`;
 }
 
 /**
@@ -143,6 +147,8 @@ export async function getGenkitModelName(): Promise<string> {
 export function invalidateAiModelCache() {
     cachedConfig = null;
     lastCacheTime = 0;
+    cachedAccessToken = null;
+    tokenExpiry = 0;
     markTunedModelHealthy();
 }
 
@@ -152,31 +158,54 @@ export function invalidateAiModelCache() {
 let cachedAccessToken: string | null = null;
 let tokenExpiry = 0;
 
-export async function getVertexAccessToken(): Promise<string | null> {
+export async function getVertexAccessToken(forceRefresh = false): Promise<string | null> {
     const now = Date.now();
-    if (cachedAccessToken && (now < tokenExpiry - 60000)) {
+    if (!forceRefresh && cachedAccessToken && (now < tokenExpiry - 60000)) {
         return cachedAccessToken;
     }
 
-    const saBase64 = process.env.FIREBASE_SERVICE_ACCOUNT;
-    if (!saBase64) return null;
+    const saEnv = process.env.FB_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT;
 
+    if (saEnv && saEnv.trim() !== '') {
+        try {
+            let sa;
+            if (saEnv.trim().startsWith('{')) {
+                sa = JSON.parse(saEnv);
+            } else {
+                sa = JSON.parse(Buffer.from(saEnv, 'base64').toString('utf8'));
+            }
+            const auth = new GoogleAuth({
+                credentials: sa,
+                scopes: ['https://www.googleapis.com/auth/cloud-platform']
+            });
+            const client = await auth.getClient();
+            const tokenResponse = await client.getAccessToken();
+            if (tokenResponse.token) {
+                cachedAccessToken = tokenResponse.token;
+                tokenExpiry = now + 3500 * 1000; // ~1 hour
+                return cachedAccessToken;
+            }
+        } catch (err) {
+            console.error("[AI Model Resolver] Failed to acquire Vertex AI access token from Service Account:", err);
+        }
+    }
+
+    // Fallback: Attempt Google Application Default Credentials (ADC)
     try {
-        const sa = JSON.parse(Buffer.from(saBase64, 'base64').toString('utf8'));
         const auth = new GoogleAuth({
-            credentials: sa,
             scopes: ['https://www.googleapis.com/auth/cloud-platform']
         });
         const client = await auth.getClient();
         const tokenResponse = await client.getAccessToken();
         if (tokenResponse.token) {
             cachedAccessToken = tokenResponse.token;
-            tokenExpiry = now + 3500 * 1000; // ~1 hour
+            tokenExpiry = now + 3500 * 1000;
             return cachedAccessToken;
         }
-    } catch (err) {
-        console.error("[AI Model Resolver] Failed to acquire Vertex AI access token:", err);
+    } catch {
+        // No local ADC found
     }
+
     return null;
 }
 
@@ -203,11 +232,12 @@ export async function getLanguageModelForChat(options?: { forceDefault?: boolean
     }
 
     const config = await getActiveAiModelConfig();
+    const activeDefaultModel = config.provider === 'default' ? (config.modelId || DEFAULT_MODEL) : DEFAULT_MODEL;
 
     if (!config.isFineTuned || config.isDegraded) {
         return {
-            model: defaultProvider(DEFAULT_MODEL),
-            modelId: DEFAULT_MODEL,
+            model: defaultProvider(activeDefaultModel),
+            modelId: activeDefaultModel,
             isFineTuned: false,
             isFallback: config.provider === 'finetuned' && config.isDegraded,
         };

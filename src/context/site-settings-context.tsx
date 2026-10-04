@@ -10,11 +10,21 @@ import { useDoc, useFirestore } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { useUserProfile } from "./user-profile";
 
+export interface FineTunedProject {
+    id: string;
+    name: string;
+    endpoint: string;
+    createdAt?: string;
+}
+
 interface SiteSettings {
     isMaintenanceMode: boolean;
     isStorageKillSwitch?: boolean;
     aiModelProvider?: 'default' | 'finetuned';
     fineTunedModelId?: string;
+    defaultGeminiModel?: string;
+    fineTunedProjects?: FineTunedProject[];
+    activeFineTunedProjectId?: string;
     lastUpdated?: string;
     updatedBy?: string;
 }
@@ -26,6 +36,9 @@ interface SiteSettingsContextType {
     shouldCorruptImages: boolean;
     aiModelProvider: 'default' | 'finetuned';
     fineTunedModelId: string;
+    defaultGeminiModel: string;
+    fineTunedProjects: FineTunedProject[];
+    activeFineTunedProjectId: string;
 }
 
 const SiteSettingsContext = createContext<SiteSettingsContextType | undefined>(undefined);
@@ -44,7 +57,17 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
     const isMaintenanceMode = settings?.isMaintenanceMode || false;
     const isStorageKillSwitch = settings?.isStorageKillSwitch || false;
     const aiModelProvider = settings?.aiModelProvider || 'default';
-    const fineTunedModelId = settings?.fineTunedModelId || 'projects/781722135778/locations/us-central1/models/2614243376421142528@1';
+    const fineTunedModelId = settings?.fineTunedModelId || 'projects/781722135778/locations/us-central1/endpoints/2302171190132736000';
+    const defaultGeminiModel = settings?.defaultGeminiModel || 'gemini-2.5-flash';
+    const fineTunedProjects: FineTunedProject[] = settings?.fineTunedProjects || [
+        {
+            id: 'default-proj-1',
+            name: 'Buildbot Production Hardware Tuning',
+            endpoint: 'projects/781722135778/locations/us-central1/endpoints/2302171190132736000',
+            createdAt: '2026-04-01T00:00:00.000Z',
+        }
+    ];
+    const activeFineTunedProjectId = settings?.activeFineTunedProjectId || (fineTunedProjects[0]?.id || 'default-proj-1');
     
     // Corrupt images if Storage Kill Switch is ON and the user is NOT a Super Admin
     const shouldCorruptImages = isStorageKillSwitch && !profile?.isSuperAdmin;
@@ -55,8 +78,11 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
         isStorageKillSwitch,
         shouldCorruptImages,
         aiModelProvider,
-        fineTunedModelId
-    }), [settings, isMaintenanceMode, isStorageKillSwitch, shouldCorruptImages, aiModelProvider, fineTunedModelId]);
+        fineTunedModelId,
+        defaultGeminiModel,
+        fineTunedProjects,
+        activeFineTunedProjectId
+    }), [settings, isMaintenanceMode, isStorageKillSwitch, shouldCorruptImages, aiModelProvider, fineTunedModelId, defaultGeminiModel, fineTunedProjects, activeFineTunedProjectId]);
 
     return (
         <SiteSettingsContext.Provider value={value}>

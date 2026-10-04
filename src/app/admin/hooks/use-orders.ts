@@ -28,9 +28,9 @@ export function useOrders(profile: any) {
     }, [firestore]);
     const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersQuery);
 
-    const handleDeleteOrder = async (orderId: string) => {
+    const handleDeleteOrder = async (orderId: string, skipConfirm = false) => {
         if (!firestore) return;
-        if (!window.confirm("Are you sure you want to delete this reservation? This cannot be undone.")) return;
+        if (!skipConfirm && !window.confirm("Are you sure you want to delete this reservation? This cannot be undone.")) return;
 
         try {
             await deleteDoc(doc(firestore, "orders", orderId));

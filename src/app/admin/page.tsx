@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
     Package, Monitor, 
-    Archive, Trash2 
+    Archive, Trash2, BarChart3, ShoppingBag 
 } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, Badge } from '@mantine/core';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/theme-provider";
@@ -96,35 +96,70 @@ export default function AdminPage() {
                         </div>
                     </div>
 
-                    <Tabs value={currentTab} className="w-full" onValueChange={handleTabAccess}>
-                        <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
-                            <TabsList className="inline-flex w-auto min-w-full md:min-w-0">
-                                <TabsTrigger value="stock" className="whitespace-nowrap">
+                    <Tabs 
+                        value={currentTab} 
+                        onChange={(val) => val && handleTabAccess(val)}
+                        variant="pills"
+                        radius="md"
+                        color="cyan"
+                        className="w-full"
+                    >
+                        <div className="flex items-center justify-between mb-6 border-b border-slate-200 dark:border-white/10 pb-4 overflow-x-auto">
+                            <Tabs.List className="bg-slate-100 dark:bg-[#141a23] p-1.5 rounded-xl border border-slate-200 dark:border-white/10 inline-flex flex-nowrap md:flex-wrap gap-1.5 w-auto">
+                                <Tabs.Tab 
+                                    value="stock" 
+                                    leftSection={<Package className="h-4 w-4" />}
+                                    className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
+                                >
                                     Manage Stock
-                                </TabsTrigger>
-                                <TabsTrigger value="prebuilts" className="whitespace-nowrap">
+                                </Tabs.Tab>
+                                <Tabs.Tab 
+                                    value="prebuilts" 
+                                    leftSection={<Monitor className="h-4 w-4" />}
+                                    className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
+                                >
                                     Manage Prebuilts
-                                </TabsTrigger>
-                                <TabsTrigger value="reservations" className="relative whitespace-nowrap">
+                                </Tabs.Tab>
+                                <Tabs.Tab 
+                                    value="reservations" 
+                                    leftSection={<ShoppingBag className="h-4 w-4" />}
+                                    rightSection={
+                                        stats.pendingOrdersCount > 0 ? (
+                                            <Badge 
+                                                size="xs" 
+                                                color="yellow" 
+                                                variant="filled" 
+                                                circle 
+                                                className="font-bold text-slate-950 bg-yellow-400 animate-pulse ml-1"
+                                            >
+                                                {stats.pendingOrdersCount}
+                                            </Badge>
+                                        ) : null
+                                    }
+                                    className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
+                                >
                                     Reservations
-                                    {stats.pendingOrdersCount > 0 && (
-                                        <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground animate-bounce">
-                                            {stats.pendingOrdersCount}
-                                        </span>
-                                    )}
-                                </TabsTrigger>
+                                </Tabs.Tab>
                                 {profile?.isSuperAdmin && (
-                                    <TabsTrigger value="sales" className="whitespace-nowrap">
+                                    <Tabs.Tab 
+                                        value="sales" 
+                                        leftSection={<BarChart3 className="h-4 w-4" />}
+                                        className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
+                                    >
                                         Sales & Analytics
-                                    </TabsTrigger>
+                                    </Tabs.Tab>
                                 )}
-                                <TabsTrigger value="archive" className="whitespace-nowrap">
+                                <Tabs.Tab 
+                                    value="archive" 
+                                    leftSection={<Archive className="h-4 w-4" />}
+                                    className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
+                                >
                                     Archive
-                                </TabsTrigger>
-                            </TabsList>
+                                </Tabs.Tab>
+                            </Tabs.List>
                         </div>
 
-                        <TabsContent value="stock">
+                        <Tabs.Panel value="stock">
                             <StockTab 
                                 parts={parts}
                                 partsLoading={partsLoading}
@@ -146,9 +181,9 @@ export default function AdminPage() {
                                 toggleAllPartsSelection={toggleAllPartsSelection}
                                 setConfirmAction={setConfirmAction}
                             />
-                        </TabsContent>
+                        </Tabs.Panel>
 
-                        <TabsContent value="prebuilts" className="mt-6">
+                        <Tabs.Panel value="prebuilts" className="mt-6">
                             <PrebuiltTab 
                                 prebuiltSystems={prebuiltSystems || []}
                                 prebuiltsLoading={prebuiltsLoading}
@@ -168,28 +203,28 @@ export default function AdminPage() {
                                 toggleAllPrebuiltsSelection={toggleAllPrebuiltsSelection}
                                 setConfirmAction={setConfirmAction}
                             />
-                        </TabsContent>
+                        </Tabs.Panel>
 
-                        <TabsContent value="reservations" className="mt-6">
+                        <Tabs.Panel value="reservations" className="mt-6">
                             <ReservationsTab 
                                 orders={orders || []}
                                 ordersLoading={ordersLoading}
                                 onDeleteOrder={handleDeleteOrder}
                                 onUpdateOrder={handleUpdateOrder}
                             />
-                        </TabsContent>
+                        </Tabs.Panel>
 
                         {profile?.isSuperAdmin && (
-                            <TabsContent value="sales" className="mt-6">
+                            <Tabs.Panel value="sales" className="mt-6">
                                 <SalesTab 
                                     orders={orders || []}
                                     parts={parts}
                                     prebuiltSystems={prebuiltSystems || []}
                                 />
-                            </TabsContent>
+                            </Tabs.Panel>
                         )}
 
-                        <TabsContent value="archive" className="mt-6">
+                        <Tabs.Panel value="archive" className="mt-6">
                             <ArchiveTab 
                                 parts={parts}
                                 partsLoading={partsLoading}
@@ -213,7 +248,7 @@ export default function AdminPage() {
                                 toggleAllPrebuiltsSelection={toggleAllPrebuiltsSelection}
                                 setConfirmAction={setConfirmAction}
                             />
-                        </TabsContent>
+                        </Tabs.Panel>
                     </Tabs>
 
                     {/* Global Bulk Action Confirmation Dialog */}
