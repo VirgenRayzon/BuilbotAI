@@ -100,8 +100,18 @@ export type UserProfile = {
   id: string;
   email: string;
   name?: string;
+  firstName?: string;
+  lastName?: string;
+  bio?: string;
+  photoURL?: string;
+  address?: string;
+  apartment?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
   isManager: boolean;
   isSuperAdmin?: boolean;
+  createdAt?: any;
 };
 
 export type OrderItem = {

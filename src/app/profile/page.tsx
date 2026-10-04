@@ -46,6 +46,8 @@ import { useFavorites } from "./hooks/use-favorites";
 import { ProfileHero } from "./components/profile-hero";
 import { ProfileSidebar } from "./components/profile-sidebar";
 import { AccountDetails } from "./components/account-details";
+import { MantineProfileView } from "./components/mantine-profile-view";
+import { MantineSettingsView } from "./components/mantine-settings-view";
 import { EmergencyControlsCard } from "./components/emergency-controls-card";
 import { ReservationsList } from "./components/reservations-list";
 import { FavoritesList } from "./components/favorites-list";
@@ -104,15 +106,15 @@ export default function ProfilePage() {
   // Define permitted tabs per role
   const getAllowedTabs = useCallback(() => {
     if (isSuperAdmin) {
-      return ["account", "reservations", "favorites", "audit", "management", "ai-models", "safeguards", "content"];
+      return ["profile", "settings", "account", "audit", "management", "ai-models", "safeguards", "content"];
     }
     if (isManager) {
-      return ["account", "reservations", "favorites", "audit"];
+      return ["profile", "settings", "account", "audit"];
     }
-    return ["account", "reservations", "favorites", "activity"];
+    return ["profile", "settings", "account", "reservations", "favorites", "activity"];
   }, [isSuperAdmin, isManager]);
 
-  const defaultTab = "account";
+  const defaultTab = "profile";
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
 
   // Synchronize and sanitize URL query params
@@ -124,7 +126,11 @@ export default function ProfilePage() {
         const allowed = getAllowedTabs();
 
         if (tab && allowed.includes(tab)) {
-          setActiveTab(tab);
+          if (tab === "account" || tab === "overview") {
+            setActiveTab("profile");
+          } else {
+            setActiveTab(tab);
+          }
         } else if (tab === "audit-logs" && (isManager || isSuperAdmin)) {
           setActiveTab("audit");
         } else {
@@ -207,108 +213,30 @@ export default function ProfilePage() {
                     transition={{ duration: 0.2 }}
                     className="space-y-6"
                   >
-                    {/* TAB 1: Account & Security */}
-                    {activeTab === "account" && (
-                      <div className="space-y-6">
-                        <Paper
-                          withBorder
-                          radius="lg"
-                          p="lg"
-                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-                        >
-                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                            <div>
-                              <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
-                                <User className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
-                                <span>Account & Security</span>
-                              </Title>
-                              <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
-                                Manage your profile identity, contact credentials, and security settings.
-                              </Text>
-                            </div>
-                            <Badge
-                              size="md"
-                              variant={isSuperAdmin ? "filled" : isManager ? "filled" : "light"}
-                              color={isSuperAdmin ? "indigo" : isManager ? "orange" : "cyan"}
-                              className="font-bold uppercase tracking-wider text-[10px]"
-                            >
-                              {isSuperAdmin ? "Super Admin" : isManager ? "Manager" : "Verified Customer"}
-                            </Badge>
-                          </div>
-                        </Paper>
-
-                        {/* Regular User Hardware Stats Summary */}
-                        {isRegularUser && (
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <Paper
-                              withBorder
-                              radius="lg"
-                              p="md"
-                              className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-                            >
-                              <Group justify="space-between" mb={4}>
-                                <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                                  Total Builds
-                                </Text>
-                                <ThemeIcon size="xs" radius="xl" color="cyan" variant="light">
-                                  <Package size={12} />
-                                </ThemeIcon>
-                              </Group>
-                              <Text className="text-2xl font-headline font-bold text-slate-900 dark:text-white">
-                                {reservations.stats.totalBuilds}
-                              </Text>
-                            </Paper>
-
-                            <Paper
-                              withBorder
-                              radius="lg"
-                              p="md"
-                              className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-                            >
-                              <Group justify="space-between" mb={4}>
-                                <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                                  Active Orders
-                                </Text>
-                                <ThemeIcon size="xs" radius="xl" color="blue" variant="light">
-                                  <Truck size={12} />
-                                </ThemeIcon>
-                              </Group>
-                              <Text className="text-2xl font-headline font-bold text-cyan-600 dark:text-cyan-400">
-                                {reservations.stats.activeBuilds}
-                              </Text>
-                            </Paper>
-
-                            <Paper
-                              withBorder
-                              radius="lg"
-                              p="md"
-                              className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-                            >
-                              <Group justify="space-between" mb={4}>
-                                <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                                  Hardware Value
-                                </Text>
-                                <ThemeIcon size="xs" radius="xl" color="teal" variant="light">
-                                  <Cpu size={12} />
-                                </ThemeIcon>
-                              </Group>
-                              <Text className="text-xl font-headline font-bold text-emerald-600 dark:text-emerald-400 truncate">
-                                {formatCurrency(reservations.stats.totalValue)}
-                              </Text>
-                            </Paper>
-                          </div>
-                        )}
-
-                        <AccountDetails
-                          profile={profile}
-                          {...profileState}
-                          {...adminKeys}
-                        />
-                      </div>
+                    {/* TAB: Profile (Mantine UI apps/profile) */}
+                    {(activeTab === "profile" || activeTab === "account") && (
+                      <MantineProfileView
+                        profile={profile}
+                        authUser={authUser}
+                        onNavigateToSettings={() => handleTabChange("settings")}
+                        reservations={reservations.reservations}
+                        favorites={favoritesHook.favorites}
+                        stats={reservations.stats}
+                      />
                     )}
 
-                    {/* TAB 2: Store Reservations */}
-                    {activeTab === "reservations" && (
+                    {/* TAB: Settings (Mantine UI apps/settings) */}
+                    {activeTab === "settings" && (
+                      <MantineSettingsView
+                        profile={profile}
+                        authUser={authUser}
+                        {...profileState}
+                        {...adminKeys}
+                      />
+                    )}
+
+                    {/* TAB 2: Store Reservations (Regular Customers Only) */}
+                    {activeTab === "reservations" && isRegularUser && (
                       <div className="space-y-6">
                         <Paper
                           withBorder
@@ -352,8 +280,8 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* TAB 3: Saved Rigs & Builds */}
-                    {activeTab === "favorites" && (
+                    {/* TAB 3: Saved Rigs & Builds (Regular Customers Only) */}
+                    {activeTab === "favorites" && isRegularUser && (
                       <div className="space-y-6">
                         <Paper
                           withBorder

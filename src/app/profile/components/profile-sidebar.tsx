@@ -25,6 +25,7 @@ import {
   ChevronRight,
   Cpu,
   Bot,
+  Sliders,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/firebase";
@@ -79,43 +80,59 @@ export function ProfileSidebar({
     }
   };
 
-  // 1. Personal Workspace Items (Available to all users)
-  const personalItems = [
+  // 1. Personal Workspace Items (Profile, Settings, Reservations, Saved Rigs, Activity)
+  const personalItems: {
+    id: string;
+    label: string;
+    icon: any;
+    color: string;
+    badge: any;
+    badgeColor?: string;
+  }[] = [
     {
-      id: "account",
-      label: "Account & Security",
+      id: "profile",
+      label: "Profile",
       icon: User,
       color: "cyan",
       badge: null,
     },
     {
-      id: "reservations",
-      label: "Store Reservations",
-      icon: Package,
+      id: "settings",
+      label: "Settings",
+      icon: Settings,
       color: "blue",
-      badge: reservationsCount > 0 ? reservationsCount : null,
-      badgeColor: "blue",
-    },
-    {
-      id: "favorites",
-      label: "Saved Rigs & Builds",
-      icon: Heart,
-      color: "pink",
-      badge: favoritesCount > 0 ? favoritesCount : null,
-      badgeColor: "pink",
+      badge: null,
     },
   ];
 
-  // For regular customers only: Activity History
+  // For regular customers only: Store Reservations, Saved Rigs & Builds, Activity History
   if (isRegularUser) {
-    personalItems.push({
-      id: "activity",
-      label: "Activity History",
-      icon: History,
-      color: "indigo",
-      badge: userLogsCount > 0 ? userLogsCount : null,
-      badgeColor: "indigo",
-    });
+    personalItems.push(
+      {
+        id: "reservations",
+        label: "Store Reservations",
+        icon: Package,
+        color: "blue",
+        badge: reservationsCount > 0 ? reservationsCount : null,
+        badgeColor: "blue",
+      },
+      {
+        id: "favorites",
+        label: "Saved Rigs & Builds",
+        icon: Heart,
+        color: "pink",
+        badge: favoritesCount > 0 ? favoritesCount : null,
+        badgeColor: "pink",
+      },
+      {
+        id: "activity",
+        label: "Activity History",
+        icon: History,
+        color: "indigo",
+        badge: userLogsCount > 0 ? userLogsCount : null,
+        badgeColor: "indigo",
+      }
+    );
   }
 
   // 2. Operations & Administration Items (Strictly for Manager / Super Admin)
@@ -146,7 +163,7 @@ export function ProfileSidebar({
       {
         id: "management",
         label: "Management Portal",
-        icon: Settings,
+        icon: Sliders,
         color: "cyan",
         badge: "Admin",
         badgeColor: "cyan",
@@ -192,7 +209,7 @@ export function ProfileSidebar({
         >
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none px-1">
             {allNavItems.map((item) => {
-              const isActive = activeTab === item.id;
+              const isActive = activeTab === item.id || (item.id === "profile" && activeTab === "account");
               const Icon = item.icon;
 
               return (
@@ -248,7 +265,7 @@ export function ProfileSidebar({
 
               <div className="space-y-1">
                 {personalItems.map((item) => {
-                  const isActive = activeTab === item.id;
+                  const isActive = activeTab === item.id || (item.id === "profile" && activeTab === "account");
                   const Icon = item.icon;
 
                   return (
