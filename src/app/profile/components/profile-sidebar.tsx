@@ -26,6 +26,7 @@ import {
   Cpu,
   Bot,
   Sliders,
+  FileCode,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/firebase";
@@ -80,15 +81,17 @@ export function ProfileSidebar({
     }
   };
 
-  // 1. Personal Workspace Items (Profile, Settings, Reservations, Saved Rigs, Activity)
-  const personalItems: {
+  type NavItem = {
     id: string;
     label: string;
     icon: any;
     color: string;
     badge: any;
     badgeColor?: string;
-  }[] = [
+  };
+
+  // 1. Account Items
+  const accountItems: NavItem[] = [
     {
       id: "profile",
       label: "Profile",
@@ -96,21 +99,34 @@ export function ProfileSidebar({
       color: "cyan",
       badge: null,
     },
-    {
-      id: "settings",
-      label: "Settings",
-      icon: Settings,
-      color: "blue",
-      badge: null,
-    },
   ];
 
-  // For regular customers only: Store Reservations, Saved Rigs & Builds, Activity History
+  // Audit Logs for Staff / Super Admin placed directly under Profile
+  if (isManager || isSuperAdmin) {
+    accountItems.push({
+      id: "audit",
+      label: isSuperAdmin ? "Admin Audit Logs" : "Staff Audit Logs",
+      icon: Shield,
+      color: "indigo",
+      badge: staffLogsCount > 0 ? staffLogsCount : null,
+      badgeColor: "indigo",
+    });
+  }
+
+  accountItems.push({
+    id: "settings",
+    label: "Settings",
+    icon: Settings,
+    color: "blue",
+    badge: null,
+  });
+
+  // For regular customers only: Store Reservations, Saved Favourites, Activity Logs
   if (isRegularUser) {
-    personalItems.push(
+    accountItems.push(
       {
         id: "reservations",
-        label: "Store Reservations",
+        label: "Reservations",
         icon: Package,
         color: "blue",
         badge: reservationsCount > 0 ? reservationsCount : null,
@@ -118,7 +134,7 @@ export function ProfileSidebar({
       },
       {
         id: "favorites",
-        label: "Saved Rigs & Builds",
+        label: "Saved Favourites",
         icon: Heart,
         color: "pink",
         badge: favoritesCount > 0 ? favoritesCount : null,
@@ -126,7 +142,7 @@ export function ProfileSidebar({
       },
       {
         id: "activity",
-        label: "Activity History",
+        label: "Activity Logs",
         icon: History,
         color: "indigo",
         badge: userLogsCount > 0 ? userLogsCount : null,
@@ -135,29 +151,8 @@ export function ProfileSidebar({
     );
   }
 
-  // 2. Operations & Administration Items (Strictly for Manager / Super Admin)
-  const adminItems: {
-    id: string;
-    label: string;
-    icon: any;
-    color: string;
-    badge: any;
-    badgeColor?: string;
-  }[] = [];
-
-  // Staff Audit Logs (Managers & Super Admin)
-  if (isManager || isSuperAdmin) {
-    adminItems.push({
-      id: "audit",
-      label: isSuperAdmin ? "System Audit Logs" : "Staff Audit Logs",
-      icon: Shield,
-      color: "indigo",
-      badge: staffLogsCount > 0 ? staffLogsCount : null,
-      badgeColor: "indigo",
-    });
-  }
-
-  // Super Admin Exclusive Tools
+  // 2. Administration Items (Super Admin Tools)
+  const adminItems: NavItem[] = [];
   if (isSuperAdmin) {
     adminItems.push(
       {
@@ -169,32 +164,93 @@ export function ProfileSidebar({
         badgeColor: "cyan",
       },
       {
-        id: "ai-models",
-        label: "AI Intelligence",
-        icon: Bot,
-        color: "violet",
-        badge: "Vertex",
-        badgeColor: "indigo",
-      },
-      {
         id: "safeguards",
         label: "System Safeguards",
         icon: Activity,
         color: "amber",
         badge: "3 Controls",
         badgeColor: "yellow",
+      }
+    );
+  }
+
+  // 3. AI Section (Super Admin)
+  const aiItems: NavItem[] = [];
+  if (isSuperAdmin) {
+    aiItems.push(
+      {
+        id: "ai-models",
+        label: "Intelligence",
+        icon: Bot,
+        color: "violet",
+        badge: "Vertex",
+        badgeColor: "indigo",
       },
       {
-        id: "content",
-        label: "Site Content & Story",
-        icon: FileText,
-        color: "teal",
+        id: "prompts",
+        label: "System Prompts",
+        icon: FileCode,
+        color: "cyan",
         badge: null,
       }
     );
   }
 
-  const allNavItems = [...personalItems, ...adminItems];
+  // 4. Site Content Section (Super Admin)
+  const contentItems: NavItem[] = [];
+  if (isSuperAdmin) {
+    contentItems.push({
+      id: "content",
+      label: "About",
+      icon: FileText,
+      color: "teal",
+      badge: null,
+    });
+  }
+
+  const allNavItems = [...accountItems, ...adminItems, ...aiItems, ...contentItems];
+
+  const renderNavButton = (item: NavItem) => {
+    const isActive = activeTab === item.id || (item.id === "profile" && activeTab === "account");
+    const Icon = item.icon;
+
+    return (
+      <UnstyledButton
+        key={item.id}
+        onClick={() => onTabChange(item.id)}
+        className={cn(
+          "w-full h-[46px] min-h-[46px] max-h-[46px] flex items-center justify-between px-3 rounded-xl text-xs font-headline font-bold uppercase tracking-wider transition-all group",
+          isActive
+            ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-l-4 border-cyan-500 shadow-sm font-extrabold"
+            : "text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-white/[0.04] hover:text-slate-900 dark:hover:text-white"
+        )}
+      >
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <ThemeIcon
+            size={28}
+            radius="md"
+            color={isActive ? "cyan" : "gray"}
+            variant={isActive ? "light" : "subtle"}
+            className="group-hover:scale-110 transition-transform shrink-0"
+          >
+            <Icon className="h-4 w-4" />
+          </ThemeIcon>
+          <span className="truncate">{item.label}</span>
+        </div>
+
+        {item.badge !== null && (
+          <Badge
+            size="xs"
+            variant={isActive ? "filled" : "light"}
+            color={item.badgeColor || "cyan"}
+            className="font-mono font-bold shrink-0 ml-2 text-[10px] px-2 py-0.5 whitespace-nowrap"
+          >
+            {item.badge}
+          </Badge>
+        )}
+      </UnstyledButton>
+    );
+  };
 
   return (
     <>
@@ -249,66 +305,26 @@ export function ProfileSidebar({
         <Paper
           visibleFrom="lg"
           withBorder
-          radius="xl"
+          radius="lg"
           p="md"
           className="flex flex-col justify-between bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
         >
-          <div className="space-y-6">
-            {/* SECTION 1: PERSONAL WORKSPACE */}
+          <div className="space-y-5">
+            {/* SECTION 1: ACCOUNT */}
             <div className="space-y-1.5">
               <Text
                 size="xs"
                 className="text-[10px] font-bold uppercase tracking-[0.15em] font-mono text-slate-400 dark:text-slate-500 px-3 pb-1"
               >
-                Workspace
+                Account
               </Text>
 
               <div className="space-y-1">
-                {personalItems.map((item) => {
-                  const isActive = activeTab === item.id || (item.id === "profile" && activeTab === "account");
-                  const Icon = item.icon;
-
-                  return (
-                    <UnstyledButton
-                      key={item.id}
-                      onClick={() => onTabChange(item.id)}
-                      className={cn(
-                        "w-full h-[46px] min-h-[46px] max-h-[46px] flex items-center justify-between px-3 rounded-xl text-xs font-headline font-bold uppercase tracking-wider transition-all group",
-                        isActive
-                          ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-l-4 border-cyan-500 shadow-sm font-extrabold"
-                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-white/[0.04] hover:text-slate-900 dark:hover:text-white"
-                      )}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <ThemeIcon
-                          size={28}
-                          radius="md"
-                          color={isActive ? "cyan" : "gray"}
-                          variant={isActive ? "light" : "subtle"}
-                          className="group-hover:scale-110 transition-transform shrink-0"
-                        >
-                          <Icon className="h-4 w-4" />
-                        </ThemeIcon>
-                        <span className="truncate">{item.label}</span>
-                      </div>
-
-                      {item.badge !== null && (
-                        <Badge
-                          size="xs"
-                          variant={isActive ? "filled" : "light"}
-                          color={item.badgeColor || "cyan"}
-                          className="font-mono font-bold shrink-0 ml-2 text-[10px] px-2 py-0.5 whitespace-nowrap"
-                        >
-                          {item.badge}
-                        </Badge>
-                      )}
-                    </UnstyledButton>
-                  );
-                })}
+                {accountItems.map(renderNavButton)}
               </div>
             </div>
 
-            {/* SECTION 2: OPERATIONS & MANAGEMENT (STAFF ONLY) */}
+            {/* SECTION 2: ADMINISTRATION */}
             {adminItems.length > 0 && (
               <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-white/10">
                 <Text
@@ -319,73 +335,68 @@ export function ProfileSidebar({
                 </Text>
 
                 <div className="space-y-1">
-                  {adminItems.map((item) => {
-                    const isActive = activeTab === item.id;
-                    const Icon = item.icon;
+                  {adminItems.map(renderNavButton)}
+                </div>
+              </div>
+            )}
 
-                    return (
-                      <UnstyledButton
-                        key={item.id}
-                        onClick={() => onTabChange(item.id)}
-                        className={cn(
-                          "w-full h-[46px] min-h-[46px] max-h-[46px] flex items-center justify-between px-3 rounded-xl text-xs font-headline font-bold uppercase tracking-wider transition-all group",
-                          isActive
-                            ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-l-4 border-cyan-500 shadow-sm font-extrabold"
-                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-white/[0.04] hover:text-slate-900 dark:hover:text-white"
-                        )}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          <ThemeIcon
-                            size={28}
-                            radius="md"
-                            color={isActive ? "cyan" : "gray"}
-                            variant={isActive ? "light" : "subtle"}
-                            className="group-hover:scale-110 transition-transform shrink-0"
-                          >
-                            <Icon className="h-4 w-4" />
-                          </ThemeIcon>
-                          <span className="truncate">{item.label}</span>
-                        </div>
+            {/* SECTION 3: AI */}
+            {aiItems.length > 0 && (
+              <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-white/10">
+                <Text
+                  size="xs"
+                  className="text-[10px] font-bold uppercase tracking-[0.15em] font-mono text-slate-400 dark:text-slate-500 px-3 pb-1"
+                >
+                  AI
+                </Text>
 
-                        {item.badge !== null && (
-                          <Badge
-                            size="xs"
-                            variant={isActive ? "filled" : "light"}
-                            color={item.badgeColor || "cyan"}
-                            className="font-mono font-bold shrink-0 ml-2 text-[10px] px-2 py-0.5 whitespace-nowrap"
-                          >
-                            {item.badge}
-                          </Badge>
-                        )}
-                      </UnstyledButton>
-                    );
-                  })}
+                <div className="space-y-1">
+                  {aiItems.map(renderNavButton)}
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 4: SITE CONTENT */}
+            {contentItems.length > 0 && (
+              <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-white/10">
+                <Text
+                  size="xs"
+                  className="text-[10px] font-bold uppercase tracking-[0.15em] font-mono text-slate-400 dark:text-slate-500 px-3 pb-1"
+                >
+                  Site Content
+                </Text>
+
+                <div className="space-y-1">
+                  {contentItems.map(renderNavButton)}
                 </div>
               </div>
             )}
           </div>
 
-          {/* FOOTER ACTIONS */}
-          <div className="pt-4 mt-6 border-t border-slate-200 dark:border-white/10 space-y-1">
-            {/* Quick Return to PC Builder */}
-            <UnstyledButton
-              onClick={() => router.push("/builder")}
-              className="w-full h-[42px] min-h-[42px] flex items-center justify-between px-3 rounded-xl text-xs font-headline font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-white/[0.04] hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors group"
+          {/* FOOTER ACTIONS: SESSION */}
+          <div className="pt-3 border-t border-slate-200 dark:border-white/10 space-y-1.5 mt-5">
+            <Text
+              size="xs"
+              className="text-[10px] font-bold uppercase tracking-[0.15em] font-mono text-slate-400 dark:text-slate-500 px-3 pb-1"
             >
-              <div className="flex items-center gap-2.5">
-                <Cpu className="h-4 w-4 text-cyan-500 group-hover:scale-110 transition-transform" />
-                <span>Launch PC Builder</span>
-              </div>
-              <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-            </UnstyledButton>
+              Session
+            </Text>
 
             {/* Sign Out Button */}
             <UnstyledButton
               onClick={() => setSignOutModalOpen(true)}
-              className="w-full h-[42px] min-h-[42px] flex items-center justify-between px-3 rounded-xl text-xs font-headline font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors group"
+              className="w-full h-[46px] min-h-[46px] max-h-[46px] flex items-center justify-between px-3 rounded-xl text-xs font-headline font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors group"
             >
-              <div className="flex items-center gap-2.5">
-                <LogOut className="h-4 w-4 text-rose-500 group-hover:scale-110 transition-transform" />
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <ThemeIcon
+                  size={28}
+                  radius="md"
+                  color="red"
+                  variant="subtle"
+                  className="group-hover:scale-110 transition-transform shrink-0"
+                >
+                  <LogOut className="h-4 w-4 text-rose-500" />
+                </ThemeIcon>
                 <span>Sign Out</span>
               </div>
             </UnstyledButton>

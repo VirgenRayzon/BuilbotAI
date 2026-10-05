@@ -49,6 +49,7 @@ const prompt = ai.definePrompt({
     schema: AiPrebuiltAdvisorInputSchema.extend({
       knowledgeContext: z.string().optional(),
       webResearchContext: z.string().optional(),
+      customSystemPrompt: z.string().optional(),
     })
   },
   output: { schema: AiPrebuiltAdvisorOutputSchema },
@@ -56,15 +57,10 @@ const prompt = ai.definePrompt({
   config: {
     temperature: 0.2,
   },
-  prompt: `You are an expert PC Builder. A user has selected a list of components for a pre-built system.
-
-{{#if webResearchContext}}
-WEB RESEARCH CONTEXT (Current market pricing and component data):
-{{{webResearchContext}}}
-{{/if}}
-
-EXPERT LOCAL KNOWLEDGE BASE:
-{{{knowledgeContext}}}
+  prompt: `{{#if customSystemPrompt}}
+{{{customSystemPrompt}}}
+{{else}}
+You are an expert PC Builder. A user has selected a list of components for a pre-built system.
 
 Your task is to:
 1.  Generate a premium, ultra-catchy, and memorable name for this build (e.g., "The Midnight Apex", "Quantum Overlord"). Focus on energy and performance tiers.
@@ -73,6 +69,15 @@ Your task is to:
 4.  Estimate the total power consumption in watts (e.g., "550W").
 5.  Estimate a reasonable market price for the entire build in Philippine Pesos (PHP). Use the web research context if available for accurate pricing.
 6.  Identify the appropriate performance tier ('Entry', 'Mid-Range', 'High-End', or 'Workstation') for this configuration.
+{{/if}}
+
+{{#if webResearchContext}}
+WEB RESEARCH CONTEXT (Current market pricing and component data):
+{{{webResearchContext}}}
+{{/if}}
+
+EXPERT LOCAL KNOWLEDGE BASE:
+{{{knowledgeContext}}}
 
 The user has specified the build tier as: {{{tier}}}.
 
@@ -138,10 +143,14 @@ Summarize the total estimated build cost in PHP.`,
 
       // Step 2: Structured output prompt WITHOUT googleSearchRetrieval
       console.log("[aiPrebuiltAdvisorFlow] Step 2: Generating structured analysis...");
+      const { getActiveSystemPrompt } = await import('@/lib/system-prompts');
+      const customSystemPrompt = await getActiveSystemPrompt('prebuiltAdvisor');
+
       const { output } = await prompt({
         ...input,
         knowledgeContext,
         webResearchContext,
+        customSystemPrompt,
       });
 
       if (!output) {

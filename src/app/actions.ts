@@ -708,3 +708,82 @@ export async function invalidateAiModelCacheAction() {
     return { success: false };
   }
 }
+
+export async function updateSystemPromptsAction(prompts: {
+  chatbot?: string;
+  buildAdvisor?: string;
+  prebuiltAdvisor?: string;
+  updatedBy?: string;
+}) {
+  try {
+    const db = getAdminFirestore();
+    const now = new Date().toISOString();
+    const systemPromptsPayload: Record<string, any> = {
+      lastUpdated: now,
+      updatedBy: prompts.updatedBy || 'Super Admin',
+    };
+
+    if (prompts.chatbot !== undefined) systemPromptsPayload.chatbot = prompts.chatbot;
+    if (prompts.buildAdvisor !== undefined) systemPromptsPayload.buildAdvisor = prompts.buildAdvisor;
+    if (prompts.prebuiltAdvisor !== undefined) systemPromptsPayload.prebuiltAdvisor = prompts.prebuiltAdvisor;
+
+    await db.collection('siteSettings').doc('main').set({
+      systemPrompts: systemPromptsPayload,
+      lastUpdated: now,
+      updatedBy: prompts.updatedBy || 'Super Admin',
+    }, { merge: true });
+
+    const { invalidateSystemPromptsCache } = await import('@/lib/system-prompts');
+    invalidateSystemPromptsCache();
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Failed to update systemPrompts via admin action:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function resetSystemPromptsAction(
+  target?: 'chatbot' | 'buildAdvisor' | 'prebuiltAdvisor' | 'all',
+  updatedBy?: string
+) {
+  try {
+    const db = getAdminFirestore();
+    const now = new Date().toISOString();
+    const {
+      DEFAULT_CHATBOT_PROMPT,
+      DEFAULT_BUILD_ADVISOR_PROMPT,
+      DEFAULT_PREBUILT_ADVISOR_PROMPT,
+    } = await import('@/lib/constants/default-system-prompts');
+
+    const systemPromptsPayload: Record<string, any> = {
+      lastUpdated: now,
+      updatedBy: updatedBy || 'Super Admin',
+    };
+
+    if (!target || target === 'all') {
+      systemPromptsPayload.chatbot = DEFAULT_CHATBOT_PROMPT;
+      systemPromptsPayload.buildAdvisor = DEFAULT_BUILD_ADVISOR_PROMPT;
+      systemPromptsPayload.prebuiltAdvisor = DEFAULT_PREBUILT_ADVISOR_PROMPT;
+    } else {
+      if (target === 'chatbot') systemPromptsPayload.chatbot = DEFAULT_CHATBOT_PROMPT;
+      if (target === 'buildAdvisor') systemPromptsPayload.buildAdvisor = DEFAULT_BUILD_ADVISOR_PROMPT;
+      if (target === 'prebuiltAdvisor') systemPromptsPayload.prebuiltAdvisor = DEFAULT_PREBUILT_ADVISOR_PROMPT;
+    }
+
+    await db.collection('siteSettings').doc('main').set({
+      systemPrompts: systemPromptsPayload,
+      lastUpdated: now,
+      updatedBy: updatedBy || 'Super Admin',
+    }, { merge: true });
+
+    const { invalidateSystemPromptsCache } = await import('@/lib/system-prompts');
+    invalidateSystemPromptsCache();
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Failed to reset systemPrompts via admin action:", err);
+    return { success: false, error: err.message };
+  }
+}
+

@@ -202,402 +202,78 @@ export function MantineProfileView({
 
   return (
     <div className="space-y-6">
-      {/* Header and Breadcrumbs */}
-      <div>
-        <Breadcrumbs separator="/" mb={4} className="text-xs">
-          {breadcrumbItems}
-        </Breadcrumbs>
-        <Title
-          order={2}
-          className="text-2xl font-bold font-headline text-slate-900 dark:text-slate-100 tracking-tight"
-        >
-          Profile
-        </Title>
+
+
+      {/* Profile Card */}
+      <div className="w-full">
+        <div className="w-full">
+          <Paper
+            withBorder
+            radius="lg"
+            p="xl"
+            className="w-full bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm text-center flex flex-col items-center"
+          >
+            <Text size="xs" fw={700} mb="lg" className="uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Profile details
+            </Text>
+
+            <Avatar
+              src={profile?.photoURL || authUser?.photoURL}
+              size={170}
+              radius="2xl"
+              color="blue"
+              mx="auto"
+              mb="lg"
+              className="border-4 border-white dark:border-slate-800 shadow-xl ring-2 ring-blue-500/20"
+            >
+              {initials}
+            </Avatar>
+
+            <Title order={3} ta="center" className="text-xl font-bold font-headline text-slate-900 dark:text-slate-100">
+              {displayName}
+            </Title>
+
+            <Text size="sm" ta="center" mt={4} mb="sm" className="text-slate-500 dark:text-slate-400">
+              {email}
+            </Text>
+
+            <Badge
+              size="md"
+              variant="light"
+              color={isSuperAdmin ? "indigo" : isManager ? "orange" : "blue"}
+              mb="lg"
+              className="font-bold text-xs uppercase tracking-wider"
+            >
+              {isSuperAdmin ? "Super Admin" : isManager ? "Store Manager" : "Verified Customer"}
+            </Badge>
+
+            <Text
+              size="sm"
+              ta="center"
+              maw={680}
+              mx="auto"
+              mb="xl"
+              className="text-slate-600 dark:text-slate-400 leading-relaxed whitespace-pre-line"
+            >
+              {bio}
+            </Text>
+
+            <Button
+              variant="outline"
+              color="blue"
+              size="sm"
+              radius="md"
+              w="100%"
+              maw={320}
+              mx="auto"
+              onClick={onNavigateToSettings}
+              className="font-semibold"
+            >
+              Edit Settings
+            </Button>
+          </Paper>
+        </div>
       </div>
-
-      {/* Main 2-Column Layout */}
-      <Grid gutter="md">
-        {/* LEFT COLUMN (approx 1/3) */}
-        <Grid.Col span={{ base: 12, md: 4 }}>
-          <Stack gap="md">
-            {/* Card 1: Profile Details */}
-            <Paper
-              withBorder
-              radius="md"
-              p="xl"
-              className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm text-center flex flex-col items-center"
-            >
-              <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">
-                Profile details
-              </Text>
-
-              <Avatar
-                src={profile?.photoURL || authUser?.photoURL}
-                size={88}
-                radius="xl"
-                color="blue"
-                className="mb-3 border-2 border-white dark:border-slate-800 shadow-md ring-2 ring-blue-500/20"
-              >
-                {initials}
-              </Avatar>
-
-              <Title order={4} className="text-lg font-bold font-headline text-slate-900 dark:text-slate-100">
-                {displayName}
-              </Title>
-
-              <Text size="xs" className="text-slate-500 dark:text-slate-400 mb-2">
-                {email}
-              </Text>
-
-              <Badge
-                size="sm"
-                variant="light"
-                color={isSuperAdmin ? "indigo" : isManager ? "orange" : "blue"}
-                className="font-bold text-[10px] uppercase tracking-wider mb-3"
-              >
-                {isSuperAdmin ? "Super Admin" : isManager ? "Store Manager" : "Verified Customer"}
-              </Badge>
-
-              <Text size="xs" className="text-slate-600 dark:text-slate-400 text-center leading-relaxed mb-4 line-clamp-3">
-                {bio}
-              </Text>
-
-              <Button
-                variant="outline"
-                color="blue"
-                size="xs"
-                radius="md"
-                fullWidth
-                onClick={onNavigateToSettings}
-                className="font-semibold text-xs"
-              >
-                Edit Settings
-              </Button>
-            </Paper>
-
-            {/* Card 2: Skills & Tags */}
-            <Paper
-              withBorder
-              radius="md"
-              p="lg"
-              className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-            >
-              <Title order={5} className="text-sm font-bold font-headline text-slate-900 dark:text-slate-100 mb-3">
-                Skills & Interests
-              </Title>
-              <div className="flex flex-wrap gap-1.5">
-                {skills.map((skill) => (
-                  <Badge
-                    key={skill}
-                    size="sm"
-                    radius="sm"
-                    variant="filled"
-                    color="blue"
-                    className="font-bold text-[10px] tracking-wider uppercase bg-blue-600 hover:bg-blue-700"
-                  >
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            </Paper>
-
-            {/* Card 3: About */}
-            <Paper
-              withBorder
-              radius="md"
-              p="lg"
-              className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-            >
-              <Title order={5} className="text-sm font-bold font-headline text-slate-900 dark:text-slate-100 mb-3">
-                About
-              </Title>
-              <Stack gap="xs" className="text-xs text-slate-600 dark:text-slate-300">
-                <Group gap="xs" wrap="nowrap">
-                  <MapPin size={15} className="text-slate-400 shrink-0" />
-                  <span>Lives in <strong className="text-slate-800 dark:text-slate-100 font-semibold">{locationText}</strong></span>
-                </Group>
-                <Group gap="xs" wrap="nowrap">
-                  <Briefcase size={15} className="text-slate-400 shrink-0" />
-                  <span>Member at <strong className="text-slate-800 dark:text-slate-100 font-semibold">Buildbot AI Store</strong></span>
-                </Group>
-                <Group gap="xs" wrap="nowrap">
-                  <Mail size={15} className="text-slate-400 shrink-0" />
-                  <span className="truncate">Email: <strong className="text-slate-800 dark:text-slate-100 font-semibold">{email}</strong></span>
-                </Group>
-              </Stack>
-            </Paper>
-
-            {/* Card 4: Social */}
-            <Paper
-              withBorder
-              radius="md"
-              p="lg"
-              className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-            >
-              <Title order={5} className="text-sm font-bold font-headline text-slate-900 dark:text-slate-100 mb-3">
-                Social
-              </Title>
-              <Stack gap="xs" className="text-xs">
-                <Anchor href="https://facebook.com" target="_blank" className="flex items-center gap-2.5 text-slate-600 dark:text-slate-400 hover:text-blue-600">
-                  <Facebook size={15} className="text-blue-600" />
-                  <span className="font-medium">Facebook</span>
-                </Anchor>
-                <Anchor href="https://twitter.com" target="_blank" className="flex items-center gap-2.5 text-slate-600 dark:text-slate-400 hover:text-sky-500">
-                  <Twitter size={15} className="text-sky-500" />
-                  <span className="font-medium">Twitter / X</span>
-                </Anchor>
-                <Anchor href="https://linkedin.com" target="_blank" className="flex items-center gap-2.5 text-slate-600 dark:text-slate-400 hover:text-blue-700">
-                  <Linkedin size={15} className="text-blue-700" />
-                  <span className="font-medium">LinkedIn</span>
-                </Anchor>
-                <Anchor href="https://github.com" target="_blank" className="flex items-center gap-2.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                  <Github size={15} className="text-slate-800 dark:text-slate-200" />
-                  <span className="font-medium">Github</span>
-                </Anchor>
-              </Stack>
-            </Paper>
-          </Stack>
-        </Grid.Col>
-
-        {/* RIGHT COLUMN (approx 2/3) */}
-        <Grid.Col span={{ base: 12, md: 8 }}>
-          <Stack gap="md">
-            {/* Card 1: Activity & Valuation Chart */}
-            <Paper
-              withBorder
-              radius="md"
-              p="lg"
-              className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-            >
-              <Group justify="space-between" mb="md">
-                <div>
-                  <Title order={4} className="text-base font-bold font-headline text-slate-900 dark:text-slate-100">
-                    Build Activity & Valuation
-                  </Title>
-                  <Text size="xs" className="text-slate-500 dark:text-slate-400">
-                    System activity, part reservations, and hardware configuration volume
-                  </Text>
-                </div>
-                <Badge size="xs" variant="light" color="blue">
-                  Live Insights
-                </Badge>
-              </Group>
-
-              <div className="h-64 w-full pt-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="profileSeries1" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0} />
-                      </linearGradient>
-                      <linearGradient id="profileSeries2" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(150, 150, 150, 0.15)" />
-                    <XAxis
-                      dataKey="time"
-                      tick={{ fill: "#888888", fontSize: 11 }}
-                      axisLine={{ stroke: "rgba(150, 150, 150, 0.2)" }}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fill: "#888888", fontSize: 11 }}
-                      axisLine={{ stroke: "rgba(150, 150, 150, 0.2)" }}
-                      tickLine={false}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#1e293b",
-                        borderColor: "rgba(255,255,255,0.1)",
-                        borderRadius: "8px",
-                        fontSize: "12px",
-                        color: "#fff",
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="series1"
-                      name="Build Activity"
-                      stroke="#3b82f6"
-                      strokeWidth={2.5}
-                      fillOpacity={1}
-                      fill="url(#profileSeries1)"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="series2"
-                      name="Reservation Volume"
-                      stroke="#06b6d4"
-                      strokeWidth={2}
-                      fillOpacity={1}
-                      fill="url(#profileSeries2)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </Paper>
-
-            {/* Row of 3 Stat Cards */}
-            <Grid gutter="sm">
-              <Grid.Col span={{ base: 12, sm: 4 }}>
-                <Paper
-                  withBorder
-                  radius="md"
-                  p="md"
-                  className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-                >
-                  <Group justify="space-between" align="flex-start" mb="xs">
-                    <div>
-                      <Text size="xs" fw={700} className="text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Total Builds
-                      </Text>
-                      <Title order={3} className="text-2xl font-bold font-headline text-slate-900 dark:text-slate-100 mt-1">
-                        {stats.totalBuilds || favorites.length || 3}
-                      </Title>
-                    </div>
-                    <ThemeIcon size="lg" radius="md" color="blue" variant="light">
-                      <Cpu size={18} />
-                    </ThemeIcon>
-                  </Group>
-                  <Text size="xs" className="text-blue-600 dark:text-blue-400 font-semibold">
-                    Saved Rigs in Workspace
-                  </Text>
-                </Paper>
-              </Grid.Col>
-
-              <Grid.Col span={{ base: 12, sm: 4 }}>
-                <Paper
-                  withBorder
-                  radius="md"
-                  p="md"
-                  className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-                >
-                  <Group justify="space-between" align="flex-start" mb="xs">
-                    <div>
-                      <Text size="xs" fw={700} className="text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Reservations
-                      </Text>
-                      <Title order={3} className="text-2xl font-bold font-headline text-slate-900 dark:text-slate-100 mt-1">
-                        {stats.activeBuilds || reservations.length || 1}
-                      </Title>
-                    </div>
-                    <ThemeIcon size="lg" radius="md" color="teal" variant="light">
-                      <Package size={18} />
-                    </ThemeIcon>
-                  </Group>
-                  <Text size="xs" className="text-teal-600 dark:text-teal-400 font-semibold">
-                    Store Pick-up Tickets
-                  </Text>
-                </Paper>
-              </Grid.Col>
-
-              <Grid.Col span={{ base: 12, sm: 4 }}>
-                <Paper
-                  withBorder
-                  radius="md"
-                  p="md"
-                  className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-                >
-                  <Group justify="space-between" align="flex-start" mb="xs">
-                    <div>
-                      <Text size="xs" fw={700} className="text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Hardware Value
-                      </Text>
-                      <Title order={3} className="text-2xl font-bold font-headline text-slate-900 dark:text-slate-100 mt-1 truncate">
-                        {stats.totalValue > 0 ? formatCurrency(stats.totalValue) : "₱145,000"}
-                      </Title>
-                    </div>
-                    <ThemeIcon size="lg" radius="md" color="indigo" variant="light">
-                      <TrendingUp size={18} />
-                    </ThemeIcon>
-                  </Group>
-                  <Text size="xs" className="text-indigo-600 dark:text-indigo-400 font-semibold">
-                    Total Estimated Rig Worth
-                  </Text>
-                </Paper>
-              </Grid.Col>
-            </Grid>
-
-            {/* Card 3: Recent Builds & Projects Table */}
-            <Paper
-              withBorder
-              radius="md"
-              p="lg"
-              className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-            >
-              <Group justify="space-between" mb="md">
-                <div>
-                  <Title order={4} className="text-base font-bold font-headline text-slate-900 dark:text-slate-100">
-                    Projects & Saved Builds
-                  </Title>
-                  <Text size="xs" className="text-slate-500 dark:text-slate-400">
-                    Recent custom configurations and active reservation requests
-                  </Text>
-                </div>
-
-                <Button
-                  size="xs"
-                  variant="light"
-                  color="blue"
-                  radius="md"
-                  leftSection={<Cpu size={14} />}
-                  onClick={() => router.push("/builder")}
-                  className="font-semibold text-xs"
-                >
-                  Launch PC Builder
-                </Button>
-              </Group>
-
-              <div className="overflow-x-auto">
-                <Table striped highlightOnHover verticalSpacing="sm" className="text-xs">
-                  <Table.Thead className="bg-slate-50 dark:bg-slate-900/50">
-                    <Table.Tr>
-                      <Table.Th className="text-slate-600 dark:text-slate-300 font-bold uppercase text-[11px] tracking-wider">
-                        Name
-                      </Table.Th>
-                      <Table.Th className="text-slate-600 dark:text-slate-300 font-bold uppercase text-[11px] tracking-wider">
-                        Date
-                      </Table.Th>
-                      <Table.Th className="text-slate-600 dark:text-slate-300 font-bold uppercase text-[11px] tracking-wider">
-                        State
-                      </Table.Th>
-                      <Table.Th className="text-slate-600 dark:text-slate-300 font-bold uppercase text-[11px] tracking-wider text-right">
-                        Est. Value
-                      </Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {recentItems.map((item, idx) => (
-                      <Table.Tr key={idx} className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                        <Table.Td className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                          <ThemeIcon size="xs" radius="sm" color={item.stateColor} variant="light">
-                            <Layers size={11} />
-                          </ThemeIcon>
-                          <span>{item.name}</span>
-                        </Table.Td>
-                        <Table.Td className="text-slate-500 dark:text-slate-400 font-mono">
-                          {item.date}
-                        </Table.Td>
-                        <Table.Td>
-                          <Badge size="xs" variant="light" color={item.stateColor} className="font-semibold uppercase tracking-wider">
-                            {item.state}
-                          </Badge>
-                        </Table.Td>
-                        <Table.Td className="text-right font-mono font-bold text-slate-800 dark:text-slate-200">
-                          {item.value}
-                        </Table.Td>
-                      </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </div>
-            </Paper>
-          </Stack>
-        </Grid.Col>
-      </Grid>
     </div>
   );
 }

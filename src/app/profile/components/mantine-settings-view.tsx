@@ -156,18 +156,7 @@ export function MantineSettingsView({
 
   return (
     <div className="space-y-6">
-      {/* Header and Breadcrumbs */}
-      <div>
-        <Breadcrumbs separator="/" mb={4} className="text-xs">
-          {breadcrumbItems}
-        </Breadcrumbs>
-        <Title
-          order={2}
-          className="text-2xl font-bold font-headline text-slate-900 dark:text-slate-100 tracking-tight"
-        >
-          Settings
-        </Title>
-      </div>
+
 
       {/* Main 2-Column Grid */}
       <Grid gutter="md">
@@ -175,7 +164,7 @@ export function MantineSettingsView({
         <Grid.Col span={{ base: 12, lg: 6.5 }}>
           <Paper
             withBorder
-            radius="md"
+            radius="lg"
             p="xl"
             className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm h-full flex flex-col justify-between"
           >
@@ -208,13 +197,13 @@ export function MantineSettingsView({
                 value={bio}
                 onChange={(e) => setBio(e.currentTarget.value)}
                 placeholder="A dynamic software engineering enthusiast, passionate about custom PC builds, liquid cooling, and next-gen gaming..."
-                minRows={5}
+                rows={6}
                 radius="md"
                 size="sm"
                 classNames={{
                   label: "text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1",
                   input:
-                    "bg-slate-50 dark:bg-slate-900/50 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 focus:border-blue-500 text-xs leading-relaxed",
+                    "bg-slate-50 dark:bg-slate-900/50 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 focus:border-blue-500 text-xs leading-relaxed !h-auto min-h-[140px]",
                 }}
               />
 
@@ -310,7 +299,7 @@ export function MantineSettingsView({
         <Grid.Col span={{ base: 12, lg: 5.5 }}>
           <Paper
             withBorder
-            radius="md"
+            radius="lg"
             p="xl"
             className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm h-full flex flex-col justify-between"
           >

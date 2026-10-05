@@ -109,11 +109,24 @@ export async function aiBuildAdvisorRecommendations(
 // Prompt Definition
 const aiBuildAdvisorRecommendationsPrompt = ai.definePrompt({
   name: 'aiBuildAdvisorRecommendationsPrompt',
-  input: { schema: AiBuildAdvisorRecommendationsInputSchema.extend({ knowledgeContext: z.string().optional(), storeInventory: z.string().optional(), webSearchContext: z.string().optional() }) },
+  input: {
+    schema: AiBuildAdvisorRecommendationsInputSchema.extend({
+      knowledgeContext: z.string().optional(),
+      storeInventory: z.string().optional(),
+      webSearchContext: z.string().optional(),
+      customSystemPrompt: z.string().optional(),
+    }),
+  },
   output: { schema: AiBuildAdvisorRecommendationsOutputSchema },
   model: 'googleai/gemini-2.5-flash',
   config: { temperature: 0.1 },
-  prompt: `You are an expert PC building advisor specializing in the Philippine market. Your goal is to recommend a set of compatible core components (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, Cooler) for a user based on their specific needs.
+  prompt: `{{#if customSystemPrompt}}
+{{{customSystemPrompt}}}
+{{else}}
+You are an expert PC building advisor specializing in the Philippine market. Your goal is to recommend a set of compatible core components (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, Cooler) for a user based on their specific needs.
+
+Provide a brief summary of the overall build strategy in the context of the Philippine market, and then detail the recommendations for each component, including the model name, estimated PHP price, and a concise reason for its selection (mentioning why it's a good value in PHP where applicable). Also provide an estimated total wattage for the build.
+{{/if}}
 
 {{#if webSearchContext}}
 WEB SEARCH RESEARCH CONTEXT (Use this data for current market pricing and availability):
@@ -149,8 +162,6 @@ CRITICAL RULES:
    - Strictly follow the PHP budget provided by the user. DO NOT exceed it.
    {{/if}}
 
-Provide a brief summary of the overall build strategy in the context of the Philippine market, and then detail the recommendations for each component, including the model name, estimated PHP price, and a concise reason for its selection (mentioning why it's a good value in PHP where applicable). Also provide an estimated total wattage for the build.
-
 User's PC building goals:
 Intended Use: {{{intendedUse}}}
 Budget: {{{budget}}} (PHP)
@@ -167,6 +178,7 @@ Additional Notes: {{{additionalNotes}}}
 Please format your response as a JSON object strictly following the output schema provided. The estimatedPrice for each component must be a realistic PHP price number (not a string).`,
 });
 
+
 // Genkit Flow Definition
 import { retrieveLocalKnowledge } from '@/lib/knowledge-retriever';
 import { getAdminFirestore } from '@/firebase/server-init';
@@ -174,14 +186,15 @@ import { getInventoryFromFirestore } from '@/lib/inventory-fetcher';
 
 const CACHE_COLLECTION = 'ai_recommendation_cache_v3';
 
-const generateCacheKey = (input: AiBuildAdvisorRecommendationsInput) => {
+const generateCacheKey = (input: AiBuildAdvisorRecommendationsInput, promptSig: string = '') => {
   const parts = [
     input.intendedUse.toLowerCase().trim(),
     input.budget.toLowerCase().trim().replace(/[^\d]/g, ''), // Extract numbers for more consistent caching (e.g. 20000)
     input.performanceLevel.toLowerCase().trim(),
     (input.additionalNotes || '').toLowerCase().trim(),
     input.allowFlexibleBudget ? 'flexible' : 'strict',
-    input.allowWebSearch ? 'websearch' : 'local'
+    input.allowWebSearch ? 'websearch' : 'local',
+    promptSig ? promptSig.substring(0, 32) : 'default'
   ];
   return parts.join('|').replace(/[\/.]/g, '_').substring(0, 1000);
 };
@@ -193,7 +206,11 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
     outputSchema: AiBuildAdvisorRecommendationsOutputSchema,
   },
   async (input) => {
-    const cacheKey = generateCacheKey(input);
+    // Resolve dynamic system prompt from Firestore (or baseline default)
+    const { getActiveSystemPrompt } = await import('@/lib/system-prompts');
+    const customSystemPrompt = await getActiveSystemPrompt('buildAdvisor');
+
+    const cacheKey = generateCacheKey(input, customSystemPrompt);
     const db = getAdminFirestore();
 
     // 0. Check Maintenance Mode (Kill Switch)
@@ -281,6 +298,7 @@ Provide specific model names and realistic PHP prices from Philippine retailers 
         knowledgeContext,
         storeInventory: storeInventory || undefined,
         webSearchContext,
+        customSystemPrompt,
       }
     );
 

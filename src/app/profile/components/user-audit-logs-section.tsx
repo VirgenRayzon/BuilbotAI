@@ -208,21 +208,6 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
 
   return (
     <Stack gap="md">
-      <div className="flex items-end justify-between px-1">
-        <div className="space-y-1">
-          <Title order={2} className="text-2xl font-headline font-bold flex items-center gap-2.5 text-slate-900 dark:text-white">
-            <History className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
-            <span>Audit Logs</span>
-          </Title>
-          <Text size="sm" className="text-slate-600 dark:text-slate-400 font-medium">
-            Review your reservations, saved configurations, and account security history.
-          </Text>
-        </div>
-        <Badge color="cyan" variant="light" size="md" className="font-bold">
-          {filteredLogs.length} events
-        </Badge>
-      </div>
-
       <Paper
         withBorder
         radius="lg"

@@ -13,6 +13,7 @@ import {
   Group,
   ThemeIcon,
   Button,
+  SegmentedControl,
 } from "@mantine/core";
 import {
   User,
@@ -28,6 +29,7 @@ import {
   History,
   Truck,
   Bot,
+  FileCode,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RouteGuard } from "@/components/auth/route-guard";
@@ -55,6 +57,7 @@ import { UserAuditLogsSection } from "./components/user-audit-logs-section";
 import { AuditLogsSection } from "./components/audit-logs-section";
 import { SuperAdminSettings } from "@/components/super-admin-settings";
 import { AiModelSettings } from "@/components/ai-model-settings";
+import { AiSystemPromptsSettings } from "@/components/ai-system-prompts-settings";
 import { AboutManagement } from "@/components/about-management";
 
 import {
@@ -106,7 +109,7 @@ export default function ProfilePage() {
   // Define permitted tabs per role
   const getAllowedTabs = useCallback(() => {
     if (isSuperAdmin) {
-      return ["profile", "settings", "account", "audit", "management", "ai-models", "safeguards", "content"];
+      return ["profile", "settings", "account", "audit", "management", "ai-models", "prompts", "safeguards", "content"];
     }
     if (isManager) {
       return ["profile", "settings", "account", "audit"];
@@ -153,6 +156,7 @@ export default function ProfilePage() {
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       url.searchParams.set("tab", tabId);
+      url.searchParams.delete("sub");
       window.history.replaceState({}, "", url.toString());
     }
   };
@@ -215,24 +219,56 @@ export default function ProfilePage() {
                   >
                     {/* TAB: Profile (Mantine UI apps/profile) */}
                     {(activeTab === "profile" || activeTab === "account") && (
-                      <MantineProfileView
-                        profile={profile}
-                        authUser={authUser}
-                        onNavigateToSettings={() => handleTabChange("settings")}
-                        reservations={reservations.reservations}
-                        favorites={favoritesHook.favorites}
-                        stats={reservations.stats}
-                      />
+                      <div className="space-y-6">
+                        <Paper
+                          withBorder
+                          radius="lg"
+                          p="lg"
+                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
+                        >
+                          <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
+                            <User className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                            <span>Profile Overview</span>
+                          </Title>
+                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium mt-1">
+                            Manage your public identity, personal details, and community presence.
+                          </Text>
+                        </Paper>
+                        <MantineProfileView
+                          profile={profile}
+                          authUser={authUser}
+                          onNavigateToSettings={() => handleTabChange("settings")}
+                          reservations={reservations.reservations}
+                          favorites={favoritesHook.favorites}
+                          stats={reservations.stats}
+                        />
+                      </div>
                     )}
 
                     {/* TAB: Settings (Mantine UI apps/settings) */}
                     {activeTab === "settings" && (
-                      <MantineSettingsView
-                        profile={profile}
-                        authUser={authUser}
-                        {...profileState}
-                        {...adminKeys}
-                      />
+                      <div className="space-y-6">
+                        <Paper
+                          withBorder
+                          radius="lg"
+                          p="lg"
+                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
+                        >
+                          <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
+                            <Settings className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                            <span>Account Settings</span>
+                          </Title>
+                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium mt-1">
+                            Configure security preferences, linked accounts, and notification options.
+                          </Text>
+                        </Paper>
+                        <MantineSettingsView
+                          profile={profile}
+                          authUser={authUser}
+                          {...profileState}
+                          {...adminKeys}
+                        />
+                      </div>
                     )}
 
                     {/* TAB 2: Store Reservations (Regular Customers Only) */}
@@ -293,7 +329,7 @@ export default function ProfilePage() {
                             <div>
                               <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
                                 <Heart className="h-5 w-5 text-rose-500" />
-                                <span>Saved Rigs & Builds</span>
+                                <span>Saved Favourites</span>
                               </Title>
                               <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
                                 Access and modify your custom PC builds saved from the PC Builder.
@@ -332,7 +368,7 @@ export default function ProfilePage() {
                         >
                           <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
                             <History className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                            <span>Activity History</span>
+                            <span>Activity Logs</span>
                           </Title>
                           <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
                             Review your recent account actions, build updates, and reservation events.
@@ -357,7 +393,7 @@ export default function ProfilePage() {
                         >
                           <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
                             <Shield className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                            <span>{isSuperAdmin ? "System Audit Logs" : "Staff Audit Logs"}</span>
+                            <span>{isSuperAdmin ? "Admin Audit Logs" : "Staff Audit Logs"}</span>
                           </Title>
                           <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
                             Enterprise security audit trail, administrative actions, and system modifications.
@@ -406,12 +442,34 @@ export default function ProfilePage() {
                             <Bot className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                             <span>AI Model Intelligence Configuration</span>
                           </Title>
-                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
+                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium mt-1">
                             Switch between default Gemini 2.5 Flash and fine-tuned Vertex AI models for platform recommendations and chat.
                           </Text>
                         </Paper>
 
                         <AiModelSettings />
+                      </div>
+                    )}
+
+                    {/* TAB 8: AI System Prompts (Super Admin Only) */}
+                    {activeTab === "prompts" && isSuperAdmin && (
+                      <div className="space-y-6">
+                        <Paper
+                          withBorder
+                          radius="lg"
+                          p="lg"
+                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
+                        >
+                          <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
+                            <FileCode className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                            <span>AI System Prompts & Instructions</span>
+                          </Title>
+                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium mt-1">
+                            Customize and fine-tune system instructions, persona directives, and role prompts for platform AI agents.
+                          </Text>
+                        </Paper>
+
+                        <AiSystemPromptsSettings />
                       </div>
                     )}
 

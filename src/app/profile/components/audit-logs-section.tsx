@@ -213,21 +213,6 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
 
   return (
     <Stack gap="md">
-      <div className="flex items-end justify-between px-1">
-        <div className="space-y-1">
-          <Title order={2} className="text-2xl font-headline font-bold flex items-center gap-2.5 text-slate-900 dark:text-white">
-            <Shield className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-            <span>System Audit Trail</span>
-          </Title>
-          <Text size="sm" className="text-slate-600 dark:text-slate-400 font-medium">
-            Review staff activity, authentication modifications, and inventory events. Logs are retained for 90 days.
-          </Text>
-        </div>
-        <Badge color="indigo" variant="light" size="md" className="font-bold">
-          {filteredLogs.length} events
-        </Badge>
-      </div>
-
       <Paper
         withBorder
         radius="lg"

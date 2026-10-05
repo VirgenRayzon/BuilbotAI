@@ -10,6 +10,7 @@ import {
   ThemeIcon,
   Button,
   Modal,
+  Avatar,
 } from "@mantine/core";
 import {
   Shield,
@@ -55,9 +56,9 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
 
   const joinDate = authUser?.metadata?.creationTime
     ? new Date(authUser.metadata.creationTime).toLocaleDateString(undefined, {
-        month: "short",
-        year: "numeric",
-      })
+      month: "short",
+      year: "numeric",
+    })
     : "Member";
 
   const handleConfirmSignOut = async () => {
@@ -81,7 +82,7 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
       <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8 mb-6">
         <Paper
           withBorder
-          radius="2xl"
+          radius="lg"
           p={{ base: "lg", sm: "xl" }}
           className="relative overflow-hidden bg-white/90 dark:bg-[#111722]/95 border-slate-200 dark:border-white/10 shadow-sm backdrop-blur-xl"
         >
@@ -94,9 +95,15 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
             <div className="flex flex-col sm:flex-row items-center sm:items-start lg:items-center gap-5 sm:gap-6 text-center sm:text-left w-full lg:w-auto">
               {/* Avatar */}
               <div className="relative shrink-0">
-                <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-gradient-to-br from-cyan-600 via-sky-600 to-indigo-700 flex items-center justify-center text-3xl sm:text-4xl font-black font-headline text-white shadow-xl shadow-cyan-500/20 ring-4 ring-white dark:ring-slate-900">
+                <Avatar
+                  src={profile?.photoURL || authUser?.photoURL}
+                  alt={profile?.name || "User"}
+                  size={96}
+                  radius="lg"
+                  className="!h-24 !w-24 sm:!h-28 sm:!w-28 rounded-2xl bg-gradient-to-br from-cyan-600 via-sky-600 to-indigo-700 text-3xl sm:text-4xl font-black font-headline text-white shadow-xl shadow-cyan-500/20 ring-4 ring-white dark:ring-slate-900 [&_.mantine-Avatar-placeholder]:bg-transparent [&_.mantine-Avatar-placeholder]:text-white shrink-0"
+                >
                   {initial}
-                </div>
+                </Avatar>
                 {isSuperAdmin && (
                   <div
                     className="absolute -bottom-1.5 -right-1.5 bg-indigo-600 text-white rounded-xl p-1.5 shadow-md ring-2 ring-white dark:ring-slate-900"
@@ -147,10 +154,10 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
                     <Badge
                       size="md"
                       variant="light"
-                      color="cyan"
+                      color="blue"
                       className="font-bold uppercase tracking-wider text-[10px]"
                     >
-                      VERIFIED BUILDER
+                      CUSTOMER ACCESS
                     </Badge>
                   )}
 
@@ -211,16 +218,7 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
               ) : null}
 
               <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
-                <Button
-                  size="sm"
-                  variant="light"
-                  color="cyan"
-                  onClick={() => router.push("/builder")}
-                  leftSection={<Cpu size={15} />}
-                  className="font-bold text-xs uppercase tracking-wider rounded-xl h-10 px-4"
-                >
-                  PC Builder
-                </Button>
+
 
                 <Button
                   size="sm"

@@ -4,165 +4,238 @@ import { useState, useEffect } from "react";
 import { useFirestore } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { Order } from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { 
-    Dialog as ShdnDialog, 
-    DialogContent as ShdnDialogContent, 
-    DialogHeader as ShdnDialogHeader, 
-    DialogTitle as ShdnDialogTitle,
-    DialogDescription as ShdnDialogDescription,
-    DialogFooter as ShdnDialogFooter
-} from "@/components/ui/dialog";
-import { Loader2, Package, Calendar, CreditCard, ChevronRight, User } from "lucide-react";
+import {
+  Modal,
+  Paper,
+  Text,
+  Badge,
+  Button,
+  Group,
+  Stack,
+  ThemeIcon,
+  Loader,
+  ScrollArea,
+  Divider,
+} from "@mantine/core";
+import { Package, Calendar, CreditCard, ChevronRight, Hash, Clock } from "lucide-react";
 import { formatCurrency, cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
 
 interface OrderDetailsModalProps {
-    orderId: string | null;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
+  orderId: string | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export function OrderDetailsModal({ orderId, open, onOpenChange }: OrderDetailsModalProps) {
-    const firestore = useFirestore();
-    const [order, setOrder] = useState<Order | null>(null);
-    const [loading, setLoading] = useState(false);
+  const firestore = useFirestore();
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        const fetchOrder = async () => {
-            if (!orderId || !firestore) return;
-            setLoading(true);
-            try {
-                const docRef = doc(firestore, "orders", orderId);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    setOrder({ id: docSnap.id, ...docSnap.data() } as Order);
-                }
-            } catch (error) {
-                console.error("Error fetching order details:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (open && orderId) {
-            fetchOrder();
-        } else if (!open) {
-            // Reset order when closed to avoid showing old data next time
-            setTimeout(() => setOrder(null), 300);
+  useEffect(() => {
+    const fetchOrder = async () => {
+      if (!orderId || !firestore) return;
+      setLoading(true);
+      try {
+        const docRef = doc(firestore, "orders", orderId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setOrder({ id: docSnap.id, ...docSnap.data() } as Order);
         }
-    }, [orderId, open, firestore]);
-
-    const getStatusInfo = (status: string) => {
-        switch (status) {
-            case 'pending': return { variant: 'outline', label: 'Pending Approval', color: 'text-amber-500 bg-amber-500/10' };
-            case 'building': return { variant: 'secondary', label: 'Building Phase', color: 'text-blue-500 bg-blue-500/10' };
-            case 'finished building': return { variant: 'default', label: 'Ready for Pickup', color: 'text-emerald-500 bg-emerald-500/10' };
-            case 'cancelled': return { variant: 'destructive', label: 'Cancelled', color: 'text-rose-500 bg-rose-500/10' };
-            default: return { variant: 'outline', label: 'Processing', color: 'text-muted-foreground bg-muted/50' };
-        }
+      } catch (error) {
+        console.error("Error fetching order details:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    return (
-        <ShdnDialog open={open} onOpenChange={onOpenChange}>
-            <ShdnDialogContent className="sm:max-w-lg bg-background/95 backdrop-blur-2xl border-white/10 shadow-2xl p-0 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 pointer-events-none" />
-                
-                <ShdnDialogHeader className="p-6 pb-2 relative">
-                    <div className="flex items-center justify-between mb-2">
-                        <ShdnDialogTitle className="text-2xl font-headline font-bold uppercase tracking-tight">Order Details</ShdnDialogTitle>
-                        {order && (
-                            <Badge className={cn("px-2.5 py-1 text-[10px] uppercase font-bold tracking-widest border-white/5", getStatusInfo(order.status).color)}>
-                                {getStatusInfo(order.status).label}
-                            </Badge>
-                        )}
+    if (open && orderId) {
+      fetchOrder();
+    } else if (!open) {
+      setTimeout(() => setOrder(null), 300);
+    }
+  }, [orderId, open, firestore]);
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending":
+        return { label: "Pending Approval", color: "yellow" };
+      case "building":
+        return { label: "Building Phase", color: "blue" };
+      case "finished building":
+        return { label: "Ready for Pickup", color: "teal" };
+      case "cancelled":
+        return { label: "Cancelled", color: "red" };
+      default:
+        return { label: "Processing", color: "gray" };
+    }
+  };
+
+  const statusInfo = order ? getStatusBadge(order.status) : null;
+
+  return (
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      centered
+      radius="lg"
+      size="md"
+      title={
+        <div className="flex items-center justify-between w-full pr-3">
+          <Group gap="xs">
+            <ThemeIcon size="md" radius="md" color="cyan" variant="light">
+              <Package size={18} />
+            </ThemeIcon>
+            <div>
+              <Text fw={700} size="sm" className="font-headline text-slate-900 dark:text-slate-100 uppercase tracking-tight">
+                Order Details
+              </Text>
+              {order && (
+                <Text size="11px" c="dimmed" className="font-mono flex items-center gap-1 mt-0.5">
+                  <Hash size={11} className="opacity-60" />
+                  <span>{order.id.toUpperCase()}</span>
+                </Text>
+              )}
+            </div>
+          </Group>
+          {statusInfo && (
+            <Badge size="xs" variant="light" color={statusInfo.color} className="font-bold uppercase tracking-wider">
+              {statusInfo.label}
+            </Badge>
+          )}
+        </div>
+      }
+      classNames={{
+        content: "bg-white dark:bg-[#111722] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-2xl",
+        header: "bg-white dark:bg-[#111722] border-b border-slate-200 dark:border-white/10 px-5 py-3.5",
+        body: "!p-5",
+      }}
+    >
+      {loading ? (
+        <div className="h-60 flex flex-col items-center justify-center space-y-3">
+          <Loader size="sm" color="cyan" />
+          <Text size="xs" c="dimmed">
+            Retrieving hardware specs...
+          </Text>
+        </div>
+      ) : order ? (
+        <Stack gap="md">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 gap-3">
+            <Paper
+              withBorder
+              p="sm"
+              radius="md"
+              className="bg-slate-50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10"
+            >
+              <Text size="10px" fw={700} c="dimmed" className="uppercase tracking-wider mb-1">
+                Reserved On
+              </Text>
+              <Group gap={6}>
+                <Calendar size={14} className="text-cyan-600 dark:text-cyan-400" />
+                <Text size="xs" fw={600} className="text-slate-800 dark:text-slate-200">
+                  {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString(undefined, { dateStyle: "medium" }) : "Recently"}
+                </Text>
+              </Group>
+            </Paper>
+
+            <Paper
+              withBorder
+              p="sm"
+              radius="md"
+              className="bg-slate-50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10"
+            >
+              <Text size="10px" fw={700} c="dimmed" className="uppercase tracking-wider mb-1">
+                Total Investment
+              </Text>
+              <Group gap={6}>
+                <CreditCard size={14} className="text-emerald-500" />
+                <Text size="xs" fw={700} className="text-emerald-600 dark:text-emerald-400 font-headline">
+                  {formatCurrency(order.totalPrice)}
+                </Text>
+              </Group>
+            </Paper>
+          </div>
+
+          {/* Hardware Specifications List */}
+          <div className="space-y-2">
+            <Group justify="space-between" align="center">
+              <Text size="xs" fw={700} c="dimmed" className="uppercase tracking-wider flex items-center gap-1.5">
+                <Package size={13} />
+                <span>Hardware Specifications</span>
+              </Text>
+              <Badge size="xs" variant="outline" color="gray" className="font-mono">
+                {order.items?.length || 0} items
+              </Badge>
+            </Group>
+
+            <Paper
+              withBorder
+              radius="md"
+              className="overflow-hidden border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]"
+            >
+              <ScrollArea.Autosize mah={220} type="scroll" offsetScrollbars>
+                <div className="divide-y divide-slate-100 dark:divide-white/5">
+                  {order.items.map((item, idx) => (
+                    <div
+                      key={`${item.id}-${idx}`}
+                      className="p-2.5 px-3 flex justify-between items-center hover:bg-white dark:hover:bg-white/[0.03] transition-colors"
+                    >
+                      <div className="flex flex-col min-w-0 pr-2">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-400">
+                          {(item as any).category || "Part"}
+                        </span>
+                        <Text size="xs" fw={500} truncate className="text-slate-800 dark:text-slate-200">
+                          {item.name}
+                        </Text>
+                      </div>
+                      <Text size="xs" fw={600} className="font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                        {formatCurrency(item.price)}
+                      </Text>
                     </div>
-                    <ShdnDialogDescription className="text-muted-foreground font-mono text-xs">
-                        {order ? `Reference: #${order.id.toUpperCase()}` : "Loading build information..."}
-                    </ShdnDialogDescription>
-                </ShdnDialogHeader>
-
-                <div className="px-6 space-y-6 relative">
-                    {loading ? (
-                        <div className="h-64 flex flex-col items-center justify-center space-y-4">
-                            <Loader2 className="h-10 w-10 animate-spin text-primary opacity-50" />
-                            <p className="text-xs text-muted-foreground animate-pulse">Retrieving system specs...</p>
-                        </div>
-                    ) : order ? (
-                        <div className="space-y-6 animate-in fade-in duration-500">
-                            {/* Summary Card */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-muted/30 rounded-2xl p-4 border border-white/5">
-                                    <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-widest">Reserved On</p>
-                                    <div className="flex items-center gap-2">
-                                        <Calendar className="h-3.5 w-3.5 text-primary" />
-                                        <p className="font-semibold text-sm">
-                                            {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'Recently'}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="bg-muted/30 rounded-2xl p-4 border border-white/5">
-                                    <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-widest">Total Investment</p>
-                                    <div className="flex items-center gap-2">
-                                        <CreditCard className="h-3.5 w-3.5 text-emerald-500" />
-                                        <p className="font-headline font-bold text-emerald-500 whitespace-nowrap">
-                                            {formatCurrency(order.totalPrice)}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Separator className="opacity-30" />
-
-                            {/* Components List */}
-                            <div className="space-y-3">
-                                <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                    <Package className="h-3.5 w-3.5" /> Hardware Specifications
-                                </h4>
-                                <div className="bg-background/40 rounded-2xl border border-white/5 overflow-hidden divide-y divide-white/5">
-                                    <div className="max-h-[220px] overflow-y-auto">
-                                        {order.items.map((item, idx) => (
-                                            <div key={`${item.id}-${idx}`} className="p-3 px-4 flex justify-between items-center group hover:bg-white/[0.02] transition-colors">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[9px] font-bold text-primary uppercase tracking-tighter opacity-70">
-                                                        {(item as any).category || 'Part'}
-                                                    </span>
-                                                    <span className="text-sm font-medium truncate max-w-[280px]">
-                                                        {item.name}
-                                                    </span>
-                                                </div>
-                                                <span className="text-xs font-mono text-muted-foreground">
-                                                    {formatCurrency(item.price)}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="h-64 flex flex-col items-center justify-center text-center p-8 space-y-4">
-                            <div className="h-16 w-16 rounded-full bg-muted/20 flex items-center justify-center">
-                                <Package className="h-8 w-8 text-muted-foreground opacity-20" />
-                            </div>
-                            <p className="text-sm text-muted-foreground">Order data could not be retrieved. It may have been removed or archived.</p>
-                        </div>
-                    )}
+                  ))}
                 </div>
+              </ScrollArea.Autosize>
+            </Paper>
+          </div>
 
-                <ShdnDialogFooter className="p-6 pt-2 bg-muted/20 relative mt-4">
-                    <Button variant="ghost" className="text-xs text-muted-foreground hover:text-foreground" onClick={() => onOpenChange(false)}>
-                        Dismiss
-                    </Button>
-                    <Button className="shadow-lg shadow-primary/20 group" asChild onClick={() => onOpenChange(false)}>
-                        <a href="/profile" className="flex items-center gap-2">
-                            Go to My Profile
-                            <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                        </a>
-                    </Button>
-                </ShdnDialogFooter>
-            </ShdnDialogContent>
-        </ShdnDialog>
-    );
+          <Divider className="border-slate-100 dark:border-white/10" />
+
+          {/* Modal Footer Buttons */}
+          <Group justify="flex-end" gap="xs">
+            <Button
+              variant="default"
+              size="xs"
+              radius="md"
+              onClick={() => onOpenChange(false)}
+              className="text-xs font-semibold"
+            >
+              Dismiss
+            </Button>
+            <Button
+              component={Link}
+              href="/profile?tab=reservations"
+              color="blue"
+              size="xs"
+              radius="md"
+              rightSection={<ChevronRight size={14} />}
+              onClick={() => onOpenChange(false)}
+              className="text-xs font-semibold shadow-sm shadow-blue-500/20"
+            >
+              Go to My Reservations
+            </Button>
+          </Group>
+        </Stack>
+      ) : (
+        <div className="h-48 flex flex-col items-center justify-center text-center p-4 space-y-2">
+          <ThemeIcon size="xl" radius="xl" color="gray" variant="light">
+            <Package size={20} className="opacity-50" />
+          </ThemeIcon>
+          <Text size="xs" c="dimmed">
+            Order data could not be retrieved. It may have been archived or removed.
+          </Text>
+        </div>
+      )}
+    </Modal>
+  );
 }

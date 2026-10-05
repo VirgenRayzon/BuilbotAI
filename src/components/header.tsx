@@ -284,6 +284,19 @@ export function Header() {
                       </div>
                     </div>
 
+                    {/* Account Section */}
+                    <Menu.Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      Account
+                    </Menu.Label>
+
+                    <Menu.Item
+                      leftSection={<UserIcon size={16} className="text-cyan-500" />}
+                      onClick={() => router.push("/profile")}
+                      className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
+                    >
+                      Profile
+                    </Menu.Item>
+
                     {/* Non-staff Customer Workspaces */}
                     {!isStaff && (
                       <>
@@ -305,29 +318,15 @@ export function Header() {
                       </>
                     )}
 
-                    {/* Staff Portals: Management Portal & Site Content */}
-                    {isStaff && (
-                      <>
-                        {profile?.isSuperAdmin && (
-                          <Menu.Item
-                            leftSection={<Sliders size={16} className="text-cyan-500" />}
-                            onClick={() => router.push("/profile?tab=management")}
-                            className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
-                          >
-                            Management Portal
-                          </Menu.Item>
-                        )}
-
-                        {profile?.isSuperAdmin && (
-                          <Menu.Item
-                            leftSection={<Database size={16} className="text-teal-500" />}
-                            onClick={() => router.push("/profile?tab=content")}
-                            className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
-                          >
-                            Site Content
-                          </Menu.Item>
-                        )}
-                      </>
+                    {/* Staff Portals: Management Portal */}
+                    {isStaff && profile?.isSuperAdmin && (
+                      <Menu.Item
+                        leftSection={<Sliders size={16} className="text-cyan-500" />}
+                        onClick={() => router.push("/profile?tab=management")}
+                        className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
+                      >
+                        Management Portal
+                      </Menu.Item>
                     )}
 
                     <Menu.Item
@@ -347,30 +346,11 @@ export function Header() {
 
                     <Menu.Item
                       leftSection={<Settings size={16} className="text-slate-500 dark:text-slate-400" />}
-                      onClick={() => router.push("/profile?tab=account")}
+                      onClick={() => router.push("/profile?tab=settings")}
                       className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
                     >
                       Account Settings
                     </Menu.Item>
-
-                    {isStaff && (
-                      <>
-                        <Menu.Item
-                          leftSection={<ShieldCheck size={16} className="text-amber-500" />}
-                          onClick={() => router.push("/admin")}
-                          className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
-                        >
-                          Admin Dashboard
-                        </Menu.Item>
-                        <Menu.Item
-                          leftSection={<Cpu size={16} className="text-cyan-500" />}
-                          onClick={() => router.push("/admin/prebuilt-builder")}
-                          className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
-                        >
-                          Prebuilt Builder
-                        </Menu.Item>
-                      </>
-                    )}
 
                     <Menu.Divider className="my-1 border-slate-100 dark:border-white/10" />
 
@@ -508,10 +488,21 @@ export function Header() {
                 <Divider my="md" className="border-slate-200 dark:border-white/10" />
 
                 <Text size="xs" fw={700} c="dimmed" className="uppercase tracking-wider px-2 mb-2">
-                  My Profile
+                  Account
                 </Text>
 
                 <Stack gap={4}>
+                  <Link
+                    href="/profile"
+                    className={classes.drawerLink}
+                    onClick={closeDrawer}
+                  >
+                    <span className="flex items-center gap-2">
+                      <UserIcon size={16} className="text-cyan-500" />
+                      Profile
+                    </span>
+                  </Link>
+
                   {!isStaff && (
                     <>
                       <Link
@@ -538,34 +529,17 @@ export function Header() {
                     </>
                   )}
 
-                  {isStaff && (
-                    <>
-                      {profile?.isSuperAdmin && (
-                        <Link
-                          href="/profile?tab=management"
-                          className={classes.drawerLink}
-                          onClick={closeDrawer}
-                        >
-                          <span className="flex items-center gap-2">
-                            <Sliders size={16} className="text-cyan-500" />
-                            Management Portal
-                          </span>
-                        </Link>
-                      )}
-
-                      {profile?.isSuperAdmin && (
-                        <Link
-                          href="/profile?tab=content"
-                          className={classes.drawerLink}
-                          onClick={closeDrawer}
-                        >
-                          <span className="flex items-center gap-2">
-                            <Database size={16} className="text-teal-500" />
-                            Site Content
-                          </span>
-                        </Link>
-                      )}
-                    </>
+                  {isStaff && profile?.isSuperAdmin && (
+                    <Link
+                      href="/profile?tab=management"
+                      className={classes.drawerLink}
+                      onClick={closeDrawer}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Sliders size={16} className="text-cyan-500" />
+                        Management Portal
+                      </span>
+                    </Link>
                   )}
 
                   <Link
@@ -580,7 +554,7 @@ export function Header() {
                   </Link>
 
                   <Link
-                    href="/profile?tab=account"
+                    href="/profile?tab=settings"
                     className={classes.drawerLink}
                     onClick={closeDrawer}
                   >

@@ -17,6 +17,14 @@ export interface FineTunedProject {
     createdAt?: string;
 }
 
+export interface SystemPromptsSetting {
+    chatbot?: string;
+    buildAdvisor?: string;
+    prebuiltAdvisor?: string;
+    lastUpdated?: string;
+    updatedBy?: string;
+}
+
 interface SiteSettings {
     isMaintenanceMode: boolean;
     isStorageKillSwitch?: boolean;
@@ -25,6 +33,7 @@ interface SiteSettings {
     defaultGeminiModel?: string;
     fineTunedProjects?: FineTunedProject[];
     activeFineTunedProjectId?: string;
+    systemPrompts?: SystemPromptsSetting;
     lastUpdated?: string;
     updatedBy?: string;
 }
@@ -39,6 +48,7 @@ interface SiteSettingsContextType {
     defaultGeminiModel: string;
     fineTunedProjects: FineTunedProject[];
     activeFineTunedProjectId: string;
+    systemPrompts?: SystemPromptsSetting;
 }
 
 const SiteSettingsContext = createContext<SiteSettingsContextType | undefined>(undefined);
@@ -68,6 +78,7 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
         }
     ];
     const activeFineTunedProjectId = settings?.activeFineTunedProjectId || (fineTunedProjects[0]?.id || 'default-proj-1');
+    const systemPrompts = settings?.systemPrompts;
     
     // Corrupt images if Storage Kill Switch is ON and the user is NOT a Super Admin
     const shouldCorruptImages = isStorageKillSwitch && !profile?.isSuperAdmin;
@@ -81,8 +92,9 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
         fineTunedModelId,
         defaultGeminiModel,
         fineTunedProjects,
-        activeFineTunedProjectId
-    }), [settings, isMaintenanceMode, isStorageKillSwitch, shouldCorruptImages, aiModelProvider, fineTunedModelId, defaultGeminiModel, fineTunedProjects, activeFineTunedProjectId]);
+        activeFineTunedProjectId,
+        systemPrompts,
+    }), [settings, isMaintenanceMode, isStorageKillSwitch, shouldCorruptImages, aiModelProvider, fineTunedModelId, defaultGeminiModel, fineTunedProjects, activeFineTunedProjectId, systemPrompts]);
 
     return (
         <SiteSettingsContext.Provider value={value}>

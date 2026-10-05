@@ -76,7 +76,7 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
           {/* Maintenance Mode */}
           <Paper
             p="sm"
-            radius="md"
+            radius="lg"
             withBorder
             className={`transition-colors ${
               emergency.isMaintenanceMode
@@ -116,7 +116,7 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
           {/* Chaos / Storage Mode */}
           <Paper
             p="sm"
-            radius="md"
+            radius="lg"
             withBorder
             className={`transition-colors ${
               emergency.isStorageKillSwitch
@@ -156,7 +156,7 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
           {/* AI Kill Switch */}
           <Paper
             p="sm"
-            radius="md"
+            radius="lg"
             withBorder
             className={`transition-colors ${
               emergency.isAiKillSwitch

@@ -1,15 +1,33 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Check, Archive, ShieldCheck, History, Info, X, PackageCheck } from 'lucide-react';
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+  Bell,
+  Check,
+  Archive,
+  ShieldCheck,
+  History,
+  Info,
+  X,
+  PackageCheck,
+  CheckCheck,
+  AlertCircle,
+} from 'lucide-react';
+import {
+  Popover,
+  Modal,
+  Button,
+  ActionIcon,
+  Badge,
+  Text,
+  Group,
+  Stack,
+  ThemeIcon,
+  ScrollArea,
+  Paper,
+  Divider,
+} from '@mantine/core';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useFirestore } from '@/firebase';
 import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, writeBatch } from 'firebase/firestore';
@@ -17,219 +35,368 @@ import { useUserProfile } from '@/context/user-profile';
 import { SystemNotification } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-} from "@/components/ui/dialog";
 
 export function NotificationCenter() {
-    const firestore = useFirestore();
-    const router = useRouter();
-    const { profile } = useUserProfile();
-    const [selectedNotification, setSelectedNotification] = React.useState<SystemNotification | null>(null);
+  const firestore = useFirestore();
+  const router = useRouter();
+  const { profile } = useUserProfile();
+  const [popoverOpened, setPopoverOpened] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState<SystemNotification | null>(null);
 
-    const notificationsQuery = useMemo(() => {
-        if (!firestore) return null;
-        return query(
-            collection(firestore, 'system_notifications'),
-            orderBy('createdAt', 'desc'),
-            limit(50)
-        );
-    }, [firestore]);
-
-    const { data: notifications, loading } = useCollection<SystemNotification>(notificationsQuery);
-
-    const unreadCount = useMemo(() => {
-        if (!notifications || !profile) return 0;
-        return notifications.filter(n => !n.readBy.includes(profile.id)).length;
-    }, [notifications, profile]);
-
-    const handleMarkAsRead = async (notificationId: string) => {
-        if (!firestore || !profile) return;
-        const notificationRef = doc(firestore, 'system_notifications', notificationId);
-        await updateDoc(notificationRef, {
-            readBy: arrayUnion(profile.id)
-        });
-    };
-
-    const handleMarkAllAsRead = async () => {
-        if (!firestore || !profile || !notifications) return;
-        const unreadNotifications = notifications.filter(n => !n.readBy.includes(profile.id));
-        if (unreadNotifications.length === 0) return;
-
-        const batch = writeBatch(firestore);
-        unreadNotifications.forEach(n => {
-            const ref = doc(firestore, 'system_notifications', n.id);
-            batch.update(ref, {
-                readBy: arrayUnion(profile!.id)
-            });
-        });
-        await batch.commit();
-    };
-
-    const handleNotificationClick = (notification: SystemNotification) => {
-        setSelectedNotification(notification);
-        if (!notification.readBy.includes(profile?.id || '')) {
-            handleMarkAsRead(notification.id);
-        }
-    };
-
-    const getIcon = (type: SystemNotification['type']) => {
-        switch (type) {
-            case 'reservation_received': return <ShieldCheck className="h-4 w-4 text-emerald-500" />;
-            case 'item_archived': return <Archive className="h-4 w-4 text-orange-500" />;
-            case 'status_changed': return <History className="h-4 w-4 text-blue-500" />;
-            case 'stock_added': return <PackageCheck className="h-4 w-4 text-emerald-500" />;
-            case 'user_cancelled': return <X className="h-4 w-4 text-rose-500" />;
-            default: return <Info className="h-4 w-4 text-primary" />;
-        }
-    };
-
-    return (
-        <>
-            <Popover>
-                <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="relative group transition-all">
-                        {unreadCount > 0 ? (
-                            <>
-                                <Bell className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
-                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground animate-pulse shadow-sm">
-                                    {unreadCount > 9 ? '9+' : unreadCount}
-                                </span>
-                            </>
-                        ) : (
-                            <Bell className="h-5 w-5 text-foreground/60 group-hover:text-primary transition-colors" />
-                        )}
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 p-0 bg-background/95 backdrop-blur-xl border-border/40 shadow-2xl" align="end">
-                    <div className="flex items-center justify-between p-4 border-b border-border/40">
-                        <h3 className="font-headline font-bold text-sm">System Alerts</h3>
-                        {unreadCount > 0 && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-[10px] h-7 font-bold uppercase tracking-wider text-primary hover:text-primary hover:bg-primary/5"
-                                onClick={handleMarkAllAsRead}
-                            >
-                                Mark all as read
-                            </Button>
-                        )}
-                    </div>
-                    <ScrollArea className="h-[400px]">
-                        {loading ? (
-                            <div className="flex items-center justify-center h-20">
-                                <span className="text-xs text-muted-foreground animate-pulse">Scanning alerts...</span>
-                            </div>
-                        ) : notifications && notifications.length > 0 ? (
-                            <div className="divide-y divide-border/40">
-                                {notifications.map((notification) => (
-                                    <div
-                                        key={notification.id}
-                                        onClick={() => handleNotificationClick(notification)}
-                                        className={cn(
-                                            "p-4 transition-colors relative group cursor-pointer",
-                                            !notification.readBy.includes(profile?.id || '') ? "bg-primary/5" : "hover:bg-muted/30"
-                                        )}
-                                    >
-                                        <div className="flex gap-3">
-                                            <div className="mt-1 flex-shrink-0">
-                                                {getIcon(notification.type)}
-                                            </div>
-                                            <div className="flex-grow space-y-1 min-w-0">
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <p className="font-bold text-xs truncate italic">{notification.title}</p>
-                                                    {!notification.readBy.includes(profile?.id || '') && (
-                                                        <span className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
-                                                    )}
-                                                </div>
-                                                <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
-                                                    {notification.message}
-                                                </p>
-                                                <div className="flex items-center justify-between pt-1">
-                                                    <span className="text-[9px] text-muted-foreground/60 uppercase font-bold tracking-tight">
-                                                        {notification.createdAt ? formatDistanceToNow(notification.createdAt instanceof Date ? notification.createdAt : notification.createdAt.toDate(), { addSuffix: true }) : 'just now'}
-                                                    </span>
-                                                    {!notification.readBy.includes(profile?.id || '') && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleMarkAsRead(notification.id);
-                                                            }}
-                                                        >
-                                                            <Check className="h-3 w-3" />
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center h-40 space-y-2 opacity-40">
-                                <Bell className="h-8 w-8 text-muted-foreground" />
-                                <p className="text-xs font-bold uppercase tracking-widest">No new alerts</p>
-                            </div>
-                        )}
-                    </ScrollArea>
-                    <div className="p-2 border-t border-border/40 bg-muted/20">
-                        <Button 
-                            variant="ghost" 
-                            className="w-full text-[10px] font-bold uppercase tracking-widest h-8 opacity-60 hover:opacity-100"
-                            onClick={() => router.push('/profile#audit-logs')}
-                        >
-                            View Audit Log
-                        </Button>
-                    </div>
-                </PopoverContent>
-            </Popover>
-
-            <Dialog open={!!selectedNotification} onOpenChange={(open) => !open && setSelectedNotification(null)}>
-                <DialogContent className="sm:max-w-[425px] bg-background/80 backdrop-blur-2xl border-border/40 shadow-2xl overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 via-primary to-primary/50" />
-                    <DialogHeader className="pt-4">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
-                                {selectedNotification && getIcon(selectedNotification.type)}
-                            </div>
-                            <DialogTitle className="font-headline font-bold text-xl uppercase tracking-tight italic">
-                                {selectedNotification?.title}
-                            </DialogTitle>
-                        </div>
-                        <DialogDescription className="text-xs text-muted-foreground uppercase tracking-[0.2em] font-black pb-2 border-b border-border/40">
-                            System Alert Details
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="py-6">
-                        <div className="p-4 rounded-2xl bg-muted/30 border border-border/40 shadow-inner relative group overflow-hidden">
-                            <div className="absolute top-0 right-0 p-8 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:bg-primary/10" />
-                            <p className="text-sm font-medium leading-relaxed relative z-10 text-foreground/90">
-                                {selectedNotification?.message}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground/60 font-bold uppercase tracking-widest">
-                        <div className="flex items-center gap-1.5">
-                            <History className="h-3 w-3" />
-                            {selectedNotification?.createdAt ? formatDistanceToNow(selectedNotification.createdAt instanceof Date ? selectedNotification.createdAt : selectedNotification.createdAt.toDate(), { addSuffix: true }) : 'just now'}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <Badge variant="outline" className="text-[8px] h-4 border-white/10 bg-white/5 uppercase">
-                                ID: {selectedNotification?.id.substring(0, 8)}
-                            </Badge>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
-        </>
+  const notificationsQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'system_notifications'),
+      orderBy('createdAt', 'desc'),
+      limit(50)
     );
+  }, [firestore]);
+
+  const { data: notifications, loading } = useCollection<SystemNotification>(notificationsQuery);
+
+  const unreadCount = useMemo(() => {
+    if (!notifications || !profile) return 0;
+    return notifications.filter((n) => !n.readBy.includes(profile.id)).length;
+  }, [notifications, profile]);
+
+  const handleMarkAsRead = async (notificationId: string) => {
+    if (!firestore || !profile) return;
+    const notificationRef = doc(firestore, 'system_notifications', notificationId);
+    await updateDoc(notificationRef, {
+      readBy: arrayUnion(profile.id),
+    });
+  };
+
+  const handleMarkAllAsRead = async () => {
+    if (!firestore || !profile || !notifications) return;
+    const unreadNotifications = notifications.filter((n) => !n.readBy.includes(profile.id));
+    if (unreadNotifications.length === 0) return;
+
+    const batch = writeBatch(firestore);
+    unreadNotifications.forEach((n) => {
+      const ref = doc(firestore, 'system_notifications', n.id);
+      batch.update(ref, {
+        readBy: arrayUnion(profile!.id),
+      });
+    });
+    await batch.commit();
+  };
+
+  const handleNotificationClick = (notification: SystemNotification) => {
+    setSelectedNotification(notification);
+    if (!notification.readBy.includes(profile?.id || '')) {
+      handleMarkAsRead(notification.id);
+    }
+  };
+
+  const getNotificationIcon = (type: SystemNotification['type']) => {
+    switch (type) {
+      case 'reservation_received':
+        return (
+          <ThemeIcon size="md" radius="md" color="teal" variant="light">
+            <ShieldCheck size={16} />
+          </ThemeIcon>
+        );
+      case 'item_archived':
+        return (
+          <ThemeIcon size="md" radius="md" color="orange" variant="light">
+            <Archive size={16} />
+          </ThemeIcon>
+        );
+      case 'status_changed':
+        return (
+          <ThemeIcon size="md" radius="md" color="blue" variant="light">
+            <History size={16} />
+          </ThemeIcon>
+        );
+      case 'stock_added':
+        return (
+          <ThemeIcon size="md" radius="md" color="cyan" variant="light">
+            <PackageCheck size={16} />
+          </ThemeIcon>
+        );
+      case 'user_cancelled':
+        return (
+          <ThemeIcon size="md" radius="md" color="red" variant="light">
+            <X size={16} />
+          </ThemeIcon>
+        );
+      default:
+        return (
+          <ThemeIcon size="md" radius="md" color="indigo" variant="light">
+            <Info size={16} />
+          </ThemeIcon>
+        );
+    }
+  };
+
+  return (
+    <>
+      <Popover
+        opened={popoverOpened}
+        onChange={setPopoverOpened}
+        width={360}
+        position="bottom-end"
+        withArrow={false}
+        shadow="xl"
+        radius="lg"
+        withinPortal
+      >
+        <Popover.Target>
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            size="lg"
+            radius="md"
+            aria-label="Staff System Alerts"
+            onClick={() => setPopoverOpened((o) => !o)}
+            className="relative hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+          >
+            {unreadCount > 0 ? (
+              <>
+                <Bell size={18} className="text-cyan-600 dark:text-cyan-400" />
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-[#111722]">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              </>
+            ) : (
+              <Bell size={18} className="text-slate-600 dark:text-slate-400" />
+            )}
+          </ActionIcon>
+        </Popover.Target>
+
+        <Popover.Dropdown className="p-0 bg-white/95 dark:bg-[#111722]/95 border-slate-200 dark:border-white/10 backdrop-blur-xl shadow-2xl rounded-xl overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between p-3.5 px-4 border-b border-slate-100 dark:border-white/10">
+            <Group gap="xs">
+              <Text fw={700} size="sm" className="font-headline text-slate-900 dark:text-white">
+                System Alerts
+              </Text>
+              {unreadCount > 0 && (
+                <Badge size="xs" variant="filled" color="cyan" className="font-bold">
+                  {unreadCount} new
+                </Badge>
+              )}
+            </Group>
+
+            {unreadCount > 0 && (
+              <Button
+                variant="subtle"
+                color="cyan"
+                size="compact-xs"
+                leftSection={<CheckCheck size={13} />}
+                onClick={handleMarkAllAsRead}
+                className="text-[10px] font-bold uppercase tracking-wider h-6 px-2"
+              >
+                Mark all as read
+              </Button>
+            )}
+          </div>
+
+          {/* Alerts List */}
+          <ScrollArea.Autosize mah={380} type="scroll" offsetScrollbars>
+            {loading ? (
+              <div className="flex items-center justify-center h-28">
+                <Text size="xs" c="dimmed" className="animate-pulse">
+                  Scanning system alerts...
+                </Text>
+              </div>
+            ) : notifications && notifications.length > 0 ? (
+              <div className="divide-y divide-slate-100 dark:divide-white/5">
+                {notifications.map((notification) => {
+                  const isUnread = !notification.readBy.includes(profile?.id || '');
+                  return (
+                    <div
+                      key={notification.id}
+                      onClick={() => handleNotificationClick(notification)}
+                      className={cn(
+                        'p-3.5 px-4 transition-colors relative group cursor-pointer flex gap-3 items-start',
+                        isUnread
+                          ? 'bg-cyan-500/[0.04] dark:bg-cyan-500/[0.06] hover:bg-cyan-500/[0.08]'
+                          : 'hover:bg-slate-50 dark:hover:bg-white/[0.03]'
+                      )}
+                    >
+                      <div className="flex-shrink-0 mt-0.5">
+                        {getNotificationIcon(notification.type)}
+                      </div>
+
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <Text
+                            size="xs"
+                            fw={isUnread ? 700 : 600}
+                            truncate
+                            className={cn(
+                              isUnread ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'
+                            )}
+                          >
+                            {notification.title}
+                          </Text>
+                          {isUnread && (
+                            <span className="h-2 w-2 rounded-full bg-cyan-500 flex-shrink-0" />
+                          )}
+                        </div>
+
+                        <Text
+                          size="xs"
+                          c="dimmed"
+                          className="line-clamp-2 leading-relaxed text-[11px]"
+                        >
+                          {notification.message}
+                        </Text>
+
+                        <div className="flex items-center justify-between pt-1">
+                          <Text size="10px" c="dimmed" fw={600} className="tracking-tight">
+                            {notification.createdAt
+                              ? formatDistanceToNow(
+                                  notification.createdAt instanceof Date
+                                    ? notification.createdAt
+                                    : notification.createdAt.toDate(),
+                                  { addSuffix: true }
+                                )
+                              : 'just now'}
+                          </Text>
+
+                          {isUnread && (
+                            <ActionIcon
+                              variant="subtle"
+                              color="gray"
+                              size="xs"
+                              radius="sm"
+                              title="Mark as read"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMarkAsRead(notification.id);
+                              }}
+                            >
+                              <Check size={12} />
+                            </ActionIcon>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-44 space-y-2 opacity-50 p-4">
+                <ThemeIcon size="xl" radius="xl" color="gray" variant="light">
+                  <Bell size={20} />
+                </ThemeIcon>
+                <Text size="xs" fw={700} className="uppercase tracking-widest text-slate-500">
+                  No alerts recorded
+                </Text>
+              </div>
+            )}
+          </ScrollArea.Autosize>
+
+          {/* Footer View Audit Log */}
+          <div className="p-2 border-t border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
+            <Button
+              variant="subtle"
+              color="indigo"
+              size="xs"
+              fullWidth
+              leftSection={<History size={14} />}
+              onClick={() => {
+                setPopoverOpened(false);
+                router.push('/profile?tab=audit');
+              }}
+              className="font-bold text-xs uppercase tracking-wider h-8"
+            >
+              View Full Audit Log
+            </Button>
+          </div>
+        </Popover.Dropdown>
+      </Popover>
+
+      {/* Mantine Alert Details Modal */}
+      <Modal
+        opened={!!selectedNotification}
+        onClose={() => setSelectedNotification(null)}
+        centered
+        radius="lg"
+        size="sm"
+        title={
+          <Group gap="xs">
+            {selectedNotification && getNotificationIcon(selectedNotification.type)}
+            <div>
+              <Text fw={700} size="sm" className="font-headline text-slate-900 dark:text-slate-100 uppercase tracking-tight">
+                {selectedNotification?.title}
+              </Text>
+              <Text size="10px" c="dimmed" className="uppercase tracking-wider font-semibold">
+                System Alert Details
+              </Text>
+            </div>
+          </Group>
+        }
+        classNames={{
+          content: 'bg-white dark:bg-[#111722] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-2xl',
+          header: 'bg-white dark:bg-[#111722] border-b border-slate-200 dark:border-white/10 px-5 py-3.5',
+          body: '!p-5',
+        }}
+      >
+        <Stack gap="md">
+          <Paper
+            withBorder
+            p="md"
+            radius="md"
+            className="bg-slate-50/70 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 relative overflow-hidden"
+          >
+            <Text size="sm" className="leading-relaxed text-slate-800 dark:text-slate-200">
+              {selectedNotification?.message}
+            </Text>
+          </Paper>
+
+          <Group justify="space-between" align="center" className="pt-1">
+            <Group gap={6}>
+              <History size={13} className="text-slate-400" />
+              <Text size="xs" c="dimmed" fw={600}>
+                {selectedNotification?.createdAt
+                  ? formatDistanceToNow(
+                      selectedNotification.createdAt instanceof Date
+                        ? selectedNotification.createdAt
+                        : selectedNotification.createdAt.toDate(),
+                      { addSuffix: true }
+                    )
+                  : 'just now'}
+              </Text>
+            </Group>
+
+            <Badge size="xs" variant="outline" color="gray" className="font-mono">
+              ID: {selectedNotification?.id.substring(0, 8)}
+            </Badge>
+          </Group>
+
+          <Divider className="border-slate-100 dark:border-white/10" />
+
+          <Group justify="flex-end" gap="xs">
+            <Button
+              variant="default"
+              size="xs"
+              radius="md"
+              onClick={() => setSelectedNotification(null)}
+              className="text-xs font-semibold"
+            >
+              Close
+            </Button>
+            <Button
+              color="indigo"
+              size="xs"
+              radius="md"
+              leftSection={<History size={14} />}
+              onClick={() => {
+                setSelectedNotification(null);
+                router.push('/profile?tab=audit');
+              }}
+              className="text-xs font-semibold shadow-sm shadow-indigo-500/20"
+            >
+              Open Audit Log
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+    </>
+  );
 }
