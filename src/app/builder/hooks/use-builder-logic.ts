@@ -241,7 +241,7 @@ export function useBuilderLogic(allParts: Part[]) {
                         model: coolerModel,
                         price: 0,
                         description: `Bundled cooler.`,
-                        image: "https://picsum.photos/seed/stockcooler/800/600",
+                        image: "/placeholders/components/cooler.jpg",
                         imageHint: "included cooler",
                         icon: Wind,
                         wattage: 0,

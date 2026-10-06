@@ -129,9 +129,10 @@ export function useBuildActions({
           checkAbort();
           setAiPhase('image-fetch');
 
-          const randomNum = Math.floor(Math.random() * 1000);
-          const systemSlug = result.systemName.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-          const finalImage = `https://picsum.photos/seed/${systemSlug}${randomNum}/800/600`;
+          const caseImage = (build['Case'] as ComponentData)?.image;
+          const finalImage = (caseImage && !caseImage.includes('picsum.photos')) 
+            ? caseImage 
+            : '/placeholders/components/case.jpg';
 
           const finalData: PrebuiltBuilderAddFormSchema = {
             name: result.systemName,

@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Check } from "lucide-react";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { PlaceHolderImages, getComponentPlaceholderImage } from "@/lib/placeholder-images";
 import { cn } from "@/lib/utils";
 import {
     Carousel,
@@ -57,8 +57,8 @@ export function ChatRecommendationsCarousel({
                             }
                         }
 
-                        const placeholderImage = PlaceHolderImages.find(p => p.id.toLowerCase() === category.toLowerCase())?.imageUrl || PlaceHolderImages.find(p => p.id === 'case')?.imageUrl;
-                        const finalImage = partImageUrl && partImageUrl.startsWith('http') ? partImageUrl : placeholderImage;
+                        const placeholderImage = getComponentPlaceholderImage(category, partName);
+                        const finalImage = partImageUrl && partImageUrl.startsWith('http') && !partImageUrl.includes('picsum.photos') ? partImageUrl : placeholderImage;
 
                         return (
                             <CarouselItem key={partId || idx} className="pl-2 basis-[80%] sm:basis-[200px] shrink-0 h-full">

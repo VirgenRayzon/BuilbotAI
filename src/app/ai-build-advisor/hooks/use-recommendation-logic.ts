@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Build, AiRecommendation, Part } from "@/lib/types";
 import type { AiBuildAdvisorRecommendationsInput } from "@/ai/flows/ai-build-advisor-recommendations";
 import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind } from "lucide-react";
+import { getComponentPlaceholderImage } from "@/lib/placeholder-images";
 
 const componentIcons: Record<string, any> = {
   cpu: Cpu, gpu: Server, motherboard: CircuitBoard, ram: MemoryStick, 
@@ -96,13 +97,18 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, allParts: Part[]
                            (pName && (normalized.includes(pName) || pName.includes(normalized)));
                 }) as any;
 
+                const fallbackImage = getComponentPlaceholderImage(type, modelName);
+                const resolvedImage = (match && match.imageUrl && !match.imageUrl.includes('picsum.photos'))
+                    ? match.imageUrl
+                    : fallbackImage;
+
                 return {
                     model: match ? (match.model || match.name) : modelName,
                     description,
                     id: match ? match.id : `ai-suggested-${type}`,
                     price: (price === 0 && match?.price) ? match.price : price,
                     icon: componentIcons[type],
-                    image: match ? match.imageUrl : `https://picsum.photos/seed/${type}/800/600`,
+                    image: resolvedImage,
                     imageHint: type,
                 };
             };

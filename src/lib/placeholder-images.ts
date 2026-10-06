@@ -7,51 +7,150 @@ export type ImagePlaceholder = {
 
 export const PlaceHolderImages: ImagePlaceholder[] = [
   {
-    "id": "cpu",
-    "description": "A modern CPU.",
-    "imageUrl": "https://images.unsplash.com/photo-1613483187636-c2024013d54a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxjcHUlMjBwcm9jZXNzb3J8ZW58MHx8fHwxNzcxNjMzMzE3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    "imageHint": "cpu processor"
+    id: "cpu",
+    description: "A modern high-performance desktop processor.",
+    imageUrl: "/placeholders/components/cpu.jpg",
+    imageHint: "cpu processor"
   },
   {
-    "id": "gpu",
-    "description": "A powerful graphics card.",
-    "imageUrl": "https://images.unsplash.com/photo-1692049065982-fc40fa2d4403?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Z3JhcGhpY3MlMjBjYXJkfGVufDB8fHx8MTc3MTcyNDk2M3ww&ixlib=rb-4.1.0&q=80&w=1080",
-    "imageHint": "graphics card"
+    id: "gpu",
+    description: "A high-performance discrete graphics card.",
+    imageUrl: "/placeholders/components/gpu.jpg",
+    imageHint: "discrete graphics card"
   },
   {
-    "id": "motherboard",
-    "description": "A computer motherboard.",
-    "imageUrl": "https://images.unsplash.com/photo-1586920740280-e7da670f7cb7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxtb3RoZXJib2FyZCUyMGNpcmN1aXR8ZW58MHx8fHwxNzcxNzQ2NjU3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    "imageHint": "motherboard circuit"
+    id: "gpu-integrated",
+    description: "Integrated APU graphics processor.",
+    imageUrl: "/placeholders/components/gpu-integrated.jpg",
+    imageHint: "integrated graphics apu"
   },
   {
-    "id": "ram",
-    "description": "A stick of RAM.",
-    "imageUrl": "https://images.unsplash.com/photo-1676554565685-3aeb5d7ad1b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cmFtJTIwbWVtb3J5JTIwc3RpY2t8ZW58MHx8fHwxNzcxNzQ2NjU3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    "imageHint": "ram memory stick"
+    id: "motherboard",
+    description: "A premium gaming motherboard.",
+    imageUrl: "/placeholders/components/motherboard.jpg",
+    imageHint: "motherboard circuit"
   },
   {
-    "id": "storage",
-    "description": "A fast SSD.",
-    "imageUrl": "https://images.unsplash.com/photo-1721333090141-fc6946f28eaa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzc2QlMjBzdG9yYWdlfGVufDB8fHx8MTc3MTc0NzI4NXww&ixlib=rb-4.1.0&q=80&w=1080",
-    "imageHint": "ssd storage"
+    id: "ram",
+    description: "High-speed dual-channel DDR5/DDR4 RAM modules.",
+    imageUrl: "/placeholders/components/ram.jpg",
+    imageHint: "ram memory stick"
   },
   {
-    "id": "psu",
-    "description": "A reliable power supply unit.",
-    "imageUrl": "https://images.unsplash.com/photo-1672689944912-9a123a34a1cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cG93ZXIlMjBzdXBwbHl8ZW58MHx8fHwxNzcxNzQ3Mjg1fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    "imageHint": "power supply"
+    id: "storage",
+    description: "A lightning-fast M.2 NVMe SSD.",
+    imageUrl: "/placeholders/components/storage.jpg",
+    imageHint: "ssd storage nvme"
   },
   {
-    "id": "case",
-    "description": "A stylish PC case.",
-    "imageUrl": "https://images.unsplash.com/photo-1618339220157-daa2cd9ade56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxjb21wdXRlciUyMGNhc2V8ZW58MHx8fHwxNzcxNzQ3Mjg1fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    "imageHint": "computer case"
+    id: "psu",
+    description: "A reliable modular power supply unit.",
+    imageUrl: "/placeholders/components/psu.jpg",
+    imageHint: "power supply psu"
   },
   {
-    "id": "cooler",
-    "description": "An efficient CPU cooler.",
-    "imageUrl": "https://images.unsplash.com/photo-1705614232873-190b1770c6be?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxjcHUlMjBjb29sZXJ8ZW58MHx8fHwxNzcxNzQ3Mjg1fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    "imageHint": "cpu cooler"
+    id: "case",
+    description: "A sleek modern gaming PC case chassis.",
+    imageUrl: "/placeholders/components/case.jpg",
+    imageHint: "computer case chassis"
+  },
+  {
+    id: "cooler",
+    description: "An efficient high-performance CPU cooler.",
+    imageUrl: "/placeholders/components/cooler.jpg",
+    imageHint: "cpu cooler heatsink"
   }
 ];
+
+/**
+ * Returns a high-quality, category-specific local placeholder image
+ * for computer components when an inventory image is not available.
+ */
+export function getComponentPlaceholderImage(category?: string, modelOrName?: string): string {
+  const cat = (category || "").toLowerCase().trim();
+  const name = (modelOrName || "").toLowerCase().trim();
+
+  // Detect integrated vs discrete graphics
+  if (
+    cat.includes("gpu") || 
+    cat.includes("graphic") || 
+    cat.includes("video") || 
+    cat.includes("vga")
+  ) {
+    const isIntegrated = 
+      name.includes("integrated") ||
+      name.includes("uhd") ||
+      name.includes("iris") ||
+      name.includes("vega") ||
+      name.includes("apu") ||
+      name.includes("onboard") ||
+      name.includes("none") ||
+      name.includes("n/a") ||
+      (name.includes("radeon") && !name.includes("rx"));
+      
+    if (isIntegrated) {
+      return "/placeholders/components/gpu-integrated.jpg";
+    }
+    return "/placeholders/components/gpu.jpg";
+  }
+
+  if (cat.includes("cpu") || cat.includes("processor")) {
+    return "/placeholders/components/cpu.jpg";
+  }
+
+  if (cat.includes("motherboard") || cat.includes("mobo") || cat.includes("mainboard")) {
+    return "/placeholders/components/motherboard.jpg";
+  }
+
+  if (cat.includes("ram") || cat.includes("memory")) {
+    return "/placeholders/components/ram.jpg";
+  }
+
+  if (
+    cat.includes("storage") || 
+    cat.includes("ssd") || 
+    cat.includes("hdd") || 
+    cat.includes("drive") || 
+    cat.includes("nvme") || 
+    cat.includes("hard")
+  ) {
+    return "/placeholders/components/storage.jpg";
+  }
+
+  if (
+    cat.includes("psu") || 
+    cat.includes("power") || 
+    cat.includes("supply")
+  ) {
+    return "/placeholders/components/psu.jpg";
+  }
+
+  if (
+    cat.includes("cooler") || 
+    cat.includes("fan") || 
+    cat.includes("aio") || 
+    cat.includes("liquid") || 
+    cat.includes("heatsink")
+  ) {
+    return "/placeholders/components/cooler.jpg";
+  }
+
+  if (
+    cat.includes("case") || 
+    cat.includes("chassis") || 
+    cat.includes("cabinet") || 
+    cat.includes("tower")
+  ) {
+    return "/placeholders/components/case.jpg";
+  }
+
+  // Fallback if category didn't match, check model name
+  if (name.includes("rtx") || name.includes("gtx") || name.includes("radeon") || name.includes("geforce")) {
+    return "/placeholders/components/gpu.jpg";
+  }
+  if (name.includes("core i") || name.includes("ryzen") || name.includes("intel") || name.includes("amd")) {
+    return "/placeholders/components/cpu.jpg";
+  }
+
+  return "/placeholders/components/case.jpg";
+}
