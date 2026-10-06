@@ -26,6 +26,8 @@ const AiBuildAdvisorRecommendationsInputSchema = z.object({
     ),
   performanceLevel: z
     .string()
+    .optional()
+    .default('Optimal performance for budget and intended workload')
     .describe(
       'The desired performance level (e.g., "high performance for 4K gaming", "good for 1080p gaming", "reliable for daily tasks").'
     ),
@@ -250,11 +252,11 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
     const knowledgeResults = await retrieveLocalKnowledge(query);
     const knowledgeContext = knowledgeResults.join('\n\n');
 
+    const dynamicModel = await getGenkitModelName('buildAdvisor');
     let storeInventory = '';
     let webSearchContext: string | undefined;
 
     if (input.allowWebSearch) {
-      const dynamicModel = await getGenkitModelName();
       // Step 1: Plain-text research call WITH googleSearchRetrieval (no structured output)
       console.log(`[AI Recommendations] Step 1: Running web search pre-research with model ${dynamicModel}...`);
       const researchResponse = await safeGenkitGenerate(ai, {
@@ -299,7 +301,8 @@ Provide specific model names and realistic PHP prices from Philippine retailers 
         storeInventory: storeInventory || undefined,
         webSearchContext,
         customSystemPrompt,
-      }
+      },
+      { model: dynamicModel }
     );
 
     if (!output) {

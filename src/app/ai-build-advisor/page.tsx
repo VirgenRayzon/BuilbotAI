@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { useUserProfile } from "@/context/user-profile";
 import { useLoading } from "@/context/loading-context";
 import { cn } from "@/lib/utils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs } from "@mantine/core";
+import { CircuitBoard, Sparkles } from "lucide-react";
 import { BuilderFloatingAnalytics } from "@/components/builder-floating-analytics";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
 import { RouteGuard } from "@/components/auth/route-guard";
@@ -103,28 +104,27 @@ export default function AiBuildAdvisorPage() {
                     <AdvisorHeader isAiKillSwitch={isAiKillSwitch} />
 
                     {builderState ? (
-                        <Tabs defaultValue="critique" className="w-full h-full">
-                            <div className="flex justify-center mb-5">
-                                <TabsList className={cn(
-                                    "p-1 h-14 rounded-2xl border backdrop-blur-md",
-                                    isDark ? "bg-slate-900/60 border-white/5" : "bg-white/60 border-slate-200"
-                                )}>
-                                    <TabsTrigger
+                        <Tabs defaultValue="critique" variant="pills" radius="xl" color="cyan" className="w-full h-full">
+                            <div className="flex justify-center mb-6">
+                                <Tabs.List className="bg-slate-100/90 dark:bg-[#141a23] p-1.5 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm backdrop-blur-md gap-1.5">
+                                    <Tabs.Tab
                                         value="critique"
-                                        className="rounded-xl px-5 h-full data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300 font-bold uppercase tracking-widest text-[10px]"
+                                        leftSection={<CircuitBoard className="h-4 w-4" />}
+                                        className="font-headline font-bold text-xs uppercase tracking-wider py-2.5 px-6 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-md"
                                     >
                                         Review Current Build
-                                    </TabsTrigger>
-                                    <TabsTrigger
+                                    </Tabs.Tab>
+                                    <Tabs.Tab
                                         value="generate"
-                                        className="rounded-xl px-5 h-full data-[state=active]:bg-primary data-[state=active]:text-white transition-all duration-300 font-bold uppercase tracking-widest text-[10px]"
+                                        leftSection={<Sparkles className="h-4 w-4" />}
+                                        className="font-headline font-bold text-xs uppercase tracking-wider py-2.5 px-6 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-md"
                                     >
                                         Create New Build
-                                    </TabsTrigger>
-                                </TabsList>
+                                    </Tabs.Tab>
+                                </Tabs.List>
                             </div>
 
-                            <TabsContent value="critique" className="mt-0 h-full">
+                            <Tabs.Panel value="critique" className="mt-0 h-full">
                                 <CritiqueTab
                                     isDark={isDark}
                                     builderState={builderState}
@@ -141,8 +141,8 @@ export default function AiBuildAdvisorPage() {
                                     workload={workload}
                                     setWorkload={setWorkload}
                                 />
-                            </TabsContent>
-                            <TabsContent value="generate" className="mt-0 h-full">
+                            </Tabs.Panel>
+                            <Tabs.Panel value="generate" className="mt-0 h-full">
                                 <RecommendationTab
                                     isDark={isDark}
                                     isPending={isPending}
@@ -154,7 +154,7 @@ export default function AiBuildAdvisorPage() {
                                     totalPrice={totalPrice}
                                     error={error}
                                 />
-                            </TabsContent>
+                            </Tabs.Panel>
                         </Tabs>
                     ) : (
                         <RecommendationTab

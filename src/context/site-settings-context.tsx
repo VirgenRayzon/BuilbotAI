@@ -17,6 +17,20 @@ export interface FineTunedProject {
     createdAt?: string;
 }
 
+export type AiFeatureKey = 'chatbot' | 'buildAdvisor' | 'prebuiltAdvisor';
+
+export interface FeatureModelRouting {
+    chatbot: 'default' | 'finetuned';
+    buildAdvisor: 'default' | 'finetuned';
+    prebuiltAdvisor: 'default' | 'finetuned';
+}
+
+export const DEFAULT_FEATURE_ROUTING: FeatureModelRouting = {
+    chatbot: 'finetuned',
+    buildAdvisor: 'default',
+    prebuiltAdvisor: 'default',
+};
+
 export interface SystemPromptsSetting {
     chatbot?: string;
     buildAdvisor?: string;
@@ -33,6 +47,7 @@ interface SiteSettings {
     defaultGeminiModel?: string;
     fineTunedProjects?: FineTunedProject[];
     activeFineTunedProjectId?: string;
+    featureModelRouting?: FeatureModelRouting;
     systemPrompts?: SystemPromptsSetting;
     lastUpdated?: string;
     updatedBy?: string;
@@ -48,6 +63,7 @@ interface SiteSettingsContextType {
     defaultGeminiModel: string;
     fineTunedProjects: FineTunedProject[];
     activeFineTunedProjectId: string;
+    featureModelRouting: FeatureModelRouting;
     systemPrompts?: SystemPromptsSetting;
 }
 
@@ -79,6 +95,11 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
     ];
     const activeFineTunedProjectId = settings?.activeFineTunedProjectId || (fineTunedProjects[0]?.id || 'default-proj-1');
     const systemPrompts = settings?.systemPrompts;
+    const featureModelRouting: FeatureModelRouting = settings?.featureModelRouting || {
+        chatbot: (aiModelProvider === 'finetuned' ? 'finetuned' : 'default'),
+        buildAdvisor: (aiModelProvider === 'finetuned' ? 'finetuned' : 'default'),
+        prebuiltAdvisor: (aiModelProvider === 'finetuned' ? 'finetuned' : 'default'),
+    };
     
     // Corrupt images if Storage Kill Switch is ON and the user is NOT a Super Admin
     const shouldCorruptImages = isStorageKillSwitch && !profile?.isSuperAdmin;
@@ -93,8 +114,9 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
         defaultGeminiModel,
         fineTunedProjects,
         activeFineTunedProjectId,
+        featureModelRouting,
         systemPrompts,
-    }), [settings, isMaintenanceMode, isStorageKillSwitch, shouldCorruptImages, aiModelProvider, fineTunedModelId, defaultGeminiModel, fineTunedProjects, activeFineTunedProjectId, systemPrompts]);
+    }), [settings, isMaintenanceMode, isStorageKillSwitch, shouldCorruptImages, aiModelProvider, fineTunedModelId, defaultGeminiModel, fineTunedProjects, activeFineTunedProjectId, featureModelRouting, systemPrompts]);
 
     return (
         <SiteSettingsContext.Provider value={value}>

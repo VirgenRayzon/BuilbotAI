@@ -275,7 +275,7 @@ REQUIRED OUTPUT SCHEMA:
 Output strictly the JSON object.`;
 
     try {
-        const dynamicModel = await getGenkitModelName();
+        const dynamicModel = await getGenkitModelName('buildAdvisor');
         console.log(`[AI Build Critique] Generating fast critique using Product Highlights with model: ${dynamicModel}...`);
         const response = await safeGenkitGenerate(ai, {
             model: dynamicModel,

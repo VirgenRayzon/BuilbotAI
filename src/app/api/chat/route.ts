@@ -30,9 +30,9 @@ export async function POST(req: Request) {
             return new Response(JSON.stringify({ error: "AI service is currently unavailable" }), { status: 500 });
         }
 
-        // Resolve active AI model (Default vs Fine-Tuned with automated fallback)
-        const resolved = await getLanguageModelForChat();
-        console.log(`[Chat API] Using model: ${resolved.modelId} (isFineTuned: ${resolved.isFineTuned}, isFallback: ${resolved.isFallback})`);
+        // Resolve active AI model (Default vs Fine-Tuned with automated fallback for Chatbot)
+        const resolved = await getLanguageModelForChat({ feature: 'chatbot' });
+        console.log(`[Chat API] Using model: ${resolved.modelId} (feature: chatbot, isFineTuned: ${resolved.isFineTuned}, isFallback: ${resolved.isFallback})`);
 
         // Slice to get last 10 messages for context
         const recentMessages = messages.slice(-10);

@@ -1,7 +1,7 @@
 "use server";
 import { generateText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { getVertexAccessToken, markTunedModelHealthy, DEFAULT_TUNED_MODEL_ID } from '@/lib/ai-model-resolver';
+import { getVertexAccessToken, markTunedModelHealthy, DEFAULT_TUNED_MODEL_ID, type FeatureModelRouting } from '@/lib/ai-model-resolver';
 
 
 import {
@@ -30,7 +30,7 @@ import {
 } from "@/ai/flows/ai-smart-budget";
 
 
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 120000): Promise<T> {
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 180000): Promise<T> {
   const timeoutPromise = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error("AI_TIMEOUT")), timeoutMs)
   );
@@ -668,6 +668,7 @@ export async function updateSiteSettingsAction(settings: {
   defaultGeminiModel?: string;
   fineTunedProjects?: Array<{ id: string; name: string; endpoint: string; createdAt?: string }>;
   activeFineTunedProjectId?: string;
+  featureModelRouting?: FeatureModelRouting;
   updatedBy?: string;
 }) {
   try {
@@ -689,6 +690,9 @@ export async function updateSiteSettingsAction(settings: {
     }
     if (settings.activeFineTunedProjectId !== undefined) {
       updatePayload.activeFineTunedProjectId = settings.activeFineTunedProjectId;
+    }
+    if (settings.featureModelRouting !== undefined) {
+      updatePayload.featureModelRouting = settings.featureModelRouting;
     }
 
     await db.collection('siteSettings').doc('main').set(updatePayload, { merge: true });

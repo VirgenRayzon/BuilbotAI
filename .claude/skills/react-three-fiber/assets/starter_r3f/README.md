@@ -32,7 +32,7 @@ pnpm install
 npm run dev
 ```
 
-Opens at `http://localhost:3000`
+Opens at `http://localhost:9002`
 
 ### Build
 

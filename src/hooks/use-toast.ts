@@ -8,8 +8,9 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 
-const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_LIMIT = 3
+const TOAST_REMOVE_DELAY = 1000
+const DEFAULT_TOAST_DURATION = 8000 // 8 seconds automatically disappear
 
 type ToasterToast = ToastProps & {
   id: string
@@ -164,9 +165,17 @@ function toast({ ...props }: Toast) {
     },
   })
 
+  // Automatically dismiss after 8 seconds
+  const autoDismissTimer = setTimeout(() => {
+    dismiss()
+  }, (props as any).duration ?? DEFAULT_TOAST_DURATION)
+
   return {
     id: id,
-    dismiss,
+    dismiss: () => {
+      clearTimeout(autoDismissTimer)
+      dismiss()
+    },
     update,
   }
 }

@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useFirestore } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -25,10 +24,12 @@ import {
     Zap,
     Brain,
     Gauge,
+    MessageSquare,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useUserProfile } from '@/context/user-profile';
 import { useSiteSettings, type FineTunedProject } from '@/context/site-settings-context';
+import { type AiFeatureKey, type FeatureModelRouting, DEFAULT_FEATURE_ROUTING } from '@/lib/ai-model-resolver';
 import { createAuditLog } from '@/firebase/audit';
 import {
     testAiModelConnectionAction,
@@ -118,6 +119,38 @@ export const AVAILABLE_GEMINI_MODELS = [
 
 const DEFAULT_PROJECT_ENDPOINT = 'projects/781722135778/locations/us-central1/endpoints/2302171190132736000';
 
+const AI_FEATURES_CONFIG: Array<{
+    key: AiFeatureKey;
+    name: string;
+    description: string;
+    icon: React.ComponentType<{ className?: string }>;
+    tag: string;
+    speedNotes?: string;
+}> = [
+        {
+            key: 'chatbot',
+            name: 'Buildbot Chat Assistance',
+            description: 'Interactive hardware consultant & floating chat assistant for real-time parts advice and compatibility questions.',
+            icon: MessageSquare,
+            tag: 'Chat Widget & API',
+        },
+        {
+            key: 'buildAdvisor',
+            name: 'Build Advisor Recommendation',
+            description: 'Generates full 8-component builds with budget allocation, performance tiering, and Philippine retailer market research.',
+            icon: Sparkles,
+            tag: 'Recommendation Engine',
+            speedNotes: 'Default Gemini API runs live web pricing research in ~35s without hitting timeouts.',
+        },
+        {
+            key: 'prebuiltAdvisor',
+            name: 'Prebuilt Builder Advisor',
+            description: 'Evaluates prebuilt PC configurations, performs component balance checks, and suggests hardware upgrades.',
+            icon: Cpu,
+            tag: 'Prebuilt Systems',
+        },
+    ];
+
 export function AiModelSettings() {
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -128,15 +161,26 @@ export function AiModelSettings() {
         defaultGeminiModel: activeGeminiModel,
         fineTunedProjects: activeProjects,
         activeFineTunedProjectId: initialActiveProjectId,
+        featureModelRouting: activeFeatureRouting,
     } = useSiteSettings();
 
-    // Model selection state
-    const [selectedAiProvider, setSelectedAiProvider] = useState<'default' | 'finetuned'>(
-        activeAiProvider || 'default'
-    );
+    // Active engine tab: choose whether to view/configure the Gemini catalog or Fine-Tuned projects
+    const [activeEngineTab, setActiveEngineTab] = useState<'gemini' | 'finetuned'>(() => {
+        return activeAiProvider === 'finetuned' ? 'finetuned' : 'gemini';
+    });
     const [selectedGeminiModel, setSelectedGeminiModel] = useState<string>(
         activeGeminiModel || 'gemini-2.5-flash'
     );
+
+    // Per-feature model routing state
+    const [featureRouting, setFeatureRouting] = useState<FeatureModelRouting>(() => {
+        if (activeFeatureRouting) return activeFeatureRouting;
+        return {
+            chatbot: activeAiProvider || 'default',
+            buildAdvisor: activeAiProvider || 'default',
+            prebuiltAdvisor: activeAiProvider || 'default',
+        };
+    });
 
     // Fine-tuned projects state
     const [projects, setProjects] = useState<FineTunedProject[]>(() => {
@@ -185,10 +229,6 @@ export function AiModelSettings() {
 
     // Synchronize from context
     useEffect(() => {
-        if (activeAiProvider) setSelectedAiProvider(activeAiProvider);
-    }, [activeAiProvider]);
-
-    useEffect(() => {
         if (activeGeminiModel) setSelectedGeminiModel(activeGeminiModel);
     }, [activeGeminiModel]);
 
@@ -204,9 +244,25 @@ export function AiModelSettings() {
         }
     }, [initialActiveProjectId]);
 
+    useEffect(() => {
+        if (activeFeatureRouting) {
+            setFeatureRouting(activeFeatureRouting);
+        }
+    }, [activeFeatureRouting]);
+
     // Active project lookup
     const currentActiveProject = projects.find((p) => p.id === activeProjectId) || projects[0];
     const currentTunedEndpoint = currentActiveProject?.endpoint || DEFAULT_PROJECT_ENDPOINT;
+
+    // Routing metrics across all features
+    const routingValues = Object.values(featureRouting);
+    const allVertex = routingValues.length > 0 && routingValues.every((v) => v === 'finetuned');
+    const allGemini = routingValues.length > 0 && routingValues.every((v) => v === 'default');
+    const currentRoutingMode: 'vertex' | 'gemini' | 'hybrid' = allVertex
+        ? 'vertex'
+        : allGemini
+            ? 'gemini'
+            : 'hybrid';
 
     // Handle adding a new named project
     const handleAddProject = () => {
@@ -278,8 +334,9 @@ export function AiModelSettings() {
         setTestingConnection(true);
         setTestResult(null);
         try {
+            const targetProvider = activeEngineTab === 'finetuned' ? 'finetuned' : 'default';
             const result = await testAiModelConnectionAction(
-                selectedAiProvider,
+                targetProvider,
                 currentTunedEndpoint,
                 selectedGeminiModel
             );
@@ -317,13 +374,16 @@ export function AiModelSettings() {
     const handleSaveAiModelSettings = async () => {
         setSavingAiSettings(true);
         try {
+            const effectiveGlobalProvider: 'default' | 'finetuned' = allVertex ? 'finetuned' : 'default';
+
             // 1. Server-side persistence via Admin SDK
             await updateSiteSettingsAction({
-                aiModelProvider: selectedAiProvider,
+                aiModelProvider: effectiveGlobalProvider,
                 defaultGeminiModel: selectedGeminiModel,
                 fineTunedModelId: currentTunedEndpoint,
                 fineTunedProjects: projects,
                 activeFineTunedProjectId: activeProjectId,
+                featureModelRouting: featureRouting,
                 updatedBy: profile?.email || 'Super Admin',
             });
 
@@ -333,27 +393,26 @@ export function AiModelSettings() {
                 await setDoc(
                     siteSettingsRef,
                     {
-                        aiModelProvider: selectedAiProvider,
+                        aiModelProvider: effectiveGlobalProvider,
                         defaultGeminiModel: selectedGeminiModel,
                         fineTunedModelId: currentTunedEndpoint,
                         fineTunedProjects: projects,
                         activeFineTunedProjectId: activeProjectId,
+                        featureModelRouting: featureRouting,
                         lastUpdated: new Date().toISOString(),
                         updatedBy: profile?.email || 'Super Admin',
                     },
                     { merge: true }
-                ).catch(() => {});
+                ).catch(() => { });
             }
 
             // 3. Invalidate server-side model cache
-            await invalidateAiModelCacheAction().catch(() => {});
+            await invalidateAiModelCacheAction().catch(() => { });
 
             // 4. Create audit log
             if (firestore) {
-                const activeModelDesc =
-                    selectedAiProvider === 'finetuned'
-                        ? `Fine-Tuned Model: "${currentActiveProject?.name}" (${currentTunedEndpoint})`
-                        : `Default Gemini API: ${selectedGeminiModel}`;
+                const summaryRouting = `Chatbot: ${featureRouting.chatbot}, Advisor: ${featureRouting.buildAdvisor}, Prebuilts: ${featureRouting.prebuiltAdvisor}`;
+                const activeModelDesc = `Gemini: ${selectedGeminiModel} | Fine-Tuned: "${currentActiveProject?.name}" (${currentTunedEndpoint}) | Routing: [${summaryRouting}]`;
 
                 await createAuditLog(firestore, {
                     actionName: 'updated',
@@ -362,18 +421,15 @@ export function AiModelSettings() {
                     actorEmail: profile?.email,
                     scope: 'System',
                     resourceName: 'AI Model Configuration',
-                    details: `Switched active AI model to: ${activeModelDesc}`,
-                }).catch(() => {});
+                    details: `Updated AI Model Configuration: ${activeModelDesc}`,
+                }).catch(() => { });
             }
 
             setIsAiDirty(false);
 
             toast({
                 title: 'AI Settings Saved',
-                description:
-                    selectedAiProvider === 'finetuned'
-                        ? `Fine-Tuned Model "${currentActiveProject?.name}" is now live!`
-                        : `Default model switched to ${selectedGeminiModel}!`,
+                description: `Settings live! Default Gemini: ${selectedGeminiModel}, Active Fine-Tuned: "${currentActiveProject?.name}".`,
             });
         } catch (err: any) {
             console.error('Failed to update AI model settings:', err);
@@ -397,130 +453,171 @@ export function AiModelSettings() {
                             AI Model Routing & Inference Engine
                         </CardTitle>
                         <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
-                            Switch between official Gemini AI models and your fine-tuned Vertex AI project endpoints for platform intelligence.
+                            Configure official Gemini foundation models, manage fine-tuned Vertex AI project endpoints, and assign models to individual features.
                         </CardDescription>
                     </div>
                     <Badge
                         variant="outline"
                         className={
-                            selectedAiProvider === 'finetuned'
-                                ? 'bg-amber-500/10 text-amber-500 border-amber-500/30'
-                                : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30'
+                            currentRoutingMode === 'vertex'
+                                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                                : currentRoutingMode === 'gemini'
+                                    ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30'
+                                    : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30'
                         }
                     >
-                        {selectedAiProvider === 'finetuned' ? 'Fine-Tuned Active' : 'Default Gemini Active'}
+                        {currentRoutingMode === 'vertex'
+                            ? 'Vertex AI Active'
+                            : currentRoutingMode === 'gemini'
+                                ? 'Default Gemini Active'
+                                : 'Hybrid Routing Active'}
                     </Badge>
                 </div>
             </CardHeader>
 
             <CardContent className="space-y-6 pt-6">
-                {/* PROVIDER SELECTION TILES */}
-                <RadioGroup
-                    value={selectedAiProvider}
-                    onValueChange={(val: 'default' | 'finetuned') => {
-                        setSelectedAiProvider(val);
-                        setIsAiDirty(true);
-                    }}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                >
-                    {/* OPTION 1: DEFAULT GEMINI API */}
-                    <div
-                        onClick={() => {
-                            setSelectedAiProvider('default');
-                            setIsAiDirty(true);
-                        }}
-                        className={`flex flex-col justify-between p-4 rounded-xl border cursor-pointer transition-all ${
-                            selectedAiProvider === 'default'
-                                ? 'border-cyan-500 bg-cyan-500/5 dark:bg-cyan-500/10 shadow-sm'
-                                : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-black/20 hover:bg-slate-100/60 dark:hover:bg-white/[0.03]'
-                        }`}
-                    >
-                        <div className="flex items-start gap-3">
-                            <RadioGroupItem value="default" id="model-default" className="mt-1" />
-                            <div className="space-y-1">
-                                <Label
-                                    htmlFor="model-default"
-                                    className="font-semibold text-sm cursor-pointer flex items-center gap-1.5 text-slate-900 dark:text-white"
-                                >
-                                    <Sparkles className="h-4 w-4 text-cyan-500" />
-                                    Default Gemini API
-                                </Label>
-                                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                                    Official Google Gemini foundation models via Generative Language API. Choose from the complete family of Gemini models below.
-                                </p>
-                            </div>
-                        </div>
-                        <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500">
-                            <span>
-                                Active Model:{' '}
-                                <span className="text-cyan-600 dark:text-cyan-400 font-mono font-semibold">
-                                    {selectedGeminiModel}
-                                </span>
-                            </span>
-                            <Badge variant="secondary" className="text-[9px] uppercase tracking-wider">
-                                {AVAILABLE_GEMINI_MODELS.length} Models Available
-                            </Badge>
-                        </div>
+                {/* ENGINE MANAGEMENT CARDS */}
+                <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                        <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                            <Layers className="h-3.5 w-3.5" />
+                            Model Engines & Catalogs
+                        </Label>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Select an engine below to view and configure its models
+                        </span>
                     </div>
 
-                    {/* OPTION 2: FINE-TUNED VERTEX MODEL */}
-                    <div
-                        onClick={() => {
-                            setSelectedAiProvider('finetuned');
-                            setIsAiDirty(true);
-                        }}
-                        className={`flex flex-col justify-between p-4 rounded-xl border cursor-pointer transition-all ${
-                            selectedAiProvider === 'finetuned'
-                                ? 'border-amber-500 bg-amber-500/5 dark:bg-amber-500/10 shadow-sm'
-                                : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-black/20 hover:bg-slate-100/60 dark:hover:bg-white/[0.03]'
-                        }`}
-                    >
-                        <div className="flex items-start gap-3">
-                            <RadioGroupItem value="finetuned" id="model-finetuned" className="mt-1" />
-                            <div className="space-y-1">
-                                <Label
-                                    htmlFor="model-finetuned"
-                                    className="font-semibold text-sm cursor-pointer flex items-center gap-1.5 text-amber-600 dark:text-amber-400"
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* ENGINE 1: DEFAULT GEMINI API */}
+                        <div
+                            onClick={() => setActiveEngineTab('gemini')}
+                            className={`flex flex-col justify-between p-4 rounded-xl border cursor-pointer transition-all ${activeEngineTab === 'gemini'
+                                    ? 'border-cyan-500 bg-cyan-500/5 dark:bg-cyan-500/10 shadow-sm ring-2 ring-cyan-500/20'
+                                    : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-black/20 hover:border-cyan-500/40 hover:bg-slate-100/60 dark:hover:bg-white/[0.03]'
+                                }`}
+                        >
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-start gap-3">
+                                    <div
+                                        className={`p-2 rounded-lg mt-0.5 shrink-0 transition-colors ${activeEngineTab === 'gemini'
+                                                ? 'bg-cyan-500 text-white shadow-sm'
+                                                : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400'
+                                            }`}
+                                    >
+                                        <Sparkles className="h-4 w-4" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-sm text-slate-900 dark:text-white">
+                                                Default Gemini API
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                                            Official Google Gemini foundation models via Generative Language API. Choose which Gemini model variant powers default workloads.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <Badge
+                                    variant={activeEngineTab === 'gemini' ? 'default' : 'outline'}
+                                    className={
+                                        activeEngineTab === 'gemini'
+                                            ? 'bg-cyan-600 hover:bg-cyan-600 text-white text-[10px] uppercase tracking-wider shrink-0'
+                                            : 'text-[10px] uppercase tracking-wider text-slate-500 border-slate-300 dark:border-white/10 shrink-0'
+                                    }
                                 >
-                                    <Cpu className="h-4 w-4" />
-                                    Fine-Tuned Vertex Model
-                                </Label>
-                                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                                    Custom fine-tuned models trained on PC building datasets and hardware catalogs. Manage named projects and endpoints below.
-                                </p>
+                                    {activeEngineTab === 'gemini' ? 'Configuring' : 'Configure'}
+                                </Badge>
+                            </div>
+
+                            <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500">
+                                <span>
+                                    Active Model:{' '}
+                                    <span className="text-cyan-600 dark:text-cyan-400 font-mono font-semibold">
+                                        {selectedGeminiModel}
+                                    </span>
+                                </span>
+                                <Badge variant="secondary" className="text-[9px] uppercase tracking-wider">
+                                    {AVAILABLE_GEMINI_MODELS.length} Models Available
+                                </Badge>
                             </div>
                         </div>
-                        <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500">
-                            <span className="truncate mr-2">
-                                Active Project:{' '}
-                                <span className="text-amber-600 dark:text-amber-400 font-mono font-semibold truncate">
-                                    {currentActiveProject?.name || 'No Project'}
+
+                        {/* ENGINE 2: FINE-TUNED VERTEX MODEL */}
+                        <div
+                            onClick={() => setActiveEngineTab('finetuned')}
+                            className={`flex flex-col justify-between p-4 rounded-xl border cursor-pointer transition-all ${activeEngineTab === 'finetuned'
+                                    ? 'border-amber-500 bg-amber-500/5 dark:bg-amber-500/10 shadow-sm ring-2 ring-amber-500/20'
+                                    : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-black/20 hover:border-amber-500/40 hover:bg-slate-100/60 dark:hover:bg-white/[0.03]'
+                                }`}
+                        >
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-start gap-3">
+                                    <div
+                                        className={`p-2 rounded-lg mt-0.5 shrink-0 transition-colors ${activeEngineTab === 'finetuned'
+                                                ? 'bg-amber-500 text-white shadow-sm'
+                                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                                            }`}
+                                    >
+                                        <Cpu className="h-4 w-4" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-sm text-slate-900 dark:text-white">
+                                                Fine-Tuned Vertex Model
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                                            Custom fine-tuned models trained on PC building datasets and hardware catalogs. Manage named projects and endpoints below.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <Badge
+                                    variant={activeEngineTab === 'finetuned' ? 'default' : 'outline'}
+                                    className={
+                                        activeEngineTab === 'finetuned'
+                                            ? 'bg-amber-600 hover:bg-amber-600 text-white text-[10px] uppercase tracking-wider shrink-0'
+                                            : 'text-[10px] uppercase tracking-wider text-slate-500 border-slate-300 dark:border-white/10 shrink-0'
+                                    }
+                                >
+                                    {activeEngineTab === 'finetuned' ? 'Configuring' : 'Configure'}
+                                </Badge>
+                            </div>
+
+                            <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500">
+                                <span className="truncate mr-2">
+                                    Active Project:{' '}
+                                    <span className="text-amber-600 dark:text-amber-400 font-mono font-semibold truncate">
+                                        {currentActiveProject?.name || 'No Project'}
+                                    </span>
                                 </span>
-                            </span>
-                            <Badge
-                                variant="outline"
-                                className="text-[9px] uppercase tracking-wider text-amber-500 border-amber-500/30 shrink-0"
-                            >
-                                {projects.length} Registered
-                            </Badge>
+                                <Badge
+                                    variant="outline"
+                                    className="text-[9px] uppercase tracking-wider text-amber-500 border-amber-500/30 shrink-0"
+                                >
+                                    {projects.length} Registered
+                                </Badge>
+                            </div>
                         </div>
                     </div>
-                </RadioGroup>
+                </div>
 
                 {/* CONDITIONAL SECTION: DEFAULT GEMINI MODELS CATALOG */}
-                {selectedAiProvider === 'default' && (
+                {activeEngineTab === 'gemini' && (
                     <div className="p-5 rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.02] dark:bg-cyan-500/[0.04] space-y-4">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div>
                                 <h3 className="text-sm font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
                                     <Sparkles className="h-4 w-4 text-cyan-500" />
-                                    Select Gemini Model Variant
+                                    Select Default Gemini Model Variant
                                 </h3>
                                 <p className="text-xs text-slate-600 dark:text-slate-400">
-                                    Choose which Gemini model powers chat conversations, compatibility checking, and recommendation engines.
+                                    Choose which Gemini model powers chat conversations, compatibility checking, and recommendation engines when routed to Gemini.
                                 </p>
                             </div>
-                            <Badge variant="outline" className="text-xs font-mono text-cyan-600 dark:text-cyan-400 border-cyan-500/30">
+                            <Badge variant="outline" className="text-xs font-mono text-cyan-600 dark:text-cyan-400 border-cyan-500/30 shrink-0">
                                 Selected: {selectedGeminiModel}
                             </Badge>
                         </div>
@@ -537,21 +634,19 @@ export function AiModelSettings() {
                                             setSelectedGeminiModel(model.id);
                                             setIsAiDirty(true);
                                         }}
-                                        className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
-                                            isSelected
+                                        className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${isSelected
                                                 ? 'border-cyan-500 bg-white dark:bg-[#131c2d] ring-2 ring-cyan-500/20 shadow-md'
                                                 : 'border-slate-200 dark:border-white/10 bg-white/70 dark:bg-slate-900/50 hover:border-slate-300 dark:hover:border-white/20'
-                                        }`}
+                                            }`}
                                     >
                                         <div className="space-y-2">
                                             <div className="flex items-center justify-between gap-1.5">
                                                 <div className="flex items-center gap-2">
                                                     <div
-                                                        className={`p-1.5 rounded-lg ${
-                                                            isSelected
+                                                        className={`p-1.5 rounded-lg ${isSelected
                                                                 ? 'bg-cyan-500 text-white'
                                                                 : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400'
-                                                        }`}
+                                                            }`}
                                                     >
                                                         <Icon size={14} />
                                                     </div>
@@ -594,7 +689,7 @@ export function AiModelSettings() {
                 )}
 
                 {/* CONDITIONAL SECTION: NAMED FINE-TUNED PROJECTS (VERTEX AI) */}
-                {selectedAiProvider === 'finetuned' && (
+                {activeEngineTab === 'finetuned' && (
                     <div className="p-5 rounded-2xl border border-amber-500/30 bg-amber-50/30 dark:bg-amber-950/15 space-y-5">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div>
@@ -712,19 +807,17 @@ export function AiModelSettings() {
                                                     setActiveProjectId(proj.id);
                                                     setIsAiDirty(true);
                                                 }}
-                                                className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                                                    isSelected
+                                                className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isSelected
                                                         ? 'border-amber-500 bg-white dark:bg-[#161d2b] ring-2 ring-amber-500/20 shadow-md'
                                                         : 'border-slate-200 dark:border-white/10 bg-white/70 dark:bg-slate-900/50 hover:border-slate-300 dark:hover:border-white/20'
-                                                }`}
+                                                    }`}
                                             >
                                                 <div className="flex items-start gap-3 min-w-0">
                                                     <div
-                                                        className={`mt-0.5 p-1.5 rounded-lg shrink-0 ${
-                                                            isSelected
+                                                        className={`mt-0.5 p-1.5 rounded-lg shrink-0 ${isSelected
                                                                 ? 'bg-amber-500 text-white'
                                                                 : 'bg-slate-100 dark:bg-white/5 text-slate-500'
-                                                        }`}
+                                                            }`}
                                                     >
                                                         <Cpu size={16} />
                                                     </div>
@@ -770,11 +863,10 @@ export function AiModelSettings() {
                                                         <span className="inline font-bold">Delete</span>
                                                     </Button>
                                                     <div
-                                                        className={`h-5 w-5 rounded-full border flex items-center justify-center ${
-                                                            isSelected
+                                                        className={`h-5 w-5 rounded-full border flex items-center justify-center ${isSelected
                                                                 ? 'border-amber-500 bg-amber-500 text-white'
                                                                 : 'border-slate-300 dark:border-white/20'
-                                                        }`}
+                                                            }`}
                                                     >
                                                         {isSelected && <Check size={12} strokeWidth={3} />}
                                                     </div>
@@ -787,6 +879,145 @@ export function AiModelSettings() {
                         </div>
                     </div>
                 )}
+
+                {/* FEATURE MODEL ROUTING SECTION */}
+                <div className="p-5 rounded-2xl border border-indigo-500/20 bg-indigo-500/[0.02] dark:bg-indigo-500/[0.04] space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <h3 className="text-sm font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
+                                <Brain className="h-4 w-4 text-indigo-500" />
+                                Feature Model Assignment & Workload Routing
+                            </h3>
+                            <p className="text-xs text-slate-600 dark:text-slate-400">
+                                Configure which model powers each AI feature: Default Gemini API or your fine-tuned Vertex AI model.
+                            </p>
+                        </div>
+                        <Badge variant="outline" className="text-xs font-mono text-indigo-600 dark:text-indigo-400 border-indigo-500/30 self-start sm:self-auto">
+                            3 Workloads Configurable
+                        </Badge>
+                    </div>
+
+                    <div className="space-y-3.5">
+                        {AI_FEATURES_CONFIG.map((feat) => {
+                            const currentRoute = featureRouting[feat.key] || 'default';
+                            const Icon = feat.icon;
+                            const isDefault = currentRoute === 'default';
+                            const isFinetuned = currentRoute === 'finetuned';
+
+                            return (
+                                <div
+                                    key={feat.key}
+                                    className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#131c2d] shadow-sm space-y-3"
+                                >
+                                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                                        <div className="flex items-start gap-2.5">
+                                            <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 mt-0.5 shrink-0">
+                                                <Icon className="h-4 w-4" />
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                                                        {feat.name}
+                                                    </h4>
+                                                    <Badge variant="secondary" className="text-[10px]">
+                                                        {feat.tag}
+                                                    </Badge>
+                                                </div>
+                                                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+                                                    {feat.description}
+                                                </p>
+                                                {feat.speedNotes && (
+                                                    <p className="text-[11px] text-cyan-600 dark:text-cyan-400 font-medium mt-1">
+                                                        💡 {feat.speedNotes}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <Badge
+                                            variant="outline"
+                                            className={
+                                                isFinetuned
+                                                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 shrink-0'
+                                                    : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30 shrink-0'
+                                            }
+                                        >
+                                            {isFinetuned ? 'Fine-Tuned Active' : 'Default Gemini Active'}
+                                        </Badge>
+                                    </div>
+
+                                    {/* 2 CHOICES */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                        {/* CHOICE 1: DEFAULT GEMINI API */}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setFeatureRouting((prev) => ({ ...prev, [feat.key]: 'default' }));
+                                                setIsAiDirty(true);
+                                            }}
+                                            className={`p-3 rounded-lg border text-left transition-all flex items-start justify-between cursor-pointer ${isDefault
+                                                    ? 'border-cyan-500 bg-cyan-500/10 dark:bg-cyan-500/20 ring-1 ring-cyan-500 shadow-sm'
+                                                    : 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 bg-slate-50/50 dark:bg-black/20'
+                                                }`}
+                                        >
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-1.5 font-semibold text-xs text-slate-900 dark:text-white">
+                                                    <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
+                                                    Default Gemini API
+                                                </div>
+                                                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                                                    {selectedGeminiModel}
+                                                </p>
+                                            </div>
+                                            <div
+                                                className={`h-4 w-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${isDefault
+                                                        ? 'border-cyan-500 bg-cyan-500 text-white'
+                                                        : 'border-slate-300 dark:border-white/20'
+                                                    }`}
+                                            >
+                                                {isDefault && <Check size={10} strokeWidth={3} />}
+                                            </div>
+                                        </button>
+
+                                        {/* CHOICE 2: FINETUNED */}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setFeatureRouting((prev) => ({ ...prev, [feat.key]: 'finetuned' }));
+                                                setIsAiDirty(true);
+                                            }}
+                                            className={`p-3 rounded-lg border text-left transition-all flex items-start justify-between cursor-pointer ${isFinetuned
+                                                    ? 'border-amber-500 bg-amber-500/10 dark:bg-amber-500/20 ring-1 ring-amber-500 shadow-sm'
+                                                    : 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 bg-slate-50/50 dark:bg-black/20'
+                                                }`}
+                                        >
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-1.5 font-semibold text-xs text-slate-900 dark:text-white">
+                                                    <Cpu className="h-3.5 w-3.5 text-amber-500" />
+                                                    Fine-Tuned Model
+                                                </div>
+                                                <p
+                                                    className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate max-w-[200px]"
+                                                    title={currentActiveProject?.name}
+                                                >
+                                                    {currentActiveProject?.name || 'Active Endpoint'}
+                                                </p>
+                                            </div>
+                                            <div
+                                                className={`h-4 w-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${isFinetuned
+                                                        ? 'border-amber-500 bg-amber-500 text-white'
+                                                        : 'border-slate-300 dark:border-white/20'
+                                                    }`}
+                                            >
+                                                {isFinetuned && <Check size={10} strokeWidth={3} />}
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
 
                 {/* TEST & SAVE CONTROLS */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
@@ -802,10 +1033,15 @@ export function AiModelSettings() {
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                 Testing Connection...
                             </>
+                        ) : activeEngineTab === 'finetuned' ? (
+                            <>
+                                <Cpu className="h-3.5 w-3.5 text-amber-500" />
+                                Test Vertex AI Endpoint
+                            </>
                         ) : (
                             <>
                                 <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
-                                Test Model Connection
+                                Test Gemini API Connection
                             </>
                         )}
                     </Button>
@@ -829,13 +1065,12 @@ export function AiModelSettings() {
                 {/* CONNECTION TEST RESULT DISPLAY */}
                 {testResult && (
                     <div
-                        className={`p-4 rounded-xl border text-xs space-y-2 ${
-                            testResult.success
+                        className={`p-4 rounded-xl border text-xs space-y-2 ${testResult.success
                                 ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300'
                                 : testResult.isPermissionError
-                                ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-500/30 text-amber-800 dark:text-amber-300'
-                                : 'bg-rose-50 dark:bg-rose-950/20 border-rose-300 dark:border-rose-500/30 text-rose-800 dark:text-rose-300'
-                        }`}
+                                    ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-500/30 text-amber-800 dark:text-amber-300'
+                                    : 'bg-rose-50 dark:bg-rose-950/20 border-rose-300 dark:border-rose-500/30 text-rose-800 dark:text-rose-300'
+                            }`}
                     >
                         <div className="flex items-center justify-between">
                             <span className="font-semibold flex items-center gap-1.5">

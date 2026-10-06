@@ -81,7 +81,7 @@ ${buildContext}
 `;
 
     try {
-        const dynamicModel = await getGenkitModelName();
+        const dynamicModel = await getGenkitModelName('prebuiltAdvisor');
         // Step 1: Plain-text research call WITH googleSearchRetrieval (no structured output)
         console.log("[AI Prebuilt Performance] Step 1: Running web search pre-research for component capabilities...");
         const researchResponse = await safeGenkitGenerate(ai, {

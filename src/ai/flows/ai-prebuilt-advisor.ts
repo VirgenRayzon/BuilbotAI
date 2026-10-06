@@ -116,7 +116,7 @@ const aiPrebuiltAdvisorFlow = ai.defineFlow(
     const knowledgeContext = knowledgeResults.join('\n\n');
 
     try {
-      const dynamicModel = await getGenkitModelName();
+      const dynamicModel = await getGenkitModelName('prebuiltAdvisor');
       // Step 1: Plain-text research call WITH googleSearchRetrieval (no structured output)
       console.log(`[aiPrebuiltAdvisorFlow] Step 1: Running web search pre-research for pricing with model ${dynamicModel}...`);
       const researchResponse = await safeGenkitGenerate(ai, {
@@ -151,7 +151,7 @@ Summarize the total estimated build cost in PHP.`,
         knowledgeContext,
         webResearchContext,
         customSystemPrompt,
-      });
+      }, { model: dynamicModel });
 
       if (!output) {
         throw new Error('Failed to get suggestions from the AI.');

@@ -62,7 +62,7 @@ Rules:
 Return your response strictly adhering to the JSON schema.
 `;
 
-        const dynamicModel = await getGenkitModelName();
+        const dynamicModel = await getGenkitModelName('buildAdvisor');
 
         const response = await safeGenkitGenerate(ai, {
             model: dynamicModel,

@@ -11,6 +11,19 @@ import { getAdminFirestore } from '@/firebase/server-init';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { GoogleAuth } from 'google-auth-library';
 import type { LanguageModel } from 'ai';
+export type AiFeatureKey = 'chatbot' | 'buildAdvisor' | 'prebuiltAdvisor';
+
+export interface FeatureModelRouting {
+    chatbot: 'default' | 'finetuned';
+    buildAdvisor: 'default' | 'finetuned';
+    prebuiltAdvisor: 'default' | 'finetuned';
+}
+
+export const DEFAULT_FEATURE_ROUTING: FeatureModelRouting = {
+    chatbot: 'finetuned',
+    buildAdvisor: 'default',
+    prebuiltAdvisor: 'default',
+};
 
 export interface ActiveAiModelConfig {
     provider: 'default' | 'finetuned';
@@ -26,8 +39,17 @@ export const DEFAULT_TUNED_MODEL_ID = 'projects/781722135778/locations/us-centra
 export const TUNED_MODEL_RESOURCE_ID = 'projects/781722135778/locations/us-central1/models/2614243376421142528';
 export const TUNED_ENDPOINT_RESOURCE_ID = 'projects/781722135778/locations/us-central1/endpoints/2302171190132736000';
 
-// In-memory cache to prevent excessive Firestore reads across rapid chat messages
-let cachedConfig: ActiveAiModelConfig | null = null;
+interface CachedSettingsData {
+    globalProvider: 'default' | 'finetuned';
+    featureRouting: FeatureModelRouting;
+    normalizedModelId: string;
+    configuredDefaultGeminiModel: string;
+    projectId: string;
+    location: string;
+}
+
+// In-memory cache to prevent excessive Firestore reads across rapid chat messages & flows
+let cachedSettings: CachedSettingsData | null = null;
 let lastCacheTime = 0;
 const CACHE_TTL_MS = 15000; // 15 seconds cache
 
@@ -67,70 +89,106 @@ export function normalizeModelId(rawId?: string): string {
     return normalized;
 }
 
-export async function getActiveAiModelConfig(): Promise<ActiveAiModelConfig> {
+export async function getActiveAiModelConfig(feature?: AiFeatureKey): Promise<ActiveAiModelConfig> {
     const now = Date.now();
     const degraded = isCurrentlyDegraded();
 
-    if (cachedConfig && (now - lastCacheTime < CACHE_TTL_MS) && cachedConfig.isDegraded === degraded) {
-        return cachedConfig;
-    }
+    if (!cachedSettings || (now - lastCacheTime >= CACHE_TTL_MS)) {
+        let globalProvider: 'default' | 'finetuned' = 'default';
+        let rawModelId = DEFAULT_TUNED_MODEL_ID;
+        let configuredDefaultGeminiModel = DEFAULT_MODEL;
+        let featureRouting: FeatureModelRouting = { ...DEFAULT_FEATURE_ROUTING };
 
-    let provider: 'default' | 'finetuned' = 'default';
-    let rawModelId = DEFAULT_TUNED_MODEL_ID;
-    let configuredDefaultGeminiModel = DEFAULT_MODEL;
+        try {
+            const firestore = getAdminFirestore();
+            const settingsSnap = await firestore.collection('siteSettings').doc('main').get();
 
-    try {
-        const firestore = getAdminFirestore();
-        const settingsSnap = await firestore.collection('siteSettings').doc('main').get();
+            if (settingsSnap.exists) {
+                const data = settingsSnap.data();
+                globalProvider = (data?.aiModelProvider === 'finetuned') ? 'finetuned' : 'default';
+                if (data?.fineTunedModelId?.trim()) {
+                    rawModelId = data.fineTunedModelId.trim();
+                } else if (process.env.GEMINI_FINE_TUNED_MODEL) {
+                    rawModelId = process.env.GEMINI_FINE_TUNED_MODEL;
+                }
+                if (data?.defaultGeminiModel?.trim()) {
+                    configuredDefaultGeminiModel = data.defaultGeminiModel.trim();
+                }
 
-        if (settingsSnap.exists) {
-            const data = settingsSnap.data();
-            provider = (data?.aiModelProvider === 'finetuned') ? 'finetuned' : 'default';
-            if (data?.fineTunedModelId?.trim()) {
-                rawModelId = data.fineTunedModelId.trim();
-            } else if (process.env.GEMINI_FINE_TUNED_MODEL) {
+                if (data?.featureModelRouting) {
+                    featureRouting = {
+                        chatbot: data.featureModelRouting.chatbot === 'finetuned' ? 'finetuned' : 'default',
+                        buildAdvisor: data.featureModelRouting.buildAdvisor === 'finetuned' ? 'finetuned' : 'default',
+                        prebuiltAdvisor: data.featureModelRouting.prebuiltAdvisor === 'finetuned' ? 'finetuned' : 'default',
+                    };
+                } else {
+                    // Fall back to global aiModelProvider if featureModelRouting hasn't been configured yet
+                    featureRouting = {
+                        chatbot: globalProvider,
+                        buildAdvisor: globalProvider,
+                        prebuiltAdvisor: globalProvider,
+                    };
+                }
+            }
+        } catch (error) {
+            console.warn("[AI Model Resolver] Unable to fetch siteSettings from Firestore, falling back to env/defaults:", error);
+            if (process.env.GEMINI_FINE_TUNED_MODEL) {
+                globalProvider = 'finetuned';
                 rawModelId = process.env.GEMINI_FINE_TUNED_MODEL;
-            }
-            if (data?.defaultGeminiModel?.trim()) {
-                configuredDefaultGeminiModel = data.defaultGeminiModel.trim();
+                featureRouting = {
+                    chatbot: 'finetuned',
+                    buildAdvisor: 'finetuned',
+                    prebuiltAdvisor: 'finetuned',
+                };
             }
         }
-    } catch (error) {
-        console.warn("[AI Model Resolver] Unable to fetch siteSettings from Firestore, falling back to env/defaults:", error);
-        if (process.env.GEMINI_FINE_TUNED_MODEL) {
-            provider = 'finetuned';
-            rawModelId = process.env.GEMINI_FINE_TUNED_MODEL;
+
+        const normalizedModelId = normalizeModelId(rawModelId);
+        let projectId = '781722135778';
+        let location = 'us-central1';
+
+        const match = normalizedModelId.match(/projects\/([^\/]+)\/locations\/([^\/]+)/);
+        if (match) {
+            projectId = match[1];
+            location = match[2];
         }
+
+        cachedSettings = {
+            globalProvider,
+            featureRouting,
+            normalizedModelId,
+            configuredDefaultGeminiModel,
+            projectId,
+            location,
+        };
+        lastCacheTime = now;
     }
 
-    const normalizedId = normalizeModelId(rawModelId);
-    let projectId = '781722135778';
-    let location = 'us-central1';
+    const effectiveProvider = (feature && cachedSettings.featureRouting[feature])
+        ? cachedSettings.featureRouting[feature]
+        : cachedSettings.globalProvider;
 
-    const match = normalizedId.match(/projects\/([^\/]+)\/locations\/([^\/]+)/);
-    if (match) {
-        projectId = match[1];
-        location = match[2];
-    }
+    const isFineTuned = effectiveProvider === 'finetuned' && !degraded;
+    const modelId = effectiveProvider === 'finetuned'
+        ? cachedSettings.normalizedModelId
+        : cachedSettings.configuredDefaultGeminiModel;
 
-    cachedConfig = {
-        provider,
-        modelId: provider === 'finetuned' ? normalizedId : configuredDefaultGeminiModel,
-        isFineTuned: provider === 'finetuned' && !degraded,
-        projectId,
-        location,
+    return {
+        provider: effectiveProvider,
+        modelId,
+        isFineTuned,
+        projectId: cachedSettings.projectId,
+        location: cachedSettings.location,
         isDegraded: degraded,
     };
-    lastCacheTime = now;
-    return cachedConfig;
 }
 
 /**
  * Returns model identifier formatted for Genkit flows:
  * e.g. 'googleai/gemini-2.5-flash' or fine-tuned model path
  */
-export async function getGenkitModelName(): Promise<string> {
-    const config = await getActiveAiModelConfig();
+export async function getGenkitModelName(feature?: AiFeatureKey): Promise<string> {
+    const config = await getActiveAiModelConfig(feature);
     if (config.isFineTuned && !config.isDegraded) {
         // If the path already has a provider prefix, return as is
         if (config.modelId.startsWith('vertexai/')) return config.modelId;
@@ -145,7 +203,7 @@ export async function getGenkitModelName(): Promise<string> {
  * Invalidate model cache when a Super Admin changes the model in settings
  */
 export function invalidateAiModelCache() {
-    cachedConfig = null;
+    cachedSettings = null;
     lastCacheTime = 0;
     cachedAccessToken = null;
     tokenExpiry = 0;
@@ -213,7 +271,7 @@ export async function getVertexAccessToken(forceRefresh = false): Promise<string
  * Resolves the active LanguageModel instance for Vercel AI SDK (Chat Route & Server Actions).
  * Automatically provides fallback to Gemini 2.5 Flash if fine-tuned model cannot be initialized.
  */
-export async function getLanguageModelForChat(options?: { forceDefault?: boolean }): Promise<{
+export async function getLanguageModelForChat(options?: { forceDefault?: boolean; feature?: AiFeatureKey }): Promise<{
     model: LanguageModel;
     modelId: string;
     isFineTuned: boolean;
@@ -231,7 +289,8 @@ export async function getLanguageModelForChat(options?: { forceDefault?: boolean
         };
     }
 
-    const config = await getActiveAiModelConfig();
+    const feature = options?.feature || 'chatbot';
+    const config = await getActiveAiModelConfig(feature);
     const activeDefaultModel = config.provider === 'default' ? (config.modelId || DEFAULT_MODEL) : DEFAULT_MODEL;
 
     if (!config.isFineTuned || config.isDegraded) {

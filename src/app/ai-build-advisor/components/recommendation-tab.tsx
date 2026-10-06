@@ -2,10 +2,10 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Bot, CircuitBoard, Database } from 'lucide-react';
+import { Bot } from 'lucide-react';
+import { Paper, Box, Group, ThemeIcon, Text } from '@mantine/core';
 import { ChatForm } from '@/components/chat-form';
 import { BuildSummary } from '@/components/build-summary';
-import { cn } from '@/lib/utils';
 
 interface RecommendationTabProps {
     isDark: boolean;
@@ -36,41 +36,38 @@ export function RecommendationTab({
             animate={{ opacity: 1, y: 0 }}
             className="grid lg:grid-cols-12 gap-8 h-full"
         >
-            <aside className="lg:col-span-4 lg:sticky lg:top-24 self-start">
-                <div className={cn(
-                    "p-5 rounded-3xl border transition-all duration-500 relative overflow-hidden glass-panel border-primary/30 shadow-[0_0_30px_rgba(34,211,238,0.08),0_0_60px_rgba(34,211,238,0.04)]",
-                    isDark ? "bg-slate-900/40" : "bg-white/60"
-                )}>
-                    {/* Animated top accent */}
-                    <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent z-20" />
-
-                    {/* Subtle corner glow accents */}
-                    <div className="absolute -top-6 -left-6 w-32 h-32 bg-primary/10 rounded-full blur-[40px] pointer-events-none z-0" />
-                    <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-purple-500/8 rounded-full blur-[30px] pointer-events-none z-0" />
-
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className={cn(
-                                "p-3 rounded-2xl",
-                                isDark ? "bg-primary/10" : "bg-primary/5"
-                            )}>
-                                <Bot className="w-8 h-8 text-primary animate-pulse" />
-                            </div>
-                            <div>
-                                <h2 className="text-2xl font-headline font-bold tracking-tight">
+            {/* Left Column - Width matched to "Your Build" (lg:col-span-3) */}
+            <aside className="lg:col-span-3 lg:sticky lg:top-24 self-start">
+                <Paper
+                    radius="lg"
+                    withBorder
+                    shadow="xl"
+                    className="w-full overflow-hidden bg-white/95 dark:bg-[#0d1117]/95 border-slate-200 dark:border-cyan-500/20 backdrop-blur-xl relative shadow-xl dark:shadow-[0_0_35px_rgba(0,0,0,0.5)]"
+                >
+                    <Box className="p-4 sm:p-5 bg-slate-50/90 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/10">
+                        <Group justify="space-between" align="center">
+                            <Group gap="xs" align="center">
+                                <ThemeIcon size={32} radius="md" variant="light" color="cyan" className="shadow-sm">
+                                    <Bot className="h-5 w-5 text-cyan-500 dark:text-cyan-400" />
+                                </ThemeIcon>
+                                <Text fw={900} size="xl" className="font-headline tracking-tight text-slate-900 dark:text-white">
                                     Buildbot Advisor
-                                </h2>
-                            </div>
-                        </div>
+                                </Text>
+                            </Group>
+                        </Group>
+                    </Box>
+
+                    <Box className="p-4 sm:p-5">
                         <ChatForm
                             getRecommendations={handleGetRecommendations}
                             isPending={isPending}
                         />
-                    </div>
-                </div>
+                    </Box>
+                </Paper>
             </aside>
 
-            <div className="lg:col-span-8">
+            {/* Right Column - Width matched to Diagnostics (lg:col-span-9) */}
+            <div className="lg:col-span-9">
                 <BuildSummary
                     build={build}
                     isPending={isPending}

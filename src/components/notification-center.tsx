@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import React, { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
   Check,
@@ -12,8 +13,10 @@ import {
   X,
   PackageCheck,
   CheckCheck,
-  AlertCircle,
-} from 'lucide-react';
+  SlidersHorizontal,
+  ChevronRight,
+  ExternalLink,
+} from "lucide-react";
 import {
   Popover,
   Modal,
@@ -27,41 +30,121 @@ import {
   ScrollArea,
   Paper,
   Divider,
-} from '@mantine/core';
-import { useCollection } from '@/firebase/firestore/use-collection';
-import { useFirestore } from '@/firebase';
-import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, writeBatch } from 'firebase/firestore';
-import { useUserProfile } from '@/context/user-profile';
-import { SystemNotification } from '@/lib/types';
-import { formatDistanceToNow } from 'date-fns';
-import { cn } from '@/lib/utils';
+} from "@mantine/core";
+import { useCollection } from "@/firebase/firestore/use-collection";
+import { useFirestore } from "@/firebase";
+import { collection, query, orderBy, limit, doc, updateDoc, arrayUnion, writeBatch } from "firebase/firestore";
+import { useUserProfile } from "@/context/user-profile";
+import { SystemNotification } from "@/lib/types";
+import { formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
+
+/* ── Web Audio Feedback ── */
+let _audioCtx: AudioContext | null = null;
+function playSoftTick() {
+  try {
+    const AudioCtxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtxClass) return;
+    if (!_audioCtx) _audioCtx = new AudioCtxClass();
+    if (_audioCtx.state === "suspended") {
+      _audioCtx.resume();
+    }
+    const buf = _audioCtx.createBuffer(1, Math.floor(_audioCtx.sampleRate * 0.003), _audioCtx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) {
+      d[i] = (Math.random() * 2 - 1) * (1 - i / d.length) ** 4;
+    }
+    const src = _audioCtx.createBufferSource();
+    src.buffer = buf;
+    const g = _audioCtx.createGain();
+    g.gain.value = 0.06;
+    src.connect(g).connect(_audioCtx.destination);
+    src.start();
+  } catch {
+    /* silent on browser restrictions */
+  }
+}
+
+/* ── Categories ── */
+const CATEGORIES = ["All", "Reservations", "Stock", "Status", "Archived"] as const;
+type CategoryType = (typeof CATEGORIES)[number];
 
 export function NotificationCenter() {
   const firestore = useFirestore();
   const router = useRouter();
   const { profile } = useUserProfile();
   const [popoverOpened, setPopoverOpened] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<CategoryType>("All");
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedNotification, setSelectedNotification] = useState<SystemNotification | null>(null);
 
   const notificationsQuery = useMemo(() => {
     if (!firestore) return null;
     return query(
-      collection(firestore, 'system_notifications'),
-      orderBy('createdAt', 'desc'),
+      collection(firestore, "system_notifications"),
+      orderBy("createdAt", "desc"),
       limit(50)
     );
   }, [firestore]);
 
-  const { data: notifications, loading } = useCollection<SystemNotification>(notificationsQuery);
+  const { data: rawNotifications, loading } = useCollection<SystemNotification>(notificationsQuery);
+
+  const notifications = useMemo(() => {
+    return rawNotifications || [];
+  }, [rawNotifications]);
 
   const unreadCount = useMemo(() => {
     if (!notifications || !profile) return 0;
-    return notifications.filter((n) => !n.readBy.includes(profile.id)).length;
+    return notifications.filter((n) => !n.readBy?.includes(profile.id)).length;
   }, [notifications, profile]);
+
+  const getCategoryForNotification = useCallback((n: SystemNotification): CategoryType => {
+    switch (n.type) {
+      case "reservation_received":
+      case "user_cancelled":
+        return "Reservations";
+      case "stock_added":
+        return "Stock";
+      case "status_changed":
+        return "Status";
+      case "item_archived":
+        return "Archived";
+      default:
+        return "Status";
+    }
+  }, []);
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<CategoryType, number> = {
+      All: notifications.length,
+      Reservations: 0,
+      Stock: 0,
+      Status: 0,
+      Archived: 0,
+    };
+    notifications.forEach((n) => {
+      const cat = getCategoryForNotification(n);
+      if (counts[cat] !== undefined) {
+        counts[cat]++;
+      }
+    });
+    return counts;
+  }, [notifications, getCategoryForNotification]);
+
+  const filteredNotifications = useMemo(() => {
+    if (activeCategory === "All") return notifications;
+    return notifications.filter((n) => getCategoryForNotification(n) === activeCategory);
+  }, [notifications, activeCategory, getCategoryForNotification]);
+
+  const handleCategoryChange = (cat: CategoryType) => {
+    if (cat === activeCategory) return;
+    playSoftTick();
+    setActiveCategory(cat);
+  };
 
   const handleMarkAsRead = async (notificationId: string) => {
     if (!firestore || !profile) return;
-    const notificationRef = doc(firestore, 'system_notifications', notificationId);
+    const notificationRef = doc(firestore, "system_notifications", notificationId);
     await updateDoc(notificationRef, {
       readBy: arrayUnion(profile.id),
     });
@@ -69,12 +152,12 @@ export function NotificationCenter() {
 
   const handleMarkAllAsRead = async () => {
     if (!firestore || !profile || !notifications) return;
-    const unreadNotifications = notifications.filter((n) => !n.readBy.includes(profile.id));
+    const unreadNotifications = notifications.filter((n) => !n.readBy?.includes(profile.id));
     if (unreadNotifications.length === 0) return;
 
     const batch = writeBatch(firestore);
     unreadNotifications.forEach((n) => {
-      const ref = doc(firestore, 'system_notifications', n.id);
+      const ref = doc(firestore, "system_notifications", n.id);
       batch.update(ref, {
         readBy: arrayUnion(profile!.id),
       });
@@ -84,47 +167,47 @@ export function NotificationCenter() {
 
   const handleNotificationClick = (notification: SystemNotification) => {
     setSelectedNotification(notification);
-    if (!notification.readBy.includes(profile?.id || '')) {
+    if (!notification.readBy?.includes(profile?.id || "")) {
       handleMarkAsRead(notification.id);
     }
   };
 
-  const getNotificationIcon = (type: SystemNotification['type']) => {
+  const getNotificationIcon = (type: SystemNotification["type"]) => {
     switch (type) {
-      case 'reservation_received':
+      case "reservation_received":
         return (
-          <ThemeIcon size="md" radius="md" color="teal" variant="light">
-            <ShieldCheck size={16} />
+          <ThemeIcon size="sm" radius="md" color="teal" variant="light" className="shrink-0 mt-0.5">
+            <ShieldCheck size={14} />
           </ThemeIcon>
         );
-      case 'item_archived':
+      case "item_archived":
         return (
-          <ThemeIcon size="md" radius="md" color="orange" variant="light">
-            <Archive size={16} />
+          <ThemeIcon size="sm" radius="md" color="orange" variant="light" className="shrink-0 mt-0.5">
+            <Archive size={14} />
           </ThemeIcon>
         );
-      case 'status_changed':
+      case "status_changed":
         return (
-          <ThemeIcon size="md" radius="md" color="blue" variant="light">
-            <History size={16} />
+          <ThemeIcon size="sm" radius="md" color="blue" variant="light" className="shrink-0 mt-0.5">
+            <History size={14} />
           </ThemeIcon>
         );
-      case 'stock_added':
+      case "stock_added":
         return (
-          <ThemeIcon size="md" radius="md" color="cyan" variant="light">
-            <PackageCheck size={16} />
+          <ThemeIcon size="sm" radius="md" color="cyan" variant="light" className="shrink-0 mt-0.5">
+            <PackageCheck size={14} />
           </ThemeIcon>
         );
-      case 'user_cancelled':
+      case "user_cancelled":
         return (
-          <ThemeIcon size="md" radius="md" color="red" variant="light">
-            <X size={16} />
+          <ThemeIcon size="sm" radius="md" color="red" variant="light" className="shrink-0 mt-0.5">
+            <X size={14} />
           </ThemeIcon>
         );
       default:
         return (
-          <ThemeIcon size="md" radius="md" color="indigo" variant="light">
-            <Info size={16} />
+          <ThemeIcon size="sm" radius="md" color="indigo" variant="light" className="shrink-0 mt-0.5">
+            <Info size={14} />
           </ThemeIcon>
         );
     }
@@ -135,7 +218,7 @@ export function NotificationCenter() {
       <Popover
         opened={popoverOpened}
         onChange={setPopoverOpened}
-        width={360}
+        width={460}
         position="bottom-end"
         withArrow={false}
         shadow="xl"
@@ -143,153 +226,214 @@ export function NotificationCenter() {
         withinPortal
       >
         <Popover.Target>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            size="lg"
-            radius="md"
-            aria-label="Staff System Alerts"
-            onClick={() => setPopoverOpened((o) => !o)}
-            className="relative hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
-          >
-            {unreadCount > 0 ? (
-              <>
+          <div className="relative inline-flex items-center justify-center">
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="lg"
+              radius="md"
+              aria-label="Staff System Alerts"
+              onClick={() => setPopoverOpened((o) => !o)}
+              className="relative hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+            >
+              {unreadCount > 0 ? (
                 <Bell size={18} className="text-cyan-600 dark:text-cyan-400" />
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-[#111722]">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              </>
-            ) : (
-              <Bell size={18} className="text-slate-600 dark:text-slate-400" />
+              ) : (
+                <Bell size={18} className="text-slate-600 dark:text-slate-400" />
+              )}
+            </ActionIcon>
+            {unreadCount > 0 && (
+              <span className="pointer-events-none absolute -top-1 -right-1 z-20 flex min-w-[18px] h-[18px] px-1 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-bold leading-none text-white shadow-sm ring-2 ring-white dark:ring-[#0c121e]">
+                {unreadCount}
+              </span>
             )}
-          </ActionIcon>
+          </div>
         </Popover.Target>
 
-        <Popover.Dropdown className="p-0 bg-white/95 dark:bg-[#111722]/95 border-slate-200 dark:border-white/10 backdrop-blur-xl shadow-2xl rounded-xl overflow-hidden">
+        <Popover.Dropdown className="p-0 bg-white/95 dark:bg-[#111722]/95 border-slate-200 dark:border-white/10 backdrop-blur-xl shadow-2xl rounded-2xl overflow-hidden w-[460px] max-w-[95vw]">
           {/* Header */}
-          <div className="flex items-center justify-between p-3.5 px-4 border-b border-slate-100 dark:border-white/10">
-            <Group gap="xs">
-              <Text fw={700} size="sm" className="font-headline text-slate-900 dark:text-white">
+          <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-slate-100 dark:border-white/5">
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] font-semibold text-slate-900 dark:text-white tracking-tight">
                 System Alerts
-              </Text>
+              </span>
               {unreadCount > 0 && (
-                <Badge size="xs" variant="filled" color="cyan" className="font-bold">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
                   {unreadCount} new
-                </Badge>
+                </span>
               )}
-            </Group>
+            </div>
 
             {unreadCount > 0 && (
               <Button
                 variant="subtle"
                 color="cyan"
                 size="compact-xs"
-                leftSection={<CheckCheck size={13} />}
+                leftSection={<CheckCheck size={12} />}
                 onClick={handleMarkAllAsRead}
-                className="text-[10px] font-bold uppercase tracking-wider h-6 px-2"
+                className="text-[10px] font-semibold uppercase tracking-wider h-6 px-2 hover:bg-cyan-500/10"
               >
-                Mark all as read
+                Mark all read
               </Button>
             )}
           </div>
 
-          {/* Alerts List */}
-          <ScrollArea.Autosize mah={380} type="scroll" offsetScrollbars>
+          {/* Spring Pill Filter Bar (Rauno Freiberg craft inspired) */}
+          <div className="px-3.5 py-2 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01]">
+            <div className="flex items-center gap-1.5 py-0.5">
+              {CATEGORIES.map((cat) => {
+                const isActive = cat === activeCategory;
+                const count = categoryCounts[cat];
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => handleCategoryChange(cat)}
+                    className={cn(
+                      "relative h-7 px-2.5 rounded-full text-[11px] font-medium tracking-tight whitespace-nowrap transition-colors flex items-center gap-1.5 focus:outline-none select-none z-10 shrink-0",
+                      isActive
+                        ? "text-white dark:text-slate-900 font-semibold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    )}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="active-pill-system"
+                        className="absolute inset-0 rounded-full bg-slate-900 dark:bg-white shadow-sm -z-10"
+                        transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                      />
+                    )}
+                    <span>{cat}</span>
+                    {count > 0 && (
+                      <span
+                        className={cn(
+                          "text-[9px] px-1 py-0.2 rounded-full font-bold",
+                          isActive
+                            ? "bg-white/20 dark:bg-black/20 text-white dark:text-slate-900"
+                            : "bg-slate-200/60 dark:bg-white/10 text-slate-500 dark:text-slate-400"
+                        )}
+                      >
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Alerts List with Staggered Transition */}
+          <div className="max-h-[340px] overflow-y-auto">
             {loading ? (
-              <div className="flex items-center justify-center h-28">
+              <div className="flex items-center justify-center h-32">
                 <Text size="xs" c="dimmed" className="animate-pulse">
                   Scanning system alerts...
                 </Text>
               </div>
-            ) : notifications && notifications.length > 0 ? (
+            ) : filteredNotifications.length > 0 ? (
               <div className="divide-y divide-slate-100 dark:divide-white/5">
-                {notifications.map((notification) => {
-                  const isUnread = !notification.readBy.includes(profile?.id || '');
-                  return (
-                    <div
-                      key={notification.id}
-                      onClick={() => handleNotificationClick(notification)}
-                      className={cn(
-                        'p-3.5 px-4 transition-colors relative group cursor-pointer flex gap-3 items-start',
-                        isUnread
-                          ? 'bg-cyan-500/[0.04] dark:bg-cyan-500/[0.06] hover:bg-cyan-500/[0.08]'
-                          : 'hover:bg-slate-50 dark:hover:bg-white/[0.03]'
-                      )}
-                    >
-                      <div className="flex-shrink-0 mt-0.5">
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {filteredNotifications.map((notification, index) => {
+                    const isUnread = !notification.readBy?.includes(profile?.id || "");
+                    const isHovered = hoveredId === notification.id;
+
+                    return (
+                      <motion.div
+                        key={notification.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.96, y: -4 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                        transition={{
+                          delay: index * 0.02,
+                          type: "spring",
+                          stiffness: 450,
+                          damping: 32,
+                        }}
+                        onMouseEnter={() => setHoveredId(notification.id)}
+                        onMouseLeave={() => setHoveredId(null)}
+                        onClick={() => handleNotificationClick(notification)}
+                        className={cn(
+                          "px-4 py-3 cursor-pointer transition-colors relative flex gap-3 items-start select-none",
+                          isUnread
+                            ? "bg-cyan-500/[0.04] dark:bg-cyan-500/[0.06]"
+                            : "bg-transparent",
+                          isHovered && "bg-slate-100/70 dark:bg-white/[0.04]"
+                        )}
+                      >
                         {getNotificationIcon(notification.type)}
-                      </div>
 
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <Text
-                            size="xs"
-                            fw={isUnread ? 700 : 600}
-                            truncate
-                            className={cn(
-                              isUnread ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'
-                            )}
-                          >
-                            {notification.title}
-                          </Text>
-                          {isUnread && (
-                            <span className="h-2 w-2 rounded-full bg-cyan-500 flex-shrink-0" />
-                          )}
-                        </div>
-
-                        <Text
-                          size="xs"
-                          c="dimmed"
-                          className="line-clamp-2 leading-relaxed text-[11px]"
-                        >
-                          {notification.message}
-                        </Text>
-
-                        <div className="flex items-center justify-between pt-1">
-                          <Text size="10px" c="dimmed" fw={600} className="tracking-tight">
-                            {notification.createdAt
-                              ? formatDistanceToNow(
-                                  notification.createdAt instanceof Date
-                                    ? notification.createdAt
-                                    : notification.createdAt.toDate(),
-                                  { addSuffix: true }
-                                )
-                              : 'just now'}
-                          </Text>
-
-                          {isUnread && (
-                            <ActionIcon
-                              variant="subtle"
-                              color="gray"
-                              size="xs"
-                              radius="sm"
-                              title="Mark as read"
-                              className="opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleMarkAsRead(notification.id);
-                              }}
+                        <div className="flex-1 min-w-0 space-y-0.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span
+                              className={cn(
+                                "text-xs font-medium truncate transition-colors",
+                                isUnread
+                                  ? "text-slate-900 dark:text-white font-semibold"
+                                  : isHovered
+                                    ? "text-slate-900 dark:text-white"
+                                    : "text-slate-700 dark:text-slate-300"
+                              )}
                             >
-                              <Check size={12} />
-                            </ActionIcon>
-                          )}
+                              {notification.title}
+                            </span>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium shrink-0">
+                              {notification.createdAt
+                                ? formatDistanceToNow(
+                                    notification.createdAt instanceof Date
+                                      ? notification.createdAt
+                                      : notification.createdAt.toDate(),
+                                    { addSuffix: false }
+                                  )
+                                : "now"}
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                            {notification.message}
+                          </p>
+
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-[9px] font-mono text-slate-400 dark:text-slate-500 uppercase">
+                              {getCategoryForNotification(notification)}
+                            </span>
+
+                            {isUnread && (
+                              <ActionIcon
+                                variant="subtle"
+                                color="cyan"
+                                size="xs"
+                                radius="sm"
+                                title="Mark as read"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMarkAsRead(notification.id);
+                                }}
+                                className="h-5 w-5 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10"
+                              >
+                                <Check size={11} />
+                              </ActionIcon>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-44 space-y-2 opacity-50 p-4">
-                <ThemeIcon size="xl" radius="xl" color="gray" variant="light">
-                  <Bell size={20} />
-                </ThemeIcon>
-                <Text size="xs" fw={700} className="uppercase tracking-widest text-slate-500">
-                  No alerts recorded
-                </Text>
+              <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-2.5">
+                  <SlidersHorizontal size={16} className="text-slate-400" />
+                </div>
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  No {activeCategory === "All" ? "" : activeCategory.toLowerCase()} alerts
+                </span>
+                <span className="text-[11px] text-slate-400 mt-0.5">
+                  Everything is up to date and in order.
+                </span>
               </div>
             )}
-          </ScrollArea.Autosize>
+          </div>
 
           {/* Footer View Audit Log */}
           <div className="p-2 border-t border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
@@ -298,12 +442,12 @@ export function NotificationCenter() {
               color="indigo"
               size="xs"
               fullWidth
-              leftSection={<History size={14} />}
+              leftSection={<History size={13} />}
               onClick={() => {
                 setPopoverOpened(false);
-                router.push('/profile?tab=audit');
+                router.push("/profile?tab=audit");
               }}
-              className="font-bold text-xs uppercase tracking-wider h-8"
+              className="font-semibold text-xs tracking-wide h-8 hover:bg-indigo-500/10"
             >
               View Full Audit Log
             </Button>
@@ -322,7 +466,7 @@ export function NotificationCenter() {
           <Group gap="xs">
             {selectedNotification && getNotificationIcon(selectedNotification.type)}
             <div>
-              <Text fw={700} size="sm" className="font-headline text-slate-900 dark:text-slate-100 uppercase tracking-tight">
+              <Text fw={700} size="sm" className="font-headline text-slate-900 dark:text-slate-100 tracking-tight">
                 {selectedNotification?.title}
               </Text>
               <Text size="10px" c="dimmed" className="uppercase tracking-wider font-semibold">
@@ -332,9 +476,9 @@ export function NotificationCenter() {
           </Group>
         }
         classNames={{
-          content: 'bg-white dark:bg-[#111722] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-2xl',
-          header: 'bg-white dark:bg-[#111722] border-b border-slate-200 dark:border-white/10 px-5 py-3.5',
-          body: '!p-5',
+          content: "bg-white dark:bg-[#111722] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-2xl",
+          header: "bg-white dark:bg-[#111722] border-b border-slate-200 dark:border-white/10 px-5 py-3.5",
+          body: "!p-5",
         }}
       >
         <Stack gap="md">
@@ -360,12 +504,12 @@ export function NotificationCenter() {
                         : selectedNotification.createdAt.toDate(),
                       { addSuffix: true }
                     )
-                  : 'just now'}
+                  : "just now"}
               </Text>
             </Group>
 
             <Badge size="xs" variant="outline" color="gray" className="font-mono">
-              ID: {selectedNotification?.id.substring(0, 8)}
+              ID: {selectedNotification?.id?.substring(0, 8)}
             </Badge>
           </Group>
 
@@ -388,7 +532,7 @@ export function NotificationCenter() {
               leftSection={<History size={14} />}
               onClick={() => {
                 setSelectedNotification(null);
-                router.push('/profile?tab=audit');
+                router.push("/profile?tab=audit");
               }}
               className="text-xs font-semibold shadow-sm shadow-indigo-500/20"
             >
@@ -400,3 +544,5 @@ export function NotificationCenter() {
     </>
   );
 }
+
+export default NotificationCenter;

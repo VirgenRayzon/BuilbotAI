@@ -33,6 +33,7 @@ import { useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/lib/types";
+import { useSiteSettings } from "@/context/site-settings-context";
 
 interface ProfileSidebarProps {
   profile: UserProfile | null;
@@ -63,6 +64,13 @@ export function ProfileSidebar({
   const isSuperAdmin = Boolean(profile?.isSuperAdmin);
   const isManager = Boolean(profile?.isManager && !profile?.isSuperAdmin);
   const isRegularUser = !isSuperAdmin && !isManager;
+
+  const { featureModelRouting, aiModelProvider } = useSiteSettings();
+  const routingValues = featureModelRouting ? Object.values(featureModelRouting) : [aiModelProvider];
+  const allVertex = routingValues.every((v) => v === 'finetuned');
+  const allGemini = routingValues.every((v) => v === 'default');
+  const intelligenceBadge = allVertex ? 'Vertex' : allGemini ? 'Gemini' : 'Hybrid';
+  const intelligenceBadgeColor = allVertex ? 'indigo' : allGemini ? 'cyan' : 'violet';
 
   // Handle Logout
   const handleConfirmSignOut = async () => {
@@ -183,8 +191,8 @@ export function ProfileSidebar({
         label: "Intelligence",
         icon: Bot,
         color: "violet",
-        badge: "Vertex",
-        badgeColor: "indigo",
+        badge: intelligenceBadge,
+        badgeColor: intelligenceBadgeColor,
       },
       {
         id: "prompts",
