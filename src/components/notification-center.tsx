@@ -445,7 +445,7 @@ export function NotificationCenter() {
               leftSection={<History size={13} />}
               onClick={() => {
                 setPopoverOpened(false);
-                router.push("/profile?tab=audit");
+                router.push("/admin?tab=audit");
               }}
               className="font-semibold text-xs tracking-wide h-8 hover:bg-indigo-500/10"
             >
@@ -532,7 +532,7 @@ export function NotificationCenter() {
               leftSection={<History size={14} />}
               onClick={() => {
                 setSelectedNotification(null);
-                router.push("/profile?tab=audit");
+                router.push("/admin?tab=audit");
               }}
               className="text-xs font-semibold shadow-sm shadow-indigo-500/20"
             >

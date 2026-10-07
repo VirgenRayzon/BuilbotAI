@@ -54,11 +54,6 @@ import { EmergencyControlsCard } from "./components/emergency-controls-card";
 import { ReservationsList } from "./components/reservations-list";
 import { FavoritesList } from "./components/favorites-list";
 import { UserAuditLogsSection } from "./components/user-audit-logs-section";
-import { AuditLogsSection } from "./components/audit-logs-section";
-import { SuperAdminSettings } from "@/components/super-admin-settings";
-import { AiModelSettings } from "@/components/ai-model-settings";
-import { AiSystemPromptsSettings } from "@/components/ai-system-prompts-settings";
-import { AboutManagement } from "@/components/about-management";
 
 import {
   AlertDialog,
@@ -94,7 +89,6 @@ export default function ProfilePage() {
   const reservations = useReservations();
   const emergency = useEmergencyControls();
   const adminKeys = useAdminKeys();
-  const audit = useAuditLogs();
   const userAudit = useUserAuditLogs();
   const favoritesHook = useFavorites();
 
@@ -106,13 +100,13 @@ export default function ProfilePage() {
   const isManager = Boolean(profile?.isManager && !profile?.isSuperAdmin);
   const isRegularUser = !isSuperAdmin && !isManager;
 
-  // Define permitted tabs per role
+  // Define permitted tabs per role (Safeguards remains for Super Admin)
   const getAllowedTabs = useCallback(() => {
     if (isSuperAdmin) {
-      return ["profile", "settings", "account", "audit", "management", "ai-models", "prompts", "safeguards", "content"];
+      return ["profile", "settings", "account", "safeguards"];
     }
     if (isManager) {
-      return ["profile", "settings", "account", "audit"];
+      return ["profile", "settings", "account"];
     }
     return ["profile", "settings", "account", "reservations", "favorites", "activity"];
   }, [isSuperAdmin, isManager]);
@@ -120,12 +114,31 @@ export default function ProfilePage() {
   const defaultTab = "profile";
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
 
-  // Synchronize and sanitize URL query params
+  // Synchronize and sanitize URL query params with legacy redirections to /admin
   useEffect(() => {
     if (typeof window !== "undefined") {
       const syncTabs = () => {
         const params = new URLSearchParams(window.location.search);
         const tab = params.get("tab");
+
+        // Graceful automatic redirections for relocated tabs
+        if (tab === "audit" || tab === "audit-logs") {
+          router.replace("/admin?tab=audit");
+          return;
+        }
+        if (tab === "management") {
+          router.replace("/admin?tab=management");
+          return;
+        }
+        if (tab === "ai-models" || tab === "prompts") {
+          router.replace("/admin?tab=ai");
+          return;
+        }
+        if (tab === "content") {
+          router.replace("/admin?tab=content");
+          return;
+        }
+
         const allowed = getAllowedTabs();
 
         if (tab && allowed.includes(tab)) {
@@ -134,8 +147,6 @@ export default function ProfilePage() {
           } else {
             setActiveTab(tab);
           }
-        } else if (tab === "audit-logs" && (isManager || isSuperAdmin)) {
-          setActiveTab("audit");
         } else {
           setActiveTab(defaultTab);
         }
@@ -189,7 +200,7 @@ export default function ProfilePage() {
             stats={reservations.stats}
           />
 
-          <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 pb-12">
+          <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 pb-12">
             {/* Facebook / Mantine UI 2-Column Architecture */}
             <div className="flex flex-col lg:flex-row gap-8 items-start">
               {/* Left Column: Sticky Navigation Sidebar */}
@@ -202,7 +213,6 @@ export default function ProfilePage() {
                   reservationsCount={reservations.reservations.length}
                   favoritesCount={favoritesHook.favorites.length}
                   userLogsCount={userAudit.logs.length}
-                  staffLogsCount={audit.auditLogs.length}
                 />
               </aside>
 
@@ -382,98 +392,7 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* TAB 5: Staff / System Audit Logs (Managers & Super Admins Only) */}
-                    {activeTab === "audit" && (isManager || isSuperAdmin) && (
-                      <div className="space-y-6">
-                        <Paper
-                          withBorder
-                          radius="lg"
-                          p="lg"
-                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-                        >
-                          <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
-                            <Shield className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                            <span>{isSuperAdmin ? "Admin Audit Logs" : "Staff Audit Logs"}</span>
-                          </Title>
-                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
-                            Enterprise security audit trail, administrative actions, and system modifications.
-                          </Text>
-                        </Paper>
-
-                        <AuditLogsSection
-                          logs={audit.auditLogs}
-                          loading={audit.auditLogsLoading}
-                        />
-                      </div>
-                    )}
-
-                    {/* TAB 6: Management Portal (Super Admin Only) */}
-                    {activeTab === "management" && isSuperAdmin && (
-                      <div className="space-y-6">
-                        <Paper
-                          withBorder
-                          radius="lg"
-                          p="lg"
-                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-                        >
-                          <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
-                            <Settings className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
-                            <span>Management Portal</span>
-                          </Title>
-                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
-                            Manage staff credentials, manager keys, and password reset requests.
-                          </Text>
-                        </Paper>
-
-                        <SuperAdminSettings />
-                      </div>
-                    )}
-
-                    {/* TAB 7: AI Model Intelligence (Super Admin Only) */}
-                    {activeTab === "ai-models" && isSuperAdmin && (
-                      <div className="space-y-6">
-                        <Paper
-                          withBorder
-                          radius="lg"
-                          p="lg"
-                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-                        >
-                          <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
-                            <Bot className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                            <span>AI Model Intelligence Configuration</span>
-                          </Title>
-                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium mt-1">
-                            Switch between default Gemini 2.5 Flash and fine-tuned Vertex AI models for platform recommendations and chat.
-                          </Text>
-                        </Paper>
-
-                        <AiModelSettings />
-                      </div>
-                    )}
-
-                    {/* TAB 8: AI System Prompts (Super Admin Only) */}
-                    {activeTab === "prompts" && isSuperAdmin && (
-                      <div className="space-y-6">
-                        <Paper
-                          withBorder
-                          radius="lg"
-                          p="lg"
-                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-                        >
-                          <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
-                            <FileCode className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
-                            <span>AI System Prompts & Instructions</span>
-                          </Title>
-                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium mt-1">
-                            Customize and fine-tune system instructions, persona directives, and role prompts for platform AI agents.
-                          </Text>
-                        </Paper>
-
-                        <AiSystemPromptsSettings />
-                      </div>
-                    )}
-
-                    {/* TAB 8: System Safeguards (Super Admin Only) */}
+                    {/* System Safeguards (Super Admin Only - Retained in Profile) */}
                     {activeTab === "safeguards" && isSuperAdmin && (
                       <div className="space-y-6">
                         <Paper
@@ -492,28 +411,6 @@ export default function ProfilePage() {
                         </Paper>
 
                         <EmergencyControlsCard emergency={emergency} />
-                      </div>
-                    )}
-
-                    {/* TAB 8: Site Content & Branding (Super Admin Only) */}
-                    {activeTab === "content" && isSuperAdmin && (
-                      <div className="space-y-6">
-                        <Paper
-                          withBorder
-                          radius="lg"
-                          p="lg"
-                          className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-                        >
-                          <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
-                            <FileText className="h-5 w-5 text-teal-600 dark:text-teal-400" />
-                            <span>Site Content & Branding</span>
-                          </Title>
-                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
-                            Update customer-facing company information, mission statement, and story.
-                          </Text>
-                        </Paper>
-
-                        <AboutManagement />
                       </div>
                     )}
                   </motion.div>

@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-10-07]
+
+### Features
+- Replace generic placeholder images with realistic hardware component photos for advisor recommendations ([3f1c605](https://github.com/VirgenRayzon/BuilbotAI/commit/3f1c605))
+
+## [2026-10-06]
+
+### Features
+- **ai**: Add per-feature model routing and dual engine management in super admin ([a57e3e6](https://github.com/VirgenRayzon/BuilbotAI/commit/a57e3e6))
+
+### Miscellaneous
+- Update profile, navigation, AI system prompts, and notifications to Mantine UI ([4e57fda](https://github.com/VirgenRayzon/BuilbotAI/commit/4e57fda))
+
+## [2026-10-04]
+
+### Features
+- Migrate Profile and Settings views to Mantine UI and add to workspace navigation ([ed8e592](https://github.com/VirgenRayzon/BuilbotAI/commit/ed8e592))
+- **auth**: Implement Google sign-in and sign-up with session security, claims sync, and Mantine UI integration ([3962460](https://github.com/VirgenRayzon/BuilbotAI/commit/3962460))
+- **profile**: Overhaul profile UI with Mantine aesthetics, hero banner, Vertex AI model projects management, and deprecate test builders ([990879e](https://github.com/VirgenRayzon/BuilbotAI/commit/990879e))
+- **header**: Overhaul header with Mantine UI, role-based nav, and user menu ([e71ede1](https://github.com/VirgenRayzon/BuilbotAI/commit/e71ede1))
+
 ## [2026-10-03]
 
 ### Features

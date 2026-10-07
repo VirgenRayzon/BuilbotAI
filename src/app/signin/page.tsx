@@ -185,7 +185,7 @@ function SignInContent() {
     >
       <UnifiedBackground />
 
-      <div className="w-full max-w-[460px] z-10 flex flex-col gap-3">
+      <div className="w-full max-w-[540px] z-10 flex flex-col gap-3">
         {/* Navigation & Brand Header */}
         <div className="flex items-center justify-start px-1">
           <Link

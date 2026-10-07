@@ -14,7 +14,7 @@ interface CTASectionProps {
 export function CTASection({ isDark }: CTASectionProps) {
   return (
     <section className="py-40 relative overflow-hidden transition-colors duration-1000">
-      <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8 text-center relative z-10">
+      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 text-center relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}

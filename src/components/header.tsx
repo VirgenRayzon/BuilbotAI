@@ -322,20 +322,30 @@ export function Header() {
                     {isStaff && profile?.isSuperAdmin && (
                       <Menu.Item
                         leftSection={<Sliders size={16} className="text-cyan-500" />}
-                        onClick={() => router.push("/profile?tab=management")}
+                        onClick={() => router.push("/admin?tab=management")}
                         className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
                       >
                         Management Portal
                       </Menu.Item>
                     )}
 
-                    <Menu.Item
-                      leftSection={<History size={16} className="text-indigo-500" />}
-                      onClick={() => router.push(isStaff ? "/profile?tab=audit" : "/profile?tab=audit-logs")}
-                      className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
-                    >
-                      Audit Logs
-                    </Menu.Item>
+                    {isStaff ? (
+                      <Menu.Item
+                        leftSection={<History size={16} className="text-indigo-500" />}
+                        onClick={() => router.push("/admin?tab=audit")}
+                        className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
+                      >
+                        Audit Logs
+                      </Menu.Item>
+                    ) : (
+                      <Menu.Item
+                        leftSection={<History size={16} className="text-indigo-500" />}
+                        onClick={() => router.push("/profile?tab=activity")}
+                        className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
+                      >
+                        Activity Logs
+                      </Menu.Item>
+                    )}
 
                     <Menu.Divider className="my-1 border-slate-100 dark:border-white/10" />
 
@@ -531,7 +541,7 @@ export function Header() {
 
                   {isStaff && profile?.isSuperAdmin && (
                     <Link
-                      href="/profile?tab=management"
+                      href="/admin?tab=management"
                       className={classes.drawerLink}
                       onClick={closeDrawer}
                     >
@@ -543,13 +553,13 @@ export function Header() {
                   )}
 
                   <Link
-                    href={isStaff ? "/profile?tab=audit" : "/profile?tab=audit-logs"}
+                    href={isStaff ? "/admin?tab=audit" : "/profile?tab=activity"}
                     className={classes.drawerLink}
                     onClick={closeDrawer}
                   >
                     <span className="flex items-center gap-2">
                       <History size={16} className="text-indigo-500" />
-                      Audit Logs
+                      {isStaff ? "Audit Logs" : "Activity Logs"}
                     </span>
                   </Link>
 

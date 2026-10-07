@@ -334,7 +334,7 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                 isDark ? "invert" : ""
             )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-            <main className="w-full max-w-[1800px] mx-auto p-4 md:p-8 pt-10 md:pt-20 animate-in fade-in duration-700 relative z-10">
+            <main className="w-full p-4 sm:p-6 md:p-8 lg:p-10 pt-10 md:pt-20 animate-in fade-in duration-700 relative z-10">
                 {/* Top Navigation */}
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}

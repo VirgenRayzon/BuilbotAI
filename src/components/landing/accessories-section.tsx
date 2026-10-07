@@ -17,7 +17,7 @@ export function AccessoriesSection({ isDark }: AccessoriesSectionProps) {
       "py-32 relative border-y transition-colors duration-1000",
       isDark ? "border-white/5" : "border-slate-200"
     )}>
-      <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8">
+      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10">
         <SectionHeader
           badge="Curated Experiences"
           title="Beyond The System Unit"

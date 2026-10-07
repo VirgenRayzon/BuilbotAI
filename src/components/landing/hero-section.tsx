@@ -35,7 +35,7 @@ export function HeroSection({ isDark }: HeroSectionProps) {
           : "bg-[radial-gradient(circle_at_30%_50%,rgba(59,130,246,0.1),transparent_50%)]"
       )} />
 
-      <div className="max-w-[1800px] w-full relative z-10 mx-auto px-4 md:px-8 py-20">
+      <div className="w-full relative z-10 px-4 sm:px-6 md:px-8 lg:px-10 py-20">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left Content */}
           <motion.div

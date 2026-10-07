@@ -271,7 +271,7 @@ export default function ManagerSignupPage() {
     >
       <UnifiedBackground />
 
-      <div className="w-full max-w-[460px] z-10 flex flex-col gap-3">
+      <div className="w-full max-w-[540px] z-10 flex flex-col gap-3">
         {/* Top bar */}
         <div className="flex items-center justify-between px-1">
           <Link

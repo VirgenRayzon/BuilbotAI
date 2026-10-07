@@ -328,7 +328,7 @@ function SystemAccessContent() {
     >
       <UnifiedBackground />
 
-      <div className="w-full max-w-[460px] z-10 flex flex-col gap-3">
+      <div className="w-full max-w-[540px] z-10 flex flex-col gap-3">
         <div className="flex items-center justify-between px-1">
           <Link
             href="/"
@@ -540,12 +540,12 @@ function SystemAccessContent() {
 
             {/* Footer Links */}
             <div className="flex flex-col items-center gap-1.5 text-center text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-white/10">
-              <div>
+              <div className="whitespace-nowrap">
                 New manager with an access key?{' '}
                 <Anchor
                   component={Link}
                   href="/system-access/signup"
-                  className="font-bold text-red-600 dark:text-red-400 hover:underline"
+                  className="font-bold text-red-600 dark:text-red-400 hover:underline whitespace-nowrap"
                 >
                   Register manager account
                 </Anchor>

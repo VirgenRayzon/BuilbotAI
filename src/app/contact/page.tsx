@@ -25,7 +25,7 @@ export default function ContactPage() {
         <div className="absolute bottom-[10%] left-[10%] w-[600px] h-[600px] bg-purple-500/5 rounded-full blur-[140px]" />
       </div>
 
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12">
         <div className="grid lg:grid-cols-2 gap-16 items-start">
           {/* Left: Contact Info */}
           <motion.div

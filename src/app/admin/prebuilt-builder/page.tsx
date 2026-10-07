@@ -479,7 +479,7 @@ export default function PrebuiltBuilderPage() {
                     isDark ? "invert" : ""
                 )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-                <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-4 md:py-8 pb-24 lg:pb-8 relative z-10">
+                <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-4 md:py-8 pb-24 lg:pb-8 relative z-10">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
                         <div className="text-left">
                             <div className="flex items-center gap-3 mb-2">

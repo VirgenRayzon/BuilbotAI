@@ -85,7 +85,7 @@ export default function AboutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background font-body text-foreground pt-32 pb-24 px-4 md:px-12 max-w-[1800px] w-full mx-auto">
+    <div className="min-h-screen bg-background font-body text-foreground pt-32 pb-24 px-4 sm:px-6 md:px-8 lg:px-12 w-full">
       {/* Lightbox Modal */}
       <AnimatePresence>
         {selectedImage && (

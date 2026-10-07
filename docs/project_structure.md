@@ -175,6 +175,21 @@ BuilbotAI
 │   │   ├── frontend-design
 │   │   │   ├── LICENSE.txt
 │   │   │   └── SKILL.md
+│   │   ├── mantine-combobox
+│   │   │   ├── references
+│   │   │   │   ├── api.md
+│   │   │   │   └── patterns.md
+│   │   │   └── SKILL.md
+│   │   ├── mantine-custom-components
+│   │   │   ├── references
+│   │   │   │   ├── api.md
+│   │   │   │   └── patterns.md
+│   │   │   └── SKILL.md
+│   │   ├── mantine-form
+│   │   │   ├── references
+│   │   │   │   ├── api.md
+│   │   │   │   └── patterns.md
+│   │   │   └── SKILL.md
 │   │   ├── nextjs-app-router-patterns
 │   │   │   └── SKILL.md
 │   │   ├── nextjs-best-practices
@@ -256,30 +271,17 @@ BuilbotAI
 │       │   └── SKILL.md
 │       └── threejs-interaction
 │           └── SKILL.md
+├── .firebase
+│   └── studio-3150054754-c7d0b
+│       └── functions
+│           └── .env
 ├── .husky
-│   ├── _
-│   │   ├── .gitignore
-│   │   ├── applypatch-msg
-│   │   ├── commit-msg
-│   │   ├── h
-│   │   ├── husky.sh
-│   │   ├── post-applypatch
-│   │   ├── post-checkout
-│   │   ├── post-commit
-│   │   ├── post-merge
-│   │   ├── post-rewrite
-│   │   ├── pre-applypatch
-│   │   ├── pre-auto-gc
-│   │   ├── pre-commit
-│   │   ├── pre-merge-commit
-│   │   ├── pre-push
-│   │   ├── pre-rebase
-│   │   └── prepare-commit-msg
 │   ├── pre-commit
 │   └── pre-push
 ├── .idx
 │   ├── dev.nix
 │   └── icon.png
+├── .tmp
 ├── .vscode
 │   └── settings.json
 ├── design_mocks
@@ -290,6 +292,7 @@ BuilbotAI
 │   ├── media__1772284001327.png
 │   └── neon_analytics_bot_layout_1772285192674.png
 ├── directives
+│   ├── admin_session_and_idle_timeout.md
 │   └── ingest_knowledge.md
 ├── docs
 │   ├── backend.json
@@ -304,6 +307,17 @@ BuilbotAI
 │   ├── migrate_audit_logs.ts
 │   └── update_changelog.js
 ├── public
+│   ├── placeholders
+│   │   └── components
+│   │       ├── case.jpg
+│   │       ├── cooler.jpg
+│   │       ├── cpu.jpg
+│   │       ├── gpu-integrated.jpg
+│   │       ├── gpu.jpg
+│   │       ├── motherboard.jpg
+│   │       ├── psu.jpg
+│   │       ├── ram.jpg
+│   │       └── storage.jpg
 │   ├── team
 │   │   ├── developer_m.png
 │   │   ├── developer.png
@@ -321,6 +335,15 @@ BuilbotAI
 │   ├── hero-pc.png
 │   └── landing-hero.png
 ├── scratch
+│   ├── test_placeholders
+│   │   ├── case.jpg
+│   │   ├── cooler.jpg
+│   │   ├── cpu.jpg
+│   │   ├── gpu.jpg
+│   │   ├── motherboard.jpg
+│   │   ├── psu.jpg
+│   │   ├── ram.jpg
+│   │   └── storage.jpg
 │   ├── app.spec.ts
 │   ├── build_summary_diff.txt
 │   ├── check-firestore-schema.js
@@ -330,9 +353,22 @@ BuilbotAI
 │   ├── list-models.js
 │   ├── print-raw-response.js
 │   ├── screenshot-home.png
+│   ├── screenshot-mega-menu-dark.png
+│   ├── screenshot-mega-menu-light.png
+│   ├── screenshot-mega-menu.png
+│   ├── screenshot-onboarding-header.png
+│   ├── screenshot-signin.png
+│   ├── screenshot-signup-form.png
+│   ├── screenshot-signup-toa-v2.png
+│   ├── screenshot-signup-toa.png
+│   ├── screenshot-system-access-modal.png
+│   ├── screenshot-system-access-new.png
 │   ├── screenshot-system-access.png
+│   ├── screenshot-terms-updated.png
 │   ├── test-chat.js
+│   ├── test-critique-speed.ts
 │   ├── test-fetch.ts
+│   ├── test-mega-menu.js
 │   ├── verify-rbac.ts
 │   └── verify-server-actions.ts
 ├── src
@@ -391,6 +427,8 @@ BuilbotAI
 │   │   │   └── page.tsx
 │   │   ├── faq
 │   │   │   └── page.tsx
+│   │   ├── forgot-password
+│   │   │   └── page.tsx
 │   │   ├── lens
 │   │   │   └── page.tsx
 │   │   ├── pre-builts
@@ -401,8 +439,12 @@ BuilbotAI
 │   │   │   ├── components
 │   │   │   │   ├── account-details.tsx
 │   │   │   │   ├── audit-logs-section.tsx
+│   │   │   │   ├── emergency-controls-card.tsx
 │   │   │   │   ├── favorites-list.tsx
+│   │   │   │   ├── mantine-profile-view.tsx
+│   │   │   │   ├── mantine-settings-view.tsx
 │   │   │   │   ├── profile-hero.tsx
+│   │   │   │   ├── profile-sidebar.tsx
 │   │   │   │   ├── reservations-list.tsx
 │   │   │   │   └── user-audit-logs-section.tsx
 │   │   │   ├── hooks
@@ -414,23 +456,18 @@ BuilbotAI
 │   │   │   │   ├── use-reservations.ts
 │   │   │   │   └── use-user-audit-logs.ts
 │   │   │   └── page.tsx
+│   │   ├── settings
 │   │   ├── signin
 │   │   │   └── page.tsx
 │   │   ├── signup
 │   │   │   └── page.tsx
 │   │   ├── system-access
+│   │   │   ├── components
+│   │   │   │   └── request-key-modal.tsx
+│   │   │   ├── signup
+│   │   │   │   └── page.tsx
 │   │   │   └── page.tsx
 │   │   ├── team
-│   │   │   └── page.tsx
-│   │   ├── test-builder-1
-│   │   │   └── page.tsx
-│   │   ├── test-builder-2
-│   │   │   ├── browse
-│   │   │   │   └── page.tsx
-│   │   │   ├── components
-│   │   │   │   ├── build-content-standalone.tsx
-│   │   │   │   ├── build-item-standalone.tsx
-│   │   │   │   └── your-build-standalone.tsx
 │   │   │   └── page.tsx
 │   │   ├── actions.ts
 │   │   ├── checkout-actions.ts
@@ -444,7 +481,8 @@ BuilbotAI
 │   ├── components
 │   │   ├── auth
 │   │   │   ├── route-guard.tsx
-│   │   │   └── session-timeout.tsx
+│   │   │   ├── session-timeout.tsx
+│   │   │   └── terms-of-agreement-modal.tsx
 │   │   ├── chat
 │   │   │   ├── hooks
 │   │   │   │   └── use-floating-chat.ts
@@ -478,6 +516,8 @@ BuilbotAI
 │   │   │   ├── identity-fields.tsx
 │   │   │   ├── part-selector.tsx
 │   │   │   └── use-prebuilt-form.ts
+│   │   ├── providers
+│   │   │   └── mantine-app-provider.tsx
 │   │   ├── ui
 │   │   │   ├── accordion.tsx
 │   │   │   ├── alert-dialog.tsx
@@ -526,7 +566,9 @@ BuilbotAI
 │   │   ├── add-prebuilt-dialog.tsx
 │   │   ├── add-stock-dialog.tsx
 │   │   ├── ai-build-critique.tsx
+│   │   ├── ai-model-settings.tsx
 │   │   ├── ai-progress-modal.tsx
+│   │   ├── ai-system-prompts-settings.tsx
 │   │   ├── animated-cube-logo.tsx
 │   │   ├── app-layout.tsx
 │   │   ├── build-summary.tsx
@@ -537,6 +579,9 @@ BuilbotAI
 │   │   ├── component-card.tsx
 │   │   ├── footer.tsx
 │   │   ├── full-page-loader.tsx
+│   │   ├── header-mega-menu.module.css
+│   │   ├── header-mega-menu.tsx
+│   │   ├── header.module.css
 │   │   ├── header.tsx
 │   │   ├── image-upload.tsx
 │   │   ├── inventory-part-card.tsx
@@ -571,6 +616,7 @@ BuilbotAI
 │   │   └── user-profile.tsx
 │   ├── firebase
 │   │   ├── auth
+│   │   │   ├── google-auth.tsx
 │   │   │   └── use-user.tsx
 │   │   ├── firestore
 │   │   │   ├── use-collection.tsx
@@ -586,10 +632,13 @@ BuilbotAI
 │   │   ├── provider.tsx
 │   │   └── server-init.ts
 │   ├── hooks
+│   │   ├── use-admin-session-guard.ts
 │   │   ├── use-build-actions.ts
+│   │   ├── use-idle-timeout.ts
 │   │   ├── use-mobile.tsx
 │   │   ├── use-part-form.ts
 │   │   ├── use-persistent-state.ts
+│   │   ├── use-system-prompts.ts
 │   │   └── use-toast.ts
 │   ├── knowledge
 │   │   ├── check-parts-compatible.md
@@ -609,21 +658,30 @@ BuilbotAI
 │   │   └── understand-cpu-bottleneck.md
 │   └── lib
 │       ├── constants
-│       │   └── category-specs.ts
+│       │   ├── category-specs.ts
+│       │   └── default-system-prompts.ts
 │       ├── ai-model-resolver.ts
 │       ├── auth-utils.ts
 │       ├── bottleneck.ts
 │       ├── compatibility.ts
+│       ├── export-excel.ts
 │       ├── fps-estimator.ts
 │       ├── inventory-fetcher.ts
 │       ├── knowledge-retriever.ts
 │       ├── placeholder-images.ts
 │       ├── prebuilt-utils.ts
+│       ├── system-prompts.ts
 │       ├── types.ts
 │       ├── utils.ts
 │       └── vector-retriever.ts
 ├── test-results
 │   └── .last-run.json
+├── tmp
+│   ├── test_knowledge_tools.ts
+│   ├── test_local_extraction.ts
+│   ├── test_search.ts
+│   ├── verify_google_search.ts
+│   └── verify_local_db.ts
 ├── .env
 ├── .eslintrc.json
 ├── .firebaserc

@@ -17,8 +17,18 @@ export function useAdminCore() {
     const { toast } = useToast();
     
     // Default to 'stock' or the tab in URL
-    const initialTab = searchParams.get('tab') || 'stock';
+    const urlTab = searchParams.get('tab');
+    const initialTab = urlTab || 'stock';
     const [currentTab, setCurrentTab] = useState(initialTab);
+
+    // Sync tab when searchParams change
+    useEffect(() => {
+        if (urlTab) {
+            // Map legacy aliases
+            const resolvedTab = urlTab === 'ai-models' || urlTab === 'prompts' ? 'ai' : urlTab;
+            setCurrentTab(resolvedTab);
+        }
+    }, [urlTab]);
 
     // Sync global loading state
     useEffect(() => {
@@ -27,18 +37,20 @@ export function useAdminCore() {
     }, [userLoading, setIsPageLoading]);
 
     const handleTabAccess = (val: string) => {
-        // Restrict Sales tab to Super Admin only
-        if (val === 'sales' && !profile?.isSuperAdmin) {
+        const superAdminOnlyTabs = ['sales', 'management', 'ai', 'content'];
+
+        // Restrict Super Admin only tabs
+        if (superAdminOnlyTabs.includes(val) && !profile?.isSuperAdmin) {
             toast({
                 title: "Access Restricted",
-                description: "The Sales performance page is reserved for Super Admins.",
+                description: "This control panel is reserved exclusively for Super Administrators.",
                 variant: "destructive"
             });
             return;
         }
         
         setCurrentTab(val);
-        // Optional: sync with URL
+        // Sync with URL
         const params = new URLSearchParams(searchParams.toString());
         params.set('tab', val);
         router.push(`?${params.toString()}`, { scroll: false });

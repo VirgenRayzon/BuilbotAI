@@ -12,7 +12,7 @@ export function Footer() {
       {/* Decorative top bar */}
       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent z-20"></div>
 
-      <div className="max-w-[1800px] w-full mx-auto pt-24 pb-12 px-4 md:px-8">
+      <div className="w-full pt-24 pb-12 px-4 sm:px-6 md:px-8 lg:px-10">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-24">
           {/* Brand Column */}
           <div className="col-span-1 md:col-span-8 space-y-6">

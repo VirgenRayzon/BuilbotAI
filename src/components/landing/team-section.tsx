@@ -56,7 +56,7 @@ export function TeamSection() {
   return (
     <section className="py-32 relative overflow-hidden transition-colors duration-1000">
 
-      <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8 relative z-10">
+      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 relative z-10">
         <SectionHeader
           badge="BSIT Capstone Project"
           title="Meet The Team"

@@ -442,7 +442,7 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
                                             ))}
 
                                             {/* TDP / Wattage if not already in specifications */}
-                                            {part.wattage && !hasTdpInSpecs && (
+                                            {Boolean(part.wattage && part.wattage > 0) && !hasTdpInSpecs && (
                                                 <Paper
                                                     p="10px 14px"
                                                     radius="md"

@@ -17,23 +17,17 @@ import {
   Package,
   Heart,
   History,
-  Shield,
   Settings,
   Activity,
-  FileText,
   LogOut,
   ChevronRight,
   Cpu,
-  Bot,
-  Sliders,
-  FileCode,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/lib/types";
-import { useSiteSettings } from "@/context/site-settings-context";
 
 interface ProfileSidebarProps {
   profile: UserProfile | null;
@@ -64,13 +58,6 @@ export function ProfileSidebar({
   const isSuperAdmin = Boolean(profile?.isSuperAdmin);
   const isManager = Boolean(profile?.isManager && !profile?.isSuperAdmin);
   const isRegularUser = !isSuperAdmin && !isManager;
-
-  const { featureModelRouting, aiModelProvider } = useSiteSettings();
-  const routingValues = featureModelRouting ? Object.values(featureModelRouting) : [aiModelProvider];
-  const allVertex = routingValues.every((v) => v === 'finetuned');
-  const allGemini = routingValues.every((v) => v === 'default');
-  const intelligenceBadge = allVertex ? 'Vertex' : allGemini ? 'Gemini' : 'Hybrid';
-  const intelligenceBadgeColor = allVertex ? 'indigo' : allGemini ? 'cyan' : 'violet';
 
   // Handle Logout
   const handleConfirmSignOut = async () => {
@@ -107,27 +94,14 @@ export function ProfileSidebar({
       color: "cyan",
       badge: null,
     },
+    {
+      id: "settings",
+      label: "Settings",
+      icon: Settings,
+      color: "blue",
+      badge: null,
+    },
   ];
-
-  // Audit Logs for Staff / Super Admin placed directly under Profile
-  if (isManager || isSuperAdmin) {
-    accountItems.push({
-      id: "audit",
-      label: isSuperAdmin ? "Admin Audit Logs" : "Staff Audit Logs",
-      icon: Shield,
-      color: "indigo",
-      badge: staffLogsCount > 0 ? staffLogsCount : null,
-      badgeColor: "indigo",
-    });
-  }
-
-  accountItems.push({
-    id: "settings",
-    label: "Settings",
-    icon: Settings,
-    color: "blue",
-    badge: null,
-  });
 
   // For regular customers only: Store Reservations, Saved Favourites, Activity Logs
   if (isRegularUser) {
@@ -159,64 +133,20 @@ export function ProfileSidebar({
     );
   }
 
-  // 2. Administration Items (Super Admin Tools)
+  // 2. Administration Items (Super Admin Tools - System Safeguards retained in Profile)
   const adminItems: NavItem[] = [];
   if (isSuperAdmin) {
-    adminItems.push(
-      {
-        id: "management",
-        label: "Management Portal",
-        icon: Sliders,
-        color: "cyan",
-        badge: "Admin",
-        badgeColor: "cyan",
-      },
-      {
-        id: "safeguards",
-        label: "System Safeguards",
-        icon: Activity,
-        color: "amber",
-        badge: "3 Controls",
-        badgeColor: "yellow",
-      }
-    );
-  }
-
-  // 3. AI Section (Super Admin)
-  const aiItems: NavItem[] = [];
-  if (isSuperAdmin) {
-    aiItems.push(
-      {
-        id: "ai-models",
-        label: "Intelligence",
-        icon: Bot,
-        color: "violet",
-        badge: intelligenceBadge,
-        badgeColor: intelligenceBadgeColor,
-      },
-      {
-        id: "prompts",
-        label: "System Prompts",
-        icon: FileCode,
-        color: "cyan",
-        badge: null,
-      }
-    );
-  }
-
-  // 4. Site Content Section (Super Admin)
-  const contentItems: NavItem[] = [];
-  if (isSuperAdmin) {
-    contentItems.push({
-      id: "content",
-      label: "About",
-      icon: FileText,
-      color: "teal",
-      badge: null,
+    adminItems.push({
+      id: "safeguards",
+      label: "System Safeguards",
+      icon: Activity,
+      color: "amber",
+      badge: "3 Controls",
+      badgeColor: "yellow",
     });
   }
 
-  const allNavItems = [...accountItems, ...adminItems, ...aiItems, ...contentItems];
+  const allNavItems = [...accountItems, ...adminItems];
 
   const renderNavButton = (item: NavItem) => {
     const isActive = activeTab === item.id || (item.id === "profile" && activeTab === "account");
@@ -348,37 +278,6 @@ export function ProfileSidebar({
               </div>
             )}
 
-            {/* SECTION 3: AI */}
-            {aiItems.length > 0 && (
-              <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-white/10">
-                <Text
-                  size="xs"
-                  className="text-[10px] font-bold uppercase tracking-[0.15em] font-mono text-slate-400 dark:text-slate-500 px-3 pb-1"
-                >
-                  AI
-                </Text>
-
-                <div className="space-y-1">
-                  {aiItems.map(renderNavButton)}
-                </div>
-              </div>
-            )}
-
-            {/* SECTION 4: SITE CONTENT */}
-            {contentItems.length > 0 && (
-              <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-white/10">
-                <Text
-                  size="xs"
-                  className="text-[10px] font-bold uppercase tracking-[0.15em] font-mono text-slate-400 dark:text-slate-500 px-3 pb-1"
-                >
-                  Site Content
-                </Text>
-
-                <div className="space-y-1">
-                  {contentItems.map(renderNavButton)}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* FOOTER ACTIONS: SESSION */}

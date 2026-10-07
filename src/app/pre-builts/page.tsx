@@ -125,7 +125,7 @@ export default function PreBuiltsPage() {
                     isDark ? "invert" : ""
                 )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-                <main className="w-full max-w-[1800px] mx-auto px-4 md:px-8 py-8 md:py-12 pt-10 md:pt-20 relative z-10">
+                <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-8 md:py-12 pt-10 md:pt-20 relative z-10">
                     <div className="relative mb-5">
                         <motion.div
                             initial={{ opacity: 0, x: -20 }}
