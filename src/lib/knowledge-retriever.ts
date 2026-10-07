@@ -29,20 +29,45 @@ export function initializeKnowledgeCache(): void {
         const filePath = path.join(knowledgeDir, file);
         const content = fs.readFileSync(filePath, 'utf-8');
         
-        // Split by markdown headers or double newlines to get logical chunks
-        const sections = content.split(/(?=^## )|\n\n+/m).filter(s => s.trim().length > 10);
+        // Smart chunking: splits by markdown headers, numbered steps, tier lists, or length caps
+        const lines = content.split(/\r?\n/);
+        let current: string[] = [];
+        let currentLen = 0;
 
-        for (const section of sections) {
-            newCache.push({
-                source: file,
-                text: section.trim(),
-                normalized: section.toLowerCase()
-            });
+        for (const line of lines) {
+            const trimmed = line.trim();
+            const isHeading = /^(#{1,4}\s+|Tier\s+\d+|\d+\.\s+[A-Z]|[A-Z][a-zA-Z\s]{2,25}\?*$)/.test(trimmed) && trimmed.length < 50;
+
+            if (isHeading && currentLen > 250) {
+                const chunkText = current.join('\n').trim();
+                if (chunkText.length > 20) {
+                    newCache.push({ source: file, text: chunkText, normalized: chunkText.toLowerCase() });
+                }
+                current = [line];
+                currentLen = line.length;
+            } else if (currentLen + line.length > 1200) {
+                const chunkText = current.join('\n').trim();
+                if (chunkText.length > 20) {
+                    newCache.push({ source: file, text: chunkText, normalized: chunkText.toLowerCase() });
+                }
+                current = [line];
+                currentLen = line.length;
+            } else {
+                current.push(line);
+                currentLen += line.length + 1;
+            }
+        }
+
+        if (current.length > 0) {
+            const chunkText = current.join('\n').trim();
+            if (chunkText.length > 20) {
+                newCache.push({ source: file, text: chunkText, normalized: chunkText.toLowerCase() });
+            }
         }
     }
     knowledgeCache = newCache;
     cacheTimestamp = Date.now();
-    console.log(`[Knowledge Base] Cached ${knowledgeCache.length} sections from ${files.length} files.`);
+    console.log(`[Knowledge Base] Cached ${knowledgeCache.length} granular sections from ${files.length} files.`);
 }
 
 // Call on startup

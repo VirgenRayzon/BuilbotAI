@@ -12,94 +12,13 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getGenkitModelName, safeGenkitGenerate } from '@/lib/ai-model-resolver';
 
-// Input Schema Definition
-const AiBuildAdvisorRecommendationsInputSchema = z.object({
-  intendedUse: z
-    .string()
-    .describe(
-      'The primary intended use of the PC (e.g., gaming, video editing, software development, general office work).'
-    ),
-  budget: z
-    .string()
-    .describe(
-      'The approximate budget for the PC build in Philippine Peso (PHP) (e.g., "around ₱50,000", "75k PHP budget").'
-    ),
-  performanceLevel: z
-    .string()
-    .optional()
-    .default('Optimal performance for budget and intended workload')
-    .describe(
-      'The desired performance level (e.g., "high performance for 4K gaming", "good for 1080p gaming", "reliable for daily tasks").'
-    ),
-  additionalNotes: z
-    .string()
-    .optional()
-    .describe('Any additional specific requirements or preferences from the user.'),
-  allowFlexibleBudget: z
-    .boolean()
-    .optional()
-    .describe('Whether the AI is allowed to exceed the budget by up to 30% for significantly better value/performance.'),
-  allowWebSearch: z
-    .boolean()
-    .optional()
-    .describe('Whether the AI is allowed to use Google Search to find parts outside the local inventory.'),
-});
-export type AiBuildAdvisorRecommendationsInput = z.infer<
-  typeof AiBuildAdvisorRecommendationsInputSchema
->;
+import {
+  AiBuildAdvisorRecommendationsInputSchema,
+  AiBuildAdvisorRecommendationsOutputSchema,
+  type AiBuildAdvisorRecommendationsInput,
+  type AiBuildAdvisorRecommendationsOutput,
+} from '@/ai/schemas/build-advisor-schemas';
 
-// Output Schema Definition
-const AiBuildAdvisorRecommendationsOutputSchema = z.object({
-  summary: z
-    .string()
-    .describe(
-      'A brief overall summary of the recommended build strategy and its compatibility.'
-    ),
-  cpu: z.object({
-    model: z.string().describe('The recommended CPU model name.'),
-    description: z.string().describe('A brief explanation for the CPU recommendation.'),
-    estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
-  }),
-  gpu: z.object({
-    model: z.string().describe('The recommended GPU model name.'),
-    description: z.string().describe('A brief explanation for the GPU recommendation.'),
-    estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
-  }),
-  motherboard: z.object({
-    model: z.string().describe('The recommended Motherboard model name.'),
-    description: z.string().describe('A brief explanation for the Motherboard recommendation, highlighting compatibility with CPU and RAM.'),
-    estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
-  }),
-  ram: z.object({
-    model: z.string().describe('The recommended RAM model and specifications (e.g., "Corsair Vengeance RGB DDR5 32GB (2x16GB) 6000MHz").'),
-    description: z.string().describe('A brief explanation for the RAM recommendation, including type and speed considerations.'),
-    estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
-  }),
-  storage: z.object({
-    model: z.string().describe('The recommended Storage (SSD/HDD) model name.'),
-    description: z.string().describe('A brief explanation for the Storage recommendation.'),
-    estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
-  }),
-  psu: z.object({
-    model: z.string().describe('The recommended Power Supply Unit (PSU) model name.'),
-    description: z.string().describe('A brief explanation for the PSU recommendation.'),
-    estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
-  }),
-  case: z.object({
-    model: z.string().describe('The recommended PC Case model name.'),
-    description: z.string().describe('A brief explanation for the Case recommendation.'),
-    estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
-  }),
-  cooler: z.object({
-    model: z.string().describe('The recommended CPU Cooler model name.'),
-    description: z.string().describe('A brief explanation for the Cooler recommendation.'),
-    estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
-  }),
-  estimatedWattage: z.string().describe('The estimated total wattage for the build, in the format "550W".'),
-});
-export type AiBuildAdvisorRecommendationsOutput = z.infer<
-  typeof AiBuildAdvisorRecommendationsOutputSchema
->;
 
 // Wrapper function to call the Genkit flow
 export async function aiBuildAdvisorRecommendations(
@@ -115,7 +34,6 @@ const aiBuildAdvisorRecommendationsPrompt = ai.definePrompt({
     schema: AiBuildAdvisorRecommendationsInputSchema.extend({
       knowledgeContext: z.string().optional(),
       storeInventory: z.string().optional(),
-      webSearchContext: z.string().optional(),
       customSystemPrompt: z.string().optional(),
     }),
   },
@@ -127,12 +45,11 @@ const aiBuildAdvisorRecommendationsPrompt = ai.definePrompt({
 {{else}}
 You are an expert PC building advisor specializing in the Philippine market. Your goal is to recommend a set of compatible core components (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, Cooler) for a user based on their specific needs.
 
-Provide a brief summary of the overall build strategy in the context of the Philippine market, and then detail the recommendations for each component, including the model name, estimated PHP price, and a concise reason for its selection (mentioning why it's a good value in PHP where applicable). Also provide an estimated total wattage for the build.
-{{/if}}
+Provide a brief summary of the overall build strategy in the context of the Philippine market, and provide recommendations for each component with its model name, estimated PHP price, and estimated total wattage for the build.
 
-{{#if webSearchContext}}
-WEB SEARCH RESEARCH CONTEXT (Use this data for current market pricing and availability):
-{{{webSearchContext}}}
+DESCRIPTION RULES (MAXIMUM SPEED):
+- CPU, GPU, and Motherboard: Provide a concise justification explaining their performance synergy and value in PHP.
+- RAM, Storage, PSU, Case, and Cooler: Set description to an empty string "" (or a brief 2-word tag); our client system automatically populates dynamic specifications for these components. Do not spend tokens writing long descriptions for these supporting parts.
 {{/if}}
 
 {{#if knowledgeContext}}
@@ -143,18 +60,23 @@ Base your recommendations strictly on the expert knowledge provided above if it 
 {{/if}}
 
 {{#if storeInventory}}
-STORE_INVENTORY_MENU (MANDATORY EXACT MATCHES IF WEB SEARCH IS OFF):
+STORE_INVENTORY_MENU (IN-STOCK STORE PARTS):
 {{{storeInventory}}}
 {{/if}}
 
 CRITICAL RULES:
 1. CURRENCY: All price discussions and budget considerations MUST be in Philippine Peso (PHP). Use the ₱ symbol.
 2. LOCAL PRICING: Provide estimated prices that reflect the current PC component market in the Philippines (e.g., shops like Dynaquest, PCHub, Gilmore prices).
-{{#if allowWebSearch}}
-3. INVENTORY AVAILABILITY: You are allowed to use Google Search to find and recommend the best parts available in the current market, even if they aren't in a specific inventory.
+{{#if allowAiSearch}}
+3. HARDWARE MARKET SELECTION (AI SEARCH ENABLED - STORE-FIRST HYBRID):
+   - You have access to both our STORE_INVENTORY_MENU and your comprehensive Philippine PC hardware knowledge and tier lists.
+   - STORE-FIRST PRIORITY: Prioritize selecting components from our STORE_INVENTORY_MENU whenever an in-stock part offers competitive value, compatibility, and fits comfortably within the user's budget.
+   - EXTERNAL MARKET SELECTION: If our store inventory lacks a suitable, compatible part for a given component, or if an external Philippine market part offers significantly superior value/performance for this budget, you are encouraged to recommend that external market component. Use realistic Philippine retail market prices (₱) (e.g., Dynaquest, PCHub, Gilmore).
 {{else}}
-3. INVENTORY AVAILABILITY: You MUST ONLY recommend parts that are explicitly listed in the STORE_INVENTORY_MENU above. DO NOT recommend parts that are not in the list. DO NOT hallucinate parts. Ensure the model name exactly matches the inventory.
-   - STRICT INVENTORY RULE: If picking from the limited inventory causes the build to exceed the budget while trying to meet the user's Intended Use, Desired Performance, or Additional Notes, you MUST deprioritize those preferences. Choose lower-tier parts from the inventory to stay within budget, even if it means the build won't meet their original performance goals.
+3. INVENTORY AVAILABILITY (STRICT STORE INVENTORY ONLY - STRICT REJECTION RULE):
+   - You MUST ONLY recommend components that are explicitly listed in the STORE_INVENTORY_MENU above.
+   - DO NOT recommend any parts outside the menu. DO NOT hallucinate inventory items. Ensure model names match exactly.
+   - STRICT REJECTION: If our available store inventory lacks the necessary components to build a complete, 100% compatible PC within the user's budget, DO NOT make up fake stock or recommend incompatible parts. Instead, in your summary, state clearly and transparently: "Our current in-stock store inventory cannot fulfill a complete, compatible build for this budget (₱{{budget}}). Please enable 'AI Search' to allow recommendations from the broader Philippine market, or consider adjusting your budget." Still provide whatever best partial/nearest configuration you can from the actual inventory, but clearly emphasize the notice in the summary.
 {{/if}}
 4. COMPATIBILITY: Ensure all recommended components are 100% compatible.
 5. BUDGET ADHERENCE: 
@@ -195,7 +117,7 @@ const generateCacheKey = (input: AiBuildAdvisorRecommendationsInput, promptSig: 
     input.performanceLevel.toLowerCase().trim(),
     (input.additionalNotes || '').toLowerCase().trim(),
     input.allowFlexibleBudget ? 'flexible' : 'strict',
-    input.allowWebSearch ? 'websearch' : 'local',
+    input.allowAiSearch ? 'aisearch' : 'local',
     promptSig ? promptSig.substring(0, 32) : 'default'
   ];
   return parts.join('|').replace(/[\/.]/g, '_').substring(0, 1000);
@@ -245,53 +167,20 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
     }
 
     // 2. Cache miss: Run AI
-    console.log(`[AI Cache] Miss for key: ${cacheKey}. Generating fresh...`);
+    console.log(`[AI Cache] Miss for key: ${cacheKey}. Generating fresh (AI Search: ${!!input.allowAiSearch})...`);
     
     // Fetch relevant local knowledge based on the user's intent and performance level
     const query = `${input.intendedUse} ${input.performanceLevel} ${input.additionalNotes || ''}`;
-    const knowledgeResults = await retrieveLocalKnowledge(query);
-    const knowledgeContext = knowledgeResults.join('\n\n');
-
     const dynamicModel = await getGenkitModelName('buildAdvisor');
-    let storeInventory = '';
-    let webSearchContext: string | undefined;
+    
+    const categoriesToFetch = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'];
+    const [knowledgeResults, inventoryResults] = await Promise.all([
+      retrieveLocalKnowledge(query),
+      Promise.all(categoriesToFetch.map(cat => getInventoryFromFirestore(cat, undefined, 10)))
+    ]);
 
-    if (input.allowWebSearch) {
-      // Step 1: Plain-text research call WITH googleSearchRetrieval (no structured output)
-      console.log(`[AI Recommendations] Step 1: Running web search pre-research with model ${dynamicModel}...`);
-      const researchResponse = await safeGenkitGenerate(ai, {
-        model: dynamicModel,
-        prompt: `You are a PC hardware market researcher specializing in the Philippine market.
-Research the following and provide a detailed summary of current pricing and availability in PHP:
-
-User Requirements:
-- Intended Use: ${input.intendedUse}
-- Budget: ${input.budget} (PHP)
-- Performance Level: ${input.performanceLevel}
-${input.additionalNotes ? `- Additional Notes: ${input.additionalNotes}` : ''}
-
-Search for:
-1. Best CPU options in the Philippines for this budget and use case, with current PHP prices.
-2. Best GPU options in the Philippines for this budget and use case, with current PHP prices.
-3. Compatible motherboard, RAM, storage, PSU, case, and cooler options with PHP prices.
-4. Current market availability and any ongoing deals or promotions.
-
-Provide specific model names and realistic PHP prices from Philippine retailers (Dynaquest, PCHub, EasyPC, etc.).`,
-        config: {
-          temperature: 0.3,
-          googleSearchRetrieval: {},
-        },
-      });
-      webSearchContext = researchResponse.text;
-      console.log('[AI Recommendations] Step 1 complete. Research context obtained.');
-    } else {
-      // Fetch store inventory exclusively from Live Firestore if web search is off
-      const categoriesToFetch = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'];
-      const inventoryResults = await Promise.all(
-          categoriesToFetch.map(cat => getInventoryFromFirestore(cat, undefined, 10))
-      );
-      storeInventory = inventoryResults.flat().join('\n');
-    }
+    const knowledgeContext = knowledgeResults.join('\n\n');
+    const storeInventory = inventoryResults.flat().join('\n');
 
     // Step 2: Structured output prompt WITHOUT googleSearchRetrieval
     const { output } = await aiBuildAdvisorRecommendationsPrompt(
@@ -299,7 +188,6 @@ Provide specific model names and realistic PHP prices from Philippine retailers 
         ...input,
         knowledgeContext,
         storeInventory: storeInventory || undefined,
-        webSearchContext,
         customSystemPrompt,
       },
       { model: dynamicModel }
