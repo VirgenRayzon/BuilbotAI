@@ -335,10 +335,10 @@ export function ProfileSidebar({
           blur: 4,
         }}
         classNames={{
-          content:
-            "border border-slate-200 dark:border-white/10 shadow-2xl bg-white dark:bg-[#111722]",
-          header:
-            "border-b border-slate-100 dark:border-white/5 pb-3 bg-white dark:bg-[#111722]",
+          content: "bg-white dark:bg-[#111722] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-2xl rounded-2xl overflow-hidden",
+          header: "bg-white dark:bg-[#111722] border-b border-slate-200 dark:border-white/10 px-6 py-4",
+          body: "!px-6 !pt-5 !pb-6",
+          close: "text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors",
         }}
       >
         <Text size="xs" className="text-slate-600 dark:text-slate-300 leading-relaxed mt-2">

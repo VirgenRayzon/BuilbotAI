@@ -1,19 +1,19 @@
-
 "use client";
 
+import React, { useMemo } from "react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@/components/ui/toggle-group";
-import { Button } from "@/components/ui/button";
+  TextInput,
+  Button,
+  ActionIcon,
+  Menu,
+  Checkbox,
+  ScrollArea,
+  Badge,
+  SegmentedControl,
+  Group,
+  Paper,
+  Text,
+} from "@mantine/core";
 import {
   List,
   LayoutGrid,
@@ -22,12 +22,10 @@ import {
   ArrowDownAZ,
   ArrowUpAZ,
   CheckCircle2,
+  Search,
+  Check,
+  Layers,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import React from "react";
-import { Layers, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 type Category = {
@@ -87,217 +85,288 @@ export function InventoryToolbar({
   hideIncompatible,
   onHideIncompatibleChange,
 }: InventoryToolbarProps) {
-  const hasIcons = React.useMemo(() => categories.some(c => c.icon), [categories]);
+  const hasIcons = useMemo(() => categories.some((c) => c.icon), [categories]);
 
-  const handleToggleChange = (value: string) => {
-    if (!value) return; // Don't allow deselecting everything without clicking another button
-    onCategoryChange(value, true);
-  };
-
-  const allSelected = categories.every(c => c.selected);
-  const selectedValue = allSelected ? "All" : categories.find(c => c.selected)?.name || "All";
+  const allSelected = categories.every((c) => c.selected);
+  const selectedCount = categories.filter((c) => c.selected).length;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
+      {/* Optional Top Category Bar when icons are supplied */}
       {hasIcons && (
-        <ToggleGroup
-          type="single"
-          variant="outline"
-          value={selectedValue}
-          onValueChange={handleToggleChange}
-          className="flex flex-wrap gap-2 w-full"
-        >
-          <ToggleGroupItem
-            value="All"
-            aria-label="Show all categories"
-            className="px-4 py-2 h-11 flex flex-row items-center gap-2 data-[state=on]:bg-primary data-[state=on]:text-white transition-all border border-border/40 data-[state=off]:bg-muted/20 data-[state=off]:hover:bg-muted/40 rounded-xl min-w-fit font-headline font-bold uppercase tracking-wider text-[10px]"
+        <div className="flex flex-wrap gap-2 w-full">
+          <Button
+            size="xs"
+            radius="md"
+            variant={allSelected ? "filled" : "default"}
+            color={allSelected ? "cyan" : undefined}
+            leftSection={<Layers size={14} />}
+            onClick={() => onCategoryChange("All", true)}
           >
-            <Layers className="h-4 w-4 shrink-0" />
-            <span>All</span>
-          </ToggleGroupItem>
+            All
+          </Button>
           {categories.map((cat) => {
             const Icon = cat.icon!;
             return (
-              <ToggleGroupItem
+              <Button
                 key={cat.name}
-                value={cat.name}
-                aria-label={`Toggle ${cat.name}`}
-                className="px-4 py-2 h-11 flex flex-row items-center gap-2 data-[state=on]:bg-primary data-[state=on]:text-white transition-all border border-border/40 data-[state=off]:bg-muted/20 data-[state=off]:hover:bg-muted/40 rounded-xl min-w-fit font-headline font-bold uppercase tracking-wider text-[10px]"
+                size="xs"
+                radius="md"
+                variant={cat.selected && !allSelected ? "filled" : "default"}
+                color={cat.selected && !allSelected ? "cyan" : undefined}
+                leftSection={<Icon className="h-3.5 w-3.5" />}
+                onClick={() => onCategoryChange(cat.name, true)}
               >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span>{cat.name}</span>
-              </ToggleGroupItem>
+                {cat.name}
+              </Button>
             );
           })}
-        </ToggleGroup>
+        </div>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border p-2 shadow-sm glass-panel">
-        <div className="flex flex-wrap items-center gap-3">
-          {onSearchQueryChange && (
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
+
+      {/* Main Toolbar Surface */}
+      <Paper
+        withBorder
+        radius="lg"
+        p="xs"
+        className="bg-white/80 dark:bg-[#141a23]/90 border-slate-200/80 dark:border-white/10"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Left Controls: Search & Filters */}
+          <div className="flex flex-wrap items-center gap-2 flex-grow sm:flex-grow-0">
+            {onSearchQueryChange && (
+              <TextInput
                 placeholder="Search..."
-                className="pl-8 h-9 bg-background focus-visible:ring-1"
-                value={searchQuery || ''}
-                onChange={(e) => onSearchQueryChange(e.target.value)}
+                value={searchQuery || ""}
+                onChange={(e) => onSearchQueryChange(e.currentTarget.value)}
+                leftSection={<Search size={15} className="text-slate-400" />}
+                size="sm"
+                radius="md"
+                className="w-full sm:w-56"
               />
-            </div>
-          )}
-
-          {!hasIcons && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-9">
-                  <Filter className="mr-2 h-4 w-4" />
-                  Categories
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="start">
-                <DropdownMenuLabel>Filter by Category</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem
-                  checked={categories.every(c => c.selected)}
-                  onCheckedChange={() => onCategoryChange('All', true)}
-                  className="font-bold"
-                >
-                  All Categories
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuSeparator />
-                {categories.map((cat) => (
-                  <DropdownMenuCheckboxItem
-                    key={cat.name}
-                    checked={cat.selected}
-                    onCheckedChange={(checked) => onCategoryChange(cat.name, !!checked)}
-                  >
-                    {cat.name}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-
-          {availableBrands.length > 0 && onBrandChange && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-9">
-                  <Filter className="mr-2 h-4 w-4" />
-                  Brands
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="start">
-                <DropdownMenuLabel>Filter by Brand</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <ScrollArea className="max-h-[300px]">
-                  <DropdownMenuCheckboxItem
-                    checked={selectedBrands.length === 0}
-                    onCheckedChange={() => onBrandChange([])}
-                    className="font-bold"
-                  >
-                    All Brands
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuSeparator />
-                  {availableBrands.map((brand) => (
-                    <DropdownMenuCheckboxItem
-                      key={brand}
-                      checked={selectedBrands.includes(brand)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          onBrandChange([brand]);
-                        } else {
-                          onBrandChange([]);
-                        }
-                      }}
-                    >
-                      {brand}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </ScrollArea>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-9 font-normal">
-                <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
-                Sort by {sortBy}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              {supportedSorts.map(sortOption => (
-                <DropdownMenuCheckboxItem
-                  key={sortOption}
-                  checked={sortBy === sortOption}
-                  onCheckedChange={() => onSortByChange(sortOption)}
-                >
-                  {sortOption}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Button variant="ghost" size="sm" onClick={() => onSortDirectionChange(sortDirection === 'asc' ? 'desc' : 'asc')} className="h-9 font-normal hidden sm:inline-flex">
-            {sortDirection === 'asc' ? (
-              <ArrowUpAZ className="mr-2 h-4 w-4 text-muted-foreground" />
-            ) : (
-              <ArrowDownAZ className="mr-2 h-4 w-4 text-muted-foreground" />
             )}
-            {sortDirection.toUpperCase()}
-          </Button>
 
-          {onHideIncompatibleChange !== undefined && (
-            <Button
-              variant="outline"
+            {/* Categories Dropdown Filter */}
+            {!hasIcons && (
+              <Menu shadow="md" width={220} radius="md" closeOnItemClick={false}>
+                <Menu.Target>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    radius="md"
+                    leftSection={<Filter size={14} className="text-slate-400" />}
+                  >
+                    Categories
+                    {!allSelected && selectedCount > 0 && (
+                      <Badge size="xs" variant="filled" color="cyan" circle ml={6}>
+                        {selectedCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Label>Filter by Category</Menu.Label>
+                  <div className="px-2 py-1.5">
+                    <Checkbox
+                      label="All Categories"
+                      size="xs"
+                      checked={allSelected}
+                      onChange={() => onCategoryChange("All", true)}
+                    />
+                  </div>
+                  <Menu.Divider />
+                  <ScrollArea.Autosize mah={240}>
+                    <div className="space-y-1 px-2 py-1">
+                      {categories.map((cat) => (
+                        <Checkbox
+                          key={cat.name}
+                          label={cat.name}
+                          size="xs"
+                          checked={cat.selected}
+                          onChange={(e) =>
+                            onCategoryChange(cat.name, e.currentTarget.checked)
+                          }
+                        />
+                      ))}
+                    </div>
+                  </ScrollArea.Autosize>
+                </Menu.Dropdown>
+              </Menu>
+            )}
+
+            {/* Brands Dropdown Filter */}
+            {availableBrands.length > 0 && onBrandChange && (
+              <Menu shadow="md" width={220} radius="md" closeOnItemClick={false}>
+                <Menu.Target>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    radius="md"
+                    leftSection={<Filter size={14} className="text-slate-400" />}
+                  >
+                    Brands
+                    {selectedBrands.length > 0 && (
+                      <Badge size="xs" variant="filled" color="cyan" circle ml={6}>
+                        {selectedBrands.length}
+                      </Badge>
+                    )}
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Label>Filter by Brand</Menu.Label>
+                  <div className="px-2 py-1.5">
+                    <Checkbox
+                      label="All Brands"
+                      size="xs"
+                      checked={selectedBrands.length === 0}
+                      onChange={() => onBrandChange([])}
+                    />
+                  </div>
+                  <Menu.Divider />
+                  <ScrollArea.Autosize mah={240}>
+                    <div className="space-y-1 px-2 py-1">
+                      {availableBrands.map((brand) => (
+                        <Checkbox
+                          key={brand}
+                          label={brand}
+                          size="xs"
+                          checked={selectedBrands.includes(brand)}
+                          onChange={(e) => {
+                            if (e.currentTarget.checked) {
+                              onBrandChange([...selectedBrands, brand]);
+                            } else {
+                              onBrandChange(selectedBrands.filter((b) => b !== brand));
+                            }
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </ScrollArea.Autosize>
+                </Menu.Dropdown>
+              </Menu>
+            )}
+
+            {/* Sort Dropdown */}
+            <Menu shadow="md" width={180} radius="md">
+              <Menu.Target>
+                <Button
+                  variant="default"
+                  size="sm"
+                  radius="md"
+                  leftSection={<ArrowUpDown size={14} className="text-slate-400" />}
+                >
+                  Sort by {sortBy}
+                </Button>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Label>Sort Options</Menu.Label>
+                {supportedSorts.map((sortOption) => (
+                  <Menu.Item
+                    key={sortOption}
+                    onClick={() => onSortByChange(sortOption)}
+                    rightSection={
+                      sortBy === sortOption ? (
+                        <Check size={14} className="text-cyan-500" />
+                      ) : null
+                    }
+                  >
+                    {sortOption}
+                  </Menu.Item>
+                ))}
+              </Menu.Dropdown>
+            </Menu>
+
+            {/* Direction Toggle */}
+            <ActionIcon
+              variant="default"
+              size="lg"
+              radius="md"
+              onClick={() =>
+                onSortDirectionChange(sortDirection === "asc" ? "desc" : "asc")
+              }
+              title={`Sort: ${sortDirection.toUpperCase()}`}
+            >
+              {sortDirection === "asc" ? (
+                <ArrowUpAZ size={16} className="text-slate-500" />
+              ) : (
+                <ArrowDownAZ size={16} className="text-slate-500" />
+              )}
+            </ActionIcon>
+
+            {/* Hide Incompatible Toggle */}
+            {onHideIncompatibleChange !== undefined && (
+              <Button
+                variant={hideIncompatible ? "light" : "default"}
+                color={hideIncompatible ? "cyan" : "gray"}
+                size="sm"
+                radius="md"
+                onClick={() => onHideIncompatibleChange(!hideIncompatible)}
+                leftSection={
+                  <CheckCircle2
+                    size={14}
+                    className={hideIncompatible ? "text-cyan-500" : "text-slate-400"}
+                  />
+                }
+              >
+                Hide Incompatible
+              </Button>
+            )}
+          </div>
+
+          {/* Right Controls: Specs Toggle, Counter & Grid/List Switcher */}
+          <Group gap="xs" align="center">
+            {onShowDetailsChange && (
+              <Button
+                variant={showDetails ? "light" : "default"}
+                color={showDetails ? "cyan" : "gray"}
+                size="sm"
+                radius="md"
+                onClick={() => onShowDetailsChange(!showDetails)}
+                leftSection={<Layers size={14} />}
+              >
+                {showDetails ? "Hide Specs" : "Show Specs"}
+              </Button>
+            )}
+
+            <Badge
+              variant="light"
+              color="gray"
               size="sm"
-              onClick={() => onHideIncompatibleChange(!hideIncompatible)}
-              className={cn(
-                "h-9 text-xs font-medium transition-all gap-1.5 border-border/60",
-                hideIncompatible
-                  ? "bg-primary/20 border-primary/50 text-primary font-semibold shadow-[0_0_12px_rgba(var(--primary-rgb),0.2)]"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
+              radius="sm"
+              className="hidden sm:inline-flex font-medium"
             >
-              <CheckCircle2 className={cn("h-4 w-4", hideIncompatible ? "text-primary" : "text-muted-foreground")} />
-              <span>Hide Incompatible</span>
-            </Button>
-          )}
-        </div>
+              {itemCount} items
+            </Badge>
 
-        <div className="flex items-center gap-4 text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
-          {onShowDetailsChange && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => onShowDetailsChange(!showDetails)}
-              className={cn(
-                "h-9 font-bold transition-all",
-                showDetails ? "bg-primary/20 border-primary/40 text-primary" : "text-muted-foreground"
-              )}
-            >
-              <Layers className="mr-2 h-4 w-4" />
-              {showDetails ? "Hide Specs" : "Show Specs"}
-            </Button>
-          )}
-
-          <span className="hidden sm:inline-flex font-bold bg-muted/20 px-3 py-1.5 rounded-lg border border-border/40">
-            Showing {itemCount} items
-          </span>
-          {showViewToggle && view && onViewChange && (
-            <div className="flex items-center border rounded-md p-1 bg-background">
-              <ToggleGroup type="single" value={view} onValueChange={(v) => v && onViewChange(v as 'grid' | 'list')} className="gap-1">
-                <ToggleGroupItem value="list" aria-label="Toggle list view" className="h-7 w-7 px-0">
-                  <List className="h-4 w-4" />
-                </ToggleGroupItem>
-                <ToggleGroupItem value="grid" aria-label="Toggle grid view" className="h-7 w-7 px-0">
-                  <LayoutGrid className="h-4 w-4" />
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-          )}
+            {showViewToggle && view && onViewChange && (
+              <SegmentedControl
+                value={view}
+                onChange={(val) => onViewChange(val as "grid" | "list")}
+                size="xs"
+                radius="md"
+                data={[
+                  {
+                    value: "grid",
+                    label: (
+                      <div className="flex items-center justify-center p-0.5" title="Grid View">
+                        <LayoutGrid size={15} />
+                      </div>
+                    ),
+                  },
+                  {
+                    value: "list",
+                    label: (
+                      <div className="flex items-center justify-center p-0.5" title="List View">
+                        <List size={15} />
+                      </div>
+                    ),
+                  },
+                ]}
+              />
+            )}
+          </Group>
         </div>
-      </div>
+      </Paper>
     </div>
   );
 }

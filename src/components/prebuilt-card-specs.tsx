@@ -14,6 +14,7 @@ import {
     RectangleVertical as Case, 
     Wind as Cooler 
 } from "lucide-react";
+import { Text, Group, Stack } from "@mantine/core";
 
 interface PrebuiltCardSpecsProps {
     components: {
@@ -127,9 +128,9 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
 
     if (loading) {
         return (
-            <div className="space-y-2 mt-4 mb-2 animate-pulse">
+            <div className="space-y-2 py-2 animate-pulse">
                 {[1, 2, 3].map(i => (
-                    <div key={i} className="h-4 bg-muted rounded w-full" />
+                    <div key={i} className="h-4 bg-slate-200/60 dark:bg-white/5 rounded w-full" />
                 ))}
             </div>
         );
@@ -137,20 +138,20 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
 
     if (!expanded) {
         return (
-            <div className="space-y-1.5 mt-3 mb-1 text-xs text-muted-foreground">
+            <div className="space-y-1.5 py-1 text-xs text-slate-500 dark:text-slate-400">
                 <div className="flex items-center gap-2">
-                    <Cpu className="h-3.5 w-3.5 text-primary/70 shrink-0" />
+                    <Cpu className="h-3.5 w-3.5 text-cyan-500 shrink-0" />
                     <span className="truncate" title={specs.cpu || "No CPU listed"}>{specs.cpu || "No CPU listed"}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Gpu className="h-3.5 w-3.5 text-primary/70 shrink-0" />
+                    <Gpu className="h-3.5 w-3.5 text-cyan-500 shrink-0" />
                     <span className="truncate" title={specs.gpu || "No GPU listed"}>{specs.gpu || "No GPU listed"}</span>
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground/80">
-                    <MemoryStick className="h-3.5 w-3.5 shrink-0" />
+                <div className="flex items-center gap-2">
+                    <MemoryStick className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                     <span className="truncate" title={specs.ram || "No RAM listed"}>{specs.ram || "No RAM listed"}</span>
-                    <span className="mx-1 opacity-50">•</span>
-                    <HardDrive className="h-3.5 w-3.5 shrink-0" />
+                    <span className="mx-1 opacity-40">•</span>
+                    <HardDrive className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                     <span className="truncate" title={specs.storage || "No Storage listed"}>{specs.storage || "No Storage listed"}</span>
                 </div>
             </div>
@@ -160,25 +161,23 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
     const allSpecs = [
         { label: 'CPU', value: specs.cpu, icon: Cpu },
         { label: 'GPU', value: specs.gpu, icon: Gpu },
-        { label: 'Mobo', value: specs.motherboard, icon: CircuitBoard },
+        { label: 'Motherboard', value: specs.motherboard, icon: CircuitBoard },
         { label: 'RAM', value: specs.ram, icon: MemoryStick },
-        { label: 'Disk', value: specs.storage, icon: HardDrive },
+        { label: 'Storage', value: specs.storage, icon: HardDrive },
         { label: 'PSU', value: specs.psu, icon: Psu },
         { label: 'Case', value: specs.case, icon: Case },
-        { label: 'Fan', value: specs.cooler, icon: Cooler },
-    ].filter(s => s.value && s.value !== "N/A");
+        { label: 'Cooler', value: specs.cooler, icon: Cooler },
+    ].filter(s => s.value && s.value !== "N/A" && s.value !== "Unknown");
 
     return (
-        <div className="space-y-2 mt-4 mb-2 text-xs">
-            <div className="grid grid-cols-1 gap-2">
-                {allSpecs.map((s, i) => (
-                    <div key={i} className="flex items-center gap-2 py-0.5 border-b border-primary/5 last:border-0">
-                        <s.icon className="h-3.5 w-3.5 text-primary/70 shrink-0" />
-                        <span className="font-semibold text-primary/80 shrink-0">{s.label}:</span>
-                        <span className="truncate text-muted-foreground" title={s.value || ""}>{s.value}</span>
-                    </div>
-                ))}
-            </div>
+        <div className="space-y-1 py-1 text-xs">
+            {allSpecs.map((s, i) => (
+                <div key={i} className="flex items-center gap-2 py-1 border-b border-slate-200/60 dark:border-white/5 last:border-0">
+                    <s.icon className="h-3.5 w-3.5 text-cyan-500 shrink-0" />
+                    <span className="font-semibold text-slate-700 dark:text-slate-300 shrink-0 text-[11px]">{s.label}:</span>
+                    <span className="truncate text-slate-500 dark:text-slate-400 text-[11px]" title={s.value || ""}>{s.value}</span>
+                </div>
+            ))}
         </div>
     );
 }

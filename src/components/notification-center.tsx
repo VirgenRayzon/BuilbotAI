@@ -476,9 +476,10 @@ export function NotificationCenter() {
           </Group>
         }
         classNames={{
-          content: "bg-white dark:bg-[#111722] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-2xl",
-          header: "bg-white dark:bg-[#111722] border-b border-slate-200 dark:border-white/10 px-5 py-3.5",
-          body: "!p-5",
+          content: "bg-white dark:bg-[#111722] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-2xl rounded-2xl overflow-hidden",
+          header: "bg-white dark:bg-[#111722] border-b border-slate-200 dark:border-white/10 px-6 py-4",
+          body: "!px-6 !pt-5 !pb-6",
+          close: "text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors",
         }}
       >
         <Stack gap="md">

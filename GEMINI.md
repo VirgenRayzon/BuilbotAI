@@ -28,19 +28,22 @@ You operate within a 3-layer architecture that separates concerns to maximize re
 **0. Understand the Codebase**
 At the start of every new conversation, you MUST read `docs/project_structure.md` to understand the current project structure.
 
-
 **1. Check for tools first**
 Before writing a new script, check `execution/` and existing `npm` scripts in `package.json`. Only create new tools if necessary.
 
-**2. Self-anneal when things break**
+**2. Interactive Alignment & Planning (`/grill-me`)**
+- Regularly interview the user using the **`/grill-me`** pattern, especially during implementation planning and before major architectural/design changes.
+- Walk down each branch of the design/decision tree, asking clear, focused questions to ensure complete alignment on requirements before executing code.
+
+**3. Self-anneal when things break**
 - Analyze error messages and stack traces.
 - Fix scripts/code and test again (verify with `npm run dev` and `npm run genkit:dev`).
 - Update the directive with what you learned (API limits, timing, edge cases).
 
-**3. Update directives as you learn**
+**4. Update directives as you learn**
 Directives are living documents. When you discover API constraints, better approaches, or common errors, update the directive. Directives must be preserved and improved over time.
 
-## Development Principles
+## Development & Design Principles
 
 **1. Split components aggressively**
 Deconstruct monolithic components into modular units. If a file exceeds 300 lines, identify sub-component extraction opportunities.
@@ -48,8 +51,11 @@ Deconstruct monolithic components into modular units. If a file exceeds 300 line
 **2. No business logic in components**
 Encapsulate complex state, AI interaction, and data merging into custom hooks. Components should focus on layout and presentation.
 
-**3. Maintain Design Fidelity & Mantine UI Aesthetic**
-Always adhere to the "Sleek Tech & Immersive" aesthetic in `DESIGN.md`. Use Mantine UI (`@mantine/core` v8+) for card surfaces (`Paper`), inputs (`TextInput`, `PasswordInput`), segmented controls, and modals. Never add artificial neon light bars (`h-1 bg-gradient-to-r ...`) on top of cards.
+**3. Minimalistic UI & Mantine UI Aesthetic**
+- **Primary Goal:** Keep the interface clean, minimalistic, and clutter-free while strictly following Mantine UI aesthetics for a unified look and feel.
+- When creating or modifying UI components, inspect Mantine UI patterns first and leverage the Mantine skill/primitives (`@mantine/core` v8+).
+- Use Mantine UI components for card surfaces (`Paper`), inputs (`TextInput`, `PasswordInput`), segmented controls, buttons, and modals.
+- Never add artificial neon light bars (`h-1 bg-gradient-to-r ...`) on top of cards.
 
 **4. Strict Light and Dark Mode Compatibility**
 Every component, card, form input, modal, and button must be 100% legible and polished in BOTH light and dark modes. Never use single-theme hardcoded text colors (e.g. raw `text-white` or `bg-white` without corresponding dark/light variants). Always verify proper contrast:
@@ -66,6 +72,18 @@ Every component, card, form input, modal, and button must be 100% legible and po
   - Instead of "Initialize Session" / "Register Session" -> Use "Sign In", "Get Started", "Start Building", or "Log In".
   - Instead of "Neural Diagnostic / Bottleneck Protocol" -> Use "Compatibility Check" or "Performance Analysis".
 - Keep button labels, card headers, and badges concise, accessible, and user-friendly.
+
+## Operational Constraints & Environment
+
+- **Development Port:** The application runs strictly on **Port `9002`** (`http://localhost:9002/`). When testing or opening browser URLs, ALWAYS use port `9002` (do NOT default to port 3000).
+- **Environment:** Use `VITE_` prefix for all Firebase and SQL connection strings.
+- **Data Hierarchy:** NotebookLM (Verified Corpus) > SQL Server (Local Index) > Heuristic Estimate.
+
+### Test Accounts & Credentials
+Use the following credentials when testing authentication and role-based flows:
+- **User Account:** `Email: user@test.com` | `Pass: 123456`
+- **Manager Account:** `Email: manager@test.com` | `Pass: 123456` | `Key: 00216764`
+- **Super Admin Account:** `Email: admin@test.com` | `Pass: 123456` | `Key: SUPER_ADMIN_123`
 
 ## Self-annealing loop
 

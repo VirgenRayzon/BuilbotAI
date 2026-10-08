@@ -1,12 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Menu, Modal, Paper, TextInput } from "@mantine/core";
-import { AlertTriangle, FolderOpen, Heart, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
-import type { ComponentData, FavoriteBuild } from "@/lib/types";
-import { formatCurrency } from "@/lib/utils";
+import { Badge, Button, Group, Modal, Paper, ScrollArea, Text, ThemeIcon, Title } from "@mantine/core";
+import { AlertTriangle, ShieldCheck, Sparkles } from "lucide-react";
+import type { ComponentData } from "@/lib/types";
+import { formatCurrency, cn } from "@/lib/utils";
 
 const reviewCategories = ["Motherboard", "CPU", "GPU", "RAM", "Storage", "PSU", "Cooler", "Case", "Monitor", "Keyboard", "Mouse", "Headset"];
+
+const UNIFIED_MODAL_CLASSNAMES = {
+  content: "bg-white dark:bg-[#111722] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-2xl rounded-2xl overflow-hidden",
+  header: "bg-white dark:bg-[#111722] border-b border-slate-200 dark:border-white/10 px-6 py-4",
+  body: "!px-6 !pt-5 !pb-6",
+  close: "text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors",
+};
 
 interface BuildActionFooterProps {
   build: Record<string, ComponentData | ComponentData[] | null>;
@@ -16,141 +23,219 @@ interface BuildActionFooterProps {
   isManagerMode: boolean;
   isAiPending: boolean;
   isCheckingOut: boolean;
-  isSaving: boolean;
   analysis?: unknown;
-  favorites: FavoriteBuild[];
   onCategorySelect?: (category: string) => void;
   onAnalyze: () => void;
   onReserve: (onSuccess: () => void) => void;
   onAddPrebuilt: () => void;
-  onSave: (name: string) => Promise<boolean>;
-  onLoad: (favorite: FavoriteBuild) => void;
-  onClear: () => void;
 }
 
 export function BuildActionFooter({
   build, totalPrice, selectedParts, missingCategories, isManagerMode,
-  isAiPending, isCheckingOut, isSaving, analysis, favorites,
-  onCategorySelect, onAnalyze, onReserve, onAddPrebuilt, onSave, onLoad, onClear,
+  isAiPending, isCheckingOut, analysis,
+  onCategorySelect, onAnalyze, onReserve, onAddPrebuilt,
 }: BuildActionFooterProps) {
   const [reserveOpen, setReserveOpen] = useState(false);
-  const [clearOpen, setClearOpen] = useState(false);
-  const [saveOpen, setSaveOpen] = useState(false);
-  const [saveName, setSaveName] = useState("");
   const complete = missingCategories.length === 0;
 
-  const save = async () => {
-    if (await onSave(saveName)) {
-      setSaveOpen(false);
-      setSaveName("");
-    }
-  };
-
   return (
-    <div className="px-4 sm:px-5 pb-5 pt-2 space-y-3">
+    <div className="px-4 sm:px-5 pb-5 pt-2 space-y-2.5">
       {!complete && (
-        <Paper withBorder radius="md" p="sm" className="bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/25">
-          <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 text-xs font-bold uppercase tracking-wide">
-            <AlertTriangle className="w-4 h-4" /> Incomplete build
-          </div>
-          <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-            Complete these required parts before {isManagerMode ? "adding this prebuilt" : "analyzing or reserving"}:
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
+        <Paper
+          withBorder
+          radius="md"
+          p="sm"
+          className="bg-amber-50/80 dark:bg-amber-950/20 border-amber-200 dark:border-amber-500/25 shadow-xs"
+        >
+          <Group gap="xs" align="center" className="mb-1">
+            <ThemeIcon size="sm" radius="sm" color="yellow" variant="light">
+              <AlertTriangle size={14} />
+            </ThemeIcon>
+            <Text size="xs" fw={700} className="font-headline uppercase tracking-wider text-amber-800 dark:text-amber-300">
+              Incomplete Configuration
+            </Text>
+          </Group>
+          <Text size="xs" className="text-slate-600 dark:text-slate-400 leading-relaxed">
+            Complete the remaining {missingCategories.length} core {missingCategories.length === 1 ? "part" : "parts"} before {isManagerMode ? "saving this prebuilt" : "reserving"}:
+          </Text>
+          <Group gap="xs" mt="xs" wrap="wrap">
             {missingCategories.map((category) => (
-              <button
+              <Badge
                 key={category}
-                type="button"
+                component="button"
                 onClick={() => onCategorySelect?.(category)}
-                className="rounded-md border border-amber-300 dark:border-amber-500/35 bg-amber-100 dark:bg-amber-500/15 px-2 py-1 text-[10px] font-semibold text-amber-900 dark:text-amber-200 hover:bg-amber-200 dark:hover:bg-amber-500/25"
+                variant="light"
+                color="yellow"
+                size="sm"
+                radius="sm"
+                className="cursor-pointer hover:scale-105 active:scale-95 transition-transform font-semibold normal-case"
               >
                 + {category}
-              </button>
+              </Badge>
             ))}
-          </div>
+          </Group>
         </Paper>
       )}
 
       {isManagerMode ? (
-        <Button fullWidth size="md" radius="md" leftSection={<Sparkles size={17} />} disabled={!complete || isAiPending} loading={isAiPending} onClick={onAddPrebuilt}>
-          Add new prebuilt
+        <Button
+          fullWidth
+          size="md"
+          radius="md"
+          color="cyan"
+          leftSection={<Sparkles size={17} />}
+          disabled={!complete || isAiPending}
+          loading={isAiPending}
+          onClick={onAddPrebuilt}
+          className="font-headline font-bold text-xs uppercase tracking-wider shadow-sm shadow-cyan-500/20"
+        >
+          Add New Prebuilt
         </Button>
       ) : (
         <>
-          <Button fullWidth size="md" radius="md" color="teal" leftSection={<ShieldCheck size={18} />} disabled={!complete} onClick={() => setReserveOpen(true)}>
-            Reserve build
+          <Button
+            fullWidth
+            size="md"
+            radius="md"
+            color="teal"
+            leftSection={<ShieldCheck size={18} />}
+            disabled={!complete}
+            onClick={() => setReserveOpen(true)}
+            className={cn(
+              "font-headline font-bold text-xs uppercase tracking-wider transition-all duration-200",
+              complete
+                ? "shadow-md shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.99]"
+                : "opacity-60 cursor-not-allowed"
+            )}
+          >
+            Reserve Build
           </Button>
-          <Button fullWidth size="md" radius="md" variant="outline" color="cyan" leftSection={<Sparkles size={17} />} disabled={!complete} onClick={onAnalyze}>
-            {analysis ? "Refresh analysis" : "Analyze build"}
+          <Button
+            fullWidth
+            size="md"
+            radius="md"
+            variant="light"
+            color="cyan"
+            leftSection={<Sparkles size={17} />}
+            disabled={!complete}
+            onClick={onAnalyze}
+            className={cn(
+              "font-headline font-bold text-xs uppercase tracking-wider border border-cyan-500/30 dark:border-cyan-400/20 transition-all duration-200",
+              complete
+                ? "hover:border-cyan-500/50 hover:scale-[1.01] active:scale-[0.99] shadow-xs"
+                : "opacity-60 cursor-not-allowed"
+            )}
+          >
+            {analysis ? "Refresh Analysis" : "Analyze Build"}
           </Button>
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <Button variant="light" color="gray" radius="md" leftSection={<Heart size={15} />} disabled={selectedParts === 0} onClick={() => setSaveOpen(true)}>
-              Save
-            </Button>
-            <Menu width={250} position="bottom-end" withinPortal shadow="md">
-              <Menu.Target>
-                <Button variant="light" color="gray" radius="md" leftSection={<FolderOpen size={15} />} disabled={favorites.length === 0}>
-                  Load ({favorites.length})
-                </Button>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Label>Saved builds</Menu.Label>
-                {favorites.map((favorite) => (
-                  <Menu.Item key={favorite.id} onClick={() => onLoad(favorite)}>
-                    <span className="block truncate text-sm font-semibold">{favorite.name}</span>
-                    <span className="block text-xs text-slate-500 dark:text-slate-400">{favorite.parts.length} parts · {formatCurrency(favorite.totalPrice)}</span>
-                  </Menu.Item>
-                ))}
-              </Menu.Dropdown>
-            </Menu>
-          </div>
         </>
       )}
 
-      <Button fullWidth variant="subtle" color="red" size="xs" leftSection={<RotateCcw size={14} />} disabled={selectedParts === 0} onClick={() => setClearOpen(true)}>
-        Clear build
-      </Button>
-
-      <Modal opened={clearOpen} onClose={() => setClearOpen(false)} title="Clear your build?" centered radius="lg" overlayProps={{ backgroundOpacity: 0.65, blur: 5 }}>
-        <p className="text-sm text-slate-600 dark:text-slate-300">This removes every selected part from your current build.</p>
-        <div className="mt-5 flex justify-end gap-2">
-          <Button variant="default" onClick={() => setClearOpen(false)}>Cancel</Button>
-          <Button color="red" onClick={() => { onClear(); setClearOpen(false); }}>Clear build</Button>
-        </div>
-      </Modal>
-
-      {!isManagerMode && (
-        <>
-          <Modal opened={saveOpen} onClose={() => setSaveOpen(false)} title="Save build" centered radius="lg" overlayProps={{ backgroundOpacity: 0.65, blur: 5 }}>
-            <TextInput label="Build name" placeholder="My 4K build" value={saveName} onChange={(event) => setSaveName(event.currentTarget.value)} onKeyDown={(event) => { if (event.key === "Enter") void save(); }} radius="md" />
-            <div className="mt-5 flex justify-end gap-2">
-              <Button variant="default" onClick={() => setSaveOpen(false)}>Cancel</Button>
-              <Button disabled={!saveName.trim()} loading={isSaving} onClick={() => void save()}>Save build</Button>
+      {/* Confirm Reservation Modal */}
+      <Modal
+        opened={reserveOpen}
+        onClose={() => setReserveOpen(false)}
+        size="lg"
+        radius="lg"
+        centered
+        overlayProps={{ backgroundOpacity: 0.65, blur: 5 }}
+        title={
+          <Group gap="sm">
+            <ThemeIcon size="lg" color="teal" variant="light" radius="md" className="shadow-xs">
+              <ShieldCheck size={20} />
+            </ThemeIcon>
+            <div>
+              <Title order={4} className="font-headline text-base font-bold text-slate-900 dark:text-white uppercase tracking-tight">
+                Confirm Reservation
+              </Title>
+              <Text size="xs" c="dimmed">
+                Review your hardware setup before locking in your reservation.
+              </Text>
             </div>
-          </Modal>
-
-          <Modal opened={reserveOpen} onClose={() => setReserveOpen(false)} title="Confirm reservation" centered radius="lg" overlayProps={{ backgroundOpacity: 0.65, blur: 5 }}>
-            <p className="text-sm text-slate-600 dark:text-slate-300">Review your selected parts before reserving.</p>
-            <div className="my-4 max-h-64 space-y-2 overflow-y-auto border-y border-slate-200 dark:border-white/10 py-3">
+          </Group>
+        }
+        classNames={UNIFIED_MODAL_CLASSNAMES}
+      >
+        <div className="space-y-4">
+          {/* Scrollable Parts List with Mantine themed scrollbar */}
+          <Paper withBorder radius="md" className="overflow-hidden border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.01]">
+            <div className="px-4 py-2.5 bg-slate-100/70 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/10 flex justify-between items-center text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <span>Component</span>
+              <span>Price</span>
+            </div>
+            <ScrollArea.Autosize mah={260} type="auto" offsetScrollbars scrollbarSize={6} className="divide-y divide-slate-100 dark:divide-white/5">
               {reviewCategories.flatMap((category) => {
                 const value = build[category];
                 const parts = Array.isArray(value) ? value : value ? [value] : [];
                 return parts.map((part, index) => (
-                  <div key={`${category}-${index}`} className="flex justify-between gap-3 text-xs">
-                    <span className="min-w-0 truncate text-slate-600 dark:text-slate-300">{category}: {part.model}</span>
-                    <span className="shrink-0 font-semibold">{formatCurrency(part.price || 0)}</span>
+                  <div
+                    key={`${category}-${index}`}
+                    className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-slate-100/60 dark:hover:bg-white/[0.02] transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Badge size="xs" variant="light" color="cyan" radius="sm" fw={700} className="shrink-0 uppercase text-[9px] font-mono tracking-wider">
+                        {category}
+                      </Badge>
+                      <span className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">
+                        {part.model}
+                      </span>
+                    </div>
+                    <span className="shrink-0 font-mono text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                      {formatCurrency(part.price || 0)}
+                    </span>
                   </div>
                 ));
               })}
-            </div>
-            <div className="flex justify-between font-bold"><span>Total value</span><span>{formatCurrency(totalPrice)}</span></div>
-            <div className="mt-5 flex justify-end gap-2">
-              <Button variant="default" onClick={() => setReserveOpen(false)}>Cancel</Button>
-              <Button color="teal" loading={isCheckingOut} onClick={() => onReserve(() => setReserveOpen(false))}>Confirm reservation</Button>
-            </div>
-          </Modal>
-        </>
-      )}
+            </ScrollArea.Autosize>
+          </Paper>
+
+          {/* Pricing & Reservation Summary */}
+          <Paper withBorder radius="md" p="md" className="bg-slate-50/80 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 shadow-xs">
+            <Group justify="space-between" align="center">
+              <div>
+                <Text size="xs" fw={700} className="font-headline uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Total Reservation Value
+                </Text>
+                <Text size="xs" c="dimmed">
+                  {selectedParts} parts verified for reservation
+                </Text>
+              </div>
+              <Text fw={900} className="font-headline text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                {formatCurrency(totalPrice)}
+              </Text>
+            </Group>
+          </Paper>
+
+          <Text size="xs" c="dimmed" className="leading-relaxed">
+            Reservations hold selected inventory for pickup or store checkout. No immediate online charge is processed until verified at the counter.
+          </Text>
+
+          <Group justify="flex-end" gap="sm" mt="md" pt="sm" className="border-t border-slate-100 dark:border-white/5">
+            <Button
+              variant="default"
+              size="sm"
+              radius="md"
+              onClick={() => setReserveOpen(false)}
+              className="font-medium text-xs border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 transition-all active:scale-[0.98]"
+            >
+              Cancel
+            </Button>
+            <Button
+              color="teal"
+              size="sm"
+              radius="md"
+              loading={isCheckingOut}
+              leftSection={<ShieldCheck size={16} />}
+              onClick={() => onReserve(() => setReserveOpen(false))}
+              className="font-headline font-bold text-xs uppercase tracking-wider shadow-md shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.99] transition-all"
+            >
+              Confirm Reservation
+            </Button>
+          </Group>
+        </div>
+      </Modal>
     </div>
   );
 }
+
+

@@ -140,6 +140,7 @@ export function ReservationsTab({
     const [orderCurrentPage, setOrderCurrentPage] = useState(1);
     const [orderItemsPerPage, setOrderItemsPerPage] = useState(9); // 3x3 grid default
     const [expandedCardIds, setExpandedCardIds] = useState<Record<string, boolean>>({});
+    const [showAllSpecs, setShowAllSpecs] = useState(false);
 
     // Delete confirmation modal state
     const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
@@ -284,11 +285,18 @@ export function ReservationsTab({
 
     const orderTotalPages = Math.ceil(filteredOrders.length / orderItemsPerPage) || 1;
 
+    // Toggle all cards specs breakdown
+    const toggleShowAllSpecs = () => {
+        const next = !showAllSpecs;
+        setShowAllSpecs(next);
+        setExpandedCardIds({});
+    };
+
     // Toggle card component breakdown expand
     const toggleExpand = (orderId: string) => {
         setExpandedCardIds(prev => ({
             ...prev,
-            [orderId]: !prev[orderId]
+            [orderId]: !(prev[orderId] !== undefined ? prev[orderId] : showAllSpecs)
         }));
     };
 
@@ -888,6 +896,19 @@ export function ReservationsTab({
                             }}
                         />
 
+                        {/* Global Show/Hide Specs Toggle Button */}
+                        <Button
+                            variant={showAllSpecs ? "light" : "default"}
+                            color={showAllSpecs ? "cyan" : "gray"}
+                            size="sm"
+                            radius="md"
+                            onClick={toggleShowAllSpecs}
+                            leftSection={<Layers size={14} className={showAllSpecs ? "text-cyan-500" : "text-slate-400"} />}
+                            className="text-xs font-bold shrink-0"
+                        >
+                            {showAllSpecs ? "Hide Specs" : "Show Specs"}
+                        </Button>
+
                         {/* Reset Filters button if any filter is active */}
                         {(statusFilter !== 'all' || searchQuery.trim() !== '') && (
                             <Button
@@ -909,39 +930,6 @@ export function ReservationsTab({
                 </div>
             </Paper>
 
-            {/* Results Count Summary */}
-            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium px-1">
-                <span>
-                    Showing <strong className="text-slate-900 dark:text-white">{filteredOrders.length}</strong> of{' '}
-                    <strong className="text-slate-900 dark:text-white">{orders?.length || 0}</strong> reservations
-                    {statusFilter !== 'all' && (
-                        <span className="ml-1 text-cyan-600 dark:text-cyan-400 font-bold uppercase">
-                            (Filtered: {statusFilter})
-                        </span>
-                    )}
-                </span>
-
-                <div className="flex items-center gap-2">
-                    <span>Cards per page:</span>
-                    <Select
-                        value={orderItemsPerPage.toString()}
-                        onChange={(val) => val && setOrderItemsPerPage(Number(val))}
-                        data={[
-                            { label: '6', value: '6' },
-                            { label: '9', value: '9' },
-                            { label: '12', value: '12' },
-                            { label: '24', value: '24' },
-                        ]}
-                        size="xs"
-                        radius="md"
-                        className="w-[68px]"
-                        classNames={{
-                            input: "bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-white/10 text-xs font-bold text-center h-7"
-                        }}
-                    />
-                </div>
-            </div>
-
             {/* SECTION 3: Cards Grid */}
             {ordersLoading ? (
                 <div className="py-20 text-center space-y-3">
@@ -954,10 +942,11 @@ export function ReservationsTab({
                 <SimpleGrid cols={{ base: 1, md: 2, xl: 3 }} spacing="lg">
                     {paginatedOrders.map(order => {
                         const currentStatus = order.status || 'pending';
-                        const cfg = STATUS_CONFIG[currentStatus as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
                         const isPrebuilt = (order as any).type === 'prebuilt';
                         const isPending = currentStatus === 'pending';
-                        const isExpanded = !!expandedCardIds[order.id];
+                        const isExpanded = expandedCardIds[order.id] !== undefined
+                            ? expandedCardIds[order.id]
+                            : showAllSpecs;
 
                         const dateFormatted = order.createdAt?.toDate
                             ? order.createdAt.toDate().toLocaleDateString(undefined, { dateStyle: 'medium' })
@@ -970,31 +959,30 @@ export function ReservationsTab({
                                 key={order.id}
                                 withBorder
                                 radius="lg"
-                                p="lg"
+                                p="md"
                                 className={cn(
-                                    "flex flex-col justify-between transition-all duration-300 relative overflow-hidden bg-white dark:bg-[#111722]",
-                                    cfg.borderClass,
-                                    cfg.cardHover,
-                                    isPending && "bg-gradient-to-b from-yellow-500/[0.04] to-transparent",
+                                    "flex flex-col justify-between transition-all duration-300 relative group",
+                                    "bg-white/80 dark:bg-[#141a23]/90 hover:shadow-md hover:-translate-y-1",
+                                    "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
                                     currentStatus === 'cancelled' && "opacity-75 grayscale-[0.3]"
                                 )}
                             >
-                                <div className="space-y-4">
+                                <div className="space-y-3.5">
                                     {/* Card Header: Type Icon, Email, Status Badge, and Delete Button */}
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="flex items-center gap-3 min-w-0">
                                             <ThemeIcon
-                                                size={40}
+                                                size={38}
                                                 radius="md"
                                                 color={isPrebuilt ? "cyan" : isPending ? "yellow" : "gray"}
                                                 variant="light"
                                                 className="shrink-0"
                                             >
                                                 {isPrebuilt ? (
-                                                    <Monitor className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                                                    <Monitor className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
                                                 ) : (
                                                     <Package className={cn(
-                                                        "h-5 w-5",
+                                                        "h-4 w-4",
                                                         isPending ? "text-yellow-600 dark:text-yellow-400" : "text-slate-600 dark:text-slate-400"
                                                     )} />
                                                 )}
@@ -1002,7 +990,7 @@ export function ReservationsTab({
 
                                             <div className="min-w-0">
                                                 <Tooltip label={order.userEmail} withArrow position="top">
-                                                    <Text className="font-headline font-bold text-sm text-slate-900 dark:text-white truncate">
+                                                    <Text fw={700} size="sm" className="font-headline text-slate-900 dark:text-slate-100 truncate leading-snug">
                                                         {order.userEmail}
                                                     </Text>
                                                 </Tooltip>
@@ -1010,33 +998,35 @@ export function ReservationsTab({
                                                 <div className="flex flex-wrap items-center gap-1.5 mt-1">
                                                     {isPrebuilt ? (
                                                         <Badge
-                                                            variant="outline"
+                                                            variant="light"
                                                             color="cyan"
                                                             size="xs"
-                                                            className="text-[9px] uppercase font-bold tracking-wider"
+                                                            radius="sm"
+                                                            className="font-semibold text-[9px] uppercase tracking-wide"
                                                         >
                                                             Prebuilt
                                                         </Badge>
                                                     ) : (
                                                         <Badge
-                                                            variant="outline"
+                                                            variant="light"
                                                             color="gray"
                                                             size="xs"
-                                                            className="text-[9px] uppercase font-bold tracking-wider"
+                                                            radius="sm"
+                                                            className="font-semibold text-[9px] uppercase tracking-wide"
                                                         >
                                                             Custom Build
                                                         </Badge>
                                                     )}
 
-                                                    {/* PENDING IS YELLOW */}
                                                     {isPending && (
                                                         <Badge
                                                             color="yellow"
-                                                            variant="filled"
+                                                            variant="light"
                                                             size="xs"
-                                                            className="text-[9px] font-bold uppercase tracking-wider text-slate-950 bg-yellow-400 animate-pulse"
+                                                            radius="sm"
+                                                            className="text-[9px] font-bold uppercase tracking-wide"
                                                         >
-                                                            NEW
+                                                            New
                                                         </Badge>
                                                     )}
                                                 </div>
@@ -1060,12 +1050,17 @@ export function ReservationsTab({
                                     </div>
 
                                     {/* Card Metadata: Rig / ID and Date */}
-                                    <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/5 space-y-1">
+                                    <Paper
+                                        withBorder
+                                        radius="md"
+                                        p="xs"
+                                        className="bg-slate-50/70 dark:bg-white/[0.02] border-slate-200/60 dark:border-white/5 space-y-1.5"
+                                    >
                                         <div className="flex items-center justify-between text-xs font-mono">
-                                            <span className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
-                                                {isPrebuilt ? "Rig Identity" : "Build Spec"}
+                                            <span className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                                                {isPrebuilt ? "Rig Name" : "Build ID"}
                                             </span>
-                                            <span className="text-slate-900 dark:text-slate-200 font-bold truncate max-w-[170px]">
+                                            <span className="text-slate-900 dark:text-slate-200 font-bold truncate max-w-[170px] text-xs">
                                                 {isPrebuilt
                                                     ? ((order as any).prebuiltName || 'Custom Prebuilt')
                                                     : `#${order.id.substring(0, 10).toUpperCase()}`
@@ -1074,29 +1069,29 @@ export function ReservationsTab({
                                         </div>
 
                                         <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                                            <span className="flex items-center gap-1.5 font-medium">
-                                                <Calendar className="h-3 w-3" />
+                                            <span className="flex items-center gap-1.5 font-medium text-[11px]">
+                                                <Calendar className="h-3 w-3 text-slate-400" />
                                                 <span>{dateFormatted}</span>
                                             </span>
-                                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                            <span className="font-semibold text-slate-700 dark:text-slate-300 text-[11px]">
                                                 {order.items?.length || 0} Components
                                             </span>
                                         </div>
-                                    </div>
+                                    </Paper>
 
                                     {/* Amount and Status Change Dropdown */}
-                                    <div className="pt-3 border-t border-slate-200 dark:border-white/10 flex items-center justify-between gap-3">
+                                    <div className="pt-2.5 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-between gap-3">
                                         <div>
-                                            <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-500 dark:text-slate-400 text-[10px]">
-                                                Total Amount
+                                            <Text size="xs" c="dimmed" tt="uppercase" fw={600} className="tracking-wider text-[10px]">
+                                                Total Price
                                             </Text>
-                                            <Text className="text-xl font-headline font-bold text-emerald-600 dark:text-emerald-400">
+                                            <Text size="lg" fw={700} className="text-slate-900 dark:text-slate-100 font-mono leading-tight">
                                                 {formatCurrency(order.totalPrice)}
                                             </Text>
                                         </div>
 
-                                        {/* Status Dropdown - Color Coded (Pending is Yellow) */}
-                                        <div className="w-[155px] shrink-0">
+                                        {/* Status Dropdown - Clean Mantine Select with Color Accents */}
+                                        <div className="w-[145px] shrink-0">
                                             <Select
                                                 value={currentStatus}
                                                 onChange={(val) => val && onUpdateOrder(order.id, val as Order['status'])}
@@ -1110,11 +1105,11 @@ export function ReservationsTab({
                                                 radius="md"
                                                 classNames={{
                                                     input: cn(
-                                                        "text-[10px] font-headline font-bold uppercase tracking-wider h-8 pl-2.5 pr-6 transition-colors truncate",
-                                                        isPending && "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/50 hover:border-yellow-500 font-extrabold",
-                                                        currentStatus === 'building' && "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/50 hover:border-blue-500",
-                                                        currentStatus === 'finished building' && "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/50 hover:border-emerald-500",
-                                                        currentStatus === 'cancelled' && "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/50 hover:border-rose-500"
+                                                        "text-[10px] font-bold uppercase tracking-wider h-7 pl-2.5 pr-6 transition-colors font-mono",
+                                                        isPending && "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 hover:border-amber-500",
+                                                        currentStatus === 'building' && "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30 hover:border-blue-500",
+                                                        currentStatus === 'finished building' && "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 hover:border-emerald-500",
+                                                        currentStatus === 'cancelled' && "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30 hover:border-rose-500"
                                                     )
                                                 }}
                                             />
@@ -1122,51 +1117,60 @@ export function ReservationsTab({
                                     </div>
 
                                     {/* Expandable Components Breakdown Drawer */}
-                                    <div className="pt-1">
+                                    <div className="pt-0.5">
                                         <Button
                                             variant="subtle"
                                             color="gray"
                                             size="xs"
+                                            radius="md"
                                             fullWidth
                                             onClick={() => toggleExpand(order.id)}
+                                            leftSection={<Layers size={13} className="text-slate-400 group-hover:text-cyan-500 transition-colors" />}
                                             rightSection={
                                                 <ChevronDown
+                                                    size={14}
                                                     className={cn(
-                                                        "h-3.5 w-3.5 transition-transform duration-200",
+                                                        "transition-transform duration-200 text-slate-400",
                                                         isExpanded && "rotate-180"
                                                     )}
                                                 />
                                             }
-                                            className="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white h-7"
+                                            className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white h-7 mt-0.5"
                                         >
-                                            {isExpanded ? "Hide Components" : `View Components (${order.items?.length || 0})`}
+                                            {isExpanded ? "Hide Specs" : `Show Specs (${order.items?.length || 0})`}
                                         </Button>
 
                                         <Collapse in={isExpanded}>
-                                            <div className="mt-2.5 p-2.5 rounded-lg bg-slate-50/90 dark:bg-black/40 border border-slate-200 dark:border-white/5 space-y-1.5 max-h-48 overflow-y-auto">
-                                                <div className="flex justify-between items-center px-1 pb-1 border-b border-slate-200 dark:border-white/5 text-[9px] uppercase tracking-wider font-bold text-slate-400">
+                                            <Paper
+                                                withBorder
+                                                radius="md"
+                                                p="xs"
+                                                mt="xs"
+                                                className="bg-slate-50/70 dark:bg-white/[0.02] border-slate-200/60 dark:border-white/5 space-y-1 max-h-52 overflow-y-auto"
+                                            >
+                                                <div className="flex justify-between items-center px-1 pb-1 border-b border-slate-200/70 dark:border-white/5 text-[9px] uppercase tracking-wider font-bold text-slate-400">
                                                     <span>Component</span>
                                                     <span>Price</span>
                                                 </div>
                                                 {order.items?.map((item, idx) => (
                                                     <div
                                                         key={`${order.id}-item-${idx}`}
-                                                        className="flex justify-between items-start text-xs py-1 border-t border-slate-200/50 dark:border-white/[0.03] first:border-t-0"
+                                                        className="flex justify-between items-start text-xs py-1 border-t border-slate-200/40 dark:border-white/[0.03] first:border-t-0"
                                                     >
                                                         <div className="flex flex-col pr-2 min-w-0">
-                                                            <span className="text-[8px] font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-tighter">
+                                                            <span className="text-[9px] font-semibold text-cyan-600 dark:text-cyan-400 uppercase tracking-wide">
                                                                 {(item as any).category || 'Part'}
                                                             </span>
                                                             <span className="font-medium text-slate-800 dark:text-slate-200 text-xs truncate">
                                                                 {item.name}
                                                             </span>
                                                         </div>
-                                                        <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300 shrink-0">
+                                                        <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300 shrink-0">
                                                             {formatCurrency(item.price)}
                                                         </span>
                                                     </div>
                                                 ))}
-                                            </div>
+                                            </Paper>
                                         </Collapse>
                                     </div>
                                 </div>
@@ -1246,8 +1250,10 @@ export function ReservationsTab({
                 radius="lg"
                 overlayProps={{ backgroundOpacity: 0.6, blur: 4 }}
                 classNames={{
-                    content: "bg-white dark:bg-[#141a23] border border-slate-200 dark:border-white/10 p-2 shadow-2xl",
-                    header: "bg-transparent border-b border-slate-200 dark:border-white/10 pb-3",
+                    content: "bg-white dark:bg-[#111722] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-2xl rounded-2xl overflow-hidden",
+                    header: "bg-white dark:bg-[#111722] border-b border-slate-200 dark:border-white/10 px-6 py-4",
+                    body: "!px-6 !pt-5 !pb-6",
+                    close: "text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors",
                 }}
             >
                 <div className="space-y-4 pt-2">

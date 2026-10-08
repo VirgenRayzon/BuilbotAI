@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useId } from "react";
 import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical as CaseIcon, Wind, Monitor, Keyboard, Mouse, Headphones, ChevronDown, HardDrive } from "lucide-react";
+import { Paper } from "@mantine/core";
 import { Separator } from "@/components/ui/separator";
 import { cn, formatCurrency } from "@/lib/utils";
 import { ComponentData } from "@/lib/types";
@@ -305,16 +306,32 @@ export function BuildContent({
       </div>
 
       <div className="pt-4 flex-none space-y-4">
-        <Separator className="opacity-50" />
+        <div className="h-px w-full bg-slate-200 dark:bg-white/10" />
         
         {totalWattage > 0 && (
           <PowerMeter value={totalWattage} max={psuWattage} className="mt-2" />
         )}
 
-        <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-white/10">
-          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Total value</span>
-          <span className="text-2xl font-bold font-headline text-slate-950 dark:text-slate-100 tracking-tight">{formatCurrency(totalPrice)}</span>
-        </div>
+        <Paper
+          withBorder
+          radius="md"
+          p="sm"
+          className="bg-slate-50/70 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 shadow-xs"
+        >
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="block text-[11px] font-bold font-headline uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Total Value
+              </span>
+              <span className="block text-[10px] text-slate-400 dark:text-slate-500">
+                Estimated configuration cost
+              </span>
+            </div>
+            <span className="text-2xl font-black font-headline text-slate-900 dark:text-white tracking-tight tabular-nums">
+              {formatCurrency(totalPrice)}
+            </span>
+          </div>
+        </Paper>
       </div>
     </div>
   );

@@ -3,10 +3,10 @@
 This document serves as the "source of truth" for the visual identity, copywriting style, and design language of BuildbotAI.
 
 ## 1. Visual Theme & Atmosphere
-The design follows a **Sleek Tech & Immersive** aesthetic. The atmosphere is **technical yet premium**, utilizing high-contrast elements, refined glassmorphism, and vibrant accents to create a trustworthy, high-performance experience.
-- **Mood**: Precise, Professional, Modern SaaS, Trustworthy, and Accessible.
-- **Density**: Comfortable with ample whitespace to ensure focus on complex hardware specifications.
-- **Visual Styles**: Clean glassmorphism (`backdrop-blur-xl`), subtle borders, modern surfaces, and purposeful lighting. No tacky neon top stripes on cards.
+The design follows a **Minimalistic, Sleek Tech & Immersive** aesthetic. The primary visual goal is to maintain a **clean, minimalistic, and clutter-free interface** that strictly aligns with Mantine UI aesthetics for a unified look and feel across the application.
+- **Mood**: Minimalistic, Precise, Professional, Modern SaaS, Trustworthy, and Accessible.
+- **Density**: Comfortable and uncluttered with intentional whitespace to ensure focus on complex hardware configurations without visual noise.
+- **Visual Styles**: Minimalistic card surfaces (`Paper`), subtle borders, refined glassmorphism (`backdrop-blur-xl`), and purposeful lighting. No tacky neon top stripes on cards.
 
 ## 2. Color Palette & Roles
 The system uses a curated palette of tech-focused colors:
@@ -43,7 +43,12 @@ BuildbotAI must be 100% legible, accessible, and aesthetically polished in **BOT
 
 ## 4. Mantine UI Integration & Aesthetic Directives
 
-Mantine UI (`@mantine/core` v8+) is an official design standard for BuildbotAI components, modals, inputs, and interactive surfaces.
+Mantine UI (`@mantine/core` v8+) is the official design standard for BuildbotAI components, modals, inputs, and interactive surfaces.
+
+### Design Standard & Component Creation Workflow:
+- **Inspect Mantine UI Patterns First**: Before designing or assembling any new UI component, inspect existing Mantine UI patterns to preserve visual harmony.
+- **Leverage Mantine Skills**: When building complex custom dropdowns, forms, or compound components, consult the Mantine skills (`mantine-custom-components`, `mantine-form`, `mantine-combobox`).
+- **Minimalistic First**: Keep the interface clean, functional, and uncluttered. Avoid excessive visual embellishments.
 
 1. **Surface Primitives (`Paper`, `Card`, `Modal`)**:
    - Use Mantine `Paper` with `radius="lg"`, `withBorder`, and consistent padding (`p="lg"` or `p="xl"`).

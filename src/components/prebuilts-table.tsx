@@ -1,18 +1,30 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { cn, formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
 import {
   Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+  Button,
+  Badge,
+  ActionIcon,
+  Checkbox,
+  Text,
+  Group,
+  Stack,
+  Box,
+  Paper,
+} from "@mantine/core";
 import Image from "next/image";
-import { Trash2, ShieldCheck, ChevronDown, ChevronUp, Archive, RotateCcw } from "lucide-react";
-import type { PrebuiltSystem } from "@/lib/types";
+import {
+  Trash2,
+  ShieldCheck,
+  ChevronDown,
+  ChevronUp,
+  Archive,
+  RotateCcw,
+  AlertCircle,
+} from "lucide-react";
+import type { PrebuiltSystem, Part } from "@/lib/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,21 +37,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { getMissingParts } from "@/lib/prebuilt-utils";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { AlertCircle } from "lucide-react";
+import { getMissingParts, checkSystemStock } from "@/lib/prebuilt-utils";
 import { PrebuiltCardSpecs } from "./prebuilt-card-specs";
 import { AddPrebuiltDialog, type AddPrebuiltFormSchema } from "./add-prebuilt-dialog";
-import type { Part } from "@/lib/types";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useFirestore } from "@/firebase";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
-import { checkSystemStock } from "@/lib/prebuilt-utils";
 import { useSiteSettings } from "@/context/site-settings-context";
 
 interface PrebuiltsTableProps {
@@ -58,52 +60,58 @@ interface PrebuiltsTableProps {
   isArchiveView?: boolean;
 }
 
-export function PrebuiltsTable({ 
-  systems, 
-  onDelete, 
+export function PrebuiltsTable({
+  systems,
+  onDelete,
   onArchive,
-  onUpdate, 
-  parts = [], 
-  showActions = true, 
-  expandedIds = [], 
+  onUpdate,
+  parts = [],
+  showActions = true,
+  expandedIds = [],
   onToggleExpand = () => {},
   selectedIds = [],
   onToggleSelection = () => {},
   onToggleSelectAll = () => {},
   isSuperAdmin = false,
-  isArchiveView = false
+  isArchiveView = false,
 }: PrebuiltsTableProps) {
-  const { toast } = useToast();
-  const allSelected = systems.length > 0 && systems.every(s => selectedIds.includes(s.id));
+  const allSelected = systems.length > 0 && systems.every((s) => selectedIds.includes(s.id));
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-[40px]">
-            {showActions && (
-              <Checkbox 
+    <Table highlightOnHover verticalSpacing="sm" horizontalSpacing="md">
+      <Table.Thead className="bg-slate-50 dark:bg-white/[0.03] border-b border-slate-200/80 dark:border-white/10">
+        <Table.Tr>
+          {showActions && (
+            <Table.Th className="w-[40px]">
+              <Checkbox
                 checked={allSelected}
-                onCheckedChange={() => onToggleSelectAll()}
+                onChange={() => onToggleSelectAll()}
+                size="xs"
               />
-            )}
-          </TableHead>
-          <TableHead className="w-[40px]"></TableHead>
-          <TableHead>System Name</TableHead>
-          <TableHead>Tier</TableHead>
-          <TableHead className="text-right">Price</TableHead>
-          <TableHead className="w-[100px]"></TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
+            </Table.Th>
+          )}
+          <Table.Th className="w-[40px]"></Table.Th>
+          <Table.Th className="text-[11px] font-semibold tracking-wider uppercase text-slate-500">
+            System Name
+          </Table.Th>
+          <Table.Th className="text-[11px] font-semibold tracking-wider uppercase text-slate-500">
+            Tier
+          </Table.Th>
+          <Table.Th className="text-right text-[11px] font-semibold tracking-wider uppercase text-slate-500">
+            Price
+          </Table.Th>
+          <Table.Th className="w-[120px] text-right"></Table.Th>
+        </Table.Tr>
+      </Table.Thead>
+      <Table.Tbody>
         {systems.map((system) => (
-          <PrebuiltTableRow 
-            key={system.id} 
-            system={system} 
-            onDelete={onDelete} 
+          <PrebuiltTableRow
+            key={system.id}
+            system={system}
+            onDelete={onDelete}
             onArchive={onArchive}
-            onUpdate={onUpdate} 
-            parts={parts} 
+            onUpdate={onUpdate}
+            parts={parts}
             showActions={showActions}
             isExpanded={expandedIds.includes(system.id)}
             onToggleExpand={() => onToggleExpand(system.id)}
@@ -113,49 +121,49 @@ export function PrebuiltsTable({
             isArchiveView={isArchiveView}
           />
         ))}
-      </TableBody>
+      </Table.Tbody>
     </Table>
   );
 }
 
-function PrebuiltTableRow({ 
-  system, 
-  onDelete, 
+function PrebuiltTableRow({
+  system,
+  onDelete,
   onArchive,
-  onUpdate, 
-  parts, 
+  onUpdate,
+  parts,
   showActions,
   isExpanded,
   onToggleExpand,
   isSelected,
   onToggleSelection,
   isSuperAdmin,
-  isArchiveView
-}: { 
-  system: PrebuiltSystem, 
-  onDelete?: (id: string) => void, 
-  onArchive?: (id: string, isArchived: boolean) => void,
-  onUpdate?: any, 
-  parts: Part[], 
-  showActions: boolean,
-  isExpanded: boolean,
-  onToggleExpand: () => void,
-  isSelected: boolean,
-  onToggleSelection: (id: string) => void,
-  isSuperAdmin: boolean,
-  isArchiveView: boolean
+  isArchiveView,
+}: {
+  system: PrebuiltSystem;
+  onDelete?: (id: string) => void;
+  onArchive?: (id: string, isArchived: boolean) => void;
+  onUpdate?: any;
+  parts: Part[];
+  showActions: boolean;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  isSelected: boolean;
+  onToggleSelection: (id: string) => void;
+  isSuperAdmin: boolean;
+  isArchiveView: boolean;
 }) {
   const { shouldCorruptImages } = useSiteSettings();
   const { toast } = useToast();
   const firestore = useFirestore();
-  const [stockStatus, setStockStatus] = useState<'loading' | 'in-stock' | 'out-of-stock'>('loading');
-  
+  const [stockStatus, setStockStatus] = useState<"loading" | "in-stock" | "out-of-stock">("loading");
+
   const missingParts = getMissingParts(system);
   const isComplete = missingParts.length === 0;
 
   useEffect(() => {
     if (!firestore || !isComplete) {
-      setStockStatus('out-of-stock');
+      setStockStatus("out-of-stock");
       return;
     }
 
@@ -164,9 +172,14 @@ function PrebuiltTableRow({
         const components: Record<string, { stock: number } | null> = {};
         const promises = Object.entries(system.components).map(async ([category, id]) => {
           const collectionMap: Record<string, string> = {
-            cpu: 'CPU', gpu: 'GPU', motherboard: 'Motherboard',
-            ram: 'RAM', storage: 'Storage', psu: 'PSU',
-            case: 'Case', cooler: 'Cooler',
+            cpu: "CPU",
+            gpu: "GPU",
+            motherboard: "Motherboard",
+            ram: "RAM",
+            storage: "Storage",
+            psu: "PSU",
+            case: "Case",
+            cooler: "Cooler",
           };
           const collectionName = collectionMap[category] || category;
           const partId = Array.isArray(id) ? id[0] : id;
@@ -187,10 +200,10 @@ function PrebuiltTableRow({
         });
         await Promise.all(promises);
         const inStock = checkSystemStock(components);
-        setStockStatus(inStock ? 'in-stock' : 'out-of-stock');
+        setStockStatus(inStock ? "in-stock" : "out-of-stock");
       } catch (e) {
         console.error("Stock check error:", e);
-        setStockStatus('out-of-stock');
+        setStockStatus("out-of-stock");
       }
     };
 
@@ -199,47 +212,51 @@ function PrebuiltTableRow({
 
   const handleReserve = (systemName: string) => {
     toast({
-      title: 'Reservation Initiated',
-      description: `${systemName} has been reserved.`,
+      title: "Reservation Initiated",
+      description: `${systemName} has been recorded. Check your profile for details.`,
     });
-  }
+  };
 
   return (
     <>
-      <TableRow 
+      <Table.Tr
         className={cn(
-          "group transition-colors cursor-pointer",
-          isExpanded ? "bg-muted/30" : "hover:bg-muted/50",
-          isSelected && "bg-muted/50"
+          "transition-colors cursor-pointer",
+          isExpanded ? "bg-slate-50/50 dark:bg-white/[0.02]" : "hover:bg-slate-50/80 dark:hover:bg-white/[0.03]",
+          isSelected && "bg-cyan-50/30 dark:bg-cyan-950/20"
         )}
         onClick={() => onToggleExpand()}
       >
-        <TableCell onClick={(e) => e.stopPropagation()}>
-          {showActions && (
-            <Checkbox 
+        {showActions && (
+          <Table.Td onClick={(e) => e.stopPropagation()}>
+            <Checkbox
               checked={isSelected}
-              onCheckedChange={() => onToggleSelection(system.id)}
+              onChange={() => onToggleSelection(system.id)}
+              size="xs"
             />
-          )}
-        </TableCell>
-        <TableCell>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
-        </TableCell>
-        <TableCell className="font-medium p-4">
-          <div className="flex items-center gap-4">
-            <div className="relative w-14 h-14 rounded-md overflow-hidden bg-muted flex-shrink-0 border shadow-sm group-hover:border-primary/30 transition-colors">
+          </Table.Td>
+        )}
+
+        <Table.Td>
+          <ActionIcon variant="subtle" size="sm" color="gray">
+            {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+          </ActionIcon>
+        </Table.Td>
+
+        {/* System identity */}
+        <Table.Td>
+          <Group gap="sm" wrap="nowrap">
+            <Box className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-slate-200/70 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.03]">
               <Image
                 src={getOptimizedStorageUrl(system.imageUrl, shouldCorruptImages) || "/placeholder-system.png"}
                 alt={system.name}
                 fill
                 unoptimized
                 sizes="64px"
-                className="object-cover group-hover:scale-110 transition-transform duration-500"
+                className="object-cover"
               />
-            </div>
-            <div className="flex-1">
+            </Box>
+            <Stack gap={2} className="min-w-0">
               {onUpdate ? (
                 <div onClick={(e) => e.stopPropagation()}>
                   <AddPrebuiltDialog
@@ -247,49 +264,99 @@ function PrebuiltTableRow({
                     parts={parts}
                     onSave={(data) => onUpdate(system.id, data)}
                   >
-                    <p className="font-headline text-base group-hover:text-primary transition-colors cursor-pointer hover:underline underline-offset-4 decoration-primary/30 italic">
+                    <Text
+                      size="sm"
+                      fw={600}
+                      className="cursor-pointer hover:text-cyan-500 transition-colors line-clamp-1"
+                    >
                       {system.name}
-                    </p>
+                    </Text>
                   </AddPrebuiltDialog>
                 </div>
               ) : (
-                <p className="font-headline text-base group-hover:text-primary transition-colors">{system.name}</p>
+                <Text size="sm" fw={600} className="line-clamp-1">
+                  {system.name}
+                </Text>
               )}
-              <p className="text-xs text-muted-foreground line-clamp-1 max-w-[400px]">
+              <Text size="xs" c="dimmed" lineClamp={1}>
                 {system.description}
-              </p>
-            </div>
-          </div>
-        </TableCell>
-        <TableCell>
-          <Badge variant="secondary" className="font-medium bg-secondary/50">{system.tier}</Badge>
-        </TableCell>
-        <TableCell className="text-right font-headline font-bold text-lg">
-          {formatCurrency(system.price)}
-        </TableCell>
-        <TableCell onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center gap-2">
+              </Text>
+            </Stack>
+          </Group>
+        </Table.Td>
+
+        {/* Tier & Stock badge */}
+        <Table.Td>
+          <Group gap={6}>
+            <Badge
+              size="xs"
+              variant="light"
+              color={
+                system.tier === "High-End" || system.tier === "Workstation"
+                  ? "cyan"
+                  : system.tier === "Mid-Range"
+                  ? "blue"
+                  : "gray"
+              }
+              radius="sm"
+            >
+              {system.tier}
+            </Badge>
+
+            {!showActions && (
+              <Badge
+                variant="dot"
+                size="xs"
+                color={
+                  stockStatus === "in-stock"
+                    ? "teal"
+                    : stockStatus === "loading"
+                    ? "gray"
+                    : "red"
+                }
+              >
+                {stockStatus === "in-stock"
+                  ? "In Stock"
+                  : stockStatus === "loading"
+                  ? "Checking"
+                  : "Out of Stock"}
+              </Badge>
+            )}
+          </Group>
+        </Table.Td>
+
+        {/* Price */}
+        <Table.Td className="text-right">
+          <Text size="sm" fw={700} className="font-mono">
+            {formatCurrency(system.price)}
+          </Text>
+        </Table.Td>
+
+        {/* Action column */}
+        <Table.Td onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-end gap-2">
             {showActions && onArchive && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                  <ActionIcon
+                    variant="subtle"
+                    size="sm"
+                    color="gray"
                     onClick={(e) => e.stopPropagation()}
                     title={isArchiveView ? "Restore" : "Archive"}
                   >
-                    {isArchiveView ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
-                  </Button>
+                    {isArchiveView ? <RotateCcw size={15} /> : <Archive size={15} />}
+                  </ActionIcon>
                 </AlertDialogTrigger>
                 <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>{isArchiveView ? "Restore System?" : "Archive System?"}</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      {isArchiveView ? "Restore System?" : "Archive System?"}
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      {isArchiveView 
+                      {isArchiveView
                         ? `This will restore ${system.name} to the public showcase.`
-                        : `This will move ${system.name} to the archive. It will no longer be visible to customers.`
-                      }
+                        : `This will move ${system.name} to the archive. It will no longer be visible to customers.`}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -299,7 +366,7 @@ function PrebuiltTableRow({
                         e.stopPropagation();
                         onArchive(system.id, !isArchiveView);
                       }}
-                      className={isArchiveView ? "bg-primary hover:bg-primary/90" : "bg-orange-500 hover:bg-orange-600"}
+                      className={isArchiveView ? "bg-cyan-600 hover:bg-cyan-700" : "bg-orange-500 hover:bg-orange-600"}
                     >
                       {isArchiveView ? "Restore" : "Archive"}
                     </AlertDialogAction>
@@ -308,103 +375,73 @@ function PrebuiltTableRow({
               </AlertDialog>
             )}
 
-            {showActions && onDelete && isSuperAdmin ? (
+            {showActions && onDelete && isSuperAdmin && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <ActionIcon
+                    variant="subtle"
+                    size="sm"
+                    color="red"
                     onClick={(e) => e.stopPropagation()}
-                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    title="Delete"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    <Trash2 size={15} />
+                  </ActionIcon>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogTitle>Delete System?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete the prebuilt system.
+                      This action cannot be undone. This will permanently delete {system.name}.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={() => onDelete(system.id)}
-                      className="bg-destructive hover:bg-destructive/90"
+                      className="bg-red-600 hover:bg-red-700"
                     >
                       Delete
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-            ) : !showActions && (
-              (() => {
-                if (!isComplete) {
-                  return (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="cursor-not-allowed">
-                            <Button size="icon" variant="outline" disabled className="opacity-50">
-                              <AlertCircle className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Incomplete: {missingParts.join(', ')}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  );
-                }
+            )}
 
-                if (stockStatus === 'loading') {
-                  return (
-                    <Button size="icon" variant="outline" disabled>
-                      <ShieldCheck className="h-4 w-4 animate-pulse" />
-                    </Button>
-                  );
-                }
-
-                if (stockStatus === 'out-of-stock') {
-                  return (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="cursor-not-allowed">
-                            <Button size="icon" variant="outline" disabled className="opacity-50">
-                              <AlertCircle className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Out of Stock: One or more components are unavailable.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  );
-                }
-
-                return (
-                  <Button size="icon" variant="outline" onClick={() => handleReserve(system.name)} title="Reserve this Prebuilt">
-                    <ShieldCheck className="h-4 w-4" />
-                  </Button>
-                );
-              })()
+            {!showActions && (
+              <Button
+                size="xs"
+                radius="md"
+                variant="light"
+                color="cyan"
+                disabled={stockStatus !== "in-stock" || !isComplete}
+                onClick={() => handleReserve(system.name)}
+                leftSection={<ShieldCheck size={14} />}
+              >
+                Reserve
+              </Button>
             )}
           </div>
-        </TableCell>
-      </TableRow>
+        </Table.Td>
+      </Table.Tr>
+
+      {/* Expanded Specs Row */}
       {isExpanded && (
-        <TableRow className="bg-muted/10">
-          <TableCell colSpan={6} className="p-4 pt-0">
-            <div className="bg-background/50 rounded-lg p-4 border border-border/40 mt-2">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Component Breakdown</p>
+        <Table.Tr className="bg-slate-50/30 dark:bg-white/[0.01]">
+          <Table.Td colSpan={showActions ? 6 : 5} className="p-4 pt-1">
+            <Paper
+              withBorder
+              radius="md"
+              p="sm"
+              className="bg-white/80 dark:bg-[#141a23]/90 border-slate-200/70 dark:border-white/10"
+            >
+              <Text size="xs" fw={700} c="dimmed" tt="uppercase" className="tracking-wider mb-2 text-[10px]">
+                Component Breakdown
+              </Text>
               <PrebuiltCardSpecs components={system.components} expanded={true} />
-            </div>
-          </TableCell>
-        </TableRow>
+            </Paper>
+          </Table.Td>
+        </Table.Tr>
       )}
     </>
   );
