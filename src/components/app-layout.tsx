@@ -4,20 +4,18 @@
 import { useUserProfile } from "@/context/user-profile";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { FullPageLoader } from "@/components/full-page-loader";
+import { NeutralPageLoader } from "@/components/neutral-page-loader";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
-import { useLoading } from "@/context/loading-context";
 import { MaintenanceScreen } from "@/components/maintenance-screen";
 import { useDoc, useFirestore } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 
-import { AnimatePresence } from "framer-motion";
+import { Button, Paper, Text, Title } from "@mantine/core";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { loading, authUser, profile } = useUserProfile();
-  const { isPageLoading } = useLoading();
+  const { loading, status, authUser, profile } = useUserProfile();
   const firestore = useFirestore();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -38,11 +36,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
-  // If we are on the landing page and redirecting (loading or authUser exists)
-  const isLandingRedirect = pathname === "/" && (loading || authUser);
-
-  // Global loading state: Not mounted yet, or landing redirect, or page-specific loading
-  const showGlobalLoader = !mounted || isLandingRedirect || isPageLoading;
+  const isLandingRedirect = pathname === "/" && !!authUser;
 
   // Routes exempt from maintenance screen (admin pages & system access login)
   const isAdminRoute = pathname.startsWith('/admin') || pathname === '/system-access';
@@ -56,29 +50,45 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isLandingPage = pathname === '/';
   const shouldShowFooter = isLandingPage || showFooterRoutes.some(route => pathname === route);
 
-  const isHeaderHidden = mounted && !loading && !authUser && ['/signin', '/signup', '/system-access'].includes(pathname);
+  const isHeaderHidden = mounted && ['/signin', '/signup', '/system-access'].includes(pathname);
+
+  // The shared header contains role-specific navigation. Keep the entire shell
+  // neutral until Auth and the current user's profile have both resolved.
+  // During an explicit customer sign-in, preserve the mounted form while the
+  // new user's profile resolves so its submit state cannot reset mid-login.
+  if ((loading && !(pathname === '/signin' && authUser)) || isLandingRedirect) {
+    return <NeutralPageLoader />;
+  }
+
+  if (status === 'missing' || status === 'error') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 text-slate-900 dark:bg-[#0c0f14] dark:text-slate-100">
+        <Paper withBorder radius="lg" p="xl" className="w-full max-w-md border-slate-200 bg-white text-center dark:border-white/10 dark:bg-[#111722]">
+          <Title order={2} size="h3" className="text-slate-900 dark:text-slate-100">Account unavailable</Title>
+          <Text size="sm" c="dimmed" mt="sm">
+            {status === 'missing'
+              ? 'We could not find your account profile. Please try again or contact support.'
+              : 'We could not verify your account right now. Check your connection and try again.'}
+          </Text>
+          <Button color="cyan" mt="lg" onClick={() => window.location.reload()}>Try again</Button>
+        </Paper>
+      </div>
+    );
+  }
+
+  if (showMaintenance) return <MaintenanceScreen />;
 
   return (
-    <>
-      <AnimatePresence>
-        {showGlobalLoader && <FullPageLoader key="global-loader" label="BuilbotAI" subtitle="Architecting Experience" />}
-      </AnimatePresence>
-      
-      {showMaintenance ? (
-        <MaintenanceScreen />
-      ) : (
-        <div className={cn("flex flex-col min-h-screen overflow-x-hidden transition-opacity duration-1000", showGlobalLoader ? "opacity-0" : "opacity-100")}>
-          <Header />
-          <main className={cn(
-            "flex-1 min-h-[calc(100vh-4rem)]", 
-            !isHeaderHidden && "pt-16",
-            isMaintenanceMode && !isAdmin && !isAdminRoute && "grayscale-[0.5] contrast-125"
-          )}>
-            {children}
-          </main>
-          {mounted && shouldShowFooter && <Footer />}
-        </div>
-      )}
-    </>
+    <div className="flex flex-col min-h-screen overflow-x-hidden">
+      <Header />
+      <main className={cn(
+        "flex-1 min-h-[calc(100vh-4rem)]",
+        !isHeaderHidden && "pt-16",
+        isMaintenanceMode && !isAdmin && !isAdminRoute && "grayscale-[0.5] contrast-125"
+      )}>
+        {children}
+      </main>
+      {mounted && shouldShowFooter && <Footer />}
+    </div>
   );
 }

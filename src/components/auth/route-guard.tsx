@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUserProfile } from '@/context/user-profile';
-import { getEffectiveRole, AuthPermissions, UserRole } from '@/lib/auth-utils';
-import { FullPageLoader } from '@/components/full-page-loader';
+import { getEffectiveRole, AuthPermissions } from '@/lib/auth-utils';
+import { NeutralPageLoader } from '@/components/neutral-page-loader';
 
 interface RouteGuardProps {
     children: React.ReactNode;
@@ -26,49 +26,37 @@ export function RouteGuard({
 }: RouteGuardProps) {
     const router = useRouter();
     const pathname = usePathname();
-    const { authUser, profile, loading: authLoading } = useUserProfile();
-    const [isAuthorized, setIsAuthorized] = useState(false);
-    const [isChecking, setIsChecking] = useState(true);
+    const { authUser, profile, status } = useUserProfile();
+    const lastRedirect = useRef<string | null>(null);
+    const isResolved = status === 'ready' || status === 'unauthenticated';
+    const role = getEffectiveRole(profile);
+    const isAuthorized = isResolved && (!requiredPermission || AuthPermissions[requiredPermission](role));
+    const isDenied = isResolved && !isAuthorized;
+
+    const isStaff = role === 'manager' || role === 'superadmin';
+    const destination = isStaff && requiredPermission === 'isClientOnly'
+        ? '/admin'
+        : !authUser && fallbackPath === '/'
+            ? '/signin'
+            : fallbackPath;
 
     useEffect(() => {
-        if (!authLoading) {
-            const role = getEffectiveRole(profile);
-            
-            // If no specific permission is required, anyone (authorized or not) can pass
-            if (!requiredPermission) {
-                setIsAuthorized(true);
-                setIsChecking(false);
-                return;
-            }
-
-            const hasPermission = AuthPermissions[requiredPermission](role);
-
-            if (hasPermission) {
-                setIsAuthorized(true);
-                setIsChecking(false);
-            } else {
-                setIsAuthorized(false);
-                setIsChecking(false);
-
-                // If they are logged in as a manager but hit a client-only page, send them to admin
-                const isStaff = (role as any) === 'manager' || (role as any) === 'superadmin';
-                if (isStaff && requiredPermission === 'isClientOnly') {
-                    router.replace('/admin');
-                } else if (!authUser && fallbackPath === '/') {
-                    // For protected routes, unauthenticated users should go to signin
-                    router.replace('/signin');
-                } else {
-                    router.replace(fallbackPath);
-                }
-            }
+        if (!isDenied || pathname === destination) {
+            lastRedirect.current = null;
+            return;
         }
-    }, [authLoading, authUser, profile, requiredPermission, router, fallbackPath]);
 
-    // Render loading state while checking
-    if (authLoading || isChecking) {
-        return loadingComponent || <FullPageLoader label="BuilbotAI" subtitle="Verifying access..." />;
+        const redirectKey = `${pathname}:${destination}`;
+        if (lastRedirect.current !== redirectKey) {
+            lastRedirect.current = redirectKey;
+            router.replace(destination);
+        }
+    }, [destination, isDenied, pathname, router]);
+
+    if (status === 'loading') {
+        return loadingComponent || <NeutralPageLoader />;
     }
 
-    // Only render children if authorized
+    // Denied and unresolved-error states never render protected children.
     return isAuthorized ? <>{children}</> : null;
 }

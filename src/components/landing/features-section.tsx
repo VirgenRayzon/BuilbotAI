@@ -14,7 +14,7 @@ interface FeaturesSectionProps {
 export function FeaturesSection({ isDark }: FeaturesSectionProps) {
   return (
     <section className="py-32 relative transition-colors duration-1000">
-      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10">
+      <div id="features" className="w-full scroll-mt-24 px-4 sm:px-6 md:px-8 lg:px-10">
         <SectionHeader
           badge="BuildbotAI Features"
           title="Beyond Simple Compatibility"

@@ -69,7 +69,7 @@ export function useBuilderLogic(allParts: Part[]) {
             CPU: null, GPU: null, Motherboard: null, RAM: [], Storage: [], PSU: null, Case: null, Cooler: null,
             Monitor: null, Keyboard: null, Mouse: null, Headset: null,
         });
-        toast({ title: 'Build Cleared', description: 'Your build has been reset.' });
+        toast({ title: 'Your build cleared.' });
     };
 
     const handleRemovePart = (category: string, index?: number) => {

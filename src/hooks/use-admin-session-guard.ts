@@ -21,11 +21,15 @@ export function useAdminSessionGuard() {
   const user = useUser();
   const { profile, loading } = useUserProfile();
   const pathname = usePathname();
-  const hasValidatedRef = useRef(false);
+  const validatedUidRef = useRef<string | null>(null);
 
   useEffect(() => {
     // 1. Skip if still loading, unauthenticated, or on authentication portals
-    if (loading || !user || !auth || !profile) return;
+    if (!user) {
+      validatedUidRef.current = null;
+      return;
+    }
+    if (loading || !auth || !profile) return;
     if (pathname === '/system-access' || pathname === '/signin') return;
 
     // 2. Only applies to privileged staff roles (Managers & Super Admins)
@@ -36,14 +40,14 @@ export function useAdminSessionGuard() {
     const isProtectedPath = pathname?.startsWith('/admin') || pathname?.startsWith('/profile');
     if (!isProtectedPath) return;
 
-    if (hasValidatedRef.current) return;
+    if (validatedUidRef.current === user.uid) return;
 
     if (typeof window === 'undefined') return;
 
     // 4. Check if this tab has the active admin session marker
     const activeMarker = sessionStorage.getItem(ADMIN_SESSION_KEY);
     if (activeMarker === user.uid) {
-      hasValidatedRef.current = true;
+      validatedUidRef.current = user.uid;
 
       // Responder for newly opened admin tabs in the same browser session
       if ('BroadcastChannel' in window) {
@@ -93,7 +97,7 @@ export function useAdminSessionGuard() {
             // Sibling admin tab confirmed the session!
             isHandled = true;
             sessionStorage.setItem(ADMIN_SESSION_KEY, user.uid);
-            hasValidatedRef.current = true;
+            validatedUidRef.current = user.uid;
           }
         };
 

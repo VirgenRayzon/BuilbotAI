@@ -31,12 +31,13 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
   const auth = useAuth();
   const user = useUser();
   const firestore = useFirestore();
-  const { profile } = useUserProfile();
+  const { profile, status } = useUserProfile();
 
   const [showWarning, setShowWarning] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(0);
 
-  const isStaff = Boolean(profile?.isSuperAdmin || profile?.isManager);
+  const sessionReady = status === 'ready' && !!user && profile?.id === user.uid;
+  const isStaff = sessionReady && Boolean(profile?.isSuperAdmin || profile?.isManager);
   const totalTimeoutMs = isStaff ? STAFF_TIMEOUT_MS : USER_TIMEOUT_MS;
   const warningDurationMs = isStaff ? STAFF_WARNING_MS : USER_WARNING_MS;
   const totalWarningSeconds = Math.round(warningDurationMs / 1000);
@@ -187,7 +188,7 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
 
   // Main evaluation logic
   const evaluateInactivity = useCallback(() => {
-    if (!user || isLoggingOutRef.current) return;
+    if (!sessionReady || isLoggingOutRef.current) return;
 
     const storedLast = getStoredActivity();
     const effectiveLast = Math.max(lastActivityRef.current, storedLast);
@@ -204,11 +205,11 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
       setShowWarning(false);
       setSecondsRemaining(0);
     }
-  }, [user, totalTimeoutMs, warningDurationMs, getStoredActivity, performLogout]);
+  }, [sessionReady, totalTimeoutMs, warningDurationMs, getStoredActivity, performLogout]);
 
   // Set up BroadcastChannel & storage synchronization across tabs
   useEffect(() => {
-    if (typeof window === 'undefined' || !user) return;
+    if (typeof window === 'undefined' || !sessionReady) return;
 
     let bc: BroadcastChannel | null = null;
     if ('BroadcastChannel' in window) {
@@ -254,11 +255,11 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
       }
       window.removeEventListener('storage', handleStorage);
     };
-  }, [user, performLogout]);
+  }, [sessionReady, performLogout]);
 
   // Set up periodic heartbeat and window event listeners
   useEffect(() => {
-    if (!user) {
+    if (!sessionReady) {
       setShowWarning(false);
       setSecondsRemaining(0);
       return;
@@ -304,7 +305,7 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
       window.removeEventListener('focus', handleFocus);
       clearInterval(intervalId);
     };
-  }, [user, showWarning, recordActivity, evaluateInactivity, getStoredActivity, totalTimeoutMs]);
+  }, [sessionReady, showWarning, recordActivity, evaluateInactivity, getStoredActivity, totalTimeoutMs]);
 
   return {
     showWarning,

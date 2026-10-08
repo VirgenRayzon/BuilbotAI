@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useId } from "react";
 import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical as CaseIcon, Wind, Monitor, Keyboard, Mouse, Headphones, ChevronDown, HardDrive } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { cn, formatCurrency } from "@/lib/utils";
-import { ComponentData, Resolution } from "@/lib/types";
+import { ComponentData } from "@/lib/types";
 import { BuildItem } from "./build-item";
 import { PowerMeter } from "../ui/power-meter";
-import { calculateSynergyScore } from "@/lib/bottleneck";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface BuildContentProps {
@@ -16,7 +15,6 @@ interface BuildContentProps {
   onCategorySelect?: (category: string) => void;
   categories?: any[];
   showSystemBalance?: boolean;
-  resolution: Resolution;
   totalWattage: number;
   psuWattage: number;
   totalPrice: number;
@@ -48,12 +46,35 @@ export function BuildContent({
   activeFilter,
   categories,
   showSystemBalance,
-  resolution,
   totalWattage,
   psuWattage,
   totalPrice,
 }: BuildContentProps) {
   const [showAccessories, setShowAccessories] = useState(false);
+  const accessoriesId = useId();
+  const previousAccessories = useRef("");
+  const accessorySignature = accessoryCategories.map((category) => {
+    const value = build[category];
+    return Array.isArray(value)
+      ? value.map((part) => `${category}:${part.id}`).join("|")
+      : value ? `${category}:${value.id}` : "";
+  }).filter(Boolean).join("|");
+
+  useEffect(() => {
+    if (accessorySignature !== previousAccessories.current) {
+      setShowAccessories(Boolean(accessorySignature));
+      previousAccessories.current = accessorySignature;
+    }
+  }, [accessorySignature]);
+
+  useEffect(() => {
+    const handleLoadedBuild = (event: Event) => {
+      const favorite = (event as CustomEvent<{ parts?: { category: string }[] }>).detail;
+      setShowAccessories(Boolean(favorite?.parts?.some((part) => accessoryCategories.includes(part.category))));
+    };
+    window.addEventListener("load-favorite-build", handleLoadedBuild);
+    return () => window.removeEventListener("load-favorite-build", handleLoadedBuild);
+  }, []);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     RAM: false,
     Storage: false,
@@ -244,6 +265,8 @@ export function BuildContent({
 
         <button 
           type="button"
+          aria-expanded={showAccessories}
+          aria-controls={accessoriesId}
           className="w-full pt-6 pb-3 cursor-pointer group/acc border-none bg-transparent outline-none"
           onClick={(e) => {
             e.preventDefault();
@@ -253,7 +276,7 @@ export function BuildContent({
         >
           <div className="flex items-center gap-3 w-full">
             <span className="flex items-center gap-1.5 shrink-0">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] group-hover/acc:text-primary transition-colors">
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 group-hover/acc:text-primary transition-colors">
                 Accessories
               </span>
               <ChevronDown className={cn(
@@ -265,18 +288,20 @@ export function BuildContent({
           </div>
         </button>
 
-        {showAccessories && accessoryCategories.map((name) => (
-          <BuildItem
-            key={name}
-            name={name}
-            component={build[name]}
-            icon={componentIcons[name.toLowerCase()] || Monitor}
-            onRemove={onRemovePart}
-            onSelect={onCategorySelect}
-            isAccessory={true}
-            isActiveFilter={activeFilter === name}
-          />
-        ))}
+        <div id={accessoriesId} className={cn("space-y-2", !showAccessories && "hidden")}>
+          {showAccessories && accessoryCategories.map((name) => (
+            <BuildItem
+              key={name}
+              name={name}
+              component={build[name]}
+              icon={componentIcons[name.toLowerCase()] || Monitor}
+              onRemove={onRemovePart}
+              onSelect={onCategorySelect}
+              isAccessory={true}
+              isActiveFilter={activeFilter === name}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="pt-4 flex-none space-y-4">
@@ -286,26 +311,9 @@ export function BuildContent({
           <PowerMeter value={totalWattage} max={psuWattage} className="mt-2" />
         )}
 
-        <div className="pt-2">
-            <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Synergy Rating</span>
-                <span className={cn("text-[10px] font-black tracking-widest", calculateSynergyScore(build, resolution).score >= 80 ? "text-primary" : "text-amber-500")}>
-                    {calculateSynergyScore(build, resolution).score}/100
-                </span>
-            </div>
-            <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${calculateSynergyScore(build, resolution).score}%` }}
-                    className="h-full bg-primary"
-                    style={{ backgroundColor: calculateSynergyScore(build, resolution).color }}
-                />
-            </div>
-        </div>
-
-        <div className="flex justify-between items-center pt-3 border-t border-dashed border-border/40">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Total Value</span>
-          <span className="text-2xl font-bold font-headline text-primary tracking-tighter">{formatCurrency(totalPrice)}</span>
+        <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-white/10">
+          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Total value</span>
+          <span className="text-2xl font-bold font-headline text-slate-950 dark:text-slate-100 tracking-tight">{formatCurrency(totalPrice)}</span>
         </div>
       </div>
     </div>

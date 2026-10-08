@@ -72,7 +72,7 @@ export function Header() {
     : loading
       ? "#"
       : authUser
-        ? (profile?.isManager ? "/admin" : "/builder")
+        ? (profile?.isManager || profile?.isSuperAdmin ? "/admin" : "/builder")
         : "/";
 
   const handleSignOut = async () => {

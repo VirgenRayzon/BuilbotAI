@@ -122,7 +122,7 @@ export default function PrebuiltBuilderPage() {
             Case: null, Motherboard: null, CPU: null, GPU: null, RAM: [], Storage: [], PSU: null, Cooler: null,
             Monitor: null, Keyboard: null, Mouse: null, Headset: null,
         });
-        toast({ title: 'Build Cleared', description: 'Builder has been reset.' });
+        toast({ title: 'Your build cleared.' });
     };
 
     const handleRemovePart = (category: string, index?: number) => {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm, Controller } from 'react-hook-form';
@@ -29,6 +29,7 @@ import {
   Anchor,
   Divider,
   Checkbox,
+  Loader,
 } from '@mantine/core';
 import { LogIn, Mail, Lock, AlertCircle, ArrowLeft, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -50,6 +51,7 @@ function SignInContent() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const redirectingRef = useRef(false);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const router = useRouter();
@@ -63,13 +65,10 @@ function SignInContent() {
 
   // Redirect if already logged in (never redirect while actively logging in)
   useEffect(() => {
-    if (loading || googleLoading) return;
+    if (loading || googleLoading || redirectingRef.current) return;
     if (!authLoading && authUser && profile) {
-      if (profile.isManager || profile.isSuperAdmin) {
-        router.push('/admin');
-      } else {
-        router.push('/builder');
-      }
+      redirectingRef.current = true;
+      router.replace(profile.isManager || profile.isSuperAdmin ? '/admin' : '/builder');
     }
   }, [authUser, profile, authLoading, router, loading, googleLoading]);
 
@@ -87,9 +86,13 @@ function SignInContent() {
   });
 
   const onSubmit = async (values: FormValues) => {
+    if (!auth || !firestore) {
+      setError('Sign-in is unavailable right now. Please try again.');
+      return;
+    }
     setLoading(true);
     setError(null);
-    if (!auth || !firestore) return;
+    let navigating = false;
 
     try {
       await setPersistence(auth, browserLocalPersistence);
@@ -132,8 +135,11 @@ function SignInContent() {
         description: 'Welcome back to Buildbot AI!',
       });
 
-      router.push('/builder');
+      redirectingRef.current = true;
+      router.replace('/builder');
+      navigating = true;
     } catch (err: any) {
+      redirectingRef.current = false;
       const msg = err.message || 'An error occurred during sign-in.';
       if (
         msg.includes('auth/invalid-credential') ||
@@ -145,7 +151,7 @@ function SignInContent() {
         setError(msg);
       }
     } finally {
-      setLoading(false);
+      if (!navigating) setLoading(false);
     }
   };
 
@@ -153,6 +159,7 @@ function SignInContent() {
     if (!auth || !firestore) return;
     setGoogleLoading(true);
     setError(null);
+    let navigating = false;
 
     try {
       const result = await executeCustomerGoogleAuth(auth, firestore, { isSignUp: false });
@@ -168,13 +175,27 @@ function SignInContent() {
         title: 'Signed In',
         description: 'Welcome back to Buildbot AI!',
       });
-      router.push('/builder');
+      redirectingRef.current = true;
+      router.replace('/builder');
+      navigating = true;
     } catch (err: any) {
+      redirectingRef.current = false;
       setError(err.message || 'Failed to sign in with Google. Please try again.');
     } finally {
-      setGoogleLoading(false);
+      if (!navigating) setGoogleLoading(false);
     }
   };
+
+  // An existing session is being restored or redirected. Keep the sign-in form
+  // out of view without interrupting an active submission's loading state.
+  if (authUser && !loading && !googleLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center gap-3 bg-slate-50 text-slate-600 dark:bg-[#0c0f14] dark:text-slate-300" role="status">
+        <Loader size="sm" color="cyan" />
+        <Text size="sm">Opening your workspace...</Text>
+      </div>
+    );
+  }
 
   return (
     <div

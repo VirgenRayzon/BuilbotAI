@@ -1,6 +1,6 @@
-import { FullPageLoader } from "@/components/full-page-loader";
+import { NeutralPageLoader } from "@/components/neutral-page-loader";
 
 export default function Loading() {
-  return <FullPageLoader message="Synchronizing identity..." />;
+  return <NeutralPageLoader message="Loading page..." />;
 }
 

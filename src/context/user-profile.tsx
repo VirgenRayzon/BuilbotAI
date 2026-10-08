@@ -1,81 +1,132 @@
-/**
- * UserProfileContext — Provides authenticated user and Firestore profile data.
- * Combines Firebase Auth state with the 'users' collection document for role-based access.
- */
-
+/** Auth identity and server-confirmed Firestore profile for role-based UI. */
 'use client';
 
-import React, { createContext, useContext, useMemo, useState, useEffect, ReactNode } from 'react';
-import { useUser, useFirestore, useDoc } from '@/firebase';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { doc, onSnapshot } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import type { UserProfile } from '@/lib/types';
-import { doc } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
+
+type ProfileStatus = 'loading' | 'unauthenticated' | 'ready' | 'missing' | 'error';
+type SnapshotStatus = 'loading' | 'ready' | 'missing' | 'error';
+
+interface ProfileSnapshot {
+    uid: string;
+    status: SnapshotStatus;
+    profile: UserProfile | null;
+    error: Error | null;
+}
 
 interface UserProfileContextValue {
     authUser: User | null | undefined;
     profile: UserProfile | null;
     loading: boolean;
+    status: ProfileStatus;
+    error: Error | null;
 }
 
-
 const UserProfileContext = createContext<UserProfileContextValue>({
-    authUser: null,
+    authUser: undefined,
     profile: null,
     loading: true,
+    status: 'loading',
+    error: null,
 });
 
 export function UserProfileProvider({ children }: { children: ReactNode }) {
     const authUser = useUser();
     const firestore = useFirestore();
-
-    const userDocRef = useMemo(() => {
-        if (authUser && firestore) {
-            return doc(firestore, 'users', authUser.uid);
-        }
-        return null;
-    }, [authUser, firestore]);
-
-    const { data: profile, loading: profileLoading } = useDoc<UserProfile>(userDocRef);
-
-    // Track when the profile is actually "ready" for the current authUser
-    // This prevents the "flash" where authUser is truthy but profile is still null
-    const [isProfileReady, setIsProfileReady] = useState(false);
-    const [lastUid, setLastUid] = useState<string | null | undefined>(undefined);
-
-    // Synchronous state reset during render to prevent the "one-render flash"
-    if (authUser?.uid !== lastUid) {
-        setLastUid(authUser?.uid);
-        setIsProfileReady(false);
-    }
+    const uid = authUser?.uid;
+    const [snapshot, setSnapshot] = useState<ProfileSnapshot | null>(null);
 
     useEffect(() => {
-        if (authUser === undefined) {
-            setIsProfileReady(false);
-        } else if (authUser === null) {
-            setIsProfileReady(true);
-        } else if (profileLoading) {
-            setIsProfileReady(false);
-        } else if (profile !== undefined) {
-            // Wait until the profile matches the current user
-            if (!profile || profile.id === authUser.uid) {
-                setIsProfileReady(true);
-            }
-        }
-    }, [authUser, profile, profileLoading]);
+        if (!uid || !firestore) return;
 
-    const value = useMemo(() => ({
-        authUser,
-        profile,
-        loading: !isProfileReady,
-    }), [authUser, profile, isProfileReady]);
+        let active = true;
+        let sawMissingProfile = false;
+        let missingTimer: ReturnType<typeof setTimeout> | undefined;
+        setSnapshot({ uid, status: 'loading', profile: null, error: null });
+
+        // Cached roles may be stale after an account's role changes.
+        const timeout = setTimeout(() => {
+            if (!active) return;
+            setSnapshot(current => current?.uid === uid && current.status === 'loading'
+                ? {
+                    uid,
+                    status: sawMissingProfile ? 'missing' : 'error',
+                    profile: null,
+                    error: sawMissingProfile ? null : new Error('Profile verification timed out.'),
+                }
+                : current);
+        }, 15000);
+
+        const unsubscribe = onSnapshot(
+            doc(firestore, 'users', uid),
+            { includeMetadataChanges: true },
+            current => {
+                if (!active || current.metadata.fromCache || current.metadata.hasPendingWrites) return;
+
+                if (current.exists()) {
+                    clearTimeout(timeout);
+                    if (missingTimer) clearTimeout(missingTimer);
+                    missingTimer = undefined;
+                    sawMissingProfile = false;
+                    setSnapshot({
+                        uid,
+                        status: 'ready',
+                        profile: { ...current.data(), id: current.id } as UserProfile,
+                        error: null,
+                    });
+                    return;
+                }
+
+                // Sign-in may precede the first profile write.
+                sawMissingProfile = true;
+                setSnapshot({ uid, status: 'loading', profile: null, error: null });
+                if (!missingTimer) {
+                    missingTimer = setTimeout(() => {
+                        if (!active) return;
+                        clearTimeout(timeout);
+                        missingTimer = undefined;
+                        setSnapshot({ uid, status: 'missing', profile: null, error: null });
+                    }, 3000);
+                }
+            },
+            error => {
+                if (!active) return;
+                clearTimeout(timeout);
+                if (missingTimer) clearTimeout(missingTimer);
+                setSnapshot({ uid, status: 'error', profile: null, error });
+            }
+        );
+
+        return () => {
+            active = false;
+            clearTimeout(timeout);
+            if (missingTimer) clearTimeout(missingTimer);
+            unsubscribe();
+        };
+    }, [uid, firestore]);
+
+    const status: ProfileStatus = authUser === undefined
+        ? 'loading'
+        : authUser === null
+            ? 'unauthenticated'
+            : !firestore || snapshot?.uid !== uid
+                ? 'loading'
+                : snapshot?.status ?? 'loading';
 
     return (
-        <UserProfileContext.Provider value={value}>
+        <UserProfileContext.Provider value={{
+            authUser,
+            profile: status === 'ready' ? snapshot?.profile ?? null : null,
+            loading: status === 'loading',
+            status,
+            error: status === 'error' ? snapshot?.error ?? null : null,
+        }}>
             {children}
         </UserProfileContext.Provider>
     );
 }
 
-export const useUserProfile = () => {
-    return useContext(UserProfileContext);
-}
+export const useUserProfile = () => useContext(UserProfileContext);
