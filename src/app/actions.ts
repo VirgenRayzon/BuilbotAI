@@ -6,8 +6,10 @@ import { getVertexAccessToken, markTunedModelHealthy, DEFAULT_TUNED_MODEL_ID, ty
 
 import {
   aiBuildAdvisorRecommendations,
-  type AiBuildAdvisorRecommendationsInput,
 } from "@/ai/flows/ai-build-advisor-recommendations";
+import type {
+  AiBuildAdvisorRecommendationsInput,
+} from "@/ai/schemas/build-advisor-schemas";
 import {
   extractPartDetails,
   type ExtractPartDetailsInput,

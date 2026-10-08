@@ -4,7 +4,7 @@
  * Notification, SystemNotification, and related domain types.
  */
 
-import type { AiBuildAdvisorRecommendationsOutput } from "@/ai/flows/ai-build-advisor-recommendations";
+import type { AiBuildAdvisorRecommendationsOutput } from "@/ai/schemas/build-advisor-schemas";
 
 export type Resolution = '1080p' | '1440p' | '4K';
 export type WorkloadType = 'Esports' | 'AAA' | 'Balanced';
@@ -34,15 +34,15 @@ export type ComponentData = {
 
 export type Build = {
   summary: string;
-  cpu: ComponentData;
-  gpu: ComponentData;
-  motherboard: ComponentData;
-  ram: ComponentData;
-  storage: ComponentData;
-  psu: ComponentData;
-  case: ComponentData;
-  cooler: ComponentData;
-  estimatedWattage: string;
+  cpu: ComponentData | null;
+  gpu: ComponentData | null;
+  motherboard: ComponentData | null;
+  ram: ComponentData | null;
+  storage: ComponentData | null;
+  psu: ComponentData | null;
+  case: ComponentData | null;
+  cooler: ComponentData | null;
+  estimatedWattage?: string;
 };
 
 export type AiRecommendation = AiBuildAdvisorRecommendationsOutput;

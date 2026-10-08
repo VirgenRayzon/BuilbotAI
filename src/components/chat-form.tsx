@@ -20,7 +20,7 @@ const formSchema = z.object({
   intendedUse: z.string().min(1, "Please select an intended use."),
   budget: z.string().min(2, "Please provide a budget."),
   allowFlexibleBudget: z.boolean().default(false),
-  allowWebSearch: z.boolean().default(true),
+  allowAiSearch: z.boolean().default(true),
 });
 
 export type FormSchema = z.infer<typeof formSchema>;
@@ -37,7 +37,7 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
       intendedUse: "",
       budget: "",
       allowFlexibleBudget: false,
-      allowWebSearch: true,
+      allowAiSearch: true,
     },
   });
 
@@ -48,7 +48,7 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
       performanceLevel: "Optimal performance for budget and intended workload",
       additionalNotes: "",
       allowFlexibleBudget: values.allowFlexibleBudget,
-      allowWebSearch: values.allowWebSearch,
+      allowAiSearch: values.allowAiSearch,
     });
   }
 
@@ -139,7 +139,7 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
       />
 
       <Controller
-        name="allowWebSearch"
+        name="allowAiSearch"
         control={form.control}
         render={({ field }) => (
           <Paper
@@ -153,11 +153,11 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
                 <Group gap={6} align="center">
                   <Sparkles className="w-3.5 h-3.5 text-cyan-500 shrink-0" />
                   <Text size="xs" fw={700} className="text-slate-800 dark:text-slate-200">
-                    Web Search
+                    AI Search
                   </Text>
                 </Group>
                 <Text size="xs" c="dimmed" className="text-[10px] sm:text-[11px] leading-tight">
-                  Allow AI to search the web for parts outside our inventory.
+                  Allows AI to recommend parts outside of our inventory.
                 </Text>
               </Stack>
               <Switch

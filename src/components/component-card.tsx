@@ -63,19 +63,24 @@ export function ComponentCard({ name, component, icon: Icon }: ComponentCardProp
             />
             {component.id.startsWith('ai-suggested-') && (
                 <div className="absolute top-2 right-2 z-20">
-                    <div className="bg-amber-500/90 text-white text-[10px] font-black px-2 py-1 rounded-md shadow-lg backdrop-blur-sm border border-amber-400/50 flex items-center gap-1.5 animate-in fade-in zoom-in duration-300">
-                        <Info className="w-3 h-3" />
-                        NOT IN INVENTORY
+                    <div className="bg-amber-500/90 dark:bg-amber-600/90 text-white text-[10px] font-bold tracking-tight px-2 py-1 rounded-md shadow-md backdrop-blur-sm border border-amber-400/40 flex items-center gap-1.5 animate-in fade-in zoom-in duration-300">
+                        <Info className="w-3 h-3 shrink-0" />
+                        Market Part (External)
                     </div>
                 </div>
             )}
         </div>
         <p className="text-sm text-muted-foreground">{component.description}</p>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex items-center justify-between gap-2">
         <div className="text-lg font-semibold text-foreground">
           {formatCurrency(component.price)}
         </div>
+        {component.id.startsWith('ai-suggested-') && (
+          <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 dark:bg-amber-500/20 px-2 py-0.5 rounded-md border border-amber-500/20 dark:border-amber-500/30">
+            Est. Market Price
+          </span>
+        )}
       </CardFooter>
     </Card>
   );
