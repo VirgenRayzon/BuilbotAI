@@ -18,7 +18,6 @@ import { InventoryView } from "./components/inventory-view";
 import { YourBuild } from "@/components/your-build";
 import { RouteGuard } from "@/components/auth/route-guard";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
-import { BuilderFloatingAnalytics } from "@/components/builder-floating-analytics";
 import type { Part, ComponentData, Resolution, WorkloadType } from "@/lib/types";
 
 /**
@@ -109,7 +108,7 @@ export default function BuilderPage() {
                     isDark ? "invert" : ""
                 )} style={{ backgroundImage: 'radial-gradient(currentColor 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-                <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-8 md:py-12 pb-24 lg:pb-12 pt-10 md:pt-20 relative z-10">
+                <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-4 md:py-6 pb-24 lg:pb-12 pt-4 md:pt-6 relative z-10">
                     <BuilderHeader />
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">
@@ -127,6 +126,7 @@ export default function BuilderPage() {
                                 onAnalysisUpdate={setAnalysis}
                                 onCategorySelect={handleCategoryChange}
                                 categories={categories}
+                                onApplySuggestion={handleApplySuggestion}
                             />
                         </aside>
 
@@ -161,16 +161,6 @@ export default function BuilderPage() {
                     </div>
                 </main>
 
-                {/* Floating UI Elements */}
-                <BuilderFloatingAnalytics
-                    build={build}
-                    resolution={resolution}
-                    onResolutionChange={setResolution}
-                    workload={workload}
-                    onWorkloadChange={setWorkload}
-                    analysis={analysis}
-                    onApplySuggestion={handleApplySuggestion}
-                />
                 <BuilderFloatingChat build={build} />
             </div>
         </RouteGuard>

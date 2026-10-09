@@ -9,9 +9,9 @@ import type { ComponentData } from "@/lib/types";
 import type { TelemetryInfo } from "../types";
 
 const SLEEK_GREETINGS = [
-    "System initialized. Welcome, Architect. I am Buildbot AI, your hardware synthesis consultant. How shall we optimize your build today?",
-    "Liaison active. Buildbot AI online. Ready to analyze compatibility, bottleneck constraints, and recommend peak-tier hardware configurations. What component are we looking for?",
-    "Interface online. I am Buildbot AI, your dedicated PC builder consultant. Ready to assist in selecting compatible components and resolving bottleneck anomalies. How can I help you build today?"
+    "Hi there! I am Buildbot AI, your PC building assistant. How can I help you choose parts or optimize your build today?",
+    "Hello! Ready to check compatibility, analyze bottlenecks, or suggest upgrades for your PC build. What are you looking to build?",
+    "Welcome! I'm Buildbot AI. Need advice on choosing components or balancing your setup? Ask me anything!"
 ];
 
 export function useFloatingChat(build?: Record<string, ComponentData | ComponentData[] | null>) {

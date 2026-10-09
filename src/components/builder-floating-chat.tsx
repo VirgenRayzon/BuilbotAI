@@ -39,8 +39,8 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
 
     return (
         <div className={cn(
-            "fixed left-6 flex flex-col items-start gap-4 max-w-[calc(100vw-3rem)] transition-all duration-300",
-            "bottom-24 lg:bottom-6",
+            "fixed right-4 sm:right-6 flex flex-col items-end gap-3 sm:gap-4 max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-3rem)] transition-all duration-300",
+            "bottom-20 sm:bottom-24 lg:bottom-6",
             isOpen ? "z-[60]" : "z-50"
         )}>
             <AnimatePresence>
@@ -50,16 +50,15 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.92, y: 20 }}
                         transition={{ duration: 0.22, ease: "easeOut" }}
-                        className="w-[calc(100vw-2rem)] sm:w-[500px]"
+                        className="w-[calc(100vw-2rem)] sm:w-[420px] md:w-[440px]"
                     >
                         <Card className={cn(
-                            "flex flex-col h-[60vh] sm:h-[800px] max-h-[800px] shadow-[0_10px_50px_rgba(6,182,212,0.25)] overflow-hidden backdrop-blur-2xl relative border rounded-2xl transition-colors duration-500",
-                            isDark ? "border-cyan-500/40 bg-background/85" : "border-cyan-500/20 bg-white/95"
+                            "flex flex-col h-[65vh] sm:h-[540px] max-h-[calc(100dvh-7.5rem)] min-h-[360px] shadow-[0_10px_40px_rgba(6,182,212,0.15)] overflow-hidden backdrop-blur-2xl relative border rounded-2xl transition-colors duration-500",
+                            isDark ? "border-cyan-500/30 bg-background/90" : "border-slate-200/80 bg-white/95"
                         )}>
                             {/* Ambient Glowing Background Orbs */}
                             <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[80px] animate-pulse pointer-events-none" />
                             <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-cyan-600/10 rounded-full blur-[80px] animate-pulse pointer-events-none" style={{ animationDelay: '2s' }} />
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 animate-pulse z-10" />
 
                             {/* Header */}
                             <ChatHeader
@@ -128,12 +127,12 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
             </AnimatePresence>
 
             {/* Floating Action Trigger Button */}
-            <div className="relative">
-                <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-600 to-cyan-600 blur opacity-60 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse" />
+            <div className="relative group">
+                <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 blur-sm opacity-50 group-hover:opacity-90 transition duration-300" />
                 <AnimatedIconButton
                     onClick={toggleOpen}
-                    className="h-14 w-14 sm:h-16 sm:w-16 p-0 shadow-[0_0_40px_rgba(6,182,212,0.5)] border-white/20 bg-gradient-to-tr from-blue-600/90 to-cyan-600/90 backdrop-blur-xl"
-                    icon={<AnimatedMessageIcon size={28} className="text-white" />}
+                    className="h-11 w-11 sm:h-12 sm:w-12 md:h-13 md:w-13 rounded-full p-0 shadow-[0_4px_20px_rgba(6,182,212,0.35)] border-white/20 bg-gradient-to-tr from-blue-600/95 to-cyan-600/95 backdrop-blur-xl [&>svg]:w-5 [&>svg]:h-5 sm:[&>svg]:w-5.5 sm:[&>svg]:h-5.5"
+                    icon={<AnimatedMessageIcon size={22} className="text-white" />}
                 />
             </div>
         </div>

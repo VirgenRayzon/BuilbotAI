@@ -100,7 +100,7 @@ export default function AiBuildAdvisorPage() {
                 "min-h-screen transition-colors duration-500 overflow-x-hidden relative",
                 isDark ? "bg-[#0c0f14] text-slate-50" : "bg-slate-50 text-slate-900"
             )}>
-                <main className="flex-1 w-full px-4 sm:px-6 md:px-8 lg:px-10 py-8 md:py-12 pt-10 md:pt-20 relative z-10">
+                <main className="flex-1 w-full px-4 sm:px-6 md:px-8 lg:px-10 py-4 md:py-6 pt-4 md:pt-6 relative z-10">
                     <AdvisorHeader isAiKillSwitch={isAiKillSwitch} />
 
                     {builderState ? (

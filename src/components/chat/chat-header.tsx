@@ -29,10 +29,10 @@ export function ChatHeader({ isDark, isAiKillSwitch, onClear, onClose }: ChatHea
                 </div>
                 <div>
                     <CardTitle className="font-headline text-sm font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-300">
-                        Buildbot AI Interface
+                        Buildbot AI Assistant
                     </CardTitle>
                     <p className="text-[10px] text-muted-foreground font-mono">
-                        {isAiKillSwitch ? "Offline (Disabled)" : "Hardware Synthesis Online"}
+                        {isAiKillSwitch ? "Offline (Disabled)" : "AI Assistant Ready"}
                     </p>
                 </div>
             </div>

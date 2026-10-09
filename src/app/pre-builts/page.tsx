@@ -128,29 +128,24 @@ export default function PreBuiltsPage() {
           }}
         />
 
-        <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-8 md:py-12 pt-10 md:pt-20 relative z-10">
-          <div className="relative mb-6">
+        <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-4 md:py-6 pt-4 md:pt-6 relative z-10">
+          <div className="relative mb-4">
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="relative z-10"
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="relative z-10 flex flex-col gap-0.5"
             >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="h-px w-8 bg-cyan-500" />
-                <span className="text-[11px] uppercase tracking-[0.2em] font-semibold text-cyan-500">
-                  Ready to Ship
-                </span>
-              </div>
-              <h1 className="text-4xl md:text-6xl font-headline font-black uppercase tracking-tight leading-none mb-3">
-                Pre-Built <span className="text-cyan-500">Systems</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-cyan-600 dark:text-cyan-400 font-headline">
+                Ready to Ship
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-slate-100">
+                Pre-Built <span className="text-cyan-600 dark:text-cyan-400 italic">Systems</span>
               </h1>
-              <p className="text-muted-foreground max-w-2xl text-base md:text-lg leading-relaxed font-normal">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                 Curated PC builds tested for performance, reliability, and stability out of the box.
               </p>
             </motion.div>
-
-            {/* Background Accent */}
-            <div className="absolute -top-24 -left-24 w-96 h-96 bg-cyan-500/5 rounded-full blur-[120px] pointer-events-none" />
           </div>
 
           <motion.div

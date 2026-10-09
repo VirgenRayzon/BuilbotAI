@@ -29,6 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, cn } from "@/lib/utils";
 import type { ComponentData, FavoriteBuild, FavoriteBuildPart, Part, Resolution, WorkloadType } from "@/lib/types";
 import type { PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
+import { DualSidebarAnalyzer } from "@/components/bottleneck/dual-sidebar-analyzer";
 
 const UNIFIED_MODAL_CLASSNAMES = {
   content: "bg-white dark:bg-[#111722] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-2xl rounded-2xl overflow-hidden",
@@ -55,6 +56,7 @@ interface YourBuildProps {
   onAnalysisUpdate?: (analysis: any) => void;
   onCategorySelect?: (category: string) => void;
   categories?: { name: string; selected?: boolean }[];
+  onApplySuggestion?: (category: string, partId: string) => void;
 }
 
 const requiredCategories = ["Motherboard", "CPU", "GPU", "RAM", "Storage", "PSU", "Cooler", "Case"];
@@ -63,8 +65,10 @@ const savedCategories = [...requiredCategories, "Monitor", "Keyboard", "Mouse", 
 export function YourBuild({
   build, onClearBuild, onRemovePart, onAnalyze, showSystemBalance = true,
   className, isManagerMode = false, onAddPrebuilt, analysis, onAnalysisUpdate,
-  onCategorySelect, categories,
+  onCategorySelect, categories, resolution, onResolutionChange, workload, onWorkloadChange,
+  onApplySuggestion,
 }: YourBuildProps) {
+  const [sidebarTab, setSidebarTab] = useState<"parts" | "analytics">("parts");
   const user = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -279,16 +283,10 @@ export function YourBuild({
           <Box className="px-5 py-4 border-b border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
             <Group justify="space-between" align="center">
               <Group gap="xs" align="center">
-                <ThemeIcon size={32} radius="md" variant="light" color="cyan" className="shadow-xs">
-                  <Cpu className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-                </ThemeIcon>
                 <div>
                   <Title order={3} className="font-headline text-base font-bold tracking-tight text-slate-900 dark:text-slate-100">
                     Your Build
                   </Title>
-                  <Text size="xs" c="dimmed">
-                    Choose parts and reserve your setup.
-                  </Text>
                 </div>
               </Group>
               <Group gap="xs" align="center">
@@ -306,7 +304,21 @@ export function YourBuild({
               </Group>
             </Group>
           </Box>
-          {renderContent()}
+          <DualSidebarAnalyzer
+            build={build}
+            resolution={resolution}
+            onResolutionChange={onResolutionChange}
+            workload={workload}
+            onWorkloadChange={onWorkloadChange}
+            analysis={analysis}
+            onApplySuggestion={onApplySuggestion}
+            selectedPartsCount={selectedParts}
+            totalCategoriesCount={requiredCategories.length}
+            activeTab={sidebarTab}
+            onTabChange={setSidebarTab}
+          >
+            {renderContent()}
+          </DualSidebarAnalyzer>
         </Paper>
       </div>
 
@@ -349,7 +361,23 @@ export function YourBuild({
                 </SheetClose>
               </Group>
             </SheetHeader>
-            <ScrollArea className="flex-1 min-h-0">{renderContent()}</ScrollArea>
+            <ScrollArea className="flex-1 min-h-0">
+              <DualSidebarAnalyzer
+                build={build}
+                resolution={resolution}
+                onResolutionChange={onResolutionChange}
+                workload={workload}
+                onWorkloadChange={onWorkloadChange}
+                analysis={analysis}
+                onApplySuggestion={onApplySuggestion}
+                selectedPartsCount={selectedParts}
+                totalCategoriesCount={requiredCategories.length}
+                activeTab={sidebarTab}
+                onTabChange={setSidebarTab}
+              >
+                {renderContent()}
+              </DualSidebarAnalyzer>
+            </ScrollArea>
           </SheetContent>
         </Sheet>
       </div>
