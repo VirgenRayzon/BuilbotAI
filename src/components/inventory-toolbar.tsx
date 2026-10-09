@@ -12,7 +12,7 @@ import {
   SegmentedControl,
   Group,
   Paper,
-  Text,
+  Tooltip,
 } from "@mantine/core";
 import {
   List,
@@ -25,6 +25,8 @@ import {
   Search,
   Check,
   Layers,
+  ShieldCheck,
+  ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -91,7 +93,7 @@ export function InventoryToolbar({
   const selectedCount = categories.filter((c) => c.selected).length;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       {/* Optional Top Category Bar when icons are supplied */}
       {hasIcons && (
         <div className="flex flex-wrap gap-2 w-full">
@@ -124,41 +126,43 @@ export function InventoryToolbar({
         </div>
       )}
 
-      {/* Main Toolbar Surface */}
+      {/* Main Single-Line Toolbar Surface */}
       <Paper
         withBorder
         radius="lg"
         p="xs"
-        className="bg-white/80 dark:bg-[#141a23]/90 border-slate-200/80 dark:border-white/10"
+        className="bg-white/80 dark:bg-[#141a23]/90 border-slate-200/80 dark:border-white/10 shadow-xs"
       >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* Left Controls: Search & Filters */}
-          <div className="flex flex-wrap items-center gap-2 flex-grow sm:flex-grow-0">
+        <div className="flex items-center justify-between gap-2 sm:gap-3 flex-nowrap overflow-x-auto no-scrollbar py-0.5">
+          {/* Left Controls: Search, Filters, Sort & Direction */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Search Input */}
             {onSearchQueryChange && (
               <TextInput
                 placeholder="Search..."
                 value={searchQuery || ""}
                 onChange={(e) => onSearchQueryChange(e.currentTarget.value)}
-                leftSection={<Search size={15} className="text-slate-400" />}
-                size="sm"
+                leftSection={<Search size={14} className="text-slate-400" />}
+                size="xs"
                 radius="md"
-                className="w-full sm:w-56"
+                className="w-36 sm:w-48 lg:w-56 shrink-0"
               />
             )}
 
-            {/* Categories Dropdown Filter */}
+            {/* Categories Dropdown Filter (when no top category bar) */}
             {!hasIcons && (
               <Menu shadow="md" width={220} radius="md" closeOnItemClick={false}>
                 <Menu.Target>
                   <Button
-                    variant="default"
-                    size="sm"
+                    variant={!allSelected && selectedCount > 0 ? "light" : "default"}
+                    color={!allSelected && selectedCount > 0 ? "cyan" : undefined}
+                    size="xs"
                     radius="md"
-                    leftSection={<Filter size={14} className="text-slate-400" />}
+                    leftSection={<Filter size={13} className={!allSelected && selectedCount > 0 ? "text-cyan-500" : "text-slate-400"} />}
                   >
                     Categories
                     {!allSelected && selectedCount > 0 && (
-                      <Badge size="xs" variant="filled" color="cyan" circle ml={6}>
+                      <Badge size="xs" variant="filled" color="cyan" circle ml={5}>
                         {selectedCount}
                       </Badge>
                     )}
@@ -199,14 +203,15 @@ export function InventoryToolbar({
               <Menu shadow="md" width={220} radius="md" closeOnItemClick={false}>
                 <Menu.Target>
                   <Button
-                    variant="default"
-                    size="sm"
+                    variant={selectedBrands.length > 0 ? "light" : "default"}
+                    color={selectedBrands.length > 0 ? "cyan" : undefined}
+                    size="xs"
                     radius="md"
-                    leftSection={<Filter size={14} className="text-slate-400" />}
+                    leftSection={<Filter size={13} className={selectedBrands.length > 0 ? "text-cyan-500" : "text-slate-400"} />}
                   >
                     Brands
                     {selectedBrands.length > 0 && (
-                      <Badge size="xs" variant="filled" color="cyan" circle ml={6}>
+                      <Badge size="xs" variant="filled" color="cyan" circle ml={5}>
                         {selectedBrands.length}
                       </Badge>
                     )}
@@ -246,20 +251,21 @@ export function InventoryToolbar({
               </Menu>
             )}
 
-            {/* Sort Dropdown */}
-            <Menu shadow="md" width={180} radius="md">
+            {/* Sort Menu */}
+            <Menu shadow="md" width={170} radius="md">
               <Menu.Target>
                 <Button
                   variant="default"
-                  size="sm"
+                  size="xs"
                   radius="md"
-                  leftSection={<ArrowUpDown size={14} className="text-slate-400" />}
+                  leftSection={<ArrowUpDown size={13} className="text-slate-400" />}
                 >
-                  Sort by {sortBy}
+                  <span className="hidden md:inline text-slate-400 font-normal mr-1">Sort:</span>
+                  {sortBy}
                 </Button>
               </Menu.Target>
               <Menu.Dropdown>
-                <Menu.Label>Sort Options</Menu.Label>
+                <Menu.Label>Sort By</Menu.Label>
                 {supportedSorts.map((sortOption) => (
                   <Menu.Item
                     key={sortOption}
@@ -276,55 +282,66 @@ export function InventoryToolbar({
               </Menu.Dropdown>
             </Menu>
 
-            {/* Direction Toggle */}
-            <ActionIcon
-              variant="default"
-              size="lg"
-              radius="md"
-              onClick={() =>
-                onSortDirectionChange(sortDirection === "asc" ? "desc" : "asc")
-              }
-              title={`Sort: ${sortDirection.toUpperCase()}`}
+            {/* Direction Toggle ActionIcon */}
+            <Tooltip
+              label={sortDirection === "asc" ? "Ascending (Click for Descending)" : "Descending (Click for Ascending)"}
+              withArrow
+              position="top"
             >
-              {sortDirection === "asc" ? (
-                <ArrowUpAZ size={16} className="text-slate-500" />
-              ) : (
-                <ArrowDownAZ size={16} className="text-slate-500" />
-              )}
-            </ActionIcon>
-
-            {/* Hide Incompatible Toggle */}
-            {onHideIncompatibleChange !== undefined && (
-              <Button
-                variant={hideIncompatible ? "light" : "default"}
-                color={hideIncompatible ? "cyan" : "gray"}
-                size="sm"
+              <ActionIcon
+                variant="default"
+                size="input-xs"
                 radius="md"
-                onClick={() => onHideIncompatibleChange(!hideIncompatible)}
-                leftSection={
+                onClick={() =>
+                  onSortDirectionChange(sortDirection === "asc" ? "desc" : "asc")
+                }
+                aria-label={`Sort Direction: ${sortDirection.toUpperCase()}`}
+              >
+                {sortDirection === "asc" ? (
+                  <ArrowUpAZ size={15} className="text-cyan-500" />
+                ) : (
+                  <ArrowDownAZ size={15} className="text-cyan-500" />
+                )}
+              </ActionIcon>
+            </Tooltip>
+
+            {/* Hide Incompatible ActionIcon / Toggle Button */}
+            {onHideIncompatibleChange !== undefined && (
+              <Tooltip
+                label={hideIncompatible ? "Hiding Incompatible Parts (Click to Show All)" : "Hide Incompatible Parts"}
+                withArrow
+                position="top"
+              >
+                <ActionIcon
+                  variant={hideIncompatible ? "light" : "default"}
+                  color={hideIncompatible ? "cyan" : "gray"}
+                  size="input-xs"
+                  radius="md"
+                  onClick={() => onHideIncompatibleChange(!hideIncompatible)}
+                  aria-label="Toggle Incompatible Filter"
+                >
                   <CheckCircle2
-                    size={14}
+                    size={15}
                     className={hideIncompatible ? "text-cyan-500" : "text-slate-400"}
                   />
-                }
-              >
-                Hide Incompatible
-              </Button>
+                </ActionIcon>
+              </Tooltip>
             )}
           </div>
 
-          {/* Right Controls: Specs Toggle, Counter & Grid/List Switcher */}
-          <Group gap="xs" align="center">
+          {/* Right Controls: Specs Toggle, Item Counter & Grid/List Switcher */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {onShowDetailsChange && (
               <Button
                 variant={showDetails ? "light" : "default"}
                 color={showDetails ? "cyan" : "gray"}
-                size="sm"
+                size="xs"
                 radius="md"
                 onClick={() => onShowDetailsChange(!showDetails)}
-                leftSection={<Layers size={14} />}
+                leftSection={<Layers size={13} />}
               >
-                {showDetails ? "Hide Specs" : "Show Specs"}
+                <span className="hidden sm:inline">{showDetails ? "Hide Specs" : "Show Specs"}</span>
+                <span className="sm:hidden">Specs</span>
               </Button>
             )}
 
@@ -333,7 +350,7 @@ export function InventoryToolbar({
               color="gray"
               size="sm"
               radius="sm"
-              className="hidden sm:inline-flex font-medium"
+              className="font-medium whitespace-nowrap"
             >
               {itemCount} items
             </Badge>
@@ -349,7 +366,7 @@ export function InventoryToolbar({
                     value: "grid",
                     label: (
                       <div className="flex items-center justify-center p-0.5" title="Grid View">
-                        <LayoutGrid size={15} />
+                        <LayoutGrid size={14} />
                       </div>
                     ),
                   },
@@ -357,14 +374,14 @@ export function InventoryToolbar({
                     value: "list",
                     label: (
                       <div className="flex items-center justify-center p-0.5" title="List View">
-                        <List size={15} />
+                        <List size={14} />
                       </div>
                     ),
                   },
                 ]}
               />
             )}
-          </Group>
+          </div>
         </div>
       </Paper>
     </div>

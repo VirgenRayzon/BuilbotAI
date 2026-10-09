@@ -86,7 +86,7 @@ export function PrebuiltTab({
 
     const togglePrebuiltExpand = (id: string) => {
         setExpandedPrebuiltIds(prev =>
-            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+            prev.includes(id) ? [] : filteredAndSortedPrebuilts.map(s => s.id)
         );
     };
 

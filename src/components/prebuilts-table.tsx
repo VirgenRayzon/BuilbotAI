@@ -94,13 +94,13 @@ export function PrebuiltsTable({
           <Table.Th className="text-[11px] font-semibold tracking-wider uppercase text-slate-500">
             System Name
           </Table.Th>
-          <Table.Th className="text-[11px] font-semibold tracking-wider uppercase text-slate-500">
+          <Table.Th className="w-[140px] whitespace-nowrap text-[11px] font-semibold tracking-wider uppercase text-slate-500">
             Tier
           </Table.Th>
-          <Table.Th className="text-right text-[11px] font-semibold tracking-wider uppercase text-slate-500">
+          <Table.Th className="w-[140px] text-right text-[11px] font-semibold tracking-wider uppercase text-slate-500 whitespace-nowrap">
             Price
           </Table.Th>
-          <Table.Th className="w-[120px] text-right"></Table.Th>
+          <Table.Th className="w-[100px] text-right"></Table.Th>
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
@@ -286,8 +286,8 @@ function PrebuiltTableRow({
         </Table.Td>
 
         {/* Tier & Stock badge */}
-        <Table.Td>
-          <Group gap={6}>
+        <Table.Td className="w-[140px] whitespace-nowrap">
+          <Group gap={6} wrap="nowrap">
             <Badge
               size="xs"
               variant="light"
@@ -299,6 +299,7 @@ function PrebuiltTableRow({
                   : "gray"
               }
               radius="sm"
+              className="uppercase tracking-wider font-semibold whitespace-nowrap"
             >
               {system.tier}
             </Badge>
@@ -314,6 +315,7 @@ function PrebuiltTableRow({
                     ? "gray"
                     : "red"
                 }
+                className="whitespace-nowrap"
               >
                 {stockStatus === "in-stock"
                   ? "In Stock"
@@ -326,7 +328,7 @@ function PrebuiltTableRow({
         </Table.Td>
 
         {/* Price */}
-        <Table.Td className="text-right">
+        <Table.Td className="w-[140px] text-right whitespace-nowrap">
           <Text size="sm" fw={700} className="font-mono">
             {formatCurrency(system.price)}
           </Text>
