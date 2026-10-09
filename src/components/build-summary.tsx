@@ -276,7 +276,7 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                             )}
 
                             {/* Progressive Slots Grid */}
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
                                 {COMPONENT_SLOTS.map((slot, index) => {
                                     const compData = build ? (build as any)[slot.key] : null;
                                     const isSlotLoaded = Boolean(compData && compData.model);
@@ -416,7 +416,7 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                             </div>
 
                             {/* Components Grid */}
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
                                 {COMPONENT_SLOTS.map((slot, index) => {
                                     const compData = (build as any)[slot.key];
                                     return (

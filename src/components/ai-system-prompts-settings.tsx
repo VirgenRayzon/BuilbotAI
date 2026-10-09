@@ -20,6 +20,7 @@ import {
   Bot,
   Cpu,
   Sparkles,
+  Wrench,
   Save,
   RotateCcw,
   Copy,
@@ -81,6 +82,7 @@ export function AiSystemPromptsSettings() {
             {meta.id === "chatbot" && <Bot size={15} className="text-cyan-500" />}
             {meta.id === "buildAdvisor" && <Cpu size={15} className="text-violet-500" />}
             {meta.id === "prebuiltAdvisor" && <Sparkles size={15} className="text-amber-500" />}
+            {meta.id === "partExtractor" && <Wrench size={15} className="text-emerald-500" />}
             <span className="font-semibold text-xs">{meta.title}</span>
             {dirty && (
               <span className="h-2 w-2 rounded-full bg-amber-500 ring-2 ring-amber-400/30 animate-pulse" />
@@ -340,7 +342,7 @@ export function AiSystemPromptsSettings() {
                   disabled={isSaving}
                   className="text-xs font-semibold border-slate-300 dark:border-white/10"
                 >
-                  Save All 3 Prompts
+                  Save All {SYSTEM_PROMPT_METAS.length} Prompts
                 </Button>
               )}
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import {
     Badge,
     Divider,
@@ -308,6 +308,9 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
                             >
                                 {part.name}
                             </DialogTitle>
+                            <DialogDescription className="sr-only">
+                                Technical specifications, stock availability, and pricing details for {part.name}
+                            </DialogDescription>
 
                             <Group gap="sm" align="baseline" mt={4}>
                                 <Text

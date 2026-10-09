@@ -719,6 +719,7 @@ export async function updateSystemPromptsAction(prompts: {
   chatbot?: string;
   buildAdvisor?: string;
   prebuiltAdvisor?: string;
+  partExtractor?: string;
   updatedBy?: string;
 }) {
   try {
@@ -732,6 +733,7 @@ export async function updateSystemPromptsAction(prompts: {
     if (prompts.chatbot !== undefined) systemPromptsPayload.chatbot = prompts.chatbot;
     if (prompts.buildAdvisor !== undefined) systemPromptsPayload.buildAdvisor = prompts.buildAdvisor;
     if (prompts.prebuiltAdvisor !== undefined) systemPromptsPayload.prebuiltAdvisor = prompts.prebuiltAdvisor;
+    if (prompts.partExtractor !== undefined) systemPromptsPayload.partExtractor = prompts.partExtractor;
 
     await db.collection('siteSettings').doc('main').set({
       systemPrompts: systemPromptsPayload,
@@ -750,7 +752,7 @@ export async function updateSystemPromptsAction(prompts: {
 }
 
 export async function resetSystemPromptsAction(
-  target?: 'chatbot' | 'buildAdvisor' | 'prebuiltAdvisor' | 'all',
+  target?: 'chatbot' | 'buildAdvisor' | 'prebuiltAdvisor' | 'partExtractor' | 'all',
   updatedBy?: string
 ) {
   try {
@@ -760,6 +762,7 @@ export async function resetSystemPromptsAction(
       DEFAULT_CHATBOT_PROMPT,
       DEFAULT_BUILD_ADVISOR_PROMPT,
       DEFAULT_PREBUILT_ADVISOR_PROMPT,
+      DEFAULT_PART_EXTRACTOR_PROMPT,
     } = await import('@/lib/constants/default-system-prompts');
 
     const systemPromptsPayload: Record<string, any> = {
@@ -771,10 +774,12 @@ export async function resetSystemPromptsAction(
       systemPromptsPayload.chatbot = DEFAULT_CHATBOT_PROMPT;
       systemPromptsPayload.buildAdvisor = DEFAULT_BUILD_ADVISOR_PROMPT;
       systemPromptsPayload.prebuiltAdvisor = DEFAULT_PREBUILT_ADVISOR_PROMPT;
+      systemPromptsPayload.partExtractor = DEFAULT_PART_EXTRACTOR_PROMPT;
     } else {
       if (target === 'chatbot') systemPromptsPayload.chatbot = DEFAULT_CHATBOT_PROMPT;
       if (target === 'buildAdvisor') systemPromptsPayload.buildAdvisor = DEFAULT_BUILD_ADVISOR_PROMPT;
       if (target === 'prebuiltAdvisor') systemPromptsPayload.prebuiltAdvisor = DEFAULT_PREBUILT_ADVISOR_PROMPT;
+      if (target === 'partExtractor') systemPromptsPayload.partExtractor = DEFAULT_PART_EXTRACTOR_PROMPT;
     }
 
     await db.collection('siteSettings').doc('main').set({

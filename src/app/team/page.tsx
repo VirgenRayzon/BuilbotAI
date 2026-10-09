@@ -30,16 +30,16 @@ export default function TeamPage() {
           viewport={{ once: true }}
           className="max-w-3xl mx-auto"
         >
-          <div className="h-px w-24 bg-primary/30 mx-auto mb-5" />
-          <h2 className="text-3xl font-black font-headline uppercase tracking-tight mb-6">
-            Join the Revolution
+          <div className="h-px w-24 bg-cyan-500/40 mx-auto mb-5" />
+          <h2 className="text-3xl font-black font-headline uppercase tracking-tight mb-4 text-slate-900 dark:text-slate-100">
+            Engineering With Purpose
           </h2>
           <p className={cn(
-            "text-lg font-medium leading-relaxed",
+            "text-lg font-medium leading-relaxed max-w-2xl mx-auto",
             isDark ? "text-slate-400" : "text-slate-600"
           )}>
-            Our team is constantly expanding the boundaries of neural PC architecture.
-            Want to be part of the future of hardware synthesis?
+            Our capstone team combines modern software engineering with PC hardware expertise
+            to make custom PC configuration transparent, reliable, and accessible for everyone.
           </p>
         </motion.div>
       </section>

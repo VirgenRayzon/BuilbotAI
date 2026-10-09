@@ -12,11 +12,12 @@ import {
   DEFAULT_CHATBOT_PROMPT,
   DEFAULT_BUILD_ADVISOR_PROMPT,
   DEFAULT_PREBUILT_ADVISOR_PROMPT,
+  DEFAULT_PART_EXTRACTOR_PROMPT,
   SYSTEM_PROMPT_METAS,
   SystemPromptMeta,
 } from "@/lib/constants/default-system-prompts";
 
-export type SystemPromptKey = 'chatbot' | 'buildAdvisor' | 'prebuiltAdvisor';
+export type SystemPromptKey = 'chatbot' | 'buildAdvisor' | 'prebuiltAdvisor' | 'partExtractor';
 
 export function useSystemPrompts() {
   const { systemPrompts: savedPrompts } = useSiteSettings();
@@ -31,6 +32,7 @@ export function useSystemPrompts() {
     chatbot: DEFAULT_CHATBOT_PROMPT,
     buildAdvisor: DEFAULT_BUILD_ADVISOR_PROMPT,
     prebuiltAdvisor: DEFAULT_PREBUILT_ADVISOR_PROMPT,
+    partExtractor: DEFAULT_PART_EXTRACTOR_PROMPT,
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -43,8 +45,9 @@ export function useSystemPrompts() {
       chatbot: savedPrompts?.chatbot ?? DEFAULT_CHATBOT_PROMPT,
       buildAdvisor: savedPrompts?.buildAdvisor ?? DEFAULT_BUILD_ADVISOR_PROMPT,
       prebuiltAdvisor: savedPrompts?.prebuiltAdvisor ?? DEFAULT_PREBUILT_ADVISOR_PROMPT,
+      partExtractor: savedPrompts?.partExtractor ?? DEFAULT_PART_EXTRACTOR_PROMPT,
     }));
-  }, [savedPrompts?.chatbot, savedPrompts?.buildAdvisor, savedPrompts?.prebuiltAdvisor]);
+  }, [savedPrompts?.chatbot, savedPrompts?.buildAdvisor, savedPrompts?.prebuiltAdvisor, savedPrompts?.partExtractor]);
 
   // Active prompt metadata
   const activeMeta = useMemo<SystemPromptMeta>(() => {
@@ -69,7 +72,8 @@ export function useSystemPrompts() {
     return (
       isDirty('chatbot') ||
       isDirty('buildAdvisor') ||
-      isDirty('prebuiltAdvisor')
+      isDirty('prebuiltAdvisor') ||
+      isDirty('partExtractor')
     );
   }, [isDirty]);
 
@@ -120,6 +124,7 @@ export function useSystemPrompts() {
               chatbot: draftPrompts.chatbot,
               buildAdvisor: draftPrompts.buildAdvisor,
               prebuiltAdvisor: draftPrompts.prebuiltAdvisor,
+              partExtractor: draftPrompts.partExtractor,
               updatedBy: editorEmail,
             }
           : {
@@ -201,6 +206,7 @@ export function useSystemPrompts() {
           chatbot: DEFAULT_CHATBOT_PROMPT,
           buildAdvisor: DEFAULT_BUILD_ADVISOR_PROMPT,
           prebuiltAdvisor: DEFAULT_PREBUILT_ADVISOR_PROMPT,
+          partExtractor: DEFAULT_PART_EXTRACTOR_PROMPT,
         });
       } else {
         setDraftPrompts((prev) => ({
@@ -288,6 +294,8 @@ function getBaselineDefault(key: SystemPromptKey): string {
       return DEFAULT_BUILD_ADVISOR_PROMPT;
     case 'prebuiltAdvisor':
       return DEFAULT_PREBUILT_ADVISOR_PROMPT;
+    case 'partExtractor':
+      return DEFAULT_PART_EXTRACTOR_PROMPT;
   }
 }
 
@@ -299,5 +307,7 @@ function getPromptName(key: SystemPromptKey): string {
       return 'Build Advisor';
     case 'prebuiltAdvisor':
       return 'Prebuilt Advisor';
+    case 'partExtractor':
+      return 'Component Specs Extractor';
   }
 }

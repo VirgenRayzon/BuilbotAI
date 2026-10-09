@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm, Controller } from 'react-hook-form';
@@ -27,6 +27,7 @@ import {
   Checkbox,
   Divider,
   Progress,
+  Loader,
 } from '@mantine/core';
 import { Mail, Lock, AlertCircle, ArrowLeft, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -69,6 +70,8 @@ export default function SignUpPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [toaOpened, setToaOpened] = useState(false);
 
+  const redirectingRef = useRef(false);
+
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const router = useRouter();
@@ -79,12 +82,13 @@ export default function SignUpPage() {
 
   // Redirect if already logged in (never redirect while actively registering)
   useEffect(() => {
-    if (loading || googleLoading) return;
+    if (loading || googleLoading || redirectingRef.current) return;
     if (!authLoading && authUser && profile) {
+      redirectingRef.current = true;
       if (profile.isManager || profile.isSuperAdmin) {
-        router.push('/admin');
+        router.replace('/admin');
       } else {
-        router.push('/builder');
+        router.replace('/builder');
       }
     }
   }, [authUser, profile, authLoading, router, loading, googleLoading]);
@@ -142,15 +146,17 @@ export default function SignUpPage() {
         description: "Welcome to Buildbot AI! You've been successfully signed up.",
       });
 
-      router.push('/builder');
+      redirectingRef.current = true;
+      router.replace('/builder');
     } catch (err: any) {
+      redirectingRef.current = false;
       if (err.code === 'auth/email-already-in-use') {
         setError('An account with this email address already exists. Please sign in instead.');
       } else {
         setError(err.message || 'An error occurred during registration.');
       }
     } finally {
-      setLoading(false);
+      if (!redirectingRef.current) setLoading(false);
     }
   };
 
@@ -180,13 +186,25 @@ export default function SignUpPage() {
         title: 'Account Connected',
         description: 'Signed up with Google successfully! Welcome to Buildbot AI.',
       });
-      router.push('/builder');
+      redirectingRef.current = true;
+      router.replace('/builder');
     } catch (err: any) {
+      redirectingRef.current = false;
       setError(err.message || 'Failed to sign up with Google. Please try again.');
     } finally {
-      setGoogleLoading(false);
+      if (!redirectingRef.current) setGoogleLoading(false);
     }
   };
+
+  // If already authenticated or in process of redirecting, do not flash the registration form
+  if ((authUser && !loading && !googleLoading) || redirectingRef.current) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center gap-3 bg-slate-50 text-slate-600 dark:bg-[#0c0f14] dark:text-slate-300" role="status">
+        <Loader size="sm" color="cyan" />
+        <Text size="sm">Opening your workspace...</Text>
+      </div>
+    );
+  }
 
   return (
     <div

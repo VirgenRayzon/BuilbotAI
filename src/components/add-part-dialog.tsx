@@ -1,41 +1,33 @@
-/**
- * AddPartDialog — Modal dialog for creating or editing inventory parts.
- * Orchestrates PartIdentitySection and PartSpecificationsSection sub-components
- * with the usePartForm hook for state management and AI autofill.
- */
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
-import { Plus, Sparkles, BrainCircuit, Loader2, Zap } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
   DialogTrigger,
+  DialogClose,
   DialogHeader,
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "./ui/scroll-area";
-import { SparkleButton } from "./ui/sparkle-button";
+import { ThemeIcon, Text, Badge, Paper } from "@mantine/core";
+import { Plus, BrainCircuit, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
-import type { Part } from "@/lib/types";
-
-// Extracted Components & Hooks
 import { usePartForm, AddPartFormSchema } from "@/hooks/use-part-form";
+import { CATEGORY_SPECS } from "@/lib/constants/category-specs";
 import { PartIdentitySection } from "./parts/part-identity-section";
 import { PartSpecificationsSection } from "./parts/part-specifications-section";
-import { CATEGORY_SPECS } from "@/lib/constants/category-specs";
+import { AiActionButton } from "./ui/ai-action-button";
+import type { Part } from "@/lib/types";
 
 interface AddPartDialogProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   onSave: (data: AddPartFormSchema) => Promise<void>;
   initialData?: Part;
   title?: string;
@@ -45,13 +37,14 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [showTelemetry, setShowTelemetry] = useState(false);
+  const [justAutofilled, setJustAutofilled] = useState(false);
   const startTimeRef = useRef<number>(0);
+  const prevPendingRef = useRef(false);
   const { toast } = useToast();
 
   const firestore = useFirestore();
   const settingsDocRef = useMemo(() => {
-    if (firestore) return doc(firestore, 'siteSettings', 'main');
+    if (firestore) return doc(firestore, "siteSettings", "main");
     return null;
   }, [firestore]);
   const { data: settings } = useDoc<any>(settingsDocRef);
@@ -65,7 +58,6 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
     handleGetAiDetails,
     handleCancelAiDetails,
     setSpecValue,
-    selectedCategory,
   } = usePartForm({ initialData, open, isAiKillSwitch });
 
   const handleCategoryChange = (newCategory: string) => {
@@ -81,7 +73,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
       await onSave(values);
       toast({ 
         title: initialData ? "Part Updated!" : "Part Added!", 
-        description: `${values.partName} has been ${initialData ? 'updated' : 'added to'} the inventory.` 
+        description: `${values.partName} has been ${initialData ? "updated" : "added to"} the inventory.` 
       });
       if (!initialData) form.reset();
       setOpen(false);
@@ -96,6 +88,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
     }
   };
 
+  // Live timer for AI generation
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isAiPending) {
@@ -110,155 +103,132 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
     };
   }, [isAiPending]);
 
+  // Trigger field highlight when AI generation finishes
+  useEffect(() => {
+    if (prevPendingRef.current && !isAiPending && aiDuration !== null) {
+      setJustAutofilled(true);
+      const timer = setTimeout(() => setJustAutofilled(false), 2500);
+      return () => clearTimeout(timer);
+    }
+    prevPendingRef.current = isAiPending;
+  }, [isAiPending, aiDuration]);
+
   return (
     <Dialog
       open={open}
       onOpenChange={(isOpen) => {
         if (!isOpen && isAiPending) return;
         setOpen(isOpen);
-        if (!isOpen) {
-          setShowTelemetry(false);
-        }
       }}
     >
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[70vw] p-0 gap-0 overflow-hidden border-primary/20 bg-background/95 backdrop-blur-xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] rounded-3xl [&>button.absolute]:hidden">
+      <DialogContent className="sm:max-w-[70vw] p-0 gap-0 overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] backdrop-blur-2xl shadow-2xl rounded-3xl [&>button.absolute]:hidden">
         
         {/* Header */}
-        <DialogHeader className="px-8 pt-8 pb-6 border-b border-border/40 bg-muted/20 flex-row items-center gap-4 space-y-0">
-          <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
-            <Plus className="h-6 w-6 text-primary" />
+        <DialogHeader className="px-8 pt-7 pb-5 border-b border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] flex flex-row items-center justify-between gap-4 space-y-0">
+          <div className="flex items-center gap-4">
+            <ThemeIcon size={46} radius="xl" variant="light" color="cyan" className="shadow-sm">
+              <Plus className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
+            </ThemeIcon>
+            <div>
+              <DialogTitle className="text-xl font-headline font-extrabold tracking-tight text-slate-900 dark:text-white">
+                {title || (initialData ? "Edit Component" : "Add New Component")}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                {initialData ? "Refine component details and performance metrics." : "Configure new inventory with AI-assisted specification pre-filling."}
+              </DialogDescription>
+            </div>
           </div>
-          <div className="flex-1">
-            <DialogTitle className="font-headline text-2xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-              {title || (initialData ? "Edit Component" : "Add New Component")}
-            </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground font-medium mt-1">
-              {initialData ? "Refine component details and performance metrics." : "Configure new inventory with AI-assisted specification pre-filling."}
-            </DialogDescription>
-          </div>
-          <div className="ml-auto flex items-center gap-3">
-            {isAiPending && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-500/20 bg-cyan-950/20 text-cyan-400/80 text-[10px] font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(6,182,212,0.08)] backdrop-blur-sm transition-all duration-300">
-                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                <span>{elapsedTime}s elapsed</span>
-              </div>
-            )}
-            {aiDuration !== null && !isAiPending && (
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setShowTelemetry(prev => !prev)}
-                  className="cursor-help flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/40 text-cyan-400 text-[10px] font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(6,182,212,0.15)] backdrop-blur-md hover:shadow-[0_0_25px_rgba(6,182,212,0.3)] hover:scale-105 transition-all duration-300 animate-in fade-in zoom-in-95 duration-300"
-                >
-                  <Zap className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 animate-pulse" />
-                  <span>{aiDuration.toFixed(1)}s TURNAROUND TIME</span>
-                </button>
 
-                {/* Tooltip Content */}
-                <div className={cn(
-                  "absolute right-0 top-full mt-2 w-64 p-3 rounded-xl border border-cyan-500/20 bg-slate-950/95 backdrop-blur-xl shadow-2xl transition-all duration-300 z-50 text-[10px] font-mono text-zinc-300 space-y-1.5 leading-relaxed text-left",
-                  showTelemetry ? "opacity-100 pointer-events-auto scale-100" : "opacity-0 pointer-events-none scale-95"
-                )}>
-                  <div className="border-b border-white/5 pb-1 flex justify-between">
-                    <span className="text-[9px] font-black text-cyan-400 uppercase">Telemetry Analysis</span>
-                    <span className="text-[8px] text-zinc-500 font-sans">Status: Complete</span>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">LLM Server Call:</span>
-                      <span className="text-zinc-200">{(aiDuration * 0.65).toFixed(1)}s</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">DB Part Scanning:</span>
-                      <span className="text-zinc-200">{(aiDuration * 0.20).toFixed(1)}s</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">Catalog Matching:</span>
-                      <span className="text-zinc-200">{(aiDuration * 0.15).toFixed(1)}s</span>
-                    </div>
-                    <div className="flex justify-between border-t border-white/5 pt-1.5 mt-1">
-                      <span className="text-zinc-500">Tokens Used:</span>
-                      <span className="text-cyan-400 font-bold">{tokensUsed || Math.round(480 + (aiDuration * 2.5))}</span>
-                    </div>
-                  </div>
-                  <div className="pt-1.5 border-t border-white/5 flex justify-between text-[9px] font-sans">
-                    <span className="text-zinc-400">Average: 45.0s</span>
-                    <span className="text-cyan-400 font-bold">Optimal Speed</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            <SparkleButton
-              type="button"
-              onClick={isAiPending ? handleCancelAiDetails : handleGetAiDetails}
-              isLoading={isAiPending}
-              loadingChildren="CANCEL"
-              icon={<Sparkles className="h-4 w-4" />}
-              className="h-11 px-6 shadow-lg transition-all duration-300 text-xs font-black uppercase tracking-widest"
-            >
-              AI AUTOFILL
-            </SparkleButton>
+          <div className="ml-auto">
+            <AiActionButton
+              label="AI AUTOFILL"
+              isPending={isAiPending}
+              onTrigger={handleGetAiDetails}
+              onCancel={handleCancelAiDetails}
+              elapsedTime={elapsedTime}
+              aiDuration={aiDuration}
+              tokensUsed={tokensUsed}
+              mode="part"
+            />
           </div>
         </DialogHeader>
 
+        {/* AI Progress Banner */}
         {isAiPending && (
-          <div className="relative overflow-hidden bg-primary/5 border-b border-primary/10">
-            <div className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/20">
-              <div className="h-full bg-primary animate-progress-glow w-[30%]" />
+          <div className="relative overflow-hidden bg-cyan-500/10 dark:bg-cyan-500/10 border-b border-cyan-500/20">
+            <div className="absolute inset-x-0 bottom-0 h-0.5 bg-cyan-500/20">
+              <div className="h-full bg-cyan-500 animate-progress-glow w-[35%]" />
             </div>
             <div className="px-8 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 border border-primary/20">
-                  <BrainCircuit className="h-4 w-4 text-primary animate-pulse" />
-                </div>
+                <ThemeIcon size={32} radius="lg" variant="light" color="cyan">
+                  <BrainCircuit className="h-4 w-4 animate-pulse text-cyan-600 dark:text-cyan-400" />
+                </ThemeIcon>
                 <div className="flex flex-col">
-                  <span className="text-xs font-bold text-primary uppercase tracking-widest">Buildbot Intelligence Active</span>
-                  <span className="text-[10px] text-primary/60 font-medium">Researching real-world specs, pricing, and compatibility metrics...</span>
+                  <span className="text-xs font-bold text-cyan-800 dark:text-cyan-300 uppercase tracking-wider">
+                    Buildbot Intelligence Active
+                  </span>
+                  <span className="text-[11px] text-slate-600 dark:text-slate-400">
+                    Researching real-world specs, pricing benchmarks, and verified compatibility...
+                  </span>
                 </div>
               </div>
-              <Badge variant="outline" className="animate-pulse bg-primary/10 text-primary border-primary/20 text-[10px] uppercase font-bold px-3 py-1">
+              <Badge variant="filled" color="cyan" size="sm" className="font-mono font-bold animate-pulse">
                 Processing
               </Badge>
             </div>
           </div>
         )}
 
+        {/* Form Body */}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col">
             <ScrollArea className="h-[70vh]">
               <div className="px-10 py-8 space-y-10">
-                <PartIdentitySection form={form} onCategoryChange={handleCategoryChange} />
-                <PartSpecificationsSection form={form} setSpecValue={setSpecValue} />
+                <PartIdentitySection 
+                  form={form} 
+                  onCategoryChange={handleCategoryChange} 
+                  justAutofilled={justAutofilled}
+                />
+                <PartSpecificationsSection 
+                  form={form} 
+                  setSpecValue={setSpecValue} 
+                  justAutofilled={justAutofilled}
+                />
               </div>
             </ScrollArea>
 
-            <DialogFooter className="px-8 py-6 border-t border-border/40 bg-muted/20">
+            {/* Footer */}
+            <DialogFooter className="px-8 py-4 border-t border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02]">
               <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-4">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Specifications</span>
-                    <span className="text-xs font-bold">{form.watch("specifications").length} metrics defined</span>
-                  </div>
+                <div className="flex items-center gap-3">
+                  <Badge variant="light" color="cyan" size="lg" className="font-bold uppercase tracking-wider">
+                    {form.watch("specifications").length} metrics defined
+                  </Badge>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex items-center gap-3">
                   <DialogClose asChild>
-                    <Button type="button" variant="outline" className="h-11 px-8 rounded-xl font-bold uppercase tracking-widest text-xs">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="h-10 px-6 rounded-xl font-bold uppercase tracking-wider text-xs border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
+                    >
                       Cancel
                     </Button>
                   </DialogClose>
                   <Button
                     type="submit"
                     disabled={isSubmitting || isAiPending}
-                    className="h-11 px-8 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20"
+                    className="h-10 px-8 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold uppercase tracking-wider text-xs shadow-md shadow-cyan-500/20 transition-all duration-200"
                   >
                     {isSubmitting ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        SAVING...
+                        Saving...
                       </>
                     ) : (
-                      initialData ? "UPDATE COMPONENT" : "SAVE COMPONENT"
+                      initialData ? "Update Component" : "Save Component"
                     )}
                   </Button>
                 </div>

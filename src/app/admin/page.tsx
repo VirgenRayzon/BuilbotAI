@@ -4,9 +4,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
     Package, Monitor, 
     Archive, Trash2, BarChart3, ShoppingBag,
-    Shield, Sliders, Bot, FileText
+    Shield, Sliders, Bot, FileText, Cpu, FileCode
 } from 'lucide-react';
-import { Tabs, Badge, Paper, Title, Text, SegmentedControl } from '@mantine/core';
+import { Tabs, Badge, Paper, Title, Text, SegmentedControl, ThemeIcon } from '@mantine/core';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/theme-provider";
@@ -28,6 +28,8 @@ import { PrebuiltTab } from './components/prebuilt-tab';
 import { ReservationsTab } from './components/reservations-tab';
 import { SalesTab } from './components/sales-tab';
 import { ArchiveTab } from './components/archive-tab';
+import { AdminTabHeader } from './components/admin-tab-header';
+import { useSalesActions } from './hooks/use-sales-actions';
 import { SuperAdminSettings } from '@/components/super-admin-settings';
 import { AuditLogsSection } from '@/app/profile/components/audit-logs-section';
 import { AiModelSettings } from '@/components/ai-model-settings';
@@ -80,6 +82,12 @@ export default function AdminPage() {
     
     const { orders, ordersLoading, handleDeleteOrder, handleUpdateOrder, stats } = useOrders(profile);
 
+    const salesActions = useSalesActions({
+        orders: orders || [],
+        parts: parts || [],
+        prebuiltSystems: prebuiltSystems || []
+    });
+
     
     const { 
         selectedPartIds, setSelectedPartIds, selectedPrebuiltIds, setSelectedPrebuiltIds,
@@ -116,21 +124,24 @@ export default function AdminPage() {
                 )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
                 <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-8 relative z-10">
-                    <div className="mb-8 flex items-center justify-between">
-                        <div>
-                            <h1 className="text-4xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-slate-50">
-                                Dashboard
-                            </h1>
-                            <p className="text-muted-foreground mt-2 font-medium italic">
-                                {profile?.isSuperAdmin
-                                    ? "Master control for system configurations, inventory, and analytics."
-                                    : "Manage stock inventory, prebuilt systems, and track sales performance."}
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            {/* Header actions can go here */}
-                        </div>
-                    </div>
+                    <AdminTabHeader
+                        currentTab={currentTab}
+                        isSuperAdmin={profile?.isSuperAdmin}
+                        pendingOrdersCount={stats.pendingOrdersCount}
+                        auditLogsCount={auditLogs.length}
+                        intelligenceBadge={intelligenceBadge}
+                        intelligenceBadgeColor={intelligenceBadgeColor}
+                        onOpenIngestDummy={() => salesActions.setShowIngestDummyConfirm(true)}
+                        onOpenResetSales={() => salesActions.setShowResetSalesConfirm(true)}
+                        isIngestingDummyData={salesActions.isIngestingDummyData}
+                        isResettingSales={salesActions.isResettingSales}
+                        showIngestDummyConfirm={salesActions.showIngestDummyConfirm}
+                        onCloseIngestDummyConfirm={() => salesActions.setShowIngestDummyConfirm(false)}
+                        onConfirmIngestDummy={salesActions.handleIngestDummyData}
+                        showResetSalesConfirm={salesActions.showResetSalesConfirm}
+                        onCloseResetSalesConfirm={() => salesActions.setShowResetSalesConfirm(false)}
+                        onConfirmResetSales={salesActions.handleResetSales}
+                    />
 
                     <Tabs 
                         value={currentTab} 
@@ -356,21 +367,6 @@ export default function AdminPage() {
                         {/* Relocated Tab Panels */}
                         <Tabs.Panel value="audit" className="mt-6">
                             <div className="space-y-6">
-                                <Paper
-                                    withBorder
-                                    radius="lg"
-                                    p="lg"
-                                    className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-                                >
-                                    <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
-                                        <Shield className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                                        <span>{profile?.isSuperAdmin ? "Admin Audit Logs" : "Staff Audit Logs"}</span>
-                                    </Title>
-                                    <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium mt-1">
-                                        Enterprise security audit trail, administrative actions, and system modifications.
-                                    </Text>
-                                </Paper>
-
                                 <AuditLogsSection
                                     logs={auditLogs}
                                     loading={auditLogsLoading}
@@ -381,21 +377,6 @@ export default function AdminPage() {
                         {profile?.isSuperAdmin && (
                             <Tabs.Panel value="management" className="mt-6">
                                 <div className="space-y-6">
-                                    <Paper
-                                        withBorder
-                                        radius="lg"
-                                        p="lg"
-                                        className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-                                    >
-                                        <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
-                                            <Sliders className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
-                                            <span>Management Portal</span>
-                                        </Title>
-                                        <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium mt-1">
-                                            Manage staff credentials, manager keys, and password reset requests.
-                                        </Text>
-                                    </Paper>
-
                                     <SuperAdminSettings />
                                 </div>
                             </Tabs.Panel>
@@ -404,32 +385,40 @@ export default function AdminPage() {
                         {profile?.isSuperAdmin && (
                             <Tabs.Panel value="ai" className="mt-6">
                                 <div className="space-y-6">
+
+                                    {/* Sub-Tab Bar (matching Sales & Analytics Dashboard without export button) */}
                                     <Paper
                                         withBorder
                                         radius="lg"
                                         p="md"
-                                        className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+                                        className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
                                     >
-                                        <div>
-                                            <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
-                                                <Bot className="h-5 w-5 text-indigo-500" />
-                                                <span>AI Engine & Directives</span>
-                                            </Title>
-                                            <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium mt-0.5">
-                                                Configure foundation models, provider routing, and agent persona system instructions.
-                                            </Text>
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                            <Tabs
+                                                value={aiSubTab}
+                                                onChange={(val) => val && setAiSubTab(val as 'intelligence' | 'prompts')}
+                                                variant="pills"
+                                                radius="md"
+                                                color="cyan"
+                                            >
+                                                <Tabs.List className="bg-slate-100 dark:bg-[#141a23] p-1 border border-slate-200 dark:border-white/10 inline-flex flex-wrap gap-1">
+                                                    <Tabs.Tab
+                                                        value="intelligence"
+                                                        leftSection={<Cpu className="h-4 w-4" />}
+                                                        className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+                                                    >
+                                                        Model Intelligence
+                                                    </Tabs.Tab>
+                                                    <Tabs.Tab
+                                                        value="prompts"
+                                                        leftSection={<FileCode className="h-4 w-4" />}
+                                                        className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+                                                    >
+                                                        System Prompts
+                                                    </Tabs.Tab>
+                                                </Tabs.List>
+                                            </Tabs>
                                         </div>
-                                        <SegmentedControl
-                                            value={aiSubTab}
-                                            onChange={(val) => setAiSubTab(val as 'intelligence' | 'prompts')}
-                                            data={[
-                                                { label: 'Model Intelligence', value: 'intelligence' },
-                                                { label: 'System Prompts', value: 'prompts' },
-                                            ]}
-                                            color="cyan"
-                                            radius="md"
-                                            className="bg-slate-100 dark:bg-[#141a23] border border-slate-200 dark:border-white/10 font-bold text-xs"
-                                        />
                                     </Paper>
 
                                     {aiSubTab === 'intelligence' ? (
@@ -444,21 +433,6 @@ export default function AdminPage() {
                         {profile?.isSuperAdmin && (
                             <Tabs.Panel value="content" className="mt-6">
                                 <div className="space-y-6">
-                                    <Paper
-                                        withBorder
-                                        radius="lg"
-                                        p="lg"
-                                        className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-                                    >
-                                        <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
-                                            <FileText className="h-5 w-5 text-teal-600 dark:text-teal-400" />
-                                            <span>Site Content & Branding</span>
-                                        </Title>
-                                        <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium mt-1">
-                                            Update customer-facing company information, mission statement, and story.
-                                        </Text>
-                                    </Paper>
-
                                     <AboutManagement />
                                 </div>
                             </Tabs.Panel>

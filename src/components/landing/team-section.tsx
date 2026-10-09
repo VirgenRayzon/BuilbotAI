@@ -4,48 +4,41 @@ import { motion } from 'framer-motion';
 import { SectionHeader } from './section-header';
 import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';
+import { Paper, ThemeIcon, Text, Badge, Group } from '@mantine/core';
 import { Code, FileText, UserCheck, Palette, Github, Linkedin, Twitter } from 'lucide-react';
 
 const teamMembers = [
   {
-    role: "Lead Developer",
+    role: "Lead Full-Stack Developer",
     name: "Rayzon Virgen",
-    description: "Responsible for full-stack development, implementing the core logic, AI integrations, and real-time validation systems.",
+    description: "Responsible for core application architecture, Firebase integration, AI flow orchestration, and real-time validation engines.",
     image: "/team/developer_m.png",
     icon: Code,
-    color: "text-cyan-400",
-    borderColor: "border-cyan-500/20",
-    bgColor: "bg-cyan-500/10",
+    color: "cyan",
   },
   {
     role: "Technical Documentation",
     name: "Robert Codilla",
-    description: "Managed technical specifications, hardware research, and authored the comprehensive documentation for the platform.",
+    description: "Led technical research, curated component tier hierarchies, and authored platform documentation and system specifications.",
     image: "/team/documentation_m.png",
     icon: FileText,
-    color: "text-blue-400",
-    borderColor: "border-blue-500/20",
-    bgColor: "bg-blue-500/10",
+    color: "blue",
   },
   {
     role: "Project Manager",
     name: "John Vincent Dela Rosa",
-    description: "Coordinated development timelines, managed team resources, and ensured the project aligned with capstone objectives.",
+    description: "Coordinated development milestones, aligned research outcomes, and ensured technical deliverables adhered to capstone standards.",
     image: "/team/pm_m.png",
     icon: UserCheck,
-    color: "text-purple-400",
-    borderColor: "border-purple-500/20",
-    bgColor: "bg-purple-500/10",
+    color: "violet",
   },
   {
     role: "UI/UX Designer",
     name: "John Christian Gripon",
-    description: "Designed the high-fidelity user interface and interactive experience, focusing on modern aesthetics and usability.",
+    description: "Created user interface prototypes, interactive design systems, and responsive layouts focused on accessibility and usability.",
     image: "/team/ui_m.png",
     icon: Palette,
-    color: "text-pink-400",
-    borderColor: "border-pink-500/20",
-    bgColor: "bg-pink-500/10",
+    color: "pink",
   }
 ];
 
@@ -55,12 +48,11 @@ export function TeamSection() {
 
   return (
     <section className="py-32 relative overflow-hidden transition-colors duration-1000">
-
-      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 relative z-10">
+      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 relative z-10 max-w-7xl mx-auto">
         <SectionHeader
-          badge="BSIT Capstone Project"
+          badge="STI College Cubao • BSIT Capstone"
           title="Meet The Team"
-          subtitle="Building the future of PC assembly. A Capstone Project by STI College BSIT students, dedicated to simplifying hardware selection through innovation."
+          subtitle="Building the future of accessible custom PC configuration. An academic capstone project dedicated to eliminating hardware guesswork through innovation."
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -71,66 +63,58 @@ export function TeamSection() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               viewport={{ once: true }}
-              className={cn(
-                "group relative p-8 rounded-[32px] border transition-all duration-500 hover:scale-[1.02]",
-                isDark
-                  ? "bg-slate-900/40 border-white/5 hover:border-primary/30"
-                  : "bg-slate-50/50 border-slate-200 hover:border-primary/20 shadow-sm"
-              )}
+              className="h-full"
             >
-              {/* Member Image Wrapper */}
-              <div className="relative mb-8 aspect-square rounded-2xl overflow-hidden border border-white/10 group-hover:border-primary/40 transition-colors duration-500">
-                <img
-                  src={member.image}
-                  alt={member.name}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+              <Paper
+                withBorder
+                radius="2xl"
+                p="lg"
+                className={cn(
+                  "h-full flex flex-col justify-between group transition-all duration-300 hover:scale-[1.02]",
+                  isDark
+                    ? "bg-[#111722]/85 border-white/10 hover:border-cyan-500/30 shadow-xl shadow-black/40"
+                    : "bg-white/95 border-slate-200 hover:border-cyan-500/30 shadow-lg shadow-slate-200/60"
+                )}
+              >
+                <div>
+                  {/* Member Image Wrapper */}
+                  <div className="relative mb-6 aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 group-hover:border-cyan-500/40 transition-colors duration-300">
+                    <img
+                      src={member.image}
+                      alt={member.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
 
-                {/* Role Icon Floating */}
-                <div className={cn(
-                  "absolute top-4 right-4 p-3 rounded-xl backdrop-blur-xl border flex items-center justify-center transition-transform duration-500 group-hover:rotate-12",
-                  member.bgColor,
-                  member.borderColor
-                )}>
-                  <member.icon className={cn("w-5 h-5", member.color)} />
+                    {/* Role Icon Floating */}
+                    <div className="absolute top-3 right-3">
+                      <ThemeIcon size={38} radius="md" variant="light" color={member.color} className="backdrop-blur-md shadow-md">
+                        <member.icon size={18} />
+                      </ThemeIcon>
+                    </div>
+                  </div>
+
+                  {/* Info */}
+                  <div className="space-y-2 mb-4">
+                    <Badge variant="light" color={member.color} size="sm" radius="md" className="font-bold tracking-wider uppercase">
+                      {member.role}
+                    </Badge>
+                    <h3 className="text-xl font-bold font-headline uppercase tracking-tight text-slate-900 dark:text-slate-100">
+                      {member.name}
+                    </h3>
+                    <Text size="sm" className="leading-relaxed font-medium text-slate-600 dark:text-slate-400">
+                      {member.description}
+                    </Text>
+                  </div>
                 </div>
-              </div>
 
-              {/* Info */}
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <p className={cn(
-                    "text-[10px] font-black uppercase tracking-[0.3em]",
-                    member.color
-                  )}>
-                    {member.role}
-                  </p>
-                  <h3 className={cn(
-                    "text-2xl font-black font-headline uppercase tracking-tight",
-                    isDark ? "text-white" : "text-slate-900"
-                  )}>
-                    {member.name}
-                  </h3>
+                {/* Social links */}
+                <div className="flex items-center gap-4 pt-4 border-t border-slate-200/60 dark:border-white/10 text-slate-400 dark:text-slate-500">
+                  <Github size={16} className="cursor-pointer hover:text-cyan-500 transition-colors" />
+                  <Linkedin size={16} className="cursor-pointer hover:text-cyan-500 transition-colors" />
+                  <Twitter size={16} className="cursor-pointer hover:text-cyan-500 transition-colors" />
                 </div>
-
-                <p className={cn(
-                  "text-sm leading-relaxed font-medium",
-                  isDark ? "text-slate-400" : "text-slate-600"
-                )}>
-                  {member.description}
-                </p>
-
-                {/* Social links placeholder */}
-                <div className="flex items-center gap-4 pt-4 opacity-40 group-hover:opacity-100 transition-opacity">
-                  <Github className="w-4 h-4 cursor-pointer hover:text-primary transition-colors" />
-                  <Linkedin className="w-4 h-4 cursor-pointer hover:text-primary transition-colors" />
-                  <Twitter className="w-4 h-4 cursor-pointer hover:text-primary transition-colors" />
-                </div>
-              </div>
-
-              {/* Decorative line on hover */}
-              <div className="absolute bottom-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              </Paper>
             </motion.div>
           ))}
         </div>

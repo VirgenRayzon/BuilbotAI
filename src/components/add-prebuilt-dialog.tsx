@@ -40,7 +40,6 @@ import {
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "./ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { ImageUpload } from "./image-upload";
 import { 
     Loader2, 
@@ -72,7 +71,8 @@ import {
 import { getAiPrebuiltSuggestions } from "@/app/actions";
 import { useFirestore, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
-import { SparkleButton } from "./ui/sparkle-button";
+import { AiActionButton } from "./ui/ai-action-button";
+import { ThemeIcon, Text, Paper, ActionIcon, Badge } from "@mantine/core";
 import type { Part, PrebuiltSystem } from "@/lib/types";
 
 const formSchema = z.object({
@@ -154,7 +154,7 @@ function PartSelector({
                 <Button
                     variant="outline"
                     role="combobox"
-                    className="w-full justify-between bg-muted/40 border-border/60 h-9 px-3 text-sm font-normal hover:scale-100 active:scale-100 transition-none"
+                    className="w-full justify-between bg-slate-50 dark:bg-[#141a23] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white h-10 px-3 text-sm font-normal rounded-xl hover:border-cyan-500/50 transition-colors shadow-sm hover:scale-100 active:scale-100"
                 >
                     <span className="truncate">
                         {selectedPart ? selectedPart.name : `Select ${category}…`}
@@ -163,17 +163,17 @@ function PartSelector({
                 </Button>
             </PopoverTrigger>
             <PopoverContent 
-                className="w-[var(--radix-popover-trigger-width)] p-0 border-border/40 shadow-2xl rounded-2xl overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-100 data-[state=open]:slide-in-from-top-0 duration-0" 
+                className="w-[var(--radix-popover-trigger-width)] p-0 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] text-slate-900 dark:text-white shadow-2xl rounded-2xl overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-100 data-[state=open]:slide-in-from-top-0 duration-0" 
                 align="start"
                 sideOffset={8}
             >
-                <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40 bg-muted/20 backdrop-blur-md sticky top-0 z-20">
-                    <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20">
-                        <Search className="h-4 w-4 text-primary" />
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.03] backdrop-blur-md sticky top-0 z-20">
+                    <div className="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 dark:text-cyan-400">
+                        <Search className="h-4 w-4" />
                     </div>
                     <input
                         ref={inputRef}
-                        className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/40 font-bold tracking-tight"
+                        className="flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-900 dark:text-white font-bold tracking-tight"
                         placeholder={`Search ${category}…`}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
@@ -189,17 +189,17 @@ function PartSelector({
                         </button>
                     )}
                 </div>
-                <div className="px-4 py-2 bg-muted/5 flex items-center justify-between border-b border-border/20">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">{category} Inventory</span>
-                    <span className="text-[10px] font-bold text-primary/60">{filtered.length} Results</span>
+                <div className="px-4 py-2 bg-slate-50 dark:bg-white/[0.02] flex items-center justify-between border-b border-slate-200 dark:border-white/10">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">{category} Inventory</span>
+                    <span className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400">{filtered.length} Results</span>
                 </div>
                 <ScrollArea className="h-[340px]">
-                    <div className="p-1">
+                    <div className="p-1.5">
                         {filtered.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-                                <Search className="h-8 w-8 text-muted-foreground/20 mb-2" />
-                                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/40">No components found</p>
-                                <p className="text-[10px] text-muted-foreground/40 mt-1 italic">Try a different search term</p>
+                                <Search className="h-8 w-8 text-slate-400/40 mb-2" />
+                                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">No components found</p>
+                                <p className="text-[10px] text-slate-400 mt-1 italic">Try a different search term</p>
                             </div>
                         ) : (
                             <div className="space-y-1">
@@ -224,40 +224,40 @@ function PartSelector({
                                                 setQuery("");
                                             }}
                                             className={cn(
-                                                "relative flex w-full cursor-default select-none items-center rounded-xl py-3 px-3 text-sm outline-none transition-all duration-200 border border-transparent",
-                                                "hover:bg-primary/10 hover:border-primary/20 group",
-                                                value === item.id ? "bg-primary/5 border-primary/20 ring-1 ring-primary/10" : ""
+                                                "relative flex w-full cursor-default select-none items-center rounded-xl py-2.5 px-3 text-sm outline-none transition-all duration-200 border border-transparent",
+                                                "hover:bg-cyan-500/10 hover:border-cyan-500/20 group",
+                                                value === item.id ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-700 dark:text-cyan-300" : "text-slate-800 dark:text-slate-200"
                                             )}
                                         >
-                                            <div className="flex items-center gap-4 w-full">
+                                            <div className="flex items-center gap-3 w-full">
                                                 <div className={cn(
-                                                    "h-10 w-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300",
+                                                    "h-9 w-9 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300",
                                                     value === item.id 
-                                                        ? "bg-primary text-primary-foreground shadow-[0_0_15px_rgba(var(--primary),0.3)]" 
-                                                        : "bg-muted/30 text-muted-foreground/60 group-hover:bg-primary/20 group-hover:text-primary"
+                                                        ? "bg-cyan-600 text-white shadow-sm" 
+                                                        : "bg-slate-100 dark:bg-white/[0.05] text-slate-500 dark:text-slate-400 group-hover:bg-cyan-500/20 group-hover:text-cyan-600 dark:group-hover:text-cyan-400"
                                                 )}>
-                                                    <Icon className="h-5 w-5" />
+                                                    <Icon className="h-4 w-4" />
                                                 </div>
                                                 
                                                 <div className="flex flex-col items-start gap-0.5 text-left flex-1 min-w-0">
                                                     <span className={cn(
-                                                        "font-bold text-[13px] leading-tight tracking-tight truncate w-full transition-colors",
-                                                        value === item.id ? "text-primary" : "text-foreground group-hover:text-primary"
+                                                        "font-bold text-[12px] leading-tight tracking-tight truncate w-full transition-colors",
+                                                        value === item.id ? "text-cyan-700 dark:text-cyan-300" : "text-slate-900 dark:text-slate-100 group-hover:text-cyan-600 dark:group-hover:text-cyan-400"
                                                     )}>
                                                         {item.name}
                                                     </span>
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground/40">{item.brand}</span>
-                                                        <div className="h-1 w-1 rounded-full bg-muted-foreground/20" />
-                                                        <span className="text-[11px] font-bold text-primary/80 font-mono">
+                                                        <span className="text-[10px] font-black uppercase tracking-tighter text-slate-400 dark:text-slate-500">{item.brand}</span>
+                                                        <div className="h-1 w-1 rounded-full bg-slate-300 dark:bg-white/20" />
+                                                        <span className="text-[11px] font-bold text-cyan-700 dark:text-cyan-400 font-mono">
                                                             {formatCurrency(item.price)}
                                                         </span>
                                                     </div>
                                                 </div>
 
                                                 {value === item.id && (
-                                                    <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center shadow-lg animate-in zoom-in duration-300">
-                                                        <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                                                    <div className="h-5 w-5 rounded-full bg-cyan-600 flex items-center justify-center text-white shadow-sm shrink-0">
+                                                        <Check className="h-3 w-3" />
                                                     </div>
                                                 )}
                                             </div>
@@ -293,6 +293,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
     // Track which PartSelector dropdown is open
     const [openSlot, setOpenSlot] = useState<string | null>(null);
     const [elapsedTime, setElapsedTime] = useState(0);
+    const [justAutofilled, setJustAutofilled] = useState(false);
     const [showTelemetry, setShowTelemetry] = useState(false);
     const startTimeRef = useRef<number>(0);
     const { toast } = useToast();
@@ -462,6 +463,8 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                 }
                 
                 if (fieldsUpdated.length > 0) {
+                    setJustAutofilled(true);
+                    setTimeout(() => setJustAutofilled(false), 2500);
                     toast({ title: "AI Suggestions Applied", description: `Successfully filled: ${fieldsUpdated.join(", ")}.` });
                 } else {
                     toast({ title: "Assist Complete", description: "Identity fields were already filled and were not overwritten." });
@@ -626,104 +629,65 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
         currentSticks++;
     }
 
+    const highlightClass = justAutofilled
+        ? "ring-2 ring-cyan-500/50 bg-cyan-500/10 dark:bg-cyan-500/10 transition-all duration-700"
+        : "";
+
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent className="sm:max-w-[75vw] p-0 gap-0 overflow-hidden border-primary/20 bg-background/95 backdrop-blur-xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] rounded-3xl [&>button.absolute]:hidden">
+            <DialogContent className="sm:max-w-[75vw] p-0 gap-0 overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] backdrop-blur-2xl shadow-2xl rounded-3xl [&>button.absolute]:hidden">
 
                 {/* ── Header ── */}
-                <DialogHeader className="px-8 pt-8 pb-6 border-b border-border/40 bg-muted/20 flex-row items-center gap-4 space-y-0">
-                    <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
-                        <Cpu className="h-6 w-6 text-primary" />
+                <DialogHeader className="px-8 pt-7 pb-5 border-b border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] flex flex-row items-center justify-between gap-4 space-y-0">
+                    <div className="flex items-center gap-4">
+                        <ThemeIcon size={46} radius="xl" variant="light" color="cyan" className="shadow-sm">
+                            <Cpu className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
+                        </ThemeIcon>
+                        <div>
+                            <DialogTitle className="text-xl font-headline font-extrabold tracking-tight text-slate-900 dark:text-white">
+                                {title || (initialData ? "Edit Prebuilt System" : "Add New Prebuilt System")}
+                            </DialogTitle>
+                            <DialogDescription className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                {initialData ? "Refine system details, pricing, and component configuration." : "Configure new system inventory with AI-assisted identity generation."}
+                            </DialogDescription>
+                        </div>
                     </div>
-                    <div className="flex-1">
-                        <DialogTitle className="font-headline text-2xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-                            {title || (initialData ? "Edit Prebuilt System" : "Add New Prebuilt System")}
-                        </DialogTitle>
-                        <DialogDescription className="text-sm text-muted-foreground font-medium mt-1">
-                            {initialData ? "Refine system details, pricing, and component configuration." : "Configure new system inventory with AI-assisted identity generation."}
-                        </DialogDescription>
-                    </div>
-                    <div className="ml-auto flex items-center gap-3">
-                        {isAiPending && (
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-500/20 bg-cyan-950/20 text-cyan-400/80 text-[10px] font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(6,182,212,0.08)] backdrop-blur-sm transition-all duration-300">
-                                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                                <span>{elapsedTime}s elapsed</span>
-                            </div>
-                        )}
-                        {aiDuration !== null && !isAiPending && (
-                            <div className="relative">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowTelemetry(prev => !prev)}
-                                    className="cursor-help flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/40 text-cyan-400 text-[10px] font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(6,182,212,0.15)] backdrop-blur-md hover:shadow-[0_0_25px_rgba(6,182,212,0.3)] hover:scale-105 transition-all duration-300 animate-in fade-in zoom-in-95 duration-300"
-                                >
-                                    <Zap className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 animate-pulse" />
-                                    <span>{aiDuration.toFixed(1)}s TURNAROUND TIME</span>
-                                </button>
 
-                                {/* Tooltip Content */}
-                                <div className={cn(
-                                    "absolute right-0 top-full mt-2 w-64 p-3 rounded-xl border border-cyan-500/20 bg-slate-950/95 backdrop-blur-xl shadow-2xl transition-all duration-300 z-50 text-[10px] font-mono text-zinc-300 space-y-1.5 leading-relaxed text-left",
-                                    showTelemetry ? "opacity-100 pointer-events-auto scale-100" : "opacity-0 pointer-events-none scale-95"
-                                )}>
-                                    <div className="border-b border-white/5 pb-1 flex justify-between">
-                                        <span className="text-[9px] font-black text-cyan-400 uppercase">Telemetry Analysis</span>
-                                        <span className="text-[8px] text-zinc-500 font-sans">Status: Complete</span>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <div className="flex justify-between">
-                                            <span className="text-zinc-500">LLM Server Call:</span>
-                                            <span className="text-zinc-200">{(aiDuration * 0.65).toFixed(1)}s</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-zinc-500">DB Part Scanning:</span>
-                                            <span className="text-zinc-200">{(aiDuration * 0.20).toFixed(1)}s</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-zinc-500">Catalog Matching:</span>
-                                            <span className="text-zinc-200">{(aiDuration * 0.15).toFixed(1)}s</span>
-                                        </div>
-                                        <div className="flex justify-between border-t border-white/5 pt-1.5 mt-1">
-                                            <span className="text-zinc-500">Tokens Used:</span>
-                                            <span className="text-cyan-400 font-bold">{tokensUsed || Math.round(480 + (aiDuration * 2.5))}</span>
-                                        </div>
-                                    </div>
-                                    <div className="pt-1.5 border-t border-white/5 flex justify-between text-[9px] font-sans">
-                                        <span className="text-zinc-400">Average: 45.0s</span>
-                                        <span className="text-cyan-400 font-bold">Optimal Speed</span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                        <SparkleButton
-                            type="button"
-                            onClick={isAiPending ? handleCancelAiAssist : handleAiAssist}
-                            isLoading={isAiPending}
-                            loadingChildren="CANCEL"
-                            icon={<Sparkles className="h-4 w-4" />}
-                            className="h-11 px-6 shadow-lg transition-all duration-300 text-xs font-black uppercase tracking-widest"
-                        >
-                            AI ASSIST
-                        </SparkleButton>
+                    <div className="ml-auto">
+                        <AiActionButton
+                            label="AI ASSIST"
+                            isPending={isAiPending}
+                            onTrigger={handleAiAssist}
+                            onCancel={handleCancelAiAssist}
+                            elapsedTime={elapsedTime}
+                            aiDuration={aiDuration}
+                            tokensUsed={tokensUsed}
+                            mode="prebuilt"
+                        />
                     </div>
                 </DialogHeader>
+
                 {isAiPending && (
-                    <div className="relative overflow-hidden bg-primary/5 border-b border-primary/10">
-                        <div className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/20">
-                            <div className="h-full bg-primary animate-progress-glow w-[30%]" />
+                    <div className="relative overflow-hidden bg-cyan-500/10 dark:bg-cyan-500/10 border-b border-cyan-500/20">
+                        <div className="absolute inset-x-0 bottom-0 h-0.5 bg-cyan-500/20">
+                            <div className="h-full bg-cyan-500 animate-progress-glow w-[35%]" />
                         </div>
                         <div className="px-8 py-3 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 border border-primary/20">
-                                    <BrainCircuit className="h-4 w-4 text-primary animate-pulse" />
-                                </div>
+                                <ThemeIcon size={32} radius="lg" variant="light" color="cyan">
+                                    <BrainCircuit className="h-4 w-4 text-cyan-600 dark:text-cyan-400 animate-pulse" />
+                                </ThemeIcon>
                                 <div className="flex flex-col">
-                                    <span className="text-xs font-bold text-primary uppercase tracking-widest">Buildbot Intelligence Active</span>
-                                    <span className="text-[10px] text-primary/60 font-medium">Researching market tiers, pricing benchmarks, and system identities...</span>
+                                    <span className="text-xs font-bold text-cyan-800 dark:text-cyan-300 uppercase tracking-wider">
+                                        Buildbot Intelligence Active
+                                    </span>
+                                    <span className="text-[11px] text-slate-600 dark:text-slate-400">
+                                        Researching market tiers, pricing benchmarks, and system identities...
+                                    </span>
                                 </div>
                             </div>
-                            <Badge variant="outline" className="animate-pulse bg-primary/10 text-primary border-primary/20 text-[10px] uppercase font-bold px-3 py-1">
+                            <Badge variant="filled" color="cyan" size="sm" className="font-mono font-bold animate-pulse">
                                 Processing
                             </Badge>
                         </div>
@@ -742,11 +706,16 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                     
                                     {/* Left Column: Image Preview */}
                                     <div className="col-span-12 md:col-span-4 sticky top-0">
-                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mb-4 flex items-center gap-3">
-                                            <span className="inline-block w-4 h-px bg-primary/40" />
+                                        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-400 mb-4 flex items-center gap-2.5">
+                                            <span className="inline-block w-3.5 h-0.5 bg-cyan-500/60 rounded-full" />
                                             Visual Identity
                                         </p>
-                                        <div className="p-2 rounded-3xl border border-primary/10 bg-primary/5 shadow-inner">
+                                        <Paper
+                                            withBorder
+                                            radius="xl"
+                                            p="xs"
+                                            className="bg-slate-50/70 dark:bg-[#111722]/60 border-slate-200 dark:border-white/10 shadow-sm"
+                                        >
                                             <FormField control={form.control} name="imageUrl" render={({ field }) => (
                                                 <FormItem>
                                                     <FormControl>
@@ -759,13 +728,13 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />
-                                        </div>
+                                        </Paper>
                                     </div>
 
                                     {/* Right Column: Identity Fields */}
                                     <div className="col-span-12 md:col-span-8 space-y-6">
-                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mb-4 flex items-center gap-3">
-                                            <span className="inline-block w-4 h-px bg-primary/40" />
+                                        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-400 mb-4 flex items-center gap-2.5">
+                                            <span className="inline-block w-3.5 h-0.5 bg-cyan-500/60 rounded-full" />
                                             System Details
                                         </p>
                                         
@@ -773,9 +742,18 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                             <div className="col-span-2">
                                                 <FormField control={form.control} name="name" render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">System Name</FormLabel>
+                                                        <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                                            System Name
+                                                        </FormLabel>
                                                         <FormControl>
-                                                            <Input className="bg-muted/30 border-border/40 h-10 rounded-xl focus:bg-background transition-colors shadow-sm" placeholder="e.g., Ultimate Gamer V1" {...field} />
+                                                            <Input 
+                                                                className={cn(
+                                                                    "bg-slate-50 dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 transition-all shadow-sm",
+                                                                    highlightClass
+                                                                )} 
+                                                                placeholder="e.g., Ultimate Gamer V1" 
+                                                                {...field} 
+                                                            />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -784,14 +762,19 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
 
                                             <FormField control={form.control} name="tier" render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Tier</FormLabel>
+                                                    <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                                        Tier
+                                                    </FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value}>
                                                         <FormControl>
-                                                            <SelectTrigger className="bg-muted/30 border-border/40 h-10 rounded-xl">
+                                                            <SelectTrigger className={cn(
+                                                                "bg-slate-50 dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white",
+                                                                highlightClass
+                                                            )}>
                                                                 <SelectValue placeholder="Select tier…" />
                                                             </SelectTrigger>
                                                         </FormControl>
-                                                        <SelectContent className="rounded-xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-100 data-[state=open]:slide-in-from-top-0 duration-0">
+                                                        <SelectContent className="rounded-xl bg-white dark:bg-[#141a23] border-slate-200 dark:border-white/10 text-slate-900 dark:text-white shadow-xl">
                                                             <SelectItem value="Entry">Entry</SelectItem>
                                                             <SelectItem value="Mid-Range">Mid-Range</SelectItem>
                                                             <SelectItem value="High-End">High-End</SelectItem>
@@ -804,11 +787,16 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
 
                                             <FormField control={form.control} name="price" render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Price (PHP ₱)</FormLabel>
+                                                    <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                                        Price (PHP ₱)
+                                                    </FormLabel>
                                                     <FormControl>
                                                         <Input 
                                                             type="number" 
-                                                            className="bg-muted/30 border-border/40 h-10 rounded-xl" 
+                                                            className={cn(
+                                                                "bg-slate-50 dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 transition-all shadow-sm font-mono",
+                                                                highlightClass
+                                                            )} 
                                                             placeholder="e.g., 125000" 
                                                             {...field} 
                                                             onKeyDown={(e) => {
@@ -824,73 +812,73 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                         </div>
 
                                         {/* Description */}
-                                        <div className="pt-4">
+                                        <div className="pt-2">
                                             <FormField control={form.control} name="description" render={({ field }) => (
                                                 <FormItem>
-                                                    <div className="flex items-center justify-between mb-3">
-                                                        <FormLabel className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 flex items-center gap-2">
+                                                    <div className="flex items-center justify-between mb-2.5">
+                                                        <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                                                             Description
                                                         </FormLabel>
-                                                        <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60 border border-border/40 shadow-sm">
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
+                                                        <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-white/[0.05] border border-slate-200 dark:border-white/10 shadow-sm">
+                                                            <ActionIcon
+                                                                variant="subtle"
+                                                                color="gray"
                                                                 size="sm"
-                                                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                                                                className="hover:text-cyan-600 dark:hover:text-cyan-400"
                                                                 onClick={() => {
                                                                     const val = field.value || "";
                                                                     field.onChange(`**${val}**`);
                                                                 }}
                                                                 title="Bold"
                                                             >
-                                                                <Bold className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
+                                                                <Bold className="h-3.5 w-3.5" />
+                                                            </ActionIcon>
+                                                            <ActionIcon
+                                                                variant="subtle"
+                                                                color="gray"
                                                                 size="sm"
-                                                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                                                                className="hover:text-cyan-600 dark:hover:text-cyan-400"
                                                                 onClick={() => {
                                                                     const val = field.value || "";
                                                                     field.onChange(`*${val}*`);
                                                                 }}
                                                                 title="Italic"
                                                             >
-                                                                <Italic className="h-4 w-4" />
-                                                            </Button>
-                                                            <div className="w-px h-5 bg-border/60 mx-1" />
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
+                                                                <Italic className="h-3.5 w-3.5" />
+                                                            </ActionIcon>
+                                                            <div className="w-px h-4 bg-slate-300 dark:bg-white/10 mx-0.5" />
+                                                            <ActionIcon
+                                                                variant="subtle"
+                                                                color="gray"
                                                                 size="sm"
-                                                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                                                                className="hover:text-cyan-600 dark:hover:text-cyan-400"
                                                                 onClick={() => {
                                                                     const val = field.value || "";
                                                                     field.onChange(`# ${val}`);
                                                                 }}
                                                                 title="Heading 1"
                                                             >
-                                                                <Heading1 className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
+                                                                <Heading1 className="h-3.5 w-3.5" />
+                                                            </ActionIcon>
+                                                            <ActionIcon
+                                                                variant="subtle"
+                                                                color="gray"
                                                                 size="sm"
-                                                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                                                                className="hover:text-cyan-600 dark:hover:text-cyan-400"
                                                                 onClick={() => {
                                                                     const val = field.value || "";
                                                                     field.onChange(`## ${val}`);
                                                                 }}
                                                                 title="Heading 2"
                                                             >
-                                                                <Heading2 className="h-4 w-4" />
-                                                            </Button>
-                                                            <div className="w-px h-5 bg-border/60 mx-1" />
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
+                                                                <Heading2 className="h-3.5 w-3.5" />
+                                                            </ActionIcon>
+                                                            <div className="w-px h-4 bg-slate-300 dark:bg-white/10 mx-0.5" />
+                                                            <ActionIcon
+                                                                variant="subtle"
+                                                                color="gray"
                                                                 size="sm"
-                                                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                                                                className="hover:text-cyan-600 dark:hover:text-cyan-400"
                                                                 onClick={() => {
                                                                     const val = field.value || "";
                                                                     const lines = val.split('\n');
@@ -899,26 +887,29 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                                 }}
                                                                 title="Bullet List"
                                                             >
-                                                                <List className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
+                                                                <List className="h-3.5 w-3.5" />
+                                                            </ActionIcon>
+                                                            <ActionIcon
+                                                                variant="subtle"
+                                                                color="gray"
                                                                 size="sm"
-                                                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                                                                className="hover:text-cyan-600 dark:hover:text-cyan-400"
                                                                 onClick={() => {
                                                                     const val = field.value || "";
                                                                     field.onChange(`\`${val}\``);
                                                                 }}
                                                                 title="Code"
                                                             >
-                                                                <Code className="h-4 w-4" />
-                                                            </Button>
+                                                                <Code className="h-3.5 w-3.5" />
+                                                            </ActionIcon>
                                                         </div>
                                                     </div>
                                                     <FormControl>
                                                         <textarea 
-                                                            className="flex min-h-[140px] w-full rounded-2xl border border-border/40 bg-muted/20 px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus:bg-background focus:border-primary/40 focus:ring-1 focus:ring-primary/20 focus-visible:outline-none transition-all duration-300 font-mono leading-relaxed"
+                                                            className={cn(
+                                                                "flex min-h-[130px] w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#141a23] p-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 focus-visible:outline-none transition-all duration-300 font-mono leading-relaxed",
+                                                                highlightClass
+                                                            )}
                                                             placeholder="Use Markdown for formatting...
 - The Midnight Apex
 - 4K Gaming Beast
@@ -936,18 +927,25 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
 
                                 {/* Section: Components */}
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mb-4 flex items-center gap-3">
-                                        <span className="inline-block w-4 h-px bg-primary/40" />
+                                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-400 mb-4 flex items-center gap-2.5">
+                                        <span className="inline-block w-3.5 h-0.5 bg-cyan-500/60 rounded-full" />
                                         Component Selection
-                                        <span className="text-muted-foreground/40 normal-case font-normal tracking-normal ml-1">(sorted A–Z · type to search)</span>
-                                        <span className="inline-block flex-1 h-px bg-primary/10" />
+                                        <span className="text-slate-400 dark:text-slate-500 normal-case font-normal tracking-normal ml-1">(sorted A–Z · type to search)</span>
                                     </p>
-                                    <div className="grid grid-cols-2 gap-x-8 gap-y-6 p-6 rounded-3xl border border-primary/10 bg-primary/5">
-                                        {/* Row 1: CPU & Motherboard */}
-                                        <div className="space-y-5">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {/* CPU Card */}
+                                        <Paper withBorder radius="xl" p="md" className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 shadow-sm space-y-2.5 transition-all hover:border-cyan-500/30">
                                             <FormField control={form.control} name="cpu" render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">CPU</FormLabel>
+                                                <FormItem className="space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <ThemeIcon size={24} radius="md" variant="light" color="cyan">
+                                                                <Cpu className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                                                            </ThemeIcon>
+                                                            <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 m-0">CPU</FormLabel>
+                                                        </div>
+                                                        <Badge size="xs" variant="light" color="cyan" className="font-mono text-[9px] uppercase">Core</Badge>
+                                                    </div>
                                                     <PartSelector
                                                         category="CPU"
                                                         items={inventory["CPU"] || []}
@@ -959,9 +957,21 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />
+                                        </Paper>
+
+                                        {/* Motherboard Card */}
+                                        <Paper withBorder radius="xl" p="md" className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 shadow-sm space-y-2.5 transition-all hover:border-cyan-500/30">
                                             <FormField control={form.control} name="motherboard" render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Motherboard</FormLabel>
+                                                <FormItem className="space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <ThemeIcon size={24} radius="md" variant="light" color="cyan">
+                                                                <CircuitBoard className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                                                            </ThemeIcon>
+                                                            <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 m-0">Motherboard</FormLabel>
+                                                        </div>
+                                                        <Badge size="xs" variant="light" color="cyan" className="font-mono text-[9px] uppercase">Base</Badge>
+                                                    </div>
                                                     <PartSelector
                                                         category="Motherboard"
                                                         items={inventory["Motherboard"] || []}
@@ -973,13 +983,21 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />
-                                        </div>
-                                        
-                                        {/* Row 1b: GPU & Cooler */}
-                                        <div className="space-y-5">
+                                        </Paper>
+
+                                        {/* GPU Card */}
+                                        <Paper withBorder radius="xl" p="md" className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 shadow-sm space-y-2.5 transition-all hover:border-cyan-500/30">
                                             <FormField control={form.control} name="gpu" render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">GPU</FormLabel>
+                                                <FormItem className="space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <ThemeIcon size={24} radius="md" variant="light" color="cyan">
+                                                                <Monitor className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                                                            </ThemeIcon>
+                                                            <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 m-0">GPU</FormLabel>
+                                                        </div>
+                                                        <Badge size="xs" variant="light" color="cyan" className="font-mono text-[9px] uppercase">Graphics</Badge>
+                                                    </div>
                                                     <PartSelector
                                                         category="GPU"
                                                         items={inventory["GPU"] || []}
@@ -991,9 +1009,21 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />
+                                        </Paper>
+
+                                        {/* Cooler Card */}
+                                        <Paper withBorder radius="xl" p="md" className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 shadow-sm space-y-2.5 transition-all hover:border-cyan-500/30">
                                             <FormField control={form.control} name="cooler" render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Cooler</FormLabel>
+                                                <FormItem className="space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <ThemeIcon size={24} radius="md" variant="light" color="cyan">
+                                                                <Fan className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                                                            </ThemeIcon>
+                                                            <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 m-0">Cooler</FormLabel>
+                                                        </div>
+                                                        <Badge size="xs" variant="light" color="cyan" className="font-mono text-[9px] uppercase">Thermal</Badge>
+                                                    </div>
                                                     <PartSelector
                                                         category="Cooler"
                                                         items={inventory["Cooler"] || []}
@@ -1005,13 +1035,21 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />
-                                        </div>
+                                        </Paper>
 
-                                        {/* Row 2: PSU & Case */}
-                                        <div className="space-y-5">
+                                        {/* PSU Card */}
+                                        <Paper withBorder radius="xl" p="md" className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 shadow-sm space-y-2.5 transition-all hover:border-cyan-500/30">
                                             <FormField control={form.control} name="psu" render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Power Supply</FormLabel>
+                                                <FormItem className="space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <ThemeIcon size={24} radius="md" variant="light" color="cyan">
+                                                                <Zap className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                                                            </ThemeIcon>
+                                                            <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 m-0">Power Supply</FormLabel>
+                                                        </div>
+                                                        <Badge size="xs" variant="light" color="cyan" className="font-mono text-[9px] uppercase">Power</Badge>
+                                                    </div>
                                                     <PartSelector
                                                         category="PSU"
                                                         items={inventory["PSU"] || []}
@@ -1023,11 +1061,21 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />
-                                        </div>
-                                        <div className="space-y-5">
+                                        </Paper>
+
+                                        {/* Case Card */}
+                                        <Paper withBorder radius="xl" p="md" className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 shadow-sm space-y-2.5 transition-all hover:border-cyan-500/30">
                                             <FormField control={form.control} name="case" render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Chassis / Case</FormLabel>
+                                                <FormItem className="space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <ThemeIcon size={24} radius="md" variant="light" color="cyan">
+                                                                <Box className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                                                            </ThemeIcon>
+                                                            <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 m-0">Chassis / Case</FormLabel>
+                                                        </div>
+                                                        <Badge size="xs" variant="light" color="cyan" className="font-mono text-[9px] uppercase">Case</Badge>
+                                                    </div>
                                                     <PartSelector
                                                         category="Case"
                                                         items={inventory["Case"] || []}
@@ -1039,103 +1087,64 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />
-                                        </div>
+                                        </Paper>
+                                    </div>
 
-                                        <div className="col-span-2 space-y-6 pt-4 border-t border-primary/10">
-                                            {/* RAM (Multi) */}
-                                            <div className="space-y-3">
-                                                <div className="flex items-center justify-between">
-                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">RAM Configuration</FormLabel>
-                                                    <span className="text-[10px] font-bold text-primary">{ramSlots} Slots Available</span>
+                                    {/* Multi-slot Arrays (RAM & Storage) */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6">
+                                        {/* RAM Card */}
+                                        <Paper withBorder radius="xl" p="md" className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 shadow-sm space-y-3 transition-all hover:border-cyan-500/30">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <ThemeIcon size={24} radius="md" variant="light" color="cyan">
+                                                        <MemoryStick className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                                                    </ThemeIcon>
+                                                    <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 m-0">RAM Configuration</FormLabel>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    {ramFields.map((fieldData, visualIndex) => {
-                                                        if (fieldData.isBlocked) {
-                                                            return (
-                                                                <div key={`ram-blocked-${visualIndex}`} className="flex items-center justify-center h-10 rounded-lg border border-dashed border-muted bg-muted/10">
-                                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">Unavailable</span>
-                                                                </div>
-                                                            );
-                                                        }
-                                                        if (fieldData.isPlaceholder) {
-                                                            return (
-                                                                <div key={`ram-placeholder-${visualIndex}`} className="flex items-center justify-center h-10 px-3 rounded-lg border border-primary/20 bg-primary/5 overflow-hidden">
-                                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-primary/70 truncate">Occupied by {fieldData.part?.name}</span>
-                                                                </div>
-                                                            );
-                                                        }
-                                                        return (
-                                                            <FormField
-                                                                key={`ram-${fieldData.fieldIndex}`}
-                                                                control={form.control}
-                                                                name={`ram.${fieldData.fieldIndex}` as any}
-                                                                render={({ field }) => (
-                                                                    <div className="relative group">
-                                                                        <PartSelector
-                                                                            category={`RAM Module ${fieldData.fieldIndex + 1}`}
-                                                                            items={inventory["RAM"] || []}
-                                                                            value={field.value || ""}
-                                                                            onChange={field.onChange}
-                                                                            isOpen={openSlot === `ram-${fieldData.fieldIndex}`}
-                                                                            onOpenChange={(o) => setOpenSlot(o ? `ram-${fieldData.fieldIndex}` : null)}
-                                                                        />
-                                                                        {field.value && (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => {
-                                                                                    field.onChange("");
-                                                                                    const current = form.getValues("ram");
-                                                                                    const next = [...current];
-                                                                                    next.splice(fieldData.fieldIndex, 1);
-                                                                                    form.setValue("ram", next);
-                                                                                }}
-                                                                                className="absolute -right-2 -top-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-20"
-                                                                            >
-                                                                                <X className="h-3 w-3" />
-                                                                            </button>
-                                                                        )}
-                                                                    </div>
-                                                                )}
-                                                            />
-                                                        );
-                                                    })}
-                                                </div>
+                                                <Badge size="xs" variant="light" color="cyan" className="font-mono text-[9px] uppercase">{ramSlots} Slots</Badge>
                                             </div>
-
-                                            {/* Storage (Multi) */}
-                                            <div className="space-y-3">
-                                                <div className="flex items-center justify-between">
-                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Storage Array</FormLabel>
-                                                    <span className="text-[10px] font-bold text-primary">{totalStorageSlots} Slots Available</span>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    {Array.from({ length: totalStorageSlots }).map((_, index) => {
-                                                        const isNvme = index < nvmeSlots;
-                                                        const slotLabel = isNvme ? `NVMe M.2 Slot ${index + 1}` : `SATA Slot ${index - nvmeSlots + 1}`;
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {ramFields.map((fieldData, visualIndex) => {
+                                                    if (fieldData.isBlocked) {
                                                         return (
+                                                            <div key={`ram-blocked-${visualIndex}`} className="flex items-center justify-center h-10 rounded-xl border border-dashed border-slate-300 dark:border-white/10 bg-slate-100/50 dark:bg-white/[0.02]">
+                                                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Unavailable</span>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    if (fieldData.isPlaceholder) {
+                                                        return (
+                                                            <div key={`ram-placeholder-${visualIndex}`} className="flex items-center justify-center h-10 px-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 overflow-hidden">
+                                                                <span className="text-[10px] font-bold uppercase tracking-widest text-cyan-600 dark:text-cyan-400 truncate">Occupied ({fieldData.part?.name})</span>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return (
                                                         <FormField
-                                                            key={`storage-${index}`}
+                                                            key={`ram-${fieldData.fieldIndex}`}
                                                             control={form.control}
-                                                            name={`storage.${index}` as any}
+                                                            name={`ram.${fieldData.fieldIndex}` as any}
                                                             render={({ field }) => (
                                                                 <div className="relative group">
                                                                     <PartSelector
-                                                                        category={slotLabel}
-                                                                        items={inventory["Storage"]?.filter(s => {
-                                                                            if (!s.specifications) return true;
-                                                                            const isPartNvme = s.specifications['Type']?.toString().toLowerCase().includes('nvme') || s.name.toLowerCase().includes('nvme');
-                                                                            return isNvme ? isPartNvme : !isPartNvme;
-                                                                        }) || []}
+                                                                        category={`RAM Module ${fieldData.fieldIndex + 1}`}
+                                                                        items={inventory["RAM"] || []}
                                                                         value={field.value || ""}
                                                                         onChange={field.onChange}
-                                                                        isOpen={openSlot === `storage-${index}`}
-                                                                        onOpenChange={(o) => setOpenSlot(o ? `storage-${index}` : null)}
+                                                                        isOpen={openSlot === `ram-${fieldData.fieldIndex}`}
+                                                                        onOpenChange={(o) => setOpenSlot(o ? `ram-${fieldData.fieldIndex}` : null)}
                                                                     />
                                                                     {field.value && (
                                                                         <button
                                                                             type="button"
-                                                                            onClick={() => field.onChange("")}
-                                                                            className="absolute -right-2 -top-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-20"
+                                                                            onClick={() => {
+                                                                                field.onChange("");
+                                                                                const current = form.getValues("ram");
+                                                                                const next = [...current];
+                                                                                next.splice(fieldData.fieldIndex, 1);
+                                                                                form.setValue("ram", next);
+                                                                            }}
+                                                                            className="absolute -right-2 -top-2 bg-rose-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md z-20"
                                                                         >
                                                                             <X className="h-3 w-3" />
                                                                         </button>
@@ -1143,10 +1152,60 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                                 </div>
                                                             )}
                                                         />
-                                                    )})}
-                                                </div>
+                                                    );
+                                                })}
                                             </div>
-                                        </div>
+                                        </Paper>
+
+                                        {/* Storage Card */}
+                                        <Paper withBorder radius="xl" p="md" className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 shadow-sm space-y-3 transition-all hover:border-cyan-500/30">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <ThemeIcon size={24} radius="md" variant="light" color="cyan">
+                                                        <HardDrive className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                                                    </ThemeIcon>
+                                                    <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 m-0">Storage Array</FormLabel>
+                                                </div>
+                                                <Badge size="xs" variant="light" color="cyan" className="font-mono text-[9px] uppercase">{totalStorageSlots} Slots</Badge>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {Array.from({ length: totalStorageSlots }).map((_, index) => {
+                                                    const isNvme = index < nvmeSlots;
+                                                    const slotLabel = isNvme ? `NVMe M.2 Slot ${index + 1}` : `SATA Slot ${index - nvmeSlots + 1}`;
+                                                    return (
+                                                    <FormField
+                                                        key={`storage-${index}`}
+                                                        control={form.control}
+                                                        name={`storage.${index}` as any}
+                                                        render={({ field }) => (
+                                                            <div className="relative group">
+                                                                <PartSelector
+                                                                    category={slotLabel}
+                                                                    items={inventory["Storage"]?.filter(s => {
+                                                                        if (!s.specifications) return true;
+                                                                        const isPartNvme = s.specifications['Type']?.toString().toLowerCase().includes('nvme') || s.name.toLowerCase().includes('nvme');
+                                                                        return isNvme ? isPartNvme : !isPartNvme;
+                                                                    }) || []}
+                                                                    value={field.value || ""}
+                                                                    onChange={field.onChange}
+                                                                    isOpen={openSlot === `storage-${index}`}
+                                                                    onOpenChange={(o) => setOpenSlot(o ? `storage-${index}` : null)}
+                                                                />
+                                                                {field.value && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => field.onChange("")}
+                                                                        className="absolute -right-2 -top-2 bg-rose-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md z-20"
+                                                                    >
+                                                                        <X className="h-3 w-3" />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    />
+                                                )})}
+                                            </div>
+                                        </Paper>
                                     </div>
                                 </div>
 
@@ -1154,17 +1213,20 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                         </ScrollArea>
 
                         {/* ── Sticky Footer ── */}
-                        <DialogFooter className="px-8 py-6 border-t border-border/40 bg-muted/20 flex-row justify-between items-center sm:justify-between">
+                        <DialogFooter className="px-8 py-4 border-t border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] flex-row justify-between items-center sm:justify-between">
                             <DialogClose asChild>
-                                <Button type="button" variant="ghost" size="lg" className="rounded-xl px-6 font-bold uppercase tracking-wider text-xs hover:bg-destructive/10 hover:text-destructive">
+                                <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    className="h-10 px-6 rounded-xl font-bold uppercase tracking-wider text-xs border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
+                                >
                                     Cancel
                                 </Button>
                             </DialogClose>
                             <Button
                                 type="submit"
-                                size="lg"
                                 disabled={isAiPending}
-                                className="rounded-xl px-10 font-bold uppercase tracking-[0.15em] text-xs h-12 shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all duration-200"
+                                className="h-10 px-8 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold uppercase tracking-wider text-xs shadow-md shadow-cyan-500/20 transition-all duration-200"
                             >
                                 {isAiPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {initialData ? "Update Prebuilt" : "Deploy System"}

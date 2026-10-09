@@ -105,8 +105,8 @@ export function ImageUpload({ value, onChange, className, variant = "default" }:
                 <div className="relative group mx-auto">
                     <div 
                         className={cn(
-                            "relative aspect-square w-full rounded-2xl border-2 border-dashed border-border/60 bg-muted/20 flex flex-col items-center justify-center gap-3 transition-all duration-300 overflow-hidden group-hover:border-primary/50 group-hover:bg-primary/5 shadow-inner",
-                            isPreviewReady && "border-solid border-primary/30"
+                            "relative aspect-square w-full rounded-2xl border-2 border-dashed border-slate-300 dark:border-white/15 bg-slate-50/60 dark:bg-white/[0.02] flex flex-col items-center justify-center gap-3 transition-all duration-300 overflow-hidden hover:border-cyan-500/60 hover:bg-cyan-500/5 shadow-inner",
+                            isPreviewReady && "border-solid border-cyan-500/40"
                         )}
                         onClick={() => fileInputRef.current?.click()}
                     >
@@ -121,12 +121,12 @@ export function ImageUpload({ value, onChange, className, variant = "default" }:
                             </div>
                         ) : (
                             <>
-                                <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 text-primary group-hover:scale-110 transition-transform duration-300">
-                                    <ImageIcon className="h-8 w-8" />
+                                <div className="p-3.5 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 dark:text-cyan-400 group-hover:scale-110 transition-transform duration-300">
+                                    <ImageIcon className="h-7 w-7" />
                                 </div>
                                 <div className="text-center px-4">
-                                    <p className="text-xs font-bold uppercase tracking-widest text-primary/80">Upload Photo</p>
-                                    <p className="text-[10px] text-muted-foreground mt-1">PNG, JPG or WebP</p>
+                                    <p className="text-xs font-bold uppercase tracking-widest text-slate-800 dark:text-slate-200">Upload Photo</p>
+                                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">PNG, JPG or WebP</p>
                                 </div>
                             </>
                         )}

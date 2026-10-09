@@ -58,18 +58,12 @@ export function FeatureShowcase({
                 transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
                 className={cn(
                     "relative aspect-video rounded-3xl overflow-hidden border backdrop-blur-xl p-4 shadow-2xl transition-all duration-500",
-                    isDark ? "bg-slate-900/40 border-white/5 shadow-black/40" : "bg-white/60 border-slate-200 shadow-slate-200/50"
+                    isDark
+                        ? "bg-[#111722]/80 border-white/10 shadow-black/40"
+                        : "bg-white/90 border-slate-200 shadow-slate-200/50"
                 )}
             >
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-primary/50 to-primary animate-pulse z-20"></div>
                 {visual}
-                
-                {/* HUD Decoration */}
-                <div className="absolute bottom-4 right-4 flex gap-1.5 opacity-30">
-                    <div className="w-1 h-1 rounded-full bg-primary" />
-                    <div className="w-1 h-1 rounded-full bg-primary" />
-                    <div className="w-4 h-1 rounded-full bg-primary" />
-                </div>
             </motion.div>
         </div>
     );

@@ -18,7 +18,8 @@ import {
     RefreshCw,
     AlertCircle,
     Layers,
-    SlidersHorizontal
+    SlidersHorizontal,
+    Filter
 } from 'lucide-react';
 import {
     Paper,
@@ -138,7 +139,7 @@ export function ReservationsTab({
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'price-high' | 'price-low'>('newest');
     const [orderCurrentPage, setOrderCurrentPage] = useState(1);
-    const [orderItemsPerPage, setOrderItemsPerPage] = useState(9); // 3x3 grid default
+    const [orderItemsPerPage, setOrderItemsPerPage] = useState(10); // 5 per row x 2 rows default
     const [expandedCardIds, setExpandedCardIds] = useState<Record<string, boolean>>({});
     const [showAllSpecs, setShowAllSpecs] = useState(false);
 
@@ -357,37 +358,6 @@ export function ReservationsTab({
 
     return (
         <div className="space-y-6">
-            {/* Top Header Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <ThemeIcon size={44} radius="lg" color="cyan" variant="light">
-                        <Package className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
-                    </ThemeIcon>
-                    <div>
-                        <Title order={2} className="text-2xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white">
-                            Reservations Management
-                        </Title>
-                        <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
-                            Live customer reservations, assembly tracking, and pipeline breakdown.
-                        </Text>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    {metrics.pending > 0 && (
-                        <Badge
-                            size="md"
-                            color="yellow"
-                            variant="filled"
-                            leftSection={<Clock className="h-3.5 w-3.5" />}
-                            className="font-headline font-bold uppercase tracking-wider text-slate-950 bg-yellow-400 animate-pulse px-3 py-1"
-                        >
-                            {metrics.pending} Pending Review
-                        </Badge>
-                    )}
-                </div>
-            </div>
-
             {/* SECTION 1: Status Breakdown Analytics & Interactive Pie Chart */}
             <motion.div
                 initial={{ opacity: 0, y: 15 }}
@@ -772,91 +742,16 @@ export function ReservationsTab({
                 </Paper>
             </motion.div>
 
-            {/* SECTION 2: Mantine Filter Controls & Search Bar */}
+            {/* SECTION 2: Search Bar & Dropdown Filter Controls */}
             <Paper
                 withBorder
                 radius="lg"
                 p="md"
                 className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
             >
-                <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
-                    {/* Mantine Chips for Status Filtering with Horizontal ScrollArea */}
-                    <div className="flex-1 min-w-0 max-w-full overflow-hidden">
-                        <ScrollArea type="auto" offsetScrollbars scrollbarSize={6} className="w-full">
-                            <Chip.Group
-                                value={statusFilter}
-                                onChange={(val) => setStatusFilter((val as string) || 'all')}
-                                multiple={false}
-                            >
-                                <Group gap="xs" wrap="nowrap" className="py-1 pr-2">
-                                    <Chip
-                                        value="all"
-                                        size="sm"
-                                        variant="filled"
-                                        color="cyan"
-                                        radius="md"
-                                        classNames={{
-                                            label: "font-headline font-bold text-xs uppercase tracking-wider px-3.5 py-1.5 cursor-pointer transition-all border border-slate-200 dark:border-white/10 hover:border-cyan-500/50"
-                                        }}
-                                    >
-                                        All ({metrics.totalOrders})
-                                    </Chip>
-                                    <Chip
-                                        value="pending"
-                                        size="sm"
-                                        variant="filled"
-                                        color="yellow"
-                                        radius="md"
-                                        classNames={{
-                                            label: "font-headline font-bold text-xs uppercase tracking-wider px-3.5 py-1.5 cursor-pointer transition-all border border-yellow-500/40 hover:border-yellow-500 data-[checked]:text-slate-950 data-[checked]:bg-yellow-400"
-                                        }}
-                                    >
-                                        Pending ({metrics.pending})
-                                    </Chip>
-                                    <Chip
-                                        value="building"
-                                        size="sm"
-                                        variant="filled"
-                                        color="blue"
-                                        radius="md"
-                                        classNames={{
-                                            label: "font-headline font-bold text-xs uppercase tracking-wider px-3.5 py-1.5 cursor-pointer transition-all border border-blue-500/40 hover:border-blue-500 data-[checked]:text-white data-[checked]:bg-blue-600"
-                                        }}
-                                    >
-                                        Building ({metrics.building})
-                                    </Chip>
-                                    <Chip
-                                        value="finished building"
-                                        size="sm"
-                                        variant="filled"
-                                        color="teal"
-                                        radius="md"
-                                        classNames={{
-                                            label: "font-headline font-bold text-xs uppercase tracking-wider px-3.5 py-1.5 cursor-pointer transition-all border border-emerald-500/40 hover:border-emerald-500 data-[checked]:text-white data-[checked]:bg-emerald-600"
-                                        }}
-                                    >
-                                        Finished ({metrics.finished})
-                                    </Chip>
-                                    <Chip
-                                        value="cancelled"
-                                        size="sm"
-                                        variant="filled"
-                                        color="red"
-                                        radius="md"
-                                        classNames={{
-                                            label: "font-headline font-bold text-xs uppercase tracking-wider px-3.5 py-1.5 cursor-pointer transition-all border border-rose-500/40 hover:border-rose-500 data-[checked]:text-white data-[checked]:bg-rose-600"
-                                        }}
-                                    >
-                                        Cancelled ({metrics.cancelled})
-                                    </Chip>
-                                </Group>
-                            </Chip.Group>
-                        </ScrollArea>
-                    </div>
-
-                    {/* Search, Sort, and Page Size Controls */}
-                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
-                        {/* Search Input */}
+                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                    {/* Search Input on the Left */}
+                    <div className="flex-1 max-w-md">
                         <TextInput
                             placeholder="Search by email, rig, or ID..."
                             value={searchQuery}
@@ -871,9 +766,32 @@ export function ReservationsTab({
                             }
                             radius="md"
                             size="sm"
-                            className="w-full sm:w-[260px]"
+                            className="w-full"
                             classNames={{
                                 input: "bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 text-xs font-medium"
+                            }}
+                        />
+                    </div>
+
+                    {/* Filter, Sort, and Controls Aligned to the Right */}
+                    <div className="flex flex-wrap sm:flex-nowrap items-center justify-start md:justify-end gap-3">
+                        {/* Status Filter Dropdown */}
+                        <Select
+                            value={statusFilter}
+                            onChange={(val) => setStatusFilter((val as string) || 'all')}
+                            leftSection={<Filter className="h-3.5 w-3.5 text-cyan-500 dark:text-cyan-400" />}
+                            data={[
+                                { label: `All (${metrics.totalOrders})`, value: 'all' },
+                                { label: `Pending (${metrics.pending})`, value: 'pending' },
+                                { label: `Building (${metrics.building})`, value: 'building' },
+                                { label: `Finished (${metrics.finished})`, value: 'finished building' },
+                                { label: `Cancelled (${metrics.cancelled})`, value: 'cancelled' },
+                            ]}
+                            size="sm"
+                            radius="md"
+                            className="w-full sm:w-[190px]"
+                            classNames={{
+                                input: "bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-xs font-bold"
                             }}
                         />
 
@@ -939,7 +857,7 @@ export function ReservationsTab({
                     <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Loading customer reservations...</p>
                 </div>
             ) : paginatedOrders.length > 0 ? (
-                <SimpleGrid cols={{ base: 1, md: 2, xl: 3 }} spacing="lg">
+                <SimpleGrid cols={{ base: 1, sm: 2, lg: 3, xl: 4, "2xl": 5 } as any} spacing="md">
                     {paginatedOrders.map(order => {
                         const currentStatus = order.status || 'pending';
                         const isPrebuilt = (order as any).type === 'prebuilt';
@@ -961,18 +879,18 @@ export function ReservationsTab({
                                 radius="lg"
                                 p="md"
                                 className={cn(
-                                    "flex flex-col justify-between transition-all duration-300 relative group",
+                                    "flex flex-col justify-between transition-all duration-300 relative group min-w-0",
                                     "bg-white/80 dark:bg-[#141a23]/90 hover:shadow-md hover:-translate-y-1",
                                     "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
                                     currentStatus === 'cancelled' && "opacity-75 grayscale-[0.3]"
                                 )}
                             >
-                                <div className="space-y-3.5">
+                                <div className="space-y-3.5 min-w-0">
                                     {/* Card Header: Type Icon, Email, Status Badge, and Delete Button */}
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="flex items-center gap-3 min-w-0">
+                                    <div className="flex items-start justify-between gap-2 min-w-0">
+                                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                             <ThemeIcon
-                                                size={38}
+                                                size={36}
                                                 radius="md"
                                                 color={isPrebuilt ? "cyan" : isPending ? "yellow" : "gray"}
                                                 variant="light"
@@ -988,9 +906,9 @@ export function ReservationsTab({
                                                 )}
                                             </ThemeIcon>
 
-                                            <div className="min-w-0">
+                                            <div className="min-w-0 flex-1">
                                                 <Tooltip label={order.userEmail} withArrow position="top">
-                                                    <Text fw={700} size="sm" className="font-headline text-slate-900 dark:text-slate-100 truncate leading-snug">
+                                                    <Text fw={700} size="sm" className="font-headline text-slate-900 dark:text-slate-100 truncate block leading-snug">
                                                         {order.userEmail}
                                                     </Text>
                                                 </Tooltip>
@@ -1054,44 +972,46 @@ export function ReservationsTab({
                                         withBorder
                                         radius="md"
                                         p="xs"
-                                        className="bg-slate-50/70 dark:bg-white/[0.02] border-slate-200/60 dark:border-white/5 space-y-1.5"
+                                        className="bg-slate-50/70 dark:bg-white/[0.02] border-slate-200/60 dark:border-white/5 space-y-1.5 min-w-0"
                                     >
-                                        <div className="flex items-center justify-between text-xs font-mono">
-                                            <span className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                                        <div className="flex items-center justify-between gap-2 text-xs font-mono min-w-0">
+                                            <span className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] shrink-0">
                                                 {isPrebuilt ? "Rig Name" : "Build ID"}
                                             </span>
-                                            <span className="text-slate-900 dark:text-slate-200 font-bold truncate max-w-[170px] text-xs">
-                                                {isPrebuilt
-                                                    ? ((order as any).prebuiltName || 'Custom Prebuilt')
-                                                    : `#${order.id.substring(0, 10).toUpperCase()}`
-                                                }
-                                            </span>
+                                            <Tooltip label={isPrebuilt ? ((order as any).prebuiltName || 'Custom Prebuilt') : `#${order.id.toUpperCase()}`} withArrow position="top">
+                                                <span className="text-slate-900 dark:text-slate-200 font-bold truncate text-xs text-right flex-1 min-w-0">
+                                                    {isPrebuilt
+                                                        ? ((order as any).prebuiltName || 'Custom Prebuilt')
+                                                        : `#${order.id.substring(0, 10).toUpperCase()}`
+                                                    }
+                                                </span>
+                                            </Tooltip>
                                         </div>
 
-                                        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                                            <span className="flex items-center gap-1.5 font-medium text-[11px]">
-                                                <Calendar className="h-3 w-3 text-slate-400" />
-                                                <span>{dateFormatted}</span>
+                                        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 gap-2">
+                                            <span className="flex items-center gap-1.5 font-medium text-[11px] shrink-0">
+                                                <Calendar className="h-3 w-3 text-slate-400 shrink-0" />
+                                                <span className="truncate">{dateFormatted}</span>
                                             </span>
-                                            <span className="font-semibold text-slate-700 dark:text-slate-300 text-[11px]">
+                                            <span className="font-semibold text-slate-700 dark:text-slate-300 text-[11px] shrink-0">
                                                 {order.items?.length || 0} Components
                                             </span>
                                         </div>
                                     </Paper>
 
                                     {/* Amount and Status Change Dropdown */}
-                                    <div className="pt-2.5 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-between gap-3">
-                                        <div>
-                                            <Text size="xs" c="dimmed" tt="uppercase" fw={600} className="tracking-wider text-[10px]">
+                                    <div className="pt-2.5 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-between gap-2 min-w-0">
+                                        <div className="min-w-0 flex-1">
+                                            <Text size="xs" c="dimmed" tt="uppercase" fw={600} className="tracking-wider text-[10px] truncate block">
                                                 Total Price
                                             </Text>
-                                            <Text size="lg" fw={700} className="text-slate-900 dark:text-slate-100 font-mono leading-tight">
+                                            <Text size="sm" fw={700} className="text-slate-900 dark:text-slate-100 font-mono leading-tight truncate block">
                                                 {formatCurrency(order.totalPrice)}
                                             </Text>
                                         </div>
 
-                                        {/* Status Dropdown - Clean Mantine Select with Color Accents */}
-                                        <div className="w-[145px] shrink-0">
+                                        {/* Status Dropdown - Adaptive Responsive Width */}
+                                        <div className="w-[125px] sm:w-[135px] shrink-0">
                                             <Select
                                                 value={currentStatus}
                                                 onChange={(val) => val && onUpdateOrder(order.id, val as Order['status'])}
@@ -1105,7 +1025,7 @@ export function ReservationsTab({
                                                 radius="md"
                                                 classNames={{
                                                     input: cn(
-                                                        "text-[10px] font-bold uppercase tracking-wider h-7 pl-2.5 pr-6 transition-colors font-mono",
+                                                        "text-[10px] font-bold uppercase tracking-wider h-7 pl-2 pr-5 transition-colors font-mono",
                                                         isPending && "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 hover:border-amber-500",
                                                         currentStatus === 'building' && "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30 hover:border-blue-500",
                                                         currentStatus === 'finished building' && "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 hover:border-emerald-500",

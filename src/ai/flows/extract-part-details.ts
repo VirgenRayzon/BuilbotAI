@@ -113,20 +113,23 @@ Be as specific and detailed as possible with exact numbers.`,
     // Step 2: Structured output prompt WITHOUT googleSearchRetrieval
     logDebug("Step 2: Formatting part details into structured output...");
 
-    const researcherPrompt = `You are an expert PC hardware researcher and data formatter.
+    const { getActiveSystemPrompt } = await import('@/lib/system-prompts');
+    const customSystemPrompt = await getActiveSystemPrompt('partExtractor');
+
+    const researcherPrompt = `${customSystemPrompt || "You are an expert PC hardware researcher and data formatter."}
     
 GROUNDING CONTEXT FROM LOCAL DATABASE:
 ${groundedContext || "NONE - Part not found in local database."}
 
 ${webResearchContext ? `WEB SEARCH RESEARCH CONTEXT:\n${webResearchContext}` : ''}
 
-User is asking for details on: ${input.partName}
+Target Component to extract: ${input.partName}
 
 LOGIC RULES:
 1. FIRST, check the GROUNDING CONTEXT above. If it is for the requested part (${input.partName}), use its details.
 2. If the context is NONE or for the wrong part, use the WEB SEARCH RESEARCH CONTEXT above for accurate specs and pricing.
 3. Once you have the data, format it strictly into the requested JSON schema.
-4. For prices: Convert USD street price to PHP by multiplying by 56 (e.g., $1000 = ₱56,000).
+4. For prices: Convert USD street price to PHP by multiplying by 56 (e.g., $1000 = ₱56,000) or use local Philippine retailer pricing.
 
 SPECIFICATION RULES (Ensure these keys appear in the JSON 'specifications' array):
 - **CPU**: 'Architecture', 'Cores', 'Threads', 'Base Clock (GHz)', 'Boost Clock (GHz)', 'Socket', 'TDP / Peak Power', 'L3 Cache', 'Memory Support', 'Integrated Graphics'.

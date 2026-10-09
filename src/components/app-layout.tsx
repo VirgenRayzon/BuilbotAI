@@ -13,6 +13,7 @@ import { doc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 
 import { Button, Paper, Text, Title } from "@mantine/core";
+import { AnimatePresence } from "framer-motion";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { loading, status, authUser, profile } = useUserProfile();
@@ -37,6 +38,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   const isLandingRedirect = pathname === "/" && !!authUser;
+  const isAuthPage = ['/signin', '/signup', '/system-access'].includes(pathname);
 
   // Routes exempt from maintenance screen (admin pages & system access login)
   const isAdminRoute = pathname.startsWith('/admin') || pathname === '/system-access';
@@ -50,15 +52,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isLandingPage = pathname === '/';
   const shouldShowFooter = isLandingPage || showFooterRoutes.some(route => pathname === route);
 
-  const isHeaderHidden = mounted && ['/signin', '/signup', '/system-access'].includes(pathname);
+  const isHeaderHidden = mounted && isAuthPage;
 
-  // The shared header contains role-specific navigation. Keep the entire shell
-  // neutral until Auth and the current user's profile have both resolved.
-  // During an explicit customer sign-in, preserve the mounted form while the
-  // new user's profile resolves so its submit state cannot reset mid-login.
-  if ((loading && !(pathname === '/signin' && authUser)) || isLandingRedirect) {
-    return <NeutralPageLoader />;
-  }
+  // Loader overlay condition:
+  // 1. Initial auth profile is loading (except when an unauthenticated guest lands directly on /signin)
+  // 2. Landing page is redirecting an authenticated user
+  // 3. User is authenticated on an auth page (/signin, /signup, /system-access) while route redirection completes
+  const showLoaderOverlay = (loading && !(pathname === '/signin' && !authUser)) || isLandingRedirect || (isAuthPage && !!authUser);
 
   if (status === 'missing' || status === 'error') {
     return (
@@ -79,7 +79,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   if (showMaintenance) return <MaintenanceScreen />;
 
   return (
-    <div className="flex flex-col min-h-screen overflow-x-hidden">
+    <div className="flex flex-col min-h-screen overflow-x-hidden relative">
+      <AnimatePresence>
+        {showLoaderOverlay && (
+          <NeutralPageLoader
+            key="neutral-page-loader"
+            isOverlay
+          />
+        )}
+      </AnimatePresence>
+
       <Header />
       <main className={cn(
         "flex-1 min-h-[calc(100vh-4rem)]",

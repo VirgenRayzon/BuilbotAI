@@ -167,21 +167,21 @@ export function MultiImageUpload({
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
         className={cn(
-          "relative rounded-2xl border-2 border-dashed p-6 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center text-center gap-2",
+          "relative rounded-2xl border-2 border-dashed p-6 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center text-center gap-2.5",
           isDragging
-            ? "border-primary bg-primary/10 shadow-[0_0_25px_rgba(var(--primary-rgb),0.25)] scale-[1.01]"
-            : "border-border/60 bg-muted/20 hover:border-primary/50 hover:bg-primary/5",
+            ? "border-cyan-500 bg-cyan-500/10 shadow-[0_0_25px_rgba(6,182,212,0.25)] scale-[1.01]"
+            : "border-slate-300 dark:border-white/15 bg-slate-50/60 dark:bg-white/[0.02] hover:border-cyan-500/60 hover:bg-cyan-500/5",
           images.length > 0 ? "py-4" : "aspect-square"
         )}
       >
-        <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 text-primary">
+        <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 dark:text-cyan-400">
           <Upload className={cn("h-6 w-6 transition-transform duration-300", isDragging && "-translate-y-1")} />
         </div>
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-primary/90">
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-800 dark:text-slate-200">
             {isProcessing ? "Optimizing Photos…" : "Drag & Drop Photos Here"}
           </p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
             or click to browse multiple files (PNG, JPG, WebP)
           </p>
         </div>

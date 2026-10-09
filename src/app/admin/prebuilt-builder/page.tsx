@@ -542,7 +542,7 @@ export default function PrebuiltBuilderPage() {
                             {isBuilderLoading ? null : sortedAndFilteredParts.length > 0 ? (
                                 view === 'grid' ? (
                                     <>
-                                        <div className="grid gap-3 md:gap-3 grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
+                                        <div className="grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
                                             {paginatedParts.map(part => (
                                                 <PartCard
                                                     key={part.id}

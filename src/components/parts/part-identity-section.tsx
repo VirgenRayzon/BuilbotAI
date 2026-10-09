@@ -3,20 +3,21 @@
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge, Paper, ActionIcon, Group, Tooltip } from "@mantine/core";
 import { Bold, Italic, List, Heading1, Heading2, Code, Type } from "lucide-react";
 import { MultiImageUpload } from "./multi-image-upload";
 import { componentCategories } from "@/lib/constants/category-specs";
 import { UseFormReturn } from "react-hook-form";
 import { AddPartFormSchema } from "@/hooks/use-part-form";
+import { cn } from "@/lib/utils";
 
 interface PartIdentitySectionProps {
   form: UseFormReturn<AddPartFormSchema>;
   onCategoryChange: (category: string) => void;
+  justAutofilled?: boolean;
 }
 
-export function PartIdentitySection({ form, onCategoryChange }: PartIdentitySectionProps) {
+export function PartIdentitySection({ form, onCategoryChange, justAutofilled }: PartIdentitySectionProps) {
   const selectedCategory = form.watch("category");
   const watchedImages = form.watch("images");
   const watchedImageUrl = form.watch("imageUrl");
@@ -25,15 +26,24 @@ export function PartIdentitySection({ form, onCategoryChange }: PartIdentitySect
     : (watchedImageUrl ? [watchedImageUrl] : []);
   const coverImage = watchedImageUrl || "";
 
+  const highlightClass = justAutofilled
+    ? "ring-2 ring-cyan-500/50 bg-cyan-500/10 dark:bg-cyan-500/10 transition-all duration-700"
+    : "";
+
   return (
     <div className="grid grid-cols-12 gap-8 items-start">
       {/* Left Column: Image Preview */}
       <div className="col-span-12 md:col-span-4 sticky top-0">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mb-4 flex items-center gap-3">
-          <span className="inline-block w-4 h-px bg-primary/40" />
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-400 mb-4 flex items-center gap-2.5">
+          <span className="inline-block w-3.5 h-0.5 bg-cyan-500/60 rounded-full" />
           Visual Identity
         </p>
-        <div className="p-2 rounded-3xl border border-primary/10 bg-primary/5 shadow-inner">
+        <Paper
+          withBorder
+          radius="xl"
+          p="xs"
+          className="bg-slate-50/70 dark:bg-[#111722]/60 border-slate-200 dark:border-white/10 shadow-sm"
+        >
           <MultiImageUpload
             images={images}
             coverImage={coverImage}
@@ -48,13 +58,13 @@ export function PartIdentitySection({ form, onCategoryChange }: PartIdentitySect
               form.setValue("imageUrl", cover, { shouldValidate: true });
             }}
           />
-        </div>
+        </Paper>
       </div>
 
       {/* Right Column: Fields */}
       <div className="col-span-12 md:col-span-8 space-y-6">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mb-4 flex items-center gap-3">
-          <span className="inline-block w-4 h-px bg-primary/40" />
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-400 mb-4 flex items-center gap-2.5">
+          <span className="inline-block w-3.5 h-0.5 bg-cyan-500/60 rounded-full" />
           Core Details
         </p>
 
@@ -62,9 +72,18 @@ export function PartIdentitySection({ form, onCategoryChange }: PartIdentitySect
           <div className="col-span-2">
             <FormField control={form.control} name="partName" render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Part Name</FormLabel>
+                <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Part Name
+                </FormLabel>
                 <FormControl>
-                  <Input className="bg-muted/30 border-border/40 h-10 rounded-xl focus:bg-background transition-colors shadow-sm" placeholder="e.g., AMD Ryzen 7 7700X" {...field} />
+                  <Input 
+                    className={cn(
+                      "bg-slate-50 dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 transition-all shadow-sm",
+                      highlightClass
+                    )} 
+                    placeholder="e.g., AMD Ryzen 7 7700X" 
+                    {...field} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -73,14 +92,19 @@ export function PartIdentitySection({ form, onCategoryChange }: PartIdentitySect
 
           <FormField control={form.control} name="category" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Category</FormLabel>
+              <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                Category
+              </FormLabel>
               <Select onValueChange={onCategoryChange} value={field.value}>
                 <FormControl>
-                  <SelectTrigger className="bg-muted/30 border-border/40 h-10 rounded-xl">
+                  <SelectTrigger className={cn(
+                    "bg-slate-50 dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white",
+                    highlightClass
+                  )}>
                     <SelectValue placeholder="Select…" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent className="rounded-xl">
+                <SelectContent className="rounded-xl bg-white dark:bg-[#141a23] border-slate-200 dark:border-white/10 text-slate-900 dark:text-white shadow-xl">
                   {componentCategories.map((cat) => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
@@ -92,9 +116,18 @@ export function PartIdentitySection({ form, onCategoryChange }: PartIdentitySect
 
           <FormField control={form.control} name="brand" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Brand</FormLabel>
+              <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                Brand
+              </FormLabel>
               <FormControl>
-                <Input className="bg-muted/30 border-border/40 h-10 rounded-xl" placeholder="e.g., AMD" {...field} />
+                <Input 
+                  className={cn(
+                    "bg-slate-50 dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 transition-all shadow-sm",
+                    highlightClass
+                  )} 
+                  placeholder="e.g., AMD" 
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -102,11 +135,16 @@ export function PartIdentitySection({ form, onCategoryChange }: PartIdentitySect
 
           <FormField control={form.control} name="price" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Price (PHP ₱)</FormLabel>
+              <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                Price (PHP ₱)
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
-                  className="bg-muted/30 border-border/40 h-10 rounded-xl"
+                  className={cn(
+                    "bg-slate-50 dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 transition-all shadow-sm font-mono",
+                    highlightClass
+                  )}
                   placeholder="e.g., 17500"
                   {...field}
                   onKeyDown={(e) => {
@@ -122,11 +160,13 @@ export function PartIdentitySection({ form, onCategoryChange }: PartIdentitySect
 
           <FormField control={form.control} name="stockCount" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Inventory Stock</FormLabel>
+              <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                Inventory Stock
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
-                  className="bg-muted/30 border-border/40 h-10 rounded-xl font-mono"
+                  className="bg-slate-50 dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 transition-all shadow-sm font-mono"
                   placeholder="e.g., 10"
                   {...field}
                   onKeyDown={(e) => {
@@ -142,11 +182,16 @@ export function PartIdentitySection({ form, onCategoryChange }: PartIdentitySect
 
           <FormField control={form.control} name="performanceScore" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Performance Rank (0–100)</FormLabel>
+              <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                Performance Rank (0–100)
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
-                  className="bg-muted/30 border-border/40 h-10 rounded-xl"
+                  className={cn(
+                    "bg-slate-50 dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 transition-all shadow-sm font-mono",
+                    highlightClass
+                  )}
                   placeholder="e.g., 75"
                   {...field}
                   onKeyDown={(e) => {
@@ -163,17 +208,20 @@ export function PartIdentitySection({ form, onCategoryChange }: PartIdentitySect
           {selectedCategory === "CPU" && (
             <FormField control={form.control} name="packageType" render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 flex items-center gap-1.5">
+                <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                   Package
-                  <Badge variant="outline" className="text-[8px] py-0 px-1 border-primary/30 text-primary uppercase font-bold tracking-tight">CPU</Badge>
+                  <Badge size="xs" color="cyan" variant="light" className="font-bold">CPU</Badge>
                 </FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <SelectTrigger className="bg-muted/30 border-border/40 h-10 rounded-xl">
+                    <SelectTrigger className={cn(
+                      "bg-slate-50 dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white",
+                      highlightClass
+                    )}>
                       <SelectValue placeholder="BOX / TRAY" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent className="rounded-xl">
+                  <SelectContent className="rounded-xl bg-white dark:bg-[#141a23] border-slate-200 dark:border-white/10 text-slate-900 dark:text-white shadow-xl">
                     <SelectItem value="BOX">BOX (Retail)</SelectItem>
                     <SelectItem value="TRAY">TRAY (OEM)</SelectItem>
                   </SelectContent>
@@ -184,73 +232,73 @@ export function PartIdentitySection({ form, onCategoryChange }: PartIdentitySect
           )}
         </div>
 
-        <div className="pt-4">
+        <div className="pt-2">
           <FormField control={form.control} name="description" render={({ field }) => (
             <FormItem>
-              <div className="flex items-center justify-between mb-3">
-                <FormLabel className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 flex items-center gap-2">
-                  <Type className="h-3 w-3" /> Description
+              <div className="flex items-center justify-between mb-2.5">
+                <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <Type className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" /> Description
                 </FormLabel>
-                <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60 border border-border/40 shadow-sm">
-                  <Button
-                    type="button"
-                    variant="ghost"
+                <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-white/[0.05] border border-slate-200 dark:border-white/10 shadow-sm">
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
                     size="sm"
-                    className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                    className="hover:text-cyan-600 dark:hover:text-cyan-400"
                     onClick={() => {
                       const val = field.value || "";
                       field.onChange(`**${val}**`);
                     }}
                     title="Bold"
                   >
-                    <Bold className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
+                    <Bold className="h-3.5 w-3.5" />
+                  </ActionIcon>
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
                     size="sm"
-                    className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                    className="hover:text-cyan-600 dark:hover:text-cyan-400"
                     onClick={() => {
                       const val = field.value || "";
                       field.onChange(`*${val}*`);
                     }}
                     title="Italic"
                   >
-                    <Italic className="h-4 w-4" />
-                  </Button>
-                  <div className="w-px h-5 bg-border/60 mx-1" />
-                  <Button
-                    type="button"
-                    variant="ghost"
+                    <Italic className="h-3.5 w-3.5" />
+                  </ActionIcon>
+                  <div className="w-px h-4 bg-slate-300 dark:bg-white/10 mx-0.5" />
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
                     size="sm"
-                    className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                    className="hover:text-cyan-600 dark:hover:text-cyan-400"
                     onClick={() => {
                       const val = field.value || "";
                       field.onChange(`# ${val}`);
                     }}
                     title="Heading 1"
                   >
-                    <Heading1 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
+                    <Heading1 className="h-3.5 w-3.5" />
+                  </ActionIcon>
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
                     size="sm"
-                    className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                    className="hover:text-cyan-600 dark:hover:text-cyan-400"
                     onClick={() => {
                       const val = field.value || "";
                       field.onChange(`## ${val}`);
                     }}
                     title="Heading 2"
                   >
-                    <Heading2 className="h-4 w-4" />
-                  </Button>
-                  <div className="w-px h-5 bg-border/60 mx-1" />
-                  <Button
-                    type="button"
-                    variant="ghost"
+                    <Heading2 className="h-3.5 w-3.5" />
+                  </ActionIcon>
+                  <div className="w-px h-4 bg-slate-300 dark:bg-white/10 mx-0.5" />
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
                     size="sm"
-                    className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                    className="hover:text-cyan-600 dark:hover:text-cyan-400"
                     onClick={() => {
                       const val = field.value || "";
                       const lines = val.split('\n');
@@ -259,26 +307,29 @@ export function PartIdentitySection({ form, onCategoryChange }: PartIdentitySect
                     }}
                     title="Bullet List"
                   >
-                    <List className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
+                    <List className="h-3.5 w-3.5" />
+                  </ActionIcon>
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
                     size="sm"
-                    className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                    className="hover:text-cyan-600 dark:hover:text-cyan-400"
                     onClick={() => {
                       const val = field.value || "";
                       field.onChange(`\`${val}\``);
                     }}
                     title="Code"
                   >
-                    <Code className="h-4 w-4" />
-                  </Button>
+                    <Code className="h-3.5 w-3.5" />
+                  </ActionIcon>
                 </div>
               </div>
               <FormControl>
                 <textarea
-                  className="flex min-h-[140px] w-full rounded-2xl border border-border/40 bg-muted/20 px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus:bg-background focus:border-primary/40 focus:ring-1 focus:ring-primary/20 focus-visible:outline-none transition-all duration-300 font-mono leading-relaxed"
+                  className={cn(
+                    "flex min-h-[130px] w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#141a23] p-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 focus-visible:outline-none transition-all duration-300 font-mono leading-relaxed",
+                    highlightClass
+                  )}
                   placeholder="Supports Markdown... - High-performance architecture - Real-world verified metrics"
                   {...field}
                 />

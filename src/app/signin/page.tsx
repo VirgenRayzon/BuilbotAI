@@ -188,7 +188,7 @@ function SignInContent() {
 
   // An existing session is being restored or redirected. Keep the sign-in form
   // out of view without interrupting an active submission's loading state.
-  if (authUser && !loading && !googleLoading) {
+  if ((authUser && !loading && !googleLoading) || redirectingRef.current) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center gap-3 bg-slate-50 text-slate-600 dark:bg-[#0c0f14] dark:text-slate-300" role="status">
         <Loader size="sm" color="cyan" />

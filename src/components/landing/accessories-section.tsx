@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { SectionHeader } from '@/components/landing/section-header';
-import { Button } from '@/components/ui/button';
+import { Paper, ThemeIcon, Text, Button as MantineButton, Group, Stack } from '@mantine/core';
 import { Box, MonitorSmartphone, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -13,67 +13,114 @@ interface AccessoriesSectionProps {
 
 export function AccessoriesSection({ isDark }: AccessoriesSectionProps) {
   return (
-    <section className={cn(
-      "py-32 relative border-y transition-colors duration-1000",
-      isDark ? "border-white/5" : "border-slate-200"
-    )}>
+    <section
+      className={cn(
+        "py-32 relative border-y transition-colors duration-1000",
+        isDark ? "border-white/5" : "border-slate-200"
+      )}
+    >
       <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10">
         <SectionHeader
-          badge="Curated Experiences"
-          title="Beyond The System Unit"
-          subtitle="Whether you're building from scratch or looking for a pre-built system, we provide the ultimate foundation."
+          badge="Complete Setups"
+          title="Beyond The Tower"
+          subtitle="Whether you prefer an expertly configured turnkey system or want to hand-pick peripherals, we've got you covered."
         />
 
-        <div className="grid md:grid-cols-2 gap-10 max-w-6xl mx-auto">
-          <motion.div
-            whileHover={{ y: -8 }}
-            className={cn(
-              "p-10 rounded-[40px] flex flex-col gap-8 group transition-all duration-500 relative overflow-hidden glass-panel",
-              isDark ? "shadow-none hover:border-primary/40" : "hover:border-primary/30 shadow-xl shadow-foreground/5"
-            )}
-          >
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-primary/50 to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center border border-primary/20 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
-              <Box className="w-8 h-8 text-primary" />
-            </div>
-            <div>
-              <h4 className="text-3xl font-bold font-headline uppercase tracking-tight mb-3">Plug and Play Rigs</h4>
-              <p className={cn("text-lg font-body leading-relaxed", isDark ? "text-slate-400" : "text-slate-600")}>
-                Professionally curated systems, built by experts using our AI validation tools. Guaranteed performance deployment.
-              </p>
-            </div>
-            <Button asChild variant="link" className="text-primary p-0 h-auto justify-start w-fit group/btn text-sm font-black uppercase tracking-widest">
-              <Link href="/pre-builts" className="flex items-center">
-                Secure Your Rig <ArrowRight className="ml-2 w-5 h-5 group-hover/btn:translate-x-2 transition-transform" />
-              </Link>
-            </Button>
+        <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+          {/* Card 1: Turnkey Pre-builts */}
+          <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.3 }}>
+            <Paper
+              withBorder
+              radius="2xl"
+              p={{ base: 'xl', md: 40 }}
+              className={cn(
+                "h-full flex flex-col justify-between gap-8 transition-all duration-300",
+                isDark
+                  ? "bg-[#111722]/80 border-white/10 hover:border-cyan-500/40 shadow-xl shadow-black/40"
+                  : "bg-white/90 border-slate-200 hover:border-cyan-500/30 shadow-lg shadow-slate-200/60"
+              )}
+            >
+              <Stack gap="lg">
+                <ThemeIcon size={64} radius="xl" variant="light" color="cyan">
+                  <Box size={32} />
+                </ThemeIcon>
+
+                <div>
+                  <h4 className="text-2xl sm:text-3xl font-bold font-headline uppercase tracking-tight mb-3 text-slate-900 dark:text-slate-100">
+                    Turnkey Pre-Built Systems
+                  </h4>
+                  <Text
+                    size="lg"
+                    className="leading-relaxed font-medium text-slate-600 dark:text-slate-400"
+                  >
+                    Curated, stress-tested rigs assembled by hardware technicians and validated with our AI compatibility engine. Zero guesswork, ready out of the box.
+                  </Text>
+                </div>
+              </Stack>
+
+              <MantineButton
+                component={Link}
+                href="/pre-builts"
+                variant="light"
+                color="cyan"
+                size="md"
+                radius="md"
+                rightSection={<ArrowRight size={18} />}
+                className="w-fit font-headline font-bold uppercase tracking-wider"
+              >
+                Browse Systems
+              </MantineButton>
+            </Paper>
           </motion.div>
 
-          <motion.div
-            whileHover={{ y: -8 }}
-            className={cn(
-              "p-10 rounded-[40px] flex flex-col gap-8 group transition-all duration-500 relative overflow-hidden glass-panel",
-              isDark ? "shadow-none hover:border-purple-500/40" : "hover:border-purple-500/30 shadow-xl shadow-foreground/5"
-            )}
-          >
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-purple-500/50 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="w-16 h-16 rounded-2xl bg-purple-500/20 flex items-center justify-center border border-purple-500/20 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-500">
-              <MonitorSmartphone className="w-8 h-8 text-purple-400" />
-            </div>
-            <div>
-              <h4 className="text-3xl font-bold font-headline uppercase tracking-tight mb-3">Complete Accessories Setup</h4>
-              <p className={cn("text-lg font-body leading-relaxed", isDark ? "text-slate-400" : "text-slate-600")}>
-                Beyond the tower. Buildbot have a selection of Monitor, Keyboard, and Headset for you to choose from.
-              </p>
-            </div>
-            <Button asChild variant="link" className="text-purple-400 p-0 h-auto justify-start w-fit group/btn text-sm font-black uppercase tracking-widest">
-              <Link href="/builder" className="flex items-center">
-                Equip Peripherals <ArrowRight className="ml-2 w-5 h-5 group-hover/btn:translate-x-2 transition-transform" />
-              </Link>
-            </Button>
+          {/* Card 2: Monitors & Peripherals */}
+          <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.3 }}>
+            <Paper
+              withBorder
+              radius="2xl"
+              p={{ base: 'xl', md: 40 }}
+              className={cn(
+                "h-full flex flex-col justify-between gap-8 transition-all duration-300",
+                isDark
+                  ? "bg-[#111722]/80 border-white/10 hover:border-violet-500/40 shadow-xl shadow-black/40"
+                  : "bg-white/90 border-slate-200 hover:border-violet-500/30 shadow-lg shadow-slate-200/60"
+              )}
+            >
+              <Stack gap="lg">
+                <ThemeIcon size={64} radius="xl" variant="light" color="violet">
+                  <MonitorSmartphone size={32} />
+                </ThemeIcon>
+
+                <div>
+                  <h4 className="text-2xl sm:text-3xl font-bold font-headline uppercase tracking-tight mb-3 text-slate-900 dark:text-slate-100">
+                    Monitors & Peripherals
+                  </h4>
+                  <Text
+                    size="lg"
+                    className="leading-relaxed font-medium text-slate-600 dark:text-slate-400"
+                  >
+                    Complete your workstation with high-refresh gaming displays, mechanical keyboards, audio headsets, and performance thermal accessories.
+                  </Text>
+                </div>
+              </Stack>
+
+              <MantineButton
+                component={Link}
+                href="/builder"
+                variant="light"
+                color="violet"
+                size="md"
+                radius="md"
+                rightSection={<ArrowRight size={18} />}
+                className="w-fit font-headline font-bold uppercase tracking-wider"
+              >
+                Configure Accessories
+              </MantineButton>
+            </Paper>
           </motion.div>
         </div>
       </div>
     </section>
   );
 }
+

@@ -25,6 +25,7 @@ import {
   Anchor,
   Divider,
   Modal,
+  Loader,
 } from '@mantine/core';
 import { Shield, Mail, Lock, Key, AlertCircle, ArrowLeft, Clock, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -318,6 +319,22 @@ function SystemAccessContent() {
     setValue('roleKey', '');
     clearErrors('roleKey');
   };
+
+  const isStaffLoggedIn = authUser && (profile?.isManager || profile?.isSuperAdmin);
+  const activeAdminMarker =
+    typeof window !== 'undefined'
+      ? sessionStorage.getItem('buildbot_admin_session_active')
+      : null;
+  const isRedirectingAdmin = Boolean(isStaffLoggedIn && activeAdminMarker === authUser?.uid && !loading && !googleLoading);
+
+  if (isRedirectingAdmin) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center gap-3 bg-slate-50 text-slate-600 dark:bg-[#0c0f14] dark:text-slate-300" role="status">
+        <Loader size="sm" color="red" />
+        <Text size="sm">Opening administrator dashboard...</Text>
+      </div>
+    );
+  }
 
   return (
     <div

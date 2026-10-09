@@ -2,7 +2,6 @@
 
 import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
 
 export function UnifiedBackground() {
   const { theme } = useTheme();
@@ -10,66 +9,57 @@ export function UnifiedBackground() {
 
   return (
     <div className="fixed inset-0 z-[-1] pointer-events-none overflow-hidden select-none">
-      {/* Base Layer */}
-      <div className={cn(
-        "absolute inset-0 transition-colors duration-1000",
-        isDark ? "bg-background" : "bg-slate-50"
-      )} />
-
-      {/* Primary Neural Blob */}
-      <motion.div
-        animate={{
-          scale: [1, 1.2, 1],
-          x: [0, 50, 0],
-          y: [0, 30, 0],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
+      {/* Base Canvas Layer */}
+      <div
         className={cn(
-          "absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full blur-[150px] opacity-20 transition-colors duration-1000",
-          isDark ? "bg-primary" : "bg-primary/40"
+          "absolute inset-0 transition-colors duration-700",
+          isDark ? "bg-[#0b0f17]" : "bg-slate-50"
         )}
       />
 
-      {/* Secondary Neural Blob */}
-      <motion.div
-        animate={{
-          scale: [1, 1.3, 1],
-          x: [0, -40, 0],
-          y: [0, -50, 0],
+      {/* Soft Ambient Radial Light - Top Header / Horizon (Static, CSS-only) */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: isDark
+            ? 'radial-gradient(ellipse 80% 45% at 50% -15%, rgba(34, 211, 238, 0.07), transparent 70%)'
+            : 'radial-gradient(ellipse 80% 45% at 50% -15%, rgba(6, 182, 212, 0.09), transparent 70%)',
         }}
-        transition={{
-          duration: 25,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 2
+      />
+
+      {/* Subtle Counter-Glow - Bottom Right Soft Depth */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: isDark
+            ? 'radial-gradient(ellipse 60% 40% at 85% 100%, rgba(56, 189, 248, 0.03), transparent 60%)'
+            : 'radial-gradient(ellipse 60% 40% at 85% 100%, rgba(14, 165, 233, 0.04), transparent 60%)',
         }}
+      />
+
+      {/* Refined Geometric Dot Matrix Grid (Completely Static) */}
+      <div
         className={cn(
-          "absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[150px] opacity-20 transition-colors duration-1000",
-          isDark ? "bg-purple-600" : "bg-purple-400/40"
+          "absolute inset-0 transition-opacity duration-700",
+          isDark ? "opacity-25" : "opacity-35"
         )}
+        style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, ${isDark ? '#38bdf8' : '#0284c7'} 0.75px, transparent 0.75px)`,
+          backgroundSize: '32px 32px',
+          maskImage: 'radial-gradient(ellipse 90% 80% at 50% 50%, black 40%, transparent 95%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 90% 80% at 50% 50%, black 40%, transparent 95%)',
+        }}
       />
 
-      {/* Global Grid Pattern */}
-      <div 
-        className={cn(
-          "absolute inset-0 opacity-[0.03] transition-opacity duration-1000",
-          isDark ? "invert-0" : "invert-[0.1]"
-        )} 
-        style={{ 
-          backgroundImage: `radial-gradient(circle at 1px 1px, ${isDark ? '#fff' : '#000'} 1.5px, transparent 0px)`, 
-          backgroundSize: '48px 48px' 
-        }} 
+      {/* Subtle Soft Vignette for Enhanced Focus on Center Content */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: isDark
+            ? 'radial-gradient(ellipse 100% 100% at 50% 50%, transparent 55%, rgba(5, 8, 13, 0.6) 100%)'
+            : 'radial-gradient(ellipse 100% 100% at 50% 50%, transparent 65%, rgba(226, 232, 240, 0.5) 100%)',
+        }}
       />
-
-      {/* Subtle Noise Texture */}
-      <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
-      
-      {/* Vertical Scanline Effect (Very subtle) */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.01] to-transparent h-[200%] animate-[scanline_10s_linear_infinite] pointer-events-none" />
     </div>
   );
 }

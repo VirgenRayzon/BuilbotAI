@@ -99,7 +99,7 @@ export function FeaturesSection({ isDark }: FeaturesSectionProps) {
                   </div>
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Buildbot Intelligence Matrix</span>
+                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">AI Compatibility Engine</span>
                   </div>
                   <p className={cn(
                     "text-sm leading-relaxed font-body italic",
@@ -127,7 +127,7 @@ export function FeaturesSection({ isDark }: FeaturesSectionProps) {
               <div className="absolute inset-0 bg-gradient-to-l from-background/80 via-transparent to-transparent" />
               <div className="absolute inset-0 flex flex-col justify-center p-8 gap-3 items-end">
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">AI PC Generation: Completed</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">AI Build Generation: Verified</span>
                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 backdrop-blur-md">
                     <AnimatedBotIcon className="h-5 w-5 text-primary" size={20} active />
                   </div>

@@ -3,8 +3,10 @@
  * Baseline prompt instructions for Buildbot AI assistants and advisors.
  */
 
+export type SystemPromptKey = 'chatbot' | 'buildAdvisor' | 'prebuiltAdvisor' | 'partExtractor';
+
 export interface SystemPromptMeta {
-  id: 'chatbot' | 'buildAdvisor' | 'prebuiltAdvisor';
+  id: SystemPromptKey;
   title: string;
   subtitle: string;
   targetFeature: string;
@@ -71,6 +73,15 @@ Your task is to:
 5. Estimate a reasonable market price for the entire build in Philippine Pesos (PHP). Use the web research context if available for accurate pricing.
 6. Identify the appropriate performance tier ('Entry', 'Mid-Range', 'High-End', or 'Workstation') for this configuration.`;
 
+export const DEFAULT_PART_EXTRACTOR_PROMPT = `You are an expert PC hardware researcher and data formatter. A user or store manager is adding a new PC component to the inventory.
+
+Your task is to:
+1. Identify the full official product name, manufacturer brand, and component category (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, or Cooler).
+2. Research or retrieve exact technical specifications (clock speeds, TDP, sockets, dimensions in mm, form factors, capacities).
+3. Estimate a realistic retail price in Philippine Pesos (PHP). Convert USD street price to PHP by multiplying by 56 or align with current Philippine retailer pricing (Dynaquest, PCHub, EasyPC, etc.).
+4. Provide a 0-100 performance score relative to modern hardware standards.
+5. Generate concise, marketing-ready product highlights in Markdown format with bullet points.`;
+
 export const SYSTEM_PROMPT_METAS: SystemPromptMeta[] = [
   {
     id: 'chatbot',
@@ -115,6 +126,21 @@ export const SYSTEM_PROMPT_METAS: SystemPromptMeta[] = [
       'Emphasize catchy, premium naming conventions for systems.',
       'Guide marketing descriptions to highlight practical gaming resolutions or workstation tasks.',
       'Ensure compatibility checking highlights socket and wattage issues.',
+    ],
+  },
+  {
+    id: 'partExtractor',
+    title: 'Component Specs Extractor',
+    subtitle: 'Hardware spec analyzer, pricing estimator, and feature formatter for inventory parts.',
+    targetFeature: 'extractPartDetailsFlow (Add Component Modal)',
+    iconName: 'Wrench',
+    defaultPrompt: DEFAULT_PART_EXTRACTOR_PROMPT,
+    description:
+      'Directs the AI when parsing component names, estimating local Philippine market prices (PHP), determining dimensions/wattage, and structuring technical specifications.',
+    tips: [
+      'Preserve the Philippine Peso (PHP) pricing guidance (street price conversion ~56 PHP/USD).',
+      'Instruct how technical highlights and features are formatted (Markdown bullet points).',
+      'Define scoring expectations (0-100) relative to modern PC hardware benchmarks.',
     ],
   },
 ];

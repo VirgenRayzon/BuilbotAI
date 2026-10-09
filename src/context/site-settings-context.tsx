@@ -35,6 +35,7 @@ export interface SystemPromptsSetting {
     chatbot?: string;
     buildAdvisor?: string;
     prebuiltAdvisor?: string;
+    partExtractor?: string;
     lastUpdated?: string;
     updatedBy?: string;
 }

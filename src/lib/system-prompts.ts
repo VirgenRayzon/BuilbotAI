@@ -9,17 +9,19 @@ import {
   DEFAULT_CHATBOT_PROMPT,
   DEFAULT_BUILD_ADVISOR_PROMPT,
   DEFAULT_PREBUILT_ADVISOR_PROMPT,
+  DEFAULT_PART_EXTRACTOR_PROMPT,
 } from './constants/default-system-prompts';
 
 export interface SystemPromptsConfig {
   chatbot?: string;
   buildAdvisor?: string;
   prebuiltAdvisor?: string;
+  partExtractor?: string;
   lastUpdated?: string;
   updatedBy?: string;
 }
 
-export type SystemPromptKey = 'chatbot' | 'buildAdvisor' | 'prebuiltAdvisor';
+export type SystemPromptKey = 'chatbot' | 'buildAdvisor' | 'prebuiltAdvisor' | 'partExtractor';
 
 // In-memory cache to prevent excessive Firestore reads across rapid chat messages and advisor calls
 let cachedPrompts: SystemPromptsConfig | null = null;
@@ -41,6 +43,7 @@ export async function getSystemPrompts(): Promise<SystemPromptsConfig> {
     chatbot: DEFAULT_CHATBOT_PROMPT,
     buildAdvisor: DEFAULT_BUILD_ADVISOR_PROMPT,
     prebuiltAdvisor: DEFAULT_PREBUILT_ADVISOR_PROMPT,
+    partExtractor: DEFAULT_PART_EXTRACTOR_PROMPT,
   };
 
   try {
@@ -55,6 +58,7 @@ export async function getSystemPrompts(): Promise<SystemPromptsConfig> {
           chatbot: stored.chatbot?.trim() || DEFAULT_CHATBOT_PROMPT,
           buildAdvisor: stored.buildAdvisor?.trim() || DEFAULT_BUILD_ADVISOR_PROMPT,
           prebuiltAdvisor: stored.prebuiltAdvisor?.trim() || DEFAULT_PREBUILT_ADVISOR_PROMPT,
+          partExtractor: stored.partExtractor?.trim() || DEFAULT_PART_EXTRACTOR_PROMPT,
           lastUpdated: stored.lastUpdated,
           updatedBy: stored.updatedBy,
         };
@@ -83,6 +87,8 @@ export async function getActiveSystemPrompt(key: SystemPromptKey): Promise<strin
       return DEFAULT_BUILD_ADVISOR_PROMPT;
     case 'prebuiltAdvisor':
       return DEFAULT_PREBUILT_ADVISOR_PROMPT;
+    case 'partExtractor':
+      return DEFAULT_PART_EXTRACTOR_PROMPT;
     default:
       return '';
   }
