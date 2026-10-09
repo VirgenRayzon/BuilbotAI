@@ -285,24 +285,24 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                                     />
                                                 </motion.div>
                                             ) : (
-                                                <div className="h-full min-h-[260px] p-5 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-[#111722]/60 backdrop-blur-md flex flex-col justify-between transition-all">
-                                                    <div className="space-y-4">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 dark:text-cyan-400">
-                                                                <slot.icon className="h-5 w-5" />
+                                                <div className="h-full p-4 rounded-[var(--mantine-radius-lg)] border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-[#141a23]/90 backdrop-blur-md flex flex-col justify-between transition-all">
+                                                    <div className="space-y-3">
+                                                        <div className="flex items-center gap-2.5">
+                                                            <div className="w-7 h-7 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+                                                                <slot.icon className="h-4 w-4" />
                                                             </div>
                                                             <div className="space-y-1.5 flex-1">
-                                                                <span className="text-xs font-headline font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                                                <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-700 dark:text-cyan-400">
                                                                     {slot.name}
                                                                 </span>
-                                                                <div className="h-3 w-3/4 rounded bg-slate-200 dark:bg-white/10 animate-pulse" />
+                                                                <div className="h-3.5 w-4/5 rounded bg-slate-200 dark:bg-white/10 animate-pulse" />
                                                             </div>
                                                         </div>
-                                                        <div className="aspect-square w-full rounded-xl bg-slate-200/50 dark:bg-white/5 flex items-center justify-center">
+                                                        <div className="aspect-square w-full rounded-xl bg-slate-100/70 dark:bg-white/[0.03] border border-slate-200/50 dark:border-white/5 flex items-center justify-center">
                                                             <slot.icon className="h-8 w-8 text-slate-300 dark:text-slate-700" />
                                                         </div>
                                                     </div>
-                                                    <div className="pt-3 flex items-center justify-between border-t border-slate-200/60 dark:border-white/5 text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                                                    <div className="pt-3 mt-2 flex items-center justify-between border-t border-slate-100 dark:border-white/5 text-[11px] font-mono text-slate-400 dark:text-slate-500">
                                                         <span>Selecting component...</span>
                                                         <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-500" />
                                                     </div>
@@ -413,6 +413,7 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                             initial={{ opacity: 0, scale: 0.95 }}
                                             animate={{ opacity: 1, scale: 1 }}
                                             transition={{ duration: 0.3, delay: index * 0.05 }}
+                                            className="h-full"
                                         >
                                             <ComponentCard
                                                 name={slot.name}

@@ -12,9 +12,10 @@ import {
   Stack,
   Group,
   Text,
+  Button,
 } from "@mantine/core";
-import { SparkleButton } from "./ui/sparkle-button";
 import { Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { parsePesoBudget } from '@/lib/parse-peso-budget';
 import { BUILD_ADVISOR_GOALS, getBuildAdvisorGoal, type BuildAdvisorIntendedUse } from '@/lib/build-advisor-goals';
 
@@ -211,14 +212,23 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
       />
 
       <div className="pt-2">
-        <SparkleButton
+        <Button
           type="submit"
-          className="w-full h-11 text-xs font-black uppercase tracking-wider rounded-xl"
-          isLoading={isPending}
-          icon={<Sparkles className="h-4 w-4" />}
+          fullWidth
+          size="md"
+          radius="md"
+          color="teal"
+          loading={isPending}
+          leftSection={<Sparkles size={18} />}
+          className={cn(
+            "font-headline font-bold text-xs uppercase tracking-wider transition-all duration-200 h-11",
+            !isPending
+              ? "shadow-md shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.99]"
+              : "opacity-60 cursor-not-allowed"
+          )}
         >
           {isPending ? "Generating..." : "Get Recommendations"}
-        </SparkleButton>
+        </Button>
       </div>
     </form>
   );
