@@ -15,12 +15,19 @@ import {
 } from "@mantine/core";
 import { SparkleButton } from "./ui/sparkle-button";
 import { Sparkles } from "lucide-react";
+import { parsePesoBudget } from '@/lib/parse-peso-budget';
+import { BUILD_ADVISOR_GOALS, getBuildAdvisorGoal, type BuildAdvisorIntendedUse } from '@/lib/build-advisor-goals';
 
 const formSchema = z.object({
   intendedUse: z.string().min(1, "Please select an intended use."),
-  budget: z.string().min(2, "Please provide a budget."),
+  workloadGoal: z.string().min(1, "Please select a priority for this PC."),
+  budget: z.string().min(2, "Please provide a budget.").refine(value => parsePesoBudget(value) !== null, "Enter a valid PHP budget."),
   allowFlexibleBudget: z.boolean().default(false),
   allowAiSearch: z.boolean().default(true),
+}).superRefine((values, context) => {
+  if (values.intendedUse && values.workloadGoal && !getBuildAdvisorGoal(values.intendedUse, values.workloadGoal)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ['workloadGoal'], message: 'Select a priority for the chosen intended use.' });
+  }
 });
 
 export type FormSchema = z.infer<typeof formSchema>;
@@ -35,17 +42,22 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       intendedUse: "",
+      workloadGoal: "",
       budget: "",
       allowFlexibleBudget: false,
       allowAiSearch: true,
     },
   });
+  const intendedUse = form.watch('intendedUse');
+  const goalGroup = BUILD_ADVISOR_GOALS[intendedUse as BuildAdvisorIntendedUse];
 
   function onSubmit(values: FormSchema) {
+    const goal = getBuildAdvisorGoal(values.intendedUse, values.workloadGoal);
+    if (!goal) return;
     getRecommendations({
       intendedUse: values.intendedUse,
       budget: values.budget,
-      performanceLevel: "Optimal performance for budget and intended workload",
+      performanceLevel: goal.prompt,
       additionalNotes: "",
       allowFlexibleBudget: values.allowFlexibleBudget,
       allowAiSearch: values.allowAiSearch,
@@ -68,7 +80,10 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
               { value: "General Office Work", label: "General Office Work" },
             ]}
             value={field.value}
-            onChange={field.onChange}
+            onChange={(value) => {
+              field.onChange(value ?? '');
+              form.setValue('workloadGoal', '');
+            }}
             error={fieldState.error?.message}
             radius="md"
             size="sm"
@@ -81,6 +96,30 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
           />
         )}
       />
+
+      {goalGroup && (
+        <Controller
+          key={intendedUse}
+          name="workloadGoal"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Select
+              label={goalGroup.label}
+              placeholder="Choose what matters most"
+              data={goalGroup.options.map(option => ({ value: option.value, label: option.label }))}
+              value={field.value}
+              onChange={(value) => field.onChange(value ?? '')}
+              error={fieldState.error?.message}
+              radius="md"
+              size="sm"
+              classNames={{
+                label: "text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5",
+                input: "bg-slate-50 dark:bg-slate-900/60 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium focus:border-cyan-500 transition-colors",
+              }}
+            />
+          )}
+        />
+      )}
 
       <Controller
         name="budget"

@@ -1,4 +1,5 @@
 "use server";
+import { after } from 'next/server';
 import { generateText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { getVertexAccessToken, markTunedModelHealthy, DEFAULT_TUNED_MODEL_ID, type FeatureModelRouting } from '@/lib/ai-model-resolver';
@@ -143,7 +144,7 @@ export async function getAiPrebuiltSuggestions(input: AiPrebuiltAdvisorInput) {
 
 export async function getAiBuildCritique(input: AiBuildCritiqueInput) {
   try {
-    const result = await withTimeout(aiBuildCritiqueAction(input));
+    const result = await withTimeout(aiBuildCritiqueAction(input, task => after(task)));
     return result;
   } catch (error) {
     console.error("Error fetching AI build critique:", error);

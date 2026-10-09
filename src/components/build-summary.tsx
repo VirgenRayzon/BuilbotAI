@@ -163,28 +163,16 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
 
                             <div className="absolute right-0 top-full mt-2 w-64 p-3 rounded-xl border border-slate-200 dark:border-cyan-500/20 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-300 pointer-events-none z-50 text-[10px] font-mono text-slate-700 dark:text-zinc-300 space-y-1.5 leading-relaxed">
                                 <div className="border-b border-slate-200 dark:border-white/5 pb-1 flex justify-between">
-                                    <span className="text-[9px] font-black text-cyan-600 dark:text-cyan-400 uppercase">Telemetry Analysis</span>
+                                    <span className="text-[9px] font-black text-cyan-600 dark:text-cyan-400 uppercase">Generation Time</span>
                                     <span className="text-[8px] text-slate-500 dark:text-zinc-500 font-sans">Compare: {comparisonText}</span>
                                 </div>
-                                <div className="space-y-1">
-                                    <div className="flex justify-between">
-                                        <span className="text-slate-500 dark:text-zinc-500">LLM Server Call:</span>
-                                        <span className="text-slate-800 dark:text-zinc-200">{(finalResponseTime * 0.6).toFixed(1)}s</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-slate-500 dark:text-zinc-500">DB Part Scanning:</span>
-                                        <span className="text-slate-800 dark:text-zinc-200">{(finalResponseTime * 0.25).toFixed(1)}s</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-slate-500 dark:text-zinc-500">Catalog Matching:</span>
-                                        <span className="text-slate-800 dark:text-zinc-200">{(finalResponseTime * 0.15).toFixed(1)}s</span>
-                                    </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500 dark:text-zinc-500">This build:</span>
+                                    <span className="text-slate-800 dark:text-zinc-200">{finalResponseTime.toFixed(1)}s</span>
                                 </div>
                                 <div className="pt-1.5 border-t border-slate-200 dark:border-white/5 flex justify-between text-[9px] font-sans">
                                     <span className="text-slate-600 dark:text-zinc-400">Average: {averageTime > 0 ? `${averageTime.toFixed(1)}s` : 'Calculating...'}</span>
-                                    <span className={diff >= 0 ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-amber-600 dark:text-amber-400 font-bold"}>
-                                        {diff >= 0 ? "Optimal Speed" : "Nominal Speed"}
-                                    </span>
+                                    <span className="text-slate-600 dark:text-slate-400">{comparisonText}</span>
                                 </div>
                             </div>
                         </div>
@@ -382,7 +370,7 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                         </div>
                                         <div className="flex-1">
                                             <h4 className="font-headline font-bold uppercase tracking-wider text-sm text-slate-900 dark:text-white">Build Ready</h4>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">All components matched & verified.</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Your component recommendations are ready.</p>
                                         </div>
                                     </div>
                                     {user && (

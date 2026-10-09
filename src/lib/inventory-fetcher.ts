@@ -16,8 +16,15 @@ export interface StructuredPart {
     brand: string;
     model: string;
     price: number;
+    stock?: number;
     imageUrl: string;
     category: string;
+    socket?: string;
+    ramType?: string;
+    wattage?: number;
+    performanceScore?: number;
+    dimensions?: { width: number; height: number; depth: number };
+    specifications?: Record<string, unknown>;
 }
 
 export function clearInventoryCache() {
@@ -51,9 +58,9 @@ const CATEGORY_MAP: Record<string, string> = {
 /**
  * Fetches parts exclusively from the live Firestore database collections.
  */
-export async function getInventoryFromFirestore(category: string, searchTerm?: string, limitCount: number = 50): Promise<string[]> {
+export async function getInventoryFromFirestore(category: string, searchTerm?: string, limitCount: number = 50, includeImage: boolean = true): Promise<string[]> {
     const normalizedCat = category.toLowerCase();
-    const cacheKey = `${normalizedCat}:${searchTerm || ''}:${limitCount}`;
+    const cacheKey = `${normalizedCat}:${searchTerm || ''}:${limitCount}:${includeImage}`;
     
     try {
         const cached = inventoryCache.get(cacheKey);
@@ -132,7 +139,7 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
             }
             
             const price = typeof data.price === 'number' ? ` - Price: ₱${data.price.toLocaleString()}` : '';
-            const imageUrl = data.imageUrl ? ` - Image: ${data.imageUrl}` : '';
+            const imageUrl = includeImage && data.imageUrl ? ` - Image: ${data.imageUrl}` : '';
             return `[ID: ${doc.id}] [${category.toUpperCase()}] Name: "${displayName}"${price}${imageUrl}`;
         });
 
@@ -226,8 +233,15 @@ export async function getStructuredInventory(category: string, searchTerm?: stri
                 brand: brand,
                 model: model,
                 price: typeof data.price === 'number' ? data.price : 0,
+                stock: data.stock,
                 imageUrl: data.imageUrl || '',
-                category: normalizedCat
+                category: normalizedCat,
+                socket: data.socket,
+                ramType: data.ramType,
+                wattage: data.wattage,
+                performanceScore: data.performanceScore,
+                dimensions: data.dimensions,
+                specifications: data.specifications,
             };
         });
 

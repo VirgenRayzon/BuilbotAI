@@ -2,6 +2,8 @@
 
 import { ai } from "@/ai/genkit";
 import { z } from "genkit";
+import { createHash } from 'node:crypto';
+import { AdvisorTiming } from '@/lib/advisor-timing';
 
 import { calculateBottleneck } from "@/lib/bottleneck";
 import { checkFullBuildCompatibility } from "@/lib/compatibility";
@@ -30,10 +32,7 @@ const ComponentDataSchema = z.object({
 });
 
 const AiBuildCritiqueInputSchema = z.object({
-    build: z.record(
-        z.string(),
-        z.union([ComponentDataSchema, z.array(ComponentDataSchema), z.null()])
-    ),
+    build: z.record(z.string(), z.union([ComponentDataSchema, z.array(ComponentDataSchema), z.null()])),
     intendedUse: z.string().optional(),
     performanceLevel: z.string().optional(),
     additionalNotes: z.string().optional(),
@@ -73,20 +72,16 @@ const CRITIQUE_CACHE_COLLECTION = 'ai_critique_cache_v1';
 /**
  * Generate a cache key for the entire critique output.
  */
-function generateCritiqueCacheKey(input: AiBuildCritiqueInput): string {
-    const partModels: string[] = [];
-    Object.values(input.build || {}).forEach(val => {
-        if (Array.isArray(val)) {
-            val.forEach(p => p && partModels.push((p.model || '').trim().toLowerCase()));
-        } else if (val) {
-            partModels.push(((val as any).model || '').trim().toLowerCase());
-        }
-    });
-    const sortedParts = Array.from(new Set(partModels)).sort().join('|');
-    const intent = (input.intendedUse || 'default').toLowerCase().trim();
-    const perf = (input.performanceLevel || 'default').toLowerCase().trim();
-    const notes = (input.additionalNotes || '').toLowerCase().trim();
-    return `${sortedParts}__${intent}__${perf}__${notes}`.replace(/[\/.]/g, '_').substring(0, 800);
+function generateCritiqueCacheKey(input: AiBuildCritiqueInput, modelSettings: unknown): string {
+    const parts = Object.entries(input.build || {}).sort(([a], [b]) => a.localeCompare(b));
+    return createHash('sha256').update(JSON.stringify({
+        version: 2,
+        parts,
+        intendedUse: (input.intendedUse || '').trim().toLowerCase(),
+        performanceLevel: (input.performanceLevel || '').trim().toLowerCase(),
+        additionalNotes: (input.additionalNotes || '').trim().toLowerCase(),
+        modelSettings,
+    })).digest('hex');
 }
 
 /**
@@ -112,35 +107,46 @@ export const aiBuildCritique = ai.defineFlow(
     }
 );
 
-export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
+export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput, deferCacheWrite?: (work: () => Promise<void>) => void) {
+    const timing = new AdvisorTiming('critique');
     if (!process.env.GOOGLE_API_KEY) {
         throw new Error("Missing GOOGLE_API_KEY for Build Critique.");
     }
 
     const { build, intendedUse, performanceLevel, additionalNotes } = input;
     const db = getAdminFirestore();
+    let settingsData: FirebaseFirestore.DocumentData | undefined;
 
     // 0. Check Maintenance Mode (Kill Switch)
     try {
         const settingsSnap = await db.collection('siteSettings').doc('main').get();
-        if (settingsSnap.exists && settingsSnap.data()?.isMaintenanceMode) {
+        settingsData = settingsSnap.data();
+        if (settingsSnap.exists && settingsData?.isMaintenanceMode) {
             throw new Error("MAINTENANCE_MODE_ACTIVE: AI services are temporarily restricted for system updates.");
         }
     } catch (e: any) {
         if (e.message.includes("MAINTENANCE_MODE_ACTIVE")) throw e;
         console.warn("Failed to check maintenance mode:", e);
     }
+    timing.mark('settings');
 
     // 1. Tier 1 Cache Check: Full Critique Cache
-    const critiqueCacheKey = generateCritiqueCacheKey(input);
+    const critiqueCacheKey = generateCritiqueCacheKey(input, {
+        routing: settingsData?.featureModelRouting?.buildAdvisor || settingsData?.aiModelProvider,
+        defaultModel: settingsData?.defaultGeminiModel,
+        tunedModel: settingsData?.fineTunedModelId,
+        inventoryRevision: settingsData?.advisorInventoryRevision,
+    });
     if (critiqueCacheKey.length > 5) {
         try {
             const critiqueSnap = await db.collection(CRITIQUE_CACHE_COLLECTION).doc(critiqueCacheKey).get();
             if (critiqueSnap.exists) {
                 const cacheData = critiqueSnap.data();
                 const ageInDays = (Date.now() - (cacheData?.timestamp || 0)) / (1000 * 60 * 60 * 24);
-                if (ageInDays < 7 && cacheData?.output) {
+                if (ageInDays < 1 / 24 && cacheData?.output) {
                     console.log(`[AI Critique Cache] Hit for key: ${critiqueCacheKey}`);
+                    timing.mark('cache');
+                    timing.finish('cache_hit');
                     return cacheData.output;
                 }
             }
@@ -148,6 +154,7 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
             console.warn("[AI Critique Cache] Read error:", e);
         }
     }
+    timing.mark('cache');
 
     // 2. Perform deterministic local analysis
     const bottleneck = calculateBottleneck(build as any);
@@ -164,6 +171,7 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput) {
     const fps1080 = estimateFPS(build as any, '1080p', normWorkload);
     const fps1440 = estimateFPS(build as any, '1440p', normWorkload);
     const fps4K = estimateFPS(build as any, '4K', normWorkload);
+    timing.mark('deterministic_checks');
 
     const deterministicFpsContext = fps1440 ? `
 DETERMINISTIC FPS BASELINES (Computed from hardware specifications & bottleneck multipliers):
@@ -181,7 +189,9 @@ CRITICAL: Use these deterministic baseline numbers as reference anchors for your
                 const priceStr = typeof p.price === 'number' ? `₱${p.price.toLocaleString()}` : (p.price ? `₱${p.price}` : '');
                 let text = `${brandModel} (${priceStr})`;
                 if (p.description && p.description.trim()) {
-                    text += `\n  Product Highlights:\n  ${p.description.trim().split('\n').join('\n  ')}`;
+                    const maxChars = ['CPU', 'GPU', 'Motherboard'].includes(category) ? 900 : 280;
+                    const highlights = p.description.trim().slice(0, maxChars);
+                    text += `\n  Product Highlights:\n  ${highlights.split('\n').join('\n  ')}`;
                 }
                 return text;
             };
@@ -203,14 +213,15 @@ CRITICAL: Use these deterministic baseline numbers as reference anchors for your
         )
     );
     const cleanKnowledgeQuery = `bottleneck compatibility ${uniqueCleanModels.join(' ')}`;
-    const knowledgeResults = await retrieveLocalKnowledge(cleanKnowledgeQuery, 4);
-    const knowledgeContext = knowledgeResults.join('\n\n');
-
-    // 4. Fetch store inventory exclusively from Live Firestore
+    // 4. Fetch knowledge, inventory, and model routing concurrently.
     const buildCategories = Object.keys(build);
-    const inventoryResults = await Promise.all(
-        buildCategories.map(cat => getInventoryFromFirestore(cat, undefined, 5))
-    );
+    const [knowledgeResults, inventoryResults, dynamicModel] = await Promise.all([
+        retrieveLocalKnowledge(cleanKnowledgeQuery, 4),
+        Promise.all(buildCategories.map(cat => getInventoryFromFirestore(cat, undefined, 5, false))),
+        getGenkitModelName('buildAdvisor'),
+    ]);
+    timing.mark('context_and_model');
+    const knowledgeContext = knowledgeResults.join('\n\n');
     const storeInventory = inventoryResults.flat().join('\n');
 
     const analysisContext = `
@@ -275,7 +286,6 @@ REQUIRED OUTPUT SCHEMA:
 Output strictly the JSON object.`;
 
     try {
-        const dynamicModel = await getGenkitModelName('buildAdvisor');
         console.log(`[AI Build Critique] Generating fast critique using Product Highlights with model: ${dynamicModel}...`);
         const response = await safeGenkitGenerate(ai, {
             model: dynamicModel,
@@ -292,24 +302,32 @@ Output strictly the JSON object.`;
         if (!response.output) {
             throw new Error("AI returned empty output during build critique.");
         }
+        timing.mark('model_complete');
 
         // Save to full critique cache (Tier 1)
         if (critiqueCacheKey.length > 5) {
-            try {
-                await db.collection(CRITIQUE_CACHE_COLLECTION).doc(critiqueCacheKey).set({
-                    input,
-                    output: response.output,
-                    timestamp: Date.now(),
-                });
-                console.log(`[AI Critique Cache] Saved new entry for: ${critiqueCacheKey}`);
-            } catch (e) {
-                console.warn("[AI Critique Cache] Write error:", e);
-            }
+            const saveCache = async () => {
+                try {
+                    await db.collection(CRITIQUE_CACHE_COLLECTION).doc(critiqueCacheKey).set({
+                        input,
+                        output: response.output,
+                        timestamp: Date.now(),
+                    });
+                    console.log(`[AI Critique Cache] Saved new entry for: ${critiqueCacheKey}`);
+                } catch (e) {
+                    console.warn("[AI Critique Cache] Write error:", e);
+                }
+            };
+            if (deferCacheWrite) deferCacheWrite(saveCache);
+            else await saveCache();
         }
 
+        timing.mark(deferCacheWrite ? 'cache_write_scheduled' : 'cache_write');
+        timing.finish('generated', { model: dynamicModel, promptChars: prompt.length });
         return response.output;
 
     } catch (error: any) {
+        timing.finish('error', { model: dynamicModel });
         console.error("AI Build Critique failed:", error);
         throw error;
     }

@@ -15,7 +15,7 @@ import { RouteGuard } from "@/components/auth/route-guard";
 // Custom Hooks
 import { useAdvisorData } from "./hooks/use-advisor-data";
 import { useAdvisorState } from "./hooks/use-advisor-state";
-import { useCritiqueLogic } from "./hooks/use-critique-logic";
+import { getCritiqueCacheKey, useCritiqueLogic } from "./hooks/use-critique-logic";
 import { useRecommendationLogic } from "./hooks/use-recommendation-logic";
 
 // Components
@@ -46,7 +46,7 @@ export default function AiBuildAdvisorPage() {
     // Logic Layers
     const {
         critiqueAnalysis, critiqueDuration, setCritiqueAnalysis, setCritiqueDuration,
-        critiqueLoading, critiqueError, handleCritique, handleCancelCritique, getBuildKey
+        critiqueLoading, critiqueError, handleCritique, handleCancelCritique
     } = useCritiqueLogic(isAiKillSwitch);
 
     const {
@@ -69,7 +69,7 @@ export default function AiBuildAdvisorPage() {
             lastLoadedKeyRef.current = "";
             return;
         }
-        const buildKey = getBuildKey(builderState) + workload + resolution;
+        const buildKey = getCritiqueCacheKey(builderState, { intendedUse: workload, performanceLevel: resolution });
 
         // Guard: If this key has already been processed (either loaded or cleared), do nothing
         if (lastLoadedKeyRef.current === buildKey) {
@@ -80,7 +80,7 @@ export default function AiBuildAdvisorPage() {
         if (cache) {
             try {
                 const parsedCache = JSON.parse(cache);
-                if (parsedCache[buildKey]) {
+                if (parsedCache[buildKey]?.timestamp && Date.now() - parsedCache[buildKey].timestamp < 60 * 60 * 1000) {
                     // Call critique logic to load from cache
                     handleCritique(builderState, false, { intendedUse: workload, performanceLevel: resolution });
                     lastLoadedKeyRef.current = buildKey;
@@ -92,7 +92,7 @@ export default function AiBuildAdvisorPage() {
         setCritiqueAnalysis(null);
         setCritiqueDuration(null);
         lastLoadedKeyRef.current = buildKey;
-    }, [builderState, workload, resolution, handleCritique, getBuildKey, setCritiqueAnalysis, setCritiqueDuration]);
+    }, [builderState, workload, resolution, handleCritique, setCritiqueAnalysis, setCritiqueDuration]);
 
     return (
         <RouteGuard requiredPermission="isClientOnly">

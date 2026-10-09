@@ -9,12 +9,32 @@ import { useToast } from "@/hooks/use-toast";
  */
 export function getBuildKey(state: any) {
     if (!state) return "";
-    const partIds: string[] = [];
-    Object.values(state).forEach(val => {
-        if (Array.isArray(val)) val.forEach((v: any) => partIds.push(v.id));
-        else if (val) partIds.push((val as any).id);
+    const partKey = (part: any) => part ? {
+        id: part.id,
+        brand: part.brand,
+        model: part.model || part.name,
+        price: part.price,
+        description: part.description,
+        socket: part.socket,
+        ramType: part.ramType,
+        wattage: part.wattage,
+        performanceScore: part.performanceScore,
+        performanceTier: part.performanceTier,
+        dimensions: part.dimensions,
+        specifications: part.specifications,
+    } : null;
+    return JSON.stringify(Object.entries(state)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([category, value]) => [category, Array.isArray(value) ? value.map(partKey) : partKey(value)]));
+}
+
+export function getCritiqueCacheKey(state: any, preferences?: { intendedUse?: string; performanceLevel?: string; additionalNotes?: string }) {
+    return JSON.stringify({
+        build: getBuildKey(state),
+        intendedUse: preferences?.intendedUse || '',
+        performanceLevel: preferences?.performanceLevel || '',
+        additionalNotes: preferences?.additionalNotes || '',
     });
-    return partIds.sort().join('|');
 }
 
 /**
@@ -45,7 +65,7 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
         setCritiqueLoading(false);
         toast({
             title: "Analysis Cancelled",
-            description: "The diagnostics sequence has been terminated.",
+            description: "Stopped showing this analysis.",
         });
     }, [toast]);
 
@@ -60,14 +80,14 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
         }
         if (!builderState) return;
 
-        const buildKey = getBuildKey(builderState) + (preferences?.intendedUse || "") + (preferences?.performanceLevel || "");
+        const buildKey = getCritiqueCacheKey(builderState, preferences);
         if (!forceRefresh) {
             const cache = localStorage.getItem('pc_critique_cache');
             if (cache) {
                 try {
                     const parsedCache = JSON.parse(cache);
                     const cachedEntry = parsedCache[buildKey];
-                    if (cachedEntry) {
+                    if (cachedEntry?.timestamp && Date.now() - cachedEntry.timestamp < 60 * 60 * 1000) {
                         if (cachedEntry && typeof cachedEntry === 'object' && 'analysis' in cachedEntry) {
                             setCritiqueAnalysis(cachedEntry.analysis);
                             setCritiqueDuration(cachedEntry.duration ?? null);
@@ -129,7 +149,7 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
                 build: buildData,
                 intendedUse: preferences?.intendedUse,
                 performanceLevel: preferences?.performanceLevel,
-                additionalNotes: preferences?.additionalNotes
+                additionalNotes: preferences?.additionalNotes,
             });
             
             if (controller.signal.aborted) return;
@@ -144,7 +164,8 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
                     const parsedCache = JSON.parse(cache);
                     parsedCache[buildKey] = {
                         analysis: result,
-                        duration: duration
+                        duration: duration,
+                        timestamp: Date.now(),
                     };
                     const keys = Object.keys(parsedCache);
                     if (keys.length > 10) delete parsedCache[keys[0]];

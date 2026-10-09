@@ -10,11 +10,31 @@ import {
 } from "@/ai/schemas/build-advisor-schemas";
 import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind } from "lucide-react";
 import { getComponentPlaceholderImage } from "@/lib/placeholder-images";
+import { parsePesoBudget } from '@/lib/parse-peso-budget';
+import { checkFullBuildCompatibility } from '@/lib/compatibility';
 
 const componentIcons: Record<string, any> = {
   cpu: Cpu, gpu: Server, motherboard: CircuitBoard, ram: MemoryStick, 
   storage: Database, psu: Power, case: RectangleVertical, cooler: Wind
 };
+
+const supportingParts = new Set(['ram', 'storage', 'psu', 'case', 'cooler']);
+
+function summarizeCatalogDescription(value: string): string {
+    const plainText = value
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+        .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+        .replace(/[*_#`>|]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    if (!plainText) return '';
+    if (plainText.length <= 180) return plainText;
+    const excerpt = plainText.slice(0, 181);
+    const sentenceEnd = excerpt.search(/[.!?](?:\s|$)/);
+    if (sentenceEnd >= 70) return excerpt.slice(0, sentenceEnd + 1);
+    return `${excerpt.slice(0, excerpt.lastIndexOf(' ') || 180).trimEnd()}…`;
+}
 
 /**
  * Hook to handle streaming AI build recommendations and live matching.
@@ -26,13 +46,22 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, allParts: Part[]
     const [finalResponseTime, setFinalResponseTime] = useState<number | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const generationStartTimeRef = useRef<number | null>(null);
+    const firstPartialReportedRef = useRef(false);
+    const firstCardReportedRef = useRef(false);
+    const lastRequestRef = useRef<AiBuildAdvisorRecommendationsInput | null>(null);
 
-    // Load initial build from localStorage
+    // Restore only recent recommendations; stock and prices can change.
     useEffect(() => {
         try {
             const cached = localStorage.getItem('pc_ai_build_recommendation');
             if (cached) {
-                setSavedBuild(JSON.parse(cached));
+                const entry = JSON.parse(cached);
+                const maxAgeMs = entry.input?.allowAiSearch ? 60 * 60 * 1000 : 5 * 60 * 1000;
+                if (entry.build && entry.timestamp && Date.now() - entry.timestamp < maxAgeMs) {
+                    setSavedBuild(entry.build);
+                } else {
+                    localStorage.removeItem('pc_ai_build_recommendation');
+                }
             }
         } catch (e) {
             console.warn("Failed to parse cached recommendation from localStorage:", e);
@@ -92,11 +121,11 @@ function getSmartDescription(type: string, modelName: string): string {
 
     const processComponent = useCallback((component: any, type: string): ComponentData | null => {
         if (!component || !component.model) return null;
-        let price = component.estimatedPrice || 0;
+        const price = component.estimatedPrice || 0;
         let modelName = component.model || "";
         const collection = allParts.filter(p => p.category.toLowerCase() === type.toLowerCase());
 
-        const match = collection.find((p: any) => {
+        const match = collection.find(p => component.partId && p.id === component.partId) || collection.find((p: any) => {
             const pModel = (p.model || "").toLowerCase();
             const pName = (p.name || "").toLowerCase();
             const normalized = modelName.toLowerCase();
@@ -106,18 +135,16 @@ function getSmartDescription(type: string, modelName: string): string {
 
         const effectiveModel = match ? (match.model || match.name) : modelName;
 
-        // Dynamic description resolution
-        let description = (component.description && typeof component.description === 'string')
+        const aiDescription = (component.description && typeof component.description === 'string')
             ? component.description.trim()
             : "";
-
-        if (!description) {
-            if (match && match.description?.trim()) {
-                description = match.description.trim();
-            } else {
-                description = getSmartDescription(type, effectiveModel);
-            }
-        }
+        const catalogDescription = match?.description?.trim()
+            ? summarizeCatalogDescription(match.description)
+            : '';
+        const isShortTag = aiDescription.split(/\s+/).length < 9;
+        const description = supportingParts.has(type) && (!aiDescription || isShortTag)
+            ? catalogDescription || getSmartDescription(type, effectiveModel) || aiDescription
+            : aiDescription || catalogDescription || getSmartDescription(type, effectiveModel);
 
         const fallbackImage = getComponentPlaceholderImage(type, effectiveModel);
         const resolvedImage = (match && match.imageUrl && !match.imageUrl.includes('picsum.photos'))
@@ -127,11 +154,18 @@ function getSmartDescription(type: string, modelName: string): string {
         return {
             model: effectiveModel,
             description,
-            id: match ? match.id : `ai-suggested-${type}`,
-            price: (price === 0 && match?.price) ? match.price : price,
+            id: match?.id || component.partId || `ai-suggested-${type}`,
+            price: match?.price || price,
             icon: componentIcons[type],
             image: resolvedImage,
             imageHint: type,
+            wattage: match?.wattage,
+            socket: match?.socket,
+            ramType: match?.ramType,
+            performanceTier: match?.performanceTier,
+            performanceScore: match?.performanceScore,
+            dimensions: match?.dimensions,
+            specifications: match?.specifications,
         };
     }, [allParts]);
 
@@ -140,7 +174,8 @@ function getSmartDescription(type: string, modelName: string): string {
         schema: AiBuildAdvisorRecommendationsOutputSchema,
         onError: (err) => {
             console.error("[useRecommendationLogic] Stream error:", err);
-            const msg = err.message || "Failed to get recommendations.";
+            let msg = err.message || "Failed to get recommendations.";
+            try { msg = JSON.parse(msg).error || msg; } catch { /* Non-JSON provider error. */ }
             setErrorMessage(msg);
             toast({ variant: "destructive", title: "Error", description: msg });
         },
@@ -159,9 +194,44 @@ function getSmartDescription(type: string, modelName: string): string {
                     cooler: processComponent(finalObj.cooler, "cooler"),
                     estimatedWattage: finalObj.estimatedWattage
                 };
+                const request = lastRequestRef.current;
+                const budget = request ? parsePesoBudget(request.budget) : null;
+                const limit = budget ? budget * (request?.allowFlexibleBudget ? 1.3 : 1) : null;
+                const components = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'] as const;
+                const missingStoreIds = !request?.allowAiSearch && components.some(category => !finalObj[category]?.partId);
+                const unknownStoreIds = !request?.allowAiSearch && allParts.length > 0 && components.some(category =>
+                    !allParts.some(part => part.id === finalObj[category]?.partId && !part.isArchived &&
+                        (typeof part.stock !== 'number' || part.stock > 0)));
+                const actualTotal = components.reduce((sum, category) => sum + (completedBuild[category]?.price || 0), 0);
+                const compatibility = !request?.allowAiSearch && !unknownStoreIds && allParts.length > 0
+                    ? checkFullBuildCompatibility({
+                        CPU: completedBuild.cpu,
+                        GPU: completedBuild.gpu,
+                        Motherboard: completedBuild.motherboard,
+                        RAM: completedBuild.ram ? [completedBuild.ram] : [],
+                        Storage: completedBuild.storage ? [completedBuild.storage] : [],
+                        PSU: completedBuild.psu,
+                        Case: completedBuild.case,
+                        Cooler: completedBuild.cooler,
+                    }).filter(issue => issue.severity === 'critical')
+                    : [];
+                if (missingStoreIds || unknownStoreIds || compatibility.length > 0 || (limit && actualTotal > limit + 1)) {
+                    const message = missingStoreIds || unknownStoreIds
+                        ? 'The AI could not verify every suggested part against store inventory. Please try again.'
+                        : compatibility.length > 0
+                            ? `The suggested parts have a compatibility issue: ${compatibility[0].message}`
+                        : `This build exceeds your budget of ₱${budget?.toLocaleString()}. Please try again or enable Flexible Budget.`;
+                    setErrorMessage(message);
+                    toast({ variant: 'destructive', title: 'Build needs another try', description: message });
+                    return;
+                }
                 setSavedBuild(completedBuild);
                 try {
-                    localStorage.setItem('pc_ai_build_recommendation', JSON.stringify(completedBuild));
+                    localStorage.setItem('pc_ai_build_recommendation', JSON.stringify({
+                        build: completedBuild,
+                        input: request,
+                        timestamp: Date.now(),
+                    }));
                 } catch (e) {
                     console.warn("Failed to persist recommendation to localStorage:", e);
                 }
@@ -175,12 +245,12 @@ function getSmartDescription(type: string, modelName: string): string {
         if (isLoading) {
             setFinalResponseTime(null);
             setErrorMessage(null);
-            const start = Date.now();
+            const start = generationStartTimeRef.current ?? Date.now();
             generationStartTimeRef.current = start;
             setElapsedTime(0);
             interval = setInterval(() => {
                 setElapsedTime(Math.round((Date.now() - start) / 1000));
-            }, 100);
+            }, 1000);
         } else if (generationStartTimeRef.current) {
             const finalSeconds = Math.round((Date.now() - generationStartTimeRef.current) / 100) / 10;
             setFinalResponseTime(finalSeconds);
@@ -189,6 +259,20 @@ function getSmartDescription(type: string, modelName: string): string {
         }
         return () => clearInterval(interval);
     }, [isLoading]);
+
+    useEffect(() => {
+        if (!isLoading || !object || !generationStartTimeRef.current) return;
+        const elapsedMs = Date.now() - generationStartTimeRef.current;
+        if (!firstPartialReportedRef.current && Object.keys(object).length > 0) {
+            firstPartialReportedRef.current = true;
+            console.info('[Build Advisor Timing]', JSON.stringify({ path: 'recommendation_client', event: 'first_partial', elapsedMs }));
+        }
+        if (!firstCardReportedRef.current && ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler']
+            .some(category => (object as any)[category]?.model)) {
+            firstCardReportedRef.current = true;
+            console.info('[Build Advisor Timing]', JSON.stringify({ path: 'recommendation_client', event: 'first_card', elapsedMs }));
+        }
+    }, [isLoading, object]);
 
     const handleCancelRecommendations = useCallback(() => {
         stop();
@@ -205,6 +289,10 @@ function getSmartDescription(type: string, modelName: string): string {
         }
         setErrorMessage(null);
         setSavedBuild(null);
+        lastRequestRef.current = data;
+        generationStartTimeRef.current = Date.now();
+        firstPartialReportedRef.current = false;
+        firstCardReportedRef.current = false;
         submit(data);
     }, [isAiKillSwitch, submit, toast]);
 
@@ -224,8 +312,15 @@ function getSmartDescription(type: string, modelName: string): string {
                 estimatedWattage: object.estimatedWattage || undefined
             };
         }
-        return savedBuild;
-    }, [isLoading, object, savedBuild, processComponent]);
+        if (!savedBuild || allParts.length === 0) return savedBuild;
+        const categories = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'] as const;
+        const refreshed = { ...savedBuild };
+        for (const category of categories) {
+            const part = savedBuild[category];
+            if (part) refreshed[category] = processComponent({ ...part, partId: part.id, estimatedPrice: part.price }, category);
+        }
+        return refreshed;
+    }, [isLoading, object, savedBuild, processComponent, allParts.length]);
 
     const totalPrice = useMemo(() => {
         if (!build) return 0;
@@ -238,7 +333,11 @@ function getSmartDescription(type: string, modelName: string): string {
         setSavedBuild(newBuild);
         if (newBuild) {
             try {
-                localStorage.setItem('pc_ai_build_recommendation', JSON.stringify(newBuild));
+                localStorage.setItem('pc_ai_build_recommendation', JSON.stringify({
+                    build: newBuild,
+                    input: lastRequestRef.current,
+                    timestamp: Date.now(),
+                }));
             } catch (e) { }
         } else {
             localStorage.removeItem('pc_ai_build_recommendation');

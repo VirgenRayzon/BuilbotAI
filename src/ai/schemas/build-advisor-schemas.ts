@@ -45,41 +45,49 @@ export const AiBuildAdvisorRecommendationsOutputSchema = z.object({
       'A brief overall summary of the recommended build strategy and its compatibility.'
     ),
   cpu: z.object({
+    partId: z.string().describe('Exact store inventory ID, or an empty string only for an external-market part.'),
     model: z.string().describe('The recommended CPU model name.'),
     description: z.string().describe('A brief explanation for the CPU recommendation.'),
     estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
   }),
   gpu: z.object({
+    partId: z.string().describe('Exact store inventory ID, or an empty string only for an external-market part.'),
     model: z.string().describe('The recommended GPU model name.'),
     description: z.string().describe('A brief explanation for the GPU recommendation.'),
     estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
   }),
   motherboard: z.object({
+    partId: z.string().describe('Exact store inventory ID, or an empty string only for an external-market part.'),
     model: z.string().describe('The recommended Motherboard model name.'),
     description: z.string().describe('A brief explanation for the Motherboard recommendation, highlighting compatibility with CPU and RAM.'),
     estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
   }),
   ram: z.object({
+    partId: z.string().describe('Exact store inventory ID, or an empty string only for an external-market part.'),
     model: z.string().describe('The recommended RAM model and specifications (e.g., "Corsair Vengeance RGB DDR5 32GB (2x16GB) 6000MHz").'),
     description: z.string().optional().default('').describe('Optional brief spec tag or empty string.'),
     estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
   }),
   storage: z.object({
+    partId: z.string().describe('Exact store inventory ID, or an empty string only for an external-market part.'),
     model: z.string().describe('The recommended Storage (SSD/HDD) model name.'),
     description: z.string().optional().default('').describe('Optional brief spec tag or empty string.'),
     estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
   }),
   psu: z.object({
+    partId: z.string().describe('Exact store inventory ID, or an empty string only for an external-market part.'),
     model: z.string().describe('The recommended Power Supply Unit (PSU) model name.'),
     description: z.string().optional().default('').describe('Optional brief spec tag or empty string.'),
     estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
   }),
   case: z.object({
+    partId: z.string().describe('Exact store inventory ID, or an empty string only for an external-market part.'),
     model: z.string().describe('The recommended PC Case model name.'),
     description: z.string().optional().default('').describe('Optional brief spec tag or empty string.'),
     estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
   }),
   cooler: z.object({
+    partId: z.string().describe('Exact store inventory ID, or an empty string only for an external-market part.'),
     model: z.string().describe('The recommended CPU Cooler model name.'),
     description: z.string().optional().default('').describe('Optional brief spec tag or empty string.'),
     estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
