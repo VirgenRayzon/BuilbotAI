@@ -10,8 +10,8 @@ const reviewCategories = ["Motherboard", "CPU", "GPU", "RAM", "Storage", "PSU", 
 
 const UNIFIED_MODAL_CLASSNAMES = {
   content: "bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl overflow-hidden",
-  header: "bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200/80 dark:border-white/10 px-4 py-3",
-  body: "!px-4 !pt-3.5 !pb-4",
+  header: "bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200/80 dark:border-white/10 p-3",
+  body: "!p-3",
   close: "text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors",
 };
 

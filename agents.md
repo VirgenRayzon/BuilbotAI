@@ -79,6 +79,9 @@ Every component, card, form input, modal, and button must be 100% legible and po
   - Dark mode: `dark:bg-[#141a23]/90`, `dark:border-white/10`, `backdrop-blur-md`
   - Portal/Security accents: `border-red-500/30` or `border-cyan-500/30`
 - **Padding & Visual Thickness:** Keep cards compact and sleek. Never use bloated padding (e.g. `p="xl"` or `36px`) or heavy shadows (`shadow-2xl`) that create a thick, heavy appearance. Always use `p={{ base: 'md', sm: 'lg' }}` with `Stack gap="md"`.
+- **Pop-Up Modal & Border Div Padding Standards:**
+  - All pop-up modal dialogs must strictly set their header and body padding to **`12px`** (`header: "... p-3"`, `body: "!p-3"`) for visual consistency.
+  - Bordered container inner divs, sub-surfaces, and toolbars should maintain concise `12px` (`p-3`) padding.
 - **Card Container Width Standards:**
   - Standard customer auth/forms: `max-w-[440px]`
   - Multi-role portals / management forms: `max-w-[480px]`

@@ -150,6 +150,7 @@ export default function AboutPage() {
         }}
         classNames={{
           content: isDark ? 'bg-[#141a23]/95 backdrop-blur-md border border-white/10 shadow-xl rounded-xl' : 'bg-white/95 backdrop-blur-md border border-slate-200/80 shadow-xl rounded-xl',
+          body: '!p-3',
         }}
       >
         {selectedImage && (
