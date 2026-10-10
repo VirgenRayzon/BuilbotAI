@@ -1,14 +1,12 @@
 /**
- * StockEditor — Inline stock quantity editor with increment/decrement buttons.
+ * StockEditor — Inline stock quantity editor.
  * Supports click-to-edit mode for direct number input. Used in admin inventory views.
  */
 
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StockEditorProps {
@@ -56,14 +54,6 @@ export function StockEditor({ stock, onStockChange, className }: StockEditorProp
     }
   };
 
-  const handleIncrement = () => {
-    onStockChange(stock + 1);
-  };
-
-  const handleDecrement = () => {
-    onStockChange(Math.max(0, stock - 1));
-  };
-
   if (isEditing) {
     return (
       <Input
@@ -79,21 +69,15 @@ export function StockEditor({ stock, onStockChange, className }: StockEditorProp
   }
 
   return (
-    <div className={cn("flex items-center justify-center gap-2", className)}>
-      <Button variant="outline" size="icon" className="h-6 w-6" onClick={handleDecrement}>
-        <Minus className="h-3 w-3" />
-      </Button>
+    <div className={cn("flex items-center justify-center", className)}>
       <div
-        className="font-semibold text-center w-8 cursor-pointer p-1 rounded-md hover:bg-muted"
+        className="w-8 cursor-pointer rounded-md p-1 text-center font-semibold hover:bg-muted"
         onClick={() => setIsEditing(true)}
         role="button"
         tabIndex={0}
       >
         {stock}
       </div>
-      <Button variant="outline" size="icon" className="h-6 w-6" onClick={handleIncrement}>
-        <Plus className="h-3 w-3" />
-      </Button>
     </div>
   );
 }

@@ -280,7 +280,7 @@ export function YourBuild({
           "sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-slate-900/5 dark:shadow-black/30",
           className
         )}>
-          <Box className="px-5 py-4 border-b border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
+          <Box className="p-3 border-b border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
             <Group justify="space-between" align="center">
               <Group gap="xs" align="center">
                 <div>
@@ -344,7 +344,7 @@ export function YourBuild({
             </Button>
           </SheetTrigger>
           <SheetContent side="bottom" hideClose className="h-[85vh] p-0 flex flex-col rounded-t-3xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722]">
-            <SheetHeader className="px-5 py-4 flex flex-row items-center justify-between border-b border-slate-200 dark:border-white/10 text-left bg-slate-50/50 dark:bg-white/[0.02]">
+            <SheetHeader className="p-3 flex flex-row items-center justify-between border-b border-slate-200 dark:border-white/10 text-left bg-slate-50/50 dark:bg-white/[0.02]">
               <Group gap="xs">
                 <ThemeIcon size={28} radius="md" variant="light" color="cyan">
                   <Cpu size={16} />

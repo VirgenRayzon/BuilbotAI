@@ -66,8 +66,8 @@ export function InventoryTable({
   const allSelected = parts.length > 0 && parts.every(p => selectedIds.some(s => s.id === p.id));
 
   return (
-    <Table>
-      <TableHeader>
+    <Table className="bg-transparent [&_th]:h-10 [&_th]:px-4 [&_th]:text-[11px] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-wider [&_th]:text-slate-600 dark:[&_th]:text-slate-300 [&_td]:border-slate-100 dark:[&_td]:border-white/[0.06]">
+      <TableHeader className="border-b border-slate-200 bg-slate-50/80 dark:border-white/10 dark:bg-white/[0.025]">
         <TableRow>
           <TableHead className="w-[40px]">
             <Checkbox 
@@ -85,7 +85,12 @@ export function InventoryTable({
       </TableHeader>
       <TableBody>
         {parts.map((part) => (
-          <TableRow key={part.id} className={selectedIds.some(s => s.id === part.id) ? "bg-muted/50" : ""}>
+          <TableRow
+            key={part.id}
+            className={selectedIds.some(s => s.id === part.id)
+              ? "bg-cyan-50/50 dark:bg-cyan-950/20"
+              : "transition-colors hover:bg-cyan-50/60 dark:hover:bg-cyan-500/[0.035]"}
+          >
             <TableCell>
               <Checkbox 
                 checked={selectedIds.some(s => s.id === part.id)}

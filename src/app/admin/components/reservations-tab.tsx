@@ -358,8 +358,9 @@ export function ReservationsTab({
 
     return (
         <div className="space-y-6">
-            {/* SECTION 1: Status Breakdown Analytics & Interactive Pie Chart */}
-            <motion.div
+            {/* The reservation status summary is available in Sales & Analytics;
+                keep this tab focused on finding and managing individual orders. */}
+            {false && <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45 }}
@@ -737,7 +738,7 @@ export function ReservationsTab({
                         </div>
                     </div>
                 </Paper>
-            </motion.div>
+            </motion.div>}
 
             {/* SECTION 2: Search Bar & Dropdown Filter Controls */}
             <Paper

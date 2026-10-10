@@ -104,7 +104,7 @@ export function BuildContent({
   };
 
   return (
-    <div className="px-5 py-4 flex flex-col h-full overflow-y-auto no-scrollbar">
+    <div className="p-3 flex flex-col h-full overflow-y-auto no-scrollbar">
       <div className="space-y-3 py-1 flex-1">
         {mainCategories.map((name) => {
           const mobo = build['Motherboard'] as ComponentData | null;
@@ -315,7 +315,7 @@ export function BuildContent({
         <Paper
           withBorder
           radius="md"
-          p="sm"
+          p={12}
           className="bg-slate-50/70 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 shadow-xs"
         >
           <div className="flex justify-between items-center">

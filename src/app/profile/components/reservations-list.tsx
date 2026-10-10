@@ -92,7 +92,7 @@ export function ReservationsList({
             key={reservation.id}
             withBorder
             radius="lg"
-            p="lg"
+            p={12}
             className="bg-white dark:bg-[#121824] border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md transition-all duration-200"
           >
             <Stack gap="md">

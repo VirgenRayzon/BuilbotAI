@@ -230,7 +230,10 @@ function serializeDate(val: any) {
 
 export async function getCachedInventory(): Promise<Part[]> {
   const now = Date.now();
-  if (catalogCache && (now - catalogCacheTime < CATALOG_CACHE_TTL)) {
+  // Older in-memory entries predate gallery support and do not include
+  // `images`. Treat them as stale so a deployed update takes effect at once.
+  const hasGalleryShape = catalogCache?.every(part => Array.isArray(part.images));
+  if (catalogCache && hasGalleryShape && (now - catalogCacheTime < CATALOG_CACHE_TTL)) {
     console.log("[getCachedInventory] Catalog cache hit");
     return catalogCache;
   }
@@ -255,6 +258,10 @@ export async function getCachedInventory(): Promise<Part[]> {
       usdSrp: data.usdSrp ? Number(data.usdSrp) : undefined,
       stock: Number(data.stock) || 0,
       imageUrl: data.imageUrl || '',
+      // Preserve the full gallery for builder product details. The admin editor
+      // reads Firestore directly, while the builder consumes this serialized,
+      // cached catalog payload.
+      images: Array.isArray(data.images) ? data.images.filter((image): image is string => typeof image === 'string' && image.length > 0) : [],
       specifications: data.specifications || {},
       wattage: data.wattage !== undefined ? Number(data.wattage) : undefined,
       performanceTier: data.performanceTier !== undefined ? Number(data.performanceTier) : undefined,

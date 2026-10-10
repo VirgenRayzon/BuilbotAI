@@ -293,7 +293,11 @@ export function PrebuiltTab({
                     )}
                 </div>
             ) : (
-                <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
+                <Paper
+                    withBorder
+                    radius="md"
+                    className="overflow-hidden border-slate-200 bg-white/80 shadow-sm dark:border-white/10 dark:bg-[#141a23]/80"
+                >
                     <PrebuiltsTable
                         systems={currentPrebuilts}
                         parts={parts || []}
@@ -307,7 +311,7 @@ export function PrebuiltTab({
                         onToggleSelectAll={() => toggleAllPrebuiltsSelection(currentPrebuilts)}
                         isSuperAdmin={profile?.isSuperAdmin}
                     />
-                </div>
+                </Paper>
             )}
             <PaginationControls
                 currentPage={prebuiltCurrentPage}

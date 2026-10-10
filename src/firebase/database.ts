@@ -10,7 +10,7 @@ import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage"
 import type { AddPartFormSchema } from "@/hooks/use-part-form";
 import type { AddPrebuiltFormSchema } from "@/components/add-prebuilt-dialog";
 import type { Part, PrebuiltSystem, UserProfile, SystemNotification } from "@/lib/types";
-import { fetchImageBase64, uploadBase64ToStorage } from "@/app/image-actions";
+import { fetchImageBase64 } from "@/app/image-actions";
 import { inventoryCategoryLabel, inventoryCategoryPath, inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
 
 // Uploads an image to Firebase Storage.
@@ -28,7 +28,7 @@ async function uploadToStorageClient(url: string, storagePath: string, fileNameP
         console.log(`[Storage] Processing local file upload for path: ${fullPath}`);
         try {
             const splitIdx = url.indexOf(',');
-            if (splitIdx === -1) return url;
+            if (splitIdx === -1) throw new Error("The selected image is invalid.");
 
             const header = url.substring(0, splitIdx);
             const base64Data = url.substring(splitIdx + 1);
@@ -46,23 +46,26 @@ async function uploadToStorageClient(url: string, storagePath: string, fileNameP
             return downloadUrl;
         } catch (error) {
             console.error(`[Storage] Client upload failed:`, error);
-            return url;
+            throw new Error("Could not upload the selected image to Firebase Storage.");
         }
     }
 
-    // 2. Ignore existing storage URLs or non-http URLs
-    if (!url.startsWith("http") || url.includes("firebasestorage.googleapis.com")) {
-        return url;
-    }
+    // 2. Keep URLs already stored in this Firebase bucket.
+    if (!/^https?:\/\//i.test(url)) throw new Error("Enter a valid image URL.");
+    const parsedUrl = new URL(url);
+    const bucket = getStorage().app.options.storageBucket;
+    if (bucket && (
+        (parsedUrl.hostname === "firebasestorage.googleapis.com" && parsedUrl.pathname.startsWith(`/v0/b/${bucket}/o/`)) ||
+        (parsedUrl.hostname === "storage.googleapis.com" && parsedUrl.pathname.startsWith(`/${bucket}/`))
+    )) return url;
 
     // 3. Remote URL — fetch via server action, then upload client-side
     console.log(`[Storage] Processing remote image: ${url} for path: ${storagePath}`);
     try {
-        const proxyData = await fetchImageBase64(url);
-        if (!proxyData) {
-            console.warn(`[Storage] Failed to fetch image via proxy for ${url}`);
-            return url;
-        }
+        const idToken = await getAuth().currentUser?.getIdToken();
+        if (!idToken) throw new Error("Sign in as a manager to import images.");
+        const proxyData = await fetchImageBase64(url, idToken);
+        if ("error" in proxyData) throw new Error(proxyData.error);
 
         const { base64, contentType, extension } = proxyData;
         const storage = getStorage();
@@ -76,7 +79,7 @@ async function uploadToStorageClient(url: string, storagePath: string, fileNameP
         return downloadUrl;
     } catch (error) {
         console.error(`[Storage] Upload failed for ${url}:`, error);
-        return url;
+        throw error;
     }
 }
 

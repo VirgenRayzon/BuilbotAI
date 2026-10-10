@@ -54,6 +54,7 @@ import { EmergencyControlsCard } from "./components/emergency-controls-card";
 import { ReservationsList } from "./components/reservations-list";
 import { FavoritesList } from "./components/favorites-list";
 import { UserAuditLogsSection } from "./components/user-audit-logs-section";
+import { CompactInfo } from "@/components/ui/compact-info";
 
 import {
   AlertDialog,
@@ -233,16 +234,14 @@ export default function ProfilePage() {
                         <Paper
                           withBorder
                           radius="lg"
-                          p="lg"
+                          p={12}
                           className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
                         >
                           <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
                             <User className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                             <span>Profile Overview</span>
+                            <CompactInfo message="Manage your public identity, personal details, and community presence." />
                           </Title>
-                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium mt-1">
-                            Manage your public identity, personal details, and community presence.
-                          </Text>
                         </Paper>
                         <MantineProfileView
                           profile={profile}
@@ -261,16 +260,14 @@ export default function ProfilePage() {
                         <Paper
                           withBorder
                           radius="lg"
-                          p="lg"
+                          p={12}
                           className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
                         >
                           <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
                             <Settings className="h-5 w-5 text-slate-600 dark:text-slate-400" />
                             <span>Account Settings</span>
+                            <CompactInfo message="Configure security preferences, linked accounts, and notification options." />
                           </Title>
-                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium mt-1">
-                            Configure security preferences, linked accounts, and notification options.
-                          </Text>
                         </Paper>
                         <MantineSettingsView
                           profile={profile}
@@ -287,7 +284,7 @@ export default function ProfilePage() {
                         <Paper
                           withBorder
                           radius="lg"
-                          p="lg"
+                          p={12}
                           className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
                         >
                           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -295,10 +292,8 @@ export default function ProfilePage() {
                               <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
                                 <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                 <span>Store Reservations</span>
+                                <CompactInfo message="Track active component reservation tickets, assembly progress, and pick-up readiness." />
                               </Title>
-                              <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
-                                Track active component reservation tickets, assembly progress, and pick-up readiness.
-                              </Text>
                             </div>
                             <Badge size="md" variant="light" color="blue" className="font-mono font-bold">
                               {reservations.reservations.length} Reserved Rigs
@@ -332,7 +327,7 @@ export default function ProfilePage() {
                         <Paper
                           withBorder
                           radius="lg"
-                          p="lg"
+                          p={12}
                           className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
                         >
                           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -340,10 +335,8 @@ export default function ProfilePage() {
                               <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
                                 <Heart className="h-5 w-5 text-rose-500" />
                                 <span>Saved Favourites</span>
+                                <CompactInfo message="Access and modify your custom PC builds saved from the PC Builder." />
                               </Title>
-                              <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
-                                Access and modify your custom PC builds saved from the PC Builder.
-                              </Text>
                             </div>
                             <Button
                               size="xs"
@@ -373,16 +366,14 @@ export default function ProfilePage() {
                         <Paper
                           withBorder
                           radius="lg"
-                          p="lg"
+                          p={12}
                           className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
                         >
                           <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
                             <History className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                             <span>Activity Logs</span>
+                            <CompactInfo message="Review your recent account actions, build updates, and reservation events." />
                           </Title>
-                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
-                            Review your recent account actions, build updates, and reservation events.
-                          </Text>
                         </Paper>
 
                         <UserAuditLogsSection
@@ -398,16 +389,14 @@ export default function ProfilePage() {
                         <Paper
                           withBorder
                           radius="lg"
-                          p="lg"
+                          p={12}
                           className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
                         >
                           <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
                             <Activity className="h-5 w-5 text-amber-500" />
                             <span>System Safeguards & Emergency Overrides</span>
+                            <CompactInfo message="Real-time emergency kill switches, maintenance mode locks, and storage fallbacks." />
                           </Title>
-                          <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium">
-                            Real-time emergency kill switches, maintenance mode locks, and storage fallbacks.
-                          </Text>
                         </Paper>
 
                         <EmergencyControlsCard emergency={emergency} />

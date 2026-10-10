@@ -14,12 +14,15 @@ import { cn } from "@/lib/utils";
 
 import { Button, Paper, Text, Title } from "@mantine/core";
 import { AnimatePresence } from "framer-motion";
+import { SignOutLoader } from "@/components/auth/sign-out-loader";
+import { SignOutTransitionContext } from "@/context/sign-out-transition";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { loading, status, authUser, profile } = useUserProfile();
   const firestore = useFirestore();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const [signOutStartedAt, setSignOutStartedAt] = useState<number | null>(null);
 
   // Fetch Site Settings (Kill Switch)
   const settingsDocRef = useMemo(() => {
@@ -40,6 +43,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isLandingRedirect = pathname === "/" && !!authUser;
   const isAuthPage = ['/signin', '/signup', '/system-access'].includes(pathname);
 
+  // Keep the sign-out overlay mounted across the route change, then let its
+  // existing 400 ms exit animation reveal the ready sign-in page once.
+  useEffect(() => {
+    if (signOutStartedAt === null || !isAuthPage || authUser !== null) return;
+    const remaining = Math.max(0, 600 - (Date.now() - signOutStartedAt));
+    const timeout = window.setTimeout(() => setSignOutStartedAt(null), remaining);
+    return () => window.clearTimeout(timeout);
+  }, [signOutStartedAt, isAuthPage, authUser]);
+
   // Routes exempt from maintenance screen (admin pages & system access login)
   const isAdminRoute = pathname.startsWith('/admin') || pathname === '/system-access';
 
@@ -58,7 +70,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   // 1. Initial auth profile is loading (except when an unauthenticated guest lands directly on /signin)
   // 2. Landing page is redirecting an authenticated user
   // 3. User is authenticated on an auth page (/signin, /signup, /system-access) while route redirection completes
-  const showLoaderOverlay = (loading && !(pathname === '/signin' && !authUser)) || isLandingRedirect || (isAuthPage && !!authUser);
+  const showLoaderOverlay = signOutStartedAt === null && (
+    (loading && !(pathname === '/signin' && !authUser)) ||
+    isLandingRedirect ||
+    (isAuthPage && !!authUser)
+  );
 
   if (status === 'missing' || status === 'error') {
     return (
@@ -79,25 +95,31 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   if (showMaintenance) return <MaintenanceScreen />;
 
   return (
-    <div className="flex flex-col min-h-screen overflow-x-hidden relative">
-      <AnimatePresence>
-        {showLoaderOverlay && (
-          <NeutralPageLoader
-            key="neutral-page-loader"
-            isOverlay
-          />
-        )}
-      </AnimatePresence>
+    <SignOutTransitionContext.Provider value={{
+      startSignOut: () => setSignOutStartedAt(Date.now()),
+      cancelSignOut: () => setSignOutStartedAt(null),
+    }}>
+      <div className="flex flex-col min-h-screen overflow-x-hidden relative">
+        <AnimatePresence>
+          {showLoaderOverlay && (
+            <NeutralPageLoader
+              key="neutral-page-loader"
+              isOverlay
+            />
+          )}
+        </AnimatePresence>
+        <SignOutLoader visible={signOutStartedAt !== null} />
 
-      <Header />
-      <main className={cn(
-        "flex-1 min-h-[calc(100vh-4rem)]",
-        !isHeaderHidden && "pt-16",
-        isMaintenanceMode && !isAdmin && !isAdminRoute && "grayscale-[0.5] contrast-125"
-      )}>
-        {children}
-      </main>
-      {mounted && shouldShowFooter && <Footer />}
-    </div>
+        <Header />
+        <main className={cn(
+          "flex-1 min-h-[calc(100vh-4rem)]",
+          !isHeaderHidden && "pt-16",
+          isMaintenanceMode && !isAdmin && !isAdminRoute && "grayscale-[0.5] contrast-125"
+        )}>
+          {children}
+        </main>
+        {mounted && shouldShowFooter && <Footer />}
+      </div>
+    </SignOutTransitionContext.Provider>
   );
 }

@@ -45,6 +45,7 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import classes from "./header.module.css";
 import { HeaderMegaMenu } from "./header-mega-menu";
+import { useSignOutTransition } from "@/context/sign-out-transition";
 
 interface NavTab {
   href: string;
@@ -62,6 +63,8 @@ export function Header() {
   const [userMenuOpened, setUserMenuOpened] = useState(false);
   const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] = useDisclosure(false);
   const [signOutModalOpen, setSignOutModalOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const { startSignOut, cancelSignOut } = useSignOutTransition();
 
   useEffect(() => {
     setMounted(true);
@@ -77,15 +80,22 @@ export function Header() {
 
   const handleSignOut = async () => {
     if (auth) {
+      setIsSigningOut(true);
+      setSignOutModalOpen(false);
+      startSignOut();
       const isStaff = Boolean(profile?.isSuperAdmin || profile?.isManager);
       const destination = isStaff ? "/system-access" : "/signin";
       localStorage.removeItem("pc_chat_history_v2");
       localStorage.removeItem("pc_builder_state");
       localStorage.removeItem("admin_pc_builder_state");
       try {
+        await new Promise((resolve) => window.setTimeout(resolve, 250));
         await signOut(auth);
-      } finally {
-        window.location.replace(destination);
+        router.replace(destination);
+      } catch (error) {
+        console.error("Sign out failed:", error);
+        cancelSignOut();
+        setIsSigningOut(false);
       }
     }
   };

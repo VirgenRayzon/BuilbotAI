@@ -13,7 +13,7 @@ interface ChatHeaderProps {
 
 export function ChatHeader({ isDark, isAiKillSwitch, buildPartCount, onClear, onClose }: ChatHeaderProps) {
     return (
-        <div className={cn("py-3 px-4 flex items-center justify-between flex-none border-b", isDark ? "border-white/10" : "border-slate-200")}>
+        <div className={cn("p-3 flex items-center justify-between flex-none border-b", isDark ? "border-white/10" : "border-slate-200")}>
             <div className="flex items-center gap-2.5">
                 <div className={cn("relative w-9 h-9 rounded-lg flex items-center justify-center", isDark ? "bg-cyan-500/15 text-cyan-300" : "bg-cyan-50 text-cyan-700")}>
                     <BrainCircuit className="w-4 h-4" />

@@ -39,12 +39,12 @@ export function BuildActionFooter({
   const complete = missingCategories.length === 0;
 
   return (
-    <div className="px-4 sm:px-5 pb-5 pt-2 space-y-2.5">
+    <div className="p-3 space-y-2.5">
       {!complete && (
         <Paper
           withBorder
           radius="md"
-          p="sm"
+          p={12}
           className="bg-amber-50/80 dark:bg-amber-950/20 border-amber-200 dark:border-amber-500/25 shadow-xs"
         >
           <Group gap="xs" align="center" className="mb-1">

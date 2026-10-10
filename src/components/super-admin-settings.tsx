@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CompactInfo } from '@/components/ui/compact-info';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -241,11 +242,12 @@ export function SuperAdminSettings() {
                 <CardHeader className="p-3 pb-3">
                     <CardTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
                         <Key className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                        Default Manger Access Key
+                        Default Manager Access Key
+                        <CompactInfo
+                            label="About the default manager access key"
+                            message="Manage the access key required for new manager signups."
+                        />
                     </CardTitle>
-                    <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
-                        Manage the access key required for new manager signups.
-                    </CardDescription>
                 </CardHeader>
                 <CardContent className="p-3 pt-0 space-y-3">
                     <div className="space-y-2">
@@ -275,10 +277,11 @@ export function SuperAdminSettings() {
                     <CardTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
                         <Shield className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                         Manager Accounts
+                        <CompactInfo
+                            label="About manager accounts"
+                            message="Manage individual manager access keys and view key history."
+                        />
                     </CardTitle>
-                    <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
-                        Manage individual manager access keys and view key history.
-                    </CardDescription>
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
                     {managers.length === 0 ? (
@@ -339,10 +342,11 @@ export function SuperAdminSettings() {
                     <CardTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
                         <RefreshCw className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                         Key Reset Requests
+                        <CompactInfo
+                            label="About key reset requests"
+                            message="Pending requests from managers who forgot their access key."
+                        />
                     </CardTitle>
-                    <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
-                        Pending requests from managers who forgot their access key.
-                    </CardDescription>
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
                     {requests.length === 0 ? (

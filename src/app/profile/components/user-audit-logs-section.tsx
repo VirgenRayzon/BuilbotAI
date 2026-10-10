@@ -211,11 +211,11 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
       <Paper
         withBorder
         radius="lg"
-        p="lg"
+        p={12}
         className="bg-white dark:bg-[#12161f] border-slate-200 dark:border-white/10 shadow-sm"
       >
         {/* Search & Filter Bar */}
-        <div className="flex flex-col md:flex-row gap-3 items-center flex-wrap mb-5">
+        <div className="flex flex-col md:flex-row gap-3 items-center flex-wrap">
           <TextInput
             placeholder="Search activity by title or details..."
             value={searchQuery}
@@ -307,11 +307,25 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
             </Button>
           )}
         </div>
+      </Paper>
 
-        {/* Mantine Users Table Pattern */}
-        <Table.ScrollContainer minWidth={750} className="border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
-          <Table verticalSpacing="sm" highlightOnHover className="bg-white dark:bg-[#12161f]">
-            <Table.Thead className="bg-slate-100/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-white/10">
+      <Paper
+        withBorder
+        radius="md"
+        className="overflow-hidden bg-white/80 shadow-sm dark:bg-[#141a23]/80 border-slate-200 dark:border-white/10"
+      >
+        <Group justify="space-between" className="border-b border-slate-200 px-3 py-3 dark:border-white/10">
+          <Text fw={700} size="sm" className="text-slate-900 dark:text-slate-100">
+            Activity history
+          </Text>
+          <Badge variant="light" color="cyan" size="sm" radius="sm">
+            {filteredLogs.length} {filteredLogs.length === 1 ? "event" : "events"}
+          </Badge>
+        </Group>
+
+        <Table.ScrollContainer minWidth={800}>
+          <Table verticalSpacing="sm" highlightOnHover className="bg-transparent">
+            <Table.Thead className="bg-slate-50/80 dark:bg-white/[0.025] border-b border-slate-200 dark:border-white/10">
               <Table.Tr>
                 <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
                   Resource / Activity
@@ -334,34 +348,34 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
               </Table.Tr>
             </Table.Thead>
 
-            <Table.Tbody>
-              {rows.length === 0 ? (
-                <Table.Tr>
-                  <Table.Td colSpan={6} className="h-32 text-center text-slate-600 dark:text-slate-400 font-medium">
-                    No activity logs match your selected filter criteria.
-                  </Table.Td>
-                </Table.Tr>
-              ) : (
-                rows
-              )}
-            </Table.Tbody>
-          </Table>
+              <Table.Tbody>
+                {rows.length === 0 ? (
+                  <Table.Tr>
+                    <Table.Td colSpan={6} className="h-32 text-center text-slate-600 dark:text-slate-400 font-medium">
+                      No activity logs match your selected filter criteria.
+                    </Table.Td>
+                  </Table.Tr>
+                ) : (
+                  rows
+                )}
+              </Table.Tbody>
+            </Table>
         </Table.ScrollContainer>
-
-        {/* Pagination */}
-        <div className="mt-4">
-          <PaginationControls
-            currentPage={currentPage}
-            totalPages={totalPages}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={(val) => {
-              setItemsPerPage(val);
-              setCurrentPage(1);
-            }}
-          />
-        </div>
       </Paper>
+
+      {/* Pagination */}
+      <div className="pt-1">
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={(val) => {
+            setItemsPerPage(val);
+            setCurrentPage(1);
+          }}
+        />
+      </div>
     </Stack>
   );
 }

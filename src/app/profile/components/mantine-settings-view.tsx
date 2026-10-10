@@ -178,7 +178,7 @@ export function MantineSettingsView({
 
               {/* User Name */}
               <TextInput
-                label="User Name"
+                label="Display Name"
                 value={name}
                 onChange={(e) => setName(e.currentTarget.value)}
                 placeholder="Enter your user name"

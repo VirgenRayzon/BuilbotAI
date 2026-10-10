@@ -52,7 +52,7 @@ export function AccountDetails({
     <Paper
       withBorder
       radius="lg"
-      p="lg"
+      p={12}
       className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm transition-all"
     >
       <Stack gap="md">

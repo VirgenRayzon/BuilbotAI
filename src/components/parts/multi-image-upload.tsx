@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
-import { Upload, X, Star, Image as ImageIcon, Plus, Check } from "lucide-react";
+import { Upload, X, Star, Check, Link2 } from "lucide-react";
+import { Button as MantineButton, Textarea } from "@mantine/core";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { OptimizedImage } from "../ui/optimized-image";
@@ -66,6 +67,8 @@ export function MultiImageUpload({
 }: MultiImageUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [imageLinks, setImageLinks] = useState("");
+  const [linkError, setLinkError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processFiles = useCallback(
@@ -144,6 +147,25 @@ export function MultiImageUpload({
     onCoverImageChange(imgUrl);
   };
 
+  const addImageLinks = () => {
+    const links = imageLinks.split(/\r?\n/).map((link) => link.trim()).filter(Boolean);
+    if (links.length === 0) return;
+    for (const link of links) {
+      try {
+        const parsed = new URL(link);
+        if (!["http:", "https:"].includes(parsed.protocol)) throw new Error();
+      } catch {
+        setLinkError("Enter a valid HTTP or HTTPS image link on each line.");
+        return;
+      }
+    }
+    const updatedImages = [...images, ...links.filter((link) => !images.includes(link))];
+    onImagesChange(updatedImages);
+    if (!coverImage && updatedImages.length > 0) onCoverImageChange(updatedImages[0]);
+    setImageLinks("");
+    setLinkError("");
+  };
+
   // Determine effective cover
   const effectiveCover = coverImage || images[0] || "";
 
@@ -187,11 +209,27 @@ export function MultiImageUpload({
         </div>
       </div>
 
+      <div className="space-y-2 rounded-lg border border-slate-200 dark:border-white/10 p-3 bg-white/85 dark:bg-[#141a23]/90">
+        <Textarea
+          label="Import from image links"
+          description="Paste one or more direct image links, one per line. Images move to Firebase Storage when you save."
+          placeholder={"https://example.com/photo-1.jpg\nhttps://example.com/photo-2.jpg"}
+          minRows={2}
+          autosize
+          value={imageLinks}
+          onChange={(event) => { setImageLinks(event.currentTarget.value); setLinkError(""); }}
+          error={linkError || undefined}
+        />
+        <MantineButton type="button" size="xs" variant="light" leftSection={<Link2 size={14} />} onClick={addImageLinks} disabled={!imageLinks.trim()}>
+          Add links
+        </MantineButton>
+      </div>
+
       {/* Uploaded Photos Gallery */}
       {images.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
-            <span>Uploaded Photos ({images.length})</span>
+            <span>Selected Photos ({images.length})</span>
             <span className="text-primary font-semibold">Click star to choose Cover</span>
           </div>
 

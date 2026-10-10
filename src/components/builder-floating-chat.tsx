@@ -85,7 +85,7 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                             </div>
 
                             {/* Footer Input & Actions */}
-                            <div className={cn("p-3 sm:p-4 flex-none border-t flex flex-col gap-2.5", isDark ? "bg-[#111722] border-white/10" : "bg-white border-slate-200")}>
+                            <div className={cn("p-3 flex-none border-t flex flex-col gap-2.5", isDark ? "bg-[#111722] border-white/10" : "bg-white border-slate-200")}>
                                 {/* Preset Chips (shown when conversation has no user messages) */}
                                 <AnimatePresence>
                                     {!hasUserMessages && !isLoading && !isAiKillSwitch && (

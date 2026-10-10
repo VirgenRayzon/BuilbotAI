@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,6 +46,27 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+function InfoPopover({ message, label = 'More information' }: { message: string; label?: string }) {
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <button
+                    type="button"
+                    aria-label={label}
+                    onClick={(event) => event.stopPropagation()}
+                    className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-slate-300 text-[11px] font-bold leading-none text-slate-500 transition-colors hover:border-cyan-500 hover:bg-cyan-500/10 hover:text-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 dark:border-white/15 dark:text-slate-400 dark:hover:border-cyan-400 dark:hover:text-cyan-300"
+                >
+                    !
+                </button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs border-slate-200 bg-white text-xs leading-relaxed text-slate-700 shadow-lg dark:border-white/10 dark:bg-[#141a23] dark:text-slate-200">
+                {message}
+            </TooltipContent>
+        </Tooltip>
+    );
+}
 
 // Standard available Gemini API models with specs & badges
 export const AVAILABLE_GEMINI_MODELS = [
@@ -433,17 +454,16 @@ export function AiModelSettings() {
     };
 
     return (
+        <TooltipProvider delayDuration={150}>
         <Card className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-sm">
             <CardHeader className="p-3 border-b border-slate-100 dark:border-white/5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="space-y-1">
+                    <div>
                         <CardTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
                             <Bot className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                             AI Model Routing & Inference Engine
+                            <InfoPopover message="Configure official Gemini foundation models, manage fine-tuned Vertex AI project endpoints, and assign models to individual features." />
                         </CardTitle>
-                        <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
-                            Configure official Gemini foundation models, manage fine-tuned Vertex AI project endpoints, and assign models to individual features.
-                        </CardDescription>
                     </div>
                     <Badge
                         variant="outline"
@@ -501,10 +521,8 @@ export function AiModelSettings() {
                                             <span className="font-semibold text-sm text-slate-900 dark:text-white">
                                                 Default Gemini API
                                             </span>
+                                            <InfoPopover label="About Default Gemini API" message="Official Google Gemini foundation models via the Generative Language API. Choose which Gemini model variant powers default workloads." />
                                         </div>
-                                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                                            Official Google Gemini foundation models via Generative Language API. Choose which Gemini model variant powers default workloads.
-                                        </p>
                                     </div>
                                 </div>
 
@@ -520,7 +538,7 @@ export function AiModelSettings() {
                                 </Badge>
                             </div>
 
-                            <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500">
+                            <div className="mt-3 pt-2 border-t border-slate-200/60 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500">
                                 <span>
                                     Active Model:{' '}
                                     <span className="text-cyan-600 dark:text-cyan-400 font-mono font-semibold">
@@ -556,10 +574,8 @@ export function AiModelSettings() {
                                             <span className="font-semibold text-sm text-slate-900 dark:text-white">
                                                 Fine-Tuned Vertex Model
                                             </span>
+                                            <InfoPopover label="About Fine-Tuned Vertex Model" message="Custom fine-tuned models trained on PC building datasets and hardware catalogs. Manage named projects and endpoints below." />
                                         </div>
-                                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                                            Custom fine-tuned models trained on PC building datasets and hardware catalogs. Manage named projects and endpoints below.
-                                        </p>
                                     </div>
                                 </div>
 
@@ -575,7 +591,7 @@ export function AiModelSettings() {
                                 </Badge>
                             </div>
 
-                            <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500">
+                            <div className="mt-3 pt-2 border-t border-slate-200/60 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500">
                                 <span className="truncate mr-2">
                                     Active Project:{' '}
                                     <span className="text-amber-600 dark:text-amber-400 font-mono font-semibold truncate">
@@ -601,10 +617,8 @@ export function AiModelSettings() {
                                 <h3 className="text-sm font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
                                     <Sparkles className="h-4 w-4 text-cyan-500" />
                                     Select Default Gemini Model Variant
+                                    <InfoPopover label="About Gemini model selection" message="Choose which Gemini model powers chat conversations, compatibility checking, and recommendation engines when routed to Gemini." />
                                 </h3>
-                                <p className="text-xs text-slate-600 dark:text-slate-400">
-                                    Choose which Gemini model powers chat conversations, compatibility checking, and recommendation engines when routed to Gemini.
-                                </p>
                             </div>
                             <Badge variant="outline" className="text-xs font-mono text-cyan-600 dark:text-cyan-400 border-cyan-500/30 shrink-0">
                                 Selected: {selectedGeminiModel}
@@ -623,12 +637,12 @@ export function AiModelSettings() {
                                             setSelectedGeminiModel(model.id);
                                             setIsAiDirty(true);
                                         }}
-                                        className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${isSelected
+                                        className={`p-3 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${isSelected
                                                 ? 'border-cyan-500 bg-white dark:bg-[#131c2d] ring-2 ring-cyan-500/20 shadow-md'
                                                 : 'border-slate-200 dark:border-white/10 bg-white/70 dark:bg-slate-900/50 hover:border-slate-300 dark:hover:border-white/20'
                                             }`}
                                     >
-                                        <div className="space-y-2">
+                                        <div className="space-y-1.5">
                                             <div className="flex items-center justify-between gap-1.5">
                                                 <div className="flex items-center gap-2">
                                                     <div
@@ -642,6 +656,7 @@ export function AiModelSettings() {
                                                     <span className="font-bold text-xs text-slate-900 dark:text-white">
                                                         {model.name}
                                                     </span>
+                                                    <InfoPopover label={`About ${model.name}`} message={model.description} />
                                                 </div>
                                                 {isSelected && (
                                                     <CheckCircle2 className="h-4 w-4 text-cyan-500 shrink-0" />
@@ -659,12 +674,9 @@ export function AiModelSettings() {
                                                 </span>
                                             </div>
 
-                                            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-                                                {model.description}
-                                            </p>
                                         </div>
 
-                                        <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                                        <div className="mt-2 pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-[10px] text-slate-400 font-mono">
                                             <span>Identifier:</span>
                                             <span className="text-slate-700 dark:text-slate-300 font-bold">
                                                 {model.id}
@@ -685,10 +697,8 @@ export function AiModelSettings() {
                                 <h3 className="text-sm font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
                                     <Cpu className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                                     Named Fine-Tuned Projects (Vertex AI)
+                                    <InfoPopover label="About fine-tuned projects" message="Register fine-tuned projects and choose which project model the platform routes to." />
                                 </h3>
-                                <p className="text-xs text-slate-600 dark:text-slate-400">
-                                    Register fine-tuned projects and choose which project model the platform routes to.
-                                </p>
                             </div>
                             <Button
                                 size="sm"
@@ -876,17 +886,15 @@ export function AiModelSettings() {
                             <h3 className="text-sm font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
                                 <Brain className="h-4 w-4 text-indigo-500" />
                                 Feature Model Assignment & Workload Routing
+                                <InfoPopover label="About workload routing" message="Configure which model powers each AI feature: Default Gemini API or your fine-tuned Vertex AI model." />
                             </h3>
-                            <p className="text-xs text-slate-600 dark:text-slate-400">
-                                Configure which model powers each AI feature: Default Gemini API or your fine-tuned Vertex AI model.
-                            </p>
                         </div>
                         <Badge variant="outline" className="text-xs font-mono text-indigo-600 dark:text-indigo-400 border-indigo-500/30 self-start sm:self-auto">
                             3 Workloads Configurable
                         </Badge>
                     </div>
 
-                    <div className="space-y-3.5">
+                    <div className="space-y-3">
                         {AI_FEATURES_CONFIG.map((feat) => {
                             const currentRoute = featureRouting[feat.key] || 'default';
                             const Icon = feat.icon;
@@ -896,7 +904,7 @@ export function AiModelSettings() {
                             return (
                                 <div
                                     key={feat.key}
-                                    className="p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#131c2d] shadow-sm space-y-3"
+                                    className="p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#131c2d] shadow-sm space-y-2.5"
                                 >
                                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                                         <div className="flex items-start gap-2.5">
@@ -908,13 +916,11 @@ export function AiModelSettings() {
                                                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">
                                                         {feat.name}
                                                     </h4>
+                                                    <InfoPopover label={`About ${feat.name}`} message={feat.description} />
                                                     <Badge variant="secondary" className="text-[10px]">
                                                         {feat.tag}
                                                     </Badge>
                                                 </div>
-                                                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
-                                                    {feat.description}
-                                                </p>
                                                 {feat.speedNotes && (
                                                     <p className="text-[11px] text-cyan-600 dark:text-cyan-400 font-medium mt-1">
                                                         💡 {feat.speedNotes}
@@ -1146,5 +1152,6 @@ export function AiModelSettings() {
                 </AlertDialogContent>
             </AlertDialog>
         </Card>
+        </TooltipProvider>
     );
 }

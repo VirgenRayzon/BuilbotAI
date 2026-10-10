@@ -216,7 +216,11 @@ export function ArchiveTab({
             </div>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
+          <Paper
+            withBorder
+            radius="md"
+            className="overflow-hidden border-slate-200 bg-white/80 shadow-sm dark:border-white/10 dark:bg-[#141a23]/80"
+          >
             {partsLoading ? null : (
               <InventoryTable
                 parts={archivedParts}
@@ -231,7 +235,7 @@ export function ArchiveTab({
                 isArchiveView={true}
               />
             )}
-          </div>
+          </Paper>
         </div>
       )}
 
@@ -318,7 +322,11 @@ export function ArchiveTab({
             </div>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
+          <Paper
+            withBorder
+            radius="md"
+            className="overflow-hidden border-slate-200 bg-white/80 shadow-sm dark:border-white/10 dark:bg-[#141a23]/80"
+          >
             {prebuiltsLoading ? null : (
               <PrebuiltsTable
                 systems={archivedPrebuilts}
@@ -335,7 +343,7 @@ export function ArchiveTab({
                 isArchiveView={true}
               />
             )}
-          </div>
+          </Paper>
         </div>
       )}
     </div>

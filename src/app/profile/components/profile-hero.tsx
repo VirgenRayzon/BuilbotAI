@@ -28,6 +28,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { formatCurrency } from "@/lib/utils";
+import { useSignOutTransition } from "@/context/sign-out-transition";
 
 interface ProfileHeroProps {
   profile: any;
@@ -44,6 +45,7 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
   const auth = useAuth();
   const [signOutModalOpen, setSignOutModalOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const { startSignOut, cancelSignOut } = useSignOutTransition();
 
   const isSuperAdmin = Boolean(profile?.isSuperAdmin);
   const isManager = Boolean(profile?.isManager && !profile?.isSuperAdmin);
@@ -64,15 +66,21 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
   const handleConfirmSignOut = async () => {
     if (auth) {
       setIsSigningOut(true);
+      setSignOutModalOpen(false);
+      startSignOut();
       const isStaff = isSuperAdmin || isManager;
       const destination = isStaff ? "/system-access" : "/signin";
       localStorage.removeItem("pc_chat_history_v2");
       localStorage.removeItem("pc_builder_state");
       localStorage.removeItem("admin_pc_builder_state");
       try {
+        await new Promise((resolve) => window.setTimeout(resolve, 250));
         await signOut(auth);
-      } finally {
-        window.location.replace(destination);
+        router.replace(destination);
+      } catch (error) {
+        console.error("Sign out failed:", error);
+        cancelSignOut();
+        setIsSigningOut(false);
       }
     }
   };

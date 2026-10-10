@@ -414,7 +414,7 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                         <Paper
                             withBorder
                             radius="lg"
-                            p="lg"
+                            p={12}
                             className="lg:col-span-2 bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm overflow-hidden flex flex-col justify-between"
                         >
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-white/10">
@@ -449,7 +449,7 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                 />
                             </div>
 
-                            <div className="h-[320px] pt-4">
+                            <div className="h-[280px] pt-4">
                                 {mounted ? (
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={revenueData}>
@@ -511,7 +511,7 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                         <Paper
                             withBorder
                             radius="lg"
-                            p="lg"
+                            p={12}
                             className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm flex flex-col justify-between"
                         >
                             <div className="pb-3 border-b border-slate-200 dark:border-white/10">
@@ -524,7 +524,8 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                 </Text>
                             </div>
 
-                            <div className="h-[230px] flex items-center justify-center relative">
+                            <div className="flex flex-col gap-3 pt-3 sm:flex-row sm:items-center">
+                            <div className="h-[230px] min-w-0 flex-1 flex items-center justify-center relative">
                                 {mounted ? (
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
@@ -532,8 +533,8 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                                 data={statusData}
                                                 cx="50%"
                                                 cy="50%"
-                                                innerRadius={60}
-                                                outerRadius={95}
+                                                innerRadius={70}
+                                                outerRadius={110}
                                                 paddingAngle={4}
                                                 dataKey="value"
                                                 strokeWidth={2}
@@ -577,13 +578,13 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                 </div>
                             </div>
 
-                            {/* Status Legend Pills */}
-                            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200 dark:border-white/10">
+                            {/* Status legend beside the chart on larger screens */}
+                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:min-w-[168px]">
                                 {statusData.map((d, i) => (
-                                    <div key={i} className="flex items-center justify-between p-1.5 rounded-md bg-slate-50 dark:bg-black/20 border border-slate-200/50 dark:border-white/5">
-                                        <div className="flex items-center gap-1.5 min-w-0">
+                                    <div key={i} className="flex items-center justify-between gap-3 p-2 rounded-md bg-slate-50 dark:bg-black/20 border border-slate-200/50 dark:border-white/5">
+                                        <div className="flex items-center gap-2 min-w-0">
                                             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                                            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-600 dark:text-slate-400 truncate">
+                                            <span className="text-[11px] leading-none uppercase font-semibold tracking-wide text-slate-600 dark:text-slate-400 truncate">
                                                 {d.name}
                                             </span>
                                         </div>
@@ -592,6 +593,7 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                         </span>
                                     </div>
                                 ))}
+                            </div>
                             </div>
                         </Paper>
                     </div>
@@ -602,8 +604,8 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                         <Paper
                             withBorder
                             radius="lg"
-                            p="lg"
-                            className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm flex flex-col justify-between"
+                            p={12}
+                            className="lg:order-2 bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm flex flex-col justify-between"
                         >
                             <div className="pb-3 border-b border-slate-200 dark:border-white/10">
                                 <Title order={3} className="text-xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
@@ -615,7 +617,8 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                 </Text>
                             </div>
 
-                            <div className="h-[210px] flex items-center justify-center">
+                            <div className="flex flex-col gap-3 pt-3 sm:flex-row sm:items-center">
+                            <div className="h-[230px] min-w-0 flex-1 flex items-center justify-center relative">
                                 {mounted ? (
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
@@ -623,8 +626,8 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                                 data={prebuiltTierData}
                                                 cx="50%"
                                                 cy="50%"
-                                                innerRadius={50}
-                                                outerRadius={80}
+                                                innerRadius={70}
+                                                outerRadius={110}
                                                 paddingAngle={4}
                                                 dataKey="value"
                                                 strokeWidth={2}
@@ -657,14 +660,23 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                 ) : (
                                     <div className="h-full flex items-center justify-center text-xs text-muted-foreground">Loading chart...</div>
                                 )}
+
+                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                    <span className="text-2xl font-bold font-headline text-slate-900 dark:text-white">
+                                        {prebuiltTierData.reduce((total, tier) => total + tier.value, 0)}
+                                    </span>
+                                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
+                                        Total
+                                    </span>
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200 dark:border-white/10">
+                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:min-w-[168px]">
                                 {prebuiltTierData.length > 0 ? prebuiltTierData.map((d, i) => (
-                                    <div key={i} className="flex items-center justify-between p-1.5 rounded-md bg-slate-50 dark:bg-black/20 border border-slate-200/50 dark:border-white/5">
-                                        <div className="flex items-center gap-1.5 min-w-0">
+                                    <div key={i} className="flex items-center justify-between gap-3 p-2 rounded-md bg-slate-50 dark:bg-black/20 border border-slate-200/50 dark:border-white/5">
+                                        <div className="flex items-center gap-2 min-w-0">
                                             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                                            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-600 dark:text-slate-400 truncate">
+                                            <span className="text-[11px] leading-none uppercase font-semibold tracking-wide text-slate-600 dark:text-slate-400 truncate">
                                                 {d.name}
                                             </span>
                                         </div>
@@ -678,14 +690,15 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                     </div>
                                 )}
                             </div>
+                            </div>
                         </Paper>
 
                         {/* Revenue by Category (Horizontal Bar Chart) */}
                         <Paper
                             withBorder
                             radius="lg"
-                            p="lg"
-                            className="lg:col-span-2 bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm flex flex-col justify-between"
+                            p={12}
+                            className="lg:order-1 lg:col-span-2 bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm flex flex-col justify-between"
                         >
                             <div className="pb-3 border-b border-slate-200 dark:border-white/10">
                                 <Title order={3} className="text-xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
@@ -775,7 +788,7 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                     >
                                         <div>
                                             {/* Category Card Header */}
-                                            <div className="p-4 border-b border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-black/20 flex items-center justify-between">
+                                            <div className="p-3 border-b border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-black/20 flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
                                                     {getCategoryIcon(category)}
                                                     <span className="font-headline font-bold text-sm uppercase tracking-wider text-slate-900 dark:text-white">
@@ -796,7 +809,7 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                                     return (
                                                         <div
                                                             key={item.id}
-                                                            className="p-3.5 flex flex-col hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group/item"
+                                                            className="p-3 flex flex-col hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group/item"
                                                         >
                                                             <div className="flex items-center gap-3">
                                                                 {/* Rank Badge */}
@@ -878,7 +891,7 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                         <Paper
                             withBorder
                             radius="lg"
-                            p="xl"
+                            p={12}
                             className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 text-center py-16"
                         >
                             <Stack align="center" gap="md" className="max-w-md mx-auto">
@@ -930,7 +943,7 @@ function MetricCard({
             <Paper
                 withBorder
                 radius="lg"
-                p="lg"
+                p={12}
                 className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md transition-all group"
             >
                 <div className="flex items-center justify-between mb-3">

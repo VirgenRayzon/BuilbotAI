@@ -723,6 +723,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                             value={field.value || ""} 
                                                             onChange={field.onChange} 
                                                             variant="large"
+                                                            allowImageUrl
                                                         />
                                                     </FormControl>
                                                     <FormMessage />

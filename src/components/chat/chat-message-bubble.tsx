@@ -73,7 +73,7 @@ export function ChatMessageBubble({
                         </ActionIcon>
                     )}
                     <div className={cn(
-                    "p-3 sm:p-3.5 rounded-xl text-sm leading-relaxed relative break-words w-fit min-w-0 max-w-[85%] sm:max-w-[80%] border",
+                    "p-3 rounded-xl text-sm leading-relaxed relative break-words w-fit min-w-0 max-w-[85%] sm:max-w-[80%] border",
                     isUser
                         ? 'bg-cyan-700 text-white rounded-tr-sm border-cyan-700'
                         : (isDark

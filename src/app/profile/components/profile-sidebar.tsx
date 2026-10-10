@@ -28,6 +28,7 @@ import { useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/lib/types";
+import { useSignOutTransition } from "@/context/sign-out-transition";
 
 interface ProfileSidebarProps {
   profile: UserProfile | null;
@@ -54,6 +55,7 @@ export function ProfileSidebar({
   const auth = useAuth();
   const [signOutModalOpen, setSignOutModalOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const { startSignOut, cancelSignOut } = useSignOutTransition();
 
   const isSuperAdmin = Boolean(profile?.isSuperAdmin);
   const isManager = Boolean(profile?.isManager && !profile?.isSuperAdmin);
@@ -63,15 +65,21 @@ export function ProfileSidebar({
   const handleConfirmSignOut = async () => {
     if (auth) {
       setIsSigningOut(true);
+      setSignOutModalOpen(false);
+      startSignOut();
       const isStaff = isSuperAdmin || isManager;
       const destination = isStaff ? "/system-access" : "/signin";
       localStorage.removeItem("pc_chat_history_v2");
       localStorage.removeItem("pc_builder_state");
       localStorage.removeItem("admin_pc_builder_state");
       try {
+        await new Promise((resolve) => window.setTimeout(resolve, 250));
         await signOut(auth);
-      } finally {
-        window.location.replace(destination);
+        router.replace(destination);
+      } catch (error) {
+        console.error("Sign out failed:", error);
+        cancelSignOut();
+        setIsSigningOut(false);
       }
     }
   };
@@ -244,7 +252,7 @@ export function ProfileSidebar({
           visibleFrom="lg"
           withBorder
           radius="lg"
-          p="md"
+          p={12}
           className="flex flex-col justify-between bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
         >
           <div className="space-y-5">

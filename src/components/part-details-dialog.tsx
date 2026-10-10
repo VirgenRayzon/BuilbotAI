@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import {
     Badge,
     Divider,
@@ -34,6 +34,7 @@ import {
     CheckCircle2,
     ChevronLeft,
     ChevronRight,
+    X,
 } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import React from "react";
@@ -67,10 +68,9 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
     const Icon = iconMap[part.category] || Info;
 
     const allImages = React.useMemo(() => {
-        if (part.images && part.images.length > 0) {
-            return part.images;
-        }
-        return part.imageUrl ? [part.imageUrl] : [];
+        return Array.from(
+            new Set([part.imageUrl, ...(part.images || [])].filter((image): image is string => Boolean(image)))
+        );
     }, [part.images, part.imageUrl]);
 
     const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
@@ -104,28 +104,26 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
                 {children}
             </DialogTrigger>
             <DialogContent
+                hideClose
                 className={cn(
-                    "w-[95vw] max-w-[960px] p-0 gap-0 overflow-hidden rounded-2xl border shadow-2xl transition-colors duration-200",
+                    "w-[95vw] max-w-[1000px] p-0 gap-0 overflow-hidden rounded-2xl border shadow-2xl transition-colors duration-200",
                     isDark
                         ? "bg-[#0c1017] border-white/10 text-slate-100 shadow-black/80"
                         : "bg-white border-slate-200 text-slate-900 shadow-2xl shadow-slate-900/10",
-                    "[&>button]:w-9 [&>button]:h-9 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button]:rounded-full [&>button]:transition-all [&>button]:opacity-80 [&>button]:hover:opacity-100",
-                    isDark
-                        ? "[&>button]:bg-white/10 [&>button]:text-slate-200 [&>button]:hover:bg-white/20"
-                        : "[&>button]:bg-slate-100 [&>button]:text-slate-700 [&>button]:hover:bg-slate-200"
+                    ""
                 )}
             >
                 <div className="flex flex-col md:flex-row items-stretch max-h-[85vh]">
                     {/* Left: Product Image & Action Section */}
                     <div
                         className={cn(
-                            "w-full md:w-[350px] lg:w-[380px] shrink-0 flex flex-col justify-between border-b md:border-b-0 md:border-r transition-colors",
+                            "w-full md:w-[400px] lg:w-[420px] shrink-0 flex flex-col justify-between border-b md:border-b-0 md:border-r transition-colors",
                             isDark
                                 ? "bg-slate-950/40 border-white/10"
                                 : "bg-slate-50 border-slate-200/80"
                         )}
                     >
-                        <div className="relative flex-1 w-full min-h-[280px] flex items-center justify-center p-6 select-none overflow-hidden">
+                        <div className="relative flex-1 w-full min-h-[340px] flex items-center justify-center p-6 select-none overflow-hidden">
                             <Image
                                 src={getOptimizedStorageUrl(allImages[currentImageIndex] || part.imageUrl) || "/placeholder-part.png"}
                                 alt={`${part.name} - Photo ${currentImageIndex + 1}`}
@@ -160,10 +158,10 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
                                         type="button"
                                         onClick={handlePrev}
                                         className={cn(
-                                            "z-30 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-md",
+                                            "z-30 w-10 h-10 rounded-full flex items-center justify-center bg-transparent shadow-none transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer",
                                             isDark
-                                                ? "bg-slate-900/90 hover:bg-slate-800 text-slate-100 border border-white/20 shadow-black/50"
-                                                : "bg-white/95 hover:bg-white text-slate-800 border border-slate-300 shadow-md"
+                                                ? "text-slate-100 hover:bg-white/10"
+                                                : "text-slate-800 hover:bg-slate-900/10"
                                         )}
                                         style={{
                                             position: "absolute",
@@ -180,10 +178,10 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
                                         type="button"
                                         onClick={handleNext}
                                         className={cn(
-                                            "z-30 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-md",
+                                            "z-30 w-10 h-10 rounded-full flex items-center justify-center bg-transparent shadow-none transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer",
                                             isDark
-                                                ? "bg-slate-900/90 hover:bg-slate-800 text-slate-100 border border-white/20 shadow-black/50"
-                                                : "bg-white/95 hover:bg-white text-slate-800 border border-slate-300 shadow-md"
+                                                ? "text-slate-100 hover:bg-white/10"
+                                                : "text-slate-800 hover:bg-slate-900/10"
                                         )}
                                         style={{
                                             position: "absolute",
@@ -225,11 +223,60 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
                             )}
                         </div>
 
+                        {allImages.length > 0 && (
+                            <div
+                                className={cn(
+                                    "shrink-0 border-t px-3 py-3",
+                                    isDark ? "border-white/10 bg-slate-950/60" : "border-slate-200/80 bg-slate-100/70"
+                                )}
+                                aria-label="Product photos"
+                                role="tablist"
+                            >
+                                <div className="flex items-center gap-2 overflow-x-auto pb-0.5 [scrollbar-width:thin]">
+                                    {allImages.map((image, index) => {
+                                        const isCurrent = index === currentImageIndex;
+
+                                        return (
+                                            <button
+                                                key={`${image}-${index}`}
+                                                type="button"
+                                                role="tab"
+                                                aria-selected={isCurrent}
+                                                aria-label={`View photo ${index + 1}`}
+                                                onClick={(event) => {
+                                                    event.preventDefault();
+                                                    event.stopPropagation();
+                                                    setCurrentImageIndex(index);
+                                                }}
+                                                className={cn(
+                                                    "relative h-14 w-14 shrink-0 overflow-hidden rounded-md border-2 bg-white transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 dark:bg-slate-900",
+                                                    isCurrent
+                                                        ? "border-cyan-500 shadow-sm shadow-cyan-500/30"
+                                                        : isDark
+                                                            ? "border-white/10 opacity-70 hover:border-cyan-400/60 hover:opacity-100"
+                                                            : "border-slate-200 opacity-75 hover:border-cyan-400 hover:opacity-100"
+                                                )}
+                                            >
+                                                <Image
+                                                    src={getOptimizedStorageUrl(image) || "/placeholder-part.png"}
+                                                    alt={`${part.name} thumbnail ${index + 1}`}
+                                                    fill
+                                                    unoptimized
+                                                    sizes="56px"
+                                                    className="object-contain p-1"
+                                                />
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Action CTA Button */}
                         {onToggle && (
                             <div
                                 className={cn(
-                                    "p-4 sm:p-5 border-t shrink-0 transition-colors",
+                                    "p-3 border-t shrink-0 transition-colors",
                                     isDark
                                         ? "bg-slate-950/40 border-white/10"
                                         : "bg-slate-100/70 border-slate-200/80"
@@ -277,13 +324,13 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
                     {/* Right: Content Section (Header + Scrollable Highlights & Specs) */}
                     <div
                         className={cn(
-                            "flex-1 min-w-0 flex flex-col p-6 sm:p-7 md:p-8 pr-14 md:pr-12 transition-colors",
+                            "flex-1 min-w-0 flex flex-col p-3 transition-colors",
                             isDark ? "bg-[#0c1017]" : "bg-white"
                         )}
                     >
                         {/* Header: Brand, Title, Price */}
                         <div className="space-y-2.5">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-between gap-2">
                                 <Badge
                                     variant="subtle"
                                     color="cyan"
@@ -298,6 +345,21 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
                                 >
                                     {part.brand}
                                 </Badge>
+                                <DialogClose asChild>
+                                    <ActionIcon
+                                        variant="subtle"
+                                        color="gray"
+                                        size="sm"
+                                        radius="xl"
+                                        aria-label="Close product details"
+                                        className={cn(
+                                            "shrink-0",
+                                            isDark ? "text-slate-400 hover:bg-white/10 hover:text-slate-100" : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                                        )}
+                                    >
+                                        <X className="h-3.5 w-3.5" />
+                                    </ActionIcon>
+                                </DialogClose>
                             </div>
 
                             <DialogTitle

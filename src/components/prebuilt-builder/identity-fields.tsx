@@ -30,6 +30,7 @@ export function IdentityFields({ form }: IdentityFieldsProps) {
                                     value={field.value || ""}
                                     onChange={field.onChange}
                                     variant="large"
+                                    allowImageUrl
                                 />
                             </FormControl>
                             <FormMessage />

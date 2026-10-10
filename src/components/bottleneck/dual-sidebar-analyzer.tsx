@@ -41,7 +41,7 @@ export function DualSidebarAnalyzer({
   return (
     <div className="flex flex-col">
       {/* Dual Tab Segmented Control */}
-      <Box className="px-4 py-2.5 bg-slate-100/70 dark:bg-white/[0.04] border-b border-slate-200 dark:border-white/10">
+      <Box className="p-3 bg-slate-100/70 dark:bg-white/[0.04] border-b border-slate-200 dark:border-white/10">
         <SegmentedControl
           value={activeTab}
           onChange={(val) => onTabChange(val as "parts" | "analytics")}

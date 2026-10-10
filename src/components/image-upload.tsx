@@ -7,16 +7,20 @@ import { Image as ImageIcon, Upload, X, FileText } from "lucide-react";
 import Image from "next/image";
 import { OptimizedImage } from "./ui/optimized-image";
 import { cn } from "@/lib/utils";
+import { Button as MantineButton, TextInput } from "@mantine/core";
 
 interface ImageUploadProps {
     value: string;
     onChange: (value: string) => void;
     className?: string;
     variant?: "default" | "large";
+    allowImageUrl?: boolean;
 }
 
-export function ImageUpload({ value, onChange, className, variant = "default" }: ImageUploadProps) {
+export function ImageUpload({ value, onChange, className, variant = "default", allowImageUrl = false }: ImageUploadProps) {
     const [fileName, setFileName] = useState<string>("");
+    const [imageLink, setImageLink] = useState("");
+    const [linkError, setLinkError] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,6 +69,19 @@ export function ImageUpload({ value, onChange, className, variant = "default" }:
         onChange("");
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
+        }
+    };
+
+    const addImageLink = () => {
+        try {
+            const parsed = new URL(imageLink.trim());
+            if (!["http:", "https:"].includes(parsed.protocol)) throw new Error();
+            setFileName("");
+            onChange(parsed.toString());
+            setImageLink("");
+            setLinkError("");
+        } catch {
+            setLinkError("Enter a valid HTTP or HTTPS image link.");
         }
     };
 
@@ -170,6 +187,22 @@ export function ImageUpload({ value, onChange, className, variant = "default" }:
                     className="hidden"
                     onChange={handleFileChange}
                 />
+                {allowImageUrl && (
+                    <div className="space-y-2 rounded-lg border border-slate-200 dark:border-white/10 p-3 bg-white/85 dark:bg-[#141a23]/90">
+                        <TextInput
+                            label="Import from image link"
+                            description="The image moves to Firebase Storage when you save."
+                            placeholder="https://example.com/photo.jpg"
+                            value={imageLink}
+                            onChange={(event) => { setImageLink(event.currentTarget.value); setLinkError(""); }}
+                            onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addImageLink(); } }}
+                            error={linkError || undefined}
+                        />
+                        <MantineButton type="button" size="xs" variant="light" onClick={addImageLink} disabled={!imageLink.trim()}>
+                            Use link
+                        </MantineButton>
+                    </div>
+                )}
             </div>
         );
     }

@@ -450,7 +450,11 @@ export function StockTab({
                     )}
                 </div>
             ) : (
-                <div className="rounded-xl border border-white/10 bg-background/50 backdrop-blur-md overflow-hidden">
+                <Paper
+                    withBorder
+                    radius="md"
+                    className="overflow-hidden border-slate-200 bg-white/80 shadow-sm dark:border-white/10 dark:bg-[#141a23]/80"
+                >
                     <InventoryTable
                         parts={currentParts}
                         onDelete={onDeletePart}
@@ -463,7 +467,7 @@ export function StockTab({
                         onToggleSelectAll={() => toggleAllPartsSelection(currentParts)}
                         isSuperAdmin={profile?.isSuperAdmin}
                     />
-                </div>
+                </Paper>
             )}
             <PaginationControls
                 currentPage={partCurrentPage}

@@ -33,6 +33,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
 import { PaginationControls } from "@/components/pagination-controls";
+import { CompactInfo } from "@/components/ui/compact-info";
 import type { AuditLog } from "@/lib/types";
 
 interface AuditLogsSectionProps {
@@ -341,18 +342,19 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
 
         <Paper
           withBorder
-          radius="xl"
+          radius="md"
           className="overflow-hidden bg-white/80 shadow-sm dark:bg-[#141a23]/80 border-slate-200 dark:border-white/10"
         >
           <Group justify="space-between" className="border-b border-slate-200 px-4 py-3 dark:border-white/10">
-            <div>
+            <Group gap={6} align="center" wrap="nowrap">
               <Text fw={700} size="sm" className="text-slate-900 dark:text-slate-100">
                 Activity log
               </Text>
-              <Text size="xs" c="dimmed">
-                Review recent staff and system events
-              </Text>
-            </div>
+                <CompactInfo
+                  label="About the activity log"
+                  message="Review recent staff and system events, including account, inventory, and system changes."
+                />
+            </Group>
             <Badge variant="light" color="cyan" size="sm" radius="sm">
               {filteredLogs.length} {filteredLogs.length === 1 ? "event" : "events"}
             </Badge>

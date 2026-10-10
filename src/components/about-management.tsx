@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CompactInfo } from '@/components/ui/compact-info';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -187,8 +188,13 @@ export function AboutManagement() {
               <FileText className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <CardTitle>About Page Editor</CardTitle>
-              <CardDescription>Update content for the public About page. Use Markdown for formatting (e.g., * for bullets).</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                About Page Editor
+                <CompactInfo
+                  label="About editing the public About page"
+                  message="Update content for the public About page. Use Markdown for formatting, such as * for bullets."
+                />
+              </CardTitle>
             </div>
           </div>
           <Button onClick={handleSave} disabled={saving} className="shadow-lg shadow-primary/20">
