@@ -740,14 +740,20 @@ export function ReservationsTab({
             </motion.div>
 
             {/* SECTION 2: Search Bar & Dropdown Filter Controls */}
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-                    {/* Search Input on the Left */}
-                    <div className="flex-1 max-w-md">
+            <Paper
+                withBorder
+                radius="lg"
+                p="xs"
+                className="bg-white/80 dark:bg-[#141a23]/90 border-slate-200/80 dark:border-white/10 shadow-xs"
+            >
+                <div className="flex items-center justify-between gap-2 sm:gap-3 flex-nowrap overflow-x-auto no-scrollbar py-0.5">
+                    {/* Left: Search Input */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                         <TextInput
                             placeholder="Search by email, rig, or ID..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.currentTarget.value)}
-                            leftSection={<Search className="h-4 w-4 text-slate-400" />}
+                            leftSection={<Search size={14} className="text-slate-400" />}
                             rightSection={
                                 searchQuery ? (
                                     <ActionIcon size="xs" variant="subtle" color="gray" onClick={() => setSearchQuery('')}>
@@ -756,21 +762,18 @@ export function ReservationsTab({
                                 ) : null
                             }
                             radius="md"
-                            size="sm"
-                            className="w-full"
-                            classNames={{
-                                input: "bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 text-xs font-medium"
-                            }}
+                            size="xs"
+                            className="w-44 sm:w-56 lg:w-64 shrink-0"
                         />
                     </div>
 
-                    {/* Filter, Sort, and Controls Aligned to the Right */}
-                    <div className="flex flex-wrap sm:flex-nowrap items-center justify-start md:justify-end gap-3">
+                    {/* Right: Filter, Sort, and Controls */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                         {/* Status Filter Dropdown */}
                         <Select
                             value={statusFilter}
                             onChange={(val) => setStatusFilter((val as string) || 'all')}
-                            leftSection={<Filter className="h-3.5 w-3.5 text-cyan-500 dark:text-cyan-400" />}
+                            leftSection={<Filter size={13} className="text-cyan-500 dark:text-cyan-400" />}
                             data={[
                                 { label: `All (${metrics.totalOrders})`, value: 'all' },
                                 { label: `Pending (${metrics.pending})`, value: 'pending' },
@@ -778,50 +781,45 @@ export function ReservationsTab({
                                 { label: `Finished (${metrics.finished})`, value: 'finished building' },
                                 { label: `Cancelled (${metrics.cancelled})`, value: 'cancelled' },
                             ]}
-                            size="sm"
+                            size="xs"
                             radius="md"
-                            className="w-full sm:w-[190px]"
-                            classNames={{
-                                input: "bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-xs font-bold"
-                            }}
+                            className="w-32 sm:w-40 shrink-0"
                         />
 
                         {/* Sort Selector */}
                         <Select
                             value={sortBy}
                             onChange={(val) => setSortBy((val as any) || 'newest')}
-                            leftSection={<ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />}
+                            leftSection={<ArrowUpDown size={13} className="text-slate-400" />}
                             data={[
                                 { label: 'Newest First', value: 'newest' },
                                 { label: 'Oldest First', value: 'oldest' },
                                 { label: 'Price: High to Low', value: 'price-high' },
                                 { label: 'Price: Low to High', value: 'price-low' },
                             ]}
-                            size="sm"
+                            size="xs"
                             radius="md"
-                            className="w-full sm:w-[170px]"
-                            classNames={{
-                                input: "bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-xs font-bold"
-                            }}
+                            className="w-32 sm:w-36 shrink-0"
                         />
 
                         {/* Global Show/Hide Specs Toggle Button */}
                         <Button
                             variant={showAllSpecs ? "light" : "default"}
                             color={showAllSpecs ? "cyan" : "gray"}
-                            size="sm"
+                            size="xs"
                             radius="md"
                             onClick={toggleShowAllSpecs}
-                            leftSection={<Layers size={14} className={showAllSpecs ? "text-cyan-500" : "text-slate-400"} />}
-                            className="text-xs font-bold shrink-0"
+                            leftSection={<Layers size={13} />}
+                            className="shrink-0"
                         >
-                            {showAllSpecs ? "Hide Specs" : "Show Specs"}
+                            <span className="hidden sm:inline">{showAllSpecs ? "Hide Specs" : "Show Specs"}</span>
+                            <span className="sm:hidden">Specs</span>
                         </Button>
 
                         {/* Reset Filters button if any filter is active */}
                         {(statusFilter !== 'all' || searchQuery.trim() !== '') && (
                             <Button
-                                size="sm"
+                                size="xs"
                                 variant="subtle"
                                 color="gray"
                                 radius="md"
@@ -829,14 +827,15 @@ export function ReservationsTab({
                                     setStatusFilter('all');
                                     setSearchQuery('');
                                 }}
-                                leftSection={<RefreshCw className="h-3.5 w-3.5" />}
-                                className="text-xs font-bold shrink-0"
+                                leftSection={<RefreshCw size={13} />}
+                                className="shrink-0"
                             >
                                 Reset
                             </Button>
                         )}
                     </div>
-            </div>
+                </div>
+            </Paper>
 
             {/* SECTION 3: Cards Grid */}
             {ordersLoading ? (

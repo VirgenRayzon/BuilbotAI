@@ -272,12 +272,12 @@ export default function ManagerSignupPage() {
     >
       <UnifiedBackground />
 
-      <div className="w-full max-w-[540px] z-10 flex flex-col gap-3">
+      <div className="w-full max-w-[480px] z-10 flex flex-col gap-2.5">
         {/* Top bar */}
         <div className="flex items-center justify-between px-1">
           <Link
             href="/system-access"
-            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-red-500 dark:text-slate-400 dark:hover:text-red-400 transition-all duration-200 group"
+            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-red-500 dark:text-slate-400 dark:hover:text-red-400 transition-all duration-200 group"
           >
             <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
             Back to System Access
@@ -289,23 +289,23 @@ export default function ManagerSignupPage() {
 
         <Paper
           withBorder
-          radius="xl"
-          p={{ base: 'lg', sm: 36 }}
-          className="w-full bg-white/95 dark:bg-[#111722]/95 backdrop-blur-md border-red-500/30 dark:border-red-500/30 shadow-2xl shadow-red-950/20 relative transition-all"
+          radius="lg"
+          p={{ base: 'md', sm: 'lg' }}
+          className="w-full bg-white/85 dark:bg-[#141a23]/90 backdrop-blur-md border-red-500/30 dark:border-red-500/30 shadow-sm relative transition-all"
         >
-          <Stack gap="lg">
+          <Stack gap="md">
             {/* Header with Red Badge & Shield Icon */}
-            <div className="text-center flex flex-col items-center gap-2">
-              <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 shadow-md shadow-red-500/20">
-                <ShieldAlert size={26} />
+            <div className="text-center flex flex-col items-center gap-1.5">
+              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 shadow-sm">
+                <ShieldAlert size={22} />
               </div>
               <Title
                 order={2}
-                className="text-2xl sm:text-3xl font-bold font-headline tracking-tight text-slate-900 dark:text-slate-100"
+                className="text-xl sm:text-2xl font-bold font-headline tracking-tight text-slate-900 dark:text-slate-100"
               >
                 Manager Sign Up
               </Title>
-              <Text size="sm" className="text-slate-500 dark:text-slate-400">
+              <Text size="xs" className="text-slate-500 dark:text-slate-400">
                 Register a new manager account with your default access key.
               </Text>
             </div>
@@ -456,12 +456,12 @@ export default function ManagerSignupPage() {
             </form>
 
             {/* Footer Links */}
-            <div className="text-center text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-white/10">
+            <div className="text-center text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-white/10 whitespace-nowrap">
               Already have manager credentials?{' '}
               <Anchor
                 component={Link}
                 href="/system-access"
-                className="font-bold text-red-600 dark:text-red-400 hover:underline"
+                className="font-bold text-red-600 dark:text-red-400 hover:underline whitespace-nowrap"
               >
                 Sign in via System Access
               </Anchor>

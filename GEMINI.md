@@ -73,6 +73,18 @@ Every component, card, form input, modal, and button must be 100% legible and po
   - Instead of "Neural Diagnostic / Bottleneck Protocol" -> Use "Compatibility Check" or "Performance Analysis".
 - Keep button labels, card headers, and badges concise, accessible, and user-friendly.
 
+**6. Standard Card & Modal Container Styling (Border, Padding & Dimensions)**
+- **Border & Surface:** Use Mantine `Paper` with `withBorder`, `radius="lg"`, and `shadow-sm`.
+  - Light mode: `bg-white/85`, `border-slate-200/80`
+  - Dark mode: `dark:bg-[#141a23]/90`, `dark:border-white/10`, `backdrop-blur-md`
+  - Portal/Security accents: `border-red-500/30` or `border-cyan-500/30`
+- **Padding & Visual Thickness:** Keep cards compact and sleek. Never use bloated padding (e.g. `p="xl"` or `36px`) or heavy shadows (`shadow-2xl`) that create a thick, heavy appearance. Always use `p={{ base: 'md', sm: 'lg' }}` with `Stack gap="md"`.
+- **Card Container Width Standards:**
+  - Standard customer auth/forms: `max-w-[440px]`
+  - Multi-role portals / management forms: `max-w-[480px]`
+  - Toolbars / inventory filter surfaces: `radius="lg"`, `p="xs"`, `shadow-xs`
+- **Single-Line Footer Links:** Provide enough container width and use `whitespace-nowrap` on action links (e.g., "Sign in via System Access") to prevent awkward multi-line wrapping.
+
 ## Operational Constraints & Environment
 
 - **Development Port:** The application runs strictly on **Port `9002`** (`http://localhost:9002/`). When testing or opening browser URLs, ALWAYS use port `9002` (do NOT default to port 3000).

@@ -1,10 +1,26 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { Filter, CheckSquare, PackageCheck, Archive, Trash2, LayoutGrid, Table as TableIcon, Plus } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Separator } from '@/components/ui/separator';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
+import {
+    Paper,
+    Button,
+    ActionIcon,
+    Menu,
+    Checkbox,
+    ScrollArea,
+    Badge,
+    SegmentedControl,
+} from "@mantine/core";
+import {
+    Filter,
+    CheckSquare,
+    PackageCheck,
+    Archive,
+    Trash2,
+    LayoutGrid,
+    Table as TableIcon,
+    Plus,
+} from 'lucide-react';
 import { AddPrebuiltDialog } from '@/components/add-prebuilt-dialog';
 import { InventoryPrebuiltCard } from '@/components/inventory-prebuilt-card';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
@@ -92,127 +108,168 @@ export function PrebuiltTab({
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-                <div className="flex items-center gap-3 w-full md:w-auto">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30">
-                                <Filter className="h-4 w-4" />
-                                Filter Tiers
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
-                            <DropdownMenuCheckboxItem
-                                checked={prebuiltCategories.every(c => c.selected)}
-                                onCheckedChange={() => {
-                                    onSetCategories(prebuiltCategories.map(c => ({ ...c, selected: true })));
-                                }}
-                            >
-                                All Tiers
-                            </DropdownMenuCheckboxItem>
-                            <Separator className="my-1 opacity-50" />
-                            {prebuiltCategories.map((category) => (
-                                <DropdownMenuCheckboxItem
-                                    key={category.name}
-                                    checked={category.selected && !prebuiltCategories.every(c => c.selected)}
-                                    onCheckedChange={() => {
-                                        // STRICT SINGLE-SELECT: Clicking any tier selects ONLY that one.
-                                        onSetCategories(prebuiltCategories.map(c => ({
-                                            ...c,
-                                            selected: c.name === category.name
-                                        })));
-                                    }}
-                                >
-                                    {category.name}
-                                </DropdownMenuCheckboxItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                    <Button
-                        variant={isPrebuiltSelectionMode ? "secondary" : "outline"}
-                        className={cn(
-                            "h-11 gap-2 border-white/10 bg-background/50 transition-all",
-                            isPrebuiltSelectionMode && "bg-primary/20 border-primary/50 text-white shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]"
-                        )}
-                        onClick={() => {
-                            setIsPrebuiltSelectionMode(!isPrebuiltSelectionMode);
-                            if (isPrebuiltSelectionMode) setSelectedPrebuiltIds([]);
-                        }}
-                    >
-                        <CheckSquare className="h-4 w-4" />
-                        {isPrebuiltSelectionMode ? "Finish Selection" : "Select"}
-                    </Button>
-
-                    {isPrebuiltSelectionMode && (
-                        <Button
-                            variant="outline"
-                            className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5"
-                            onClick={() => toggleAllPrebuiltsSelection(currentPrebuilts)}
-                        >
-                            <PackageCheck className="h-4 w-4" />
-                            {currentPrebuilts.length > 0 && currentPrebuilts.every(s => selectedPrebuiltIds.includes(s.id)) ? "Deselect All" : "Select All"}
-                        </Button>
-                    )}
-
-                    {selectedPrebuiltIds.length > 0 && (
-                        <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 animate-in fade-in slide-in-from-right-2">
-                            <span className="text-xs font-bold text-primary">{selectedPrebuiltIds.length} Selected</span>
-                            <Separator orientation="vertical" className="h-4 bg-primary/20" />
-                            <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 text-xs hover:bg-primary/20"
-                                onClick={() => setConfirmAction({ isOpen: true, type: 'archive', target: 'prebuilts' })}
-                            >
-                                <Archive className="mr-1.5 h-3 w-3" /> Archive
-                            </Button>
-                            {profile?.isSuperAdmin && (
+            <Paper
+                withBorder
+                radius="lg"
+                p="xs"
+                className="bg-white/80 dark:bg-[#141a23]/90 border-slate-200/80 dark:border-white/10 shadow-xs"
+            >
+                <div className="flex items-center justify-between gap-2 sm:gap-3 flex-nowrap overflow-x-auto no-scrollbar py-0.5">
+                    {/* Left Controls: Filter Tiers */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                        <Menu shadow="md" width={220} radius="md" closeOnItemClick={false}>
+                            <Menu.Target>
                                 <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 text-xs text-destructive hover:bg-destructive/20"
-                                    onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'prebuilts' })}
+                                    variant={!prebuiltCategories.every(c => c.selected) ? "light" : "default"}
+                                    color={!prebuiltCategories.every(c => c.selected) ? "cyan" : undefined}
+                                    size="xs"
+                                    radius="md"
+                                    leftSection={<Filter size={13} className={!prebuiltCategories.every(c => c.selected) ? "text-cyan-500" : "text-slate-400"} />}
                                 >
-                                    <Trash2 className="mr-1.5 h-3 w-3" /> Delete
+                                    Filter Tiers
+                                    {!prebuiltCategories.every(c => c.selected) && (
+                                        <Badge size="xs" variant="filled" color="cyan" circle ml={5}>
+                                            {prebuiltCategories.filter(c => c.selected).length}
+                                        </Badge>
+                                    )}
                                 </Button>
-                            )}
-                            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPrebuiltIds([])}>
-                                Cancel
-                            </Button>
-                        </div>
-                    )}
-                    <div className="flex bg-muted/50 p-1 rounded-lg border border-white/10 shrink-0">
-                        <Button
-                            variant={activeView === 'grid' ? 'secondary' : 'ghost'}
-                            size="icon"
-                            onClick={() => setActiveView('grid')}
-                            className={cn("h-9 w-9", activeView === 'grid' && "bg-background shadow-sm")}
-                        >
-                            <LayoutGrid className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant={activeView === 'table' ? 'secondary' : 'ghost'}
-                            size="icon"
-                            onClick={() => setActiveView('table')}
-                            className={cn("h-9 w-9", activeView === 'table' && "bg-background shadow-sm")}
-                        >
-                            <TableIcon className="h-4 w-4" />
-                        </Button>
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                                <Menu.Label>Filter by Tier</Menu.Label>
+                                <div className="px-2 py-1.5">
+                                    <Checkbox
+                                        label="All Tiers"
+                                        size="xs"
+                                        checked={prebuiltCategories.every(c => c.selected)}
+                                        onChange={() => {
+                                            onSetCategories(prebuiltCategories.map(c => ({ ...c, selected: true })));
+                                        }}
+                                    />
+                                </div>
+                                <Menu.Divider />
+                                <ScrollArea.Autosize mah={240}>
+                                    <div className="space-y-1 px-2 py-1">
+                                        {prebuiltCategories.map((category) => (
+                                            <Checkbox
+                                                key={category.name}
+                                                label={category.name}
+                                                size="xs"
+                                                checked={category.selected && !prebuiltCategories.every(c => c.selected)}
+                                                onChange={() => {
+                                                    onSetCategories(prebuiltCategories.map(c => ({
+                                                        ...c,
+                                                        selected: c.name === category.name
+                                                    })));
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                </ScrollArea.Autosize>
+                            </Menu.Dropdown>
+                        </Menu>
                     </div>
-                    <AddPrebuiltDialog
-                        parts={parts || []}
-                        onSave={onAddPrebuilt}
-                    >
-                        <Button className="h-11 gap-2 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 px-6 shrink-0 transition-transform active:scale-95">
-                            <Plus className="h-4 w-4" />
-                            Add System
+
+                    {/* Right Controls: Bulk Selection, Grid/Table Toggle & Add System */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                        <Button
+                            variant={isPrebuiltSelectionMode ? "light" : "default"}
+                            color={isPrebuiltSelectionMode ? "cyan" : undefined}
+                            size="xs"
+                            radius="md"
+                            leftSection={<CheckSquare size={13} />}
+                            onClick={() => {
+                                setIsPrebuiltSelectionMode(!isPrebuiltSelectionMode);
+                                if (isPrebuiltSelectionMode) setSelectedPrebuiltIds([]);
+                            }}
+                        >
+                            <span className="hidden sm:inline">{isPrebuiltSelectionMode ? "Finish Selection" : "Select"}</span>
+                            <span className="sm:hidden">{isPrebuiltSelectionMode ? "Done" : "Select"}</span>
                         </Button>
-                    </AddPrebuiltDialog>
+
+                        {isPrebuiltSelectionMode && (
+                            <Button
+                                variant="default"
+                                size="xs"
+                                radius="md"
+                                leftSection={<PackageCheck size={13} />}
+                                onClick={() => toggleAllPrebuiltsSelection(currentPrebuilts)}
+                            >
+                                {currentPrebuilts.length > 0 && currentPrebuilts.every(s => selectedPrebuiltIds.includes(s.id)) ? "Deselect All" : "Select All"}
+                            </Button>
+                        )}
+
+                        {selectedPrebuiltIds.length > 0 && (
+                            <div className="flex items-center gap-1.5 bg-cyan-500/10 px-2 py-1 rounded-md border border-cyan-500/20">
+                                <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">{selectedPrebuiltIds.length} Selected</span>
+                                <Button
+                                    size="xs"
+                                    variant="subtle"
+                                    color="gray"
+                                    onClick={() => setConfirmAction({ isOpen: true, type: 'archive', target: 'prebuilts' })}
+                                    leftSection={<Archive size={12} />}
+                                >
+                                    Archive
+                                </Button>
+                                {profile?.isSuperAdmin && (
+                                    <Button
+                                        size="xs"
+                                        variant="subtle"
+                                        color="red"
+                                        onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'prebuilts' })}
+                                        leftSection={<Trash2 size={12} />}
+                                    >
+                                        Delete
+                                    </Button>
+                                )}
+                                <Button size="xs" variant="subtle" color="gray" onClick={() => setSelectedPrebuiltIds([])}>
+                                    Cancel
+                                </Button>
+                            </div>
+                        )}
+
+                        <SegmentedControl
+                            value={activeView}
+                            onChange={(val) => setActiveView(val as 'grid' | 'table')}
+                            size="xs"
+                            radius="md"
+                            data={[
+                                {
+                                    value: "grid",
+                                    label: (
+                                        <div className="flex items-center justify-center p-0.5" title="Grid View">
+                                            <LayoutGrid size={14} />
+                                        </div>
+                                    ),
+                                },
+                                {
+                                    value: "table",
+                                    label: (
+                                        <div className="flex items-center justify-center p-0.5" title="Table View">
+                                            <TableIcon size={14} />
+                                        </div>
+                                    ),
+                                },
+                            ]}
+                        />
+
+                        <AddPrebuiltDialog
+                            parts={parts || []}
+                            onSave={onAddPrebuilt}
+                        >
+                            <Button
+                                size="xs"
+                                radius="md"
+                                color="cyan"
+                                variant="filled"
+                                leftSection={<Plus size={14} />}
+                                className="font-semibold shadow-xs"
+                            >
+                                Add System
+                            </Button>
+                        </AddPrebuiltDialog>
+                    </div>
                 </div>
-            </div>
+            </Paper>
 
             {activeView === 'grid' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

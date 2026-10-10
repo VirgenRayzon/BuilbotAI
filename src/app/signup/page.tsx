@@ -215,12 +215,12 @@ export default function SignUpPage() {
     >
       <UnifiedBackground />
 
-      <div className="w-full max-w-[540px] z-10 flex flex-col gap-3">
+      <div className="w-full max-w-[440px] z-10 flex flex-col gap-2.5">
         {/* Top bar back link */}
         <div className="flex items-center justify-start px-1">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-cyan-600 dark:text-slate-400 dark:hover:text-cyan-400 transition-all duration-200 group"
+            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-cyan-600 dark:text-slate-400 dark:hover:text-cyan-400 transition-all duration-200 group"
           >
             <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
             Back to Home
@@ -229,23 +229,23 @@ export default function SignUpPage() {
 
         <Paper
           withBorder
-          radius="xl"
-          p={{ base: 'lg', sm: 36 }}
-          className="w-full bg-white/95 dark:bg-[#111722]/95 backdrop-blur-md border-slate-200 dark:border-white/10 shadow-2xl shadow-cyan-950/10 relative transition-all"
+          radius="lg"
+          p={{ base: 'md', sm: 'lg' }}
+          className="w-full bg-white/85 dark:bg-[#141a23]/90 backdrop-blur-md border-slate-200/80 dark:border-white/10 shadow-sm relative transition-all"
         >
-          <Stack gap="lg">
+          <Stack gap="md">
             {/* Header / Logo + Title */}
-            <div className="text-center flex flex-col items-center gap-2">
-              <Link href="/" className="mb-1">
+            <div className="text-center flex flex-col items-center gap-1.5">
+              <Link href="/" className="mb-0.5">
                 <Logo showText={false} />
               </Link>
               <Title
                 order={2}
-                className="text-2xl sm:text-3xl font-bold font-headline tracking-tight text-slate-900 dark:text-slate-100"
+                className="text-xl sm:text-2xl font-bold font-headline tracking-tight text-slate-900 dark:text-slate-100"
               >
                 Create an account
               </Title>
-              <Text size="sm" className="text-slate-500 dark:text-slate-400">
+              <Text size="xs" className="text-slate-500 dark:text-slate-400">
                 Join Buildbot AI to configure, optimize, and simulate your custom PC builds.
               </Text>
             </div>

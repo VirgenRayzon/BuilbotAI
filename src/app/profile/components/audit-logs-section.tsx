@@ -221,121 +221,121 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
         <Paper
           withBorder
           radius="lg"
-          p="sm"
-          className="bg-white/80 dark:bg-[#141a23]/80 border-slate-200 dark:border-white/10"
+          p="xs"
+          className="bg-white/80 dark:bg-[#141a23]/90 border-slate-200/80 dark:border-white/10 shadow-xs"
         >
-          <div className="flex flex-col flex-wrap items-center gap-2 md:flex-row">
-          <TextInput
-            placeholder="Search resource name or details..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.currentTarget.value);
-              setCurrentPage(1);
-            }}
-            leftSection={<Search size={16} className="text-slate-500 dark:text-slate-400" />}
-            radius="md"
-            className="min-w-[200px] flex-1"
-            classNames={{
-              input:
-                "bg-slate-50 dark:bg-slate-900/60 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100",
-            }}
-          />
-
-          <Select
-            value={filterUser}
-            onChange={(val) => {
-              setFilterUser(val || "all");
-              setCurrentPage(1);
-            }}
-            data={[
-              { value: "all", label: "All Users / Staff" },
-              ...uniqueUsers.map((u) => ({ value: u, label: u })),
-            ]}
-            radius="md"
-            className="w-full md:w-48"
-            classNames={{
-              input:
-                "bg-slate-50 dark:bg-slate-900/60 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium",
-            }}
-          />
-
-          <Select
-            value={filterScope}
-            onChange={(val) => {
-              setFilterScope(val || "all");
-              setCurrentPage(1);
-            }}
-            data={[
-              { value: "all", label: "All Resources" },
-              { value: "Part", label: "Inventory Parts" },
-              { value: "Prebuilt", label: "Prebuilts" },
-              { value: "Order", label: "Orders" },
-              { value: "User", label: "Users" },
-              { value: "System", label: "System Config" },
-            ]}
-            radius="md"
-            className="w-full md:w-48"
-            classNames={{
-              input:
-                "bg-slate-50 dark:bg-slate-900/60 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium",
-            }}
-          />
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="default"
-                radius="md"
-                leftSection={<CalendarIcon size={14} className="text-slate-600 dark:text-slate-400" />}
-                className="h-9 w-full bg-slate-50 text-xs font-medium text-slate-900 dark:bg-slate-900/60 dark:text-slate-100 md:w-auto"
-              >
-                {dateRange?.from ? (
-                  dateRange.to ? (
-                    `${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}`
-                  ) : (
-                    format(dateRange.from, "LLL dd, y")
-                  )
-                ) : (
-                  "Filter by Date"
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              className="w-auto p-0 bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 shadow-2xl"
-              align="end"
-            >
-              <Calendar
-                initialFocus
-                mode="range"
-                defaultMonth={dateRange?.from}
-                selected={dateRange}
-                onSelect={(range) => {
-                  setDateRange(range);
+          <div className="flex items-center justify-between gap-2 sm:gap-3 flex-nowrap overflow-x-auto no-scrollbar py-0.5">
+            {/* Left: Search Input */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              <TextInput
+                placeholder="Search resource name or details..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.currentTarget.value);
                   setCurrentPage(1);
                 }}
-                numberOfMonths={2}
+                leftSection={<Search size={14} className="text-slate-400" />}
+                size="xs"
+                radius="md"
+                className="w-44 sm:w-56 lg:w-64 shrink-0"
               />
-            </PopoverContent>
-          </Popover>
+            </div>
 
-          {(searchQuery || filterUser !== "all" || filterScope !== "all" || dateRange) && (
-            <Button
-              variant="subtle"
-              color="red"
-              size="xs"
-              onClick={() => {
-                setSearchQuery("");
-                setFilterUser("all");
-                setFilterScope("all");
-                setDateRange(undefined);
-                setCurrentPage(1);
-              }}
-              leftSection={<X size={14} />}
-              className="font-bold text-xs"
-            >
-              Reset Filters
-            </Button>
-          )}
+            {/* Right: Filters & Controls */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              <Select
+                value={filterUser}
+                onChange={(val) => {
+                  setFilterUser(val || "all");
+                  setCurrentPage(1);
+                }}
+                data={[
+                  { value: "all", label: "All Users / Staff" },
+                  ...uniqueUsers.map((u) => ({ value: u, label: u })),
+                ]}
+                size="xs"
+                radius="md"
+                className="w-36 sm:w-44 shrink-0"
+              />
+
+              <Select
+                value={filterScope}
+                onChange={(val) => {
+                  setFilterScope(val || "all");
+                  setCurrentPage(1);
+                }}
+                data={[
+                  { value: "all", label: "All Resources" },
+                  { value: "Part", label: "Inventory Parts" },
+                  { value: "Prebuilt", label: "Prebuilts" },
+                  { value: "Order", label: "Orders" },
+                  { value: "User", label: "Users" },
+                  { value: "System", label: "System Config" },
+                ]}
+                size="xs"
+                radius="md"
+                className="w-32 sm:w-36 shrink-0"
+              />
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={dateRange?.from ? "light" : "default"}
+                    color={dateRange?.from ? "cyan" : undefined}
+                    size="xs"
+                    radius="md"
+                    leftSection={<CalendarIcon size={13} className={dateRange?.from ? "text-cyan-500" : "text-slate-400"} />}
+                    className="shrink-0"
+                  >
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        `${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}`
+                      ) : (
+                        format(dateRange.from, "LLL dd, y")
+                      )
+                    ) : (
+                      "Filter by Date"
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto p-0 bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 shadow-2xl"
+                  align="end"
+                >
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={(range) => {
+                      setDateRange(range);
+                      setCurrentPage(1);
+                    }}
+                    numberOfMonths={2}
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {(searchQuery || filterUser !== "all" || filterScope !== "all" || dateRange) && (
+                <Button
+                  variant="subtle"
+                  color="gray"
+                  size="xs"
+                  radius="md"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setFilterUser("all");
+                    setFilterScope("all");
+                    setDateRange(undefined);
+                    setCurrentPage(1);
+                  }}
+                  leftSection={<X size={13} />}
+                  className="shrink-0"
+                >
+                  Reset
+                </Button>
+              )}
+            </div>
           </div>
         </Paper>
 

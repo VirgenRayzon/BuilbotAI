@@ -18,3 +18,4 @@
 - Utilize minimalist, modern line icons for all interactive elements and component categories, enhancing the sleek and technical aesthetic.
 - Employ a clean, structured, and responsive layout with ample whitespace to ensure focus on components and recommendations, optimizing for both desktop and mobile displays.
 - Implement subtle, fluid animations for transitions between selections, component additions, and chatbot interactions to provide a premium and responsive user experience.
+- Card & Container Standard: Mantine `Paper` with `withBorder`, `radius="lg"`, `shadow-sm`, and balanced padding `p={{ base: 'md', sm: 'lg' }}` (never bloated `p="xl"` or heavy `shadow-2xl`). Standard form width `max-w-[440px]` (customer) and `max-w-[480px]` (management/multi-role portals). Surfaces: `bg-white/85 border-slate-200/80` in light mode, `dark:bg-[#141a23]/90 dark:border-white/10` in dark mode.

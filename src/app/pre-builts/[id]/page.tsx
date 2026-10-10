@@ -153,6 +153,8 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                                         analysisError={analysisError}
                                         canGenerateReport={canGenerateReport}
                                         onAnalyze={handleAnalyze}
+                                        components={components}
+                                        loadingParts={loadingParts}
                                     />
                                 </PrebuiltActionCard>
                             </div>

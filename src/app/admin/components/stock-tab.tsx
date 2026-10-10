@@ -1,11 +1,33 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, CheckSquare, PackageCheck, Archive, Trash2, LayoutGrid, Table as TableIcon, Plus, ArrowUpDown, ArrowUpAZ, ArrowDownAZ } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
+import {
+    Paper,
+    TextInput,
+    Button,
+    ActionIcon,
+    Menu,
+    Checkbox,
+    ScrollArea,
+    Badge,
+    SegmentedControl,
+    Tooltip,
+} from "@mantine/core";
+import {
+    Search,
+    Filter,
+    CheckSquare,
+    PackageCheck,
+    Archive,
+    Trash2,
+    LayoutGrid,
+    Table as TableIcon,
+    Plus,
+    ArrowUpDown,
+    ArrowUpAZ,
+    ArrowDownAZ,
+    Check,
+} from 'lucide-react';
 import { AddPartDialog } from '@/components/add-part-dialog';
 import { InventoryPartCard } from '@/components/inventory-part-card';
 import { InventoryTable } from '@/components/inventory-table';
@@ -122,211 +144,290 @@ export function StockTab({
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-                <div className="flex items-center gap-3 w-full md:w-auto">
-                    <div className="relative flex-grow md:flex-grow-0 md:w-80 group">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                        <Input
+            <Paper
+                withBorder
+                radius="lg"
+                p="xs"
+                className="bg-white/80 dark:bg-[#141a23]/90 border-slate-200/80 dark:border-white/10 shadow-xs"
+            >
+                <div className="flex items-center justify-between gap-2 sm:gap-3 flex-nowrap overflow-x-auto no-scrollbar py-0.5">
+                    {/* Left Controls: Search, Categories, Brands, Sort & Direction */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                        <TextInput
                             placeholder="Search parts by name or brand..."
                             value={partSearchQuery}
-                            onChange={(e) => setPartSearchQuery(e.target.value)}
-                            className="pl-10 h-11 bg-background/50 border-white/10 focus:border-primary/50 transition-all rounded-lg"
+                            onChange={(e) => setPartSearchQuery(e.currentTarget.value)}
+                            leftSection={<Search size={14} className="text-slate-400" />}
+                            size="xs"
+                            radius="md"
+                            className="w-36 sm:w-48 lg:w-56 shrink-0"
                         />
-                    </div>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30">
-                                <Filter className="h-4 w-4" />
-                                Categories
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
-                            <DropdownMenuCheckboxItem
-                                    checked={partCategories.every(c => c.selected)}
-                                onCheckedChange={() => {
-                                    const anyUnselected = partCategories.some(cat => !cat.selected);
-                                    setSelectedBrands([]);
-                                    onSetCategories(partCategories.map(c => ({ ...c, selected: anyUnselected })));
-                                }}
-                            >
-                                All Categories
-                            </DropdownMenuCheckboxItem>
-                            <Separator className="my-1 opacity-50" />
-                            {partCategories.map((category) => (
-                                <DropdownMenuCheckboxItem
-                                    key={category.name}
-                                    checked={category.selected && !partCategories.every(c => c.selected)}
-                                    onCheckedChange={() => {
-                                        setSelectedBrands([]);
-                                        // STRICT SINGLE-SELECT: Clicking any category selects ONLY that one.
-                                        onSetCategories(partCategories.map(c => ({
-                                            ...c,
-                                            selected: c.name === category.name
-                                        })));
-                                    }}
-                                >
-                                    {category.name}
-                                </DropdownMenuCheckboxItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
 
-                    {availableBrands.length > 0 && (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30">
-                                    <Filter className="h-4 w-4" />
-                                    Brands
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
-                                <DropdownMenuCheckboxItem
-                                    checked={selectedBrands.length === 0}
-                                    onCheckedChange={() => setSelectedBrands([])}
-                                >
-                                    All Brands
-                                </DropdownMenuCheckboxItem>
-                                <Separator className="my-1 opacity-50" />
-                                {availableBrands.map((brand) => (
-                                    <DropdownMenuCheckboxItem
-                                        key={brand}
-                                        checked={selectedBrands.includes(brand)}
-                                        onCheckedChange={(checked) => {
-                                            if (checked) {
-                                                setSelectedBrands([brand]);
-                                            } else {
-                                                setSelectedBrands([]);
-                                            }
-                                        }}
-                                    >
-                                        {brand}
-                                    </DropdownMenuCheckboxItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    )}
-
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30">
-                                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-                                <span>Sort by {partSortBy}</span>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="w-48 bg-background/95 backdrop-blur-xl border-white/10">
-                            {['Date Added', 'Name', 'Price'].map((option) => (
-                                <DropdownMenuCheckboxItem
-                                    key={option}
-                                    checked={partSortBy === option}
-                                    onCheckedChange={() => {
-                                        setPartSortBy(option);
-                                        setPartCurrentPage(1);
-                                    }}
-                                >
-                                    {option}
-                                </DropdownMenuCheckboxItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    <Button
-                        variant="outline"
-                        className="h-11 gap-1.5 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30 text-xs font-semibold px-3"
-                        onClick={() => {
-                            setPartSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-                            setPartCurrentPage(1);
-                        }}
-                        title={partSortDirection === 'asc' ? "Ascending order" : "Descending order"}
-                    >
-                        {partSortDirection === 'asc' ? (
-                            <ArrowUpAZ className="h-4 w-4 text-primary" />
-                        ) : (
-                            <ArrowDownAZ className="h-4 w-4 text-primary" />
-                        )}
-                        <span>{partSortDirection.toUpperCase()}</span>
-                    </Button>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                    <Button
-                        variant={isPartSelectionMode ? "secondary" : "outline"}
-                        className={cn(
-                            "h-11 gap-2 border-white/10 bg-background/50 transition-all",
-                            isPartSelectionMode && "bg-primary/20 border-primary/50 text-white shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]"
-                        )}
-                        onClick={() => {
-                            setIsPartSelectionMode(!isPartSelectionMode);
-                            if (isPartSelectionMode) setSelectedPartIds([]);
-                        }}
-                    >
-                        <CheckSquare className="h-4 w-4" />
-                        {isPartSelectionMode ? "Finish Selection" : "Select"}
-                    </Button>
-
-                    {isPartSelectionMode && (
-                        <Button
-                            variant="outline"
-                            className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5"
-                            onClick={() => toggleAllPartsSelection(currentParts)}
-                        >
-                            <PackageCheck className="h-4 w-4" />
-                            {currentParts.length > 0 && currentParts.every(p => selectedPartIds.some(s => s.id === p.id)) ? "Deselect All" : "Select All"}
-                        </Button>
-                    )}
-
-                    {selectedPartIds.length > 0 && (
-                        <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 animate-in fade-in slide-in-from-right-2">
-                            <span className="text-xs font-bold text-primary">{selectedPartIds.length} Selected</span>
-                            <Separator orientation="vertical" className="h-4 bg-primary/20" />
-                            <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 text-xs hover:bg-primary/20"
-                                onClick={() => setConfirmAction({ isOpen: true, type: 'archive', target: 'parts' })}
-                            >
-                                <Archive className="mr-1.5 h-3 w-3" /> Archive
-                            </Button>
-                            {profile?.isSuperAdmin && (
+                        {/* Categories Dropdown Filter */}
+                        <Menu shadow="md" width={220} radius="md" closeOnItemClick={false}>
+                            <Menu.Target>
                                 <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 text-xs text-destructive hover:bg-destructive/20"
-                                    onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'parts' })}
+                                    variant={!partCategories.every(c => c.selected) ? "light" : "default"}
+                                    color={!partCategories.every(c => c.selected) ? "cyan" : undefined}
+                                    size="xs"
+                                    radius="md"
+                                    leftSection={<Filter size={13} className={!partCategories.every(c => c.selected) ? "text-cyan-500" : "text-slate-400"} />}
                                 >
-                                    <Trash2 className="mr-1.5 h-3 w-3" /> Delete
+                                    Categories
+                                    {!partCategories.every(c => c.selected) && (
+                                        <Badge size="xs" variant="filled" color="cyan" circle ml={5}>
+                                            {partCategories.filter(c => c.selected).length}
+                                        </Badge>
+                                    )}
                                 </Button>
-                            )}
-                            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPartIds([])}>
-                                Cancel
-                            </Button>
-                        </div>
-                    )}
-                    <div className="flex bg-muted/50 p-1 rounded-lg border border-white/10 shrink-0">
-                        <Button
-                            variant={activeView === 'grid' ? 'secondary' : 'ghost'}
-                            size="icon"
-                            onClick={() => setActiveView('grid')}
-                            className={cn("h-9 w-9", activeView === 'grid' && "bg-background shadow-sm")}
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                                <Menu.Label>Filter by Category</Menu.Label>
+                                <div className="px-2 py-1.5">
+                                    <Checkbox
+                                        label="All Categories"
+                                        size="xs"
+                                        checked={partCategories.every(c => c.selected)}
+                                        onChange={() => {
+                                            const anyUnselected = partCategories.some(cat => !cat.selected);
+                                            setSelectedBrands([]);
+                                            onSetCategories(partCategories.map(c => ({ ...c, selected: anyUnselected })));
+                                        }}
+                                    />
+                                </div>
+                                <Menu.Divider />
+                                <ScrollArea.Autosize mah={240}>
+                                    <div className="space-y-1 px-2 py-1">
+                                        {partCategories.map((category) => (
+                                            <Checkbox
+                                                key={category.name}
+                                                label={category.name}
+                                                size="xs"
+                                                checked={category.selected && !partCategories.every(c => c.selected)}
+                                                onChange={() => {
+                                                    setSelectedBrands([]);
+                                                    onSetCategories(partCategories.map(c => ({
+                                                        ...c,
+                                                        selected: c.name === category.name
+                                                    })));
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                </ScrollArea.Autosize>
+                            </Menu.Dropdown>
+                        </Menu>
+
+                        {/* Brands Dropdown Filter */}
+                        {availableBrands.length > 0 && (
+                            <Menu shadow="md" width={220} radius="md" closeOnItemClick={false}>
+                                <Menu.Target>
+                                    <Button
+                                        variant={selectedBrands.length > 0 ? "light" : "default"}
+                                        color={selectedBrands.length > 0 ? "cyan" : undefined}
+                                        size="xs"
+                                        radius="md"
+                                        leftSection={<Filter size={13} className={selectedBrands.length > 0 ? "text-cyan-500" : "text-slate-400"} />}
+                                    >
+                                        Brands
+                                        {selectedBrands.length > 0 && (
+                                            <Badge size="xs" variant="filled" color="cyan" circle ml={5}>
+                                                {selectedBrands.length}
+                                            </Badge>
+                                        )}
+                                    </Button>
+                                </Menu.Target>
+                                <Menu.Dropdown>
+                                    <Menu.Label>Filter by Brand</Menu.Label>
+                                    <div className="px-2 py-1.5">
+                                        <Checkbox
+                                            label="All Brands"
+                                            size="xs"
+                                            checked={selectedBrands.length === 0}
+                                            onChange={() => setSelectedBrands([])}
+                                        />
+                                    </div>
+                                    <Menu.Divider />
+                                    <ScrollArea.Autosize mah={240}>
+                                        <div className="space-y-1 px-2 py-1">
+                                            {availableBrands.map((brand) => (
+                                                <Checkbox
+                                                    key={brand}
+                                                    label={brand}
+                                                    size="xs"
+                                                    checked={selectedBrands.includes(brand)}
+                                                    onChange={(e) => {
+                                                        if (e.currentTarget.checked) {
+                                                            setSelectedBrands([brand]);
+                                                        } else {
+                                                            setSelectedBrands([]);
+                                                        }
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                    </ScrollArea.Autosize>
+                                </Menu.Dropdown>
+                            </Menu>
+                        )}
+
+                        {/* Sort Menu */}
+                        <Menu shadow="md" width={180} radius="md">
+                            <Menu.Target>
+                                <Button
+                                    variant="default"
+                                    size="xs"
+                                    radius="md"
+                                    leftSection={<ArrowUpDown size={13} className="text-slate-400" />}
+                                >
+                                    <span className="hidden sm:inline text-slate-400 font-normal mr-1">Sort:</span>
+                                    {partSortBy}
+                                </Button>
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                                <Menu.Label>Sort By</Menu.Label>
+                                {['Date Added', 'Name', 'Price'].map((option) => (
+                                    <Menu.Item
+                                        key={option}
+                                        onClick={() => {
+                                            setPartSortBy(option);
+                                            setPartCurrentPage(1);
+                                        }}
+                                        rightSection={
+                                            partSortBy === option ? (
+                                                <Check size={14} className="text-cyan-500" />
+                                            ) : null
+                                        }
+                                    >
+                                        {option}
+                                    </Menu.Item>
+                                ))}
+                            </Menu.Dropdown>
+                        </Menu>
+
+                        {/* Sort Direction Toggle */}
+                        <Tooltip
+                            label={partSortDirection === "asc" ? "Ascending order" : "Descending order"}
+                            withArrow
+                            position="top"
                         >
-                            <LayoutGrid className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant={activeView === 'table' ? 'secondary' : 'ghost'}
-                            size="icon"
-                            onClick={() => setActiveView('table')}
-                            className={cn("h-9 w-9", activeView === 'table' && "bg-background shadow-sm")}
-                        >
-                            <TableIcon className="h-4 w-4" />
-                        </Button>
+                            <ActionIcon
+                                variant="default"
+                                size="input-xs"
+                                radius="md"
+                                onClick={() => {
+                                    setPartSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+                                    setPartCurrentPage(1);
+                                }}
+                                aria-label={`Sort Direction: ${partSortDirection.toUpperCase()}`}
+                            >
+                                {partSortDirection === 'asc' ? (
+                                    <ArrowUpAZ size={15} className="text-cyan-500" />
+                                ) : (
+                                    <ArrowDownAZ size={15} className="text-cyan-500" />
+                                )}
+                            </ActionIcon>
+                        </Tooltip>
                     </div>
-                    <AddPartDialog onSave={onAddPart}>
-                        <Button className="h-11 gap-2 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 px-6 shrink-0 transition-transform active:scale-95">
-                            <Plus className="h-4 w-4" />
-                            Add Part
+
+                    {/* Right Controls: Bulk Selection, Grid/Table Toggle & Add Part */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                        <Button
+                            variant={isPartSelectionMode ? "light" : "default"}
+                            color={isPartSelectionMode ? "cyan" : undefined}
+                            size="xs"
+                            radius="md"
+                            leftSection={<CheckSquare size={13} />}
+                            onClick={() => {
+                                setIsPartSelectionMode(!isPartSelectionMode);
+                                if (isPartSelectionMode) setSelectedPartIds([]);
+                            }}
+                        >
+                            <span className="hidden sm:inline">{isPartSelectionMode ? "Finish Selection" : "Select"}</span>
+                            <span className="sm:hidden">{isPartSelectionMode ? "Done" : "Select"}</span>
                         </Button>
-                    </AddPartDialog>
+
+                        {isPartSelectionMode && (
+                            <Button
+                                variant="default"
+                                size="xs"
+                                radius="md"
+                                leftSection={<PackageCheck size={13} />}
+                                onClick={() => toggleAllPartsSelection(currentParts)}
+                            >
+                                {currentParts.length > 0 && currentParts.every(p => selectedPartIds.some(s => s.id === p.id)) ? "Deselect All" : "Select All"}
+                            </Button>
+                        )}
+
+                        {selectedPartIds.length > 0 && (
+                            <div className="flex items-center gap-1.5 bg-cyan-500/10 px-2 py-1 rounded-md border border-cyan-500/20">
+                                <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">{selectedPartIds.length} Selected</span>
+                                <Button
+                                    size="xs"
+                                    variant="subtle"
+                                    color="gray"
+                                    onClick={() => setConfirmAction({ isOpen: true, type: 'archive', target: 'parts' })}
+                                    leftSection={<Archive size={12} />}
+                                >
+                                    Archive
+                                </Button>
+                                {profile?.isSuperAdmin && (
+                                    <Button
+                                        size="xs"
+                                        variant="subtle"
+                                        color="red"
+                                        onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'parts' })}
+                                        leftSection={<Trash2 size={12} />}
+                                    >
+                                        Delete
+                                    </Button>
+                                )}
+                                <Button size="xs" variant="subtle" color="gray" onClick={() => setSelectedPartIds([])}>
+                                    Cancel
+                                </Button>
+                            </div>
+                        )}
+
+                        <SegmentedControl
+                            value={activeView}
+                            onChange={(val) => setActiveView(val as 'grid' | 'table')}
+                            size="xs"
+                            radius="md"
+                            data={[
+                                {
+                                    value: "grid",
+                                    label: (
+                                        <div className="flex items-center justify-center p-0.5" title="Grid View">
+                                            <LayoutGrid size={14} />
+                                        </div>
+                                    ),
+                                },
+                                {
+                                    value: "table",
+                                    label: (
+                                        <div className="flex items-center justify-center p-0.5" title="Table View">
+                                            <TableIcon size={14} />
+                                        </div>
+                                    ),
+                                },
+                            ]}
+                        />
+
+                        <AddPartDialog onSave={onAddPart}>
+                            <Button
+                                size="xs"
+                                radius="md"
+                                color="cyan"
+                                variant="filled"
+                                leftSection={<Plus size={14} />}
+                                className="font-semibold shadow-xs"
+                            >
+                                Add Part
+                            </Button>
+                        </AddPartDialog>
+                    </div>
                 </div>
-            </div>
+            </Paper>
 
             {activeView === 'grid' ? (
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
