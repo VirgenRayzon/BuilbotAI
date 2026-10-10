@@ -260,11 +260,12 @@ export function useBuilderLogic(allParts: Part[]) {
 
     // AI suggestion matching
     useEffect(() => {
-        const findPartRobustly = (suggestion: string, partId?: string) => {
+        const findPartRobustly = (suggestion?: string, partId?: string) => {
             if (partId) {
                 const part = allParts.find(p => p.id === partId);
                 if (part) return part;
             }
+            if (!suggestion) return null;
             let part = allParts.find(p => p.name.toLowerCase() === suggestion.toLowerCase());
             if (part) return part;
             const cleanSuggestion = suggestion.replace(/\s*\(.*?\)\s*/g, '').trim().toLowerCase();

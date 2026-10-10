@@ -19,7 +19,6 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
     const [input, setInput] = useState("");
     const [elapsedTime, setElapsedTime] = useState(0);
     const [timerActive, setTimerActive] = useState(false);
-    const [addedPartIds, setAddedPartIds] = useState<Record<string, boolean>>({});
     const [telemetryState, setTelemetryState] = useState<Record<string, TelemetryInfo>>({});
 
     const { authUser, profile, loading: profileLoading } = useUserProfile();
@@ -39,32 +38,49 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
     const { data: settings } = useDoc<any>(settingsDocRef);
     const isAiKillSwitch = settings?.isAiKillSwitch || false;
 
-    // Build summary payload to pass into API
+    // Keep the serializable build details used by the server-side checks.
     const sanitizedBuild = useMemo(() => {
         if (!build) return null;
         const res: Record<string, any> = {};
+        const serializePart = (item: ComponentData) => ({
+            id: item.id,
+            name: item.model || item.description,
+            price: item.price,
+            wattage: item.wattage,
+            socket: item.socket,
+            ramType: item.ramType,
+            performanceTier: item.performanceTier,
+            performanceScore: item.performanceScore,
+            dimensions: item.dimensions,
+            specifications: item.specifications,
+        });
         for (const [key, value] of Object.entries(build)) {
             if (!value) continue;
             if (Array.isArray(value)) {
-                res[key] = value.map(item => ({
-                    id: item.id,
-                    name: item.model || item.description,
-                    price: item.price,
-                    wattage: item.wattage,
-                    specifications: item.specifications
-                }));
+                if (value.length > 0) res[key] = value.map(serializePart);
             } else {
-                res[key] = {
-                    id: value.id,
-                    name: value.model || value.description,
-                    price: value.price,
-                    wattage: value.wattage,
-                    specifications: value.specifications
-                };
+                res[key] = serializePart(value);
             }
         }
         return Object.keys(res).length > 0 ? res : null;
     }, [build]);
+
+    const buildPartCount = sanitizedBuild
+        ? Object.values(sanitizedBuild).reduce<number>((count, value) => count + (Array.isArray(value) ? value.length : 1), 0)
+        : 0;
+    const addedPartIds = useMemo(() => {
+        const selected: Record<string, boolean> = {};
+        Object.values(build || {}).forEach(value => {
+            if (Array.isArray(value)) value.forEach(part => { selected[part.id] = true; });
+            else if (value) selected[value.id] = true;
+        });
+        return selected;
+    }, [build]);
+
+    // useChat creates its Chat instance once. The transport must read these refs at
+    // request time so restored or newly selected parts reach every new message.
+    const requestContextRef = useRef({ profile, sanitizedBuild });
+    requestContextRef.current = { profile, sanitizedBuild };
 
     // Close when other floating actions open
     useEffect(() => {
@@ -93,18 +109,22 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
         status,
         setMessages,
         sendMessage,
+        regenerate,
         stop,
     } = useChat({
         transport: new DefaultChatTransport({
             api: "/api/chat",
-            body: {
-                userProfile: profile ? {
-                    displayName: profile.name || "Architect",
-                    email: profile.email,
-                    experienceLevel: (profile as any).experienceLevel || "Intermediate",
-                    preferences: (profile as any).preferences || "None provided"
-                } : null,
-                currentBuild: sanitizedBuild
+            body: () => {
+                const { profile: currentProfile, sanitizedBuild: currentBuild } = requestContextRef.current;
+                return {
+                    userProfile: currentProfile ? {
+                        displayName: currentProfile.name || "Customer",
+                        email: currentProfile.email,
+                        experienceLevel: (currentProfile as any).experienceLevel || "Intermediate",
+                        preferences: (currentProfile as any).preferences || "None provided"
+                    } : null,
+                    currentBuild,
+                };
             },
             fetch: async (api, options) => {
                 const response = await fetch(api, options);
@@ -171,12 +191,16 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
             }
         },
         onError: (err) => {
-            console.error("Chat error:", err);
             setTimerActive(false);
+            const isConnectionError = err instanceof TypeError && /fetch|network/i.test(err.message);
             toast({
                 variant: "destructive",
-                title: "Connection Interrupted",
-                description: err.message || "The AI service is temporarily unavailable or timed out. Please try again.",
+                title: isConnectionError ? "Can't connect to chat" : "Chat unavailable",
+                description: isConnectionError
+                    ? process.env.NODE_ENV === 'development'
+                        ? "The app server isn't responding on port 9002. Start npm run dev and try again."
+                        : "Check your connection and try again."
+                    : err.message || "The AI service is temporarily unavailable. Please try again.",
             });
         }
     });
@@ -261,6 +285,14 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
         });
     }, [setMessages, toast]);
 
+    const beginRequest = useCallback(() => {
+        setElapsedTime(0);
+        setTimerActive(true);
+        requestStartRef.current = Date.now();
+        ttftRef.current = 0;
+        kbTimeRef.current = 0;
+    }, []);
+
     const handleSendMessage = useCallback((e: React.FormEvent) => {
         e.preventDefault();
 
@@ -275,41 +307,36 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
 
         if (!input.trim() || isLoading) return;
 
-        setElapsedTime(0);
-        setTimerActive(true);
-        requestStartRef.current = Date.now();
-        ttftRef.current = 0;
-        kbTimeRef.current = 0;
+        beginRequest();
         sendMessage({ text: input });
         setInput("");
-    }, [input, isLoading, isAiKillSwitch, sendMessage, toast]);
+    }, [beginRequest, input, isLoading, isAiKillSwitch, sendMessage, toast]);
 
     const handlePresetClick = useCallback((presetText: string) => {
         if (isLoading || isAiKillSwitch) return;
-        setElapsedTime(0);
-        setTimerActive(true);
-        requestStartRef.current = Date.now();
-        ttftRef.current = 0;
-        kbTimeRef.current = 0;
+        beginRequest();
         sendMessage({ text: presetText });
-    }, [isLoading, isAiKillSwitch, sendMessage]);
+    }, [beginRequest, isLoading, isAiKillSwitch, sendMessage]);
+
+    const handleRetryMessage = useCallback((messageId: string, text: string) => {
+        if (isLoading || isAiKillSwitch || !text.trim()) return;
+
+        beginRequest();
+        const latestUserMessage = [...messages].reverse().find(message => message.role === 'user');
+        // Regenerating an older message discards later chat history in the SDK.
+        // Re-send older prompts at the end so the rest of the conversation remains available.
+        const retry = latestUserMessage?.id === messageId
+            ? regenerate({ messageId })
+            : sendMessage({ text });
+        void retry.catch(() => setTimerActive(false));
+    }, [beginRequest, isAiKillSwitch, isLoading, messages, regenerate, sendMessage]);
 
     const handleAddPart = useCallback((partName: string, partId: string) => {
         const event = new CustomEvent('add-suggestion', {
             detail: { model: partName, id: partId }
         });
         window.dispatchEvent(event);
-
-        setAddedPartIds((prev) => ({ ...prev, [partId]: true }));
-        toast({
-            title: "Component Added",
-            description: `"${partName}" was added to your build.`,
-        });
-
-        setTimeout(() => {
-            setAddedPartIds((prev) => ({ ...prev, [partId]: false }));
-        }, 3500);
-    }, [toast]);
+    }, []);
 
     const hasUserMessages = messages.some(m => m.role === 'user');
     const hasBuildParts = sanitizedBuild !== null;
@@ -329,8 +356,10 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
         addedPartIds,
         hasUserMessages,
         hasBuildParts,
+        buildPartCount,
         handleSendMessage,
         handlePresetClick,
+        handleRetryMessage,
         handleClearChat,
         handleAddPart,
         stop,

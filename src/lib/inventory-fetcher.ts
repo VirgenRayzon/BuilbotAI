@@ -18,6 +18,7 @@ export interface StructuredPart {
     model: string;
     price: number;
     stock?: number;
+    isArchived?: boolean;
     imageUrl: string;
     category: string;
     socket?: string;
@@ -219,6 +220,7 @@ export async function getStructuredInventory(category: string, searchTerm?: stri
                 model: model,
                 price: typeof data.price === 'number' ? data.price : 0,
                 stock: data.stock,
+                isArchived: data.isArchived,
                 imageUrl: data.imageUrl || '',
                 category: inventoryCategorySlug(collectionName),
                 socket: data.socket,

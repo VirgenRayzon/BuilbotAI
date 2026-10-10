@@ -66,7 +66,7 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
       <Controller
         name="intendedUse"
         control={form.control}
@@ -211,7 +211,7 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
         )}
       />
 
-      <div className="pt-2">
+      <div>
         <Button
           type="submit"
           fullWidth

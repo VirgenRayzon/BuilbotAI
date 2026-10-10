@@ -91,12 +91,7 @@ export function InventoryView({
       transition={{ duration: 0.3 }}
       className={className ? className : "lg:col-span-9"}
     >
-      <Paper
-        withBorder
-        radius="xl"
-        p="md"
-        className="bg-white/60 dark:bg-[#111722]/80 backdrop-blur-xl border-slate-200/80 dark:border-white/10 shadow-sm"
-      >
+      <>
         {/* Top Filter and Search Toolbar */}
         <div className="mb-4">
           <InventoryToolbar
@@ -294,7 +289,7 @@ export function InventoryView({
             </Text>
           </Paper>
         )}
-      </Paper>
+      </>
     </motion.div>
   );
 }

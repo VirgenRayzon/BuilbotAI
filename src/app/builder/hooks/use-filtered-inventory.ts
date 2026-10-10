@@ -14,7 +14,7 @@ export function useFilteredInventory(allParts: Part[], build: any, getCountInBui
     const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
     const [hideIncompatible, setHideIncompatible] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(12);
+    const [itemsPerPage, setItemsPerPage] = useState(8);
     const [categories, setCategories] = useState([
         { name: "Case", selected: true },
         { name: "Motherboard", selected: true },
