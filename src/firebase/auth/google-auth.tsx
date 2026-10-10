@@ -185,7 +185,7 @@ export async function executeStaffGoogleAuthInitiate(
   firestore: Firestore
 ): Promise<StaffGoogleAuthResult> {
   try {
-    await setPersistence(auth, browserSessionPersistence);
+    await setPersistence(auth, browserLocalPersistence);
     const provider = getGoogleProvider();
     const result = await signInWithPopup(auth, provider);
     const user = result.user;

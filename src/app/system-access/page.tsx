@@ -8,7 +8,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth, useFirestore, executeStaffGoogleAuthInitiate, GoogleIcon } from '@/firebase';
-import { signInWithEmailAndPassword, signOut, setPersistence, browserSessionPersistence } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import {
   Paper,
@@ -134,8 +134,8 @@ function SystemAccessContent() {
     }
 
     try {
-      // Enforce session persistence so credentials clear when tab/window closes
-      await setPersistence(auth, browserSessionPersistence);
+      // Use local persistence so new tabs opened from dashboard stay authenticated
+      await setPersistence(auth, browserLocalPersistence);
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 

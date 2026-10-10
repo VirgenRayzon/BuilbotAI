@@ -505,6 +505,72 @@ export async function registerManagerAction(
   }
 }
 
+export async function listManagerAccountsAction(idToken: string) {
+  try {
+    const adminAuth = getAdminAuth();
+    const db = getAdminFirestore();
+    const requester = await adminAuth.verifyIdToken(idToken);
+    const requesterProfile = await db.collection('users').doc(requester.uid).get();
+    const canManageStaff = requester.isSuperAdmin === true || requesterProfile.data()?.isSuperAdmin === true;
+
+    if (!canManageStaff) {
+      return { error: 'Super administrator access is required.', managers: [] };
+    }
+
+    const managers: Array<Record<string, unknown>> = [];
+    const staffNotificationSnapshot = await db.collection('system_notifications')
+      .where('type', 'in', ['stock_added', 'status_changed', 'item_archived'])
+      .get();
+    const knownManagerIds = new Set(
+      staffNotificationSnapshot.docs
+        .map(notification => notification.data().actorId)
+        .filter((actorId): actorId is string => typeof actorId === 'string' && actorId.length > 0)
+    );
+    const knownManagerEmails = new Set<string>();
+    staffNotificationSnapshot.docs.forEach(notification => {
+      const data = notification.data();
+      const candidates = [data.actorName, data.message];
+      candidates.forEach(value => {
+        if (typeof value !== 'string') return;
+        const email = value.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0];
+        if (email) knownManagerEmails.add(email.toLowerCase());
+      });
+    });
+    let pageToken: string | undefined;
+
+    do {
+      const page = await adminAuth.listUsers(1000, pageToken);
+      const profileRefs = page.users.map(user => db.collection('users').doc(user.uid));
+      const profiles = profileRefs.length > 0 ? await db.getAll(...profileRefs) : [];
+
+      page.users.forEach((user, index) => {
+        const profile = profiles[index]?.data() ?? {};
+        const normalizedRole = String(profile.role ?? profile.accountType ?? '').toLowerCase();
+        const hasManagerKeyHistory = typeof profile.activeManagerKey === 'string' || Array.isArray(profile.deprecatedKeys);
+        const accountEmail = String(profile.email || user.email || '').toLowerCase();
+        const isManager = user.customClaims?.isManager === true || profile.isManager === true || profile.isAdmin === true || normalizedRole === 'manager' || hasManagerKeyHistory || knownManagerIds.has(user.uid) || knownManagerEmails.has(accountEmail);
+        const isSuperAdmin = user.customClaims?.isSuperAdmin === true || profile.isSuperAdmin === true || normalizedRole === 'superadmin' || normalizedRole === 'super_admin';
+
+        if (isManager && !isSuperAdmin) {
+          managers.push({
+            id: user.uid,
+            email: profile.email || user.email || '',
+            activeManagerKey: profile.activeManagerKey || '',
+            deprecatedKeys: Array.isArray(profile.deprecatedKeys) ? profile.deprecatedKeys : [],
+          });
+        }
+      });
+
+      pageToken = page.pageToken;
+    } while (pageToken);
+
+    return { managers };
+  } catch (error: any) {
+    console.error('[listManagerAccountsAction] Failed to list managers:', error);
+    return { error: error.message || 'Unable to load manager accounts.', managers: [] };
+  }
+}
+
 
 
 export async function migrateAllUsersClaimsAction() {

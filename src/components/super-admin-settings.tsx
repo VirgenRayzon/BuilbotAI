@@ -12,6 +12,8 @@ import { Loader2, Check, X, RefreshCw, Mail, Key, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useUserProfile } from '@/context/user-profile';
 import { createAuditLog } from '@/firebase/audit';
+import { listManagerAccountsAction } from '@/app/actions';
+import { useAuth } from '@/firebase';
 
 export function SuperAdminSettings() {
     const [managerKey, setManagerKey] = useState('');
@@ -24,6 +26,7 @@ export function SuperAdminSettings() {
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
     const firestore = useFirestore();
+    const auth = useAuth();
     const { toast } = useToast();
     const { profile } = useUserProfile();
 
@@ -80,24 +83,23 @@ export function SuperAdminSettings() {
     }, [firestore]);
 
     useEffect(() => {
-        if (!firestore) return;
-        const q = query(
-            collection(firestore, 'users'),
-            where('isManager', '==', true)
-        );
+        if (!auth?.currentUser || !profile?.isSuperAdmin) return;
+        let active = true;
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const m = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            setManagers(m);
-        }, (err) => {
-            console.error("Error listening to managers:", err);
-        });
+        async function fetchManagers() {
+            try {
+                const token = await auth!.currentUser!.getIdToken();
+                const result = await listManagerAccountsAction(token);
+                if (active) setManagers(result.managers || []);
+                if (result.error) console.error('Error loading managers:', result.error);
+            } catch (err) {
+                console.error('Error loading managers:', err);
+            }
+        }
 
-        return () => unsubscribe();
-    }, [firestore]);
+        fetchManagers();
+        return () => { active = false; };
+    }, [auth, profile?.isSuperAdmin]);
 
     const handleSaveManagerKey = async () => {
         if (!firestore) return;
@@ -236,7 +238,7 @@ export function SuperAdminSettings() {
     return (
         <div className="space-y-6 w-full">
             <Card className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-sm">
-                <CardHeader>
+                <CardHeader className="p-3 pb-3">
                     <CardTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
                         <Key className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                         Default Manger Access Key
@@ -245,7 +247,7 @@ export function SuperAdminSettings() {
                         Manage the access key required for new manager signups.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="p-3 pt-0 space-y-3">
                     <div className="space-y-2">
                         <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Manager Key</Label>
                         <div className="flex gap-2">
@@ -269,7 +271,7 @@ export function SuperAdminSettings() {
             </Card>
 
             <Card className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-sm">
-                <CardHeader>
+                <CardHeader className="p-3 pb-3">
                     <CardTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
                         <Shield className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                         Manager Accounts
@@ -278,7 +280,7 @@ export function SuperAdminSettings() {
                         Manage individual manager access keys and view key history.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-3 pt-0">
                     {managers.length === 0 ? (
                         <div className="text-center py-8 border-2 border-dashed rounded-lg border-slate-200 dark:border-white/10">
                             <p className="text-slate-500 text-sm">No manager accounts found.</p>
@@ -286,7 +288,7 @@ export function SuperAdminSettings() {
                     ) : (
                         <div className="space-y-4">
                             {managers.map((manager) => (
-                                <div key={manager.id} className="flex flex-col space-y-3 p-4 border border-slate-200 dark:border-white/10 rounded-xl bg-slate-50/50 dark:bg-black/20">
+                                <div key={manager.id} className="flex flex-col space-y-3 p-3 border border-slate-200 dark:border-white/10 rounded-xl bg-slate-50/50 dark:bg-black/20">
                                     <div className="flex items-center justify-between">
                                         <div className="space-y-0.5">
                                             <p className="font-bold text-sm text-slate-900 dark:text-white">{manager.email}</p>
@@ -333,7 +335,7 @@ export function SuperAdminSettings() {
             </Card>
 
             <Card className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-sm">
-                <CardHeader>
+                <CardHeader className="p-3 pb-3">
                     <CardTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
                         <RefreshCw className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                         Key Reset Requests
@@ -342,7 +344,7 @@ export function SuperAdminSettings() {
                         Pending requests from managers who forgot their access key.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-3 pt-0">
                     {requests.length === 0 ? (
                         <div className="text-center py-8 border-2 border-dashed rounded-lg border-slate-200 dark:border-white/10">
                             <p className="text-slate-500 text-sm">No pending requests found.</p>
@@ -352,7 +354,7 @@ export function SuperAdminSettings() {
                             {requests.map((req) => {
                                 const requester = managers.find(m => m.email === req.email);
                                 return (
-                                    <div key={req.id} className="flex items-center justify-between p-4 border border-slate-200 dark:border-white/10 rounded-xl bg-slate-50/50 dark:bg-black/20">
+                                    <div key={req.id} className="flex items-center justify-between p-3 border border-slate-200 dark:border-white/10 rounded-xl bg-slate-50/50 dark:bg-black/20">
                                         <div className="space-y-1">
                                             <div className="flex items-center gap-2">
                                                 <Mail className="h-4 w-4 text-slate-500" />
