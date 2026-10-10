@@ -208,6 +208,7 @@ export async function logAdminAction(action: string, details: string, data?: any
 // In-memory catalog cache variables
 import { getAdminFirestore, getAdminAuth } from "@/firebase/server-init";
 import type { Part } from "@/lib/types";
+import { INVENTORY_CATEGORY_SLUGS, inventoryItemsPath } from "@/lib/inventory-paths";
 
 let catalogCache: Part[] | null = null;
 let catalogCacheTime = 0;
@@ -237,17 +238,12 @@ export async function getCachedInventory(): Promise<Part[]> {
   console.log("[getCachedInventory] Cache miss, fetching catalog from Firestore...");
   const db = getAdminFirestore();
   
+  const snapshots = await Promise.all(INVENTORY_CATEGORY_SLUGS.map(slug =>
+    db.collection(inventoryItemsPath(slug)).where('isArchived', '==', false).get()
+  ));
   const fetchedParts: Part[] = [];
-  
-  const snapshot = await db.collection('parts').where('isArchived', '==', false).get();
-  let docs = snapshot.docs;
-  
-  if (snapshot.empty) {
-    const fallbackSnapshot = await db.collection('parts').get();
-    docs = fallbackSnapshot.docs.filter(doc => doc.data().isArchived !== true);
-  }
-  
-  docs.forEach(doc => {
+
+  snapshots.flatMap(snapshot => snapshot.docs).forEach(doc => {
     const data = doc.data();
     const category = data.category as Part['category'];
     fetchedParts.push({

@@ -11,6 +11,7 @@ import type { AddPartFormSchema } from "@/hooks/use-part-form";
 import type { AddPrebuiltFormSchema } from "@/components/add-prebuilt-dialog";
 import type { Part, PrebuiltSystem, UserProfile, SystemNotification } from "@/lib/types";
 import { fetchImageBase64, uploadBase64ToStorage } from "@/app/image-actions";
+import { inventoryCategoryLabel, inventoryCategoryPath, inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
 
 // Uploads an image to Firebase Storage.
 // Local file uploads (data:image) go directly from the client (which has auth context).
@@ -201,12 +202,18 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
         isArchived: false
     };
 
-    await addDoc(collection(firestore, "parts"), cleanData(partData));
+    const batch = writeBatch(firestore);
+    batch.set(doc(firestore, inventoryCategoryPath(part.category)), {
+        label: inventoryCategoryLabel(part.category),
+        isActive: true,
+    }, { merge: true });
+    batch.set(doc(collection(firestore, inventoryItemsPath(part.category))), cleanData(partData));
+    await batch.commit();
 }
 
 
 export async function updatePart(firestore: Firestore, category: Part['category'], partId: string, data: Partial<Omit<Part, 'id' | 'category'>>) {
-    const docRef = doc(firestore, "parts", partId);
+    const docRef = doc(firestore, inventoryItemPath(category, partId));
 
     // If specifications are being updated but not wattage, try to re-resolve wattage
     if (data.specifications && data.wattage === undefined) {
@@ -267,17 +274,17 @@ export async function updatePart(firestore: Firestore, category: Part['category'
 }
 
 export async function deletePart(firestore: Firestore, partId: string, category: Part['category']) {
-    await deleteDoc(doc(firestore, "parts", partId));
+    await deleteDoc(doc(firestore, inventoryItemPath(category, partId)));
 }
 
 export async function archivePart(firestore: Firestore, partId: string, category: Part['category'], isArchived: boolean = true) {
-    await updateDoc(doc(firestore, "parts", partId), { isArchived });
+    await updateDoc(doc(firestore, inventoryItemPath(category, partId)), { isArchived });
 }
 
 export async function bulkArchiveParts(firestore: Firestore, items: { id: string, category: Part['category'] }[], isArchived: boolean = true) {
     const batch = writeBatch(firestore);
     items.forEach(item => {
-        const partRef = doc(firestore, "parts", item.id);
+        const partRef = doc(firestore, inventoryItemPath(item.category, item.id));
         batch.update(partRef, { isArchived });
     });
     await batch.commit();
@@ -286,7 +293,7 @@ export async function bulkArchiveParts(firestore: Firestore, items: { id: string
 export async function bulkDeleteParts(firestore: Firestore, items: { id: string, category: Part['category'] }[]) {
     const batch = writeBatch(firestore);
     items.forEach(item => {
-        const partRef = doc(firestore, "parts", item.id);
+        const partRef = doc(firestore, inventoryItemPath(item.category, item.id));
         batch.delete(partRef);
     });
     await batch.commit();
@@ -407,7 +414,7 @@ export async function resetSalesMetrics(
     
     // 2. Reset popularity for all parts
     parts.forEach(part => {
-        const partRef = doc(firestore, "parts", part.id);
+        const partRef = doc(firestore, inventoryItemPath(part.category, part.id));
         batch.update(partRef, { popularity: 0 });
     });
     
@@ -427,7 +434,7 @@ export async function ingestDummySalesData(
     const now = new Date();
     
     // Popularity tracker for parts
-    const popularityMap = new Map<string, { category: string, count: number }>();
+    const popularityMap = new Map<string, { category: Part['category'], count: number }>();
 
     for (let i = 0; i < orderCount; i++) {
         // Random date in last 12 months
@@ -462,8 +469,9 @@ export async function ingestDummySalesData(
                     });
                     totalPrice += part.price;
                     
-                    const current = popularityMap.get(part.id) || { category: part.category, count: 0 };
-                    popularityMap.set(part.id, { ...current, count: current.count + 1 });
+                    const partPath = inventoryItemPath(part.category, part.id);
+                    const current = popularityMap.get(partPath) || { category: part.category, count: 0 };
+                    popularityMap.set(partPath, { ...current, count: current.count + 1 });
                 }
             });
             // Round up to system price if needed or just use sum
@@ -481,8 +489,9 @@ export async function ingestDummySalesData(
                 });
                 totalPrice += part.price;
                 
-                const current = popularityMap.get(part.id) || { category: part.category, count: 0 };
-                popularityMap.set(part.id, { ...current, count: current.count + 1 });
+                const partPath = inventoryItemPath(part.category, part.id);
+                const current = popularityMap.get(partPath) || { category: part.category, count: 0 };
+                popularityMap.set(partPath, { ...current, count: current.count + 1 });
             }
         }
 
@@ -503,8 +512,8 @@ export async function ingestDummySalesData(
     }
 
     // Update part popularity
-    popularityMap.forEach((data, id) => {
-        const partRef = doc(firestore, "parts", id);
+    popularityMap.forEach((data, partPath) => {
+        const partRef = doc(firestore, partPath);
         batch.update(partRef, { popularity: data.count });
     });
 

@@ -1,4 +1,5 @@
 import { getAdminFirestore } from "@/firebase/server-init";
+import { inventoryCategorySlug, inventoryItemsPath } from "@/lib/inventory-paths";
 
 interface CacheEntry {
     data: string[];
@@ -72,10 +73,8 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
         const db = getAdminFirestore();
         const collectionName = CATEGORY_MAP[normalizedCat] || category;
         
-        // 1. Start with native Firestore filtering on parts collection
-        let query = db.collection('parts')
-                      .where('category', '==', collectionName)
-                      .where('isArchived', '==', false);
+        const items = db.collection(inventoryItemsPath(collectionName));
+        let query = items.where('isArchived', '==', false);
         
         // Native Firestore query on searchKeywords using array-contains for the first search term
         if (searchTerm && searchTerm !== "undefined" && searchTerm.trim() !== "") {
@@ -86,14 +85,7 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
         }
         
         // 2. Fetch the snapshot
-        let snapshot = await query.limit(searchTerm ? limitCount * 2 : limitCount).get();
-        
-        // Fallback: If no results with isArchived == false, try fetching without that filter 
-        if (snapshot.empty && !searchTerm) {
-            snapshot = await db.collection('parts')
-                         .where('category', '==', collectionName)
-                         .limit(limitCount).get();
-        }
+        const snapshot = await query.limit(searchTerm ? limitCount * 2 : limitCount).get();
         
         let docs = snapshot.docs;
  
@@ -172,9 +164,8 @@ export async function getStructuredInventory(category: string, searchTerm?: stri
         const db = getAdminFirestore();
         const collectionName = CATEGORY_MAP[normalizedCat] || category;
         
-        let query = db.collection('parts')
-                      .where('category', '==', collectionName)
-                      .where('isArchived', '==', false);
+        const items = db.collection(inventoryItemsPath(collectionName));
+        let query = items.where('isArchived', '==', false);
         
         if (searchTerm && searchTerm !== "undefined" && searchTerm.trim() !== "") {
             const terms = searchTerm.toLowerCase().split(/[\s\-_/,\(\)]+/).map(t => t.replace(/[^a-z0-9]/g, '').trim()).filter(t => t.length > 0);
@@ -183,13 +174,7 @@ export async function getStructuredInventory(category: string, searchTerm?: stri
             }
         }
         
-        let snapshot = await query.limit(searchTerm ? limitCount * 2 : limitCount).get();
-        
-        if (snapshot.empty && !searchTerm) {
-            snapshot = await db.collection('parts')
-                         .where('category', '==', collectionName)
-                         .limit(limitCount).get();
-        }
+        const snapshot = await query.limit(searchTerm ? limitCount * 2 : limitCount).get();
         
         let docs = snapshot.docs;
   
@@ -235,7 +220,7 @@ export async function getStructuredInventory(category: string, searchTerm?: stri
                 price: typeof data.price === 'number' ? data.price : 0,
                 stock: data.stock,
                 imageUrl: data.imageUrl || '',
-                category: normalizedCat,
+                category: inventoryCategorySlug(collectionName),
                 socket: data.socket,
                 ramType: data.ramType,
                 wattage: data.wattage,

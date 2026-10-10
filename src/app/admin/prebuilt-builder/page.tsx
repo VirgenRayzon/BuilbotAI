@@ -23,9 +23,8 @@ import {
 import type { ComponentData, Part, Resolution, WorkloadType } from "@/lib/types";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
 import { PartCard } from "@/components/part-card";
-import { useCollection } from "@/firebase/firestore/use-collection";
+import { useInventoryParts } from "@/firebase/firestore/use-inventory-parts";
 import { useFirestore } from "@/firebase";
-import { collection } from "firebase/firestore";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -72,9 +71,7 @@ export default function PrebuiltBuilderPage() {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
 
-    // Fetch unified parts collection
-    const partsQuery = useMemo(() => firestore ? collection(firestore, 'parts') : null, [firestore]);
-    const { data: rawParts, loading: partsLoading } = useCollection<Part>(partsQuery);
+    const { data: rawParts, loading: partsLoading } = useInventoryParts(firestore);
 
     const allParts = useMemo(() => {
         return (rawParts || []).filter(p => !p.isArchived);

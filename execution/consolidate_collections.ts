@@ -1,6 +1,10 @@
 import * as admin from 'firebase-admin';
 import * as dotenv from 'dotenv';
 
+// Legacy migration target: /parts. The planned lowercase inventory hierarchy is
+// /inventory/{categorySlug}/items/{partId}; see directives/inventory_hierarchy_migration.md.
+// Do not use this script to perform that migration.
+
 dotenv.config();
 
 // Initialize Firebase Admin

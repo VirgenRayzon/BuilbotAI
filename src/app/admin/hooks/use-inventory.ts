@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useFirestore } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
+import { useInventoryParts } from '@/firebase/firestore/use-inventory-parts';
 import { collection } from 'firebase/firestore';
 import type { Part, PrebuiltSystem } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
@@ -43,8 +44,7 @@ export function useInventory(profile: any) {
     const { toast } = useToast();
 
     // Data Fetching
-    const partsQuery = useMemo(() => firestore ? collection(firestore, 'parts') : null, [firestore]);
-    const { data: rawParts, loading: partsLoading } = useCollection<Part>(partsQuery);
+    const { data: rawParts, loading: partsLoading } = useInventoryParts(firestore);
 
     const prebuiltSystemsQuery = useMemo(() => firestore ? collection(firestore, 'prebuiltSystems') : null, [firestore]);
     const { data: prebuiltSystems, loading: prebuiltsLoading } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);

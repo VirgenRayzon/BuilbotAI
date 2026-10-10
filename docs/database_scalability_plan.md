@@ -2,6 +2,10 @@
 
 This document outlines a comprehensive database scalability plan for the **Buildbot AI** application (Forge Architect AI). It addresses existing bottlenecks, optimizes query performance, improves write reliability during peak traffic, and controls operational costs within Firebase Firestore and Google Cloud Infrastructure.
 
+> **Inventory path decision (2026-10-10):** The target inventory source of truth is `/inventory/{lowercaseCategory}/items/{partId}`. See [the inventory hierarchy migration directive](../directives/inventory_hierarchy_migration.md) for the path contract, affected code, staged migration, and verification. Earlier `/parts` consolidation recommendations below are superseded by this decision.
+
+> **Migration progress:** The live database contains 312 copied inventory items under the lowercase hierarchy, and its rules and index are deployed. Verify the App Hosting rollout of the new code and reconcile any writes made to old paths during the transition. See the directive's execution status before planning legacy cleanup.
+
 ---
 
 ## 1. Architectural Overview & Data Flow
@@ -42,13 +46,13 @@ graph TD
 
 ### A. Catalog Fetching Query (`useInventoryQuery` / `useInventory`)
 > [!WARNING]
-> **Current Issue:** The application reads parts from **12 separate root collections** in parallel. It fetches the *entire* collection of each category, then merges and filters the items (e.g. `!isArchived`) in JavaScript on the client side. As the inventory grows, client memory, network request overhead, and Firestore read costs will scale linearly, leading to severe slowdowns and high Firebase bills.
+> **Current Issue:** Current catalog code reads `/parts`, while checkout and prebuilt reservation still reference legacy root category collections. The planned hierarchy requires consistent reads and writes across these flows. Unbounded catalog reads will become costly as inventory grows.
 
 #### Action Plan:
-1. **Single Collection Consolidation:** Combine all 12 hardware category collections into a single `/parts` collection with a `category` attribute and an index on `isArchived`.
-2. **Server-Side Filtering:** Modify queries to request only active parts using Firestore's query-level parameters:
+1. **Inventory Hierarchy:** Move the part source of truth to `/inventory/{lowercaseCategory}/items/{partId}` as specified in the migration directive. Keep the existing human-readable `category` field during the first migration.
+2. **Server-Side Filtering:** Query active parts within the selected category subcollection:
    ```typescript
-   query(collection(firestore, 'parts'), where('isArchived', '==', false))
+   query(collection(firestore, 'inventory', categorySlug, 'items'), where('isArchived', '==', false))
    ```
 3. **Edge Caching / Incremental Static Regeneration (ISR):** Since the public PC part catalog changes relatively infrequently (e.g., daily or when admins update stock), serve it from Next.js ISR.
    - Cache catalog data at the Edge for 5–10 minutes (`revalidate = 300`).
@@ -104,10 +108,10 @@ graph TD
 
 ### D. AI Inventory Retrieval & Recommendation Flow (`getInventoryFromFirestore`)
 > [!TIP]
-> **AI Optimization Opportunity:** When "Web Search" is disabled, the AI chatbot fetches inventory menu context by performing **8 parallel queries** to different category collections (CPU, GPU, etc.) in every chat context assembly. Additionally, search matching is done in memory using client-side `.filter()`, which misses items when collections outgrow query limits.
+> **AI Optimization Opportunity:** The AI inventory helper currently queries `/parts` by category and may refine multi-word matches in memory after a capped Firestore query. The hierarchy migration must preserve category retrieval and search behavior while avoiding results that disappear because the initial query limit was reached.
 
 #### Action Plan:
-1. **Unified AI Catalog Querying:** Leverage the consolidated `/parts` collection to retrieve inventory details in a single query (using `in` category filters) or a unified access utility, reducing server-to-database connection round-trips.
+1. **Shared AI Catalog Paths:** Read the relevant `/inventory/{categorySlug}/items` subcollections through the same validated path helper used by the rest of the app. A broad `items` collection-group query would also include hardware vector records, so do not use it without a reviewed discriminator and matching rules/indexes.
 2. **Context-level Caching:** Cache the formatted store inventory menu context on the Next.js server using Vercel/Next.js caching (e.g., `unstable_cache` or a simple Redis/memory block) with on-demand invalidation. The Genkit flow then fetches the stock list in sub-milliseconds without triggering Firestore reads on each chat generation.
 3. **Firestore Native Key-matching:** Generate a `searchKeywords` lowercase array index for parts (e.g., `['intel', 'core', 'i5', '14600k']`). Update `getInventoryFromFirestore` to query natively using `where('searchKeywords', 'array-contains', query)`, avoiding memory filtering limits and ensuring no search results are missed.
 4. **Denormalized Specs for Performance AI:** Populate complete denormalized component details directly within the `/prebuiltSystems` document to allow the AI Performance Critiquer (`ai-prebuilt-performance.ts`) to estimate and critique configurations with **1 single document read** instead of 8 parallel N+1 lookup reads.
@@ -185,8 +189,8 @@ To maintain maximum query speed while eliminating complex multi-collection fetch
 * [ ] Refactor `firestore.rules` to check roles via `request.auth.token`.
 * [ ] Validate that security rules read operations count is reduced to 0 for static paths.
 
-### Phase 3: Collection Consolidation & Archiving (3 Weeks)
-* [ ] Run a migration script (`execution/consolidate_collections.ts`) to merge separate part category collections into a unified `/parts` collection.
+### Phase 3: Inventory Hierarchy Migration & Archiving (3 Weeks)
+* [ ] Follow `directives/inventory_hierarchy_migration.md` to migrate `/parts` and any remaining legacy category documents into `/inventory/{lowercaseCategory}/items/{partId}`; do not use `execution/consolidate_collections.ts` for this destination.
 * [ ] Add a lowercase `searchKeywords` array field on creation/update of parts for native Firestore keyword queries in `getInventoryFromFirestore`.
 * [ ] Enable Google Cloud Firestore TTL on `/auditLogs` and `/system_notifications` collections.
 * [ ] Set up GCS export / BigQuery pipeline for legacy compliance reports.

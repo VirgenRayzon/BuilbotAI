@@ -2,9 +2,8 @@
 
 import { useMemo } from 'react';
 import { useFirestore, useDoc } from '@/firebase';
-import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, doc } from 'firebase/firestore';
-import type { Part } from '@/lib/types';
+import { useInventoryParts } from '@/firebase/firestore/use-inventory-parts';
+import { doc } from 'firebase/firestore';
 
 /**
  * Hook to fetch all inventory data and site settings for the Advisor.
@@ -16,8 +15,7 @@ export function useAdvisorData() {
     const { data: settings } = useDoc<any>(settingsDocRef);
     const isAiKillSwitch = settings?.isAiKillSwitch || false;
 
-    const partsQuery = useMemo(() => firestore ? collection(firestore, 'parts') : null, [firestore]);
-    const { data: rawParts, loading: partsLoading } = useCollection<Part>(partsQuery);
+    const { data: rawParts, loading: partsLoading } = useInventoryParts(firestore);
 
     const allParts = useMemo(() => {
         return (rawParts || []).filter(p => !p.isArchived);

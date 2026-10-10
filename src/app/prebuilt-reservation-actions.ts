@@ -5,6 +5,7 @@ import { getAdminFirestore } from "@/firebase/server-init";
 import * as admin from 'firebase-admin';
 import { PrebuiltSystem, OrderItem } from "@/lib/types";
 import { pruneUserNotifications } from "@/app/checkout-actions";
+import { inventoryCategoryLabel, inventoryItemPath } from "@/lib/inventory-paths";
 
 export async function reservePrebuiltSystem(
     userId: string, 
@@ -24,14 +25,8 @@ export async function reservePrebuiltSystem(
             for (const [category, part] of Object.entries(components)) {
                 if (!part) continue;
                 
-                const collectionMap: Record<string, string> = {
-                    cpu: 'CPU', gpu: 'GPU', motherboard: 'Motherboard',
-                    ram: 'RAM', storage: 'Storage', psu: 'PSU',
-                    case: 'Case', cooler: 'Cooler',
-                };
-                const collectionName = collectionMap[category] || category;
-                
-                const partRef = firestore.collection(collectionName).doc(part.id);
+                const categoryLabel = inventoryCategoryLabel(category);
+                const partRef = firestore.doc(inventoryItemPath(category, part.id));
                 const partSnap = await transaction.get(partRef);
                 
                 if (!partSnap.exists) {
@@ -47,7 +42,7 @@ export async function reservePrebuiltSystem(
                 orderItems.push({
                     id: part.id,
                     name: part.name,
-                    category: collectionName,
+                    category: categoryLabel,
                     price: part.price
                 });
             }

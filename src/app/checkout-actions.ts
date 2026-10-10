@@ -4,6 +4,7 @@
 import { getAdminFirestore } from "@/firebase/server-init";
 import * as admin from 'firebase-admin';
 import { Order, OrderItem } from "@/lib/types";
+import { inventoryItemPath } from "@/lib/inventory-paths";
 
 /**
  * Prunes notifications for a given user, maintaining a maximum limit (default: 30)
@@ -36,7 +37,7 @@ export async function processCheckout(userId: string, userEmail: string, items: 
             for (const item of items) {
                 if (item.id === "included-stock-cooler") continue;
                 
-                const itemRef = firestore.collection(item.category).doc(item.id);
+                const itemRef = firestore.doc(inventoryItemPath(item.category, item.id));
                 const itemSnap = await transaction.get(itemRef);
                 
                 if (!itemSnap.exists) {
@@ -158,7 +159,7 @@ export async function updateReservationStatus(
             if (newStatus === 'cancelled' && currentStatus !== 'cancelled') {
                 for (const item of orderData.items) {
                     if (item.id === "included-stock-cooler") continue;
-                    const itemRef = firestore.collection(item.category).doc(item.id);
+                    const itemRef = firestore.doc(inventoryItemPath(item.category, item.id));
                     transaction.update(itemRef, {
                         stock: admin.firestore.FieldValue.increment(1)
                     });
