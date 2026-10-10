@@ -8,8 +8,6 @@ import { useLoading } from "@/context/loading-context";
 import { cn } from "@/lib/utils";
 import { Tabs } from "@mantine/core";
 import { CircuitBoard, Sparkles } from "lucide-react";
-import { BuilderFloatingAnalytics } from "@/components/builder-floating-analytics";
-import { BuilderFloatingChat } from "@/components/builder-floating-chat";
 import { RouteGuard } from "@/components/auth/route-guard";
 
 // Custom Hooks
@@ -55,7 +53,6 @@ export default function AiBuildAdvisorPage() {
     } = useRecommendationLogic(isAiKillSwitch, allParts);
 
     // Route Protection handled by RouteGuard wrapper in return
-
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -169,18 +166,6 @@ export default function AiBuildAdvisorPage() {
                             error={error}
                         />
                     )}
-
-                    <BuilderFloatingAnalytics
-                        build={builderState || {}}
-                        resolution={resolution}
-                        onResolutionChange={setResolution}
-                        workload={workload}
-                        onWorkloadChange={setWorkload}
-                    />
-
-                    <BuilderFloatingChat
-                        build={builderState || {}}
-                    />
                 </main>
             </div>
         </RouteGuard>
