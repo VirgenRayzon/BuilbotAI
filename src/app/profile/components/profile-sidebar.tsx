@@ -335,17 +335,17 @@ export function ProfileSidebar({
           blur: 4,
         }}
         classNames={{
-          content: "bg-white dark:bg-[#111722] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-2xl rounded-2xl overflow-hidden",
-          header: "bg-white dark:bg-[#111722] border-b border-slate-200 dark:border-white/10 px-6 py-4",
-          body: "!px-6 !pt-5 !pb-6",
+          content: "bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl overflow-hidden",
+          header: "bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200/80 dark:border-white/10 px-4 py-3",
+          body: "!px-4 !pt-3.5 !pb-4",
           close: "text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors",
         }}
       >
-        <Text size="xs" className="text-slate-600 dark:text-slate-300 leading-relaxed mt-2">
+        <Text size="xs" className="text-slate-600 dark:text-slate-300 leading-relaxed mt-1">
           Are you sure you want to sign out of Buildbot AI? You will need your credentials to access your saved PC configurations and store reservations.
         </Text>
 
-        <Group justify="flex-end" gap="xs" mt="lg">
+        <Group justify="flex-end" gap="xs" mt="md">
           <Button
             variant="default"
             size="xs"
