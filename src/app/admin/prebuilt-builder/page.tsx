@@ -37,6 +37,7 @@ import { useUserProfile } from "@/context/user-profile";
 import { useLoading } from "@/context/loading-context";
 import { useTheme } from "@/context/theme-provider";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
+import { motion } from "framer-motion";
 
 import { addPrebuiltSystem } from "@/firebase/database";
 import type { PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
@@ -477,15 +478,23 @@ export default function PrebuiltBuilderPage() {
                 )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
                 <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-4 md:py-8 pb-24 lg:pb-8 relative z-10">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
-                        <div className="text-left">
-                            <div className="flex items-center gap-3 mb-2">
-                                <h1 className="text-4xl font-headline font-bold uppercase tracking-tight">Prebuilt Builder</h1>
-                            </div>
-                            <p className="text-muted-foreground font-medium italic">
+                    <div className="relative mb-6">
+                        <motion.div
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="relative z-10 flex flex-col gap-0.5"
+                        >
+                            <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-cyan-600 dark:text-cyan-400 font-headline">
+                                Admin Creator
+                            </span>
+                            <h1 className="text-2xl sm:text-3xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-slate-100">
+                                Prebuilt <span className="text-cyan-600 dark:text-cyan-400 italic">Builder</span>
+                            </h1>
+                            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                                 Configure new pre-built systems for the catalog using current inventory.
                             </p>
-                        </div>
+                        </motion.div>
                     </div>
 
                     <div className="grid lg:grid-cols-12 gap-6 xl:gap-8">

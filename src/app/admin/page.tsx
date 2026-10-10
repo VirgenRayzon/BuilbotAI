@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-    Package, Monitor, 
+import {
+    Package, Monitor,
     Archive, Trash2, BarChart3, ShoppingBag,
     Shield, Sliders, Bot, FileText, Cpu, FileCode
 } from 'lucide-react';
@@ -43,7 +43,7 @@ export default function AdminPage() {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
     const { profile, handleTabAccess, currentTab } = useAdminCore();
-    
+
     // Horizontal tabs scroll reference
     const tabsScrollRef = useRef<HTMLDivElement>(null);
 
@@ -72,14 +72,14 @@ export default function AdminPage() {
         el.addEventListener('wheel', onWheel, { passive: false });
         return () => el.removeEventListener('wheel', onWheel);
     }, []);
-    
-    const { 
+
+    const {
         parts, partsLoading, prebuiltSystems, prebuiltsLoading,
         handleAddPart, handleUpdatePart, handleUpdatePartStock, handleAddPartStock, handleDeletePart, handleArchivePart,
         handleAddPrebuilt, handleUpdatePrebuilt, handleDeletePrebuilt, handleArchivePrebuilt,
         componentCategories: initialCategories
     } = useInventory(profile);
-    
+
     const { orders, ordersLoading, handleDeleteOrder, handleUpdateOrder, stats } = useOrders(profile);
 
     const salesActions = useSalesActions({
@@ -88,8 +88,8 @@ export default function AdminPage() {
         prebuiltSystems: prebuiltSystems || []
     });
 
-    
-    const { 
+
+    const {
         selectedPartIds, setSelectedPartIds, selectedPrebuiltIds, setSelectedPrebuiltIds,
         isPartSelectionMode, setIsPartSelectionMode, isPrebuiltSelectionMode, setIsPrebuiltSelectionMode,
         confirmAction, setConfirmAction, togglePartSelection, toggleAllPartsSelection,
@@ -106,7 +106,7 @@ export default function AdminPage() {
     ]);
 
     const handlePartCategoryChange = (name: string, selected: boolean) => {
-        setPartCategories(prev => prev.map(c => 
+        setPartCategories(prev => prev.map(c =>
             c.name === name ? { ...c, selected } : c
         ));
     };
@@ -143,8 +143,8 @@ export default function AdminPage() {
                         onConfirmResetSales={salesActions.handleResetSales}
                     />
 
-                    <Tabs 
-                        value={currentTab} 
+                    <Tabs
+                        value={currentTab}
                         onChange={(val) => val && handleTabAccess(val)}
                         variant="pills"
                         radius="md"
@@ -153,56 +153,43 @@ export default function AdminPage() {
                     >
                         {/* Horizontal Tab Strip Container with Adaptive Scrollbar */}
                         <div className="w-full mb-6 border-b border-slate-200 dark:border-white/10 pb-3">
-                            <div 
+                            <div
                                 ref={tabsScrollRef}
                                 className="w-full overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700/80 hover:scrollbar-thumb-cyan-500/60 dark:hover:scrollbar-thumb-cyan-500/60 scrollbar-track-transparent transition-colors"
                             >
                                 <Tabs.List className="bg-slate-100 dark:bg-[#141a23] p-1.5 rounded-xl border border-slate-200 dark:border-white/10 inline-flex flex-nowrap gap-1.5 min-w-max">
-                                    <Tabs.Tab 
-                                        value="stock" 
+                                    <Tabs.Tab
+                                        value="stock"
                                         leftSection={<Package className="h-4 w-4" />}
                                         className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
                                     >
                                         Manage Stock
                                     </Tabs.Tab>
-                                    <Tabs.Tab 
-                                        value="prebuilts" 
+                                    <Tabs.Tab
+                                        value="prebuilts"
                                         leftSection={<Monitor className="h-4 w-4" />}
                                         className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
                                     >
                                         Manage Prebuilts
                                     </Tabs.Tab>
-                                    <Tabs.Tab 
-                                        value="reservations" 
+                                    <Tabs.Tab
+                                        value="reservations"
                                         leftSection={<ShoppingBag className="h-4 w-4" />}
-                                        rightSection={
-                                            stats.pendingOrdersCount > 0 ? (
-                                                <Badge 
-                                                    size="xs" 
-                                                    color="yellow" 
-                                                    variant="filled" 
-                                                    circle 
-                                                    className="font-bold text-slate-950 bg-yellow-400 animate-pulse ml-1"
-                                                >
-                                                    {stats.pendingOrdersCount}
-                                                </Badge>
-                                            ) : null
-                                        }
                                         className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
                                     >
                                         Reservations
                                     </Tabs.Tab>
                                     {profile?.isSuperAdmin && (
-                                        <Tabs.Tab 
-                                            value="sales" 
+                                        <Tabs.Tab
+                                            value="sales"
                                             leftSection={<BarChart3 className="h-4 w-4" />}
                                             className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
                                         >
                                             Sales & Analytics
                                         </Tabs.Tab>
                                     )}
-                                    <Tabs.Tab 
-                                        value="archive" 
+                                    <Tabs.Tab
+                                        value="archive"
                                         leftSection={<Archive className="h-4 w-4" />}
                                         className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
                                     >
@@ -210,35 +197,18 @@ export default function AdminPage() {
                                     </Tabs.Tab>
 
                                     {/* Relocated Tabs */}
-                                    <Tabs.Tab 
-                                        value="audit" 
+                                    <Tabs.Tab
+                                        value="audit"
                                         leftSection={<Shield className="h-4 w-4" />}
-                                        rightSection={
-                                            auditLogs.length > 0 ? (
-                                                <Badge 
-                                                    size="xs" 
-                                                    color="indigo" 
-                                                    variant="light" 
-                                                    className="font-bold ml-1"
-                                                >
-                                                    {auditLogs.length}
-                                                </Badge>
-                                            ) : null
-                                        }
                                         className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
                                     >
                                         Audit Logs
                                     </Tabs.Tab>
 
                                     {profile?.isSuperAdmin && (
-                                        <Tabs.Tab 
-                                            value="management" 
+                                        <Tabs.Tab
+                                            value="management"
                                             leftSection={<Sliders className="h-4 w-4" />}
-                                            rightSection={
-                                                <Badge size="xs" color="cyan" variant="light" className="font-bold ml-1">
-                                                    Admin
-                                                </Badge>
-                                            }
                                             className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
                                         >
                                             Management Portal
@@ -246,8 +216,8 @@ export default function AdminPage() {
                                     )}
 
                                     {profile?.isSuperAdmin && (
-                                        <Tabs.Tab 
-                                            value="ai" 
+                                        <Tabs.Tab
+                                            value="ai"
                                             leftSection={<Bot className="h-4 w-4" />}
                                             rightSection={
                                                 <Badge size="xs" color={intelligenceBadgeColor} variant="light" className="font-bold ml-1">
@@ -261,8 +231,8 @@ export default function AdminPage() {
                                     )}
 
                                     {profile?.isSuperAdmin && (
-                                        <Tabs.Tab 
-                                            value="content" 
+                                        <Tabs.Tab
+                                            value="content"
                                             leftSection={<FileText className="h-4 w-4" />}
                                             className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
                                         >
@@ -274,7 +244,7 @@ export default function AdminPage() {
                         </div>
 
                         <Tabs.Panel value="stock">
-                            <StockTab 
+                            <StockTab
                                 parts={parts}
                                 partsLoading={partsLoading}
                                 profile={profile}
@@ -298,7 +268,7 @@ export default function AdminPage() {
                         </Tabs.Panel>
 
                         <Tabs.Panel value="prebuilts" className="mt-6">
-                            <PrebuiltTab 
+                            <PrebuiltTab
                                 prebuiltSystems={prebuiltSystems || []}
                                 prebuiltsLoading={prebuiltsLoading}
                                 parts={parts}
@@ -320,7 +290,7 @@ export default function AdminPage() {
                         </Tabs.Panel>
 
                         <Tabs.Panel value="reservations" className="mt-6">
-                            <ReservationsTab 
+                            <ReservationsTab
                                 orders={orders || []}
                                 ordersLoading={ordersLoading}
                                 onDeleteOrder={handleDeleteOrder}
@@ -330,7 +300,7 @@ export default function AdminPage() {
 
                         {profile?.isSuperAdmin && (
                             <Tabs.Panel value="sales" className="mt-6">
-                                <SalesTab 
+                                <SalesTab
                                     orders={orders || []}
                                     parts={parts}
                                     prebuiltSystems={prebuiltSystems || []}
@@ -339,7 +309,7 @@ export default function AdminPage() {
                         )}
 
                         <Tabs.Panel value="archive" className="mt-6">
-                            <ArchiveTab 
+                            <ArchiveTab
                                 parts={parts}
                                 partsLoading={partsLoading}
                                 prebuiltSystems={prebuiltSystems || []}
@@ -387,30 +357,30 @@ export default function AdminPage() {
                                 <div className="space-y-6">
 
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                            <Tabs
-                                                value={aiSubTab}
-                                                onChange={(val) => val && setAiSubTab(val as 'intelligence' | 'prompts')}
-                                                variant="pills"
-                                                radius="md"
-                                                color="cyan"
-                                            >
-                                                <Tabs.List className="inline-flex flex-wrap gap-1">
-                                                    <Tabs.Tab
-                                                        value="intelligence"
-                                                        leftSection={<Cpu className="h-4 w-4" />}
-                                                        className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
-                                                    >
-                                                        Model Intelligence
-                                                    </Tabs.Tab>
-                                                    <Tabs.Tab
-                                                        value="prompts"
-                                                        leftSection={<FileCode className="h-4 w-4" />}
-                                                        className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
-                                                    >
-                                                        System Prompts
-                                                    </Tabs.Tab>
-                                                </Tabs.List>
-                                            </Tabs>
+                                        <Tabs
+                                            value={aiSubTab}
+                                            onChange={(val) => val && setAiSubTab(val as 'intelligence' | 'prompts')}
+                                            variant="pills"
+                                            radius="md"
+                                            color="cyan"
+                                        >
+                                            <Tabs.List className="inline-flex flex-wrap gap-1">
+                                                <Tabs.Tab
+                                                    value="intelligence"
+                                                    leftSection={<Cpu className="h-4 w-4" />}
+                                                    className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+                                                >
+                                                    Model Intelligence
+                                                </Tabs.Tab>
+                                                <Tabs.Tab
+                                                    value="prompts"
+                                                    leftSection={<FileCode className="h-4 w-4" />}
+                                                    className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+                                                >
+                                                    System Prompts
+                                                </Tabs.Tab>
+                                            </Tabs.List>
+                                        </Tabs>
                                     </div>
 
                                     {aiSubTab === 'intelligence' ? (

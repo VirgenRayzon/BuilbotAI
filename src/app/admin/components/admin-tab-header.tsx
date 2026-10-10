@@ -51,10 +51,10 @@ export interface AdminTabHeaderProps {
 }
 
 interface TabMetadata {
-    title: string;
+    tag: string;
+    titlePrefix: string;
+    titleHighlight: string;
     description: string;
-    icon: React.ComponentType<{ className?: string }>;
-    color: 'cyan' | 'indigo' | 'teal';
 }
 
 export function AdminTabHeader({
@@ -77,98 +77,92 @@ export function AdminTabHeader({
 }: AdminTabHeaderProps) {
     const tabMetaMap: Record<string, TabMetadata> = {
         stock: {
-            title: "Manage Stock & Inventory",
+            tag: "Inventory Control",
+            titlePrefix: "Manage Stock & ",
+            titleHighlight: "Inventory",
             description: "Monitor component availability, update pricing, and restock hardware components.",
-            icon: Package,
-            color: "cyan",
         },
         prebuilts: {
-            title: "Manage Prebuilt Systems",
+            tag: "Curated Systems",
+            titlePrefix: "Manage Prebuilt ",
+            titleHighlight: "Systems",
             description: "Configure curated PC builds, set tier classifications, and manage showcase listings.",
-            icon: Monitor,
-            color: "cyan",
         },
         reservations: {
-            title: "Reservations Management",
+            tag: "Order Pipeline",
+            titlePrefix: "Reservations ",
+            titleHighlight: "Management",
             description: "Live customer reservations, assembly tracking, and pipeline breakdown.",
-            icon: ShoppingBag,
-            color: "cyan",
         },
         sales: {
-            title: "Sales & Analytics Dashboard",
+            tag: "Revenue & Analytics",
+            titlePrefix: "Sales & Analytics ",
+            titleHighlight: "Dashboard",
             description: "Track reservations performance, revenue distributions, and component demand.",
-            icon: BarChart3,
-            color: "cyan",
         },
         archive: {
-            title: "Inventory & Systems Archive",
+            tag: "Decommissioned Assets",
+            titlePrefix: "Inventory & Systems ",
+            titleHighlight: "Archive",
             description: "Review decommissioned components and archived prebuilt systems, or restore them to active stock.",
-            icon: Archive,
-            color: "cyan",
         },
         audit: {
-            title: isSuperAdmin ? "Admin Audit Logs" : "Staff Audit Logs",
+            tag: "Security Ledger",
+            titlePrefix: isSuperAdmin ? "Admin Audit " : "Staff Audit ",
+            titleHighlight: "Logs",
             description: "Review staff activity, inventory changes, and account events.",
-            icon: Shield,
-            color: "cyan",
         },
         management: {
-            title: "Management Portal",
+            tag: "Staff & Access",
+            titlePrefix: "Management ",
+            titleHighlight: "Portal",
             description: "Manage staff credentials, manager keys, and password reset requests.",
-            icon: Sliders,
-            color: "cyan",
         },
         ai: {
-            title: "AI Engine & Directives",
+            tag: "Intelligence Engine",
+            titlePrefix: "AI Engine & ",
+            titleHighlight: "Directives",
             description: "Configure foundation models, provider routing, and agent persona system instructions.",
-            icon: Bot,
-            color: "indigo",
         },
         content: {
-            title: "Site Content & Branding",
+            tag: "Brand & Story",
+            titlePrefix: "Site Content & ",
+            titleHighlight: "Branding",
             description: "Update customer-facing company information, mission statement, and story.",
-            icon: FileText,
-            color: "teal",
         },
     };
 
     const currentMeta = tabMetaMap[currentTab] || {
-        title: "Admin Dashboard",
+        tag: "Admin Portal",
+        titlePrefix: "Admin ",
+        titleHighlight: "Dashboard",
         description: "Master control for system configurations, inventory, and operations.",
-        icon: Package,
-        color: "cyan",
     };
 
-    const TabIcon = currentMeta.icon;
-
     return (
-        <div className="mb-8">
+        <div className="relative mb-4">
             <AnimatePresence mode="wait">
                 <motion.div
                     key={currentTab}
-                    initial={{ opacity: 0, y: 6 }}
+                    initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.22, ease: "easeOut" }}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2"
+                    exit={{ opacity: 0, y: 4 }}
+                    transition={{ duration: 0.2 }}
+                    className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2"
                 >
-                    <div className="flex items-center gap-3.5">
-                        <ThemeIcon size={44} radius="lg" color={currentMeta.color} variant="light">
-                            <TabIcon className={cn(
-                                "h-6 w-6",
-                                currentMeta.color === 'cyan' && "text-cyan-600 dark:text-cyan-400",
-                                currentMeta.color === 'indigo' && "text-indigo-600 dark:text-indigo-400",
-                                currentMeta.color === 'teal' && "text-teal-600 dark:text-teal-400"
-                            )} />
-                        </ThemeIcon>
-                        <div>
-                            <Title order={1} className="text-2xl sm:text-3xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white">
-                                {currentMeta.title}
-                            </Title>
-                            <Text size="xs" className="text-slate-600 dark:text-slate-400 font-medium mt-0.5">
-                                {currentMeta.description}
-                            </Text>
-                        </div>
+                    <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-cyan-600 dark:text-cyan-400 font-headline">
+                            {currentMeta.tag}
+                        </span>
+                        <h1 className="text-2xl sm:text-3xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-slate-100">
+                            {currentMeta.titlePrefix}
+                            <span className="text-cyan-600 dark:text-cyan-400 italic">
+                                {currentMeta.titleHighlight}
+                            </span>
+                        </h1>
+                        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                            {currentMeta.description}
+                        </p>
                     </div>
 
                     {/* Dynamic Action Slots */}

@@ -170,7 +170,7 @@ export function HeroSection({ isDark }: HeroSectionProps) {
             <div className="grid grid-cols-3 gap-4 pt-10 mt-8 border-t border-slate-200/60 dark:border-white/10 max-w-lg">
               <div>
                 <p className="text-xl sm:text-2xl font-bold font-headline text-slate-900 dark:text-slate-100">100%</p>
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pinpoint Fit</p>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Compatibility</p>
               </div>
               <div>
                 <p className="text-xl sm:text-2xl font-bold font-headline text-cyan-600 dark:text-cyan-400">Zero</p>
