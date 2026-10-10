@@ -37,7 +37,7 @@ import { useUserProfile } from "@/context/user-profile";
 import { useLoading } from "@/context/loading-context";
 import { useTheme } from "@/context/theme-provider";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
-import { BuilderFloatingAnalytics } from "@/components/builder-floating-analytics";
+
 import { addPrebuiltSystem } from "@/firebase/database";
 import type { PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
 import { checkCompatibility } from "@/lib/compatibility";
@@ -170,7 +170,7 @@ export default function PrebuiltBuilderPage() {
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
     const [view, setView] = useState<'grid' | 'list'>('grid');
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(12);
+    const [itemsPerPage, setItemsPerPage] = useState(8);
 
     const getCountInBuild = (partName: string) => {
         let count = 0;
@@ -490,7 +490,7 @@ export default function PrebuiltBuilderPage() {
 
                     <div className="grid lg:grid-cols-12 gap-6 xl:gap-8">
 
-                        {/* Your Build — Left Column (Primary Feature) */}
+                        {/* Your Build  ELeft Column (Primary Feature) */}
                         <div className="lg:col-span-3">
                             <div className="flex flex-col gap-6 pb-4">
                                 <YourBuild
@@ -511,7 +511,7 @@ export default function PrebuiltBuilderPage() {
                             </div>
                         </div>
 
-                        {/* Inventory — Right Column */}
+                        {/* Inventory  ERight Column */}
                         <div className={cn(
                             "flex flex-col gap-6 lg:col-span-9"
                         )}>
@@ -630,15 +630,6 @@ export default function PrebuiltBuilderPage() {
                         </div>
                     </div>
 
-                    <BuilderFloatingAnalytics
-                        build={build}
-                        resolution={resolution}
-                        onResolutionChange={setResolution}
-                        workload={workload}
-                        onWorkloadChange={setWorkload}
-                        analysis={analysis}
-                        onApplySuggestion={handleApplySuggestion}
-                    />
                     <BuilderFloatingChat build={build} />
                 </main>
             </div>

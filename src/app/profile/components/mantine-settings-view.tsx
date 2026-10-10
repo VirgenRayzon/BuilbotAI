@@ -165,7 +165,7 @@ export function MantineSettingsView({
           <Paper
             withBorder
             radius="lg"
-            p="xl"
+            p={12}
             className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm h-full flex flex-col justify-between"
           >
             <Stack gap="md">
@@ -300,7 +300,7 @@ export function MantineSettingsView({
           <Paper
             withBorder
             radius="lg"
-            p="xl"
+            p={12}
             className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm h-full flex flex-col justify-between"
           >
             <Stack gap="md">

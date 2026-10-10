@@ -250,9 +250,9 @@ export function NotificationCenter() {
           </div>
         </Popover.Target>
 
-        <Popover.Dropdown className="p-0 bg-white/95 dark:bg-[#111722]/95 border-slate-200 dark:border-white/10 backdrop-blur-xl shadow-2xl rounded-2xl overflow-hidden w-[460px] max-w-[95vw]">
+        <Popover.Dropdown p={0} className="bg-white dark:bg-[#111722] border-0 shadow-lg rounded-md overflow-hidden w-[420px] max-w-[95vw]">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-slate-100 dark:border-white/5">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-white/5">
             <div className="flex items-center gap-2">
               <span className="text-[13px] font-semibold text-slate-900 dark:text-white tracking-tight">
                 System Alerts
@@ -279,7 +279,7 @@ export function NotificationCenter() {
           </div>
 
           {/* Spring Pill Filter Bar (Rauno Freiberg craft inspired) */}
-          <div className="px-3.5 py-2 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01]">
+          <div className="px-3 py-1.5 border-b border-slate-100 dark:border-white/5">
             <div className="flex items-center gap-1.5 py-0.5">
               {CATEGORIES.map((cat) => {
                 const isActive = cat === activeCategory;
@@ -353,7 +353,7 @@ export function NotificationCenter() {
                         onMouseLeave={() => setHoveredId(null)}
                         onClick={() => handleNotificationClick(notification)}
                         className={cn(
-                          "px-4 py-3 cursor-pointer transition-colors relative flex gap-3 items-start select-none",
+                          "px-3 py-2.5 cursor-pointer transition-colors relative flex gap-2.5 items-start select-none",
                           isUnread
                             ? "bg-cyan-500/[0.04] dark:bg-cyan-500/[0.06]"
                             : "bg-transparent",

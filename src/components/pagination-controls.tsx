@@ -1,56 +1,28 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PaginationControlsProps {
     currentPage: number;
     totalPages: number;
-    itemsPerPage: number;
     onPageChange: (page: number) => void;
-    onItemsPerPageChange: (items: number) => void;
+    itemsPerPage?: number;
+    onItemsPerPageChange?: (items: number) => void;
     className?: string;
 }
 
 export function PaginationControls({
     currentPage,
     totalPages,
-    itemsPerPage,
     onPageChange,
-    onItemsPerPageChange,
     className,
 }: PaginationControlsProps) {
     return (
         <div className={cn(
-            "flex items-center justify-between px-3 sm:px-4 py-3 bg-slate-50/70 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl transition-colors",
+            "flex items-center justify-end py-2 transition-colors",
             className
         )}>
-            {/* Items per page selector */}
-            <div className="flex items-center space-x-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                    Items per page
-                </span>
-                <Select
-                    value={itemsPerPage.toString()}
-                    onValueChange={(v) => {
-                        onItemsPerPageChange(Number(v));
-                        onPageChange(1);
-                    }}
-                >
-                    <SelectTrigger className="h-8 w-[72px] bg-white dark:bg-slate-900 border-slate-300 dark:border-white/15 text-slate-900 dark:text-slate-100 font-semibold text-xs rounded-lg shadow-none focus:ring-1 focus:ring-cyan-500">
-                        <SelectValue placeholder={itemsPerPage.toString()} />
-                    </SelectTrigger>
-                    <SelectContent side="top" className="bg-white dark:bg-slate-900 border-slate-200 dark:border-white/15 text-slate-900 dark:text-slate-100 shadow-xl">
-                        {[10, 20, 30, 40, 50].map((pageSize) => (
-                            <SelectItem key={pageSize} value={pageSize.toString()} className="text-xs font-medium focus:bg-cyan-500/10 focus:text-cyan-600 dark:focus:text-cyan-400">
-                                {pageSize}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-
             {/* Pagination Controls & Indicator */}
             <div className="flex items-center space-x-3 sm:space-x-5">
                 <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 font-mono whitespace-nowrap">

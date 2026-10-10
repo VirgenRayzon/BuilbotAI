@@ -102,12 +102,12 @@ export function AiSystemPromptsSettings() {
       <Paper
         withBorder
         radius="lg"
-        p="xl"
+        p={12}
         className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm transition-all"
       >
-        <Stack gap="lg">
+        <Stack gap="sm">
           {/* Header & Sub-selector */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 pb-5">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-200 dark:border-white/10 pb-3">
             <div>
               <Group gap="xs">
                 <ThemeIcon size="md" radius="md" color="indigo" variant="light">
@@ -168,7 +168,7 @@ export function AiSystemPromptsSettings() {
           </div>
 
           {/* Active Prompt Details Card */}
-          <div className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-[#0d131f]/70 p-4 space-y-3">
+          <div className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-[#0d131f]/70 p-3 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <Group gap="xs">
@@ -291,7 +291,7 @@ export function AiSystemPromptsSettings() {
           </div>
 
           {/* Safe Editing Guidelines & Guardrails Tips */}
-          <div className="rounded-xl border border-blue-200 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/20 p-4 space-y-2">
+          <div className="rounded-xl border border-blue-200 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/20 p-3 space-y-2">
             <Group gap="xs">
               <Lightbulb size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
               <span className="font-bold text-xs text-blue-900 dark:text-blue-300">

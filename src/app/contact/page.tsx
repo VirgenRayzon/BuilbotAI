@@ -88,12 +88,12 @@ export default function ContactPage() {
               Our hardware specialists are ready to assist you.
             </p>
 
-            <Stack gap="lg" className="mb-10">
+            <Stack gap="sm" className="mb-6">
               {/* Channel 1: Email */}
               <Paper
                 withBorder
                 radius="xl"
-                p="lg"
+                p={12}
                 className={cn(
                   "transition-all duration-300",
                   isDark
@@ -123,7 +123,7 @@ export default function ContactPage() {
               <Paper
                 withBorder
                 radius="xl"
-                p="lg"
+                p={12}
                 className={cn(
                   "transition-all duration-300",
                   isDark
@@ -153,7 +153,7 @@ export default function ContactPage() {
               <Paper
                 withBorder
                 radius="xl"
-                p="lg"
+                p={12}
                 className={cn(
                   "transition-all duration-300",
                   isDark
@@ -191,7 +191,7 @@ export default function ContactPage() {
             <Paper
               withBorder
               radius="2xl"
-              p={{ base: 'lg', sm: 36 }}
+              p={12}
               className={cn(
                 "backdrop-blur-xl shadow-2xl relative transition-all",
                 isDark
@@ -199,7 +199,7 @@ export default function ContactPage() {
                   : "bg-white/95 border-slate-200 shadow-slate-200/70"
               )}
             >
-              <div className="mb-8">
+              <div className="mb-4">
                 <Title order={3} className="text-2xl sm:text-3xl font-bold font-headline uppercase tracking-tight text-slate-900 dark:text-slate-100 mb-2">
                   Send a Message
                 </Title>
@@ -237,7 +237,7 @@ export default function ContactPage() {
                 </Alert>
               ) : (
                 <form onSubmit={handleSubmit}>
-                  <Stack gap="md">
+                  <Stack gap="sm">
                     <div className="grid sm:grid-cols-2 gap-4">
                       <TextInput
                         label="Full Name"

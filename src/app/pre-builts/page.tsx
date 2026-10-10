@@ -153,12 +153,7 @@ export default function PreBuiltsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Paper
-              withBorder
-              radius="xl"
-              p="md"
-              className="bg-white/60 dark:bg-[#111722]/80 backdrop-blur-xl border-slate-200/80 dark:border-white/10 shadow-sm"
-            >
+            <>
               <div className="mb-4">
                 <InventoryToolbar
                   categories={categories}
@@ -229,7 +224,7 @@ export default function PreBuiltsPage() {
                   </Text>
                 </Paper>
               )}
-            </Paper>
+            </>
           </motion.div>
         </main>
       </div>

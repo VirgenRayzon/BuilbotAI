@@ -220,7 +220,7 @@ export function UserNotifications() {
           </div>
         </Popover.Target>
 
-        <Popover.Dropdown className="p-0 bg-white/95 dark:bg-[#111722]/95 border-slate-200 dark:border-white/10 backdrop-blur-xl shadow-2xl rounded-2xl overflow-hidden w-[460px] max-w-[95vw]">
+        <Popover.Dropdown p={0} className="bg-white/95 dark:bg-[#111722]/95 border-slate-200 dark:border-white/10 backdrop-blur-xl shadow-2xl rounded-2xl overflow-hidden w-[460px] max-w-[95vw]">
           {/* Header */}
           <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-slate-100 dark:border-white/5">
             <div className="flex items-center gap-2">
@@ -426,17 +426,18 @@ export function UserNotifications() {
           </div>
 
           {/* Footer Link */}
-          <div className="p-2 border-t border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
+          <div className="border-t border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
             <Button
               component={Link}
               href="/profile?tab=reservations"
               variant="subtle"
               color="cyan"
-              size="xs"
+              size="sm"
+              radius={0}
               fullWidth
               leftSection={<Package size={13} />}
               onClick={() => setPopoverOpened(false)}
-              className="font-semibold text-xs tracking-wide h-8 hover:bg-cyan-500/10"
+              className="font-semibold text-xs tracking-wide h-12 hover:bg-cyan-500/10"
             >
               View Your Reservations
             </Button>

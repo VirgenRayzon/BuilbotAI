@@ -34,7 +34,7 @@ export function RecommendationTab({
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="grid lg:grid-cols-12 gap-8 h-full"
+            className="grid lg:grid-cols-12 gap-5 xl:gap-6 h-full"
         >
             {/* Left Column - Width matched to "Your Build" (lg:col-span-3) */}
             <aside className="lg:col-span-3 lg:sticky lg:top-24 self-start">
@@ -44,7 +44,7 @@ export function RecommendationTab({
                     shadow="xl"
                     className="w-full overflow-hidden bg-white/95 dark:bg-[#0d1117]/95 border-slate-200 dark:border-cyan-500/20 backdrop-blur-xl relative shadow-xl dark:shadow-[0_0_35px_rgba(0,0,0,0.5)]"
                 >
-                    <Box className="p-4 sm:p-5 bg-slate-50/90 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/10">
+                    <Box className="p-3 bg-slate-50/90 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/10">
                         <Group justify="space-between" align="center">
                             <Group gap="xs" align="center">
                                 <ThemeIcon size={32} radius="md" variant="light" color="cyan" className="shadow-sm">
@@ -57,7 +57,7 @@ export function RecommendationTab({
                         </Group>
                     </Box>
 
-                    <Box className="p-4 sm:p-5">
+                    <Box className="p-3">
                         <ChatForm
                             getRecommendations={handleGetRecommendations}
                             isPending={isPending}

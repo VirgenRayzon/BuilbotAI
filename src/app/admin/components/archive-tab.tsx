@@ -106,13 +106,7 @@ export function ArchiveTab({
   return (
     <div className="mt-6 space-y-6">
       {/* Sub-tabs Selection Header */}
-      <Paper
-        withBorder
-        radius="lg"
-        p="md"
-        className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <Tabs
             value={archiveSubTab}
             onChange={(val) => val && setArchiveSubTab(val as 'parts' | 'prebuilts')}
@@ -120,7 +114,7 @@ export function ArchiveTab({
             radius="md"
             color="cyan"
           >
-            <Tabs.List className="bg-slate-100 dark:bg-[#141a23] p-1 border border-slate-200 dark:border-white/10 inline-flex flex-wrap gap-1">
+            <Tabs.List className="inline-flex flex-wrap gap-1">
               <Tabs.Tab
                 value="parts"
                 leftSection={<Layers className="h-4 w-4" />}
@@ -137,14 +131,13 @@ export function ArchiveTab({
               </Tabs.Tab>
             </Tabs.List>
           </Tabs>
-        </div>
-      </Paper>
+      </div>
 
       {/* --- Tab 1: Archived Parts --- */}
       {archiveSubTab === 'parts' && (
         <div className="space-y-4 animate-in fade-in duration-200">
           {/* Enclosed Categories & Bulk Filter Bar */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-muted/30 p-4 rounded-xl border border-white/5 backdrop-blur-md">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-headline font-bold flex items-center gap-2">
                 <Archive className="h-5 w-5 text-primary" />
@@ -246,7 +239,7 @@ export function ArchiveTab({
       {archiveSubTab === 'prebuilts' && (
         <div className="space-y-4 animate-in fade-in duration-200">
           {/* Enclosed Tiers & Bulk Filter Bar */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-muted/30 p-4 rounded-xl border border-white/5 backdrop-blur-md">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-headline font-bold flex items-center gap-2">
                 <Archive className="h-5 w-5 text-primary" />

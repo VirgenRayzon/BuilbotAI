@@ -83,7 +83,7 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
         <Paper
           withBorder
           radius="lg"
-          p={{ base: "lg", sm: "xl" }}
+          p={12}
           className="relative overflow-hidden bg-white/90 dark:bg-[#111722]/95 border-slate-200 dark:border-white/10 shadow-sm backdrop-blur-xl"
         >
           {/* Subtle Accent Glow */}

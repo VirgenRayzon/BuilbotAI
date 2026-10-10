@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import {
   Card,
@@ -28,7 +27,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { getMissingParts } from "@/lib/prebuilt-utils";
 import { PrebuiltCardSpecs } from "./prebuilt-card-specs";
-import { SmartImageMagnifier } from "./smart-image-magnifier";
+import { OptimizedImage } from "./ui/optimized-image";
 import { useFirestore } from "@/firebase";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { reservePrebuiltSystem } from "@/app/prebuilt-reservation-actions";
@@ -217,18 +216,18 @@ export function PrebuiltSystemCard({
       <Card
         withBorder
         radius="lg"
-        padding="md"
+        padding={0}
         className={cn(
-          "flex flex-col justify-between h-full relative group cursor-pointer transition-all duration-300",
+          "flex flex-col justify-between h-full relative group cursor-pointer overflow-hidden transition-all duration-300",
           "bg-white/80 dark:bg-[#141a23]/90 hover:shadow-md hover:-translate-y-1",
           "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
           (!isComplete || (!loadingStock && !isInStock)) && "opacity-75 grayscale-[0.5]"
         )}
       >
         {/* Top Content Area */}
-        <Stack gap="xs">
+        <Stack gap={0}>
           {/* Tier & Stock Status Badges */}
-          <Group justify="space-between" align="center" wrap="nowrap">
+          <Group justify="space-between" align="center" wrap="nowrap" className="px-3 pt-3 pb-2">
             <Badge
               size="xs"
               variant="light"
@@ -267,20 +266,22 @@ export function PrebuiltSystemCard({
           {/* Clean Rounded Image Canvas */}
           <Box
             className={cn(
-              "aspect-square relative w-full overflow-hidden rounded-xl",
-              "bg-slate-100/70 dark:bg-white/[0.03] border border-slate-200/50 dark:border-white/5",
-              "transition-colors duration-300 group-hover:bg-slate-100 dark:group-hover:bg-white/[0.05]"
+              "aspect-[4/3] relative w-full overflow-hidden",
+              "bg-white border-y border-slate-200/70 dark:border-white/10"
             )}
           >
-            <SmartImageMagnifier
+            <OptimizedImage
               src={getOptimizedStorageUrl(system.imageUrl, shouldCorruptImages) || "/placeholder-system.png"}
               alt={system.name}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              fill
+              unoptimized
+              sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
+              className="object-contain p-2"
             />
           </Box>
 
           {/* Title & Description */}
-          <Stack gap={4}>
+          <Stack gap={4} className="px-3 pt-3">
             <Text
               size="md"
               fw={700}
@@ -296,24 +297,26 @@ export function PrebuiltSystemCard({
           </Stack>
 
           {/* Collapsible Component Breakdown */}
-          <Collapse in={isExpanded}>
-            <Paper
-              withBorder
-              radius="md"
-              p="xs"
-              mt="xs"
-              className="bg-slate-50/70 dark:bg-white/[0.02] border-slate-200/60 dark:border-white/5"
-            >
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase" className="tracking-wider mb-1.5 text-[10px]">
-                Component Breakdown
-              </Text>
-              <PrebuiltCardSpecs components={system.components} expanded={true} />
-            </Paper>
-          </Collapse>
+          <div className="px-3">
+            <Collapse in={isExpanded}>
+              <Paper
+                withBorder
+                radius="md"
+                p="xs"
+                mt="xs"
+                className="bg-slate-50/70 dark:bg-white/[0.02] border-slate-200/60 dark:border-white/5"
+              >
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase" className="tracking-wider mb-1.5 text-[10px]">
+                  Component Breakdown
+                </Text>
+                <PrebuiltCardSpecs components={system.components} expanded={true} />
+              </Paper>
+            </Collapse>
+          </div>
         </Stack>
 
         {/* Bottom Price & Inset Action Area */}
-        <Stack gap="xs" mt="md">
+        <Stack gap="xs" className="px-3 pt-3 pb-3">
           {/* Price & Expand Chevron */}
           <Group justify="space-between" align="center">
             <Stack gap={0}>

@@ -6,7 +6,7 @@ import {
     Archive, Trash2, BarChart3, ShoppingBag,
     Shield, Sliders, Bot, FileText, Cpu, FileCode
 } from 'lucide-react';
-import { Tabs, Badge, Paper, Title, Text, SegmentedControl, ThemeIcon } from '@mantine/core';
+import { Tabs, Badge, Title, Text, SegmentedControl, ThemeIcon } from '@mantine/core';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/theme-provider";
@@ -386,14 +386,7 @@ export default function AdminPage() {
                             <Tabs.Panel value="ai" className="mt-6">
                                 <div className="space-y-6">
 
-                                    {/* Sub-Tab Bar (matching Sales & Analytics Dashboard without export button) */}
-                                    <Paper
-                                        withBorder
-                                        radius="lg"
-                                        p="md"
-                                        className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-                                    >
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                             <Tabs
                                                 value={aiSubTab}
                                                 onChange={(val) => val && setAiSubTab(val as 'intelligence' | 'prompts')}
@@ -401,7 +394,7 @@ export default function AdminPage() {
                                                 radius="md"
                                                 color="cyan"
                                             >
-                                                <Tabs.List className="bg-slate-100 dark:bg-[#141a23] p-1 border border-slate-200 dark:border-white/10 inline-flex flex-wrap gap-1">
+                                                <Tabs.List className="inline-flex flex-wrap gap-1">
                                                     <Tabs.Tab
                                                         value="intelligence"
                                                         leftSection={<Cpu className="h-4 w-4" />}
@@ -418,8 +411,7 @@ export default function AdminPage() {
                                                     </Tabs.Tab>
                                                 </Tabs.List>
                                             </Tabs>
-                                        </div>
-                                    </Paper>
+                                    </div>
 
                                     {aiSubTab === 'intelligence' ? (
                                         <AiModelSettings />

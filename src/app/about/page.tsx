@@ -187,13 +187,13 @@ export default function AboutPage() {
         </div>
 
         {/* Content Layout: Sticky Navigation + Story Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-start relative">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-start relative">
           {/* Left Column: Floating Quick Navigation */}
           <aside className="col-span-1 md:col-span-4 hidden md:block sticky top-32">
             <Paper
               withBorder
               radius="2xl"
-              p="xl"
+              p={12}
               className={cn(
                 'backdrop-blur-xl transition-all shadow-lg',
                 isDark
@@ -201,7 +201,7 @@ export default function AboutPage() {
                   : 'bg-white/95 border-slate-200 shadow-slate-200/60'
               )}
             >
-              <Group gap="xs" className="mb-5 pb-3 border-b border-slate-200/60 dark:border-white/10">
+              <Group gap="xs" className="mb-3 pb-3 border-b border-slate-200/60 dark:border-white/10">
                 <ThemeIcon size={28} radius="md" variant="light" color="cyan">
                   <FileText size={15} />
                 </ThemeIcon>
@@ -217,7 +217,7 @@ export default function AboutPage() {
                     href={`#${section.id}`}
                     onClick={() => setActiveSectionId(section.id)}
                     className={cn(
-                      'px-4 py-3 rounded-xl text-sm font-bold flex items-center justify-between transition-all duration-200',
+                      'px-3 py-2 rounded-xl text-sm font-bold flex items-center justify-between transition-all duration-200',
                       activeSectionId === section.id
                         ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-headline'
                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/70 dark:hover:bg-white/5'
@@ -229,7 +229,7 @@ export default function AboutPage() {
                 ))}
               </nav>
 
-              <div className="mt-8 pt-6 border-t border-slate-200/60 dark:border-white/10">
+              <div className="mt-4 pt-4 border-t border-slate-200/60 dark:border-white/10">
                 <Text size="xs" c="dimmed" mb="sm" fw={600}>
                   Ready to test our compatibility engine?
                 </Text>
@@ -250,13 +250,13 @@ export default function AboutPage() {
           </aside>
 
           {/* Right Column: Editorial Sections */}
-          <div className="col-span-1 md:col-span-8 space-y-12">
+          <div className="col-span-1 md:col-span-8 space-y-6">
             {sectionsToRender.map((section, sIndex) => (
               <section key={section.id} id={section.id} className="scroll-mt-32">
                 <Paper
                   withBorder
                   radius="2xl"
-                  p={{ base: 'xl', sm: 36 }}
+                  p={12}
                   className={cn(
                     'transition-all duration-300 shadow-xl',
                     isDark
@@ -264,7 +264,7 @@ export default function AboutPage() {
                       : 'bg-white/95 border-slate-200 shadow-slate-200/60'
                   )}
                 >
-                  <div className="flex items-center gap-3 mb-6">
+                  <div className="flex items-center gap-3 mb-3">
                     <span className="text-xs font-black uppercase tracking-widest text-cyan-600 dark:text-cyan-400">
                       0{sIndex + 1}
                     </span>
@@ -274,14 +274,14 @@ export default function AboutPage() {
                     </Title>
                   </div>
 
-                  <div className="prose prose-slate dark:prose-invert max-w-none text-slate-600 dark:text-slate-300 text-base sm:text-lg leading-relaxed mb-6 font-medium">
+                  <div className="prose prose-slate dark:prose-invert max-w-none text-slate-600 dark:text-slate-300 text-base sm:text-lg leading-relaxed mb-4 font-medium">
                     <ReactMarkdown>{section.content}</ReactMarkdown>
                   </div>
 
                   {section.imageUrl && (
                     <div
                       onClick={() => setSelectedImage(section.imageUrl!)}
-                      className="cursor-zoom-in relative rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 mb-8 group"
+                      className="cursor-zoom-in relative rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 mb-4 group"
                     >
                       <img
                         src={section.imageUrl}
@@ -298,13 +298,13 @@ export default function AboutPage() {
 
                   {/* Sub-Items (Feature Grid) */}
                   {section.subItems && section.subItems.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8 pt-8 border-t border-slate-200/60 dark:border-white/10">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-200/60 dark:border-white/10">
                       {section.subItems.map((sub, subIdx) => (
                         <Paper
                           key={subIdx}
                           withBorder
                           radius="xl"
-                          p="lg"
+                          p={12}
                           className={cn(
                             'transition-all',
                             isDark

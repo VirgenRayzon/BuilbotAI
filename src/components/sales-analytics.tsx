@@ -323,13 +323,7 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
     return (
         <div className="space-y-6">
             {/* Top Navigation & Excel Export Bar */}
-            <Paper
-                withBorder
-                radius="lg"
-                p="md"
-                className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-            >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     {/* Mantine Sub-Tabs */}
                     <Tabs
                         value={activeTab}
@@ -338,7 +332,7 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                         radius="md"
                         color="cyan"
                     >
-                        <Tabs.List className="bg-slate-100 dark:bg-[#141a23] p-1 border border-slate-200 dark:border-white/10 inline-flex flex-wrap gap-1">
+                        <Tabs.List className="inline-flex flex-wrap gap-1">
                             <Tabs.Tab
                                 value="overview"
                                 leftSection={<TrendingUp className="h-4 w-4" />}
@@ -369,8 +363,7 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                     >
                         Export to Excel
                     </Button>
-                </div>
-            </Paper>
+            </div>
 
             {/* TAB 1: Performance & Revenue Overview */}
             {activeTab === 'overview' && (

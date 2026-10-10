@@ -195,7 +195,7 @@ export function InventoryPartCard({
                         </div>
 
                         {isSelectionMode ? (
-                            <div className="aspect-square relative w-full overflow-hidden rounded-lg bg-muted/10 border border-white/5 p-2 cursor-pointer">
+                            <div className="aspect-square relative -mx-2 md:-mx-3.5 w-auto overflow-hidden bg-white border-y border-slate-200 p-2 cursor-pointer">
                                 <OptimizedImage
                                     src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || '/placeholder-part.png'}
                                     alt={part.name}
@@ -210,17 +210,14 @@ export function InventoryPartCard({
                                 initialData={part}
                                 onSave={(data) => onUpdatePart(part.id, part.category, data)}
                             >
-                                <div className="aspect-square relative w-full overflow-hidden rounded-lg bg-muted/10 border border-white/5 p-2 cursor-pointer">
+                                <div className="aspect-square relative -mx-2 md:-mx-3.5 w-auto overflow-hidden bg-white border-y border-slate-200 p-2 cursor-pointer">
                                     <OptimizedImage
                                         src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || '/placeholder-part.png'}
                                         alt={part.name}
                                         fill
                                         unoptimized
                                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                        className={cn(
-                                            "transition-transform duration-500",
-                                            part.category === 'Headset' ? "object-cover scale-125" : "object-contain"
-                                        )}
+                                        className="object-contain transition-transform duration-500"
                                     />
                                 </div>
                             </AddPartDialog>

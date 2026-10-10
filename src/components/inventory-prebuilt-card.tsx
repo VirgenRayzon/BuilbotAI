@@ -6,6 +6,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import Link from 'next/link';
 import {
   Card,
   Text,
@@ -101,7 +102,7 @@ export function InventoryPrebuiltCard({
       <Card
         withBorder
         radius="lg"
-        padding="md"
+        padding={12}
         className={cn(
           "flex flex-col justify-between h-full relative group transition-all duration-300",
           "bg-white/80 dark:bg-[#141a23]/90 hover:shadow-md hover:-translate-y-1",
@@ -249,9 +250,8 @@ export function InventoryPrebuiltCard({
           {/* Clean Rounded Image Canvas */}
           <Box
             className={cn(
-              "aspect-square relative w-full overflow-hidden rounded-xl",
-              "bg-slate-100/70 dark:bg-white/[0.03] border border-slate-200/50 dark:border-white/5",
-              "transition-colors duration-300 group-hover:bg-slate-100 dark:group-hover:bg-white/[0.05]"
+              "aspect-square relative -mx-3 w-auto overflow-hidden",
+              "bg-white border-y border-slate-200"
             )}
           >
             <OptimizedImage
@@ -260,7 +260,7 @@ export function InventoryPrebuiltCard({
               fill
               unoptimized
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              className="object-contain p-2"
             />
           </Box>
 
@@ -348,36 +348,35 @@ export function InventoryPrebuiltCard({
           </Group>
 
           {/* Side-by-side Action Buttons: Edit System & Launch Page */}
-          <Group gap="xs" grow mt="xs">
+          <Group gap="xs" mt="xs" wrap="nowrap">
             <AddPrebuiltDialog
               initialData={system}
               parts={parts}
               onSave={(data) => onUpdate(system.id, data)}
             >
-              <Button
+              <ActionIcon
                 variant="light"
                 color="cyan"
-                size="sm"
+                size="lg"
                 radius="md"
-                leftSection={<Edit3 size={14} />}
-                className="font-headline font-bold text-xs uppercase tracking-wider h-8"
+                aria-label="Edit system"
+                title="Edit system"
+                className="h-8 w-8 shrink-0"
                 onClick={(e) => e.stopPropagation()}
               >
-                Edit
-              </Button>
+                <Edit3 size={14} />
+              </ActionIcon>
             </AddPrebuiltDialog>
 
             <Button
-              component="a"
-              href={`/pre-builts/${system.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
+              component={Link}
+              href={`/pre-builts/${system.id}?from=admin`}
               variant="outline"
               color="gray"
               size="sm"
               radius="md"
               rightSection={<ExternalLink size={14} />}
-              className="font-headline font-bold text-xs uppercase tracking-wider h-8 border-slate-200 dark:border-white/10 hover:border-cyan-500/40 text-slate-700 dark:text-slate-200"
+              className="flex-1 font-headline font-bold text-xs uppercase tracking-wider h-8 border-slate-200 dark:border-white/10 hover:border-cyan-500/40 text-slate-700 dark:text-slate-200"
               onClick={(e) => e.stopPropagation()}
             >
               Launch Page

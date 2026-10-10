@@ -180,7 +180,7 @@ export function AboutManagement() {
 
   return (
     <Card className="border-white/5 bg-muted/10 overflow-hidden">
-      <CardHeader className="pb-4 border-b border-white/5">
+      <CardHeader className="p-3 border-b border-white/5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
@@ -197,7 +197,7 @@ export function AboutManagement() {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-6 space-y-6">
+      <CardContent className="p-3 space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Main Title</Label>

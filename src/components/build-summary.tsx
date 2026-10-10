@@ -142,7 +142,7 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
             className="w-full overflow-hidden bg-white/95 dark:bg-[#0d1117]/95 border-slate-200 dark:border-cyan-500/20 backdrop-blur-xl relative shadow-xl dark:shadow-[0_0_35px_rgba(0,0,0,0.5)]"
         >
             {/* Header Box */}
-            <Box className="p-5 md:p-6 bg-slate-50/90 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/10">
+            <Box className="p-3 bg-slate-50/90 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/10">
                 <Group justify="space-between" align="center">
                     <Group gap="xs" align="center">
                         <ThemeIcon size={32} radius="md" variant="light" color="cyan" className="shadow-sm">
@@ -180,7 +180,7 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                 </Group>
             </Box>
 
-            <div className="p-5 md:p-6 space-y-8">
+            <div className="p-3 space-y-5">
                 <AnimatePresence mode="wait">
                     {/* Error State */}
                     {error ? (
@@ -264,7 +264,7 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                             )}
 
                             {/* Progressive Slots Grid */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                                 {COMPONENT_SLOTS.map((slot, index) => {
                                     const compData = build ? (build as any)[slot.key] : null;
                                     const isSlotLoaded = Boolean(compData && compData.model);
@@ -322,9 +322,9 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                         >
                             <Paper
                                 radius="md"
-                                p="xl"
+                                p={12}
                                 withBorder
-                                className="py-14 px-8 border-2 border-dashed border-slate-300 dark:border-white/15 rounded-2xl bg-slate-50/60 dark:bg-slate-900/40 text-center"
+                                className="py-8 px-3 border-2 border-dashed border-slate-300 dark:border-white/15 rounded-2xl bg-slate-50/60 dark:bg-slate-900/40 text-center"
                             >
                                 <div className="flex flex-col items-center justify-center space-y-4 max-w-md mx-auto w-full">
                                     <ThemeIcon size={76} radius="xl" variant="light" color="cyan" className="bg-cyan-500/10 dark:bg-cyan-500/10 border border-cyan-500/20">
@@ -347,11 +347,11 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                             key="content"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="space-y-8"
+                            className="space-y-5"
                         >
                             {/* Top Panel Grid: Price Total & Save Control */}
-                            <div className="grid md:grid-cols-2 gap-6">
-                                <div className="h-fit self-start bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-white/10 p-5 rounded-2xl backdrop-blur-xl flex items-center gap-6 shadow-sm">
+                            <div className="grid md:grid-cols-2 gap-3">
+                                <div className="h-fit self-start bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-white/10 p-3 rounded-xl backdrop-blur-xl flex items-center gap-3 shadow-sm">
                                     <div className="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20 w-16 h-16 flex items-center justify-center select-none shrink-0">
                                         <span className="text-3xl font-black font-sans text-cyan-600 dark:text-cyan-400 leading-none">₱</span>
                                     </div>
@@ -363,7 +363,7 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                     </div>
                                 </div>
 
-                                <div className="bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-white/10 p-5 rounded-2xl backdrop-blur-xl flex flex-col justify-between gap-3 shadow-sm">
+                                <div className="bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-white/10 p-3 rounded-xl backdrop-blur-xl flex flex-col justify-between gap-3 shadow-sm">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20 shrink-0">
                                             <Sparkles className="h-5 w-5 text-emerald-500" />
@@ -404,7 +404,7 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                             </div>
 
                             {/* Components Grid */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                                 {COMPONENT_SLOTS.map((slot, index) => {
                                     const compData = (build as any)[slot.key];
                                     return (

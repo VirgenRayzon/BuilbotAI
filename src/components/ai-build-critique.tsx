@@ -223,7 +223,7 @@ export function AIBuildCritique({
             shadow="xl"
             className={cn("w-full overflow-hidden bg-white/95 dark:bg-[#0d1117]/95 border-slate-200 dark:border-cyan-500/20 backdrop-blur-xl relative shadow-xl dark:shadow-[0_0_35px_rgba(0,0,0,0.5)]", className !== undefined ? className : "mt-6")}
         >
-            <Box className="p-5 md:p-6 bg-slate-50/90 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/10">
+            <Box className="p-3 bg-slate-50/90 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/10">
                 <Group justify="space-between" align="center">
                     <Group gap="xs" align="center">
                         <ThemeIcon size={32} radius="md" variant="light" color="cyan" className="shadow-sm">
@@ -259,13 +259,13 @@ export function AIBuildCritique({
                     )}
                 </Group>
             </Box>
-            <div className="p-5 md:p-6 space-y-6">
+            <div className="p-3 space-y-4">
                 {!analysis && !loading && !error && (
                     <Paper
                         radius="md"
-                        p="xl"
+                        p={12}
                         withBorder
-                        className="py-14 px-8 border-2 border-dashed border-slate-300 dark:border-white/15 rounded-2xl bg-slate-50/60 dark:bg-slate-900/40 text-center"
+                        className="py-8 px-3 border-2 border-dashed border-slate-300 dark:border-white/15 rounded-2xl bg-slate-50/60 dark:bg-slate-900/40 text-center"
                     >
                         <Stack align="center" justify="center" gap="md" className="w-full">
                             <ThemeIcon size={76} radius="xl" variant="light" color="cyan" className="bg-cyan-500/10 dark:bg-cyan-500/10 border border-cyan-500/20">
@@ -385,7 +385,7 @@ export function AIBuildCritique({
 
                         {/* Strengths and Opportunities */}
                         <div className="space-y-4">
-                            <div className="bg-emerald-500/10 rounded-lg p-5 border border-emerald-500/20">
+                            <div className="bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/20">
                                 <h4 className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-2 mb-3">
                                     <ThumbsUp className="h-5 w-5" /> Strengths
                                 </h4>
@@ -395,7 +395,7 @@ export function AIBuildCritique({
                                     ))}
                                 </ul>
                             </div>
-                            <div className="bg-blue-500/10 rounded-lg p-5 border border-blue-500/20">
+                            <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/20">
                                 <h4 className="font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-2 mb-3">
                                     <Sparkles className="h-5 w-5" /> Optimization Opportunities
                                 </h4>
@@ -412,7 +412,7 @@ export function AIBuildCritique({
                             <h4 className="font-semibold flex items-center gap-2">
                                 <AlertTriangle className="h-5 w-5 text-yellow-500" /> Bottleneck Analysis
                             </h4>
-                            <div className="text-sm text-muted-foreground leading-relaxed bg-muted/30 p-4 rounded-lg border prose prose-sm dark:prose-invert max-w-none">
+                            <div className="text-sm text-muted-foreground leading-relaxed bg-muted/30 p-3 rounded-lg border prose prose-sm dark:prose-invert max-w-none">
                                 <ReactMarkdown>{analysis.bottleneck?.analysis || analysis.bottleneckAnalysis || ""}</ReactMarkdown>
                             </div>
                         </div>
@@ -432,7 +432,7 @@ export function AIBuildCritique({
                                                 <p className="text-[10px] font-black uppercase tracking-widest text-foreground/80">{est.game}</p>
                                                 <Gamepad2 className="h-3 w-3 text-muted-foreground opacity-50" />
                                             </div>
-                                            <div className="p-4 space-y-3 flex-1 flex flex-col">
+                                            <div className="p-3 space-y-3 flex-1 flex flex-col">
                                                 <div className="flex items-center justify-between">
                                                     <Badge variant="secondary" className="text-[9px] font-bold px-1.5 py-0 h-4 border-primary/10">{est.settings}</Badge>
                                                     <div className="flex items-baseline gap-1">
@@ -471,7 +471,7 @@ export function AIBuildCritique({
                                     {analysis.suggestions.map((sug: any, idx: number) => (
                                         <div
                                             key={idx}
-                                            className="bg-card border rounded-xl p-4 shadow-sm hover:border-primary/20 transition-all group flex flex-col gap-3 relative"
+                                            className="bg-card border rounded-xl p-3 shadow-sm hover:border-primary/20 transition-all group flex flex-col gap-3 relative"
                                         >
                                             <div className="flex flex-wrap items-center gap-2 mb-1">
                                                 <span className="line-through text-muted-foreground text-xs">{sug.originalComponent}</span>

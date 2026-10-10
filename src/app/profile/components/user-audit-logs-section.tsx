@@ -66,7 +66,7 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {

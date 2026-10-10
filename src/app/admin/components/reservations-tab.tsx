@@ -139,7 +139,7 @@ export function ReservationsTab({
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'price-high' | 'price-low'>('newest');
     const [orderCurrentPage, setOrderCurrentPage] = useState(1);
-    const [orderItemsPerPage, setOrderItemsPerPage] = useState(10); // 5 per row x 2 rows default
+    const [orderItemsPerPage, setOrderItemsPerPage] = useState(8);
     const [expandedCardIds, setExpandedCardIds] = useState<Record<string, boolean>>({});
     const [showAllSpecs, setShowAllSpecs] = useState(false);
 
@@ -367,10 +367,10 @@ export function ReservationsTab({
                 <Paper
                     withBorder
                     radius="lg"
-                    p="lg"
+                    p={12}
                     className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm overflow-hidden"
                 >
-                    <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+                    <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
                         {/* Left: Donut Pie Chart */}
                         <div className="w-full lg:w-[320px] flex flex-col items-center justify-center shrink-0">
                             <div className="relative w-full h-[220px] flex items-center justify-center">
@@ -423,9 +423,6 @@ export function ReservationsTab({
                                 </div>
                             </div>
 
-                            <Text size="xs" className="text-slate-500 dark:text-slate-400 font-mono mt-1 text-center">
-                                Click any slice to filter
-                            </Text>
                         </div>
 
                         {/* Right: 4 Interactive Status Metric Cards with Framer Motion */}
@@ -441,7 +438,7 @@ export function ReservationsTab({
                                 <Paper
                                     withBorder
                                     radius="lg"
-                                    p="lg"
+                                    p={12}
                                     onClick={() => setStatusFilter(statusFilter === 'pending' ? 'all' : 'pending')}
                                     className={cn(
                                         "bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md transition-all group cursor-pointer relative overflow-hidden flex flex-col justify-between h-full",
@@ -518,7 +515,7 @@ export function ReservationsTab({
                                 <Paper
                                     withBorder
                                     radius="lg"
-                                    p="lg"
+                                    p={12}
                                     onClick={() => setStatusFilter(statusFilter === 'building' ? 'all' : 'building')}
                                     className={cn(
                                         "bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md transition-all group cursor-pointer relative overflow-hidden flex flex-col justify-between h-full",
@@ -595,7 +592,7 @@ export function ReservationsTab({
                                 <Paper
                                     withBorder
                                     radius="lg"
-                                    p="lg"
+                                    p={12}
                                     onClick={() => setStatusFilter(statusFilter === 'finished building' || statusFilter === 'finished' ? 'all' : 'finished building')}
                                     className={cn(
                                         "bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md transition-all group cursor-pointer relative overflow-hidden flex flex-col justify-between h-full",
@@ -672,7 +669,7 @@ export function ReservationsTab({
                                 <Paper
                                     withBorder
                                     radius="lg"
-                                    p="lg"
+                                    p={12}
                                     onClick={() => setStatusFilter(statusFilter === 'cancelled' ? 'all' : 'cancelled')}
                                     className={cn(
                                         "bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md transition-all group cursor-pointer relative overflow-hidden flex flex-col justify-between h-full",
@@ -743,13 +740,7 @@ export function ReservationsTab({
             </motion.div>
 
             {/* SECTION 2: Search Bar & Dropdown Filter Controls */}
-            <Paper
-                withBorder
-                radius="lg"
-                p="md"
-                className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
-            >
-                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
                     {/* Search Input on the Left */}
                     <div className="flex-1 max-w-md">
                         <TextInput
@@ -845,8 +836,7 @@ export function ReservationsTab({
                             </Button>
                         )}
                     </div>
-                </div>
-            </Paper>
+            </div>
 
             {/* SECTION 3: Cards Grid */}
             {ordersLoading ? (
@@ -857,7 +847,7 @@ export function ReservationsTab({
                     <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Loading customer reservations...</p>
                 </div>
             ) : paginatedOrders.length > 0 ? (
-                <SimpleGrid cols={{ base: 1, sm: 2, lg: 3, xl: 4, "2xl": 5 } as any} spacing="md">
+                <SimpleGrid cols={{ base: 1, sm: 2, lg: 3, xl: 4 } as any} spacing="sm">
                     {paginatedOrders.map(order => {
                         const currentStatus = order.status || 'pending';
                         const isPrebuilt = (order as any).type === 'prebuilt';
@@ -877,7 +867,7 @@ export function ReservationsTab({
                                 key={order.id}
                                 withBorder
                                 radius="lg"
-                                p="md"
+                                p={12}
                                 className={cn(
                                     "flex flex-col justify-between transition-all duration-300 relative group min-w-0",
                                     "bg-white/80 dark:bg-[#141a23]/90 hover:shadow-md hover:-translate-y-1",
@@ -885,7 +875,7 @@ export function ReservationsTab({
                                     currentStatus === 'cancelled' && "opacity-75 grayscale-[0.3]"
                                 )}
                             >
-                                <div className="space-y-3.5 min-w-0">
+                                <div className="space-y-2.5 min-w-0">
                                     {/* Card Header: Type Icon, Email, Status Badge, and Delete Button */}
                                     <div className="flex items-start justify-between gap-2 min-w-0">
                                         <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -913,7 +903,7 @@ export function ReservationsTab({
                                                     </Text>
                                                 </Tooltip>
 
-                                                <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                                <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                                                     {isPrebuilt ? (
                                                         <Badge
                                                             variant="light"
@@ -972,7 +962,7 @@ export function ReservationsTab({
                                         withBorder
                                         radius="md"
                                         p="xs"
-                                        className="bg-slate-50/70 dark:bg-white/[0.02] border-slate-200/60 dark:border-white/5 space-y-1.5 min-w-0"
+                                        className="bg-slate-50/70 dark:bg-white/[0.02] border-slate-200/60 dark:border-white/5 space-y-1 min-w-0"
                                     >
                                         <div className="flex items-center justify-between gap-2 text-xs font-mono min-w-0">
                                             <span className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] shrink-0">
@@ -1000,7 +990,7 @@ export function ReservationsTab({
                                     </Paper>
 
                                     {/* Amount and Status Change Dropdown */}
-                                    <div className="pt-2.5 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-between gap-2 min-w-0">
+                                    <div className="pt-2 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-between gap-2 min-w-0">
                                         <div className="min-w-0 flex-1">
                                             <Text size="xs" c="dimmed" tt="uppercase" fw={600} className="tracking-wider text-[10px] truncate block">
                                                 Total Price

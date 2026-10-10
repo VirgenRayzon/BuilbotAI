@@ -49,9 +49,9 @@ export function PartCard({
             <Card
                 withBorder
                 radius="lg"
-                padding="md"
+                padding={0}
                 className={cn(
-                    "flex flex-col justify-between h-full relative group cursor-pointer transition-all duration-300",
+                    "flex flex-col justify-between h-full relative group cursor-pointer overflow-hidden transition-all duration-300",
                     "bg-white/80 dark:bg-[#141a23]/90 hover:shadow-md hover:-translate-y-1",
                     "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
                     isOutOfStock && "opacity-60 grayscale",
@@ -76,7 +76,7 @@ export function PartCard({
                 )}
 
                 {/* --- Top Metadata & Title --- */}
-                <Stack gap={6} mb="xs">
+                <Stack gap={6} className="px-3 pt-3 pb-2">
                     <Group justify="space-between" align="center" wrap="nowrap">
                         <Badge
                             size="xs"
@@ -113,9 +113,8 @@ export function PartCard({
                 {/* --- Clean Image Showcase Surface --- */}
                 <Box
                     className={cn(
-                        "aspect-square relative w-full overflow-hidden rounded-xl p-4 my-1",
-                        "bg-slate-100/70 dark:bg-white/[0.03] border border-slate-200/50 dark:border-white/5",
-                        "transition-colors duration-300 group-hover:bg-slate-100 dark:group-hover:bg-white/[0.05]"
+                        "aspect-[4/3] relative w-full overflow-hidden",
+                        "bg-white border-y border-slate-200/70 dark:border-white/10"
                     )}
                 >
                     <OptimizedImage
@@ -124,15 +123,12 @@ export function PartCard({
                         fill
                         unoptimized
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        className={cn(
-                            "transition-transform duration-500 group-hover:scale-105",
-                            part.category === "Headset" ? "object-cover scale-110" : "object-contain"
-                        )}
+                        className="object-contain p-2 transition-transform duration-500 group-hover:scale-105"
                     />
                 </Box>
 
                 {/* --- Price & Inset Action Area --- */}
-                <Stack gap="xs" mt="xs">
+                <Stack gap="xs" className="px-3 pt-3 pb-3">
                     <Group justify="space-between" align="baseline">
                         <Stack gap={0}>
                             <Text size="xs" c="dimmed" tt="uppercase" fw={600} className="tracking-wider text-[10px]">

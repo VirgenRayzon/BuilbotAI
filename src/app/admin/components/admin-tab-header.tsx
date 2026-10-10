@@ -108,9 +108,9 @@ export function AdminTabHeader({
         },
         audit: {
             title: isSuperAdmin ? "Admin Audit Logs" : "Staff Audit Logs",
-            description: "Enterprise security audit trail, administrative actions, and system modifications.",
+            description: "Review staff activity, inventory changes, and account events.",
             icon: Shield,
-            color: "indigo",
+            color: "cyan",
         },
         management: {
             title: "Management Portal",

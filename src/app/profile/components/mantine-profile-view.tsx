@@ -210,7 +210,7 @@ export function MantineProfileView({
           <Paper
             withBorder
             radius="lg"
-            p="xl"
+            p={12}
             className="w-full bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm text-center flex flex-col items-center"
           >
             <Text size="xs" fw={700} mb="lg" className="uppercase tracking-wider text-slate-400 dark:text-slate-500">

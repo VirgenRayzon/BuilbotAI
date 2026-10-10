@@ -44,7 +44,7 @@ export function CritiqueTab({
     const router = useRouter();
 
     return (
-        <div className="grid lg:grid-cols-12 gap-8 h-full">
+        <div className="grid lg:grid-cols-12 gap-5 xl:gap-6 h-full">
             {/* Sidebar Column - Left (Consistent with main Builder Page) */}
             <div className="lg:col-span-3">
                 <motion.div

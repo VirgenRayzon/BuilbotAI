@@ -434,7 +434,7 @@ export function AiModelSettings() {
 
     return (
         <Card className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-sm">
-            <CardHeader className="border-b border-slate-100 dark:border-white/5 pb-4">
+            <CardHeader className="p-3 border-b border-slate-100 dark:border-white/5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="space-y-1">
                         <CardTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
@@ -464,7 +464,7 @@ export function AiModelSettings() {
                 </div>
             </CardHeader>
 
-            <CardContent className="space-y-6 pt-6">
+            <CardContent className="p-3 space-y-3">
                 {/* ENGINE MANAGEMENT CARDS */}
                 <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
@@ -477,11 +477,11 @@ export function AiModelSettings() {
                         </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {/* ENGINE 1: DEFAULT GEMINI API */}
                         <div
                             onClick={() => setActiveEngineTab('gemini')}
-                            className={`flex flex-col justify-between p-4 rounded-xl border cursor-pointer transition-all ${activeEngineTab === 'gemini'
+                            className={`flex flex-col justify-between p-3 rounded-xl border cursor-pointer transition-all ${activeEngineTab === 'gemini'
                                     ? 'border-cyan-500 bg-cyan-500/5 dark:bg-cyan-500/10 shadow-sm ring-2 ring-cyan-500/20'
                                     : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-black/20 hover:border-cyan-500/40 hover:bg-slate-100/60 dark:hover:bg-white/[0.03]'
                                 }`}
@@ -536,7 +536,7 @@ export function AiModelSettings() {
                         {/* ENGINE 2: FINE-TUNED VERTEX MODEL */}
                         <div
                             onClick={() => setActiveEngineTab('finetuned')}
-                            className={`flex flex-col justify-between p-4 rounded-xl border cursor-pointer transition-all ${activeEngineTab === 'finetuned'
+                            className={`flex flex-col justify-between p-3 rounded-xl border cursor-pointer transition-all ${activeEngineTab === 'finetuned'
                                     ? 'border-amber-500 bg-amber-500/5 dark:bg-amber-500/10 shadow-sm ring-2 ring-amber-500/20'
                                     : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-black/20 hover:border-amber-500/40 hover:bg-slate-100/60 dark:hover:bg-white/[0.03]'
                                 }`}
@@ -595,7 +595,7 @@ export function AiModelSettings() {
 
                 {/* CONDITIONAL SECTION: DEFAULT GEMINI MODELS CATALOG */}
                 {activeEngineTab === 'gemini' && (
-                    <div className="p-5 rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.02] dark:bg-cyan-500/[0.04] space-y-4">
+                    <div className="p-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.02] dark:bg-cyan-500/[0.04] space-y-3">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div>
                                 <h3 className="text-sm font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
@@ -679,7 +679,7 @@ export function AiModelSettings() {
 
                 {/* CONDITIONAL SECTION: NAMED FINE-TUNED PROJECTS (VERTEX AI) */}
                 {activeEngineTab === 'finetuned' && (
-                    <div className="p-5 rounded-2xl border border-amber-500/30 bg-amber-50/30 dark:bg-amber-950/15 space-y-5">
+                    <div className="p-3 rounded-2xl border border-amber-500/30 bg-amber-50/30 dark:bg-amber-950/15 space-y-3">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div>
                                 <h3 className="text-sm font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
@@ -703,7 +703,7 @@ export function AiModelSettings() {
 
                         {/* ADD PROJECT FORM */}
                         {isAddingProject && (
-                            <div className="p-4 rounded-xl border border-amber-400/40 bg-white dark:bg-[#161d2b] shadow-sm space-y-4">
+                            <div className="p-3 rounded-xl border border-amber-400/40 bg-white dark:bg-[#161d2b] shadow-sm space-y-3">
                                 <h4 className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
                                     <Plus className="h-3.5 w-3.5" />
                                     Register New Fine-Tuned Project
@@ -796,7 +796,7 @@ export function AiModelSettings() {
                                                     setActiveProjectId(proj.id);
                                                     setIsAiDirty(true);
                                                 }}
-                                                className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isSelected
+                                                className={`p-3 rounded-xl border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isSelected
                                                         ? 'border-amber-500 bg-white dark:bg-[#161d2b] ring-2 ring-amber-500/20 shadow-md'
                                                         : 'border-slate-200 dark:border-white/10 bg-white/70 dark:bg-slate-900/50 hover:border-slate-300 dark:hover:border-white/20'
                                                     }`}
@@ -870,7 +870,7 @@ export function AiModelSettings() {
                 )}
 
                 {/* FEATURE MODEL ROUTING SECTION */}
-                <div className="p-5 rounded-2xl border border-indigo-500/20 bg-indigo-500/[0.02] dark:bg-indigo-500/[0.04] space-y-4">
+                <div className="p-3 rounded-2xl border border-indigo-500/20 bg-indigo-500/[0.02] dark:bg-indigo-500/[0.04] space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div>
                             <h3 className="text-sm font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
@@ -896,7 +896,7 @@ export function AiModelSettings() {
                             return (
                                 <div
                                     key={feat.key}
-                                    className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#131c2d] shadow-sm space-y-3"
+                                    className="p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#131c2d] shadow-sm space-y-3"
                                 >
                                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                                         <div className="flex items-start gap-2.5">

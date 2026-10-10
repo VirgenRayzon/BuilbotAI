@@ -186,7 +186,7 @@ export default function FAQPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 * catIndex }}
               >
-                <Group gap="sm" className="mb-5">
+                <Group gap="sm" className="mb-3">
                   <ThemeIcon size={36} radius="md" variant="light" color="cyan">
                     <cat.icon size={18} />
                   </ThemeIcon>
@@ -205,9 +205,9 @@ export default function FAQPage() {
                         ? "bg-[#111722]/85 border-white/10 hover:border-cyan-500/30 shadow-md shadow-black/20"
                         : "bg-white border-slate-200 hover:border-cyan-500/30 shadow-sm"
                     ),
-                    control: "px-6 py-4 hover:bg-slate-50/60 dark:hover:bg-white/5",
+                    control: "px-3 py-3 hover:bg-slate-50/60 dark:hover:bg-white/5",
                     label: "font-bold text-slate-900 dark:text-slate-100 text-base sm:text-lg",
-                    panel: "px-6 pb-6 pt-1 text-slate-600 dark:text-slate-300 font-medium text-sm sm:text-base leading-relaxed border-t border-slate-100 dark:border-white/5",
+                    panel: "px-3 pb-3 pt-1 text-slate-600 dark:text-slate-300 font-medium text-sm sm:text-base leading-relaxed border-t border-slate-100 dark:border-white/5",
                     chevron: "text-cyan-600 dark:text-cyan-400",
                   }}
                 >
@@ -224,7 +224,7 @@ export default function FAQPage() {
             <Paper
               withBorder
               radius="xl"
-              p="xl"
+              p={12}
               className={cn(
                 "text-center py-16",
                 isDark ? "bg-[#111722]/60 border-white/10" : "bg-white border-slate-200"
@@ -246,12 +246,12 @@ export default function FAQPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="mt-20"
+          className="mt-10"
         >
           <Paper
             withBorder
             radius="2xl"
-            p={{ base: 'xl', sm: 40 }}
+            p={12}
             className={cn(
               "text-center backdrop-blur-xl shadow-xl",
               isDark
@@ -259,7 +259,7 @@ export default function FAQPage() {
                 : "bg-white/95 border-slate-200"
             )}
           >
-            <div className="max-w-xl mx-auto space-y-4">
+            <div className="max-w-xl mx-auto space-y-3">
               <ThemeIcon size={52} radius="xl" variant="light" color="cyan" className="mx-auto">
                 <MessageSquare size={24} />
               </ThemeIcon>

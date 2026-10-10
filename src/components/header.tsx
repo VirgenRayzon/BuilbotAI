@@ -165,13 +165,13 @@ export function Header() {
           </div>
 
           {/* Right Section: Aligned Tabs & User Actions */}
-          <div className="flex items-center gap-3 md:gap-5">
+          <div className="flex items-center gap-2 md:gap-3">
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin text-cyan-500/70" />
             ) : authUser ? (
               <>
                 {/* Desktop Tabs aligned with user */}
-                <nav className="hidden sm:flex items-center gap-1.5" aria-label="Main Navigation">
+                <nav className="hidden sm:flex items-center gap-1" aria-label="Main Navigation">
                   {tabs.map((tab) => {
                     const isActive = pathname === tab.href;
                     return (
