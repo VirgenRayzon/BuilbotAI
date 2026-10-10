@@ -65,7 +65,7 @@ export function StockTab({
     const [partSortDirection, setPartSortDirection] = useState<'asc' | 'desc'>('desc');
     const [activeView, setActiveView] = useState<'grid' | 'table'>('grid');
     const [partCurrentPage, setPartCurrentPage] = useState(1);
-    const [partItemsPerPage, setPartItemsPerPage] = useState(10);
+    const [partItemsPerPage, setPartItemsPerPage] = useState(8);
 
     const filteredAndSortedParts = useMemo(() => {
         const selectedCategories = partCategories.filter(c => c.selected).map(c => c.name);
@@ -122,8 +122,8 @@ export function StockTab({
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-muted/30 p-4 rounded-xl border border-white/5 backdrop-blur-md">
-                <div className="flex items-center gap-4 w-full md:w-auto">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                <div className="flex items-center gap-3 w-full md:w-auto">
                     <div className="relative flex-grow md:flex-grow-0 md:w-80 group">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <Input
@@ -329,7 +329,7 @@ export function StockTab({
             </div>
 
             {activeView === 'grid' ? (
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
                     {partsLoading ? null : (
                         currentParts.map((part) => (
                             <InventoryPartCard

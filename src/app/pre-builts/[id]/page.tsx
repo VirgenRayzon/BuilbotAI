@@ -1,716 +1,175 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useTheme } from "@/context/theme-provider";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { formatCurrency, getOptimizedStorageUrl, cn } from "@/lib/utils";
-import type { PrebuiltSystem, Part, FavoriteBuild, FavoriteBuildPart } from "@/lib/types";
-import { getMissingParts, checkSystemStock } from "@/lib/prebuilt-utils";
-import { Sparkles, ShieldCheck, Loader2, AlertCircle, ThumbsUp, ThumbsDown, MonitorPlay, Zap, ExternalLink, Gamepad2, ArrowLeft, ChevronLeft, CircuitBoard, Database, Box, Wrench, SlidersHorizontal } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { getAiPrebuiltPerformance } from "@/app/actions";
-import { doc, getDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
-import { useFirestore } from "@/firebase";
-import ReactMarkdown from 'react-markdown';
-import { SmartImageMagnifier } from "@/components/smart-image-magnifier";
+import { use } from "react";
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
-import { useUserProfile } from "@/context/user-profile";
-import { reservePrebuiltSystem } from "@/app/prebuilt-reservation-actions";
-import { SparkleButton } from "@/components/ui/sparkle-button";
-import { OptimizedImage } from "@/components/ui/optimized-image";
-import { PartDetailsDialog } from "@/components/part-details-dialog";
-
-const getPerformanceStyle = (fps: string) => {
-    const minFps = parseInt(fps.match(/\d+/)?.[0] || "0");
-    if (minFps >= 100) return { color: "bg-emerald-500", text: "text-emerald-500", percent: 100, label: "Legendary" };
-    if (minFps >= 75) return { color: "bg-green-500", text: "text-green-500", percent: 85, label: "Excellent" };
-    if (minFps >= 60) return { color: "bg-green-400", text: "text-green-400", percent: 70, label: "Smooth" };
-    if (minFps >= 45) return { color: "bg-yellow-500", text: "text-yellow-500", percent: 50, label: "Playable" };
-    if (minFps >= 30) return { color: "bg-orange-500", text: "text-orange-500", percent: 35, label: "Entry" };
-    return { color: "bg-red-500", text: "text-red-500", percent: 15, label: "Low" };
-};
+import { Container, Grid, Title, Text, Badge, Group, Paper, Button, Loader } from "@mantine/core";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { usePrebuiltDetails } from "./hooks/use-prebuilt-details";
+import { PrebuiltImageView } from "./components/prebuilt-image-view";
+import { PrebuiltActionCard } from "./components/prebuilt-action-card";
+import { PrebuiltAiReview } from "./components/prebuilt-ai-review";
 
 export default function PrebuiltProductPage({ params }: { params: Promise<{ id: string }> }) {
-    const { theme } = useTheme();
-    const isDark = theme === "dark";
     const { id: systemId } = use(params);
-    const [system, setSystem] = useState<PrebuiltSystem | null>(null);
-    const [loadingSystem, setLoadingSystem] = useState(true);
+    const {
+        system,
+        loadingSystem,
+        components,
+        loadingParts,
+        analysis,
+        loadingAnalysis,
+        analysisError,
+        isReserving,
+        isManagerOrAdmin,
+        canGenerateReport,
+        isComplete,
+        missingParts,
+        isInStock,
+        backLink,
+        backText,
+        handleReserve,
+        handleCustomizePrebuilt,
+        handleAnalyze,
+    } = usePrebuiltDetails(systemId);
 
-    const [components, setComponents] = useState<Record<string, Part | null>>({});
-    const [loadingParts, setLoadingParts] = useState(false);
-
-    const [localAnalysis, setLocalAnalysis] = useState<any>(null);
-    const [loadingAnalysis, setLoadingAnalysis] = useState(false);
-    const [isReserving, setIsReserving] = useState(false);
-    const [analysisError, setAnalysisError] = useState<string | null>(null);
-
-    const { profile, authUser } = useUserProfile();
-    const canGenerateReport = profile?.isManager || profile?.isSuperAdmin;
-    const analysis = system?.aiReport || localAnalysis;
-
-    const { toast } = useToast();
-    const firestore = useFirestore();
-    const router = useRouter();
-
-    const backLink = (profile?.isManager || profile?.isSuperAdmin) ? "/admin?tab=prebuilts" : "/pre-builts";
-    const backText = (profile?.isManager || profile?.isSuperAdmin) ? "Back to Manage Prebuilts" : "Back to Pre-built Rigs";
-
-    const missingParts = system ? getMissingParts(system) : [];
-    const isComplete = system ? missingParts.length === 0 : false;
-
-    useEffect(() => {
-        if (!firestore || !systemId) return;
-
-        const fetchSystem = async () => {
-            try {
-                const docRef = doc(firestore, 'prebuiltSystems', systemId);
-                const snap = await getDoc(docRef);
-                if (snap.exists()) {
-                    const data = snap.data() as PrebuiltSystem;
-                    // Protect archived systems from non-admin users
-                    if (data.isArchived && !(profile?.isManager || profile?.isSuperAdmin)) {
-                        toast({
-                            title: "Access Denied",
-                            description: "This system is no longer available.",
-                            variant: "destructive"
-                        });
-                        router.push('/pre-builts');
-                        return;
-                    }
-                    setSystem({ ...data, id: snap.id });
-                } else {
-                    toast({
-                        title: "System Not Found",
-                        description: "The prebuilt system you are looking for does not exist.",
-                        variant: "destructive"
-                    });
-                }
-            } catch (error) {
-                console.error("Error fetching system:", error);
-            } finally {
-                setLoadingSystem(false);
-            }
-        };
-
-        fetchSystem();
-    }, [firestore, systemId, toast]);
-
-    useEffect(() => {
-        if (system && firestore && Object.keys(components).length === 0) {
-            const fetchComponents = async () => {
-                setLoadingParts(true);
-                const partsRecord: Record<string, Part | null> = {};
-
-                try {
-                    const promises = Object.entries(system.components).map(async ([category, id]) => {
-                        const collectionMap: Record<string, string> = {
-                            cpu: 'CPU', gpu: 'GPU', motherboard: 'Motherboard',
-                            ram: 'RAM', storage: 'Storage', psu: 'PSU',
-                            case: 'Case', cooler: 'Cooler',
-                        };
-                        const collectionName = collectionMap[category] || category;
-
-                        // Handle potential array of IDs (e.g. for RAM or Storage)
-                        const partId = Array.isArray(id) ? id[0] : id;
-
-                        if (!partId) {
-                            partsRecord[category] = null;
-                            return;
-                        }
-
-                        // First try looking up by document ID
-                        const partRef = doc(firestore, collectionName, partId as string);
-                        const snap = await getDoc(partRef);
-
-                        if (snap.exists()) {
-                            partsRecord[category] = { id: snap.id, ...snap.data() } as Part;
-                        } else {
-                            // Fall back: query by name field (for legacy data that stored names instead of IDs)
-                            const q = query(collection(firestore, collectionName), where("name", "==", partId));
-                            const querySnap = await getDocs(q);
-                            if (!querySnap.empty) {
-                                const docSnap = querySnap.docs[0];
-                                partsRecord[category] = { id: docSnap.id, ...docSnap.data() } as Part;
-                            } else {
-                                partsRecord[category] = null;
-                            }
-                        }
-                    });
-
-                    await Promise.all(promises);
-                    setComponents(partsRecord);
-                } catch (error) {
-                    console.error("Error fetching parts:", error);
-                    toast({
-                        title: "Error loading build details",
-                        description: "Could not fetch some component details. Please try again.",
-                        variant: "destructive"
-                    });
-                } finally {
-                    setLoadingParts(false);
-                }
-            };
-
-            fetchComponents();
-        }
-    }, [firestore, system, toast, components]);
-
-    const isInStock = checkSystemStock(components);
-
-    const handleReserve = async () => {
-        if (!isComplete || !system || !profile || !authUser || !isInStock || isReserving) return;
-
-        setIsReserving(true);
-        try {
-            // Prepare component map for the reservation action
-            const componentsMap: Record<string, { id: string, name: string, price: number, category: string }> = {};
-            Object.entries(components).forEach(([category, part]) => {
-                if (part) {
-                    componentsMap[category] = {
-                        id: part.id,
-                        name: part.name,
-                        price: part.price,
-                        category: category
-                    };
-                }
-            });
-
-            // Sanitize system object for Server Action (remove Firestore Timestamps/toJSON methods)
-            const sanitizedSystem = JSON.parse(JSON.stringify(system));
-
-            const result = await reservePrebuiltSystem(
-                authUser.uid,
-                profile.email,
-                profile.name || profile.email.split('@')[0],
-                sanitizedSystem,
-                componentsMap
-            );
-
-            if (result.success) {
-                toast({
-                    title: 'Reservation Successful',
-                    description: `Your reservation for ${system.name} has been recorded.`,
-                });
-                router.push('/profile');
-            } else {
-                toast({
-                    title: 'Reservation Failed',
-                    description: result.error || 'An error occurred during reservation.',
-                    variant: 'destructive'
-                });
-            }
-        } catch (error) {
-            console.error("Reservation error:", error);
-            toast({
-                title: 'Error',
-                description: 'An unexpected error occurred.',
-                variant: 'destructive'
-            });
-        } finally {
-            setIsReserving(false);
-        }
-    };
-
-    const handleCustomizePrebuilt = () => {
-        if (!system) return;
-
-        // Build list of FavoriteBuildPart from resolved components or system components
-        const parts: FavoriteBuildPart[] = [];
-        const categoryMap: Record<string, string> = {
-            cpu: 'CPU', gpu: 'GPU', motherboard: 'Motherboard',
-            ram: 'RAM', storage: 'Storage', psu: 'PSU',
-            case: 'Case', cooler: 'Cooler',
-        };
-
-        Object.entries(components).forEach(([key, part]) => {
-            if (part) {
-                const category = categoryMap[key.toLowerCase()] || part.category || key.toUpperCase();
-                parts.push({
-                    category,
-                    partId: part.id,
-                    name: part.name,
-                    price: part.price
-                });
-            }
-        });
-
-        const prebuiltBuildPayload: FavoriteBuild = {
-            id: system.id,
-            name: `${system.name} (Customized)`,
-            parts,
-            totalPrice: system.price,
-            source: 'builder',
-            createdAt: new Date().toISOString()
-        };
-
-        // Save to localStorage for instant load on the builder page
-        localStorage.setItem('pc_builder_load_favorite', JSON.stringify(prebuiltBuildPayload));
-
-        toast({
-            title: "Prebuilt Loaded",
-            description: `Transferring ${system.name} components into the PC Builder...`,
-        });
-
-        router.push('/builder');
-    };
-
-    const handleAnalyze = async () => {
-        if (!system || !firestore || !systemId) return;
-        setLoadingAnalysis(true);
-        setAnalysisError(null);
-
-        const inputData: any = {};
-        Object.entries(components).forEach(([key, val]) => {
-            if (val) {
-                inputData[key.charAt(0).toUpperCase() + key.slice(1)] = {
-                    model: val.name,
-                    price: val.price,
-                    brand: val.brand
-                };
-            }
-        });
-
-        try {
-            const result = await getAiPrebuiltPerformance(inputData);
-            if ('error' in result) {
-                setAnalysisError(result.error as string);
-            } else {
-                // Save report to firestore cache
-                const docRef = doc(firestore, 'prebuiltSystems', systemId);
-                await updateDoc(docRef, { aiReport: result });
-                setLocalAnalysis(result);
-                toast({
-                    title: "Report Saved",
-                    description: "AI Performance Analysis has been generated and cached publicly.",
-                });
-            }
-        } catch (err) {
-            setAnalysisError("An unexpected error occurred during analysis.");
-        } finally {
-            setLoadingAnalysis(false);
-        }
-    };
-
+    // 1. Loading State
     if (loadingSystem) {
         return (
-            <div className="container mx-auto p-4 md:p-8 flex items-center justify-center min-h-[60vh]">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                    <p className="text-muted-foreground animate-pulse font-medium">Loading prebuilt rigorous specifications...</p>
-                </div>
+            <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3">
+                <Loader size="md" color="cyan" />
+                <Text size="sm" c="dimmed" fw={500}>
+                    Loading system specifications...
+                </Text>
             </div>
         );
     }
 
+    // 2. Not Found State
     if (!system) {
         return (
-            <div className="container mx-auto p-4 md:p-8 flex items-center justify-center min-h-[60vh]">
-                <div className="text-center">
-                    <MonitorPlay className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
-                    <h2 className="text-2xl font-bold font-headline mb-2">System Not Found</h2>
-                    <p className="text-muted-foreground mb-6">The system you are looking for might have been removed or is unavailable.</p>
-                    <Button asChild>
-                        <Link href={backLink}>{backText}</Link>
+            <Container size="sm" py={80} className="text-center">
+                <Paper p="2xl" radius="xl" withBorder className="bg-white/80 dark:bg-[#141a23]/80 border-slate-200 dark:border-white/10">
+                    <Title order={2} size="h3" fw={800} className="mb-2">
+                        System Not Found
+                    </Title>
+                    <Text size="sm" c="dimmed" className="mb-6">
+                        The requested prebuilt rig might have been unlisted or relocated.
+                    </Text>
+                    <Button component={Link} href={backLink} variant="default" radius="md">
+                        {backText}
                     </Button>
-                </div>
-            </div>
+                </Paper>
+            </Container>
         );
     }
 
+    const hasComponents = Object.values(components).some(Boolean);
+
     return (
-        <div className={cn(
-            "min-h-screen transition-colors duration-500 overflow-x-hidden",
-            isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
-        )}>
-            {/* Circuit Pattern Background */}
-            <div className={cn(
-                "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
-                isDark ? "invert" : ""
-            )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+        <div className="min-h-screen overflow-x-hidden bg-white text-slate-900 transition-colors duration-500 dark:bg-[#0c0f14] dark:text-slate-50">
+            <div
+                className="fixed inset-0 pointer-events-none z-0 opacity-[0.03] dark:invert"
+                style={{ backgroundImage: "radial-gradient(#000 0.5px, transparent 0.5px)", backgroundSize: "24px 24px" }}
+            />
 
-            <main className="w-full p-4 sm:p-6 md:p-8 lg:p-10 pt-10 md:pt-20 animate-in fade-in duration-700 relative z-10">
+            <div className="relative z-10 w-full px-4 py-8 sm:px-6 md:px-8 lg:px-10">
                 {/* Top Navigation */}
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="mb-12"
-                >
-                    <Button variant="ghost" asChild className="group text-muted-foreground hover:text-primary transition-colors">
-                        <Link href={backLink} className="flex items-center gap-2">
-                            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-                            <span className="text-[10px] uppercase font-bold tracking-[0.2em]">{backText}</span>
-                        </Link>
-                    </Button>
-                </motion.div>
-
-                {/* Product Split Section */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 relative items-start">
-                    {/* Left side: Sticky Image */}
-                    <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
-                        <div className="aspect-square relative w-full overflow-hidden rounded-2xl shadow-xl border bg-card/50 backdrop-blur-sm group">
-                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none z-10" />
-                            <SmartImageMagnifier
-                                src={getOptimizedStorageUrl(system.imageUrl) || "/placeholder-system.png"}
-                                alt={system.name}
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Right side: Details & Specs */}
-                    <div className="lg:col-span-7 space-y-12">
-                        {/* Header Details */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                        >
-                            <div className="flex items-center gap-4 mb-6">
-                                <Badge className="px-4 py-1.5 font-black tracking-[0.2em] uppercase text-[10px] bg-primary text-white border-none shadow-lg shadow-primary/20">
-                                    {system.tier}
-                                </Badge>
-                                {isComplete && (
-                                    <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
-                                        <ShieldCheck className="h-3 w-3" />
-                                        Diagnostics Validated
-                                    </div>
-                                )}
-                            </div>
-                            <h1 className="text-5xl md:text-7xl font-headline font-black uppercase tracking-tighter leading-none mb-6">
-                                {system.name}
-                            </h1>
-                            <p className="text-xl text-muted-foreground max-w-2xl leading-relaxed font-medium">
-                                {system.description}
-                            </p>
-                        </motion.div>
-
-                        {/* Price and Action Card */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.98 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.2 }}
-                            className={cn(
-                                "rounded-3xl border backdrop-blur-xl shadow-2xl overflow-hidden group",
-                                isDark ? "bg-slate-900/40 border-white/5 shadow-black/40" : "bg-white/60 border-slate-200 shadow-slate-200/50"
-                            )}
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-                            <CardContent className="p-6 md:p-8 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 relative z-10">
-                                <div className="shrink-0">
-                                    <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground font-black mb-1.5">Estimated Build Total</p>
-                                    <p className="text-4xl sm:text-5xl md:text-6xl font-black font-headline text-primary tracking-tighter">{formatCurrency(system.price)}</p>
-                                </div>
-                                <div className="w-full xl:w-auto flex flex-col items-stretch xl:items-end gap-3">
-                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
-                                        {!(profile?.isManager || profile?.isSuperAdmin) && (
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={handleCustomizePrebuilt}
-                                                disabled={loadingParts || Object.keys(components).length === 0}
-                                                className="h-14 px-5 text-xs sm:text-sm font-bold uppercase tracking-wider rounded-2xl border-white/10 hover:border-primary/50 hover:bg-primary/10 transition-all flex items-center justify-center gap-2 group/custom whitespace-nowrap"
-                                            >
-                                                <SlidersHorizontal className="h-4 w-4 text-primary group-hover/custom:rotate-45 transition-transform duration-300" />
-                                                <span>Customize this Prebuilt</span>
-                                            </Button>
-                                        )}
-                                        <SparkleButton
-                                            onClick={handleReserve}
-                                            isLoading={isReserving}
-                                            disabled={!isComplete || loadingParts || !isInStock || isReserving}
-                                            icon={<Zap className="h-4 w-4 sm:h-5 sm:w-5" />}
-                                            className="h-14 px-6 sm:px-8 text-xs sm:text-sm font-black tracking-wider shadow-2xl rounded-2xl whitespace-nowrap"
-                                        >
-                                            {loadingParts ? "Validating Stock..." : !isInStock ? "Diagnostics Failed" : "Reserve this Prebuilt"}
-                                        </SparkleButton>
-                                    </div>
-                                    {!isComplete && (
-                                        <div className="flex items-center justify-center xl:justify-end gap-2 text-destructive">
-                                            <AlertCircle className="h-4 w-4" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest">Critical: Missing {missingParts.length} Components</span>
-                                        </div>
-                                    )}
-                                    {isComplete && !loadingParts && !isInStock && (
-                                        <div className="flex items-center justify-center xl:justify-end gap-2 text-destructive">
-                                            <AlertCircle className="h-4 w-4" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest">One or more components are out of stock</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </motion.div>
-
-                        {/* Component Breakdown */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 }}
-                            className="space-y-6 pt-6"
-                        >
-                            <div className="flex items-center gap-4">
-                                <Box className="w-6 h-6 text-primary" />
-                                <h3 className="text-2xl font-headline font-black uppercase tracking-tight">
-                                    Integrated Architecture
-                                </h3>
-                            </div>
-
-                            {loadingParts ? (
-                                <div className={cn(
-                                    "flex flex-col items-center justify-center py-20 gap-4 rounded-3xl border border-dashed backdrop-blur-md",
-                                    isDark ? "bg-slate-900/20 border-white/5" : "bg-white/40 border-slate-200"
-                                )}>
-                                    <Loader2 className="h-10 w-10 animate-spin text-primary opacity-50" />
-                                    <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground animate-pulse">Running Component Validation...</p>
-                                </div>
-                            ) : (
-                                <div className="grid gap-3 sm:gap-4">
-                                    {Object.entries(components).map(([category, part], idx) => {
-                                        if (!part) {
-                                            return (
-                                                <motion.div
-                                                    key={category}
-                                                    initial={{ opacity: 0, x: -10 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    transition={{ delay: 0.05 * idx }}
-                                                    className={cn(
-                                                        "flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl border transition-all duration-300",
-                                                        isDark ? "bg-slate-900/40 border-white/5" : "bg-white/60 border-slate-200"
-                                                    )}
-                                                >
-                                                    <div className="w-full sm:w-24 md:w-28 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] shrink-0">
-                                                        {category}
-                                                    </div>
-                                                    <div className="flex items-center gap-3 text-destructive/80 font-bold uppercase tracking-widest text-[10px] py-1">
-                                                        <AlertCircle className="h-4 w-4" /> Component Missing From Configuration
-                                                    </div>
-                                                </motion.div>
-                                            );
-                                        }
-
-                                        return (
-                                            <PartDetailsDialog
-                                                key={category}
-                                                part={part}
-                                                isAdded={true}
-                                                onToggle={() => {
-                                                    toast({
-                                                        title: "Integrated Component",
-                                                        description: `${part.name} is pre-configured in this build. Click "Customize this Prebuilt" to modify components in the PC Builder.`,
-                                                    });
-                                                }}
-                                            >
-                                                <motion.div
-                                                    initial={{ opacity: 0, x: -10 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    transition={{ delay: 0.05 * idx }}
-                                                    className={cn(
-                                                        "flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl border transition-all duration-300 group cursor-pointer text-left select-none",
-                                                        isDark
-                                                            ? "bg-slate-900/40 border-white/5 hover:border-primary/40 hover:bg-slate-900/60 shadow-lg hover:shadow-primary/5"
-                                                            : "bg-white/60 border-slate-200 hover:border-primary/30 hover:bg-white/80 shadow-sm hover:shadow-md"
-                                                    )}
-                                                >
-                                                    <div className="w-full sm:w-24 md:w-28 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] shrink-0">
-                                                        {category}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-4">
-                                                            {/* Part Photo Thumbnail */}
-                                                            <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 bg-slate-950/20 dark:bg-white/5 border border-white/10 p-1 flex items-center justify-center group-hover:border-primary/40 group-hover:scale-105 transition-all duration-300 shadow-inner">
-                                                                <OptimizedImage
-                                                                    src={getOptimizedStorageUrl(part.imageUrl) || '/placeholder-part.png'}
-                                                                    alt={part.name}
-                                                                    fill
-                                                                    sizes="(max-width: 640px) 56px, 64px"
-                                                                    className="object-contain p-1"
-                                                                />
-                                                            </div>
-
-                                                            {/* Part Details */}
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="font-bold text-base sm:text-lg leading-tight mb-1 group-hover:text-primary transition-colors line-clamp-2">
-                                                                    {part.name}
-                                                                </p>
-                                                                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
-                                                                    {part.brand}
-                                                                </p>
-                                                            </div>
-
-                                                            {/* Part Price & Stock */}
-                                                            <div className="text-right shrink-0">
-                                                                <p className="font-mono font-bold text-sm sm:text-base mb-1">{formatCurrency(part.price)}</p>
-                                                                {part.stock > 0 ? (
-                                                                    <div className="flex items-center justify-end gap-1.5 text-emerald-500">
-                                                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                                                        <span className="text-[9px] font-black uppercase tracking-widest">In Stock</span>
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="flex items-center justify-end gap-1.5 text-destructive">
-                                                                        <div className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                                                                        <span className="text-[9px] font-black uppercase tracking-widest">Depleted</span>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </motion.div>
-                                            </PartDetailsDialog>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </motion.div>
-                    </div>
-                </div>
-
-                {/* AI Performance Section */}
-                <div className="mt-24 pt-24 border-t border-border/50">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="text-center mb-16"
+                <div className="mb-8">
+                    <Button
+                        component={Link}
+                        href={backLink}
+                        variant="subtle"
+                        color="gray"
+                        size="xs"
+                        leftSection={<ArrowLeft className="w-3.5 h-3.5" />}
+                        className="font-semibold text-xs tracking-wider uppercase text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400"
                     >
-                        <div className="inline-flex items-center justify-center p-4 bg-primary/10 rounded-3xl mb-6">
-                            <Sparkles className="h-10 w-10 text-primary animate-pulse" />
-                        </div>
-                        <h2 className="text-4xl md:text-5xl font-headline font-black uppercase tracking-tighter mb-6">Buildbot Review</h2>
-                        <p className="text-muted-foreground max-w-3xl mx-auto text-xl leading-relaxed font-medium">
-                            Buildbot analyzes every component to provide a performance review and technical benchmarks for this specific build.
-                        </p>
-                    </motion.div>
-
-                    <div className="w-full mx-auto relative">
-                        {!analysis && !loadingAnalysis && !analysisError && (
-                            <Card className="border-dashed shadow-none bg-transparent">
-                                <CardContent className="flex flex-col items-center justify-center py-24 text-center relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-primary/5 blur-[120px] rounded-full w-[500px] h-[500px] -z-10 m-auto opacity-30 animate-pulse" />
-                                    {canGenerateReport ? (
-                                        <SparkleButton
-                                            onClick={handleAnalyze}
-                                            isLoading={loadingAnalysis}
-                                            icon={<Sparkles className="h-6 w-6" />}
-                                            className="px-12 h-16 text-lg shadow-2xl"
-                                        >
-                                            Initialize Buildbot Analysis
-                                        </SparkleButton>
-                                    ) : (
-                                        <div className="flex flex-col items-center">
-                                            <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-6">
-                                                <Sparkles className="h-10 w-10 text-muted-foreground/30" />
-                                            </div>
-                                            <h3 className="text-2xl font-headline font-bold uppercase tracking-tight mb-2">Review Data Unavailable</h3>
-                                            <p className="text-muted-foreground max-w-md">The performance review for this system has not been generated yet.</p>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        )}
-
-                        {loadingAnalysis && (
-                            <div className="flex flex-col items-center justify-center py-32 gap-8">
-                                <div className="relative">
-                                    <div className="absolute inset-0 bg-primary/20 animate-ping rounded-full scale-150" />
-                                    <div className="w-24 h-24 rounded-3xl bg-primary/10 flex items-center justify-center border border-primary/30 relative z-10 backdrop-blur-md">
-                                        <Sparkles className="h-12 w-12 text-primary animate-pulse" />
-                                    </div>
-                                </div>
-                                <div className="text-center space-y-2">
-                                    <p className="text-2xl font-headline font-black uppercase tracking-widest text-primary animate-pulse">Running Review</p>
-                                    <p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.3em]">Processing Hardware Synergy Vectors...</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {analysisError && (
-                            <div className="bg-destructive/10 border border-destructive/20 text-destructive p-12 rounded-3xl max-w-2xl mx-auto text-center shadow-2xl backdrop-blur-md">
-                                <AlertCircle className="h-16 w-16 mx-auto mb-6 opacity-80" />
-                                <h3 className="text-2xl font-headline font-black uppercase tracking-tight mb-3">Review Failed</h3>
-                                <p className="mb-8 text-lg font-medium">{analysisError}</p>
-                                {canGenerateReport && (
-                                    <SparkleButton
-                                        onClick={handleAnalyze}
-                                        className="px-10 h-12 text-xs"
-                                        icon={<Zap className="h-4 w-4" />}
-                                    >
-                                        Re-Attempt Sync
-                                    </SparkleButton>
-                                )}
-                            </div>
-                        )}
-
-                        {analysis && !loadingAnalysis && (
-                            <div className="space-y-12 animate-in fade-in slide-in-from-bottom-12 duration-1000">
-                                {/* Pros / Strengths */}
-                                <div className="w-full mx-auto">
-                                    <motion.div
-                                        initial={{ opacity: 0, scale: 0.98 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        className={cn(
-                                            "rounded-[2.5rem] border backdrop-blur-xl shadow-2xl relative overflow-hidden",
-                                            isDark ? "bg-slate-900/40 border-white/5" : "bg-white/60 border-slate-200"
-                                        )}
-                                    >
-                                        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
-                                        <div className="p-8 md:p-16">
-                                            <div className="flex flex-col items-center text-center mb-12">
-                                                <div className="bg-emerald-500/10 p-5 rounded-[2rem] mb-6">
-                                                    <ThumbsUp className="h-10 w-10 text-emerald-500" />
-                                                </div>
-                                                <h4 className="text-3xl md:text-4xl font-headline font-black uppercase tracking-tight text-emerald-500">
-                                                    Architecture Strengths
-                                                </h4>
-                                            </div>
-
-                                            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-                                                {(analysis?.pros || []).map((pro: string, idx: number) => (
-                                                    <motion.div
-                                                        key={idx}
-                                                        initial={{ opacity: 0, x: -10 }}
-                                                        animate={{ opacity: 1, x: 0 }}
-                                                        transition={{ delay: 0.1 * idx }}
-                                                        className={cn(
-                                                            "p-3 rounded-3xl border flex gap-5 group transition-all duration-300",
-                                                            isDark ? "bg-slate-900/30 border-white/5 hover:border-emerald-500/40" : "bg-white/40 border-slate-100 hover:border-emerald-500/30"
-                                                        )}
-                                                    >
-                                                        <div className="mt-1 flex-shrink-0 w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-                                                        </div>
-                                                        <span className="text-lg font-medium leading-relaxed group-hover:text-foreground transition-colors">{pro}</span>
-                                                    </motion.div>
-                                                ))}
-                                                {(!analysis?.pros || analysis?.pros?.length === 0) && (
-                                                    <div className="col-span-2 py-12 text-center text-muted-foreground/50 italic text-xl">No specific architectural strengths identified for this configuration.</div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                </div>
-
-                                {canGenerateReport && (
-                                    <div className="py-8 flex justify-center">
-                                        <SparkleButton
-                                            onClick={handleAnalyze}
-                                            isLoading={loadingAnalysis}
-                                            className="h-12 text-[10px]"
-                                            icon={<ArrowLeft className="h-4 w-4" />}
-                                        >
-                                            Reset Diagnostic Matrix
-                                        </SparkleButton>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                        {backText}
+                    </Button>
                 </div>
-            </main>
+
+                {/* Desktop layout: visual at left, build details at right. */}
+                <Grid gutter={{ base: "xl", lg: 40 }} align="stretch">
+                    {/* Product information is first in the document for a better mobile reading order. */}
+                    <Grid.Col span={{ base: 12, md: 6 }} order={{ base: 1, md: 2 }} className="flex">
+                        <div className="flex h-full w-full flex-col">
+                            {/* Product Header */}
+                            <div>
+                                <Group gap="xs" mb="xs">
+                                    <Badge
+                                        variant="filled"
+                                        color="cyan"
+                                        size="md"
+                                        radius="sm"
+                                        className="font-bold tracking-wider uppercase text-[10px]"
+                                    >
+                                        {system.tier} Tier
+                                    </Badge>
+                                    {isComplete && (
+                                        <Badge
+                                            variant="light"
+                                            color="teal"
+                                            size="md"
+                                            radius="sm"
+                                            leftSection={<ShieldCheck className="w-3.5 h-3.5" />}
+                                            className="font-semibold text-[10px]"
+                                        >
+                                            Verified Build
+                                        </Badge>
+                                    )}
+                                </Group>
+
+                                <Title
+                                    order={1}
+                                    className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50 mb-3"
+                                >
+                                    {system.name}
+                                </Title>
+
+                                {system.description && (
+                                    <Text size="md" c="dimmed" className="leading-relaxed">
+                                        {system.description}
+                                    </Text>
+                                )}
+                            </div>
+
+                            {/* Anchor the purchase controls to the base of the image column. */}
+                            <div className="mt-auto pt-6">
+                                <PrebuiltActionCard
+                                    price={system.price}
+                                    isComplete={isComplete}
+                                    missingPartsCount={missingParts.length}
+                                    isInStock={isInStock}
+                                    loadingParts={loadingParts}
+                                    isReserving={isReserving}
+                                    isManagerOrAdmin={isManagerOrAdmin}
+                                    hasComponents={hasComponents}
+                                    onReserve={handleReserve}
+                                    onCustomize={handleCustomizePrebuilt}
+                                >
+                                    <PrebuiltAiReview
+                                        analysis={analysis}
+                                        loadingAnalysis={loadingAnalysis}
+                                        analysisError={analysisError}
+                                        canGenerateReport={canGenerateReport}
+                                        onAnalyze={handleAnalyze}
+                                    />
+                                </PrebuiltActionCard>
+                            </div>
+                        </div>
+                    </Grid.Col>
+
+                    {/* The image defines the desktop row height. */}
+                    <Grid.Col span={{ base: 12, md: 6 }} order={{ base: 2, md: 1 }}>
+                        <PrebuiltImageView
+                            imageUrl={system.imageUrl}
+                            systemName={system.name}
+                            tier={system.tier}
+                        />
+                    </Grid.Col>
+                </Grid>
+
+            </div>
         </div>
     );
 }

@@ -58,7 +58,7 @@ export function PrebuiltTab({
     const [prebuiltSortDirection, setPrebuiltSortDirection] = useState<'asc' | 'desc'>('desc');
     const [activeView, setActiveView] = useState<'grid' | 'table'>('grid');
     const [prebuiltCurrentPage, setPrebuiltCurrentPage] = useState(1);
-    const [prebuiltItemsPerPage, setPrebuiltItemsPerPage] = useState(10);
+    const [prebuiltItemsPerPage, setPrebuiltItemsPerPage] = useState(8);
     const [expandedPrebuiltIds, setExpandedPrebuiltIds] = useState<string[]>([]);
 
     const filteredAndSortedPrebuilts = useMemo(() => {
@@ -92,8 +92,8 @@ export function PrebuiltTab({
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-muted/30 p-4 rounded-xl border border-white/5 backdrop-blur-md">
-                <div className="flex items-center gap-4 w-full md:w-auto">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                <div className="flex items-center gap-3 w-full md:w-auto">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="h-11 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30">
@@ -215,7 +215,7 @@ export function PrebuiltTab({
             </div>
 
             {activeView === 'grid' ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {prebuiltsLoading ? null : (
                         currentPrebuilts.map((system) => (
                             <InventoryPrebuiltCard

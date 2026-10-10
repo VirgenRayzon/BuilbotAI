@@ -66,7 +66,7 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
 
   const uniqueUsers = useMemo(() => {
     const users = new Set(logs.map((log) => log.actorName));
@@ -135,14 +135,17 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
         .slice(0, 2) || "ST";
 
     return (
-      <Table.Tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
+      <Table.Tr
+        key={log.id}
+        className="transition-colors hover:bg-cyan-50/60 dark:hover:bg-cyan-500/[0.035] [&>td]:border-slate-100 dark:[&>td]:border-white/[0.06]"
+      >
         {/* Employee / Actor with Avatar */}
         <Table.Td>
           <Group gap="sm" wrap="nowrap">
             <Avatar
               size={34}
               radius={34}
-              color="indigo"
+              color="cyan"
               variant="light"
               className="border border-slate-200 dark:border-white/10 shrink-0 font-bold text-xs"
             >
@@ -213,14 +216,15 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
 
   return (
     <Stack gap="md">
-      <Paper
-        withBorder
-        radius="lg"
-        p="lg"
-        className="bg-white dark:bg-[#12161f] border-slate-200 dark:border-white/10 shadow-sm"
-      >
+      <div className="space-y-4">
         {/* Search & Filter Bar */}
-        <div className="flex flex-col md:flex-row gap-3 items-center flex-wrap mb-5">
+        <Paper
+          withBorder
+          radius="lg"
+          p="sm"
+          className="bg-white/80 dark:bg-[#141a23]/80 border-slate-200 dark:border-white/10"
+        >
+          <div className="flex flex-col flex-wrap items-center gap-2 md:flex-row">
           <TextInput
             placeholder="Search resource name or details..."
             value={searchQuery}
@@ -230,7 +234,7 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
             }}
             leftSection={<Search size={16} className="text-slate-500 dark:text-slate-400" />}
             radius="md"
-            className="flex-1 min-w-[200px]"
+            className="min-w-[200px] flex-1"
             classNames={{
               input:
                 "bg-slate-50 dark:bg-slate-900/60 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100",
@@ -248,7 +252,7 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
               ...uniqueUsers.map((u) => ({ value: u, label: u })),
             ]}
             radius="md"
-            className="w-full md:w-44"
+            className="w-full md:w-48"
             classNames={{
               input:
                 "bg-slate-50 dark:bg-slate-900/60 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium",
@@ -270,7 +274,7 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
               { value: "System", label: "System Config" },
             ]}
             radius="md"
-            className="w-full md:w-44"
+            className="w-full md:w-48"
             classNames={{
               input:
                 "bg-slate-50 dark:bg-slate-900/60 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium",
@@ -283,7 +287,7 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
                 variant="default"
                 radius="md"
                 leftSection={<CalendarIcon size={14} className="text-slate-600 dark:text-slate-400" />}
-                className="w-full md:w-auto h-9 bg-slate-50 dark:bg-slate-900/60 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium text-xs"
+                className="h-9 w-full bg-slate-50 text-xs font-medium text-slate-900 dark:bg-slate-900/60 dark:text-slate-100 md:w-auto"
               >
                 {dateRange?.from ? (
                   dateRange.to ? (
@@ -332,29 +336,48 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
               Reset Filters
             </Button>
           )}
-        </div>
+          </div>
+        </Paper>
 
-        {/* Mantine Users Table Pattern */}
-        <Table.ScrollContainer minWidth={800} className="border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
-          <Table verticalSpacing="sm" highlightOnHover className="bg-white dark:bg-[#12161f]">
-            <Table.Thead className="bg-slate-100/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-white/10">
+        <Paper
+          withBorder
+          radius="xl"
+          className="overflow-hidden bg-white/80 shadow-sm dark:bg-[#141a23]/80 border-slate-200 dark:border-white/10"
+        >
+          <Group justify="space-between" className="border-b border-slate-200 px-4 py-3 dark:border-white/10">
+            <div>
+              <Text fw={700} size="sm" className="text-slate-900 dark:text-slate-100">
+                Activity log
+              </Text>
+              <Text size="xs" c="dimmed">
+                Review recent staff and system events
+              </Text>
+            </div>
+            <Badge variant="light" color="cyan" size="sm" radius="sm">
+              {filteredLogs.length} {filteredLogs.length === 1 ? "event" : "events"}
+            </Badge>
+          </Group>
+
+          <Table.ScrollContainer minWidth={800}>
+          <Table verticalSpacing="sm" highlightOnHover className="bg-transparent">
+            <Table.Thead className="bg-slate-50/80 dark:bg-white/[0.025] border-b border-slate-200 dark:border-white/10">
               <Table.Tr>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
+                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3">
                   Staff / Actor
                 </Table.Th>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
+                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3">
                   Action
                 </Table.Th>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
+                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3">
                   Resource & Scope
                 </Table.Th>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
+                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3">
                   Details
                 </Table.Th>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
+                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3">
                   Timestamp
                 </Table.Th>
-                <Table.Th className="py-3.5">
+                <Table.Th className="py-3">
                   <VisuallyHidden>Actions</VisuallyHidden>
                 </Table.Th>
               </Table.Tr>
@@ -372,10 +395,11 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
               )}
             </Table.Tbody>
           </Table>
-        </Table.ScrollContainer>
+          </Table.ScrollContainer>
+        </Paper>
 
         {/* Pagination */}
-        <div className="mt-4">
+        <div className="pt-1">
           <PaginationControls
             currentPage={currentPage}
             totalPages={totalPages}
@@ -387,7 +411,7 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
             }}
           />
         </div>
-      </Paper>
+      </div>
     </Stack>
   );
 }
