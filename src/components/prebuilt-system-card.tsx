@@ -219,9 +219,9 @@ export function PrebuiltSystemCard({
         padding={0}
         className={cn(
           "flex flex-col justify-between h-full relative group cursor-pointer overflow-hidden transition-all duration-300",
-          "bg-white/80 dark:bg-[#141a23]/90 hover:shadow-md hover:-translate-y-1",
+          "bg-white/85 dark:bg-[#111722] hover:shadow-md hover:-translate-y-1",
           "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
-          (!isComplete || (!loadingStock && !isInStock)) && "opacity-75 grayscale-[0.5]"
+          (!isComplete || (!loadingStock && !isInStock)) && "border-red-500/30 dark:border-red-500/30 hover:border-red-500/50 dark:hover:border-red-500/50 opacity-75 grayscale-[0.5]"
         )}
       >
         {/* Top Content Area */}
@@ -258,7 +258,7 @@ export function PrebuiltSystemCard({
               </Badge>
             ) : (
               <Badge size="xs" variant="light" color="red" radius="sm">
-                Out of Stock
+                Missing Parts
               </Badge>
             )}
           </Group>

@@ -76,7 +76,9 @@ export function useInventory(profile: any) {
 
     const handleUpdatePart = async (partId: string, category: Part['category'], data: AddPartFormSchema) => {
         if (!firestore) return;
+        const newCategory = (data.category as Part['category']) || category;
         await updatePart(firestore, category, partId, {
+            category: newCategory,
             name: data.partName,
             brand: data.brand,
             price: data.price,
@@ -98,23 +100,30 @@ export function useInventory(profile: any) {
             scope: 'Part',
             resourceName: data.partName,
             resourceId: partId,
-            details: `Updated part in category ${category}`
+            details: newCategory !== category 
+                ? `Updated part and changed category from ${category} to ${newCategory}` 
+                : `Updated part in category ${category}`
         });
         await clearCatalogCache();
     };
 
     const handleAddPartStock = async (partId: string, category: Part['category'], amountToAdd: number) => {
-        if (!firestore || amountToAdd <= 0) return;
+        if (!firestore || amountToAdd === 0) return;
         const currentPart = parts.find(p => p.id === partId);
         const currentStock = currentPart?.stock ?? 0;
-        const newStock = currentStock + amountToAdd;
+        const newStock = Math.max(0, currentStock + amountToAdd);
+        const actualDelta = newStock - currentStock;
+        if (actualDelta === 0) return;
         const partName = currentPart?.name || partId;
         const actorName = profile?.name || profile?.email || 'Admin';
 
         // 1. Update stock in Firestore
         await updatePart(firestore, category, partId, { stock: newStock });
 
-        // 2. Create Audit Log (e.g. Admin added 10 stocks of Ryzen 7 7700X)
+        const isReducing = actualDelta < 0;
+        const absDelta = Math.abs(actualDelta);
+
+        // 2. Create Audit Log
         await createAuditLog(firestore, {
             actionName: 'updated',
             actorId: profile?.id || 'unknown',
@@ -123,18 +132,22 @@ export function useInventory(profile: any) {
             scope: 'Part',
             resourceName: partName,
             resourceId: partId,
-            details: `${actorName} added ${amountToAdd} stocks of ${partName} (Stock: ${currentStock} -> ${newStock})`
+            details: isReducing
+                ? `${actorName} reduced ${absDelta} stocks of ${partName} (Stock: ${currentStock} -> ${newStock})`
+                : `${actorName} added ${absDelta} stocks of ${partName} (Stock: ${currentStock} -> ${newStock})`
         });
 
-        // 3. Create System Notification for other admins/managers (excluding the actor, non-admins never see system_notifications)
+        // 3. Create System Notification for other admins/managers
         await createSystemNotification(
             firestore,
             {
                 type: 'stock_added',
                 actorId: profile?.id || 'unknown',
                 actorName: actorName,
-                title: 'Stock Added',
-                message: `${actorName} added ${amountToAdd} stocks of ${partName}. Total stock is now ${newStock}.`,
+                title: isReducing ? 'Stock Reduced' : 'Stock Added',
+                message: isReducing
+                    ? `${actorName} reduced ${absDelta} stocks of ${partName}. Total stock is now ${newStock}.`
+                    : `${actorName} added ${absDelta} stocks of ${partName}. Total stock is now ${newStock}.`,
                 targetId: partId
             },
             profile?.id ? [profile.id] : []
@@ -142,8 +155,8 @@ export function useInventory(profile: any) {
 
         await clearCatalogCache();
         toast({
-            title: "Stock Added",
-            description: `Successfully added ${amountToAdd} stock(s) to ${partName}. New stock: ${newStock}.`,
+            title: isReducing ? "Stock Reduced" : "Stock Added",
+            description: `Successfully ${isReducing ? 'reduced' : 'added'} ${absDelta} stock(s) for ${partName}. New stock: ${newStock}.`,
         });
     };
 

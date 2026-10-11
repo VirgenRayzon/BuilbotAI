@@ -9,7 +9,6 @@ import {
     Dialog,
     DialogContent,
     DialogTrigger,
-    DialogClose,
     DialogHeader,
     DialogTitle,
     DialogDescription,
@@ -40,7 +39,7 @@ import {
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "./ui/scroll-area";
-import { ImageUpload } from "./image-upload";
+import { MultiImageUpload } from "./parts/multi-image-upload";
 import { 
     Loader2, 
     Sparkles, 
@@ -73,7 +72,8 @@ import { useFirestore, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { AiActionButton } from "./ui/ai-action-button";
 import { ThemeIcon, Text, Paper, ActionIcon, Badge } from "@mantine/core";
-import type { Part, PrebuiltSystem } from "@/lib/types";
+import type { ComponentData, Part, PrebuiltSystem } from "@/lib/types";
+import { checkCompatibility, checkFullBuildCompatibility, type CompatibilityResult } from "@/lib/compatibility";
 
 const formSchema = z.object({
     name: z.string().min(1, "System name is required."),
@@ -81,6 +81,7 @@ const formSchema = z.object({
     description: z.string().optional(),
     price: z.coerce.number().min(0, "Price must be a positive number."),
     imageUrl: z.string().optional().or(z.literal("")),
+    images: z.array(z.string()).optional(),
     cpu: z.string().optional(),
     gpu: z.string().optional(),
     motherboard: z.string().optional(),
@@ -96,6 +97,32 @@ const formSchema = z.object({
 });
 
 export type AddPrebuiltFormSchema = z.infer<typeof formSchema>;
+
+function getMissingAiAssistComponents(values: AddPrebuiltFormSchema): string[] {
+    const missing: string[] = [];
+    if (!values.cpu) missing.push("CPU");
+    if (!values.motherboard) missing.push("motherboard");
+    if (!values.gpu) missing.push("GPU");
+    if (!values.cooler) missing.push("cooler");
+    if (!values.psu) missing.push("power supply");
+    if (!values.case) missing.push("case");
+    if (!(values.ram || []).some(Boolean)) missing.push("RAM");
+    if (!(values.storage || []).some(Boolean)) missing.push("storage");
+    return missing;
+}
+
+function getSelectedPartIds(values: AddPrebuiltFormSchema): string[] {
+    return [
+        values.cpu,
+        values.gpu,
+        values.motherboard,
+        ...(values.ram || []),
+        ...(values.storage || []),
+        values.psu,
+        values.case,
+        values.cooler,
+    ].filter((id): id is string => Boolean(id));
+}
 
 interface AddPrebuiltDialogProps {
     children: React.ReactNode;
@@ -113,6 +140,7 @@ function PartSelector({
     onChange,
     isOpen,
     onOpenChange,
+    getCompatibility,
 }: {
     category: string;
     items: Part[];
@@ -120,6 +148,7 @@ function PartSelector({
     onChange: (v: string) => void;
     isOpen: boolean;
     onOpenChange: (v: boolean) => void;
+    getCompatibility?: (part: Part) => CompatibilityResult;
 }) {
     const [query, setQuery] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
@@ -149,7 +178,7 @@ function PartSelector({
     const selectedPart = items.find((p) => p.id === value);
 
     return (
-        <Popover open={isOpen} onOpenChange={onOpenChange} modal={true}>
+        <Popover open={isOpen} onOpenChange={onOpenChange} modal={false}>
             <PopoverTrigger asChild>
                 <Button
                     variant="outline"
@@ -163,6 +192,7 @@ function PartSelector({
                 </Button>
             </PopoverTrigger>
             <PopoverContent 
+                portalled={false}
                 className="w-[var(--radix-popover-trigger-width)] p-0 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] text-slate-900 dark:text-white shadow-2xl rounded-2xl overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-100 data-[state=open]:slide-in-from-top-0 duration-0" 
                 align="start"
                 sideOffset={8}
@@ -213,19 +243,24 @@ function PartSelector({
                                                  category === "Power Supply" ? Zap : 
                                                  category === "Cooler" ? Fan : 
                                                  category === "OS" ? Layers : MousePointer2;
+                                    const compatibility = getCompatibility?.(item);
+                                    const isIncompatible = compatibility && !compatibility.compatible;
                                     
                                     return (
                                         <button
                                             key={item.id}
                                             type="button"
+                                            disabled={isIncompatible}
                                             onClick={() => {
+                                                if (isIncompatible) return;
                                                 onChange(item.id);
                                                 onOpenChange(false);
                                                 setQuery("");
                                             }}
                                             className={cn(
                                                 "relative flex w-full cursor-default select-none items-center rounded-xl py-2.5 px-3 text-sm outline-none transition-all duration-200 border border-transparent",
-                                                "hover:bg-cyan-500/10 hover:border-cyan-500/20 group",
+                                                !isIncompatible && "hover:bg-cyan-500/10 hover:border-cyan-500/20 group",
+                                                isIncompatible && "cursor-not-allowed border-rose-500/20 bg-rose-500/5 opacity-60",
                                                 value === item.id ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-700 dark:text-cyan-300" : "text-slate-800 dark:text-slate-200"
                                             )}
                                         >
@@ -253,6 +288,11 @@ function PartSelector({
                                                             {formatCurrency(item.price)}
                                                         </span>
                                                     </div>
+                                                    {isIncompatible && (
+                                                        <span className="mt-1 text-[10px] font-medium leading-snug text-rose-600 dark:text-rose-400">
+                                                            {compatibility.message}
+                                                        </span>
+                                                    )}
                                                 </div>
 
                                                 {value === item.id && (
@@ -286,6 +326,7 @@ const PART_SLOTS = [
 
 export function AddPrebuiltDialog({ children, onSave, parts, initialData, title }: AddPrebuiltDialogProps) {
     const [open, setOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [isAiPending, setIsAiPending] = useState(false);
     const [aiDuration, setAiDuration] = useState<number | null>(null);
     const [tokensUsed, setTokensUsed] = useState<number | null>(null);
@@ -328,6 +369,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
             description: initialData?.description || "",
             price: initialData?.price || 0,
             imageUrl: initialData?.imageUrl || "",
+            images: initialData?.images || (initialData?.imageUrl ? [initialData.imageUrl] : []),
             cpu: initialData?.components.cpu || "",
             gpu: initialData?.components.gpu || "",
             motherboard: initialData?.components.motherboard || "",
@@ -339,6 +381,73 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
         },
     });
 
+    const componentValues = form.watch();
+    const missingAiAssistComponents = getMissingAiAssistComponents(componentValues);
+    const isComponentSelectionComplete = missingAiAssistComponents.length === 0;
+    const selectedPartsPrice = useMemo(() => {
+        const total = getSelectedPartIds(componentValues).reduce((sum, id) => {
+            return sum + (parts.find((part) => part.id === id)?.price || 0);
+        }, 0);
+        return Math.round(total * 100) / 100;
+    }, [componentValues, parts]);
+
+    const toComponentData = (part: Part): ComponentData => ({
+        id: part.id,
+        model: part.name,
+        description: part.description || "",
+        price: part.price,
+        image: part.imageUrl,
+        images: part.images,
+        imageHint: part.name.toLowerCase().split(" ").slice(0, 2).join(" "),
+        icon: MousePointer2,
+        wattage: part.wattage,
+        socket: part.specifications?.["Socket"]?.toString() || part.specifications?.["socket"]?.toString() || part.socket,
+        ramType: part.specifications?.["Memory Type"]?.toString() || part.specifications?.["RAM Type"]?.toString() || part.ramType,
+        performanceScore: part.performanceScore,
+        performanceTier: part.performanceTier,
+        specifications: part.specifications,
+        dimensions: part.dimensions,
+    });
+
+    const buildFromValues = (values: AddPrebuiltFormSchema) => {
+        const findSelected = (category: string, id?: string) => {
+            if (!id) return null;
+            const part = inventory[category]?.find((candidate) => candidate.id === id);
+            return part ? toComponentData(part) : null;
+        };
+
+        return {
+            CPU: findSelected("CPU", values.cpu),
+            GPU: findSelected("GPU", values.gpu),
+            Motherboard: findSelected("Motherboard", values.motherboard),
+            RAM: (values.ram || []).map((id) => findSelected("RAM", id)).filter((part): part is ComponentData => Boolean(part)),
+            Storage: (values.storage || []).map((id) => findSelected("Storage", id)).filter((part): part is ComponentData => Boolean(part)),
+            PSU: findSelected("PSU", values.psu),
+            Case: findSelected("Case", values.case),
+            Cooler: findSelected("Cooler", values.cooler),
+        } satisfies Record<string, ComponentData | ComponentData[] | null>;
+    };
+
+    const compatibilityBuild: Record<string, ComponentData | ComponentData[] | null> = useMemo(
+        () => buildFromValues(componentValues),
+        [componentValues, inventory]
+    );
+
+    const getCompatibilityForPart = (part: Part, currentValue = "") => {
+        const build = { ...compatibilityBuild };
+
+        if (part.category === "RAM" || part.category === "Storage") {
+            const selected = [...((build[part.category] as ComponentData[]) || [])];
+            const currentIndex = selected.findIndex((component) => component.id === currentValue);
+            if (currentIndex >= 0) selected.splice(currentIndex, 1);
+            build[part.category] = selected;
+        } else {
+            build[part.category] = null;
+        }
+
+        return checkCompatibility(part, build);
+    };
+
     // Re-reset form if initialData changes or dialog opens
     useEffect(() => {
         if (open && initialData) {
@@ -348,6 +457,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                 description: initialData.description,
                 price: Math.round((initialData.price || 0) * 100) / 100,
                 imageUrl: initialData.imageUrl,
+                images: initialData.images || (initialData.imageUrl ? [initialData.imageUrl] : []),
                 cpu: initialData.components.cpu,
                 gpu: initialData.components.gpu,
                 motherboard: initialData.components.motherboard,
@@ -359,11 +469,16 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
             });
         } else if (open && !initialData) {
             form.reset({
-                name: "", tier: "", description: "", price: 0, imageUrl: "",
+                name: "", tier: "", description: "", price: 0, imageUrl: "", images: [],
                 cpu: "", gpu: "", motherboard: "", ram: [], storage: [], psu: "", case: "", cooler: "",
             });
         }
     }, [open, initialData, form]);
+
+    useEffect(() => {
+        if (!open || form.getValues("price") === selectedPartsPrice) return;
+        form.setValue("price", selectedPartsPrice, { shouldValidate: true, shouldDirty: true });
+    }, [form, open, selectedPartsPrice]);
 
     const handleAiAssist = async () => {
         if (isAiKillSwitch) {
@@ -371,6 +486,16 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                 title: "AI Disabled",
                 description: "AI is disable by Administrator.",
                 variant: "destructive"
+            });
+            return;
+        }
+
+        const missingComponents = getMissingAiAssistComponents(form.getValues());
+        if (missingComponents.length > 0) {
+            toast({
+                variant: "destructive",
+                title: "Complete Component Selection",
+                description: `Select a ${missingComponents.join(", ")} before using AI Assist.`,
             });
             return;
         }
@@ -393,18 +518,19 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
             cooler: getPartName(form.getValues("cooler")),
         };
 
-        const hasComponents = Object.values(selectedComponents).some(c => 
-            Array.isArray(c) ? c.length > 0 : !!c
-        );
-
-        if (!hasComponents) {
-            toast({ 
-                variant: "destructive", 
-                title: "No Components Found", 
-                description: "The AI needs at least one selected component name to generate an identity. Please ensure parts are selected from the dropdowns." 
-            });
-            return;
-        }
+        const selectedPartIds = getSelectedPartIds(form.getValues());
+        const inventoryPrice = selectedPartIds.reduce((total, id) => {
+            return total + (parts.find((part) => part.id === id)?.price || 0);
+        }, 0);
+        const productHighlights = selectedPartIds
+            .map((id) => parts.find((part) => part.id === id))
+            .filter((part): part is Part => Boolean(part))
+            .map((part) => {
+                const maxChars = ["CPU", "GPU", "Motherboard"].includes(part.category) ? 900 : 280;
+                const highlights = part.description?.trim().slice(0, maxChars);
+                return highlights ? `${part.category} — ${part.name}:\n${highlights}` : `${part.category} — ${part.name}`;
+            })
+            .join("\n\n");
 
         setIsAiPending(true);
         aiAbortRef.current = false;
@@ -419,7 +545,9 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                     ram: (selectedComponents.ram as string[]).join(", "),
                     storage: (selectedComponents.storage as string[]).join(", ")
                 }, 
-                tier: form.getValues("tier") || undefined 
+                tier: form.getValues("tier") || undefined,
+                inventoryPrice: inventoryPrice || undefined,
+                productHighlights: productHighlights || undefined,
             });
 
             if (aiAbortRef.current) return;
@@ -430,37 +558,11 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                 setTokensUsed(Math.round(JSON.stringify(result).length / 4));
             }
 
-            if (result && "systemName" in result) {
-                const currentName = form.getValues("name");
-                const currentDesc = form.getValues("description");
-                const currentPrice = form.getValues("price");
-                const currentTier = form.getValues("tier");
-
+            if (result && "description" in result && result.description) {
                 let fieldsUpdated = [];
 
-                if (result.systemName && !form.getValues("name")) {
-                    form.setValue("name", result.systemName, { shouldValidate: true, shouldDirty: true });
-                    fieldsUpdated.push("Name");
-                }
-                if (result.description && !form.getValues("description")) {
-                    form.setValue("description", result.description, { shouldValidate: true, shouldDirty: true });
-                    fieldsUpdated.push("Description");
-                }
-                if (result.price !== undefined && (!form.getValues("price") || form.getValues("price") === 0)) {
-                    form.setValue("price", Math.round(result.price * 100) / 100, { shouldValidate: true, shouldDirty: true });
-                    fieldsUpdated.push("Price");
-                }
-                if (!form.getValues("tier")) {
-                    form.setValue("tier", result.tier || "Mid-Range", { shouldValidate: true, shouldDirty: true });
-                    fieldsUpdated.push("Tier");
-                }
-
-                // Add placeholder image if empty
-                if (!form.getValues("imageUrl")) {
-                    // Using a high-quality Unsplash image of a premium PC build for better aesthetics
-                    form.setValue("imageUrl", `https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=800&auto=format&fit=crop`, { shouldValidate: true, shouldDirty: true });
-                    fieldsUpdated.push("Image Placeholder");
-                }
+                form.setValue("description", result.description, { shouldValidate: true, shouldDirty: true });
+                fieldsUpdated.push("Description");
                 
                 if (fieldsUpdated.length > 0) {
                     setJustAutofilled(true);
@@ -508,7 +610,22 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
     }, [form.watch("ram")]);
 
     const onSubmit = async (values: AddPrebuiltFormSchema) => {
+        if (isSaving) return;
         try {
+            const compatibilityIssues = checkFullBuildCompatibility(buildFromValues(values));
+            const blockingIssue = compatibilityIssues.find((issue) => issue.severity === "critical");
+
+            if (blockingIssue) {
+                toast({
+                    variant: "destructive",
+                    title: "Compatibility Error",
+                    description: blockingIssue.message,
+                });
+                return;
+            }
+
+            setIsSaving(true);
+
             const mobo = inventory["Motherboard"]?.find(m => m.id === values.motherboard);
             const rSlots = mobo ? parseInt(mobo.specifications?.['Memory Slots']?.toString() || "4") : 4;
             const nSlots = mobo ? parseInt(mobo.specifications?.['NVMe Slots']?.toString() || "1") : 1;
@@ -540,6 +657,8 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                 title: "Save Failed",
                 description: error.message || "An unexpected error occurred while saving."
             });
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -583,7 +702,8 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
     }, [isAiPending]);
 
     const handleOpenChange = (isOpen: boolean) => {
-        if (!isOpen && isAiPending) return;
+        if (!isOpen && (isAiPending || isSaving)) return;
+        if (!isOpen) setOpenSlot(null);
         setOpen(isOpen);
         if (!isOpen) { 
             form.reset(); 
@@ -632,15 +752,22 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
     const highlightClass = justAutofilled
         ? "ring-2 ring-cyan-500/50 bg-cyan-500/10 dark:bg-cyan-500/10 transition-all duration-700"
         : "";
+    const watchedImages = form.watch("images");
+    const watchedImageUrl = form.watch("imageUrl");
+    const images = watchedImages?.length ? watchedImages : (watchedImageUrl ? [watchedImageUrl] : []);
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent className="sm:max-w-[75vw] p-0 gap-0 overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] backdrop-blur-2xl shadow-2xl rounded-3xl [&>button.absolute]:hidden">
+            <DialogContent
+                onEscapeKeyDown={(event) => { if (isSaving) event.preventDefault(); }}
+                onPointerDownOutside={(event) => { if (isSaving) event.preventDefault(); }}
+                className="w-[calc(100%-24px)] sm:max-w-[75vw] max-h-[calc(100vh-24px)] p-0 gap-0 overflow-hidden border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#111722] shadow-lg rounded-xl [&>button.absolute]:hidden"
+            >
 
                 {/* ── Header ── */}
-                <DialogHeader className="px-8 pt-7 pb-5 border-b border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] flex flex-row items-center justify-between gap-4 space-y-0">
-                    <div className="flex items-center gap-4">
+                <DialogHeader className="p-3 border-b border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] flex flex-row items-center justify-between gap-3 space-y-0">
+                    <div className="flex items-center gap-3">
                         <ThemeIcon size={46} radius="xl" variant="light" color="cyan" className="shadow-sm">
                             <Cpu className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
                         </ThemeIcon>
@@ -664,6 +791,8 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                             aiDuration={aiDuration}
                             tokensUsed={tokensUsed}
                             mode="prebuilt"
+                            disabled={isAiKillSwitch || !isComponentSelectionComplete || isSaving}
+                            className={!isComponentSelectionComplete ? "disabled:bg-slate-200 disabled:text-slate-500 disabled:border-slate-300 dark:disabled:bg-white/5 dark:disabled:text-slate-500 dark:disabled:border-white/10 disabled:shadow-none" : undefined}
                         />
                     </div>
                 </DialogHeader>
@@ -673,7 +802,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                         <div className="absolute inset-x-0 bottom-0 h-0.5 bg-cyan-500/20">
                             <div className="h-full bg-cyan-500 animate-progress-glow w-[35%]" />
                         </div>
-                        <div className="px-8 py-3 flex items-center justify-between">
+                        <div className="p-3 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <ThemeIcon size={32} radius="lg" variant="light" color="cyan">
                                     <BrainCircuit className="h-4 w-4 text-cyan-600 dark:text-cyan-400 animate-pulse" />
@@ -699,7 +828,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
 
                         {/* ── Scrollable Body ── */}
                         <ScrollArea className="h-[70vh]">
-                            <div className="px-10 py-8 space-y-10">
+                            <div className="p-3 space-y-3">
 
                                 {/* Section: System Identity */}
                                 <div className="grid grid-cols-12 gap-8 items-start">
@@ -716,19 +845,20 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                             p="xs"
                                             className="bg-slate-50/70 dark:bg-[#111722]/60 border-slate-200 dark:border-white/10 shadow-sm"
                                         >
-                                            <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                                                <FormItem>
-                                                    <FormControl>
-                                                        <ImageUpload 
-                                                            value={field.value || ""} 
-                                                            onChange={field.onChange} 
-                                                            variant="large"
-                                                            allowImageUrl
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )} />
+                                            <MultiImageUpload
+                                                images={images}
+                                                coverImage={watchedImageUrl || ""}
+                                                onImagesChange={(updatedImages) => {
+                                                    form.setValue("images", updatedImages, { shouldValidate: true, shouldDirty: true });
+                                                    const currentCover = form.getValues("imageUrl") || "";
+                                                    if (!currentCover || !updatedImages.includes(currentCover)) {
+                                                        form.setValue("imageUrl", updatedImages[0] || "", { shouldValidate: true, shouldDirty: true });
+                                                    }
+                                                }}
+                                                onCoverImageChange={(coverImage) => {
+                                                    form.setValue("imageUrl", coverImage, { shouldValidate: true, shouldDirty: true });
+                                                }}
+                                            />
                                         </Paper>
                                     </div>
 
@@ -794,8 +924,10 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                     <FormControl>
                                                         <Input 
                                                             type="number" 
+                                                            readOnly
+                                                            aria-readonly="true"
                                                             className={cn(
-                                                                "bg-slate-50 dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 transition-all shadow-sm font-mono",
+                                                                "cursor-default bg-slate-100 dark:bg-white/[0.04] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 transition-all shadow-sm font-mono",
                                                                 highlightClass
                                                             )} 
                                                             placeholder="e.g., 125000" 
@@ -807,6 +939,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                             }}
                                                         />
                                                     </FormControl>
+                                                    <Text size="xs" c="dimmed" mt={4}>Calculated from selected components.</Text>
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />
@@ -952,6 +1085,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                         items={inventory["CPU"] || []}
                                                         value={field.value || ""}
                                                         onChange={field.onChange}
+                                                        getCompatibility={(part) => getCompatibilityForPart(part, field.value || "")}
                                                         isOpen={openSlot === "cpu"}
                                                         onOpenChange={(o) => setOpenSlot(o ? "cpu" : null)}
                                                     />
@@ -978,6 +1112,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                         items={inventory["Motherboard"] || []}
                                                         value={field.value || ""}
                                                         onChange={field.onChange}
+                                                        getCompatibility={(part) => getCompatibilityForPart(part, field.value || "")}
                                                         isOpen={openSlot === "motherboard"}
                                                         onOpenChange={(o) => setOpenSlot(o ? "motherboard" : null)}
                                                     />
@@ -1004,6 +1139,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                         items={inventory["GPU"] || []}
                                                         value={field.value || ""}
                                                         onChange={field.onChange}
+                                                        getCompatibility={(part) => getCompatibilityForPart(part, field.value || "")}
                                                         isOpen={openSlot === "gpu"}
                                                         onOpenChange={(o) => setOpenSlot(o ? "gpu" : null)}
                                                     />
@@ -1030,6 +1166,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                         items={inventory["Cooler"] || []}
                                                         value={field.value || ""}
                                                         onChange={field.onChange}
+                                                        getCompatibility={(part) => getCompatibilityForPart(part, field.value || "")}
                                                         isOpen={openSlot === "cooler"}
                                                         onOpenChange={(o) => setOpenSlot(o ? "cooler" : null)}
                                                     />
@@ -1056,6 +1193,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                         items={inventory["PSU"] || []}
                                                         value={field.value || ""}
                                                         onChange={field.onChange}
+                                                        getCompatibility={(part) => getCompatibilityForPart(part, field.value || "")}
                                                         isOpen={openSlot === "psu"}
                                                         onOpenChange={(o) => setOpenSlot(o ? "psu" : null)}
                                                     />
@@ -1082,6 +1220,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                         items={inventory["Case"] || []}
                                                         value={field.value || ""}
                                                         onChange={field.onChange}
+                                                        getCompatibility={(part) => getCompatibilityForPart(part, field.value || "")}
                                                         isOpen={openSlot === "case"}
                                                         onOpenChange={(o) => setOpenSlot(o ? "case" : null)}
                                                     />
@@ -1132,6 +1271,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                                         items={inventory["RAM"] || []}
                                                                         value={field.value || ""}
                                                                         onChange={field.onChange}
+                                                                        getCompatibility={(part) => getCompatibilityForPart(part, field.value || "")}
                                                                         isOpen={openSlot === `ram-${fieldData.fieldIndex}`}
                                                                         onOpenChange={(o) => setOpenSlot(o ? `ram-${fieldData.fieldIndex}` : null)}
                                                                     />
@@ -1189,6 +1329,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                                     }) || []}
                                                                     value={field.value || ""}
                                                                     onChange={field.onChange}
+                                                                    getCompatibility={(part) => getCompatibilityForPart(part, field.value || "")}
                                                                     isOpen={openSlot === `storage-${index}`}
                                                                     onOpenChange={(o) => setOpenSlot(o ? `storage-${index}` : null)}
                                                                 />
@@ -1214,23 +1355,26 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                         </ScrollArea>
 
                         {/* ── Sticky Footer ── */}
-                        <DialogFooter className="px-8 py-4 border-t border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] flex-row justify-between items-center sm:justify-between">
-                            <DialogClose asChild>
-                                <Button 
-                                    type="button" 
-                                    variant="outline" 
-                                    className="h-10 px-6 rounded-xl font-bold uppercase tracking-wider text-xs border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
-                                >
-                                    Cancel
-                                </Button>
-                            </DialogClose>
+                        <DialogFooter className="relative z-[60] p-3 border-t border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-[#111722] flex-row justify-between items-center sm:justify-between">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onPointerDown={() => setOpenSlot(null)}
+                                onClick={() => handleOpenChange(false)}
+                                disabled={isSaving}
+                                className="h-10 px-6 rounded-xl font-bold uppercase tracking-wider text-xs border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
+                            >
+                                Cancel
+                            </Button>
                             <Button
                                 type="submit"
-                                disabled={isAiPending}
+                                disabled={isAiPending || isSaving}
                                 className="h-10 px-8 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold uppercase tracking-wider text-xs shadow-md shadow-cyan-500/20 transition-all duration-200"
                             >
-                                {isAiPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {initialData ? "Update Prebuilt" : "Deploy System"}
+                                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {isSaving
+                                    ? (initialData ? "Updating, please wait" : "Saving, please wait")
+                                    : (initialData ? "Update Prebuilt" : "Deploy System")}
                             </Button>
                         </DialogFooter>
                     </form>

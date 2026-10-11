@@ -268,7 +268,7 @@ export function YourBuild({
         onCategorySelect={onCategorySelect}
         onAnalyze={() => { if (isBuildComplete) void handleAnalyze(); }}
         onReserve={(onSuccess) => { if (isBuildComplete) void handleCheckout(onSuccess); }}
-        onAddPrebuilt={() => { if (isBuildComplete) handleAddPrebuiltWithAi(); }}
+        onAddPrebuilt={(name) => { if (isBuildComplete) handleAddPrebuiltWithAi(name); }}
       />
     </>
   );

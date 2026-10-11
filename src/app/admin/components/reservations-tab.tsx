@@ -734,7 +734,7 @@ export function ReservationsTab({
                 withBorder
                 radius="lg"
                 p="xs"
-                className="bg-white/80 dark:bg-[#141a23]/90 border-slate-200/80 dark:border-white/10 shadow-xs"
+                className="bg-white/85 dark:bg-[#111722] border-slate-200/80 dark:border-white/10 shadow-xs"
             >
                 <div className="flex items-center justify-between gap-2 sm:gap-3 flex-nowrap overflow-x-auto no-scrollbar py-0.5">
                     {/* Left: Search Input */}
@@ -857,7 +857,7 @@ export function ReservationsTab({
                                 p={12}
                                 className={cn(
                                     "flex flex-col justify-between transition-all duration-300 relative group min-w-0",
-                                    "bg-white/80 dark:bg-[#141a23]/90 hover:shadow-md hover:-translate-y-1",
+                                    "bg-white/85 dark:bg-[#111722] hover:shadow-md hover:-translate-y-1",
                                     "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
                                     currentStatus === 'cancelled' && "opacity-75 grayscale-[0.3]"
                                 )}

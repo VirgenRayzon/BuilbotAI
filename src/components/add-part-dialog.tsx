@@ -25,6 +25,7 @@ import { PartIdentitySection } from "./parts/part-identity-section";
 import { PartSpecificationsSection } from "./parts/part-specifications-section";
 import { AiActionButton } from "./ui/ai-action-button";
 import type { Part } from "@/lib/types";
+import { normalizeProductDescription } from "@/lib/normalize-product-description";
 
 interface AddPartDialogProps {
   children?: React.ReactNode;
@@ -68,9 +69,15 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
   };
 
   const onSubmit = async (values: AddPartFormSchema) => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      await onSave(values);
+      const normalizedValues = {
+        ...values,
+        description: normalizeProductDescription(values.description),
+      };
+      form.setValue("description", normalizedValues.description);
+      await onSave(normalizedValues);
       toast({ 
         title: initialData ? "Part Updated!" : "Part Added!", 
         description: `${values.partName} has been ${initialData ? "updated" : "added to"} the inventory.` 
@@ -117,16 +124,20 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
     <Dialog
       open={open}
       onOpenChange={(isOpen) => {
-        if (!isOpen && isAiPending) return;
+        if (!isOpen && (isAiPending || isSubmitting)) return;
         setOpen(isOpen);
       }}
     >
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[70vw] p-0 gap-0 overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] backdrop-blur-2xl shadow-2xl rounded-3xl [&>button.absolute]:hidden">
+      <DialogContent
+        onEscapeKeyDown={(event) => { if (isSubmitting) event.preventDefault(); }}
+        onPointerDownOutside={(event) => { if (isSubmitting) event.preventDefault(); }}
+        className="w-[calc(100%-24px)] sm:max-w-[70vw] max-h-[calc(100vh-24px)] p-0 gap-0 overflow-hidden border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#111722] shadow-lg rounded-xl [&>button.absolute]:hidden"
+      >
         
         {/* Header */}
-        <DialogHeader className="px-8 pt-7 pb-5 border-b border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] flex flex-row items-center justify-between gap-4 space-y-0">
-          <div className="flex items-center gap-4">
+        <DialogHeader className="p-3 border-b border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] flex flex-row items-center justify-between gap-3 space-y-0">
+          <div className="flex items-center gap-3">
             <ThemeIcon size={46} radius="xl" variant="light" color="cyan" className="shadow-sm">
               <Plus className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
             </ThemeIcon>
@@ -150,6 +161,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
               aiDuration={aiDuration}
               tokensUsed={tokensUsed}
               mode="part"
+              disabled={isSubmitting}
             />
           </div>
         </DialogHeader>
@@ -160,7 +172,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
             <div className="absolute inset-x-0 bottom-0 h-0.5 bg-cyan-500/20">
               <div className="h-full bg-cyan-500 animate-progress-glow w-[35%]" />
             </div>
-            <div className="px-8 py-3 flex items-center justify-between">
+            <div className="p-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <ThemeIcon size={32} radius="lg" variant="light" color="cyan">
                   <BrainCircuit className="h-4 w-4 animate-pulse text-cyan-600 dark:text-cyan-400" />
@@ -185,7 +197,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col">
             <ScrollArea className="h-[70vh]">
-              <div className="px-10 py-8 space-y-10">
+              <div className="p-3 space-y-3">
                 <PartIdentitySection 
                   form={form} 
                   onCategoryChange={handleCategoryChange} 
@@ -200,7 +212,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
             </ScrollArea>
 
             {/* Footer */}
-            <DialogFooter className="px-8 py-4 border-t border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02]">
+            <DialogFooter className="p-3 border-t border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02]">
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-3">
                   <Badge variant="light" color="cyan" size="lg" className="font-bold uppercase tracking-wider">
@@ -212,6 +224,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                     <Button 
                       type="button" 
                       variant="outline" 
+                      disabled={isSubmitting}
                       className="h-10 px-6 rounded-xl font-bold uppercase tracking-wider text-xs border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
                     >
                       Cancel
@@ -225,7 +238,7 @@ export function AddPartDialog({ children, onSave, initialData, title }: AddPartD
                     {isSubmitting ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
+                        {initialData ? "Updating, please wait" : "Saving, please wait"}
                       </>
                     ) : (
                       initialData ? "Update Component" : "Save Component"

@@ -82,20 +82,24 @@ export function InventoryPrebuiltCard({
   const missingParts = getMissingParts(system);
   const isComplete = missingParts.length === 0;
 
-  // Resolve whether all essential components are currently in stock
-  const isInStock = useMemo(() => {
-    if (!isComplete || !parts || parts.length === 0) return true;
+  const inventoryStatus = useMemo<'available' | 'out-of-stock' | 'part-missing'>(() => {
+    if (!isComplete) return 'part-missing';
+    if (!parts || parts.length === 0) return 'available';
     const essentialKeys = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'];
     const componentsRecord = system.components as Record<string, string | string[] | undefined>;
     for (const key of essentialKeys) {
       const partId = componentsRecord[key];
-      const resolvedId = Array.isArray(partId) ? partId[0] : partId;
-      if (!resolvedId) return false;
-      const foundPart = parts.find((p) => p.id === resolvedId);
-      if (!foundPart || foundPart.stock <= 0) return false;
+      const resolvedIds = Array.isArray(partId) ? partId.filter(Boolean) : partId ? [partId] : [];
+      if (resolvedIds.length === 0) return 'part-missing';
+      for (const resolvedId of resolvedIds) {
+        const foundPart = parts.find((part) => part.id === resolvedId);
+        if (!foundPart) return 'part-missing';
+        if (foundPart.stock <= 0) return 'out-of-stock';
+      }
     }
-    return true;
+    return 'available';
   }, [system.components, isComplete, parts]);
+  const hasMissingPart = inventoryStatus === 'part-missing';
 
   return (
     <div className="relative group/card-wrapper h-full">
@@ -105,9 +109,11 @@ export function InventoryPrebuiltCard({
         padding={12}
         className={cn(
           "flex flex-col justify-between h-full relative group transition-all duration-300",
-          "bg-white/80 dark:bg-[#141a23]/90 hover:shadow-md hover:-translate-y-1",
+          "bg-white/85 dark:bg-[#111722] hover:shadow-md hover:-translate-y-1",
           "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
-          isSelected && "border-cyan-500 border-2 shadow-cyan-500/20 bg-cyan-500/[0.03]"
+          isSelected && "border-cyan-500 border-2 shadow-cyan-500/20 bg-cyan-500/[0.03]",
+          hasMissingPart && "border-red-500/70 dark:border-red-500/70 bg-red-50/40 dark:bg-red-950/10 shadow-sm shadow-red-500/10 hover:border-red-500",
+          inventoryStatus === 'out-of-stock' && "border-red-500/40 dark:border-red-500/40 hover:border-red-500/60 dark:hover:border-red-500/60 opacity-80"
         )}
         onClick={() => {
           if (isSelectionMode) {
@@ -143,17 +149,17 @@ export function InventoryPrebuiltCard({
             </Badge>
 
             <Group gap={6} align="center" wrap="nowrap">
-              {!isComplete ? (
-                <Badge size="xs" variant="light" color="orange" radius="sm">
-                  Incomplete
+              {hasMissingPart ? (
+                <Badge size="xs" variant="light" color="red" radius="sm">
+                  Part Missing
                 </Badge>
-              ) : isInStock ? (
+              ) : inventoryStatus === 'available' ? (
                 <Badge size="xs" variant="light" color="teal" radius="sm">
                   In Stock
                 </Badge>
               ) : (
                 <Badge size="xs" variant="light" color="red" radius="sm">
-                  Out of Stock
+                  Missing Parts
                 </Badge>
               )}
 

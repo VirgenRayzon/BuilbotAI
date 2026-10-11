@@ -291,7 +291,7 @@ export default function ManagerSignupPage() {
           withBorder
           radius="lg"
           p={{ base: 'md', sm: 'lg' }}
-          className="w-full bg-white/85 dark:bg-[#141a23]/90 backdrop-blur-md border-red-500/30 dark:border-red-500/30 shadow-sm relative transition-all"
+          className="w-full bg-white/85 dark:bg-[#111722] border-red-500/30 dark:border-red-500/30 shadow-sm relative transition-all"
         >
           <Stack gap="md">
             {/* Header with Red Badge & Shield Icon */}

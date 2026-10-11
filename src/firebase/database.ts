@@ -215,12 +215,20 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
 }
 
 
-export async function updatePart(firestore: Firestore, category: Part['category'], partId: string, data: Partial<Omit<Part, 'id' | 'category'>>) {
-    const docRef = doc(firestore, inventoryItemPath(category, partId));
+export async function updatePart(
+    firestore: Firestore,
+    category: Part['category'],
+    partId: string,
+    data: Partial<Omit<Part, 'id' | 'category'>> & { category?: Part['category'] }
+) {
+    const targetCategory = data.category || category;
+    const isCategoryChanging = targetCategory !== category;
+    const oldDocRef = doc(firestore, inventoryItemPath(category, partId));
+    const targetDocRef = isCategoryChanging ? doc(firestore, inventoryItemPath(targetCategory, partId)) : oldDocRef;
 
     // If specifications are being updated but not wattage, try to re-resolve wattage
     if (data.specifications && data.wattage === undefined) {
-        data.wattage = resolveWattage(category, undefined, data.specifications);
+        data.wattage = resolveWattage(targetCategory, undefined, data.specifications);
     }
 
     if (data.images && data.images.length > 0) {
@@ -229,7 +237,7 @@ export async function updatePart(firestore: Firestore, category: Part['category'
         for (let i = 0; i < rawImages.length; i++) {
             const img = rawImages[i];
             if (img) {
-                const uploaded = await uploadToStorageClient(img, `parts/${category.toLowerCase()}`, `${data.name || 'part'}-${i}`);
+                const uploaded = await uploadToStorageClient(img, `parts/${targetCategory.toLowerCase()}`, `${data.name || 'part'}-${i}`);
                 persistedImages.push(uploaded);
             }
         }
@@ -240,40 +248,71 @@ export async function updatePart(firestore: Firestore, category: Part['category'
             if (coverIndex !== -1 && persistedImages[coverIndex]) {
                 data.imageUrl = persistedImages[coverIndex];
             } else {
-                data.imageUrl = await uploadToStorageClient(data.imageUrl, `parts/${category.toLowerCase()}`, `${data.name || 'part'}-cover`);
+                data.imageUrl = await uploadToStorageClient(data.imageUrl, `parts/${targetCategory.toLowerCase()}`, `${data.name || 'part'}-cover`);
             }
         } else if (persistedImages.length > 0) {
             data.imageUrl = persistedImages[0];
         }
     } else if (data.imageUrl) {
-        data.imageUrl = await uploadToStorageClient(data.imageUrl, `parts/${category.toLowerCase()}`, data.name);
+        data.imageUrl = await uploadToStorageClient(data.imageUrl, `parts/${targetCategory.toLowerCase()}`, data.name);
     }
 
     const cleanedData = cleanData(data);
 
-    // Regenerate search keywords if name, brand, or specifications are modified
-    if (data.name !== undefined || data.brand !== undefined || data.specifications !== undefined) {
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const currentData = docSnap.data();
-            const updatedName = data.name !== undefined ? data.name : (currentData.name || '');
-            const updatedBrand = data.brand !== undefined ? data.brand : (currentData.brand || '');
-            
-            const specs = data.specifications || currentData.specifications || {};
-            const updatedModel = specs.Model || currentData.model;
-            const updatedSeries = specs.Series || currentData.series;
-
-            cleanedData.searchKeywords = generateSearchKeywords(
-                updatedName,
-                updatedBrand,
-                category,
-                updatedModel,
-                updatedSeries
-            );
-        }
+    // Specifications are the editable source of truth. Keep legacy shortcut
+    // fields synchronized so older consumers cannot retain stale compatibility data.
+    if (data.specifications) {
+        const socket = data.specifications['Socket'] ?? data.specifications['socket'];
+        const ramType = data.specifications['Memory Type'] ?? data.specifications['RAM Type'];
+        if (socket !== undefined) cleanedData.socket = String(socket).trim();
+        if (ramType !== undefined) cleanedData.ramType = String(ramType).trim();
     }
 
-    await updateDoc(docRef, cleanedData);
+    // Regenerate search keywords if name, brand, or specifications are modified
+    const docSnap = await getDoc(oldDocRef);
+    const currentData = docSnap.exists() ? docSnap.data() : {};
+
+    if (data.name !== undefined || data.brand !== undefined || data.specifications !== undefined || isCategoryChanging) {
+        const updatedName = data.name !== undefined ? data.name : (currentData.name || '');
+        const updatedBrand = data.brand !== undefined ? data.brand : (currentData.brand || '');
+        
+        const specs = data.specifications || currentData.specifications || {};
+        const updatedModel = specs.Model || currentData.model;
+        const updatedSeries = specs.Series || currentData.series;
+
+        cleanedData.searchKeywords = generateSearchKeywords(
+            updatedName,
+            updatedBrand,
+            targetCategory,
+            updatedModel,
+            updatedSeries
+        );
+    }
+
+    if (isCategoryChanging) {
+        // When category changes, the item must be moved from inventory/<oldCat>/items/<id>
+        // to inventory/<newCat>/items/<id> in Firestore.
+        cleanedData.category = targetCategory;
+        const mergedData = cleanData({
+            ...currentData,
+            ...cleanedData,
+            updatedAt: new Date(),
+        });
+
+        const batch = writeBatch(firestore);
+        // Ensure destination category doc exists
+        batch.set(doc(firestore, inventoryCategoryPath(targetCategory)), {
+            label: inventoryCategoryLabel(targetCategory),
+            isActive: true,
+        }, { merge: true });
+        // Create in new location with the same ID
+        batch.set(targetDocRef, mergedData);
+        // Delete from previous category collection
+        batch.delete(oldDocRef);
+        await batch.commit();
+    } else {
+        await updateDoc(oldDocRef, cleanedData);
+    }
 }
 
 export async function deletePart(firestore: Firestore, partId: string, category: Part['category']) {
@@ -304,10 +343,14 @@ export async function bulkDeleteParts(firestore: Firestore, items: { id: string,
 
 // Prebuilt Systems
 export async function addPrebuiltSystem(firestore: Firestore, system: AddPrebuiltFormSchema) {
-    const { name, tier, description, price, imageUrl, cpu, gpu, motherboard, ram, storage, psu, case: caseComponent, cooler } = system;
+    const { name, tier, description, price, imageUrl, images, cpu, gpu, motherboard, ram, storage, psu, case: caseComponent, cooler } = system;
 
-    const finalImageUrl = imageUrl || "";
-    const persistedImageUrl = finalImageUrl ? await uploadToStorageClient(finalImageUrl, 'prebuiltSystems', name) : "";
+    const rawImages = images?.length ? images : (imageUrl ? [imageUrl] : []);
+    const persistedImages = await Promise.all(rawImages.map((image, index) =>
+        uploadToStorageClient(image, 'prebuiltSystems', `${name}-${index}`)
+    ));
+    const coverIndex = imageUrl ? rawImages.indexOf(imageUrl) : 0;
+    const persistedImageUrl = persistedImages[coverIndex] || persistedImages[0] || "";
 
     const systemData: Omit<PrebuiltSystem, 'id'> = {
         name,
@@ -315,6 +358,7 @@ export async function addPrebuiltSystem(firestore: Firestore, system: AddPrebuil
         description,
         price,
         imageUrl: persistedImageUrl,
+        images: persistedImages,
         components: {
             cpu,
             gpu,
@@ -336,9 +380,13 @@ export async function deletePrebuiltSystem(firestore: Firestore, systemId: strin
 }
 
 export async function updatePrebuiltSystem(firestore: Firestore, systemId: string, data: AddPrebuiltFormSchema) {
-    const { name, tier, description, price, imageUrl, cpu, gpu, motherboard, ram, storage, psu, case: caseComponent, cooler } = data;
-    const finalImageUrl = imageUrl || "";
-    const persistedImageUrl = finalImageUrl ? await uploadToStorageClient(finalImageUrl, 'prebuiltSystems', name) : "";
+    const { name, tier, description, price, imageUrl, images, cpu, gpu, motherboard, ram, storage, psu, case: caseComponent, cooler } = data;
+    const rawImages = images?.length ? images : (imageUrl ? [imageUrl] : []);
+    const persistedImages = await Promise.all(rawImages.map((image, index) =>
+        uploadToStorageClient(image, 'prebuiltSystems', `${name}-${index}`)
+    ));
+    const coverIndex = imageUrl ? rawImages.indexOf(imageUrl) : 0;
+    const persistedImageUrl = persistedImages[coverIndex] || persistedImages[0] || "";
 
     const systemData: Partial<PrebuiltSystem> = {
         name,
@@ -346,6 +394,7 @@ export async function updatePrebuiltSystem(firestore: Firestore, systemId: strin
         description,
         price,
         imageUrl: persistedImageUrl,
+        images: persistedImages,
         components: {
             cpu,
             gpu,

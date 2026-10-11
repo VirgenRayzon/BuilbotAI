@@ -15,6 +15,7 @@ import {
     Wind as Cooler 
 } from "lucide-react";
 import { Text, Group, Stack } from "@mantine/core";
+import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
 
 interface PrebuiltCardSpecsProps {
     components: {
@@ -67,15 +68,32 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
 
                     const lookupSingle = async (val: string) => {
                         try {
-                            const docRef = doc(firestore, collectionName, val);
-                            const snap = await getDoc(docRef);
+                            const canonicalRef = doc(firestore, inventoryItemPath(collectionName, val));
+                            const snap = await getDoc(canonicalRef);
                             if (snap.exists()) {
                                 return (snap.data() as Part).name;
                             }
-                            const q = query(collection(firestore, collectionName), where("name", "==", val));
-                            const querySnap = await getDocs(q);
+
+                            const canonicalQuery = query(
+                                collection(firestore, inventoryItemsPath(collectionName)),
+                                where("name", "==", val)
+                            );
+                            const querySnap = await getDocs(canonicalQuery);
                             if (!querySnap.empty) {
                                 return (querySnap.docs[0].data() as Part).name;
+                            }
+
+                            // Keep older prebuilt records readable while legacy inventory
+                            // collections are phased out.
+                            const legacyRef = doc(firestore, collectionName, val);
+                            const legacySnap = await getDoc(legacyRef);
+                            if (legacySnap.exists()) {
+                                return (legacySnap.data() as Part).name;
+                            }
+                            const legacyQuery = query(collection(firestore, collectionName), where("name", "==", val));
+                            const legacyQuerySnap = await getDocs(legacyQuery);
+                            if (!legacyQuerySnap.empty) {
+                                return (legacyQuerySnap.docs[0].data() as Part).name;
                             }
                             return "Unknown";
                         } catch (e) {

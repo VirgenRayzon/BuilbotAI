@@ -155,17 +155,15 @@ export function usePrebuiltForm({ parts, initialData, onSave, onClose }: UsePreb
                 const endTime = performance.now();
                 setAiDuration((endTime - startTime) / 1000);
 
-                if (result && "systemName" in result) {
+                if (result && "description" in result && result.description) {
                     setTokensUsed(Math.round(JSON.stringify(result).length / 4));
                     let fieldsUpdated = [];
                     if (result.systemName && !form.getValues("name")) {
                         form.setValue("name", result.systemName, { shouldValidate: true, shouldDirty: true });
                         fieldsUpdated.push("Name");
                     }
-                    if (result.description && !form.getValues("description")) {
-                        form.setValue("description", result.description, { shouldValidate: true, shouldDirty: true });
-                        fieldsUpdated.push("Description");
-                    }
+                    form.setValue("description", result.description, { shouldValidate: true, shouldDirty: true });
+                    fieldsUpdated.push("Description");
                     if (result.price !== undefined && (!form.getValues("price") || form.getValues("price") === 0)) {
                         form.setValue("price", Math.round(result.price * 100) / 100, { shouldValidate: true, shouldDirty: true });
                         fieldsUpdated.push("Price");

@@ -65,8 +65,18 @@ export function useBuildActions({
     });
   };
 
-  const handleAddPrebuiltWithAi = () => {
+  const handleAddPrebuiltWithAi = (requestedName: string) => {
     if (!onAddPrebuilt) return;
+
+    const prebuiltName = requestedName.trim();
+    if (!prebuiltName) {
+      toast({
+        title: "Prebuilt name required",
+        description: "Enter a name before generating the prebuilt.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (isAiKillSwitch) {
       toast({
@@ -114,8 +124,22 @@ export function useBuildActions({
           cooler: (build['Cooler'] as ComponentData)?.model,
         };
 
+        const productHighlights = Object.entries(build)
+          .flatMap(([category, value]) => {
+            const parts = Array.isArray(value) ? value : value ? [value] : [];
+            return parts
+              .filter((part) => part.description?.trim())
+              .map((part) => {
+                const maxChars = ["CPU", "GPU", "Motherboard"].includes(category) ? 900 : 280;
+                return `${category} — ${part.model}: ${part.description!.trim().slice(0, maxChars)}`;
+              });
+          })
+          .join("\n\n");
+
         const result = await getAiPrebuiltSuggestions({
-          components: selectedComponents
+          components: selectedComponents,
+          inventoryPrice: Math.round(totalPrice * 100) / 100,
+          productHighlights,
         });
 
         checkAbort();
@@ -124,7 +148,7 @@ export function useBuildActions({
         checkAbort();
         setAiPhase('ai-formatting');
 
-        if (result && "systemName" in result) {
+        if (result && "description" in result && result.description) {
           await new Promise(r => setTimeout(r, 300));
           checkAbort();
           setAiPhase('image-fetch');
@@ -135,7 +159,7 @@ export function useBuildActions({
             : '/placeholders/components/case.jpg';
 
           const finalData: PrebuiltBuilderAddFormSchema = {
-            name: result.systemName,
+            name: prebuiltName,
             description: result.description || "High-performance prebuilt system.",
             price: Math.round(totalPrice * 100) / 100,
             tier: result.tier || "Mid-Range",

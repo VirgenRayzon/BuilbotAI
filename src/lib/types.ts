@@ -81,6 +81,7 @@ export type PrebuiltSystem = {
   description?: string;
   price: number;
   imageUrl: string;
+  images?: string[];
   components: {
     cpu?: string;
     gpu?: string;

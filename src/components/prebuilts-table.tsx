@@ -435,7 +435,7 @@ function PrebuiltTableRow({
               withBorder
               radius="md"
               p="sm"
-              className="bg-white/80 dark:bg-[#141a23]/90 border-slate-200/70 dark:border-white/10"
+              className="bg-white/85 dark:bg-[#111722] border-slate-200/70 dark:border-white/10"
             >
               <Text size="xs" fw={700} c="dimmed" tt="uppercase" className="tracking-wider mb-2 text-[10px]">
                 Component Breakdown

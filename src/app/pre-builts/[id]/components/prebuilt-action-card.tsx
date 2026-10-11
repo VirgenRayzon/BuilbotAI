@@ -3,8 +3,7 @@
 import React from "react";
 import { Paper, Group, Stack, Text, Title, Button as MantineButton, Badge } from "@mantine/core";
 import { formatCurrency } from "@/lib/utils";
-import { SparkleButton } from "@/components/ui/sparkle-button";
-import { SlidersHorizontal, Zap, AlertCircle, CheckCircle2 } from "lucide-react";
+import { SlidersHorizontal, ShieldCheck, AlertCircle } from "lucide-react";
 
 interface PrebuiltActionCardProps {
     children?: React.ReactNode;
@@ -35,7 +34,7 @@ export function PrebuiltActionCard({
 }: PrebuiltActionCardProps) {
     return (
         <Paper
-            radius="xl"
+            radius="md"
             p={{ base: "sm", sm: "md" }}
             withBorder
             className="bg-white/90 dark:bg-[#141a23]/90 border-slate-200 dark:border-white/10 shadow-sm backdrop-blur-md"
@@ -46,7 +45,7 @@ export function PrebuiltActionCard({
                 </div>
             )}
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-col justify-between gap-3">
                 {/* Price Display */}
                 <div>
                     <Text size="sm" fw={800} c="dimmed" className="mb-1 uppercase tracking-[0.16em]">
@@ -62,7 +61,7 @@ export function PrebuiltActionCard({
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
                     {/* Customize Prebuilt Button (Available for all, including staff) */}
                     <MantineButton
                         variant="default"
@@ -71,26 +70,30 @@ export function PrebuiltActionCard({
                         leftSection={<SlidersHorizontal className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />}
                         disabled={loadingParts || !hasComponents}
                         onClick={onCustomize}
-                        className="h-12 px-5 text-xs font-semibold uppercase tracking-wider border-slate-200 transition-colors hover:border-cyan-500/50 dark:border-white/15"
+                        className="h-11 w-full min-w-0 px-4 text-xs font-semibold uppercase tracking-wider border-slate-200 transition-colors hover:border-cyan-500/50 dark:border-white/15"
                     >
                         Customize in Builder
                     </MantineButton>
 
                     {/* Reserve Button — STRICTLY HIDDEN for Managers and Super Admins */}
                     {!isManagerOrAdmin && (
-                        <SparkleButton
+                        <MantineButton
                             onClick={onReserve}
-                            isLoading={isReserving}
+                            loading={isReserving}
                             disabled={!isComplete || loadingParts || !isInStock || isReserving}
-                            icon={<Zap className="w-4 h-4" />}
-                            className="h-12 rounded-xl px-6 text-xs font-bold uppercase tracking-wider shadow-md"
+                            color="teal"
+                            size="md"
+                            radius="md"
+                            fullWidth
+                            leftSection={<ShieldCheck className="h-[18px] w-[18px]" />}
+                            className="h-11 text-xs font-bold uppercase tracking-wider shadow-md shadow-emerald-500/20 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
                         >
                             {loadingParts
                                 ? "Checking Stock..."
                                 : !isInStock
                                     ? "Out of Stock"
                                     : "Reserve this Build"}
-                        </SparkleButton>
+                        </MantineButton>
                     )}
                 </div>
             </div>

@@ -165,6 +165,7 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                     <Grid.Col span={{ base: 12, md: 6 }} order={{ base: 2, md: 1 }}>
                         <PrebuiltImageView
                             imageUrl={system.imageUrl}
+                            images={system.images}
                             systemName={system.name}
                             tier={system.tier}
                         />

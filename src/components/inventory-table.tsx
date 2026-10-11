@@ -49,9 +49,9 @@ interface InventoryTableProps {
   isArchiveView?: boolean;
 }
 
-export function InventoryTable({ 
-  parts, 
-  onDelete, 
+export function InventoryTable({
+  parts,
+  onDelete,
   onArchive,
   onUpdateStock,
   onAddStock,
@@ -70,9 +70,9 @@ export function InventoryTable({
       <TableHeader className="border-b border-slate-200 bg-slate-50/80 dark:border-white/10 dark:bg-white/[0.025]">
         <TableRow>
           <TableHead className="w-[40px]">
-            <Checkbox 
-                checked={allSelected}
-                onCheckedChange={() => onToggleSelectAll()}
+            <Checkbox
+              checked={allSelected}
+              onCheckedChange={() => onToggleSelectAll()}
             />
           </TableHead>
           <TableHead>Item</TableHead>
@@ -92,7 +92,7 @@ export function InventoryTable({
               : "transition-colors hover:bg-cyan-50/60 dark:hover:bg-cyan-500/[0.035]"}
           >
             <TableCell>
-              <Checkbox 
+              <Checkbox
                 checked={selectedIds.some(s => s.id === part.id)}
                 onCheckedChange={() => onToggleSelection(part.id, part.category)}
               />
@@ -136,7 +136,7 @@ export function InventoryTable({
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/10 shrink-0"
-                      title="Add Stock"
+                      title="Save Stock"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Plus className="h-3.5 w-3.5" />
@@ -152,12 +152,12 @@ export function InventoryTable({
               <div className="flex items-center gap-2">
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                        onClick={(e) => e.stopPropagation()}
-                        title={isArchiveView ? "Restore" : "Archive"}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                      onClick={(e) => e.stopPropagation()}
+                      title={isArchiveView ? "Restore" : "Archive"}
                     >
                       {isArchiveView ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
                     </Button>
@@ -166,7 +166,7 @@ export function InventoryTable({
                     <AlertDialogHeader>
                       <AlertDialogTitle>{isArchiveView ? "Restore Part?" : "Archive Part?"}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        {isArchiveView 
+                        {isArchiveView
                           ? `This will restore ${part.name} to the active inventory.`
                           : `This will move ${part.name} to the archive. It will no longer be visible to customers.`
                         }
@@ -190,9 +190,9 @@ export function InventoryTable({
                 {isSuperAdmin && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={(e) => e.stopPropagation()}
                         className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                       >

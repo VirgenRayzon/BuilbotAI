@@ -173,7 +173,7 @@ export function PrebuiltAiReview({
                                                 }}
                                             >
                                                 <Paper
-                                                    radius="xl"
+                                                    radius="md"
                                                     p={0}
                                                     withBorder
                                                     className="flex h-full min-h-[220px] flex-1 flex-col justify-between bg-white shadow-xs transition-all select-none dark:bg-[#141a23] border-slate-200/90 dark:border-white/10 hover:border-cyan-500/50 dark:hover:border-cyan-400/50 hover:shadow-md cursor-pointer group overflow-hidden"

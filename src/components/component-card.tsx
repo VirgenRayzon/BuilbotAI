@@ -54,7 +54,7 @@ export function ComponentCard({ name, component, icon: Icon }: ComponentCardProp
       padding="md"
       className={cn(
         "flex flex-col justify-between h-full relative group transition-all duration-300",
-        "bg-white/80 dark:bg-[#141a23]/90 hover:shadow-md hover:-translate-y-1",
+        "bg-white/85 dark:bg-[#111722] hover:shadow-md hover:-translate-y-1",
         "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40"
       )}
     >

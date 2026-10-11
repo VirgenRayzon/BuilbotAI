@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getAiPartDetails } from "@/app/actions";
 import { Part } from "@/lib/types";
 import { CATEGORY_SPECS } from "@/lib/constants/category-specs";
+import { normalizeProductDescription } from "@/lib/normalize-product-description";
 
 const specificationSchema = z.object({
   key: z.string().min(1),
@@ -70,7 +71,7 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
       specifications: initialData?.specifications
         ? Object.entries(initialData.specifications).map(([key, value]) => ({ key, value: String(value) }))
         : [],
-      description: initialData?.description || "",
+      description: normalizeProductDescription(initialData?.description),
       packageType: initialData?.packageType || "",
     },
   });
@@ -90,7 +91,7 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
         performanceScore: initialData.performanceScore,
         dimensions: initialData.dimensions || { width: 0, height: 0, depth: 0 },
         specifications: Object.entries(initialData.specifications || {}).map(([key, value]) => ({ key, value: String(value) })),
-        description: initialData.description || "",
+        description: normalizeProductDescription(initialData.description),
         packageType: initialData.packageType || "",
       });
     } else if (open && !initialData) {
@@ -190,7 +191,7 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
           form.setValue("packageType", result.packageType, { shouldValidate: true });
         }
         if (result.description && !form.getValues("description")) {
-          form.setValue("description", result.description, { shouldValidate: true });
+          form.setValue("description", normalizeProductDescription(result.description), { shouldValidate: true });
         }
         form.setValue("price", result.price, { shouldValidate: true });
         form.setValue("wattage", result.wattage, { shouldValidate: true });

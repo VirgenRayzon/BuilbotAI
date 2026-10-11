@@ -12,6 +12,12 @@ export interface CompatibilityIssue {
 
 export const normalize = (s?: string | number | null) => s?.toString().trim().toLowerCase() || '';
 
+const resolveSocket = (part?: Pick<Part | ComponentData, 'socket' | 'specifications'> | null) =>
+  normalize(part?.specifications?.['Socket'] || part?.specifications?.['socket'] || part?.socket);
+
+const resolveRamType = (part?: Pick<Part | ComponentData, 'ramType' | 'specifications'> | null) =>
+  normalize(part?.specifications?.['Memory Type'] || part?.specifications?.['RAM Type'] || part?.specifications?.['Memory'] || part?.specifications?.['Generation'] || part?.specifications?.['Type'] || part?.ramType);
+
 export const getComponentName = (comp?: any): string => {
     if (!comp) return '';
     return comp.name || comp.model || '';
@@ -69,13 +75,13 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
   const ramData = currentBuild['RAM'];
   const currentRams = Array.isArray(ramData) ? ramData : (ramData ? [ramData as ComponentData] : []);
 
-  const partSocket = normalize(part.socket || part.specifications?.['Socket'] || part.specifications?.['socket']);
-  const partRamType = normalize(part.ramType || part.specifications?.['Memory Type'] || part.specifications?.['RAM Type'] || part.specifications?.['Memory'] || part.specifications?.['Generation'] || part.specifications?.['Type']);
+  const partSocket = resolveSocket(part);
+  const partRamType = resolveRamType(part);
 
   // CPU Validation
   if (category === 'CPU') {
     if (mobo) {
-      const moboSocket = normalize(mobo.socket || mobo.specifications?.['Socket']);
+      const moboSocket = resolveSocket(mobo);
       if (partSocket && moboSocket && moboSocket !== partSocket) {
         return { compatible: false, message: `This CPU uses ${partSocket.toUpperCase()} socket, but your motherboard is ${moboSocket.toUpperCase()}.` };
       }
@@ -85,14 +91,14 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
   // Motherboard Validation
   if (category === 'Motherboard') {
     if (cpu) {
-      const cpuSocket = normalize(cpu.socket || cpu.specifications?.['Socket']);
+      const cpuSocket = resolveSocket(cpu);
       if (partSocket && cpuSocket && cpuSocket !== partSocket) {
         return { compatible: false, message: `This motherboard is ${partSocket.toUpperCase()}, but your CPU uses ${cpuSocket.toUpperCase()}.` };
       }
     }
     if (currentRams.length > 0) {
       for (const r of currentRams) {
-        const stickRamType = normalize(r.ramType || r.specifications?.['Memory Type'] || r.specifications?.['RAM Type'] || r.specifications?.['Memory'] || r.specifications?.['Generation'] || r.specifications?.['Type']);
+        const stickRamType = resolveRamType(r);
         if (partRamType && stickRamType) {
           if (!partRamType.includes(stickRamType) && !stickRamType.includes(partRamType)) {
             return { compatible: false, message: `This motherboard supports ${partRamType.toUpperCase()}, but your selected RAM (${getComponentName(r)}) is ${stickRamType.toUpperCase()}.` };
@@ -135,7 +141,7 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
       return { compatible: false, message: 'Please add a Motherboard before selecting RAM.' };
     }
     if (mobo) {
-      const moboRamType = normalize(mobo.ramType || mobo.specifications?.['Memory Type'] || mobo.specifications?.['RAM Type'] || mobo.specifications?.['Memory'] || mobo.specifications?.['Generation'] || mobo.specifications?.['Type']);
+      const moboRamType = resolveRamType(mobo);
       if (moboRamType && partRamType) {
         if (!moboRamType.includes(partRamType) && !partRamType.includes(moboRamType)) {
           return { compatible: false, message: `Your motherboard supports ${moboRamType.toUpperCase()}, but this RAM is ${partRamType.toUpperCase()}.` };
@@ -241,16 +247,16 @@ export const checkFullBuildCompatibility = (build: Record<string, ComponentData 
     const cooler = build['Cooler'] as ComponentData | null;
 
     if (cpu && mobo) {
-        const cpuSocket = normalize(cpu.socket || cpu.specifications?.['Socket']);
-        const moboSocket = normalize(mobo.socket || mobo.specifications?.['Socket']);
+        const cpuSocket = resolveSocket(cpu);
+        const moboSocket = resolveSocket(mobo);
         if (cpuSocket && moboSocket && cpuSocket !== moboSocket) {
             issues.push({ severity: 'critical', message: `Socket Mismatch: CPU is ${cpuSocket.toUpperCase()}, but Motherboard is ${moboSocket.toUpperCase()}.` });
         }
 
-        const moboRamType = normalize(mobo.ramType || mobo.specifications?.['Memory Type'] || mobo.specifications?.['RAM Type'] || mobo.specifications?.['Memory'] || mobo.specifications?.['Generation'] || mobo.specifications?.['Type']);
+        const moboRamType = resolveRamType(mobo);
         if (rams.length > 0) {
             for (const r of rams) {
-                const ramType = normalize(r.ramType || r.specifications?.['Memory Type'] || r.specifications?.['RAM Type'] || r.specifications?.['Memory'] || r.specifications?.['Generation'] || r.specifications?.['Type']);
+                const ramType = resolveRamType(r);
                 if (moboRamType && ramType && !moboRamType.includes(ramType) && !ramType.includes(moboRamType)) {
                     issues.push({ severity: 'critical', message: `RAM Incompatible: Motherboard supports ${moboRamType.toUpperCase()}, but ${getComponentName(r)} is ${ramType.toUpperCase()}.` });
                 }

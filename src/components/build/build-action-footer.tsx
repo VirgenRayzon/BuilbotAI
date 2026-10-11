@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, Button, Group, Modal, Paper, ScrollArea, Text, ThemeIcon, Title } from "@mantine/core";
+import { Badge, Button, Group, Modal, Paper, ScrollArea, Text, TextInput, ThemeIcon, Title } from "@mantine/core";
 import { AlertTriangle, ShieldCheck, Sparkles } from "lucide-react";
 import type { ComponentData } from "@/lib/types";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -27,7 +27,7 @@ interface BuildActionFooterProps {
   onCategorySelect?: (category: string) => void;
   onAnalyze: () => void;
   onReserve: (onSuccess: () => void) => void;
-  onAddPrebuilt: () => void;
+  onAddPrebuilt: (name: string) => void;
 }
 
 export function BuildActionFooter({
@@ -36,7 +36,17 @@ export function BuildActionFooter({
   onCategorySelect, onAnalyze, onReserve, onAddPrebuilt,
 }: BuildActionFooterProps) {
   const [reserveOpen, setReserveOpen] = useState(false);
+  const [nameOpen, setNameOpen] = useState(false);
+  const [prebuiltName, setPrebuiltName] = useState("");
   const complete = missingCategories.length === 0;
+
+  const startPrebuiltGeneration = () => {
+    const name = prebuiltName.trim();
+    if (!name) return;
+    setNameOpen(false);
+    setPrebuiltName("");
+    onAddPrebuilt(name);
+  };
 
   return (
     <div className="p-3 space-y-2.5">
@@ -86,7 +96,7 @@ export function BuildActionFooter({
           leftSection={<Sparkles size={17} />}
           disabled={!complete || isAiPending}
           loading={isAiPending}
-          onClick={onAddPrebuilt}
+          onClick={() => setNameOpen(true)}
           className="font-headline font-bold text-xs uppercase tracking-wider shadow-sm shadow-cyan-500/20"
         >
           Add New Prebuilt
@@ -130,6 +140,56 @@ export function BuildActionFooter({
           </Button>
         </>
       )}
+
+      <Modal
+        opened={nameOpen}
+        onClose={() => setNameOpen(false)}
+        size="sm"
+        radius="lg"
+        centered
+        overlayProps={{ backgroundOpacity: 0.65, blur: 5 }}
+        title={
+          <Group gap="sm">
+            <ThemeIcon size="lg" color="cyan" variant="light" radius="md">
+              <Sparkles size={18} />
+            </ThemeIcon>
+            <div>
+              <Title order={4} className="font-headline text-base font-bold text-slate-900 dark:text-white">
+                Name this prebuilt
+              </Title>
+              <Text size="xs" c="dimmed">AI will create its catalog description from the selected parts.</Text>
+            </div>
+          </Group>
+        }
+        classNames={UNIFIED_MODAL_CLASSNAMES}
+      >
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            startPrebuiltGeneration();
+          }}
+          className="space-y-4"
+        >
+          <TextInput
+            label="Prebuilt name"
+            placeholder="e.g., Velocity Core"
+            value={prebuiltName}
+            onChange={(event) => setPrebuiltName(event.currentTarget.value)}
+            autoFocus
+            required
+            radius="md"
+            size="md"
+          />
+          <Group justify="flex-end" gap="sm">
+            <Button type="button" variant="default" radius="md" onClick={() => setNameOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" color="cyan" radius="md" disabled={!prebuiltName.trim()} leftSection={<Sparkles size={16} />}>
+              Generate Prebuilt
+            </Button>
+          </Group>
+        </form>
+      </Modal>
 
       {/* Confirm Reservation Modal */}
       <Modal

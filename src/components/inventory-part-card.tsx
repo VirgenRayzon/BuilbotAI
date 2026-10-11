@@ -69,15 +69,15 @@ const categorySpecsMap: Record<string, string[]> = {
     Headset: ["Type", "Drivers", "Mic", "Connectivity"],
 };
 
-export function InventoryPartCard({ 
-    part, 
-    onDelete, 
+export function InventoryPartCard({
+    part,
+    onDelete,
     onArchive,
     onUpdateStock,
     onAddStock,
     onUpdatePart,
     isSelected = false,
-    onToggleSelection = () => {},
+    onToggleSelection = () => { },
     isSelectionMode = false,
     isSuperAdmin = false,
     isArchiveView = false
@@ -88,7 +88,7 @@ export function InventoryPartCard({
     return (
         <TooltipProvider>
             <div className="relative group/card-wrapper h-full">
-                <Card 
+                <Card
                     className={cn(
                         "flex flex-col justify-between h-full transform transition-all duration-500 ease-out relative group overflow-hidden border-primary/10 bg-background/40 backdrop-blur-xl shadow-lg cursor-pointer",
                         part.stock === 0 && "grayscale opacity-60",
@@ -101,7 +101,7 @@ export function InventoryPartCard({
                     }}
                 >
                     <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent transition-opacity duration-300 opacity-0 group-hover:opacity-100" />
-                    
+
                     {/* Multi-select Checkmark (shown only when selected) */}
                     {isSelected && (
                         <div className="absolute top-3 left-3 z-30 p-1 rounded-md bg-primary text-primary-foreground shadow-lg animate-in zoom-in-50 duration-200">
@@ -122,21 +122,21 @@ export function InventoryPartCard({
                             <div className="flex items-start gap-1">
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                            <Button 
-                                                variant="ghost" 
-                                                size="icon" 
-                                                className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors -mt-1"
-                                                onClick={(e) => e.stopPropagation()}
-                                                title={isArchiveView ? "Restore" : "Archive"}
-                                            >
-                                                {isArchiveView ? <RotateCcw className="h-3 w-3 md:h-4 md:w-4" /> : <Archive className="h-3 w-3 md:h-4 md:w-4" />}
-                                            </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors -mt-1"
+                                            onClick={(e) => e.stopPropagation()}
+                                            title={isArchiveView ? "Restore" : "Archive"}
+                                        >
+                                            {isArchiveView ? <RotateCcw className="h-3 w-3 md:h-4 md:w-4" /> : <Archive className="h-3 w-3 md:h-4 md:w-4" />}
+                                        </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                                         <AlertDialogHeader>
                                             <AlertDialogTitle>{isArchiveView ? "Restore Part?" : "Archive Part?"}</AlertDialogTitle>
                                             <AlertDialogDescription>
-                                                {isArchiveView 
+                                                {isArchiveView
                                                     ? `This will restore ${part.name} to the active inventory.`
                                                     : `This will move ${part.name} to the archive. It will no longer be visible to customers.`
                                                 }
@@ -225,13 +225,13 @@ export function InventoryPartCard({
 
                         <div className="flex justify-between items-center gap-2">
                             <p className="text-sm md:text-xl font-bold font-headline tracking-tight">{formatCurrency(part.price)}</p>
-                            <Badge 
-                                variant={part.stock > 0 ? "outline" : "destructive"} 
+                            <Badge
+                                variant={part.stock > 0 ? "outline" : "destructive"}
                                 className={cn(
                                     "text-[9px] md:text-[11px] font-mono font-bold px-2 py-0.5 shrink-0",
                                     part.stock > 5 ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10" :
-                                    part.stock > 0 ? "border-amber-500/30 text-amber-400 bg-amber-500/10" :
-                                    "border-destructive/30 text-destructive bg-destructive/10"
+                                        part.stock > 0 ? "border-amber-500/30 text-amber-400 bg-amber-500/10" :
+                                            "border-destructive/30 text-destructive bg-destructive/10"
                                 )}
                             >
                                 {part.stock > 0 ? `${part.stock} in stock` : 'Out of stock'}
@@ -263,8 +263,7 @@ export function InventoryPartCard({
                                 size="sm"
                                 className="w-full h-8 md:h-9 text-xs md:text-sm font-semibold border-primary/20 hover:border-primary/50 hover:bg-primary/10 transition-all gap-1.5 shadow-sm"
                             >
-                                <Plus className="h-3.5 w-3.5 text-primary" />
-                                <span>Add Stock</span>
+                                <span>Edit Stock</span>
                             </Button>
                         </AddStockDialog>
                     </div>
@@ -272,4 +271,4 @@ export function InventoryPartCard({
             </div>
         </TooltipProvider>
     );
-}
+}

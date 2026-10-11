@@ -91,7 +91,7 @@ export default function ForgotPasswordPage() {
           withBorder
           radius="lg"
           p={{ base: 'md', sm: 'lg' }}
-          className="w-full bg-white/85 dark:bg-[#141a23]/90 backdrop-blur-md border-slate-200/80 dark:border-white/10 shadow-sm relative transition-all"
+          className="w-full bg-white/85 dark:bg-[#111722] border-slate-200/80 dark:border-white/10 shadow-sm relative transition-all"
         >
           <Stack gap="md">
             {/* Header / Logo + Title */}

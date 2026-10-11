@@ -9,8 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { retrieveLocalKnowledge } from "@/lib/knowledge-retriever";
-import { getGenkitModelName, safeGenkitGenerate } from '@/lib/ai-model-resolver';
+import { getGenkitModelName } from '@/lib/ai-model-resolver';
 
 const ComponentInputSchema = z.object({
   cpu: z.string().optional(),
@@ -26,16 +25,16 @@ const ComponentInputSchema = z.object({
 const AiPrebuiltAdvisorInputSchema = z.object({
   components: ComponentInputSchema,
   tier: z.string().optional(),
+  inventoryPrice: z.number().nonnegative().optional(),
+  productHighlights: z.string().optional(),
 });
 export type AiPrebuiltAdvisorInput = z.infer<typeof AiPrebuiltAdvisorInputSchema>;
 
 const AiPrebuiltAdvisorOutputSchema = z.object({
-  systemName: z.string().describe('An ultra-catchy, premium, and marketing-friendly name for the pre-built system (e.g., "Neon Vanguard", "Titan Elite V2").'),
-  description: z.string().describe('A high-conversion, punchy description (2-3 sentences) that makes the user want to buy it instantly. Focus on performance breakthroughs or aesthetic vibes.'),
-  price: z.number().describe('An estimated total price for the system in Philippine Pesos (PHP), based on the provided components.'),
-  estimatedWattage: z.string().describe('The estimated total wattage for the build, in the format "550W".'),
-  compatibilitySummary: z.string().describe('A summary of the component compatibility. Note any potential issues or bottlenecks. If everything is compatible, confirm that.'),
-  tier: z.enum(['Entry', 'Mid-Range', 'High-End', 'Workstation']).describe('The tier this system falls into based on components (Entry, Mid-Range, High-End, or Workstation).'),
+  description: z.string().min(1).describe('A concise 2-3 sentence prebuilt product description synthesized from every selected component product description.'),
+  systemName: z.string().optional(),
+  price: z.number().optional(),
+  tier: z.enum(['Entry', 'Mid-Range', 'High-End', 'Workstation']).optional(),
 });
 export type AiPrebuiltAdvisorOutput = z.infer<typeof AiPrebuiltAdvisorOutputSchema>;
 
@@ -46,52 +45,30 @@ export async function aiPrebuiltAdvisor(input: AiPrebuiltAdvisorInput): Promise<
 const prompt = ai.definePrompt({
   name: 'aiPrebuiltAdvisorPrompt',
   input: {
-    schema: AiPrebuiltAdvisorInputSchema.extend({
-      knowledgeContext: z.string().optional(),
-      webResearchContext: z.string().optional(),
-      customSystemPrompt: z.string().optional(),
-    })
+    schema: AiPrebuiltAdvisorInputSchema,
   },
   output: { schema: AiPrebuiltAdvisorOutputSchema },
   model: 'googleai/gemini-2.5-flash',
   config: {
     temperature: 0.2,
+    // Gemini 2.5 uses part of this budget for internal reasoning. A complete
+    // eight-part build with product highlights can otherwise be truncated
+    // after `systemName`, which makes the required structured output invalid.
+    maxOutputTokens: 1024,
+    thinkingConfig: {
+      thinkingBudget: 0,
+    },
   },
-  prompt: `{{#if customSystemPrompt}}
-{{{customSystemPrompt}}}
-{{else}}
-You are an expert PC Builder. A user has selected a list of components for a pre-built system.
+  prompt: `You write concise product descriptions for complete prebuilt PCs.
 
-Your task is to:
-1.  Generate a premium, ultra-catchy, and memorable name for this build (e.g., "The Midnight Apex", "Quantum Overlord"). Focus on energy and performance tiers.
-2.  Write a high-impact, marketing-ready description for the system. Sell the experience—mention specific gaming resolutions (1440p/4K) or productivity gains.
-3.  Analyze the provided components for compatibility. Point out any issues (e.g., CPU socket not matching motherboard, RAM type mismatch, insufficient PSU). If they are compatible, confirm this. Use the provided Expert Local Knowledge Base if it contains relevant compatibility rules.
-4.  Estimate the total power consumption in watts (e.g., "550W").
-5.  Estimate a reasonable market price for the entire build in Philippine Pesos (PHP). Use the web research context if available for accurate pricing.
-6.  Identify the appropriate performance tier ('Entry', 'Mid-Range', 'High-End', or 'Workstation') for this configuration.
+Synthesize the saved descriptions of ALL selected components into one cohesive, customer-facing description of 2-3 sentences. Mention meaningful combined benefits, performance positioning, cooling, power delivery, storage, and aesthetics only when supported by the supplied text. Do not list the parts, do not search the web, do not invent specifications, and do not return analysis.
+
+{{#if productHighlights}}
+SELECTED COMPONENT PRODUCT DESCRIPTIONS:
+{{{productHighlights}}}
 {{/if}}
 
-{{#if webResearchContext}}
-WEB RESEARCH CONTEXT (Current market pricing and component data):
-{{{webResearchContext}}}
-{{/if}}
-
-EXPERT LOCAL KNOWLEDGE BASE:
-{{{knowledgeContext}}}
-
-The user has specified the build tier as: {{{tier}}}.
-
-Here are the selected components:
-{{#if components.cpu}}CPU: {{{components.cpu}}}{{/if}}
-{{#if components.gpu}}GPU: {{{components.gpu}}}{{/if}}
-{{#if components.motherboard}}Motherboard: {{{components.motherboard}}}{{/if}}
-{{#if components.ram}}RAM: {{{components.ram}}}{{/if}}
-{{#if components.storage}}Storage: {{{components.storage}}}{{/if}}
-{{#if components.psu}}PSU: {{{components.psu}}}{{/if}}
-{{#if components.case}}Case: {{{components.case}}}{{/if}}
-{{#if components.cooler}}Cooler: {{{components.cooler}}}{{/if}}
-
-Please provide the output in a JSON object that strictly adheres to the provided output schema. Ensure the price is a number.`,
+Return a JSON object with the required description field.`,
 });
 
 const aiPrebuiltAdvisorFlow = ai.defineFlow(
@@ -106,51 +83,19 @@ const aiPrebuiltAdvisorFlow = ai.defineFlow(
       throw new Error('At least one component must be selected to get an AI suggestion.');
     }
 
-    // Retrieve local knowledge based on the selected components
     const componentNames = Object.values(input.components)
       .filter(c => c !== undefined && c !== '')
       .join(' ');
 
-    console.log(`[aiPrebuiltAdvisorFlow] Starting two-step analysis for: ${componentNames}`);
-    const knowledgeResults = await retrieveLocalKnowledge(`compatibility rules tier lists ${componentNames}`);
-    const knowledgeContext = knowledgeResults.join('\n\n');
+    console.log(`[aiPrebuiltAdvisorFlow] Starting analysis for: ${componentNames}`);
 
     try {
       const dynamicModel = await getGenkitModelName('prebuiltAdvisor');
-      // Step 1: Plain-text research call WITH googleSearchRetrieval (no structured output)
-      console.log(`[aiPrebuiltAdvisorFlow] Step 1: Running web search pre-research for pricing with model ${dynamicModel}...`);
-      const researchResponse = await safeGenkitGenerate(ai, {
-        model: dynamicModel,
-        prompt: `You are a PC hardware pricing researcher for the Philippine market.
-Research the current market prices in PHP for each of the following components:
 
-${Object.entries(input.components)
-  .filter(([, v]) => v)
-  .map(([k, v]) => `- ${k}: ${v}`)
-  .join('\n')}
-
-For each component, provide:
-1. Current street price in PHP from Philippine retailers (Dynaquest, PCHub, EasyPC, etc.)
-2. Brief compatibility notes if relevant.
-Summarize the total estimated build cost in PHP.`,
-        config: {
-          temperature: 0.3,
-          googleSearchRetrieval: {},
-        },
-      });
-      const webResearchContext = researchResponse.text;
-      console.log("[aiPrebuiltAdvisorFlow] Step 1 complete. Research context obtained.");
-
-      // Step 2: Structured output prompt WITHOUT googleSearchRetrieval
-      console.log("[aiPrebuiltAdvisorFlow] Step 2: Generating structured analysis...");
-      const { getActiveSystemPrompt } = await import('@/lib/system-prompts');
-      const customSystemPrompt = await getActiveSystemPrompt('prebuiltAdvisor');
+      console.log(`[aiPrebuiltAdvisorFlow] Generating structured analysis with ${dynamicModel}...`);
 
       const { output } = await prompt({
         ...input,
-        knowledgeContext,
-        webResearchContext,
-        customSystemPrompt,
       }, { model: dynamicModel });
 
       if (!output) {
@@ -160,7 +105,7 @@ Summarize the total estimated build cost in PHP.`,
       console.log("[aiPrebuiltAdvisorFlow] Flow complete.");
       return output;
     } catch (error: any) {
-      console.error("[aiPrebuiltAdvisorFlow] Two-step analysis failed:", error);
+      console.error("[aiPrebuiltAdvisorFlow] Description generation failed:", error);
       throw error;
     }
   }

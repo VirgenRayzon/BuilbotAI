@@ -223,7 +223,7 @@ export function AuditLogsSection({ logs, loading }: AuditLogsSectionProps) {
           withBorder
           radius="lg"
           p="xs"
-          className="bg-white/80 dark:bg-[#141a23]/90 border-slate-200/80 dark:border-white/10 shadow-xs"
+          className="bg-white/85 dark:bg-[#111722] border-slate-200/80 dark:border-white/10 shadow-xs"
         >
           <div className="flex items-center justify-between gap-2 sm:gap-3 flex-nowrap overflow-x-auto no-scrollbar py-0.5">
             {/* Left: Search Input */}

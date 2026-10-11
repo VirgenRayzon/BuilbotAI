@@ -109,6 +109,49 @@ export default function PrebuiltBuilderPage() {
         setIsLoaded(true);
     }, []);
 
+    // Sync builder state when inventory parts update (e.g., category changed or part renamed/updated)
+    useEffect(() => {
+        if (!isLoaded || allParts.length === 0) return;
+
+        setBuild(prevBuild => {
+            let changed = false;
+            const updatedBuild = { ...prevBuild };
+
+            // Check single-slot categories
+            const singleSlotCategories = ['Case', 'Motherboard', 'CPU', 'GPU', 'PSU', 'Cooler', 'Monitor', 'Keyboard', 'Mouse', 'Headset'];
+            
+            for (const cat of singleSlotCategories) {
+                const item = updatedBuild[cat] as ComponentData | null;
+                if (!item || !item.id) continue;
+                
+                // Find matching live part from catalog by ID or model
+                const livePart = allParts.find(p => p.id === item.id || p.name === item.model);
+                if (livePart) {
+                    // If the category in catalog has changed (e.g. from Cooler to Case)
+                    if (livePart.category !== cat) {
+                        changed = true;
+                        updatedBuild[cat] = null; // Remove from old slot
+                        
+                        // If the destination slot is empty or compatible, place it or update it
+                        if (singleSlotCategories.includes(livePart.category)) {
+                            updatedBuild[livePart.category] = {
+                                ...item,
+                                id: livePart.id,
+                                model: livePart.name,
+                                price: livePart.price,
+                                image: livePart.imageUrl,
+                                wattage: livePart.wattage,
+                                specifications: livePart.specifications,
+                            };
+                        }
+                    }
+                }
+            }
+
+            return changed ? updatedBuild : prevBuild;
+        });
+    }, [allParts, isLoaded]);
+
     useEffect(() => {
         if (isLoaded) {
             localStorage.setItem('admin_pc_builder_state', JSON.stringify(build));
@@ -235,8 +278,8 @@ export default function PrebuiltBuilderPage() {
                 imageHint: part.name.toLowerCase().split(' ').slice(0, 2).join(' '),
                 icon: componentCategories.find(c => c.name === category)!.icon,
                 wattage: part.wattage,
-                socket: part.socket || part.specifications?.['Socket']?.toString() || part.specifications?.['socket']?.toString(),
-                ramType: part.ramType || part.specifications?.['Memory Type']?.toString() || part.specifications?.['RAM Type']?.toString() || part.specifications?.['Memory']?.toString(),
+                socket: part.specifications?.['Socket']?.toString() || part.specifications?.['socket']?.toString() || part.socket,
+                ramType: part.specifications?.['Memory Type']?.toString() || part.specifications?.['RAM Type']?.toString() || part.specifications?.['Memory']?.toString() || part.ramType,
                 performanceScore: part.performanceScore,
                 performanceTier: part.performanceTier,
                 specifications: part.specifications,
