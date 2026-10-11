@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { reservePrebuiltSystem } from "@/app/prebuilt-reservation-actions";
 import { getAiPrebuiltPerformance } from "@/app/actions";
 import { getMissingParts, checkSystemStock } from "@/lib/prebuilt-utils";
+import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
 import type { PrebuiltSystem, Part, FavoriteBuild, FavoriteBuildPart } from "@/lib/types";
 
 export function usePrebuiltDetails(systemId: string) {
@@ -110,22 +111,48 @@ export function usePrebuiltDetails(systemId: string) {
                         return;
                     }
 
-                    // First try document ID
-                    const partRef = doc(firestore, collectionName, partId as string);
-                    const snap = await getDoc(partRef);
+                    try {
+                        // 1. Try canonical path: inventory/{category}/items/{partId}
+                        const canonicalRef = doc(firestore, inventoryItemPath(collectionName, partId as string));
+                        const canonicalSnap = await getDoc(canonicalRef);
+                        if (canonicalSnap.exists()) {
+                            partsRecord[category] = { id: canonicalSnap.id, ...canonicalSnap.data() } as Part;
+                            return;
+                        }
 
-                    if (snap.exists()) {
-                        partsRecord[category] = { id: snap.id, ...snap.data() } as Part;
-                    } else {
-                        // Fallback query by name for legacy data
+                        // 2. Try canonical query by name in inventory/{category}/items
+                        const canonicalQuery = query(
+                            collection(firestore, inventoryItemsPath(collectionName)),
+                            where("name", "==", partId)
+                        );
+                        const canonicalQuerySnap = await getDocs(canonicalQuery);
+                        if (!canonicalQuerySnap.empty) {
+                            const docSnap = canonicalQuerySnap.docs[0];
+                            partsRecord[category] = { id: docSnap.id, ...docSnap.data() } as Part;
+                            return;
+                        }
+
+                        // 3. Fallback to legacy root collection: {collectionName}/{partId}
+                        const partRef = doc(firestore, collectionName, partId as string);
+                        const snap = await getDoc(partRef);
+                        if (snap.exists()) {
+                            partsRecord[category] = { id: snap.id, ...snap.data() } as Part;
+                            return;
+                        }
+
+                        // 4. Fallback query by name in legacy collection
                         const q = query(collection(firestore, collectionName), where("name", "==", partId));
                         const querySnap = await getDocs(q);
                         if (!querySnap.empty) {
                             const docSnap = querySnap.docs[0];
                             partsRecord[category] = { id: docSnap.id, ...docSnap.data() } as Part;
-                        } else {
-                            partsRecord[category] = null;
+                            return;
                         }
+
+                        partsRecord[category] = null;
+                    } catch (err) {
+                        console.warn(`Could not resolve part for category ${category}:`, err);
+                        partsRecord[category] = null;
                     }
                 });
 

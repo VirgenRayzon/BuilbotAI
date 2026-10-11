@@ -64,7 +64,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isLandingPage = pathname === '/';
   const shouldShowFooter = isLandingPage || showFooterRoutes.some(route => pathname === route);
 
-  const isHeaderHidden = mounted && isAuthPage;
+  const isHeaderHidden = false;
 
   // Loader overlay condition:
   // 1. Initial auth profile is loading (except when an unauthenticated guest lands directly on /signin)
@@ -99,7 +99,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       startSignOut: () => setSignOutStartedAt(Date.now()),
       cancelSignOut: () => setSignOutStartedAt(null),
     }}>
-      <div className="flex flex-col min-h-screen overflow-x-hidden relative">
+      <div className="flex flex-col min-h-screen overflow-x-clip relative">
         <AnimatePresence>
           {showLoaderOverlay && (
             <NeutralPageLoader

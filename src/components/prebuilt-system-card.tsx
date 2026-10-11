@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getMissingParts } from "@/lib/prebuilt-utils";
+import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
 import { PrebuiltCardSpecs } from "./prebuilt-card-specs";
 import { OptimizedImage } from "./ui/optimized-image";
 import { useFirestore } from "@/firebase";
@@ -98,20 +99,51 @@ export function PrebuiltSystemCard({
 
           if (!partId) return;
 
-          const partRef = doc(firestore, collectionName, partId as string);
-          const snap = await getDoc(partRef);
-          if (snap.exists()) {
-            const partData = { id: snap.id, ...snap.data() } as Part;
-            stockMap[category] = partData.stock || 0;
-            partsMap[category] = partData;
-          } else {
+          try {
+            // 1. Try canonical path: inventory/{category}/items/{partId}
+            const canonicalRef = doc(firestore, inventoryItemPath(collectionName, partId as string));
+            const canonicalSnap = await getDoc(canonicalRef);
+            if (canonicalSnap.exists()) {
+              const partData = { id: canonicalSnap.id, ...canonicalSnap.data() } as Part;
+              stockMap[category] = partData.stock || 0;
+              partsMap[category] = partData;
+              return;
+            }
+
+            // 2. Try canonical query by name in inventory/{category}/items
+            const canonicalQuery = query(
+              collection(firestore, inventoryItemsPath(collectionName)),
+              where("name", "==", partId)
+            );
+            const canonicalQuerySnap = await getDocs(canonicalQuery);
+            if (!canonicalQuerySnap.empty) {
+              const partData = { id: canonicalQuerySnap.docs[0].id, ...canonicalQuerySnap.docs[0].data() } as Part;
+              stockMap[category] = partData.stock || 0;
+              partsMap[category] = partData;
+              return;
+            }
+
+            // 3. Fallback to legacy root collection: {collectionName}/{partId}
+            const partRef = doc(firestore, collectionName, partId as string);
+            const snap = await getDoc(partRef);
+            if (snap.exists()) {
+              const partData = { id: snap.id, ...snap.data() } as Part;
+              stockMap[category] = partData.stock || 0;
+              partsMap[category] = partData;
+              return;
+            }
+
+            // 4. Fallback query by name in legacy collection
             const q = query(collection(firestore, collectionName), where("name", "==", partId));
             const querySnap = await getDocs(q);
             if (!querySnap.empty) {
               const partData = { id: querySnap.docs[0].id, ...querySnap.docs[0].data() } as Part;
               stockMap[category] = partData.stock || 0;
               partsMap[category] = partData;
+              return;
             }
+          } catch (err) {
+            console.warn(`Could not resolve stock for ${category}:`, err);
           }
         });
         await Promise.all(promises);
@@ -221,7 +253,7 @@ export function PrebuiltSystemCard({
           "flex flex-col justify-between h-full relative group cursor-pointer overflow-hidden transition-all duration-300",
           "bg-white/85 dark:bg-[#111722] hover:shadow-md hover:-translate-y-1",
           "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
-          (!isComplete || (!loadingStock && !isInStock)) && "border-red-500/30 dark:border-red-500/30 hover:border-red-500/50 dark:hover:border-red-500/50 opacity-75 grayscale-[0.5]"
+          (!isComplete || (!loadingStock && !isInStock)) && "border-red-500/60 dark:border-red-500/60 shadow-sm shadow-red-500/10 hover:border-red-500/80 dark:hover:border-red-500/80 opacity-85"
         )}
       >
         {/* Top Content Area */}
@@ -267,7 +299,7 @@ export function PrebuiltSystemCard({
           <Box
             className={cn(
               "aspect-[4/3] relative w-full overflow-hidden",
-              "bg-white border-y border-slate-200/70 dark:border-white/10"
+              "bg-transparent border-y border-slate-200/70 dark:border-white/10"
             )}
           >
             <OptimizedImage

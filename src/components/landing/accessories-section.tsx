@@ -28,29 +28,29 @@ export function AccessoriesSection({ isDark }: AccessoriesSectionProps) {
 
         <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
           {/* Card 1: Turnkey Pre-builts */}
-          <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.3 }}>
+          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
             <Paper
               withBorder
-              radius="2xl"
-              p={{ base: 'xl', md: 40 }}
+              radius="lg"
+              p={12}
               className={cn(
-                "h-full flex flex-col justify-between gap-8 transition-all duration-300",
+                "h-full flex flex-col justify-between transition-all duration-300",
                 isDark
-                  ? "bg-[#111722]/80 border-white/10 hover:border-cyan-500/40 shadow-xl shadow-black/40"
-                  : "bg-white/90 border-slate-200 hover:border-cyan-500/30 shadow-lg shadow-slate-200/60"
+                  ? "bg-[#111722]/85 border-white/10 hover:border-cyan-500/40 shadow-sm"
+                  : "bg-white/95 border-slate-200 hover:border-cyan-500/30 shadow-sm"
               )}
             >
-              <Stack gap="lg">
-                <ThemeIcon size={64} radius="xl" variant="light" color="cyan">
-                  <Box size={32} />
+              <Stack gap="md">
+                <ThemeIcon size={48} radius="lg" variant="light" color="cyan">
+                  <Box size={24} />
                 </ThemeIcon>
 
                 <div>
-                  <h4 className="text-2xl sm:text-3xl font-bold font-headline uppercase tracking-tight mb-3 text-slate-900 dark:text-slate-100">
+                  <h4 className="text-xl sm:text-2xl font-bold font-headline uppercase tracking-tight mb-2.5 text-slate-900 dark:text-slate-100">
                     Turnkey Pre-Built Systems
                   </h4>
                   <Text
-                    size="lg"
+                    size="sm"
                     className="leading-relaxed font-medium text-slate-600 dark:text-slate-400"
                   >
                     Curated, stress-tested rigs assembled by hardware technicians and validated with our AI compatibility engine. Zero guesswork, ready out of the box.
@@ -58,45 +58,47 @@ export function AccessoriesSection({ isDark }: AccessoriesSectionProps) {
                 </div>
               </Stack>
 
-              <MantineButton
-                component={Link}
-                href="/pre-builts"
-                variant="light"
-                color="cyan"
-                size="md"
-                radius="md"
-                rightSection={<ArrowRight size={18} />}
-                className="w-fit font-headline font-bold uppercase tracking-wider"
-              >
-                Browse Systems
-              </MantineButton>
+              <div className="pt-6">
+                <MantineButton
+                  component={Link}
+                  href="/pre-builts"
+                  variant="light"
+                  color="cyan"
+                  size="sm"
+                  radius="md"
+                  rightSection={<ArrowRight size={16} />}
+                  className="w-fit font-headline font-bold uppercase tracking-wider"
+                >
+                  Browse Systems
+                </MantineButton>
+              </div>
             </Paper>
           </motion.div>
 
           {/* Card 2: Monitors & Peripherals */}
-          <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.3 }}>
+          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
             <Paper
               withBorder
-              radius="2xl"
-              p={{ base: 'xl', md: 40 }}
+              radius="lg"
+              p={12}
               className={cn(
-                "h-full flex flex-col justify-between gap-8 transition-all duration-300",
+                "h-full flex flex-col justify-between transition-all duration-300",
                 isDark
-                  ? "bg-[#111722]/80 border-white/10 hover:border-violet-500/40 shadow-xl shadow-black/40"
-                  : "bg-white/90 border-slate-200 hover:border-violet-500/30 shadow-lg shadow-slate-200/60"
+                  ? "bg-[#111722]/85 border-white/10 hover:border-violet-500/40 shadow-sm"
+                  : "bg-white/95 border-slate-200 hover:border-violet-500/30 shadow-sm"
               )}
             >
-              <Stack gap="lg">
-                <ThemeIcon size={64} radius="xl" variant="light" color="violet">
-                  <MonitorSmartphone size={32} />
+              <Stack gap="md">
+                <ThemeIcon size={48} radius="lg" variant="light" color="violet">
+                  <MonitorSmartphone size={24} />
                 </ThemeIcon>
 
                 <div>
-                  <h4 className="text-2xl sm:text-3xl font-bold font-headline uppercase tracking-tight mb-3 text-slate-900 dark:text-slate-100">
+                  <h4 className="text-xl sm:text-2xl font-bold font-headline uppercase tracking-tight mb-2.5 text-slate-900 dark:text-slate-100">
                     Monitors & Peripherals
                   </h4>
                   <Text
-                    size="lg"
+                    size="sm"
                     className="leading-relaxed font-medium text-slate-600 dark:text-slate-400"
                   >
                     Complete your workstation with high-refresh gaming displays, mechanical keyboards, audio headsets, and performance thermal accessories.
@@ -104,18 +106,20 @@ export function AccessoriesSection({ isDark }: AccessoriesSectionProps) {
                 </div>
               </Stack>
 
-              <MantineButton
-                component={Link}
-                href="/builder"
-                variant="light"
-                color="violet"
-                size="md"
-                radius="md"
-                rightSection={<ArrowRight size={18} />}
-                className="w-fit font-headline font-bold uppercase tracking-wider"
-              >
-                Configure Accessories
-              </MantineButton>
+              <div className="pt-6">
+                <MantineButton
+                  component={Link}
+                  href="/builder"
+                  variant="light"
+                  color="violet"
+                  size="sm"
+                  radius="md"
+                  rightSection={<ArrowRight size={16} />}
+                  className="w-fit font-headline font-bold uppercase tracking-wider"
+                >
+                  Configure Accessories
+                </MantineButton>
+              </div>
             </Paper>
           </motion.div>
         </div>

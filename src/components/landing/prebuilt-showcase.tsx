@@ -37,6 +37,8 @@ export function PrebuiltShowcase() {
         return systems.filter(s => !s.isArchived);
     }, [systems]);
 
+    const [showAllSpecs, setShowAllSpecs] = React.useState(false);
+
     return (
         <section className="py-32 relative overflow-hidden transition-colors duration-1000">
             <div id="prebuilts" className="w-full scroll-mt-24 px-4 sm:px-6 md:px-8 lg:px-10 relative z-10">
@@ -65,7 +67,11 @@ export function PrebuiltShowcase() {
                                             viewport={{ once: true }}
                                             className="h-full py-4"
                                         >
-                                            <PrebuiltSystemCard system={system} />
+                                            <PrebuiltSystemCard
+                                                system={system}
+                                                expanded={showAllSpecs}
+                                                onToggle={() => setShowAllSpecs(!showAllSpecs)}
+                                            />
                                         </motion.div>
                                     </CarouselItem>
                                 ))}

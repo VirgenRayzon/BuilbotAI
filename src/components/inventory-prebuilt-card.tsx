@@ -112,8 +112,8 @@ export function InventoryPrebuiltCard({
           "bg-white/85 dark:bg-[#111722] hover:shadow-md hover:-translate-y-1",
           "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
           isSelected && "border-cyan-500 border-2 shadow-cyan-500/20 bg-cyan-500/[0.03]",
-          hasMissingPart && "border-red-500/70 dark:border-red-500/70 bg-red-50/40 dark:bg-red-950/10 shadow-sm shadow-red-500/10 hover:border-red-500",
-          inventoryStatus === 'out-of-stock' && "border-red-500/40 dark:border-red-500/40 hover:border-red-500/60 dark:hover:border-red-500/60 opacity-80"
+          hasMissingPart && "border-red-500/80 dark:border-red-500/80 bg-red-50/40 dark:bg-red-950/20 shadow-sm shadow-red-500/15 hover:border-red-500",
+          inventoryStatus === 'out-of-stock' && "border-red-500/60 dark:border-red-500/60 shadow-sm shadow-red-500/10 hover:border-red-500/80 dark:hover:border-red-500/80 opacity-85"
         )}
         onClick={() => {
           if (isSelectionMode) {
@@ -257,7 +257,7 @@ export function InventoryPrebuiltCard({
           <Box
             className={cn(
               "aspect-square relative -mx-3 w-auto overflow-hidden",
-              "bg-white border-y border-slate-200"
+              "bg-transparent border-y border-slate-200/60 dark:border-white/10"
             )}
           >
             <OptimizedImage

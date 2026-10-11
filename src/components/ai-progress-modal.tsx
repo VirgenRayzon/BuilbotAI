@@ -2,8 +2,32 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, Loader2, CheckCircle2, Terminal, Cpu, Zap, Sparkles, Image as ImageIcon, X } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import {
+    Paper,
+    Stack,
+    Group,
+    Text,
+    Badge,
+    Button,
+    ThemeIcon,
+    Progress,
+    ScrollArea,
+    ActionIcon,
+    Tooltip,
+    Divider
+} from "@mantine/core";
+import {
+    Bot,
+    Loader2,
+    CheckCircle2,
+    Terminal,
+    Cpu,
+    Zap,
+    Sparkles,
+    Image as ImageIcon,
+    X,
+    Check
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type ProgressPhase = 'init' | 'ai-requesting' | 'ai-complete' | 'ai-formatting' | 'image-fetch' | 'saving' | 'done';
@@ -18,18 +42,25 @@ interface AIProgressModalProps {
 }
 
 const PHASE_CONFIG: Record<ProgressPhase, { text: string; icon: React.ComponentType<{ className?: string }> }> = {
-    'init': { text: "Initializing Buildbot AI Engine...", icon: Bot },
-    'ai-requesting': { text: "Requesting Stage 1 Analysis (with Google Search)...", icon: Cpu },
+    'init': { text: "Initializing AI Engine...", icon: Bot },
+    'ai-requesting': { text: "Requesting Stage 1 Analysis...", icon: Cpu },
     'ai-complete': { text: "Stage 1 Analysis complete.", icon: Terminal },
     'ai-formatting': { text: "Requesting Stage 2 Formatting...", icon: Zap },
-    'image-fetch': { text: "Asset Retrieval: Fetching high-fidelity product imagery...", icon: ImageIcon },
-    'saving': { text: "Finalizing Prebuilt configuration and deploying...", icon: Sparkles },
-    'done': { text: "SYSTEM DEPLOYMENT SUCCESSFUL: PREBUILT ADDED TO CATALOG", icon: CheckCircle2 },
+    'image-fetch': { text: "Asset Retrieval: Fetching product imagery...", icon: ImageIcon },
+    'saving': { text: "Finalizing Prebuilt configuration...", icon: Sparkles },
+    'done': { text: "Prebuilt successfully configured and added to catalog", icon: CheckCircle2 },
 };
 
 const PHASE_ORDER: ProgressPhase[] = ['init', 'ai-requesting', 'ai-complete', 'ai-formatting', 'image-fetch', 'saving', 'done'];
 
-export function AIProgressModal({ isOpen, onComplete, onCancel, title = "Architecting Prebuilt", currentPhase = 'init', tokensUsed }: AIProgressModalProps) {
+export function AIProgressModal({
+    isOpen,
+    onComplete,
+    onCancel,
+    title = "Creating Prebuilt",
+    currentPhase = 'init',
+    tokensUsed
+}: AIProgressModalProps) {
     const [logs, setLogs] = useState<{ text: string; type: 'info' | 'success'; timestamp: string }[]>([]);
     const [elapsedTime, setElapsedTime] = useState(0);
     const [showTooltip, setShowTooltip] = useState(false);
@@ -39,6 +70,7 @@ export function AIProgressModal({ isOpen, onComplete, onCancel, title = "Archite
 
     const isFinished = currentPhase === 'done';
     const currentStepIndex = Math.max(0, PHASE_ORDER.indexOf(currentPhase));
+    const percent = Math.round(((currentStepIndex + 1) / PHASE_ORDER.length) * 100);
 
     // Reset when modal opens
     useEffect(() => {
@@ -90,210 +122,191 @@ export function AIProgressModal({ isOpen, onComplete, onCancel, title = "Archite
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 bg-black/60 backdrop-blur-sm">
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        initial={{ opacity: 0, scale: 0.96, y: 12 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
-                        className="w-full max-w-2xl"
+                        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="w-full max-w-lg"
                     >
-                        <Card className="border-primary/20 bg-card/95 shadow-[0_0_50px_-12px_rgba(var(--primary),0.3)] overflow-hidden">
-                            {/* Header */}
-                            <div className="bg-primary/5 border-b border-primary/10 p-6 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
-                                        <Bot className="w-6 h-6 text-primary animate-pulse" />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-xl font-headline font-black uppercase tracking-tighter">{title}</h2>
-                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                                            {isFinished ? "Neural Processing Complete" : "Neural Processing Active"}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    {!isFinished && onCancel && (
-                                        <button
-                                            onClick={onCancel}
-                                            className="px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-[10px] font-black uppercase tracking-widest hover:bg-destructive hover:text-white transition-all active:scale-95 flex items-center gap-2"
-                                        >
-                                            <X className="w-3 h-3" />
-                                            Stop
-                                        </button>
-                                    )}
-                                    {isFinished ? (
-                                        <div className="relative">
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowTooltip(prev => !prev)}
-                                                className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/40 text-cyan-400 text-[10px] font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(6,182,212,0.15)] backdrop-blur-md hover:shadow-[0_0_25px_rgba(6,182,212,0.3)] hover:scale-105 transition-all duration-300 animate-in fade-in zoom-in-95 duration-300"
-                                            >
-                                                <Zap className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 animate-pulse" />
-                                                <span>{elapsedTime.toFixed(1)}s TURNAROUND TIME</span>
-                                            </button>
-
-                                            {/* Tooltip Content */}
-                                            <div className={cn(
-                                                "absolute right-0 top-full mt-2 w-64 p-3 rounded-xl border border-cyan-500/20 bg-slate-950/95 backdrop-blur-xl shadow-2xl transition-all duration-300 z-50 text-[10px] font-mono text-zinc-300 space-y-1.5 leading-relaxed text-left",
-                                                showTooltip ? "opacity-100 pointer-events-auto scale-100" : "opacity-0 pointer-events-none scale-95"
-                                            )}>
-                                                <div className="border-b border-white/5 pb-1 flex justify-between">
-                                                    <span className="text-[9px] font-black text-cyan-400 uppercase">Telemetry Analysis</span>
-                                                    <span className="text-[8px] text-zinc-500 font-sans">Status: Complete</span>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <div className="flex justify-between">
-                                                        <span className="text-zinc-500">LLM Server Call:</span>
-                                                        <span className="text-zinc-200">{(elapsedTime * 0.65).toFixed(1)}s</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-zinc-500">DB Part Scanning:</span>
-                                                        <span className="text-zinc-200">{(elapsedTime * 0.20).toFixed(1)}s</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-zinc-500">Catalog Matching:</span>
-                                                        <span className="text-zinc-200">{(elapsedTime * 0.15).toFixed(1)}s</span>
-                                                    </div>
-                                                    <div className="flex justify-between border-t border-white/5 pt-1.5 mt-1">
-                                                        <span className="text-zinc-500">Tokens Used:</span>
-                                                        <span className="text-cyan-400 font-bold">
-                                                            {tokensUsed !== undefined && tokensUsed !== null ? tokensUsed : Math.round(480 + (elapsedTime * 2.5))}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div className="pt-1.5 border-t border-white/5 flex justify-between text-[9px] font-sans">
-                                                    <span className="text-zinc-400">Average: 45.0s</span>
-                                                    <span className="text-cyan-400 font-bold">Optimal Speed</span>
-                                                </div>
-                                            </div>
+                        <Paper
+                            withBorder
+                            radius="lg"
+                            className="bg-white/95 dark:bg-[#111722]/95 border-slate-200/80 dark:border-white/10 shadow-xl overflow-hidden !p-3 backdrop-blur-md"
+                        >
+                            <Stack gap="xs">
+                                {/* Header: 12px padding container, clean Mantine group */}
+                                <Group justify="space-between" align="center" wrap="nowrap" className="p-3 bg-slate-50/80 dark:bg-white/[0.03] rounded-lg border border-slate-200/60 dark:border-white/5">
+                                    <Group gap="xs" align="center">
+                                        <ThemeIcon size={34} radius="md" variant="light" color="cyan">
+                                            <Bot className="w-4 h-4 text-cyan-600 dark:text-cyan-400 animate-pulse" />
+                                        </ThemeIcon>
+                                        <div>
+                                            <Text fw={700} size="sm" className="font-headline tracking-tight text-slate-900 dark:text-white capitalize">
+                                                {title}
+                                            </Text>
+                                            <Text size="xs" c="dimmed">
+                                                {isFinished ? "Generation complete" : "Processing request"}
+                                            </Text>
                                         </div>
-                                    ) : (
-                                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-500/20 bg-cyan-950/20 text-cyan-400/80 text-[10px] font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(6,182,212,0.08)] backdrop-blur-sm transition-all duration-300">
-                                            <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                                            <span>{elapsedTime}s elapsed</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                                    </Group>
 
-                            {/* Terminal Area */}
-                            <div className="p-6 space-y-6">
-                                <div className="bg-black/90 rounded-xl border border-white/5 p-6 font-mono text-sm relative group overflow-hidden h-[300px] flex flex-col">
-                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-
-                                    <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2">
-                                        {logs.map((log, i) => (
-                                            <motion.div
-                                                key={i}
-                                                initial={{ opacity: 0, x: -10 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                className="flex gap-3"
+                                    <Group gap="xs" align="center">
+                                        {!isFinished && onCancel && (
+                                            <Button
+                                                variant="subtle"
+                                                color="red"
+                                                size="xs"
+                                                radius="md"
+                                                onClick={onCancel}
+                                                leftSection={<X size={13} />}
+                                                className="h-7 px-2.5 text-xs font-medium"
                                             >
-                                                <span className="text-primary/40">[{log.timestamp}]</span>
-                                                <span className={cn(
-                                                    "flex-1",
-                                                    log.type === 'success' ? "text-cyan-400 font-bold" : "text-primary/90"
-                                                )}>
-                                                    {log.type === 'success' ? "✓ " : "> "}{log.text}
-                                                </span>
-                                            </motion.div>
-                                        ))}
-                                        {isFinished && (
-                                            <motion.div
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                className="pt-4 mt-4 border-t border-white/10 text-cyan-400 font-bold flex items-center gap-2"
-                                            >
-                                                <CheckCircle2 className="w-4 h-4" />
-                                                SYSTEM DEPLOYMENT SUCCESSFUL: PREBUILT ADDED TO CATALOG
-                                            </motion.div>
+                                                Cancel
+                                            </Button>
                                         )}
-                                        {!isFinished && (
-                                            <div className="flex gap-3 items-center text-primary/60">
-                                                <span>[{new Date().toLocaleTimeString([], { hour12: false })}]</span>
-                                                <span className="animate-pulse flex items-center gap-2">
-                                                    Architecting next layer...
-                                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                                </span>
-                                            </div>
-                                        )}
-                                        <div ref={logsEndRef} />
-                                    </div>
 
-                                    <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between opacity-50">
-                                        <div className="flex gap-2">
-                                            <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/30" />
-                                            <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/30" />
-                                            <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/30" />
-                                        </div>
-                                        <div className="text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 text-primary">
-                                            <Terminal className="w-3 h-3" />
-                                            Buildbot-v3-Flash-Preview
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Progress Bar & Button */}
-                                <div className="space-y-6">
-                                    {!isFinished ? (
-                                        <div className="space-y-3">
-                                            <div className="flex justify-between items-end">
-                                                <div className="space-y-1">
-                                                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Current Stage</p>
-                                                    <p className="text-sm font-bold truncate max-w-[400px]">
-                                                        {PHASE_CONFIG[currentPhase]?.text || "Processing..."}
-                                                    </p>
-                                                </div>
-                                                <p className="text-xl font-black font-headline text-primary italic">
-                                                    {Math.round(((currentStepIndex + 1) / PHASE_ORDER.length) * 100)}%
-                                                </p>
-                                            </div>
-                                            <div className="h-2 w-full bg-primary/5 rounded-full overflow-hidden border border-primary/10 p-0.5">
-                                                <motion.div
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${((currentStepIndex + 1) / PHASE_ORDER.length) * 100}%` }}
-                                                    transition={{ duration: 0.6, ease: "easeOut" }}
-                                                    className="h-full bg-gradient-to-r from-primary via-cyan-500 to-primary rounded-full relative"
+                                        {isFinished ? (
+                                            <div className="relative">
+                                                <Badge
+                                                    size="sm"
+                                                    variant="light"
+                                                    color="cyan"
+                                                    radius="sm"
+                                                    leftSection={<Zap size={11} className="text-yellow-500 fill-yellow-500" />}
+                                                    className="cursor-pointer font-mono font-semibold"
+                                                    onClick={() => setShowTooltip(prev => !prev)}
                                                 >
-                                                    <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.4),transparent)] animate-[shimmer_2s_infinite]" />
-                                                </motion.div>
+                                                    {elapsedTime.toFixed(1)}s turnaround
+                                                </Badge>
+
+                                                {/* Mini Telemetry Tooltip popover */}
+                                                {showTooltip && (
+                                                    <Paper
+                                                        withBorder
+                                                        radius="md"
+                                                        p="xs"
+                                                        className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-[#141a23] border-slate-200 dark:border-white/10 shadow-xl z-50 text-[11px] font-mono space-y-1.5"
+                                                    >
+                                                        <div className="flex justify-between pb-1 border-b border-slate-200 dark:border-white/5 text-[10px] text-slate-500 dark:text-slate-400 font-sans font-bold uppercase">
+                                                            <span>Telemetry</span>
+                                                            <span className="text-emerald-500">Complete</span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-slate-500 dark:text-slate-400">Duration:</span>
+                                                            <span className="font-semibold">{elapsedTime.toFixed(1)}s</span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-slate-500 dark:text-slate-400">Tokens:</span>
+                                                            <span className="font-semibold text-cyan-600 dark:text-cyan-400">
+                                                                {tokensUsed ?? Math.round(480 + (elapsedTime * 2.5))}
+                                                            </span>
+                                                        </div>
+                                                    </Paper>
+                                                )}
                                             </div>
+                                        ) : (
+                                            <Badge size="xs" variant="light" color="cyan" radius="sm" className="font-mono">
+                                                {elapsedTime}s
+                                            </Badge>
+                                        )}
+                                    </Group>
+                                </Group>
+
+                                {/* Terminal Console Area: Compact Minimalist surface */}
+                                <div className="p-3 bg-slate-950/95 dark:bg-black/85 rounded-lg border border-slate-800/80 dark:border-white/10 font-mono text-xs text-slate-300">
+                                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/10 text-[10px] text-slate-400">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 rounded-full bg-red-500/70" />
+                                            <div className="w-2 h-2 rounded-full bg-amber-500/70" />
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500/70" />
                                         </div>
+                                        <span className="text-[10px] text-slate-500 font-mono">Console Output</span>
+                                    </div>
+
+                                    <ScrollArea h={180} scrollbarSize={4} offsetScrollbars>
+                                        <div className="space-y-2 pr-2">
+                                            {logs.map((log, i) => (
+                                                <div key={i} className="flex items-start gap-2 text-xs leading-relaxed">
+                                                    <span className="text-slate-500 text-[11px] shrink-0 font-mono">
+                                                        [{log.timestamp}]
+                                                    </span>
+                                                    <span className={cn(
+                                                        "flex-1",
+                                                        log.type === 'success'
+                                                            ? "text-cyan-400 font-semibold"
+                                                            : "text-slate-300"
+                                                    )}>
+                                                        {log.type === 'success' ? "✓ " : "> "}{log.text}
+                                                    </span>
+                                                </div>
+                                            ))}
+
+                                            {isFinished && (
+                                                <div className="pt-2 mt-2 border-t border-white/10 text-emerald-400 font-semibold flex items-center gap-1.5 text-xs">
+                                                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                                                    <span>Prebuilt saved and added to catalog</span>
+                                                </div>
+                                            )}
+
+                                            {!isFinished && (
+                                                <div className="flex items-center gap-2 text-cyan-400/80 text-xs py-0.5">
+                                                    <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                                                    <span>Working on next step...</span>
+                                                </div>
+                                            )}
+                                            <div ref={logsEndRef} />
+                                        </div>
+                                    </ScrollArea>
+                                </div>
+
+                                {/* Progress Indicator / Completion Action */}
+                                <div className="p-3 bg-slate-50/70 dark:bg-white/[0.02] rounded-lg border border-slate-200/60 dark:border-white/5 space-y-2.5">
+                                    {!isFinished ? (
+                                        <Stack gap="xs">
+                                            <Group justify="space-between" align="center">
+                                                <Text size="xs" fw={600} className="text-slate-700 dark:text-slate-300 truncate max-w-[320px]">
+                                                    {PHASE_CONFIG[currentPhase]?.text || "Processing..."}
+                                                </Text>
+                                                <Text size="xs" fw={700} c="cyan" className="font-mono">
+                                                    {percent}%
+                                                </Text>
+                                            </Group>
+                                            <Progress
+                                                value={percent}
+                                                size="sm"
+                                                radius="xl"
+                                                color="cyan"
+                                                animated
+                                            />
+                                        </Stack>
                                     ) : (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            className="flex flex-col items-center gap-4"
-                                        >
-                                            <div className="text-center">
-                                                <h3 className="text-2xl font-headline font-black uppercase text-cyan-400 tracking-tight">Done Adding Prebuilt!</h3>
-                                                <p className="text-muted-foreground text-sm">Deployment sequence complete. Inventory updated.</p>
+                                        <Stack gap="xs" align="stretch">
+                                            <div className="text-center py-1">
+                                                <Text fw={700} size="sm" className="font-headline text-slate-900 dark:text-white">
+                                                    Done Adding Prebuilt
+                                                </Text>
+                                                <Text size="xs" c="dimmed">
+                                                    Prebuilt successfully created and available in inventory.
+                                                </Text>
                                             </div>
-                                            <button
+                                            <Button
+                                                fullWidth
+                                                size="sm"
+                                                radius="md"
+                                                color="cyan"
                                                 onClick={onComplete}
-                                                className="w-full h-14 bg-cyan-500 hover:bg-cyan-600 text-white font-headline font-black uppercase tracking-widest text-xs rounded-xl transition-all shadow-[0_0_20px_-5px_rgba(6,182,212,0.5)] active:scale-[0.98] flex items-center justify-center gap-3 group"
+                                                rightSection={<Check size={15} />}
+                                                className="font-semibold text-xs h-9 shadow-sm"
                                             >
                                                 Finalize & Close
-                                                <CheckCircle2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                            </button>
-                                        </motion.div>
+                                            </Button>
+                                        </Stack>
                                     )}
                                 </div>
-                            </div>
-
-                            <div className="bg-primary/5 p-4 flex items-center justify-center gap-4 text-muted-foreground">
-                                <div className="flex items-center gap-2">
-                                    <Sparkles className="w-4 h-4 text-primary" />
-                                    <span className="text-[10px] font-bold uppercase tracking-widest">Optimized for Gemini 3</span>
-                                </div>
-                                <div className="w-1 h-1 rounded-full bg-primary/30" />
-                                <div className="flex items-center gap-2">
-                                    <Zap className="w-4 h-4 text-cyan-400" />
-                                    <span className="text-[10px] font-bold uppercase tracking-widest">Low Latency Active</span>
-                                </div>
-                            </div>
-                        </Card>
+                            </Stack>
+                        </Paper>
                     </motion.div>
                 </div>
             )}

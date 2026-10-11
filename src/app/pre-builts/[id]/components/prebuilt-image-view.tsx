@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Badge, Paper } from "@mantine/core";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn, getOptimizedStorageUrl } from "@/lib/utils";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -50,10 +50,10 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
             p={0}
             withBorder
             style={{ display: "flex" }}
-            className="flex aspect-square w-full flex-col overflow-hidden border-slate-200/80 bg-white/85 shadow-sm select-none dark:border-white/10 dark:bg-[#111722]"
+            className="flex aspect-square w-full flex-col overflow-hidden border-slate-200/80 bg-transparent shadow-sm select-none dark:border-white/10"
         >
             <div
-                className="relative min-h-0 flex-1 cursor-zoom-in bg-white"
+                className="relative min-h-0 flex-1 cursor-zoom-in bg-transparent"
                 role="button"
                 tabIndex={0}
                 aria-label={`Open full image preview for ${systemName}`}
@@ -137,7 +137,7 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                                 aria-label={`View system photo ${index + 1}`}
                                 onClick={() => setCurrentImageIndex(index)}
                                 className={cn(
-                                    "relative h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 bg-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 dark:ring-offset-[#111722]",
+                                    "relative h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 bg-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 dark:ring-offset-[#111722]",
                                     isCurrent
                                         ? "border-cyan-500 shadow-sm shadow-cyan-500/25"
                                         : "border-slate-200 opacity-75 hover:border-cyan-400 hover:opacity-100 dark:border-white/10"
@@ -158,18 +158,65 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
 
             <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
                 <DialogContent
-                    hideClose={false}
-                    className="h-[calc(100vh-24px)] max-w-[calc(100vw-24px)] bg-black/95 p-3"
+                    hideClose={true}
+                    className="w-[94vw] max-w-5xl h-[88vh] max-h-[88vh] bg-black/90 dark:bg-[#0c1017]/95 border border-white/15 dark:border-white/10 rounded-2xl p-3 shadow-2xl backdrop-blur-md flex flex-col"
                 >
                     <DialogTitle className="sr-only">{systemName} full image preview</DialogTitle>
-                    <div className="relative min-h-0 w-full overflow-hidden rounded-md bg-white">
+                    <button
+                        type="button"
+                        onClick={() => setPreviewOpen(false)}
+                        aria-label="Close preview"
+                        className="absolute right-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-slate-900/85 text-white ring-1 ring-white/25 transition-all hover:bg-slate-800 hover:ring-white/50 hover:scale-105 active:scale-95 shadow-lg"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+
+                    {allImages.length > 1 && (
+                        <>
+                            <button
+                                type="button"
+                                aria-label="Previous image"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    showPrevious();
+                                }}
+                                className="absolute left-4 top-1/2 z-50 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-slate-900/85 text-white ring-1 ring-white/20 transition-all hover:bg-slate-800 hover:ring-white/40 hover:scale-105 active:scale-95 shadow-lg backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                            >
+                                <ChevronLeft className="h-6 w-6" />
+                            </button>
+
+                            <button
+                                type="button"
+                                aria-label="Next image"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    showNext();
+                                }}
+                                className="absolute right-4 top-1/2 z-50 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-slate-900/85 text-white ring-1 ring-white/20 transition-all hover:bg-slate-800 hover:ring-white/40 hover:scale-105 active:scale-95 shadow-lg backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                            >
+                                <ChevronRight className="h-6 w-6" />
+                            </button>
+
+                            <Badge
+                                variant="filled"
+                                color="dark"
+                                radius="xl"
+                                size="md"
+                                className="absolute bottom-4 left-1/2 z-50 -translate-x-1/2 bg-slate-950/85 font-mono text-white ring-1 ring-white/10 backdrop-blur-md px-3 py-1 shadow-md"
+                            >
+                                {currentImageIndex + 1} / {allImages.length}
+                            </Badge>
+                        </>
+                    )}
+
+                    <div className="relative flex-1 min-h-0 w-full overflow-hidden rounded-xl bg-transparent">
                         <OptimizedImage
                             src={coverUrl}
                             alt={`${systemName} full-size photo ${currentImageIndex + 1}`}
                             fill
                             priority
                             unoptimized
-                            sizes="100vw"
+                            sizes="(max-width: 1024px) 94vw, 1200px"
                             className="object-contain"
                         />
                     </div>

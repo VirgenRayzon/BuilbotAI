@@ -135,7 +135,7 @@ export default function AboutPage() {
     : DEFAULT_ABOUT_CONTENT.sections;
 
   return (
-    <div className="min-h-screen bg-background font-body text-foreground pt-32 pb-24 px-4 sm:px-6 md:px-8 lg:px-12 w-full relative">
+    <div className="min-h-screen bg-background font-body text-foreground pt-24 pb-20 px-3 sm:px-6 md:px-8 w-full relative">
       {/* Lightbox Modal using Mantine Modal */}
       <Modal
         opened={!!selectedImage}
@@ -164,45 +164,45 @@ export default function AboutPage() {
         )}
       </Modal>
 
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full">
         {/* Editorial Hero Header */}
-        <div className="mb-16 md:mb-20 text-center md:text-left max-w-4xl">
+        <div className="mb-10 md:mb-14 text-center md:text-left">
           <Badge
             variant="light"
             color="cyan"
             size="lg"
             radius="xl"
             leftSection={<Sparkles size={14} />}
-            className="font-bold tracking-widest uppercase mb-6 py-2 px-3.5"
+            className="font-bold tracking-widest uppercase mb-4 py-2 px-3.5"
           >
             About BuildbotAI
           </Badge>
 
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-black font-headline uppercase tracking-tight text-slate-900 dark:text-slate-100 mb-6 leading-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black font-headline uppercase tracking-tight text-slate-900 dark:text-slate-100 mb-4 leading-tight">
             {content.title}
           </h1>
 
-          <p className="text-lg sm:text-2xl text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+          <p className="text-base sm:text-xl text-slate-600 dark:text-slate-400 font-medium leading-relaxed max-w-4xl">
             {content.subtitle}
           </p>
         </div>
 
         {/* Content Layout: Sticky Navigation + Story Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-start relative">
-          {/* Left Column: Floating Quick Navigation */}
-          <aside className="col-span-1 md:col-span-4 hidden md:block sticky top-32">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 lg:gap-6 items-start relative w-full">
+          {/* Left Column: Floating Quick Navigation (Anchored Sticky) */}
+          <aside className="col-span-1 md:col-span-4 lg:col-span-3 xl:col-span-3 hidden md:block sticky top-20 z-20 self-start">
             <Paper
               withBorder
               radius="2xl"
               p={12}
               className={cn(
-                'backdrop-blur-xl transition-all shadow-lg',
+                'backdrop-blur-xl transition-all shadow-lg flex flex-col max-h-[calc(100vh-7rem)]',
                 isDark
-                  ? 'bg-[#111722]/85 border-white/10 shadow-black/40'
+                  ? 'bg-[#111722]/90 border-white/10 shadow-black/40'
                   : 'bg-white/95 border-slate-200 shadow-slate-200/60'
               )}
             >
-              <Group gap="xs" className="mb-3 pb-3 border-b border-slate-200/60 dark:border-white/10">
+              <Group gap="xs" className="mb-2 pb-2.5 border-b border-slate-200/60 dark:border-white/10 shrink-0">
                 <ThemeIcon size={28} radius="md" variant="light" color="cyan">
                   <FileText size={15} />
                 </ThemeIcon>
@@ -211,27 +211,27 @@ export default function AboutPage() {
                 </Text>
               </Group>
 
-              <nav className="flex flex-col gap-2">
+              <nav className="flex flex-col gap-1.5 overflow-y-auto pr-1 flex-1 [scrollbar-color:rgb(6_182_212)_transparent] [scrollbar-width:thin]">
                 {sectionsToRender.map((section) => (
                   <a
                     key={section.id}
                     href={`#${section.id}`}
                     onClick={() => setActiveSectionId(section.id)}
                     className={cn(
-                      'px-3 py-2 rounded-xl text-sm font-bold flex items-center justify-between transition-all duration-200',
+                      'px-3 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between transition-all duration-200',
                       activeSectionId === section.id
-                        ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-headline'
+                        ? 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 font-headline shadow-xs'
                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/70 dark:hover:bg-white/5'
                     )}
                   >
-                    <span>{section.title}</span>
-                    <ChevronRight size={16} className="opacity-60" />
+                    <span className="truncate">{section.title}</span>
+                    <ChevronRight size={14} className="opacity-60 shrink-0 ml-1.5" />
                   </a>
                 ))}
               </nav>
 
-              <div className="mt-4 pt-4 border-t border-slate-200/60 dark:border-white/10">
-                <Text size="xs" c="dimmed" mb="sm" fw={600}>
+              <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-white/10 shrink-0">
+                <Text size="xs" c="dimmed" mb="xs" fw={600}>
                   Ready to test our compatibility engine?
                 </Text>
                 <MantineButton
@@ -251,7 +251,7 @@ export default function AboutPage() {
           </aside>
 
           {/* Right Column: Editorial Sections */}
-          <div className="col-span-1 md:col-span-8 space-y-6">
+          <div className="col-span-1 md:col-span-8 lg:col-span-9 space-y-6">
             {sectionsToRender.map((section, sIndex) => (
               <section key={section.id} id={section.id} className="scroll-mt-32">
                 <Paper

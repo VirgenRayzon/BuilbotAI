@@ -127,16 +127,12 @@ export function Header() {
   // Standard customers see Builder, Build Advisor, and Pre-builts.
   const tabs: NavTab[] = isStaff ? adminTabs : mainTabs;
 
-  // Hide header on dedicated full-screen authentication pages
+  // Render HeaderMegaMenu on onboarding/landing page, auth pages, or for unauthenticated visitors on public pages
   if (
-    mounted &&
-    ["/signin", "/signup", "/system-access", "/system-access/signup", "/forgot-password"].includes(pathname)
+    pathname === "/" ||
+    ["/signin", "/signup", "/system-access", "/system-access/signup", "/forgot-password"].includes(pathname) ||
+    (!authUser && ["/about", "/faq", "/team", "/contact"].includes(pathname))
   ) {
-    return null;
-  }
-
-  // Render HeaderMegaMenu on onboarding/landing page, or for unauthenticated visitors on public pages
-  if (pathname === "/" || (!authUser && ["/about", "/faq", "/team", "/contact"].includes(pathname))) {
     return <HeaderMegaMenu />;
   }
 
