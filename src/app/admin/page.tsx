@@ -6,8 +6,7 @@ import {
     Archive, Trash2, BarChart3, ShoppingBag,
     Shield, Sliders, Bot, FileText, Cpu, FileCode
 } from 'lucide-react';
-import { Tabs, Badge, Title, Text, SegmentedControl, ThemeIcon } from '@mantine/core';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Tabs, Badge, Title, Text, SegmentedControl, ThemeIcon, Modal, Group, Stack, Button } from '@mantine/core';
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/theme-provider";
 import { useLoading } from "@/context/loading-context";
@@ -401,36 +400,67 @@ export default function AdminPage() {
                         )}
                     </Tabs>
 
-                    {/* Global Bulk Action Confirmation Dialog */}
-                    <AlertDialog open={confirmAction.isOpen} onOpenChange={(open) => setConfirmAction(prev => ({ ...prev, isOpen: open }))}>
-                        <AlertDialogContent className="bg-background/95 backdrop-blur-2xl border-white/10 max-w-[400px]">
-                            <AlertDialogHeader>
-                                <AlertDialogTitle className="flex items-center gap-2 text-xl font-headline font-bold">
-                                    {confirmAction.type === 'delete' ? <Trash2 className="h-5 w-5 text-destructive" /> : <Archive className="h-5 w-5 text-primary" />}
+                    {/* Global Bulk Action Confirmation Modal */}
+                    <Modal
+                        opened={confirmAction.isOpen}
+                        onClose={() => setConfirmAction(prev => ({ ...prev, isOpen: false }))}
+                        title={
+                            <Group gap="xs">
+                                <ThemeIcon
+                                    size="md"
+                                    color={confirmAction.type === 'delete' ? 'red' : confirmAction.type === 'archive' ? 'orange' : 'cyan'}
+                                    variant="light"
+                                    radius="md"
+                                >
+                                    {confirmAction.type === 'delete' ? <Trash2 size={16} /> : <Archive size={16} />}
+                                </ThemeIcon>
+                                <Text fw={700} className="font-headline text-base text-slate-900 dark:text-white uppercase tracking-tight">
                                     Confirm {confirmAction.type.charAt(0).toUpperCase() + confirmAction.type.slice(1)} Action
-                                </AlertDialogTitle>
-                                <AlertDialogDescription className="text-muted-foreground pt-2">
-                                    {confirmAction.type === 'delete'
-                                        ? "This action is PERMANENT and cannot be undone. All selected items will be removed forever."
-                                        : confirmAction.type === 'archive'
-                                            ? "Are you sure you want to move the selected items to the archive?"
-                                            : "Are you sure you want to restore the selected items to the main inventory?"}
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter className="pt-6">
-                                <AlertDialogCancel className="bg-transparent border-white/10 hover:bg-white/5">Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                    className={cn(
-                                        "text-white font-bold",
-                                        confirmAction.type === 'delete' ? "bg-destructive hover:bg-destructive/90" : "bg-primary hover:bg-primary/90"
-                                    )}
+                                </Text>
+                            </Group>
+                        }
+                        centered
+                        radius="lg"
+                        size="sm"
+                        overlayProps={{ backgroundOpacity: 0.65, blur: 5 }}
+                        classNames={{
+                            content: "bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl overflow-hidden",
+                            header: "bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200/80 dark:border-white/10 p-3",
+                            body: "!p-3",
+                            close: "text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors",
+                        }}
+                    >
+                        <Stack gap="md" className="pt-1">
+                            <Text size="sm" className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                                {confirmAction.type === 'delete'
+                                    ? "This action is PERMANENT and cannot be undone. All selected items will be removed forever."
+                                    : confirmAction.type === 'archive'
+                                        ? "Are you sure you want to move the selected items to the archive?"
+                                        : "Are you sure you want to restore the selected items to the main inventory?"}
+                            </Text>
+
+                            <Group justify="flex-end" gap="xs" pt="xs">
+                                <Button
+                                    variant="default"
+                                    size="sm"
+                                    radius="md"
+                                    onClick={() => setConfirmAction(prev => ({ ...prev, isOpen: false }))}
+                                    className="border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    radius="md"
+                                    color={confirmAction.type === 'delete' ? 'red' : confirmAction.type === 'archive' ? 'orange' : 'cyan'}
+                                    className="font-bold text-xs uppercase tracking-wider"
                                     onClick={executeBulkAction}
                                 >
                                     Confirm {confirmAction.type.charAt(0).toUpperCase() + confirmAction.type.slice(1)}
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                                </Button>
+                            </Group>
+                        </Stack>
+                    </Modal>
                 </div>
             </div>
         </RouteGuard>
