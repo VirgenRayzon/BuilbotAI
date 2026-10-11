@@ -71,6 +71,8 @@ export function PrebuiltShowcase() {
                                                 system={system}
                                                 expanded={showAllSpecs}
                                                 onToggle={() => setShowAllSpecs(!showAllSpecs)}
+                                                showReserveButton={false}
+                                                isClickable={false}
                                             />
                                         </motion.div>
                                     </CarouselItem>

@@ -49,12 +49,16 @@ interface PrebuiltSystemCardProps {
   system: PrebuiltSystem;
   expanded?: boolean;
   onToggle?: () => void;
+  showReserveButton?: boolean;
+  isClickable?: boolean;
 }
 
 export function PrebuiltSystemCard({
   system,
   expanded = false,
   onToggle,
+  showReserveButton = true,
+  isClickable = true,
 }: PrebuiltSystemCardProps) {
   const { shouldCorruptImages } = useSiteSettings();
   const [isExpandedLocal, setIsExpandedLocal] = useState(false);
@@ -243,19 +247,20 @@ export function PrebuiltSystemCard({
     }
   };
 
-  return (
-    <Link href={`/pre-builts/${system.id}`} className="block h-full">
+  const mainBody = (
+    <>
       <Card
-        withBorder
-        radius="lg"
-        padding={0}
-        className={cn(
-          "flex flex-col justify-between h-full relative group cursor-pointer overflow-hidden transition-all duration-300",
-          "bg-white/85 dark:bg-[#111722] hover:shadow-md hover:-translate-y-1",
-          "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
-          (!isComplete || (!loadingStock && !isInStock)) && "border-red-500/60 dark:border-red-500/60 shadow-sm shadow-red-500/10 hover:border-red-500/80 dark:hover:border-red-500/80 opacity-85"
-        )}
-      >
+      withBorder
+      radius="lg"
+      padding={0}
+      className={cn(
+        "flex flex-col justify-between h-full relative group overflow-hidden transition-all duration-300",
+        isClickable ? "cursor-pointer hover:shadow-md hover:-translate-y-1 hover:border-cyan-500/40 dark:hover:border-cyan-500/40" : "cursor-default",
+        "bg-white/85 dark:bg-[#111722]",
+        "border-slate-200/80 dark:border-white/10",
+        (!isComplete || (!loadingStock && !isInStock)) && "border-red-500/60 dark:border-red-500/60 shadow-sm shadow-red-500/10 hover:border-red-500/80 dark:hover:border-red-500/80 opacity-85"
+      )}
+    >
         {/* Top Content Area */}
         <Stack gap={0}>
           {/* Tier & Stock Status Badges */}
@@ -373,50 +378,52 @@ export function PrebuiltSystemCard({
           </Group>
 
           {/* Inset Rounded Action Button */}
-          {!isComplete ? (
-            <Button
-              fullWidth
-              radius="md"
-              size="sm"
-              variant="light"
-              color="orange"
-              disabled
-              leftSection={<AlertCircle className="h-4 w-4" />}
-            >
-              Incomplete System
-            </Button>
-          ) : !loadingStock && !isInStock ? (
-            <Button
-              fullWidth
-              radius="md"
-              size="sm"
-              variant="light"
-              color="red"
-              disabled
-              leftSection={<AlertCircle className="h-4 w-4" />}
-            >
-              Out of Stock
-            </Button>
-          ) : (
-            <Button
-              fullWidth
-              radius="md"
-              size="sm"
-              variant="light"
-              color="cyan"
-              onClick={openCheckoutDialog}
-              disabled={loadingStock || isReserving}
-              leftSection={
-                isReserving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ShieldCheck className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" />
-                )
-              }
-              className="font-medium hover:bg-cyan-500 hover:text-white transition-all duration-200"
-            >
-              {isReserving ? "Processing..." : "Reserve Rig"}
-            </Button>
+          {showReserveButton && (
+            !isComplete ? (
+              <Button
+                fullWidth
+                radius="md"
+                size="sm"
+                variant="light"
+                color="orange"
+                disabled
+                leftSection={<AlertCircle className="h-4 w-4" />}
+              >
+                Incomplete System
+              </Button>
+            ) : !loadingStock && !isInStock ? (
+              <Button
+                fullWidth
+                radius="md"
+                size="sm"
+                variant="light"
+                color="red"
+                disabled
+                leftSection={<AlertCircle className="h-4 w-4" />}
+              >
+                Out of Stock
+              </Button>
+            ) : (
+              <Button
+                fullWidth
+                radius="md"
+                size="sm"
+                variant="light"
+                color="cyan"
+                onClick={openCheckoutDialog}
+                disabled={loadingStock || isReserving}
+                leftSection={
+                  isReserving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ShieldCheck className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" />
+                  )
+                }
+                className="font-medium hover:bg-cyan-500 hover:text-white transition-all duration-200"
+              >
+                {isReserving ? "Processing..." : "Reserve Rig"}
+              </Button>
+            )
           )}
         </Stack>
       </Card>
@@ -489,6 +496,16 @@ export function PrebuiltSystemCard({
           </div>
         </DialogContent>
       </Dialog>
+    </>
+  );
+
+  if (!isClickable) {
+    return <div className="h-full">{mainBody}</div>;
+  }
+
+  return (
+    <Link href={`/pre-builts/${system.id}`} className="block h-full">
+      {mainBody}
     </Link>
   );
 }

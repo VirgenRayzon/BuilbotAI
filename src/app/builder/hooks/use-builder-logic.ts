@@ -37,12 +37,6 @@ export function useBuilderLogic(allParts: Part[]) {
                 console.error("Failed to parse saved build", e);
             }
         }
-        // Check for a favorite to load
-        const favData = localStorage.getItem('pc_builder_load_favorite');
-        if (favData) {
-            localStorage.removeItem('pc_builder_load_favorite');
-            // We'll handle loading after allParts are available via the event listener below
-        }
         setIsLoaded(true);
     }, []);
 
@@ -306,7 +300,7 @@ export function useBuilderLogic(allParts: Part[]) {
         const outOfStock: string[] = [];
 
         for (const favPart of favorite.parts) {
-            const livePart = allParts.find(p => p.id === favPart.partId);
+            const livePart = allParts.find(p => p.id === favPart.partId || (favPart.name && p.name.toLowerCase() === favPart.name.toLowerCase()));
             if (!livePart) {
                 skipped.push(favPart.name);
                 continue;
