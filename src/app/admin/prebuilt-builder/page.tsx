@@ -477,7 +477,7 @@ export default function PrebuiltBuilderPage() {
                     isDark ? "invert" : ""
                 )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-                <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-4 md:py-8 pb-24 lg:pb-8 relative z-10">
+                <main className="w-full px-3 sm:px-6 md:px-8 lg:px-10 py-4 sm:py-6 md:py-8 pb-24 lg:pb-12 relative z-10">
                     <div className="relative mb-6">
                         <motion.div
                             initial={{ opacity: 0, y: -4 }}
@@ -488,7 +488,7 @@ export default function PrebuiltBuilderPage() {
                             <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-cyan-600 dark:text-cyan-400 font-headline">
                                 Admin Creator
                             </span>
-                            <h1 className="text-2xl sm:text-3xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-slate-100">
+                            <h1 className="text-xl sm:text-2xl md:text-3xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-slate-100">
                                 Prebuilt <span className="text-cyan-600 dark:text-cyan-400 italic">Builder</span>
                             </h1>
                             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
@@ -497,33 +497,29 @@ export default function PrebuiltBuilderPage() {
                         </motion.div>
                     </div>
 
-                    <div className="grid lg:grid-cols-12 gap-6 xl:gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">
 
-                        {/* Your Build  ELeft Column (Primary Feature) */}
-                        <div className="lg:col-span-3">
-                            <div className="flex flex-col gap-6 pb-4">
-                                <YourBuild
-                                    build={build}
-                                    onRemovePart={handleRemovePart}
-                                    onClearBuild={handleClearBuild}
-                                    resolution={resolution}
-                                    onResolutionChange={setResolution}
-                                    workload={workload}
-                                    onWorkloadChange={setWorkload}
-                                    isManagerMode={true}
-                                    onAddPrebuilt={handleAddPrebuilt}
-                                    onCategorySelect={(cat) => handleCategoryChange(cat, true)}
-                                    categories={categories}
-                                    analysis={analysis}
-                                    onAnalysisUpdate={setAnalysis}
-                                />
-                            </div>
+                        {/* Your Build — Desktop Left Column & Mobile FAB Drawer */}
+                        <div className="contents lg:block lg:col-span-3 self-start">
+                            <YourBuild
+                                build={build}
+                                onRemovePart={handleRemovePart}
+                                onClearBuild={handleClearBuild}
+                                resolution={resolution}
+                                onResolutionChange={setResolution}
+                                workload={workload}
+                                onWorkloadChange={setWorkload}
+                                isManagerMode={true}
+                                onAddPrebuilt={handleAddPrebuilt}
+                                onCategorySelect={(cat) => handleCategoryChange(cat, true)}
+                                categories={categories}
+                                analysis={analysis}
+                                onAnalysisUpdate={setAnalysis}
+                            />
                         </div>
 
-                        {/* Inventory  ERight Column */}
-                        <div className={cn(
-                            "flex flex-col gap-6 lg:col-span-9"
-                        )}>
+                        {/* Inventory — Right Column */}
+                        <div className="flex flex-col gap-6 lg:col-span-9 min-w-0">
                             <InventoryToolbar
                                 categories={categories}
                                 onCategoryChange={handleCategoryChange}
@@ -548,7 +544,7 @@ export default function PrebuiltBuilderPage() {
                             {isBuilderLoading ? null : sortedAndFilteredParts.length > 0 ? (
                                 view === 'grid' ? (
                                     <>
-                                        <div className="grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
+                                        <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
                                             {paginatedParts.map(part => (
                                                 <PartCard
                                                     key={part.id}
@@ -569,17 +565,18 @@ export default function PrebuiltBuilderPage() {
                                         />
                                     </>
                                 ) : (
-                                    <Card className="mt-6">
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Item</TableHead>
-                                                    <TableHead>Stock</TableHead>
-                                                    <TableHead className="text-right">Price</TableHead>
-                                                    <TableHead className="w-[50px]"></TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
+                                    <Card className="mt-6 overflow-hidden">
+                                        <div className="overflow-x-auto no-scrollbar">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>Item</TableHead>
+                                                        <TableHead>Stock</TableHead>
+                                                        <TableHead className="text-right">Price</TableHead>
+                                                        <TableHead className="w-[50px]"></TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
                                                 {paginatedParts.map(part => {
                                                     const selected = isSelected(part);
                                                     const currentStock = part.stock - getCountInBuild(part.name);
@@ -620,14 +617,15 @@ export default function PrebuiltBuilderPage() {
                                                 })}
                                             </TableBody>
                                         </Table>
-                                        <PaginationControls
-                                            currentPage={currentPage}
-                                            totalPages={totalPages}
-                                            itemsPerPage={itemsPerPage}
-                                            onPageChange={setCurrentPage}
-                                            onItemsPerPageChange={setItemsPerPage}
-                                        />
-                                    </Card>
+                                    </div>
+                                    <PaginationControls
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        itemsPerPage={itemsPerPage}
+                                        onPageChange={setCurrentPage}
+                                        onItemsPerPageChange={setItemsPerPage}
+                                    />
+                                </Card>
                                 )
                             ) : (
                                 <Card className="mt-6 min-h-[400px] flex items-center justify-center">

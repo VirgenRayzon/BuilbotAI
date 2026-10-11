@@ -131,15 +131,16 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
               </div>
 
               {/* Identity Details */}
-              <div className="space-y-2 min-w-0">
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
-                  <Title
-                    order={1}
-                    className="text-2xl sm:text-3xl font-headline font-black tracking-tight text-slate-900 dark:text-white"
-                  >
-                    {profile?.name || authUser?.displayName || "PC Builder"}
-                  </Title>
+              <div className="space-y-2 min-w-0 flex flex-col items-center sm:items-start text-center sm:text-left">
+                <Title
+                  order={1}
+                  className="text-2xl sm:text-3xl font-headline font-black tracking-tight text-slate-900 dark:text-white"
+                >
+                  {profile?.name || authUser?.displayName || "PC Builder"}
+                </Title>
 
+                {/* Access Badge & Status Pill */}
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   {isSuperAdmin ? (
                     <Badge
                       size="md"
@@ -175,8 +176,8 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
                   </span>
                 </div>
 
-                {/* Email, Joined Date, Authority Pill */}
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-4 text-xs font-medium text-slate-600 dark:text-slate-300">
+                {/* Email and Joined Date (Stacked on Mobile, Inline on sm+) */}
+                <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1.5 sm:gap-4 text-xs font-medium text-slate-600 dark:text-slate-300 pt-0.5">
                   {authUser?.email && (
                     <span className="flex items-center gap-1.5">
                       <Mail size={14} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
@@ -195,30 +196,30 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
             {/* Right: Hardware Metrics (for Regular Users) OR Quick Actions (for Staff) */}
             <div className="w-full lg:w-auto flex flex-col sm:flex-row items-center justify-center sm:justify-end gap-3 shrink-0">
               {isRegularUser && stats ? (
-                <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                  <div className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/5 text-center min-w-[90px]">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 block">
+                <div className="grid grid-cols-3 sm:flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                  <div className="px-2.5 sm:px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/5 text-center min-w-0 sm:min-w-[90px]">
+                    <span className="text-[9px] sm:text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 block truncate">
                       Builds
                     </span>
-                    <span className="text-lg font-headline font-bold text-slate-900 dark:text-white">
+                    <span className="text-base sm:text-lg font-headline font-bold text-slate-900 dark:text-white">
                       {stats.totalBuilds}
                     </span>
                   </div>
 
-                  <div className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/5 text-center min-w-[90px]">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 block">
+                  <div className="px-2.5 sm:px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/5 text-center min-w-0 sm:min-w-[90px]">
+                    <span className="text-[9px] sm:text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 block truncate">
                       Active
                     </span>
-                    <span className="text-lg font-headline font-bold text-cyan-600 dark:text-cyan-400">
+                    <span className="text-base sm:text-lg font-headline font-bold text-cyan-600 dark:text-cyan-400">
                       {stats.activeBuilds}
                     </span>
                   </div>
 
-                  <div className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/5 text-center min-w-[110px]">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 block">
+                  <div className="px-2.5 sm:px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/5 text-center min-w-0 sm:min-w-[110px]">
+                    <span className="text-[9px] sm:text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 block truncate">
                       Total Value
                     </span>
-                    <span className="text-sm font-headline font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="text-xs sm:text-sm font-headline font-bold text-emerald-600 dark:text-emerald-400 truncate block">
                       {formatCurrency(stats.totalValue)}
                     </span>
                   </div>
@@ -226,15 +227,13 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
               ) : null}
 
               <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
-
-
                 <Button
                   size="sm"
                   variant="subtle"
                   color="red"
                   onClick={() => setSignOutModalOpen(true)}
                   leftSection={<LogOut size={15} />}
-                  className="font-bold text-xs uppercase tracking-wider rounded-xl h-10 px-3 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+                  className="font-bold text-xs uppercase tracking-wider rounded-xl h-11 px-4 hover:bg-rose-50 dark:hover:bg-rose-950/20"
                 >
                   Sign Out
                 </Button>

@@ -322,28 +322,39 @@ export function YourBuild({
         </Paper>
       </div>
 
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 p-3 bg-white/90 dark:bg-[#111722]/90 backdrop-blur-xl border-t border-slate-200 dark:border-white/10">
+      {/* Mobile FAB Trigger & Right Drawer Sheet */}
+      <div className="lg:hidden">
         <Sheet>
           <SheetTrigger asChild>
-            <Button
-              fullWidth
-              size="lg"
-              radius="md"
-              color="cyan"
-              className="font-headline font-bold shadow-lg shadow-cyan-500/20"
-            >
-              <Group justify="space-between" className="w-full">
-                <Group gap="xs">
-                  <ThemeIcon size={24} radius="sm" variant="light" color="white" className="bg-white/20">
-                    <Cpu size={14} className="text-white" />
+            <div className="fixed bottom-4 right-4 sm:right-6 z-40">
+              <Button
+                size="md"
+                radius="xl"
+                color="cyan"
+                className={cn(
+                  "h-12 px-4 shadow-xl shadow-cyan-500/25 border border-cyan-400/30",
+                  "bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-headline font-bold",
+                  "flex items-center gap-2.5 transition-transform active:scale-95 cursor-pointer"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <ThemeIcon size={26} radius="xl" variant="light" color="white" className="bg-white/20">
+                    <Cpu size={15} className="text-white" />
                   </ThemeIcon>
-                  <span>Your Build ({selectedParts}/{requiredCategories.length})</span>
-                </Group>
-                <span className="font-mono font-bold">{formatCurrency(totalPrice)}</span>
-              </Group>
-            </Button>
+                  <span className="text-xs uppercase tracking-wider font-bold">
+                    Build ({selectedParts}/{requiredCategories.length})
+                  </span>
+                </div>
+                <div className="h-4 w-[1px] bg-white/30" />
+                <span className="font-mono text-xs font-bold">{formatCurrency(totalPrice)}</span>
+              </Button>
+            </div>
           </SheetTrigger>
-          <SheetContent side="bottom" hideClose className="h-[85vh] p-0 flex flex-col rounded-t-3xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722]">
+          <SheetContent
+            side="right"
+            hideClose
+            className="w-full sm:max-w-md p-0 flex flex-col border-l border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-2xl"
+          >
             <SheetHeader className="p-3 flex flex-row items-center justify-between border-b border-slate-200 dark:border-white/10 text-left bg-slate-50/50 dark:bg-white/[0.02]">
               <Group gap="xs">
                 <ThemeIcon size={28} radius="md" variant="light" color="cyan">
@@ -357,7 +368,9 @@ export function YourBuild({
               <Group gap="xs" align="center">
                 {renderHeaderActions()}
                 <SheetClose asChild>
-                  <button type="button" aria-label="Close Your Build" className="rounded-lg p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10"><X size={18} /></button>
+                  <button type="button" aria-label="Close Your Build" className="rounded-lg p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                    <X size={18} />
+                  </button>
                 </SheetClose>
               </Group>
             </SheetHeader>

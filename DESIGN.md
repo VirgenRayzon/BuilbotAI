@@ -113,14 +113,41 @@ Typography reinforces precision and clarity:
 ---
 
 ## 7. Component Stylings & Layout
-* **Buttons**:
+* **Buttons & Action Controls**:
   - Interactive with 150ms-250ms transitions.
   - Subtly rounded corners (`radius="md"`).
   - Tactile feedback with `hover:scale-[1.02]` and `active:scale-[0.98]`.
+  - Minimum touch target size for interactive buttons, action icons, and pills is **44px** (`h-11` or `p-3`).
 * **Cards & Containers**:
-  - Clean `Paper` or glassmorphic panel with `backdrop-blur-xl`.
-  - Borders: Thin, low-opacity borders (`border-slate-200 dark:border-white/10`).
-  - Ample padding and 8px grid spacing.
-* **Layout Principles**:
-  - **Whitespace**: Ample spacing (8px/8dp rhythm) to prevent cognitive overload.
-  - **Responsiveness**: Mobile-first approach with container maxing out at `max-w-7xl` on desktop.
+  - Mantine `Paper` with `withBorder`, `radius="lg"`, and `shadow-sm`.
+  - Light mode: `bg-white/85`, `border-slate-200/80`.
+  - Dark mode: `dark:bg-[#141a23]/90`, `dark:border-white/10`, `backdrop-blur-md`.
+  - Padding & Visual Thickness: Keep cards compact and sleek. Never use bloated padding (`p="xl"` or `36px`) or heavy shadows (`shadow-2xl`). Always use `p={{ base: 'md', sm: 'lg' }}` with `Stack gap="md"`.
+* **Pop-Up Modal & Border Div Padding Standards**:
+  - All pop-up modal dialogs must strictly set their header and body padding to **`12px`** (`header: "... p-3"`, `body: "!p-3"`) for visual consistency.
+  - Bordered container inner divs, sub-surfaces, and toolbars should maintain concise **`12px`** (`p-3`) padding.
+* **Card Container Width Standards**:
+  - Standard customer auth/forms: `max-w-[440px]`
+  - Multi-role portals / management forms: `max-w-[480px]`
+  - Toolbars / inventory filter surfaces: `radius="lg"`, `p="xs"`, `shadow-xs`
+* **Single-Line Footer Links**:
+  - Provide enough container width and use `whitespace-nowrap` on action links (e.g., "Sign in via System Access") to prevent awkward multi-line wrapping.
+
+---
+
+## 8. Responsive Design & Mobile-First Standards
+
+BuildbotAI must provide a first-class user experience across mobile phones, tablets, laptops, and ultra-wide desktops.
+
+1. **Mobile-First Layout**:
+   - Always style for small screens first (`< 640px`), scaling up using `sm:`, `md:`, and `lg:`.
+   - Ensure the UI is fully functional and aesthetically polished on narrow viewports before expanding to desktop.
+2. **Prevent Horizontal Scroll**:
+   - Do NOT use hardcoded fixed pixel widths (e.g., `w-[600px]`); use `w-full max-w-...` instead.
+   - Apply `overflow-x-hidden` on main page and layout containers.
+3. **Builders & Catalog Views**:
+   - Multi-column grids must collapse to a single column on mobile (`grid-cols-1 md:grid-cols-3 lg:grid-cols-4` or Mantine `cols={{ base: 1, sm: 2, lg: 3, xl: 4 }}`).
+   - Sidebars (e.g., "Your Build") must convert into a Floating Action Button (FAB) that opens as a drawer or sheet on mobile at the right side of the screen.
+4. **Touch Targets & Typography**:
+   - Minimum touch target size for interactive buttons, action icons, and pills is **`44px`** (`h-11` or `p-3`).
+   - Scale typography down on mobile (e.g., `text-lg md:text-2xl`, responsive heading levels) to maintain balance and avoid excessive line wrapping.

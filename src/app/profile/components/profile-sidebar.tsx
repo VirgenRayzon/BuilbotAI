@@ -201,7 +201,7 @@ export function ProfileSidebar({
   return (
     <>
       {/* MOBILE HORIZONTAL NAVIGATION (< lg) */}
-      <div className="block lg:hidden w-full mb-6">
+      <div className="block lg:hidden w-full mb-4 sm:mb-6">
         <Paper
           hiddenFrom="lg"
           withBorder
@@ -209,7 +209,7 @@ export function ProfileSidebar({
           p="xs"
           className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
         >
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none px-1">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar px-1">
             {allNavItems.map((item) => {
               const isActive = activeTab === item.id || (item.id === "profile" && activeTab === "account");
               const Icon = item.icon;
@@ -219,18 +219,18 @@ export function ProfileSidebar({
                   key={item.id}
                   onClick={() => onTabChange(item.id)}
                   className={cn(
-                    "flex items-center gap-1.5 px-3.5 h-9 rounded-lg text-xs font-headline font-bold uppercase tracking-wider whitespace-nowrap shrink-0 transition-all",
+                    "flex items-center gap-2 px-4 h-11 rounded-xl text-xs font-headline font-bold uppercase tracking-wider whitespace-nowrap shrink-0 transition-all",
                     isActive
                       ? "bg-cyan-500 text-white shadow-sm shadow-cyan-500/20"
-                      : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white active:scale-95"
                   )}
                 >
-                  <Icon size={14} className={isActive ? "text-white" : "text-slate-500 dark:text-slate-400"} />
+                  <Icon size={16} className={isActive ? "text-white" : "text-slate-500 dark:text-slate-400"} />
                   <span>{item.label}</span>
                   {item.badge !== null && (
                     <span
                       className={cn(
-                        "text-[10px] font-mono px-1.5 py-0.5 rounded-full font-bold ml-0.5",
+                        "text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ml-0.5",
                         isActive
                           ? "bg-white/20 text-white"
                           : "bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300"

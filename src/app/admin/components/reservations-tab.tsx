@@ -140,7 +140,6 @@ export function ReservationsTab({
     const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'price-high' | 'price-low'>('newest');
     const [orderCurrentPage, setOrderCurrentPage] = useState(1);
     const [orderItemsPerPage, setOrderItemsPerPage] = useState(8);
-    const [expandedCardIds, setExpandedCardIds] = useState<Record<string, boolean>>({});
     const [showAllSpecs, setShowAllSpecs] = useState(false);
 
     // Delete confirmation modal state
@@ -288,17 +287,7 @@ export function ReservationsTab({
 
     // Toggle all cards specs breakdown
     const toggleShowAllSpecs = () => {
-        const next = !showAllSpecs;
-        setShowAllSpecs(next);
-        setExpandedCardIds({});
-    };
-
-    // Toggle card component breakdown expand
-    const toggleExpand = (orderId: string) => {
-        setExpandedCardIds(prev => ({
-            ...prev,
-            [orderId]: !(prev[orderId] !== undefined ? prev[orderId] : showAllSpecs)
-        }));
+        setShowAllSpecs(prev => !prev);
     };
 
     // Execute Delete
@@ -852,9 +841,7 @@ export function ReservationsTab({
                         const currentStatus = order.status || 'pending';
                         const isPrebuilt = (order as any).type === 'prebuilt';
                         const isPending = currentStatus === 'pending';
-                        const isExpanded = expandedCardIds[order.id] !== undefined
-                            ? expandedCardIds[order.id]
-                            : showAllSpecs;
+                        const isExpanded = showAllSpecs;
 
                         const dateFormatted = order.createdAt?.toDate
                             ? order.createdAt.toDate().toLocaleDateString(undefined, { dateStyle: 'medium' })
@@ -1034,7 +1021,7 @@ export function ReservationsTab({
                                             size="xs"
                                             radius="md"
                                             fullWidth
-                                            onClick={() => toggleExpand(order.id)}
+                                            onClick={toggleShowAllSpecs}
                                             leftSection={<Layers size={13} className="text-slate-400 group-hover:text-cyan-500 transition-colors" />}
                                             rightSection={
                                                 <ChevronDown

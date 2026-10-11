@@ -112,8 +112,8 @@ export default function BuilderPage() {
                     <BuilderHeader />
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">
-                        {/* Your Build — Left Column (Primary Feature) */}
-                        <aside className="hidden lg:block lg:col-span-3 self-start">
+                        {/* Your Build — Desktop Left Column & Mobile FAB Drawer */}
+                        <div className="contents lg:block lg:col-span-3 self-start">
                             <YourBuild
                                 build={build}
                                 onRemovePart={handleRemovePart}
@@ -128,7 +128,7 @@ export default function BuilderPage() {
                                 categories={categories}
                                 onApplySuggestion={handleApplySuggestion}
                             />
-                        </aside>
+                        </div>
 
                         {/* Inventory — Right Column */}
                         <InventoryView

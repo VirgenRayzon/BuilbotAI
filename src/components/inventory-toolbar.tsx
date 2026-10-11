@@ -96,7 +96,7 @@ export function InventoryToolbar({
     <div className="space-y-2.5">
       {/* Optional Top Category Bar when icons are supplied */}
       {hasIcons && (
-        <div className="flex flex-wrap gap-2 w-full">
+        <div className="flex flex-nowrap sm:flex-wrap overflow-x-auto no-scrollbar pb-1 sm:pb-0 gap-1.5 sm:gap-2 w-full">
           <Button
             size="xs"
             radius="md"

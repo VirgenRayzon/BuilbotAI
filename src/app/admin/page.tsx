@@ -122,7 +122,7 @@ export default function AdminPage() {
                     isDark ? "invert" : ""
                 )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-                <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-8 relative z-10">
+                <div className="w-full px-3 sm:px-6 md:px-8 lg:px-10 py-4 sm:py-6 md:py-8 relative z-10">
                     <AdminTabHeader
                         currentTab={currentTab}
                         isSuperAdmin={profile?.isSuperAdmin}
@@ -150,31 +150,31 @@ export default function AdminPage() {
                         color="cyan"
                         className="w-full"
                     >
-                        {/* Horizontal Tab Strip Container with Adaptive Scrollbar */}
+                        {/* Horizontal Tab Strip Container with Fluid Touch Scrolling */}
                         <div className="w-full mb-6 border-b border-slate-200 dark:border-white/10 pb-3">
                             <div
                                 ref={tabsScrollRef}
-                                className="w-full overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700/80 hover:scrollbar-thumb-cyan-500/60 dark:hover:scrollbar-thumb-cyan-500/60 scrollbar-track-transparent transition-colors"
+                                className="w-full overflow-x-auto pb-1 no-scrollbar sm:scrollbar-thin sm:scrollbar-thumb-slate-300 sm:dark:scrollbar-thumb-slate-700/80 hover:scrollbar-thumb-cyan-500/60 dark:hover:scrollbar-thumb-cyan-500/60 scrollbar-track-transparent transition-colors"
                             >
                                 <Tabs.List className="bg-slate-100 dark:bg-[#141a23] p-1.5 rounded-xl border border-slate-200 dark:border-white/10 inline-flex flex-nowrap gap-1.5 min-w-max">
                                     <Tabs.Tab
                                         value="stock"
                                         leftSection={<Package className="h-4 w-4" />}
-                                        className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
+                                        className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
                                     >
                                         Manage Stock
                                     </Tabs.Tab>
                                     <Tabs.Tab
                                         value="prebuilts"
                                         leftSection={<Monitor className="h-4 w-4" />}
-                                        className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
+                                        className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
                                     >
                                         Manage Prebuilts
                                     </Tabs.Tab>
                                     <Tabs.Tab
                                         value="reservations"
                                         leftSection={<ShoppingBag className="h-4 w-4" />}
-                                        className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
+                                        className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
                                     >
                                         Reservations
                                     </Tabs.Tab>
@@ -182,7 +182,7 @@ export default function AdminPage() {
                                         <Tabs.Tab
                                             value="sales"
                                             leftSection={<BarChart3 className="h-4 w-4" />}
-                                            className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
+                                            className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
                                         >
                                             Sales & Analytics
                                         </Tabs.Tab>
@@ -190,7 +190,7 @@ export default function AdminPage() {
                                     <Tabs.Tab
                                         value="archive"
                                         leftSection={<Archive className="h-4 w-4" />}
-                                        className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
+                                        className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
                                     >
                                         Archive
                                     </Tabs.Tab>
@@ -199,7 +199,7 @@ export default function AdminPage() {
                                     <Tabs.Tab
                                         value="audit"
                                         leftSection={<Shield className="h-4 w-4" />}
-                                        className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
+                                        className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
                                     >
                                         Audit Logs
                                     </Tabs.Tab>
@@ -208,7 +208,7 @@ export default function AdminPage() {
                                         <Tabs.Tab
                                             value="management"
                                             leftSection={<Sliders className="h-4 w-4" />}
-                                            className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
+                                            className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
                                         >
                                             Management Portal
                                         </Tabs.Tab>
@@ -223,7 +223,7 @@ export default function AdminPage() {
                                                     {intelligenceBadge}
                                                 </Badge>
                                             }
-                                            className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
+                                            className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
                                         >
                                             AI
                                         </Tabs.Tab>
@@ -233,7 +233,7 @@ export default function AdminPage() {
                                         <Tabs.Tab
                                             value="content"
                                             leftSection={<FileText className="h-4 w-4" />}
-                                            className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
+                                            className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
                                         >
                                             Site Content
                                         </Tabs.Tab>
@@ -367,14 +367,14 @@ export default function AdminPage() {
                                                 <Tabs.Tab
                                                     value="intelligence"
                                                     leftSection={<Cpu className="h-4 w-4" />}
-                                                    className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+                                                    className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
                                                 >
                                                     Model Intelligence
                                                 </Tabs.Tab>
                                                 <Tabs.Tab
                                                     value="prompts"
                                                     leftSection={<FileCode className="h-4 w-4" />}
-                                                    className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+                                                    className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
                                                 >
                                                     System Prompts
                                                 </Tabs.Tab>

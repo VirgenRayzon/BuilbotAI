@@ -88,6 +88,18 @@ Every component, card, form input, modal, and button must be 100% legible and po
   - Toolbars / inventory filter surfaces: `radius="lg"`, `p="xs"`, `shadow-xs`
 - **Single-Line Footer Links:** Provide enough container width and use `whitespace-nowrap` on action links (e.g., "Sign in via System Access") to prevent awkward multi-line wrapping.
 
+**7. Responsive Design & Mobile-First Standards**
+- **Mobile-First Layout:** Always style for small screens first (`< 640px`), scaling up using `sm:`, `md:`, and `lg:`.
+- **Prevent Horizontal Scroll:**
+  - Do NOT use hardcoded fixed pixel widths (e.g., `w-[600px]`); use `w-full max-w-...` instead.
+  - Apply `overflow-x-hidden` on main page containers.
+- **Builders & Catalog Views:**
+  - Multi-column grids must collapse to a single column on mobile (`grid-cols-1 md:grid-cols-3 lg:grid-cols-4` or Mantine `cols={{ base: 1, sm: 2, lg: 3, xl: 4 }}`).
+  - Sidebars (e.g., "Your Build") must convert into FAB button that opens at the right side of the screen on mobile.
+- **Touch Targets & Typography:**
+  - Minimum touch target size for interactive buttons and pills is `44px` (`h-11` or `p-3`).
+  - Scale typography down on mobile (`text-lg md:text-2xl`).
+
 ## Operational Constraints & Environment
 
 - **Development Port:** The application runs strictly on **Port `9002`** (`http://localhost:9002/`). When testing or opening browser URLs, ALWAYS use port `9002` (do NOT default to port 3000).

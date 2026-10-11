@@ -323,7 +323,7 @@ export function MantineSettingsView({
 
               {/* First Name & Last Name */}
               <Grid gutter="xs">
-                <Grid.Col span={6}>
+                <Grid.Col span={{ base: 12, sm: 6 }}>
                   <TextInput
                     label="First name"
                     placeholder="first name"
@@ -338,7 +338,7 @@ export function MantineSettingsView({
                     }}
                   />
                 </Grid.Col>
-                <Grid.Col span={6}>
+                <Grid.Col span={{ base: 12, sm: 6 }}>
                   <TextInput
                     label="Last name"
                     placeholder="last name"
@@ -406,9 +406,9 @@ export function MantineSettingsView({
                 }}
               />
 
-              {/* City, State, Zip (3 Columns) */}
+              {/* City, State, Zip (Responsive Grid) */}
               <Grid gutter="xs">
-                <Grid.Col span={5}>
+                <Grid.Col span={{ base: 12, sm: 5 }}>
                   <TextInput
                     label="City"
                     placeholder="city"
@@ -423,7 +423,7 @@ export function MantineSettingsView({
                     }}
                   />
                 </Grid.Col>
-                <Grid.Col span={4}>
+                <Grid.Col span={{ base: 6, sm: 4 }}>
                   <TextInput
                     label="State"
                     placeholder="state"
@@ -438,7 +438,7 @@ export function MantineSettingsView({
                     }}
                   />
                 </Grid.Col>
-                <Grid.Col span={3}>
+                <Grid.Col span={{ base: 6, sm: 3 }}>
                   <TextInput
                     label="Zip"
                     placeholder="zip"

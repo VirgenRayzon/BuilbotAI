@@ -148,13 +148,13 @@ export function AdminTabHeader({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 4 }}
                     transition={{ duration: 0.2 }}
-                    className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2"
+                    className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 pb-2"
                 >
                     <div className="flex flex-col gap-0.5">
                         <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-cyan-600 dark:text-cyan-400 font-headline">
                             {currentMeta.tag}
                         </span>
-                        <h1 className="text-2xl sm:text-3xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-slate-100">
+                        <h1 className="text-xl sm:text-2xl md:text-3xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-slate-100">
                             {currentMeta.titlePrefix}
                             <span className="text-cyan-600 dark:text-cyan-400 italic">
                                 {currentMeta.titleHighlight}
@@ -166,9 +166,9 @@ export function AdminTabHeader({
                     </div>
 
                     {/* Dynamic Action Slots */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-1 sm:pt-0">
                         {currentTab === 'sales' && (
-                            <Group gap="sm">
+                            <Group gap="xs">
                                 <Button
                                     variant="light"
                                     color="cyan"
@@ -177,7 +177,7 @@ export function AdminTabHeader({
                                     leftSection={<Plus className={cn("h-4 w-4", isIngestingDummyData && "animate-pulse")} />}
                                     onClick={onOpenIngestDummy}
                                     loading={isIngestingDummyData}
-                                    className="font-headline font-bold text-xs uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    className="font-headline font-bold text-xs uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[38px] sm:min-h-0"
                                 >
                                     Ingest Dummy Data
                                 </Button>
@@ -190,7 +190,7 @@ export function AdminTabHeader({
                                     leftSection={<RefreshCcw className={cn("h-4 w-4", isResettingSales && "animate-spin")} />}
                                     onClick={onOpenResetSales}
                                     loading={isResettingSales}
-                                    className="font-headline font-bold text-xs uppercase tracking-wider text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    className="font-headline font-bold text-xs uppercase tracking-wider text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[38px] sm:min-h-0"
                                 >
                                     Reset Analytics
                                 </Button>
