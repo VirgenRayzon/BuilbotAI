@@ -33,6 +33,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [requestedEmail, setRequestedEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -54,10 +55,15 @@ export default function ForgotPasswordPage() {
     setError(null);
     setSuccess(false);
 
-    if (!auth) return;
+    if (!auth) {
+      setError('Password reset is unavailable right now. Please try again.');
+      setLoading(false);
+      return;
+    }
 
     try {
       await sendPasswordResetEmail(auth, values.email);
+      setRequestedEmail(values.email);
       setSuccess(true);
     } catch (err: any) {
       setError(err.message || 'Failed to send password reset email. Please try again.');
@@ -120,7 +126,7 @@ export default function ForgotPasswordPage() {
                 title="Reset Link Sent"
                 className="text-xs"
               >
-                If an account exists with that email, a password reset link has been dispatched. Please check your inbox and spam folder.
+                If an account exists for <strong>{requestedEmail}</strong>, you&apos;ll receive a reset link. Check your inbox and spam folder. After setting a new password, sign in with this same email address.
               </Alert>
             )}
 
