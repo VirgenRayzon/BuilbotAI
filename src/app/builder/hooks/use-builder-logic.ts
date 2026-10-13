@@ -77,14 +77,7 @@ export function useBuilderLogic(allParts: Part[]) {
         } else {
             next[category] = null;
 
-            if (category === 'Case') {
-                const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
-                dependentParts.forEach(key => {
-                    if (key === 'RAM' || key === 'Storage') next[key] = [];
-                    else next[key] = null;
-                });
-                toastMsg = { title: 'Build Reset', description: 'Removing the case removes all internal components.' };
-            } else if (category === 'Motherboard') {
+            if (category === 'Motherboard') {
                 const dependentParts = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
                 dependentParts.forEach(key => {
                     if (key === 'RAM' || key === 'Storage') next[key] = [];
@@ -156,14 +149,7 @@ export function useBuilderLogic(allParts: Part[]) {
 
         if (isCurrentlySelected) {
             nextBuild[category] = null;
-            if (category === 'Case') {
-                const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
-                dependentParts.forEach(key => {
-                    if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
-                    else nextBuild[key] = null;
-                });
-                toastsToShow.push({ title: 'Build Reset', description: 'Case removed.' });
-            } else if (category === 'Motherboard') {
+            if (category === 'Motherboard') {
                 const dependentParts = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
                 dependentParts.forEach(key => {
                     if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];

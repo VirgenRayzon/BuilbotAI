@@ -1,7 +1,7 @@
 /**
  * ComponentCard — Mantine UI card for displaying a single PC component in the AI build summary.
  * Designed with strict Mantine UI aesthetics, light/dark mode harmony, standardized headers,
- * padded product canvas, line-clamped AI rationale with Popover expansion, and structured price stack.
+ * edge-to-edge product canvas, line-clamped AI rationale with Popover expansion, and structured price stack.
  */
 "use client";
 
@@ -55,7 +55,8 @@ export function ComponentCard({ name, component, icon: Icon }: ComponentCardProp
       className={cn(
         "flex flex-col justify-between h-full relative group transition-all duration-300",
         "bg-white/85 dark:bg-[#111722] hover:shadow-md hover:-translate-y-1",
-        "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40"
+        "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
+        isAiSuggested && "border-yellow-500/70 dark:border-yellow-400/70 bg-yellow-50/40 dark:bg-yellow-950/15 shadow-sm shadow-yellow-500/10 hover:border-yellow-500 dark:hover:border-yellow-400"
       )}
     >
       {/* --- Top Header: Slot Icon, Badges & Model Name --- */}
@@ -66,15 +67,15 @@ export function ComponentCard({ name, component, icon: Icon }: ComponentCardProp
               size={28}
               radius="md"
               variant="light"
-              color="cyan"
+              color={isAiSuggested ? "yellow" : "cyan"}
               className="shrink-0 shadow-xs"
             >
-              <Icon className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+              <Icon className={cn("w-4 h-4", isAiSuggested ? "text-yellow-700 dark:text-yellow-300" : "text-cyan-600 dark:text-cyan-400")} />
             </ThemeIcon>
             <Badge
               size="xs"
               variant="light"
-              color="cyan"
+              color={isAiSuggested ? "yellow" : "cyan"}
               radius="sm"
               className="font-semibold tracking-wider uppercase text-[10px]"
             >
@@ -86,7 +87,7 @@ export function ComponentCard({ name, component, icon: Icon }: ComponentCardProp
             <Badge
               size="xs"
               variant="light"
-              color="amber"
+              color="yellow"
               radius="sm"
               className="font-medium text-[10px] shrink-0"
             >
@@ -110,18 +111,22 @@ export function ComponentCard({ name, component, icon: Icon }: ComponentCardProp
           size="sm"
           fw={700}
           lineClamp={2}
-          className="leading-snug transition-colors group-hover:text-cyan-600 dark:group-hover:text-cyan-400 min-h-[2.5rem] text-slate-900 dark:text-slate-100"
+          className={cn(
+            "leading-snug transition-colors min-h-[2.5rem] text-slate-900 dark:text-slate-100",
+            isAiSuggested ? "group-hover:text-yellow-800 dark:group-hover:text-yellow-300" : "group-hover:text-cyan-600 dark:group-hover:text-cyan-400"
+          )}
           title={component.model}
         >
           {component.model}
         </Text>
       </Stack>
 
-      {/* --- Padded Product Showcase Canvas --- */}
+      {/* --- Product Showcase Canvas --- */}
       <Box
         className={cn(
-          "aspect-square relative w-full overflow-hidden rounded-xl p-3 my-1",
+          "aspect-square relative w-full overflow-hidden rounded-xl my-1",
           "bg-slate-100/70 dark:bg-white/[0.03] border border-slate-200/50 dark:border-white/5",
+          isAiSuggested && "border-yellow-500/25 dark:border-yellow-400/25",
           "transition-colors duration-300 group-hover:bg-slate-100 dark:group-hover:bg-white/[0.05]"
         )}
       >
@@ -131,7 +136,7 @@ export function ComponentCard({ name, component, icon: Icon }: ComponentCardProp
           fill
           unoptimized
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-          className="object-contain transition-transform duration-500 group-hover:scale-105 p-1"
+          className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
           data-ai-hint={component.imageHint}
           onError={() => {
             setImgSrc(fallback);
@@ -161,7 +166,10 @@ export function ComponentCard({ name, component, icon: Icon }: ComponentCardProp
             <Popover.Target>
               <button
                 type="button"
-                className="text-[11px] font-semibold text-cyan-600 dark:text-cyan-400 hover:underline inline-block self-start cursor-pointer bg-transparent border-0 p-0 transition-colors"
+                className={cn(
+                  "text-[11px] font-semibold hover:underline inline-block self-start cursor-pointer bg-transparent border-0 p-0 transition-colors",
+                  isAiSuggested ? "text-yellow-700 dark:text-yellow-300" : "text-cyan-600 dark:text-cyan-400"
+                )}
               >
                 Read more...
               </button>
@@ -211,7 +219,7 @@ export function ComponentCard({ name, component, icon: Icon }: ComponentCardProp
             <Badge
               size="xs"
               variant="light"
-              color="amber"
+              color="yellow"
               radius="sm"
               className="font-semibold text-[10px]"
             >

@@ -15,14 +15,14 @@ import {
   Paper,
 } from "@mantine/core";
 import { formatCurrency, getOptimizedStorageUrl, cn } from "@/lib/utils";
-import type { PrebuiltSystem, Part } from "@/lib/types";
+import type { PrebuiltSystem, Part, FavoriteBuild } from "@/lib/types";
 import {
   ShieldCheck,
   ChevronDown,
   ChevronUp,
-  AlertCircle,
   Loader2,
   CheckCircle2,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getMissingParts } from "@/lib/prebuilt-utils";
@@ -167,6 +167,7 @@ export function PrebuiltSystemCard({
     isComplete &&
     Object.keys(partsStock).length > 0 &&
     Object.values(partsStock).every((stock) => stock > 0);
+  const needsCustomization = !isComplete || (!loadingStock && !isInStock);
 
   const openCheckoutDialog = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -247,6 +248,47 @@ export function PrebuiltSystemCard({
     }
   };
 
+  const handleCustomize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const categoryMap: Record<string, string> = {
+      cpu: "CPU",
+      gpu: "GPU",
+      motherboard: "Motherboard",
+      ram: "RAM",
+      storage: "Storage",
+      psu: "PSU",
+      case: "Case",
+      cooler: "Cooler",
+    };
+
+    const parts = Object.entries(system.components).flatMap(([category, value]) => {
+      const ids = Array.isArray(value) ? value : [value];
+      return ids.filter(Boolean).map((partId) => {
+        const resolvedPart = resolvedParts[category];
+        return {
+          category: categoryMap[category] || category,
+          partId: resolvedPart?.id || String(partId),
+          name: resolvedPart?.name || String(partId),
+          price: resolvedPart?.price || 0,
+        };
+      });
+    });
+
+    const prebuiltBuildPayload: FavoriteBuild = {
+      id: system.id,
+      name: `${system.name} (Customized)`,
+      parts,
+      totalPrice: system.price,
+      source: "builder",
+      createdAt: new Date().toISOString(),
+    };
+
+    localStorage.setItem("pc_builder_load_favorite", JSON.stringify(prebuiltBuildPayload));
+    router.push("/builder");
+  };
+
   const mainBody = (
     <>
       <Card
@@ -258,7 +300,7 @@ export function PrebuiltSystemCard({
         isClickable ? "cursor-pointer hover:shadow-md hover:-translate-y-1 hover:border-cyan-500/40 dark:hover:border-cyan-500/40" : "cursor-default",
         "bg-white/85 dark:bg-[#111722]",
         "border-slate-200/80 dark:border-white/10",
-        (!isComplete || (!loadingStock && !isInStock)) && "border-red-500/60 dark:border-red-500/60 shadow-sm shadow-red-500/10 hover:border-red-500/80 dark:hover:border-red-500/80 opacity-85"
+        needsCustomization && "border-yellow-500/60 dark:border-yellow-400/60 bg-yellow-50/50 dark:!bg-black/30 shadow-sm shadow-yellow-500/10 dark:shadow-black/30 hover:border-yellow-500/80 dark:hover:border-yellow-400/80"
       )}
     >
         {/* Top Content Area */}
@@ -286,7 +328,7 @@ export function PrebuiltSystemCard({
                 Checking stock...
               </Badge>
             ) : !isComplete ? (
-              <Badge size="xs" variant="light" color="orange" radius="sm">
+              <Badge size="xs" variant="light" color="yellow" radius="sm">
                 Incomplete
               </Badge>
             ) : isInStock ? (
@@ -294,7 +336,7 @@ export function PrebuiltSystemCard({
                 In Stock
               </Badge>
             ) : (
-              <Badge size="xs" variant="light" color="red" radius="sm">
+              <Badge size="xs" variant="light" color="yellow" radius="sm">
                 Missing Parts
               </Badge>
             )}
@@ -379,29 +421,18 @@ export function PrebuiltSystemCard({
 
           {/* Inset Rounded Action Button */}
           {showReserveButton && (
-            !isComplete ? (
+            needsCustomization ? (
               <Button
                 fullWidth
                 radius="md"
                 size="sm"
                 variant="light"
-                color="orange"
-                disabled
-                leftSection={<AlertCircle className="h-4 w-4" />}
+                color="yellow"
+                onClick={handleCustomize}
+                leftSection={<SlidersHorizontal className="h-4 w-4" />}
+                className="font-medium transition-all duration-200 hover:bg-yellow-400 hover:text-slate-950"
               >
-                Incomplete System
-              </Button>
-            ) : !loadingStock && !isInStock ? (
-              <Button
-                fullWidth
-                radius="md"
-                size="sm"
-                variant="light"
-                color="red"
-                disabled
-                leftSection={<AlertCircle className="h-4 w-4" />}
-              >
-                Out of Stock
+                Customize Pre-built
               </Button>
             ) : (
               <Button

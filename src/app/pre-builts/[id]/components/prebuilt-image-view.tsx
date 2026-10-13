@@ -26,6 +26,16 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
         setCurrentImageIndex(0);
     }, [imageUrl]);
 
+    // Fetch every gallery image as soon as the product page opens. The modal uses
+    // the same URLs, so previous/next navigation can swap from the browser cache
+    // instead of waiting for a full-size image request after the customer clicks.
+    React.useEffect(() => {
+        allImages.forEach((imageUrl) => {
+            const image = new window.Image();
+            image.src = getOptimizedStorageUrl(imageUrl) || imageUrl;
+        });
+    }, [allImages]);
+
     const currentImage = allImages[currentImageIndex] || imageUrl;
     const coverUrl = currentImage || "/placeholder-system.png";
 
@@ -64,7 +74,7 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                     src={coverUrl}
                     alt={`${systemName} photo ${currentImageIndex + 1}`}
                     fill
-                    priority
+                    priority={currentImageIndex === 0}
                     unoptimized
                     sizes="(max-width: 768px) calc(100vw - 32px), 50vw"
                     className="object-contain p-3 sm:p-5"
@@ -214,7 +224,7 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                             src={coverUrl}
                             alt={`${systemName} full-size photo ${currentImageIndex + 1}`}
                             fill
-                            priority
+                            priority={currentImageIndex === 0}
                             unoptimized
                             sizes="(max-width: 1024px) 94vw, 1200px"
                             className="object-contain"

@@ -74,10 +74,26 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
     }, [part.images, part.imageUrl]);
 
     const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
+    const [detailsOpen, setDetailsOpen] = React.useState(false);
+    const [previewOpen, setPreviewOpen] = React.useState(false);
 
     React.useEffect(() => {
         setCurrentImageIndex(0);
+        setPreviewOpen(false);
     }, [part.id]);
+
+    // The inline gallery uses the compact resized versions, but the full-screen
+    // viewer deliberately uses each original image. Warm those originals only
+    // after this part's details are opened so switching photos is immediate
+    // without downloading high-resolution media for every catalog card.
+    React.useEffect(() => {
+        if (!detailsOpen) return;
+
+        allImages.forEach((imageUrl) => {
+            const image = new window.Image();
+            image.src = imageUrl;
+        });
+    }, [allImages, detailsOpen]);
 
     const handlePrev = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -99,7 +115,13 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
     }, [part.specifications]);
 
     return (
-        <Dialog>
+        <Dialog
+            open={detailsOpen}
+            onOpenChange={(open) => {
+                setDetailsOpen(open);
+                if (!open) setPreviewOpen(false);
+            }}
+        >
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
@@ -123,7 +145,19 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
                                 : "bg-slate-50 border-slate-200/80"
                         )}
                     >
-                        <div className="relative flex-1 w-full min-h-[340px] flex items-center justify-center p-6 select-none overflow-hidden">
+                        <div
+                            className="relative flex-1 w-full min-h-[340px] flex items-center justify-center p-6 select-none overflow-hidden cursor-zoom-in"
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`Open full-size preview for ${part.name}`}
+                            onClick={() => setPreviewOpen(true)}
+                            onKeyDown={(event) => {
+                                if (event.key === "Enter" || event.key === " ") {
+                                    event.preventDefault();
+                                    setPreviewOpen(true);
+                                }
+                            }}
+                        >
                             <Image
                                 src={getOptimizedStorageUrl(allImages[currentImageIndex] || part.imageUrl) || "/placeholder-part.png"}
                                 alt={`${part.name} - Photo ${currentImageIndex + 1}`}
@@ -580,6 +614,65 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
                     </div>
                 </div>
             </DialogContent>
+
+            <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+                <DialogContent
+                    hideClose
+                    className="flex h-[88vh] max-h-[88vh] w-[94vw] max-w-5xl flex-col rounded-2xl border border-white/15 bg-black/90 p-3 shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-[#0c1017]/95"
+                >
+                    <DialogTitle className="sr-only">{part.name} full-size image preview</DialogTitle>
+                    <button
+                        type="button"
+                        onClick={() => setPreviewOpen(false)}
+                        aria-label="Close full-size preview"
+                        className="absolute right-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-slate-900/85 text-white ring-1 ring-white/25 shadow-lg transition-all hover:scale-105 hover:bg-slate-800 hover:ring-white/50 active:scale-95"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+
+                    {allImages.length > 1 && (
+                        <>
+                            <button
+                                type="button"
+                                aria-label="Previous full-size photo"
+                                onClick={handlePrev}
+                                className="absolute left-4 top-1/2 z-50 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-slate-900/85 text-white ring-1 ring-white/20 shadow-lg backdrop-blur-sm transition-all hover:scale-105 hover:bg-slate-800 hover:ring-white/40 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                            >
+                                <ChevronLeft className="h-6 w-6" />
+                            </button>
+                            <button
+                                type="button"
+                                aria-label="Next full-size photo"
+                                onClick={handleNext}
+                                className="absolute right-4 top-1/2 z-50 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-slate-900/85 text-white ring-1 ring-white/20 shadow-lg backdrop-blur-sm transition-all hover:scale-105 hover:bg-slate-800 hover:ring-white/40 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                            >
+                                <ChevronRight className="h-6 w-6" />
+                            </button>
+                            <Badge
+                                variant="filled"
+                                color="dark"
+                                radius="xl"
+                                size="md"
+                                className="absolute bottom-4 left-1/2 z-50 -translate-x-1/2 bg-slate-950/85 px-3 py-1 font-mono text-white shadow-md ring-1 ring-white/10 backdrop-blur-md"
+                            >
+                                {currentImageIndex + 1} / {allImages.length}
+                            </Badge>
+                        </>
+                    )}
+
+                    <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-xl bg-transparent">
+                        <Image
+                            src={allImages[currentImageIndex] || part.imageUrl || "/placeholder-part.png"}
+                            alt={`${part.name} full-size photo ${currentImageIndex + 1}`}
+                            fill
+                            priority={currentImageIndex === 0}
+                            unoptimized
+                            sizes="(max-width: 1024px) 94vw, 1200px"
+                            className="object-contain"
+                        />
+                    </div>
+                </DialogContent>
+            </Dialog>
         </Dialog>
     );
 }
