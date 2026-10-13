@@ -13,6 +13,7 @@ import { LoadingProvider } from "@/context/loading-context";
 import { SessionTimeout } from "@/components/auth/session-timeout";
 import { SiteSettingsProvider } from "@/context/site-settings-context";
 import { MantineAppProvider } from "@/components/providers/mantine-app-provider";
+import { AdvisorJobsProvider } from "@/context/advisor-jobs-context";
 
 export const metadata: Metadata = {
   title: "Buildbot AI",
@@ -49,10 +50,12 @@ export default function RootLayout({
               <LoadingProvider>
                 <SiteSettingsProvider>
                   <MantineAppProvider>
-                    <AppLayout>
-                      {children}
-                    </AppLayout>
-                    <SessionTimeout />
+                    <AdvisorJobsProvider>
+                      <AppLayout>
+                        {children}
+                      </AppLayout>
+                      <SessionTimeout />
+                    </AdvisorJobsProvider>
                   </MantineAppProvider>
                 </SiteSettingsProvider>
               </LoadingProvider>

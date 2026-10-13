@@ -11,6 +11,7 @@ export type WorkloadType = 'Esports' | 'AAA' | 'Balanced';
 
 export type ComponentData = {
   id: string;
+  isExternal?: boolean;
   model: string;
   description: string;
   price: number;
@@ -43,6 +44,12 @@ export type Build = {
   case: ComponentData | null;
   cooler: ComponentData | null;
   estimatedWattage?: string;
+};
+
+export type AdvisorWebResearchInfo = {
+  searchedAt: string;
+  sources: { title: string; url: string }[];
+  searchSuggestionHtml?: string;
 };
 
 export type AiRecommendation = AiBuildAdvisorRecommendationsOutput;

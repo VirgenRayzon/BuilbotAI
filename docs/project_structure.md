@@ -4,10 +4,6 @@
 BuilbotAI
 ├── .agents
 │   ├── skills
-│   │   ├── 3d-visualizer
-│   │   │   ├── manifest.yaml
-│   │   │   ├── README.md
-│   │   │   └── SKILL.md
 │   │   ├── ai-elements
 │   │   │   ├── references
 │   │   │   │   ├── agent.md
@@ -194,34 +190,6 @@ BuilbotAI
 │   │   │   └── SKILL.md
 │   │   ├── nextjs-best-practices
 │   │   │   └── SKILL.md
-│   │   ├── r3f-animation
-│   │   │   └── SKILL.md
-│   │   ├── react-three-fiber
-│   │   │   ├── assets
-│   │   │   │   ├── examples
-│   │   │   │   │   └── README.md
-│   │   │   │   └── starter_r3f
-│   │   │   │       ├── src
-│   │   │   │       │   ├── components
-│   │   │   │       │   │   ├── Box.jsx
-│   │   │   │       │   │   └── Sphere.jsx
-│   │   │   │       │   ├── App.jsx
-│   │   │   │       │   ├── Experience.jsx
-│   │   │   │       │   └── main.jsx
-│   │   │   │       ├── index.html
-│   │   │   │       ├── package.json
-│   │   │   │       ├── README.md
-│   │   │   │       └── vite.config.js
-│   │   │   ├── references
-│   │   │   │   └── api_reference.md
-│   │   │   ├── scripts
-│   │   │   │   ├── component_generator.py
-│   │   │   │   └── scene_setup.py
-│   │   │   └── SKILL.md
-│   │   ├── threejs-fundamentals
-│   │   │   └── SKILL.md
-│   │   ├── threejs-interaction
-│   │   │   └── SKILL.md
 │   │   └── ui-ux-pro-max
 │   │       ├── data
 │   │       ├── scripts
@@ -230,10 +198,6 @@ BuilbotAI
 │       └── buildbotAI-capabilities.md
 ├── .claude
 │   └── skills
-│       ├── 3d-visualizer
-│       │   ├── manifest.yaml
-│       │   ├── README.md
-│       │   └── SKILL.md
 │       ├── firebase
 │       │   └── SKILL.md
 │       ├── frontend-design
@@ -241,35 +205,7 @@ BuilbotAI
 │       │   └── SKILL.md
 │       ├── nextjs-app-router-patterns
 │       │   └── SKILL.md
-│       ├── nextjs-best-practices
-│       │   └── SKILL.md
-│       ├── r3f-animation
-│       │   └── SKILL.md
-│       ├── react-three-fiber
-│       │   ├── assets
-│       │   │   ├── examples
-│       │   │   │   └── README.md
-│       │   │   └── starter_r3f
-│       │   │       ├── src
-│       │   │       │   ├── components
-│       │   │       │   │   ├── Box.jsx
-│       │   │       │   │   └── Sphere.jsx
-│       │   │       │   ├── App.jsx
-│       │   │       │   ├── Experience.jsx
-│       │   │       │   └── main.jsx
-│       │   │       ├── index.html
-│       │   │       ├── package.json
-│       │   │       ├── README.md
-│       │   │       └── vite.config.js
-│       │   ├── references
-│       │   │   └── api_reference.md
-│       │   ├── scripts
-│       │   │   ├── component_generator.py
-│       │   │   └── scene_setup.py
-│       │   └── SKILL.md
-│       ├── threejs-fundamentals
-│       │   └── SKILL.md
-│       └── threejs-interaction
+│       └── nextjs-best-practices
 │           └── SKILL.md
 ├── .firebase
 │   └── studio-3150054754-c7d0b
@@ -282,6 +218,11 @@ BuilbotAI
 │   ├── dev.nix
 │   └── icon.png
 ├── .tmp
+│   ├── advisor-light.png
+│   ├── inspect-advisor-inventory.ts
+│   ├── smoke-advisor.cjs
+│   ├── smoke-new-build.cjs
+│   └── validate-advisor-result.ts
 ├── .vscode
 │   └── settings.json
 ├── design_mocks
@@ -292,20 +233,36 @@ BuilbotAI
 │   ├── media__1772284001327.png
 │   └── neon_analytics_bot_layout_1772285192674.png
 ├── directives
+│   ├── admin_inventory_dialog_saving.md
+│   ├── admin_prebuilt_ai_assist.md
+│   ├── admin_prebuilt_pricing.md
 │   ├── admin_session_and_idle_timeout.md
-│   └── ingest_knowledge.md
+│   ├── build_advisor_performance.md
+│   ├── chatbot_build_context.md
+│   ├── component_description_formatting.md
+│   ├── customer_ui_spacing.md
+│   ├── import_catalog_images.md
+│   ├── ingest_knowledge.md
+│   ├── inventory_hierarchy_migration.md
+│   └── password_reset.md
 ├── docs
 │   ├── backend.json
 │   ├── blueprint.md
+│   ├── build_advisor_performance_plan.md
 │   ├── database_scalability_plan.md
 │   └── project_structure.md
 ├── execution
+│   ├── benchmark_build_advisor.mjs
+│   ├── benchmark_build_critique.ts
 │   ├── consolidate_collections.ts
 │   ├── delete-test-builders.js
 │   ├── generate_project_structure.js
 │   ├── ingest_website.py
 │   ├── migrate_audit_logs.ts
-│   └── update_changelog.js
+│   ├── migrate_inventory_hierarchy.ts
+│   ├── update_changelog.js
+│   ├── verify_inventory_hierarchy.ts
+│   └── verify_public_firestore_reads.ts
 ├── public
 │   ├── placeholders
 │   │   └── components
@@ -352,11 +309,18 @@ BuilbotAI
 │   ├── find-bad-data.js
 │   ├── list-models.js
 │   ├── print-raw-response.js
+│   ├── screenshot-admin-ai.png
+│   ├── screenshot-admin-management.png
+│   ├── screenshot-admin-reservations.png
+│   ├── screenshot-admin-sales-light.png
+│   ├── screenshot-admin-sales.png
+│   ├── screenshot-admin-stock.png
 │   ├── screenshot-home.png
 │   ├── screenshot-mega-menu-dark.png
 │   ├── screenshot-mega-menu-light.png
 │   ├── screenshot-mega-menu.png
 │   ├── screenshot-onboarding-header.png
+│   ├── screenshot-reservations-5cols.png
 │   ├── screenshot-signin.png
 │   ├── screenshot-signup-form.png
 │   ├── screenshot-signup-toa-v2.png
@@ -380,6 +344,8 @@ BuilbotAI
 │   │   │   ├── ai-prebuilt-performance.ts
 │   │   │   ├── ai-smart-budget.ts
 │   │   │   └── extract-part-details.ts
+│   │   ├── schemas
+│   │   │   └── build-advisor-schemas.ts
 │   │   ├── dev.ts
 │   │   └── genkit.ts
 │   ├── app
@@ -387,6 +353,7 @@ BuilbotAI
 │   │   │   └── page.tsx
 │   │   ├── admin
 │   │   │   ├── components
+│   │   │   │   ├── admin-tab-header.tsx
 │   │   │   │   ├── archive-tab.tsx
 │   │   │   │   ├── prebuilt-tab.tsx
 │   │   │   │   ├── reservations-tab.tsx
@@ -396,7 +363,8 @@ BuilbotAI
 │   │   │   │   ├── use-admin-core.ts
 │   │   │   │   ├── use-bulk-actions.ts
 │   │   │   │   ├── use-inventory.ts
-│   │   │   │   └── use-orders.ts
+│   │   │   │   ├── use-orders.ts
+│   │   │   │   └── use-sales-actions.ts
 │   │   │   ├── prebuilt-builder
 │   │   │   │   └── page.tsx
 │   │   │   └── page.tsx
@@ -412,6 +380,11 @@ BuilbotAI
 │   │   │   │   └── use-recommendation-logic.ts
 │   │   │   └── page.tsx
 │   │   ├── api
+│   │   │   ├── ai
+│   │   │   │   └── build-advisor
+│   │   │   │       ├── critique
+│   │   │   │       └── recommendations
+│   │   │   │           └── route.ts
 │   │   │   └── chat
 │   │   │       └── route.ts
 │   │   ├── builder
@@ -429,10 +402,15 @@ BuilbotAI
 │   │   │   └── page.tsx
 │   │   ├── forgot-password
 │   │   │   └── page.tsx
-│   │   ├── lens
-│   │   │   └── page.tsx
 │   │   ├── pre-builts
 │   │   │   ├── [id]
+│   │   │   │   ├── components
+│   │   │   │   │   ├── prebuilt-action-card.tsx
+│   │   │   │   │   ├── prebuilt-ai-review.tsx
+│   │   │   │   │   ├── prebuilt-image-view.tsx
+│   │   │   │   │   └── prebuilt-parts-accordion.tsx
+│   │   │   │   ├── hooks
+│   │   │   │   │   └── use-prebuilt-details.ts
 │   │   │   │   └── page.tsx
 │   │   │   └── page.tsx
 │   │   ├── profile
@@ -482,7 +460,19 @@ BuilbotAI
 │   │   ├── auth
 │   │   │   ├── route-guard.tsx
 │   │   │   ├── session-timeout.tsx
+│   │   │   ├── sign-out-loader.tsx
 │   │   │   └── terms-of-agreement-modal.tsx
+│   │   ├── bottleneck
+│   │   │   ├── bottleneck-prototype-controller.tsx
+│   │   │   ├── bottleneck-status-card.tsx
+│   │   │   ├── dual-sidebar-analyzer.tsx
+│   │   │   ├── fps-performance-chart.tsx
+│   │   │   ├── optimization-swaps-card.tsx
+│   │   │   ├── prototype-bottom-dock.tsx
+│   │   │   ├── prototype-dual-sidebar.tsx
+│   │   │   ├── prototype-slide-drawer.tsx
+│   │   │   ├── prototype-top-hud.tsx
+│   │   │   └── synergy-gauge-card.tsx
 │   │   ├── chat
 │   │   │   ├── hooks
 │   │   │   │   └── use-floating-chat.ts
@@ -505,8 +495,7 @@ BuilbotAI
 │   │   │   ├── prebuilt-showcase.tsx
 │   │   │   ├── section-header.tsx
 │   │   │   ├── team-section.tsx
-│   │   │   ├── unified-background.tsx
-│   │   │   └── visualizer-preview.tsx
+│   │   │   └── unified-background.tsx
 │   │   ├── parts
 │   │   │   ├── multi-image-upload.tsx
 │   │   │   ├── part-identity-section.tsx
@@ -520,6 +509,7 @@ BuilbotAI
 │   │   │   └── mantine-app-provider.tsx
 │   │   ├── ui
 │   │   │   ├── accordion.tsx
+│   │   │   ├── ai-action-button.tsx
 │   │   │   ├── alert-dialog.tsx
 │   │   │   ├── alert.tsx
 │   │   │   ├── animated-icons.tsx
@@ -533,12 +523,12 @@ BuilbotAI
 │   │   │   ├── chart.tsx
 │   │   │   ├── checkbox.tsx
 │   │   │   ├── collapsible.tsx
+│   │   │   ├── compact-info.tsx
 │   │   │   ├── dialog.tsx
 │   │   │   ├── dropdown-menu.tsx
 │   │   │   ├── form.tsx
 │   │   │   ├── input.tsx
 │   │   │   ├── label.tsx
-│   │   │   ├── lens.tsx
 │   │   │   ├── menubar.tsx
 │   │   │   ├── optimized-image.tsx
 │   │   │   ├── popover.tsx
@@ -569,17 +559,14 @@ BuilbotAI
 │   │   ├── ai-model-settings.tsx
 │   │   ├── ai-progress-modal.tsx
 │   │   ├── ai-system-prompts-settings.tsx
-│   │   ├── animated-cube-logo.tsx
 │   │   ├── app-layout.tsx
 │   │   ├── build-summary.tsx
 │   │   ├── builder-floating-analytics.tsx
 │   │   ├── builder-floating-chat.tsx
-│   │   ├── builder-sidebar-left.tsx
 │   │   ├── chat-form.tsx
 │   │   ├── component-card.tsx
 │   │   ├── footer.tsx
 │   │   ├── full-page-loader.tsx
-│   │   ├── header-mega-menu.module.css
 │   │   ├── header-mega-menu.tsx
 │   │   ├── header.module.css
 │   │   ├── header.tsx
@@ -588,9 +575,9 @@ BuilbotAI
 │   │   ├── inventory-prebuilt-card.tsx
 │   │   ├── inventory-table.tsx
 │   │   ├── inventory-toolbar.tsx
-│   │   ├── lens-demo.tsx
 │   │   ├── logo.tsx
 │   │   ├── maintenance-screen.tsx
+│   │   ├── neutral-page-loader.tsx
 │   │   ├── notification-center.tsx
 │   │   ├── order-details-modal.tsx
 │   │   ├── pagination-controls.tsx
@@ -601,9 +588,7 @@ BuilbotAI
 │   │   ├── prebuilt-system-card.tsx
 │   │   ├── prebuilts-table.tsx
 │   │   ├── sales-analytics.tsx
-│   │   ├── sales-visualizer.tsx
 │   │   ├── smart-budget.tsx
-│   │   ├── smart-image-magnifier.tsx
 │   │   ├── stock-editor.tsx
 │   │   ├── super-admin-settings.tsx
 │   │   ├── theme-toggle.tsx
@@ -611,6 +596,7 @@ BuilbotAI
 │   │   └── your-build.tsx
 │   ├── context
 │   │   ├── loading-context.tsx
+│   │   ├── sign-out-transition.tsx
 │   │   ├── site-settings-context.tsx
 │   │   ├── theme-provider.tsx
 │   │   └── user-profile.tsx
@@ -620,7 +606,8 @@ BuilbotAI
 │   │   │   └── use-user.tsx
 │   │   ├── firestore
 │   │   │   ├── use-collection.tsx
-│   │   │   └── use-doc.tsx
+│   │   │   ├── use-doc.tsx
+│   │   │   └── use-inventory-parts.ts
 │   │   ├── audit.ts
 │   │   ├── client-provider.tsx
 │   │   ├── config.ts
@@ -638,6 +625,7 @@ BuilbotAI
 │   │   ├── use-mobile.tsx
 │   │   ├── use-part-form.ts
 │   │   ├── use-persistent-state.ts
+│   │   ├── use-quick-build-checks.ts
 │   │   ├── use-system-prompts.ts
 │   │   └── use-toast.ts
 │   ├── knowledge
@@ -660,14 +648,29 @@ BuilbotAI
 │       ├── constants
 │       │   ├── category-specs.ts
 │       │   └── default-system-prompts.ts
+│       ├── advisor-inventory.ts
+│       ├── advisor-timing.ts
 │       ├── ai-model-resolver.ts
 │       ├── auth-utils.ts
 │       ├── bottleneck.ts
+│       ├── build-advisor-goals.ts
+│       ├── chat-message-parts.test.ts
+│       ├── chat-message-parts.ts
+│       ├── chat-recommendation-facts.test.ts
+│       ├── chat-recommendation-facts.ts
+│       ├── chat-recommendations.test.ts
+│       ├── chat-recommendations.ts
+│       ├── chat-stream-fallback.test.ts
+│       ├── chat-stream-fallback.ts
 │       ├── compatibility.ts
 │       ├── export-excel.ts
 │       ├── fps-estimator.ts
 │       ├── inventory-fetcher.ts
+│       ├── inventory-paths.test.ts
+│       ├── inventory-paths.ts
 │       ├── knowledge-retriever.ts
+│       ├── normalize-product-description.ts
+│       ├── parse-peso-budget.ts
 │       ├── placeholder-images.ts
 │       ├── prebuilt-utils.ts
 │       ├── system-prompts.ts
@@ -676,6 +679,8 @@ BuilbotAI
 │       └── vector-retriever.ts
 ├── test-results
 │   └── .last-run.json
+├── tests
+│   └── auth-role-navigation.spec.ts
 ├── tmp
 │   ├── test_knowledge_tools.ts
 │   ├── test_local_extraction.ts

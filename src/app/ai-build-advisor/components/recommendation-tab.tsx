@@ -6,6 +6,7 @@ import { Bot } from 'lucide-react';
 import { Paper, Box, Group, ThemeIcon, Text } from '@mantine/core';
 import { ChatForm } from '@/components/chat-form';
 import { BuildSummary } from '@/components/build-summary';
+import type { AdvisorWebResearchInfo } from '@/lib/types';
 
 interface RecommendationTabProps {
     isDark: boolean;
@@ -17,6 +18,8 @@ interface RecommendationTabProps {
     finalResponseTime: number | null;
     totalPrice: number;
     error?: string | null;
+    webResearchInfo: AdvisorWebResearchInfo | null;
+    webSearchEnabled: boolean;
 }
 
 export function RecommendationTab({
@@ -28,7 +31,9 @@ export function RecommendationTab({
     elapsedTime,
     finalResponseTime,
     totalPrice,
-    error
+    error,
+    webResearchInfo,
+    webSearchEnabled,
 }: RecommendationTabProps) {
     return (
         <motion.div
@@ -76,6 +81,8 @@ export function RecommendationTab({
                     finalResponseTime={finalResponseTime}
                     totalPrice={totalPrice}
                     error={error}
+                    webResearchInfo={webResearchInfo}
+                    webSearchEnabled={webSearchEnabled}
                 />
             </div>
         </motion.div>

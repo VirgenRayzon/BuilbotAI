@@ -1,16 +1,17 @@
 "use client";
 
 import React from "react";
-import type { Build } from "@/lib/types";
+import type { Build, AdvisorWebResearchInfo } from "@/lib/types";
 import { ComponentCard } from "./component-card";
 import { Button } from "@/components/ui/button";
 import { Paper, Text, Group, ThemeIcon, Box } from "@mantine/core";
-import { Sparkles, AlertTriangle, Zap, Bot, Loader2, Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind, Heart } from "lucide-react";
+import { Sparkles, AlertTriangle, Zap, Bot, Loader2, Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind, Heart, Search, Bell } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useUser, useFirestore } from "@/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { BuildRecommendationNotes } from "./build-recommendation-notes";
 
 interface BuildSummaryProps {
     build: Build | null;
@@ -20,6 +21,8 @@ interface BuildSummaryProps {
     finalResponseTime?: number | null;
     totalPrice?: number;
     error?: string | null;
+    webResearchInfo?: AdvisorWebResearchInfo | null;
+    webSearchEnabled?: boolean;
 }
 
 const COMPONENT_SLOTS = [
@@ -37,10 +40,10 @@ const STREAMING_STEPS = [
     { title: "Analyzing Hardware Balance", sub: "Evaluating CPU and GPU pairing..." },
     { title: "Checking Compatibility", sub: "Verifying socket, RAM, and motherboard match..." },
     { title: "Sourcing Inventory", sub: "Scanning real-time component availability & pricing..." },
-    { title: "Finalizing System Architecture", sub: "Streaming component selection live..." }
+    { title: "Finalizing Your Build", sub: "Checking the full build against compatibility and budget..." }
 ];
 
-export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalResponseTime, totalPrice, error }: BuildSummaryProps) {
+export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalResponseTime, totalPrice, error, webResearchInfo, webSearchEnabled }: BuildSummaryProps) {
     const [isSaving, setIsSaving] = React.useState(false);
     const [isSaved, setIsSaved] = React.useState(false);
     const user = useUser();
@@ -133,6 +136,7 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
     };
 
     const hasAnyStreamedPart = build && COMPONENT_SLOTS.some(s => Boolean((build as any)[s.key]?.model));
+    const hasExternalParts = !!build && COMPONENT_SLOTS.some(slot => !!build[slot.key]?.isExternal);
 
     return (
         <Paper
@@ -227,8 +231,10 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                         </div>
                                         <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                                             {hasAnyStreamedPart
-                                                ? "Streaming components into your build in real time..."
-                                                : STREAMING_STEPS[Math.min(Math.floor((elapsedTime || 0) / 3), STREAMING_STEPS.length - 1)].sub}
+                                                ? "Finalizing your compatible build..."
+                                                : webSearchEnabled
+                                                    ? "Checking current PC hardware with Google Search. This may take longer..."
+                                                    : STREAMING_STEPS[Math.min(Math.floor((elapsedTime || 0) / 3), STREAMING_STEPS.length - 1)].sub}
                                         </p>
                                     </div>
                                 </div>
@@ -245,6 +251,30 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                     </Button>
                                 )}
                             </div>
+
+                            {webSearchEnabled && (
+                                <Paper
+                                    withBorder
+                                    radius="lg"
+                                    p={12}
+                                    className="border-yellow-500/50 dark:border-yellow-400/40 bg-yellow-50/80 dark:bg-yellow-500/[0.08] shadow-sm shadow-yellow-500/10"
+                                >
+                                    <Group gap="sm" align="flex-start" wrap="nowrap">
+                                        <ThemeIcon size={34} radius="md" variant="light" color="yellow" className="shrink-0">
+                                            <Search className="h-4 w-4" />
+                                        </ThemeIcon>
+                                        <Box className="min-w-0 flex-1">
+                                            <Text size="xs" fw={800} className="font-headline uppercase tracking-wider text-yellow-900 dark:text-yellow-200">
+                                                Web Search is enabled
+                                            </Text>
+                                            <Text size="xs" className="mt-1 leading-relaxed text-slate-700 dark:text-slate-300">
+                                                This may take longer. You can browse other areas while Buildbot AI works, and we&apos;ll notify you when your build is ready.
+                                            </Text>
+                                        </Box>
+                                        <Bell className="h-4 w-4 mt-1 shrink-0 text-yellow-700 dark:text-yellow-300" />
+                                    </Group>
+                                </Paper>
+                            )}
 
                             {/* Summary Banner if partially streamed */}
                             {build?.summary && (
@@ -402,6 +432,8 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                     "{build.summary}"
                                 </p>
                             </div>
+
+                            <BuildRecommendationNotes webResearchInfo={webResearchInfo} hasExternalParts={hasExternalParts} />
 
                             {/* Components Grid */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">

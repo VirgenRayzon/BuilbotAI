@@ -14,7 +14,7 @@ import {
   Text,
   Button,
 } from "@mantine/core";
-import { Sparkles } from "lucide-react";
+import { Search, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { parsePesoBudget } from '@/lib/parse-peso-budget';
 import { BUILD_ADVISOR_GOALS, getBuildAdvisorGoal, type BuildAdvisorIntendedUse } from '@/lib/build-advisor-goals';
@@ -25,11 +25,14 @@ const formSchema = z.object({
   budget: z.string().min(2, "Please provide a budget.").refine(value => parsePesoBudget(value) !== null, "Enter a valid PHP budget."),
   allowFlexibleBudget: z.boolean().default(false),
   allowAiSearch: z.boolean().default(true),
+  allowWebSearch: z.boolean().default(false),
 }).superRefine((values, context) => {
   if (values.intendedUse && values.workloadGoal && !getBuildAdvisorGoal(values.intendedUse, values.workloadGoal)) {
     context.addIssue({ code: z.ZodIssueCode.custom, path: ['workloadGoal'], message: 'Select a priority for the chosen intended use.' });
   }
 });
+
+const BUILD_ADVISOR_FORM_STORAGE_KEY = 'buildbot_advisor_create_form_v1';
 
 export type FormSchema = z.infer<typeof formSchema>;
 
@@ -39,6 +42,7 @@ interface ChatFormProps {
 }
 
 export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
+  const [formHydrated, setFormHydrated] = React.useState(false);
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -47,10 +51,37 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
       budget: "",
       allowFlexibleBudget: false,
       allowAiSearch: true,
+      allowWebSearch: false,
     },
   });
   const intendedUse = form.watch('intendedUse');
   const goalGroup = BUILD_ADVISOR_GOALS[intendedUse as BuildAdvisorIntendedUse];
+
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem(BUILD_ADVISOR_FORM_STORAGE_KEY);
+      if (saved) {
+        const parsed = formSchema.safeParse(JSON.parse(saved));
+        if (parsed.success) form.reset(parsed.data);
+      }
+    } catch (error) {
+      console.warn('Failed to restore Build Advisor form:', error);
+    } finally {
+      setFormHydrated(true);
+    }
+  }, [form]);
+
+  React.useEffect(() => {
+    if (!formHydrated) return;
+    const subscription = form.watch(values => {
+      try {
+        localStorage.setItem(BUILD_ADVISOR_FORM_STORAGE_KEY, JSON.stringify(values));
+      } catch (error) {
+        console.warn('Failed to save Build Advisor form:', error);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, formHydrated]);
 
   function onSubmit(values: FormSchema) {
     const goal = getBuildAdvisorGoal(values.intendedUse, values.workloadGoal);
@@ -62,6 +93,7 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
       additionalNotes: "",
       allowFlexibleBudget: values.allowFlexibleBudget,
       allowAiSearch: values.allowAiSearch,
+      allowWebSearch: values.allowWebSearch,
     });
   }
 
@@ -203,6 +235,41 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
               <Switch
                 color="cyan"
                 size="sm"
+                checked={field.value}
+                onChange={(event) => field.onChange(event.currentTarget.checked)}
+              />
+            </Group>
+          </Paper>
+        )}
+      />
+
+      <Controller
+        name="allowWebSearch"
+        control={form.control}
+        render={({ field }) => (
+          <Paper
+            radius="md"
+            withBorder
+            p="sm"
+            className="border-yellow-500/60 dark:border-yellow-400/60 bg-yellow-50/50 dark:bg-black/30 shadow-sm shadow-yellow-500/10 dark:shadow-black/30 hover:border-yellow-500/80 dark:hover:border-yellow-400/80 transition-colors"
+          >
+            <Group justify="space-between" align="center" wrap="nowrap">
+              <Stack gap={2}>
+                <Group gap={6} align="center">
+                  <Search className="w-3.5 h-3.5 text-yellow-700 dark:text-yellow-300 shrink-0" />
+                  <Text size="xs" fw={700} className="text-yellow-900 dark:text-yellow-200">
+                    Web Search
+                  </Text>
+                </Group>
+                <Text size="xs" className="text-[10px] sm:text-[11px] leading-tight text-slate-600 dark:text-slate-300">
+                  Check current PC hardware with Google Search. Recommendations may take noticeably longer.
+                </Text>
+              </Stack>
+              <Switch
+                aria-label="Web Search"
+                color="yellow"
+                size="sm"
+                className="min-h-11 flex items-center"
                 checked={field.value}
                 onChange={(event) => field.onChange(event.currentTarget.checked)}
               />

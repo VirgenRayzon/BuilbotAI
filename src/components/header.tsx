@@ -87,6 +87,9 @@ export function Header() {
       const destination = isStaff ? "/system-access" : "/signin";
       localStorage.removeItem("pc_chat_history_v2");
       localStorage.removeItem("pc_builder_state");
+      localStorage.removeItem("pc_ai_build_recommendation");
+      localStorage.removeItem("pc_critique_cache");
+      localStorage.removeItem("buildbot_advisor_create_form_v1");
       localStorage.removeItem("admin_pc_builder_state");
       try {
         await new Promise((resolve) => window.setTimeout(resolve, 250));

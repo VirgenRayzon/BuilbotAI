@@ -11,6 +11,7 @@ import { checkCompatibility } from "@/lib/compatibility";
 export function useAdvisorState(allParts: Part[]) {
     const { toast } = useToast();
     const [builderState, setBuilderState] = useState<Record<string, ComponentData | ComponentData[] | null> | null>(null);
+    const [hydrated, setHydrated] = useState(false);
     const [resolution, setResolution] = useState<Resolution>('1440p');
     const [workload, setWorkload] = useState<WorkloadType>('Balanced');
 
@@ -26,6 +27,7 @@ export function useAdvisorState(allParts: Part[]) {
                 console.error("Failed to parse saved build", e);
             }
         }
+        setHydrated(true);
     }, []);
 
     const handlePartToggle = useCallback((part: Part) => {
@@ -92,6 +94,7 @@ export function useAdvisorState(allParts: Part[]) {
 
     return {
         builderState,
+        hydrated,
         setBuilderState,
         handlePartToggle,
         handleRemovePart,

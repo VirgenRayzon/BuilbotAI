@@ -5,8 +5,9 @@ const body = {
   intendedUse: process.argv[2] || 'Gaming',
   budget: process.argv[3] || '50000',
   performanceLevel: process.argv[4] || '1080p gaming',
-  allowFlexibleBudget: false,
-  allowAiSearch: process.argv[5] === 'search',
+  allowFlexibleBudget: process.argv.slice(5).includes('flex'),
+  allowAiSearch: process.argv.slice(5).includes('search'),
+  allowWebSearch: process.argv.slice(5).includes('web'),
 };
 
 const startedAt = performance.now();
@@ -14,9 +15,14 @@ const response = await fetch(url, {
   method: 'POST',
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify(body),
-  signal: AbortSignal.timeout(130_000),
+  signal: AbortSignal.timeout(190_000),
 });
 const headersMs = Math.round(performance.now() - startedAt);
+let webResearch = null;
+try {
+  const encoded = response.headers.get('x-build-advisor-web-research');
+  if (encoded) webResearch = JSON.parse(decodeURIComponent(encoded));
+} catch { /* Invalid metadata is reflected by a zero source count below. */ }
 let firstByteMs = null;
 let bytes = 0;
 const chunks = [];
@@ -41,6 +47,9 @@ const budgetNumber = Number(body.budget.replace(/[^\d]/g, ''));
 console.log(JSON.stringify({
   status: response.status,
   cache: response.headers.get('x-cache') || 'MISS',
+  webSearch: body.allowWebSearch,
+  webSourceCount: webResearch?.sources?.length || 0,
+  webSearchedAt: webResearch?.searchedAt || null,
   headersMs,
   firstByteMs,
   completeMs: Math.round(performance.now() - startedAt),
@@ -49,6 +58,8 @@ console.log(JSON.stringify({
   components: parsed ? categories.filter(category => parsed[category]?.model).length : 0,
   storeIds: parsed ? categories.filter(category => parsed[category]?.partId).length : 0,
   totalPrice,
-  withinBudget: response.ok && totalPrice !== null && budgetNumber > 0 ? totalPrice <= budgetNumber : null,
+  withinBudget: response.ok && totalPrice !== null && budgetNumber > 0
+    ? totalPrice <= budgetNumber * (body.allowFlexibleBudget ? 1.3 : 1) : null,
+  error: !response.ok ? parsed?.error || null : null,
 }));
 if (!response.ok || !parsed) process.exitCode = 1;

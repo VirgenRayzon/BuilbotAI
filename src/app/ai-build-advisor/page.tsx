@@ -13,8 +13,8 @@ import { RouteGuard } from "@/components/auth/route-guard";
 // Custom Hooks
 import { useAdvisorData } from "./hooks/use-advisor-data";
 import { useAdvisorState } from "./hooks/use-advisor-state";
-import { getCritiqueCacheKey, useCritiqueLogic } from "./hooks/use-critique-logic";
-import { useRecommendationLogic } from "./hooks/use-recommendation-logic";
+import { getCritiqueCacheKey } from "./hooks/use-critique-logic";
+import { useAdvisorJobs } from "@/context/advisor-jobs-context";
 
 // Components
 import { AdvisorHeader } from "./components/advisor-header";
@@ -37,20 +37,26 @@ export default function AiBuildAdvisorPage() {
 
     // State Layer
     const {
-        builderState, handleRemovePart, handleClearBuild,
+        builderState, hydrated, handleRemovePart, handleClearBuild,
         resolution, setResolution, workload, setWorkload
     } = useAdvisorState(allParts);
 
     // Logic Layers
+    const { critique, recommendation, setAdvisorData } = useAdvisorJobs();
     const {
         critiqueAnalysis, critiqueDuration, setCritiqueAnalysis, setCritiqueDuration,
-        critiqueLoading, critiqueError, handleCritique, handleCancelCritique
-    } = useCritiqueLogic(isAiKillSwitch);
+        critiqueLoading, critiqueError, handleCritique, handleCancelCritique, activeCritiqueKey
+    } = critique;
 
     const {
         build, totalPrice, isPending, handleGetRecommendations, handleCancelRecommendations,
-        elapsedTime, finalResponseTime, error
-    } = useRecommendationLogic(isAiKillSwitch, allParts);
+        elapsedTime, finalResponseTime, error, webResearchInfo, webSearchEnabled
+    } = recommendation;
+
+    useEffect(() => {
+        if (dataLoading) return;
+        setAdvisorData(allParts, isAiKillSwitch);
+    }, [allParts, isAiKillSwitch, dataLoading, setAdvisorData]);
 
     // Route Protection handled by RouteGuard wrapper in return
 
@@ -60,6 +66,7 @@ export default function AiBuildAdvisorPage() {
 
     // Automatically load or reset critique when state changes
     useEffect(() => {
+        if (!hydrated) return;
         if (!builderState) {
             setCritiqueAnalysis(null);
             setCritiqueDuration(null);
@@ -67,6 +74,11 @@ export default function AiBuildAdvisorPage() {
             return;
         }
         const buildKey = getCritiqueCacheKey(builderState, { intendedUse: workload, performanceLevel: resolution });
+
+        if (activeCritiqueKey === buildKey && (critiqueLoading || critiqueAnalysis)) {
+            lastLoadedKeyRef.current = buildKey;
+            return;
+        }
 
         // Guard: If this key has already been processed (either loaded or cleared), do nothing
         if (lastLoadedKeyRef.current === buildKey) {
@@ -89,7 +101,7 @@ export default function AiBuildAdvisorPage() {
         setCritiqueAnalysis(null);
         setCritiqueDuration(null);
         lastLoadedKeyRef.current = buildKey;
-    }, [builderState, workload, resolution, handleCritique, setCritiqueAnalysis, setCritiqueDuration]);
+    }, [builderState, hydrated, workload, resolution, activeCritiqueKey, critiqueLoading, critiqueAnalysis, handleCritique, setCritiqueAnalysis, setCritiqueDuration]);
 
     return (
         <RouteGuard requiredPermission="isClientOnly">
@@ -150,6 +162,8 @@ export default function AiBuildAdvisorPage() {
                                     finalResponseTime={finalResponseTime}
                                     totalPrice={totalPrice}
                                     error={error}
+                                    webResearchInfo={webResearchInfo}
+                                    webSearchEnabled={webSearchEnabled}
                                 />
                             </Tabs.Panel>
                         </Tabs>
@@ -164,6 +178,8 @@ export default function AiBuildAdvisorPage() {
                             finalResponseTime={finalResponseTime}
                             totalPrice={totalPrice}
                             error={error}
+                            webResearchInfo={webResearchInfo}
+                            webSearchEnabled={webSearchEnabled}
                         />
                     )}
                 </main>

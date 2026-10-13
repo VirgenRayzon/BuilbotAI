@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { experimental_useObject as useObject } from '@ai-sdk/react';
 import { useToast } from "@/hooks/use-toast";
-import type { Build, Part, ComponentData } from "@/lib/types";
+import type { Build, Part, ComponentData, AdvisorWebResearchInfo } from "@/lib/types";
 import {
   AiBuildAdvisorRecommendationsOutputSchema,
   type AiBuildAdvisorRecommendationsInput,
@@ -45,6 +45,8 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, allParts: Part[]
     const [elapsedTime, setElapsedTime] = useState(0);
     const [finalResponseTime, setFinalResponseTime] = useState<number | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [webResearchInfo, setWebResearchInfo] = useState<AdvisorWebResearchInfo | null>(null);
+    const [webSearchEnabled, setWebSearchEnabled] = useState(false);
     const generationStartTimeRef = useRef<number | null>(null);
     const firstPartialReportedRef = useRef(false);
     const firstCardReportedRef = useRef(false);
@@ -57,7 +59,7 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, allParts: Part[]
             if (cached) {
                 const entry = JSON.parse(cached);
                 const maxAgeMs = entry.input?.allowAiSearch ? 60 * 60 * 1000 : 5 * 60 * 1000;
-                if (entry.build && entry.timestamp && Date.now() - entry.timestamp < maxAgeMs) {
+                if (entry.version === 2 && !entry.input?.allowWebSearch && entry.build && entry.timestamp && Date.now() - entry.timestamp < maxAgeMs) {
                     setSavedBuild(entry.build);
                 } else {
                     localStorage.removeItem('pc_ai_build_recommendation');
@@ -125,15 +127,9 @@ function getSmartDescription(type: string, modelName: string): string {
         let modelName = component.model || "";
         const collection = allParts.filter(p => p.category.toLowerCase() === type.toLowerCase());
 
-        const match = collection.find(p => component.partId && p.id === component.partId) || collection.find((p: any) => {
-            const pModel = (p.model || "").toLowerCase();
-            const pName = (p.name || "").toLowerCase();
-            const normalized = modelName.toLowerCase();
-            return (pModel && (normalized.includes(pModel) || pModel.includes(normalized))) ||
-                   (pName && (normalized.includes(pName) || pName.includes(normalized)));
-        }) as any;
+        const match = component.partId ? collection.find(p => p.id === component.partId) : undefined;
 
-        const effectiveModel = match ? (match.model || match.name) : modelName;
+        const effectiveModel = match ? match.name : modelName;
 
         const aiDescription = (component.description && typeof component.description === 'string')
             ? component.description.trim()
@@ -151,8 +147,22 @@ function getSmartDescription(type: string, modelName: string): string {
             ? match.imageUrl
             : fallbackImage;
 
+        const externalSpecs: Record<string, string | number> = {};
+        if (type === 'motherboard') {
+            if (component.formFactor) externalSpecs['Form Factor'] = component.formFactor;
+            if (component.nvmeSlots !== undefined) externalSpecs['NVMe Slots'] = component.nvmeSlots;
+            if (component.sataSlots !== undefined) externalSpecs['SATA Slots'] = component.sataSlots;
+        }
+        if (type === 'storage' && component.storageType) externalSpecs['Type'] = component.storageType;
+        if (type === 'case') {
+            if (component.moboSupport) externalSpecs['Mobo Support'] = component.moboSupport;
+            if (component.maxRadiatorSizeMm !== undefined) externalSpecs['Max Radiator Size (mm)'] = component.maxRadiatorSizeMm;
+        }
+        if (type === 'cooler' && component.radiatorSizeMm !== undefined) externalSpecs['Radiator Size'] = component.radiatorSizeMm;
+
         return {
             model: effectiveModel,
+            isExternal: component.isExternal ?? !component.partId,
             description,
             id: match?.id || component.partId || `ai-suggested-${type}`,
             price: match?.price || price,
@@ -160,18 +170,35 @@ function getSmartDescription(type: string, modelName: string): string {
             image: resolvedImage,
             imageHint: type,
             wattage: match?.wattage,
-            socket: match?.socket,
-            ramType: match?.ramType,
+            socket: match?.socket || component.socket,
+            ramType: match?.ramType || component.ramType,
             performanceTier: match?.performanceTier,
             performanceScore: match?.performanceScore,
             dimensions: match?.dimensions,
-            specifications: match?.specifications,
+            specifications: match?.specifications || externalSpecs,
         };
     }, [allParts]);
+
+    const fetchRecommendations: typeof fetch = useCallback(async (input, init) => {
+        const response = await fetch(input, init);
+        const encodedResearch = response.headers.get('x-build-advisor-web-research');
+        if (response.ok && encodedResearch) {
+            try {
+                const parsed = JSON.parse(decodeURIComponent(encodedResearch));
+                if (typeof parsed.searchedAt === 'string' && Array.isArray(parsed.sources)) {
+                    setWebResearchInfo(parsed as AdvisorWebResearchInfo);
+                }
+            } catch {
+                setWebResearchInfo(null);
+            }
+        }
+        return response;
+    }, []);
 
     const { object, submit, isLoading, stop, error: streamError } = useObject({
         api: '/api/ai/build-advisor/recommendations',
         schema: AiBuildAdvisorRecommendationsOutputSchema,
+        fetch: fetchRecommendations,
         onError: (err) => {
             console.error("[useRecommendationLogic] Stream error:", err);
             let msg = err.message || "Failed to get recommendations.";
@@ -199,11 +226,11 @@ function getSmartDescription(type: string, modelName: string): string {
                 const limit = budget ? budget * (request?.allowFlexibleBudget ? 1.3 : 1) : null;
                 const components = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'] as const;
                 const missingStoreIds = !request?.allowAiSearch && components.some(category => !finalObj[category]?.partId);
-                const unknownStoreIds = !request?.allowAiSearch && allParts.length > 0 && components.some(category =>
-                    !allParts.some(part => part.id === finalObj[category]?.partId && !part.isArchived &&
+                const unknownStoreIds = allParts.length > 0 && components.some(category =>
+                    !!finalObj[category]?.partId && !allParts.some(part => part.id === finalObj[category]?.partId && !part.isArchived &&
                         (typeof part.stock !== 'number' || part.stock > 0)));
                 const actualTotal = components.reduce((sum, category) => sum + (completedBuild[category]?.price || 0), 0);
-                const compatibility = !request?.allowAiSearch && !unknownStoreIds && allParts.length > 0
+                const compatibility = !unknownStoreIds
                     ? checkFullBuildCompatibility({
                         CPU: completedBuild.cpu,
                         GPU: completedBuild.gpu,
@@ -226,15 +253,22 @@ function getSmartDescription(type: string, modelName: string): string {
                     return;
                 }
                 setSavedBuild(completedBuild);
-                try {
-                    localStorage.setItem('pc_ai_build_recommendation', JSON.stringify({
-                        build: completedBuild,
-                        input: request,
-                        timestamp: Date.now(),
-                    }));
-                } catch (e) {
-                    console.warn("Failed to persist recommendation to localStorage:", e);
+                if (!request?.allowWebSearch) {
+                    try {
+                        localStorage.setItem('pc_ai_build_recommendation', JSON.stringify({
+                            version: 2,
+                            build: completedBuild,
+                            input: request,
+                            timestamp: Date.now(),
+                        }));
+                    } catch (e) {
+                        console.warn("Failed to persist recommendation to localStorage:", e);
+                    }
                 }
+                toast({
+                    title: 'Build recommendations ready',
+                    description: 'Your compatible build is ready. Open Build Advisor to view it.',
+                });
             }
         }
     });
@@ -276,6 +310,7 @@ function getSmartDescription(type: string, modelName: string): string {
 
     const handleCancelRecommendations = useCallback(() => {
         stop();
+        setWebResearchInfo(null);
         toast({
             title: "Recommendation Cancelled",
             description: "Generation stopped.",
@@ -289,6 +324,9 @@ function getSmartDescription(type: string, modelName: string): string {
         }
         setErrorMessage(null);
         setSavedBuild(null);
+        setWebResearchInfo(null);
+        setWebSearchEnabled(!!data.allowWebSearch);
+        if (data.allowWebSearch) localStorage.removeItem('pc_ai_build_recommendation');
         lastRequestRef.current = data;
         generationStartTimeRef.current = Date.now();
         firstPartialReportedRef.current = false;
@@ -331,9 +369,10 @@ function getSmartDescription(type: string, modelName: string): string {
 
     const setBuild = useCallback((newBuild: Build | null) => {
         setSavedBuild(newBuild);
-        if (newBuild) {
+        if (newBuild && !lastRequestRef.current?.allowWebSearch) {
             try {
                 localStorage.setItem('pc_ai_build_recommendation', JSON.stringify({
+                    version: 2,
                     build: newBuild,
                     input: lastRequestRef.current,
                     timestamp: Date.now(),
@@ -360,6 +399,8 @@ function getSmartDescription(type: string, modelName: string): string {
         handleCancelRecommendations,
         elapsedTime,
         finalResponseTime,
-        error: effectiveError
+        error: effectiveError,
+        webResearchInfo,
+        webSearchEnabled,
     };
 }
