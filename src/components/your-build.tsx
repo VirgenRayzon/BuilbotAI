@@ -77,6 +77,7 @@ export function YourBuild({
   const [saveOpen, setSaveOpen] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
+  const [showMissingValidation, setShowMissingValidation] = useState(false);
 
   const settingsRef = useMemo(
     () => firestore ? doc(firestore, "siteSettings", "main") : null,
@@ -89,6 +90,11 @@ export function YourBuild({
     return Array.isArray(value) ? value.length === 0 : !value;
   });
   const isBuildComplete = missingCategories.length === 0;
+
+  useEffect(() => {
+    if (isBuildComplete) setShowMissingValidation(false);
+  }, [isBuildComplete]);
+
   const selectedParts = Object.values(build).reduce<number>(
     (sum, value) => sum + (Array.isArray(value) ? value.length : value ? 1 : 0), 0
   );
@@ -250,6 +256,8 @@ export function YourBuild({
         onRemovePart={onRemovePart}
         onCategorySelect={onCategorySelect}
         activeFilter={activeCategory}
+        missingCategories={missingCategories}
+        showMissingValidation={showMissingValidation}
         categories={categories}
         showSystemBalance={showSystemBalance}
         totalWattage={totalWattage}
@@ -265,10 +273,11 @@ export function YourBuild({
         isAiPending={isAiPending}
         isCheckingOut={isCheckingOut}
         analysis={analysis}
-        onCategorySelect={onCategorySelect}
         onAnalyze={() => { if (isBuildComplete) void handleAnalyze(); }}
         onReserve={(onSuccess) => { if (isBuildComplete) void handleCheckout(onSuccess); }}
         onAddPrebuilt={(name) => { if (isBuildComplete) handleAddPrebuiltWithAi(name); }}
+        onIncompleteAction={() => setShowMissingValidation(true)}
+        showMissingValidation={showMissingValidation}
       />
     </>
   );

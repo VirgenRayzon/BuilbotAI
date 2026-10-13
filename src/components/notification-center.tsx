@@ -72,20 +72,20 @@ type CategoryType = (typeof CATEGORIES)[number];
 export function NotificationCenter() {
   const firestore = useFirestore();
   const router = useRouter();
-  const { profile } = useUserProfile();
+  const { authUser, profile } = useUserProfile();
   const [popoverOpened, setPopoverOpened] = useState(false);
   const [activeCategory, setActiveCategory] = useState<CategoryType>("All");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedNotification, setSelectedNotification] = useState<SystemNotification | null>(null);
 
   const notificationsQuery = useMemo(() => {
-    if (!firestore) return null;
+    if (!firestore || !authUser || !profile || !(profile.isManager || profile.isSuperAdmin)) return null;
     return query(
       collection(firestore, "system_notifications"),
       orderBy("createdAt", "desc"),
       limit(50)
     );
-  }, [firestore]);
+  }, [firestore, authUser, profile]);
 
   const { data: rawNotifications, loading } = useCollection<SystemNotification>(notificationsQuery);
 

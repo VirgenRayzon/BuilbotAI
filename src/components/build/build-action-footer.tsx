@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Badge, Button, Group, Modal, Paper, ScrollArea, Text, TextInput, ThemeIcon, Title } from "@mantine/core";
-import { AlertTriangle, ShieldCheck, Sparkles } from "lucide-react";
+import { ShieldCheck, Sparkles } from "lucide-react";
 import type { ComponentData } from "@/lib/types";
 import { formatCurrency, cn } from "@/lib/utils";
 
@@ -24,16 +24,17 @@ interface BuildActionFooterProps {
   isAiPending: boolean;
   isCheckingOut: boolean;
   analysis?: unknown;
-  onCategorySelect?: (category: string) => void;
   onAnalyze: () => void;
   onReserve: (onSuccess: () => void) => void;
   onAddPrebuilt: (name: string) => void;
+  onIncompleteAction: () => void;
+  showMissingValidation: boolean;
 }
 
 export function BuildActionFooter({
   build, totalPrice, selectedParts, missingCategories, isManagerMode,
   isAiPending, isCheckingOut, analysis,
-  onCategorySelect, onAnalyze, onReserve, onAddPrebuilt,
+  onAnalyze, onReserve, onAddPrebuilt, onIncompleteAction, showMissingValidation,
 }: BuildActionFooterProps) {
   const [reserveOpen, setReserveOpen] = useState(false);
   const [nameOpen, setNameOpen] = useState(false);
@@ -50,57 +51,29 @@ export function BuildActionFooter({
 
   return (
     <div className="p-3 space-y-2.5">
-      {!complete && (
-        <Paper
-          withBorder
-          radius="md"
-          p={12}
-          className="bg-amber-50/80 dark:bg-amber-950/20 border-amber-200 dark:border-amber-500/25 shadow-xs"
-        >
-          <Group gap="xs" align="center" className="mb-1">
-            <ThemeIcon size="sm" radius="sm" color="yellow" variant="light">
-              <AlertTriangle size={14} />
-            </ThemeIcon>
-            <Text size="xs" fw={700} className="font-headline uppercase tracking-wider text-amber-800 dark:text-amber-300">
-              Incomplete Configuration
-            </Text>
-          </Group>
-          <Text size="xs" className="text-slate-600 dark:text-slate-400 leading-relaxed">
-            Complete the remaining {missingCategories.length} core {missingCategories.length === 1 ? "part" : "parts"} before {isManagerMode ? "saving this prebuilt" : "reserving"}:
-          </Text>
-          <Group gap="xs" mt="xs" wrap="wrap">
-            {missingCategories.map((category) => (
-              <Badge
-                key={category}
-                component="button"
-                onClick={() => onCategorySelect?.(category)}
-                variant="light"
-                color="yellow"
-                size="sm"
-                radius="sm"
-                className="cursor-pointer hover:scale-105 active:scale-95 transition-transform font-semibold normal-case"
-              >
-                + {category}
-              </Badge>
-            ))}
-          </Group>
-        </Paper>
+      {showMissingValidation && !complete && (
+        <Text role="alert" size="xs" className="px-1 text-red-600 dark:text-red-400 leading-relaxed">
+          Select the missing parts to continue: {missingCategories.join(", ")}.
+        </Text>
       )}
-
       {isManagerMode ? (
-        <Button
-          fullWidth
-          size="md"
-          radius="md"
-          color="cyan"
-          leftSection={<Sparkles size={17} />}
-          disabled={!complete || isAiPending}
-          loading={isAiPending}
-          onClick={() => setNameOpen(true)}
-          className="font-headline font-bold text-xs uppercase tracking-wider shadow-sm shadow-cyan-500/20"
-        >
-          Add New Prebuilt
-        </Button>
+        <>
+          <Button
+            fullWidth
+            size="md"
+            radius="md"
+            color="cyan"
+            leftSection={<Sparkles size={17} />}
+            disabled={isAiPending}
+            aria-disabled={!complete || isAiPending}
+            title={!complete ? "Select every highlighted core part before adding this prebuilt." : undefined}
+            loading={isAiPending}
+            onClick={() => complete ? setNameOpen(true) : onIncompleteAction()}
+            className="font-headline font-bold text-xs uppercase tracking-wider shadow-sm shadow-cyan-500/20"
+          >
+            Add New Prebuilt
+          </Button>
+        </>
       ) : (
         <>
           <Button
@@ -109,13 +82,12 @@ export function BuildActionFooter({
             radius="md"
             color="teal"
             leftSection={<ShieldCheck size={18} />}
-            disabled={!complete}
-            onClick={() => setReserveOpen(true)}
+            aria-disabled={!complete}
+            title={!complete ? "Select every highlighted core part before reserving." : undefined}
+            onClick={() => complete ? setReserveOpen(true) : onIncompleteAction()}
             className={cn(
               "font-headline font-bold text-xs uppercase tracking-wider transition-all duration-200",
-              complete
-                ? "shadow-md shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.99]"
-                : "opacity-60 cursor-not-allowed"
+              "shadow-md shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.99]"
             )}
           >
             Reserve Build
@@ -127,13 +99,12 @@ export function BuildActionFooter({
             variant="light"
             color="cyan"
             leftSection={<Sparkles size={17} />}
-            disabled={!complete}
-            onClick={onAnalyze}
+            aria-disabled={!complete}
+            title={!complete ? "Select every highlighted core part before analyzing." : undefined}
+            onClick={() => complete ? onAnalyze() : onIncompleteAction()}
             className={cn(
               "font-headline font-bold text-xs uppercase tracking-wider border border-cyan-500/30 dark:border-cyan-400/20 transition-all duration-200",
-              complete
-                ? "hover:border-cyan-500/50 hover:scale-[1.01] active:scale-[0.99] shadow-xs"
-                : "opacity-60 cursor-not-allowed"
+              "hover:border-cyan-500/50 hover:scale-[1.01] active:scale-[0.99] shadow-xs"
             )}
           >
             {analysis ? "Refresh Analysis" : "Analyze Build"}

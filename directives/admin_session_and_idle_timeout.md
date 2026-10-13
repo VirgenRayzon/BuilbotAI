@@ -51,6 +51,9 @@ Instead of fragile in-memory `setTimeout` constructs that get throttled or suspe
   - **Stay Signed In**: Refreshes Firebase Auth ID token, resets activity timestamp, dismisses modal, and notifies all open tabs.
   - **Sign Out Now**: Immediate clean sign out with state purge.
 
+### 5. Manual sign-out listener teardown
+The shared `AppLayout` sign-out transition must unmount the authenticated header and page content before calling Firebase `signOut`. The existing short transition delay gives React time to unsubscribe from role-protected Firestore listeners (such as staff notifications and admin dashboard collections). Staff notification queries must also require a current authenticated staff profile. Otherwise Firestore can reject a still-active listener after credentials are revoked, and Next.js displays a development error overlay on `/system-access`.
+
 ---
 
 ## Edge Cases & Handling
@@ -78,3 +81,4 @@ Instead of fragile in-memory `setTimeout` constructs that get throttled or suspe
 - [ ] Account switching revalidates the staff session marker; an unauthorized route redirects only once after role resolution.
 - [ ] Customer sign-in stays on one continuous submitting state until Builder opens; the verification screen does not replace and remount the form mid-login.
 - [ ] Route loading and account verification use the same neutral loader; no separate animated full-page overlay appears.
+- [ ] Manual Super Admin and Manager sign-out reaches `/system-access` without a Firestore permission error overlay.

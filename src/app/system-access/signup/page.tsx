@@ -347,7 +347,7 @@ export default function ManagerSignupPage() {
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit(onSubmit)}>
+            <form onSubmit={handleSubmit(onSubmit)} autoComplete="on">
               <Stack gap="md">
                 <Controller
                   name="email"
@@ -379,6 +379,7 @@ export default function ManagerSignupPage() {
                       <PasswordInput
                         label="Password"
                         placeholder="Create your manager password"
+                        autoComplete="new-password"
                         radius="md"
                         size="md"
                         leftSection={<Lock size={16} className="text-slate-400" />}
@@ -427,6 +428,8 @@ export default function ManagerSignupPage() {
                     <PasswordInput
                       label="Default Manager Access Key"
                       placeholder="Enter assigned manager key"
+                      // This validates authorization; it must never be treated as the account password.
+                      autoComplete="one-time-code"
                       radius="md"
                       size="md"
                       leftSection={<Key size={16} className="text-slate-400" />}
@@ -529,6 +532,7 @@ export default function ManagerSignupPage() {
             </Text>
             <PasswordInput
               placeholder="Enter manager key"
+              autoComplete="one-time-code"
               value={googleManagerKey}
               onChange={(e) => setGoogleManagerKey(e.currentTarget.value)}
               leftSection={<Key size={16} className="text-slate-400" />}

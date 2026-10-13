@@ -110,15 +110,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </AnimatePresence>
         <SignOutLoader visible={signOutStartedAt !== null} />
 
-        <Header />
+        {signOutStartedAt === null && <Header />}
         <main className={cn(
           "flex-1 min-h-[calc(100vh-4rem)]",
           !isHeaderHidden && "pt-16",
           isMaintenanceMode && !isAdmin && !isAdminRoute && "grayscale-[0.5] contrast-125"
         )}>
-          {children}
+          {signOutStartedAt === null && children}
         </main>
-        {mounted && shouldShowFooter && <Footer />}
+        {mounted && signOutStartedAt === null && shouldShowFooter && <Footer />}
       </div>
     </SignOutTransitionContext.Provider>
   );

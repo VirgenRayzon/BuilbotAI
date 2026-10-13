@@ -453,7 +453,7 @@ function SystemAccessContent() {
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit(onSubmit)}>
+            <form onSubmit={handleSubmit(onSubmit)} autoComplete="on">
               <Stack gap="md">
                 <Controller
                   name="email"
@@ -484,6 +484,7 @@ function SystemAccessContent() {
                     <PasswordInput
                       label="Password"
                       placeholder="••••••••"
+                        autoComplete="current-password"
                       radius="md"
                       size="md"
                       leftSection={<Lock size={16} className="text-slate-400" />}
@@ -522,6 +523,10 @@ function SystemAccessContent() {
                         )}
                       </Group>
                       <PasswordInput
+                        // This is a separate authorization factor, not the account password.
+                        // Naming it as a one-time code prevents password managers from replacing
+                        // the user's saved account password with this role key.
+                        autoComplete="one-time-code"
                         placeholder={
                           activeTab === 'manager'
                             ? 'Enter manager security key'
@@ -650,6 +655,7 @@ function SystemAccessContent() {
               {activeTab === 'manager' ? 'Manager Secret Key' : 'Super Admin Master Key'}
             </Text>
             <PasswordInput
+              autoComplete="one-time-code"
               placeholder={
                 activeTab === 'manager'
                   ? 'Enter manager security key'
