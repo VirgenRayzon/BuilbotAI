@@ -3,7 +3,6 @@
 import React from 'react';
 import { UnifiedBackground } from '@/components/landing/unified-background';
 import { TeamSection } from '@/components/landing/team-section';
-import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/theme-provider';
 

@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
           category, name: brand.includes('intel') ? 'Intel Laminar RM1 CPU Cooler' : 'AMD Wraith MAX CPU Cooler with RGB LED',
           price: 0, description: 'Bundled cooler.', specifications: { Type: 'Air (Stock)' },
           imageBytes: await getCoverImage('/placeholders/components/cooler.jpg'),
+          wattage: 0,
         };
       }
       const snapshot = await getAdminFirestore().doc(inventoryItemPath(category, id)).get();
@@ -99,6 +100,7 @@ export async function POST(request: NextRequest) {
         description: typeof data.description === 'string' ? data.description : '',
         specifications: data.specifications && typeof data.specifications === 'object' ? data.specifications : {},
         imageBytes: await getCoverImage(imageUrl),
+        wattage: typeof data.wattage === 'number' ? data.wattage : undefined,
       };
     }));
     const pdf = await createBuildPdf(parts);
