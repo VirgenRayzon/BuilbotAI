@@ -6,7 +6,7 @@ description: BuildbotAI Master Agent Skills and Capabilities
 
 ## 🛠 Core Technical Capabilities
 * **Next.js & Turbopack Orchestration:** Expert in managing the local development environment on port `9002`.
-* **Firebase Integration:** Specialized in configuring Firebase services using `VITE_` prefixed environment variables.
+* **Firebase Integration:** Specialized in configuring Firebase services using `NEXT_PUBLIC_` prefixed environment variables.
 * **Component Architecture:** Capable of generating modular React components optimized for a PC building interface.
 
 ## 💻 Hardware Domain Expertise (PC Compatibility & Pricing Logic)
@@ -29,9 +29,9 @@ description: BuildbotAI Master Agent Skills and Capabilities
 * **Physical Dimensions:** GPU length (mm) and thickness vs. case internal clearance.
 
 ## 🤖 AI & Research Workflows
-* **Nano Banana 2:** Generate and edit PC component imagery.
-* **NotebookLM:** Synthesize hardware data into structured JSON.
+* **Genkit & Gemini Grounding:** Extract and synthesize hardware specifications via vector search and web research fallback.
+* **Component Generation:** Generate and edit PC component imagery.
 
 ## 🏗 Operational Constraints
 * **Port:** 9002 (`npm run dev`).
-* **Security:** Use `VITE_` prefix for all environment variables.
+* **Environment:** Use `NEXT_PUBLIC_` prefix for client Firebase environment variables.
