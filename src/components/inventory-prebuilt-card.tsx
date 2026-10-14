@@ -113,7 +113,7 @@ export function InventoryPrebuiltCard({
           "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
           isSelected && "border-cyan-500 border-2 shadow-cyan-500/20 bg-cyan-500/[0.03]",
           hasMissingPart && "border-red-500/80 dark:border-red-500/80 bg-red-50/40 dark:bg-red-950/20 shadow-sm shadow-red-500/15 hover:border-red-500",
-          inventoryStatus === 'out-of-stock' && "border-red-500/60 dark:border-red-500/60 shadow-sm shadow-red-500/10 hover:border-red-500/80 dark:hover:border-red-500/80 opacity-85"
+          inventoryStatus === 'out-of-stock' && "border-yellow-500/60 dark:border-yellow-400/60 bg-yellow-50/50 dark:!bg-black/30 shadow-sm shadow-yellow-500/10 dark:shadow-black/30 hover:border-yellow-500/80 dark:hover:border-yellow-400/80"
         )}
         onClick={() => {
           if (isSelectionMode) {
@@ -158,7 +158,7 @@ export function InventoryPrebuiltCard({
                   In Stock
                 </Badge>
               ) : (
-                <Badge size="xs" variant="light" color="red" radius="sm">
+                <Badge size="xs" variant="light" color="yellow" radius="sm">
                   Missing Parts
                 </Badge>
               )}

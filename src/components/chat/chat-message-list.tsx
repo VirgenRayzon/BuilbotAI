@@ -133,6 +133,7 @@ export function ChatMessageList({
                             {recommendationTurn?.recommendationGroups.map(group => (
                                 <ChatRecommendationsCarousel
                                     key={group.category}
+                                    category={group.category}
                                     partsList={group.parts}
                                     isDark={isDark}
                                     addedPartIds={addedPartIds}

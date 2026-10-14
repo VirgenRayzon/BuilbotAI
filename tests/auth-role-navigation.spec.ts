@@ -94,6 +94,27 @@ test('customer dashboard stays on the customer route after refresh', async ({ pa
 });
 
 for (const role of ['manager', 'superAdmin'] as const) {
+  test(`${role} credentials are rejected on customer sign-in`, async ({ page }) => {
+    test.skip(!credentials[role].email || !credentials[role].password, `Set E2E_${role === 'manager' ? 'MANAGER' : 'SUPER_ADMIN'}_* in .env`);
+    const visitedPaths: string[] = [];
+    page.on('framenavigated', frame => {
+      if (frame === page.mainFrame()) visitedPaths.push(new URL(frame.url()).pathname);
+    });
+
+    await page.goto(`${baseURL}/signin`);
+    await page.getByLabel('Email Address').fill(credentials[role].email!);
+    await page.locator('form input[type="password"]').fill(credentials[role].password!);
+    await page.locator('form').getByRole('button', { name: 'Sign In' }).click();
+
+    await expect(page.getByText('This is a staff account. Sign in through System Access with your access key.')).toBeVisible({ timeout: 45000 });
+    await expect(page).toHaveURL(/\/signin(?:\?|$)/);
+    expect(visitedPaths).not.toContain('/system-access');
+    expect(visitedPaths).not.toContain('/admin');
+
+    await page.goto(`${baseURL}/builder`);
+    await expect(page).toHaveURL(/\/signin(?:\?|$)/);
+  });
+
   test(`${role} dashboard never renders customer navigation on refresh`, async ({ page }) => {
     test.skip(!credentials[role].email || !credentials[role].password || !credentials[role].key, `Set E2E_${role === 'manager' ? 'MANAGER' : 'SUPER_ADMIN'}_* in .env`);
     await signIn(page, role);
@@ -156,7 +177,7 @@ test('delayed staff profile stays on neutral verification UI', async ({ page }) 
   });
 
   await page.reload();
-  await expect(page.getByText('Verifying your account...')).toBeVisible();
+  await expect(page.getByText('Verifying your account...').first()).toBeVisible();
   await expect(page.locator('header nav[aria-label="Main Navigation"] a[href="/admin"]')).toBeVisible({ timeout: 30000 });
   expect(delayedRequests).toBeGreaterThan(0);
   expect(await page.evaluate(() => (window as any).__customerNavSeen)).toBe(false);

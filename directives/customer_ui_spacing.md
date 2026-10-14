@@ -23,7 +23,7 @@ Keep customer-facing cards and panels compact and consistent with the product ca
 15. Prebuilt detail galleries use the original stored image in a large white `object-contain` cover area, with previous/next controls and a compact thumbnail rail beneath it. Use resized image variants only for thumbnails, keep the gallery within the same rounded, bordered surface, and do not add hover zoom.
 16. Admin prebuilt component selectors use the same shared compatibility engine as the customer builder. Disable incompatible choices with the specific reason in the picker, and run a full compatibility check again before saving to cover AI-filled and legacy values.
 17. Treat editable specification values such as `Socket` and `Memory Type` as authoritative over legacy top-level shortcut fields. Synchronize those shortcuts whenever a part is updated so compatibility changes apply immediately and remain consistent for older consumers.
-18. Admin prebuilt cards distinguish unresolved or deleted component IDs from zero inventory. Show **Part Missing** with a red card treatment when any required component cannot be resolved, and reserve **Out of Stock** for components that still exist with zero stock.
+18. Admin prebuilt cards distinguish unresolved or deleted component IDs from zero inventory. Show **Part Missing** with a red card treatment when any required component cannot be resolved. For components that still exist with zero stock, use the customer prebuilt card's yellow **Missing Parts** badge, yellow border, and dark card treatment.
 
 ## Verification
 

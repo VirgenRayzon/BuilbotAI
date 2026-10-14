@@ -11,7 +11,7 @@ import { ChatMessageList } from "./chat/chat-message-list";
 import { ChatPresetChips } from "./chat/chat-preset-chips";
 import { ChatInputBar } from "./chat/chat-input-bar";
 
-export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
+export function BuilderFloatingChat({ build, onAddPart }: BuilderFloatingChatProps) {
     const { theme } = useTheme();
     const isDark = theme === "dark";
 
@@ -78,7 +78,7 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                     addedPartIds={addedPartIds}
                                     hasBuildParts={hasBuildParts}
                                     build={build || null}
-                                    onAddPart={handleAddPart}
+                                    onAddPart={onAddPart ?? handleAddPart}
                                     onRetryMessage={handleRetryMessage}
                                     retryDisabled={isLoading || isAiKillSwitch}
                                 />

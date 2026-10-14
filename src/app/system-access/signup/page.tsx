@@ -10,7 +10,6 @@ import { useAuth, useFirestore, getGoogleProvider, formatGoogleAuthError, Google
 import {
   createUserWithEmailAndPassword,
   setPersistence,
-  browserLocalPersistence,
   browserSessionPersistence,
   signInWithPopup,
   signOut,
@@ -129,8 +128,7 @@ export default function ManagerSignupPage() {
     let createdUser: any = null;
 
     try {
-      // Local persistence for seamless multi-tab administrative workflows
-      await setPersistence(auth, browserLocalPersistence);
+      await setPersistence(auth, browserSessionPersistence);
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       createdUser = userCredential.user;
 

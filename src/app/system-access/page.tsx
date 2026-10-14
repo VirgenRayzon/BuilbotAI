@@ -8,7 +8,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth, useFirestore, executeStaffGoogleAuthInitiate, GoogleIcon } from '@/firebase';
-import { signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import {
   Paper,
@@ -134,8 +134,7 @@ function SystemAccessContent() {
     }
 
     try {
-      // Use local persistence so new tabs opened from dashboard stay authenticated
-      await setPersistence(auth, browserLocalPersistence);
+      await setPersistence(auth, browserSessionPersistence);
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
@@ -562,7 +561,7 @@ function SystemAccessContent() {
 
             {/* Footer Links */}
             <div className="flex flex-col items-center gap-1.5 text-center text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-white/10">
-              <div className="whitespace-nowrap">
+              <div>
                 New manager with an access key?{' '}
                 <Anchor
                   component={Link}

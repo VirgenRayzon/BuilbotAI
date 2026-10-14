@@ -680,7 +680,18 @@ export default function PrebuiltBuilderPage() {
                         </div>
                     </div>
 
-                    <BuilderFloatingChat build={build} />
+                    <BuilderFloatingChat
+                        build={build}
+                        onAddPart={(partName, partId) => {
+                            const part = allParts.find(item => item.id === partId);
+                            if (part) handlePartToggle(part);
+                            else toast({
+                                variant: 'destructive',
+                                title: 'Part Not Found',
+                                description: `${partName} is no longer in the current inventory.`,
+                            });
+                        }}
+                    />
                 </main>
             </div>
         </RouteGuard>

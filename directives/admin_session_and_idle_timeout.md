@@ -17,14 +17,15 @@ In enterprise e-commerce and administrative SaaS environments, privileged accoun
 | :--- | :--- | :--- | :--- | :--- |
 | **Super Admin** | `/system-access` | `browserSessionPersistence` | `sessionStorage` | Session terminates immediately upon tab/window close. |
 | **Manager** | `/system-access` | `browserSessionPersistence` | `sessionStorage` | Session terminates immediately upon tab/window close. |
-| **Client / User** | `/signin` | `browserLocalPersistence` | `indexedDB` | Session persists across browser restarts for seamless customer experience. |
+| **Client / User** | `/signin` | `browserSessionPersistence` during verification; `browserLocalPersistence` only after verification when Remember me is selected | `sessionStorage`, then `indexedDB` if selected | A verified remembered customer session persists across browser restarts. |
 
 ### 2. Tab & Window Close Detection (`useAdminSessionGuard`)
 Firebase Web SDK's `browserSessionPersistence` scopes credentials to `sessionStorage`. To guard against legacy cached IndexedDB tokens from older logins:
-1. Every authenticated staff session marks `sessionStorage.setItem('buildbot_admin_session_active', uid)`.
-2. When the user reopens the browser after closing all tabs/windows, `sessionStorage` is empty.
-3. The guard sends a probe via `BroadcastChannel('buildbot_admin_session')`. If no other active admin tab acknowledges the session within 400ms, the lingering session is invalidated (`signOut(auth)`), sensitive local state is purged, and the user is redirected to `/system-access?reason=window_closed`.
-4. If another admin tab is already active, the existing tab confirms session validity, allowing seamless multi-tab workflow without requiring redundant logins.
+1. The `/system-access` flow writes `sessionStorage.setItem('buildbot_admin_session_active', uid)` only after successful access-key verification.
+2. The admin route guard requires this marker for the current UID. The session guard signs out staff whose marker is absent or belongs to a different UID; it never creates a marker on its own.
+3. When the tab/window closes, the staff Auth session and marker are cleared. A legacy locally persisted staff session without a matching marker is signed out on restoration.
+
+The marker is a client navigation safeguard, not a server-side second factor. Firestore rules currently authorize staff data operations with persistent Firebase custom claims. Requiring the access key for direct Firestore access needs a server-enforced, session-scoped authorization design.
 
 ### Role resolution on page load
 
@@ -33,6 +34,14 @@ Firebase Auth restores the user before the Firestore `users/{uid}` role profile 
 Do not use cached profile flags, a previous UID's profile, or an Auth user without a resolved profile to choose dashboard navigation. Firestore custom claims and rules remain the authority for data operations.
 
 During a customer sign-in already in progress, keep the `/signin` form mounted while the new Auth user and profile resolve. Unmounting it resets the submit spinner and briefly shows the form again before `/builder`. The submit handler owns the successful navigation; the existing-session effect should not issue a second redirect. Keep the form in its submitting state until navigation completes.
+
+The sign-in operation guard must survive a transient component remount: otherwise the existing-session effect can route to `/builder` before Firebase finishes moving a verified customer session to the selected persistence tier. The shared layout should leave `/signin` mounted during profile verification. After manual sign-out, use a full-page redirect once Firebase has cleared Auth; the sign-out transition temporarily unmounts route content and can prevent a client navigation from finishing.
+
+On customer email or Google sign-in, begin with tab-scoped Auth persistence, check refreshed token claims and a server-read Firestore profile, and immediately sign out Manager or Super Admin accounts with an error on the customer form. Do not redirect those accounts to `/system-access` or `/admin`. Only promote a verified customer to the selected persistence tier. If role verification fails after Firebase sign-in, sign out before returning an error. A restored staff session on `/signin` must also be signed out instead of redirected.
+
+Use the same-route `reason=staff_account` notice when rejecting staff credentials. The global account verification state can temporarily replace and remount the sign-in page as Firebase Auth signs out; a component-local error alone can disappear.
+
+The public `syncUserClaimsAction` must reject staff profiles and must not issue staff claims without the System Access key check.
 
 ### 3. Idle Inactivity Engine (`useIdleTimeout`)
 Instead of fragile in-memory `setTimeout` constructs that get throttled or suspended in background tabs, the idle engine uses a timestamp-driven heartbeat:
@@ -80,5 +89,6 @@ The shared `AppLayout` sign-out transition must unmount the authenticated header
 - [ ] A missing profile or Firestore error produces a retryable verification state without a customer-role fallback.
 - [ ] Account switching revalidates the staff session marker; an unauthorized route redirects only once after role resolution.
 - [ ] Customer sign-in stays on one continuous submitting state until Builder opens; the verification screen does not replace and remount the form mid-login.
+- [ ] Manager and Super Admin credentials entered at `/signin` show a rejection on the same page, create no continuing customer session, and cannot open `/builder`.
 - [ ] Route loading and account verification use the same neutral loader; no separate animated full-page overlay appears.
 - [ ] Manual Super Admin and Manager sign-out reaches `/system-access` without a Firestore permission error overlay.

@@ -85,6 +85,7 @@ export function Header() {
       startSignOut();
       const isStaff = Boolean(profile?.isSuperAdmin || profile?.isManager);
       const destination = isStaff ? "/system-access" : "/signin";
+      sessionStorage.removeItem("buildbot_admin_session_active");
       localStorage.removeItem("pc_chat_history_v2");
       localStorage.removeItem("pc_builder_state");
       localStorage.removeItem("pc_ai_build_recommendation");
@@ -94,7 +95,7 @@ export function Header() {
       try {
         await new Promise((resolve) => window.setTimeout(resolve, 250));
         await signOut(auth);
-        router.replace(destination);
+        window.location.replace(destination);
       } catch (error) {
         console.error("Sign out failed:", error);
         cancelSignOut();

@@ -42,6 +42,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const isLandingRedirect = pathname === "/" && !!authUser;
   const isAuthPage = ['/signin', '/signup', '/system-access'].includes(pathname);
+  const isCustomerSignInPage = pathname === '/signin';
 
   // Keep the sign-out overlay mounted across the route change, then let its
   // existing 400 ms exit animation reveal the ready sign-in page once.
@@ -67,16 +68,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isHeaderHidden = false;
 
   // Loader overlay condition:
-  // 1. Initial auth profile is loading (except when an unauthenticated guest lands directly on /signin)
+  // 1. Initial auth profile is loading (the customer sign-in form owns its transition)
   // 2. Landing page is redirecting an authenticated user
-  // 3. User is authenticated on an auth page (/signin, /signup, /system-access) while route redirection completes
+  // 3. User is authenticated on an auth page other than /signin while route redirection completes
   const showLoaderOverlay = signOutStartedAt === null && (
-    (loading && !(pathname === '/signin' && !authUser)) ||
+    (loading && !isCustomerSignInPage) ||
     isLandingRedirect ||
-    (isAuthPage && !!authUser)
+    (isAuthPage && !isCustomerSignInPage && !!authUser)
   );
 
-  if (status === 'missing' || status === 'error') {
+  if ((status === 'missing' || status === 'error') && !isCustomerSignInPage) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 text-slate-900 dark:bg-[#0c0f14] dark:text-slate-100">
         <Paper withBorder radius="lg" p="xl" className="w-full max-w-md border-slate-200 bg-white text-center dark:border-white/10 dark:bg-[#111722]">

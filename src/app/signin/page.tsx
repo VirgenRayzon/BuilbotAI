@@ -12,8 +12,9 @@ import {
   signOut,
   setPersistence,
   browserLocalPersistence,
+  browserSessionPersistence,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDocFromServer, setDoc } from 'firebase/firestore';
 import { syncUserClaimsAction } from '@/app/actions';
 import {
   Paper,
@@ -46,12 +47,16 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+const staffSignInError = 'This is a staff account. Sign in through System Access with your access key.';
+// Survives a temporary page remount while Firebase Auth/profile state changes.
+let customerSignInInProgress = false;
 
 function SignInContent() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const redirectingRef = useRef(false);
+  const rejectingStaffRef = useRef<string | null>(null);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const router = useRouter();
@@ -59,18 +64,41 @@ function SignInContent() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { authUser, profile, loading: authLoading } = useUserProfile();
+  const { authUser, profile, loading: authLoading, status: profileStatus } = useUserProfile();
 
   const reason = searchParams?.get('reason');
+  const visibleError = error || (!loading && !googleLoading && reason === 'staff_account' ? staffSignInError : null);
 
-  // Redirect if already logged in (never redirect while actively logging in)
+  // Customer sign-in must never route a staff session into the admin portal.
   useEffect(() => {
-    if (loading || googleLoading || redirectingRef.current) return;
-    if (!authLoading && authUser && profile) {
-      redirectingRef.current = true;
-      router.replace(profile.isManager || profile.isSuperAdmin ? '/admin' : '/builder');
+    if (customerSignInInProgress || loading || googleLoading || redirectingRef.current) return;
+    if (authUser && (profileStatus === 'missing' || profileStatus === 'error')) {
+      if (!auth || rejectingStaffRef.current === authUser.uid) return;
+      rejectingStaffRef.current = authUser.uid;
+      void signOut(auth)
+        .then(() => setError('Unable to verify this account. Please try again.'))
+        .catch(() => setError('Unable to end the session. Please try again.'))
+        .finally(() => { rejectingStaffRef.current = null; });
+      return;
     }
-  }, [authUser, profile, authLoading, router, loading, googleLoading]);
+    if (!authLoading && authUser && profile) {
+      if (profile.isManager || profile.isSuperAdmin || ('isAdmin' in profile && profile.isAdmin)) {
+        if (!auth || rejectingStaffRef.current === authUser.uid) return;
+        rejectingStaffRef.current = authUser.uid;
+        sessionStorage.removeItem('buildbot_admin_session_active');
+        void signOut(auth)
+          .then(() => {
+            setError(staffSignInError);
+            router.replace('/signin?reason=staff_account');
+          })
+          .catch(() => setError('Unable to end the staff session. Please try again.'))
+          .finally(() => { rejectingStaffRef.current = null; });
+        return;
+      }
+      redirectingRef.current = true;
+      router.replace('/builder');
+    }
+  }, [auth, authUser, profile, authLoading, profileStatus, router, loading, googleLoading]);
 
   const {
     control,
@@ -92,24 +120,37 @@ function SignInContent() {
     }
     setLoading(true);
     setError(null);
+    customerSignInInProgress = true;
     let navigating = false;
+    let signedInUserId: string | null = null;
 
     try {
-      await setPersistence(auth, browserLocalPersistence);
+      // Keep the provisional Auth session tab-scoped until the account is verified.
+      sessionStorage.removeItem('buildbot_admin_session_active');
+      await setPersistence(auth, browserSessionPersistence);
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
+      signedInUserId = user.uid;
+      const tokenResult = await user.getIdTokenResult(true);
+      const hasStaffClaim = tokenResult.claims.isManager === true ||
+        tokenResult.claims.isSuperAdmin === true || tokenResult.claims.isAdmin === true;
+      if (hasStaffClaim) {
+        await signOut(auth);
+        setError(staffSignInError);
+        router.replace('/signin?reason=staff_account');
+        return;
+      }
 
       const userDocRef = doc(firestore, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
+      const userDoc = await getDocFromServer(userDocRef);
 
       if (userDoc.exists()) {
         const userData = userDoc.data();
 
-        // Prevent Managers/Admins from using normal customer sign in
         if (userData.isManager || userData.isSuperAdmin || userData.isAdmin) {
           await signOut(auth);
-          setError('Administrator and Manager accounts must sign in via the System Access portal (/system-access).');
-          setLoading(false);
+          setError(staffSignInError);
+          router.replace('/signin?reason=staff_account');
           return;
         }
       } else {
@@ -127,8 +168,16 @@ function SignInContent() {
 
       // Synchronize claims and refresh client token
       const idToken = await user.getIdToken();
-      await syncUserClaimsAction(idToken);
+      const claimsResult = await syncUserClaimsAction(idToken);
+      if ('error' in claimsResult) throw new Error('Unable to verify account permissions. Please try again.');
+      if (claimsResult.isManager || claimsResult.isSuperAdmin) {
+        await signOut(auth);
+        setError(staffSignInError);
+        router.replace('/signin?reason=staff_account');
+        return;
+      }
       await user.getIdToken(true);
+      await setPersistence(auth, values.rememberMe ? browserLocalPersistence : browserSessionPersistence);
 
       toast({
         title: 'Signed In',
@@ -140,6 +189,14 @@ function SignInContent() {
       navigating = true;
     } catch (err: any) {
       redirectingRef.current = false;
+      if (signedInUserId && auth.currentUser?.uid === signedInUserId) {
+        try {
+          await signOut(auth);
+        } catch {
+          setError('Unable to end the sign-in attempt. Please try again.');
+          return;
+        }
+      }
       const msg = err.message || 'An error occurred during sign-in.';
       if (
         msg.includes('auth/invalid-credential') ||
@@ -151,6 +208,7 @@ function SignInContent() {
         setError(msg);
       }
     } finally {
+      customerSignInInProgress = false;
       if (!navigating) setLoading(false);
     }
   };
@@ -159,6 +217,7 @@ function SignInContent() {
     if (!auth || !firestore) return;
     setGoogleLoading(true);
     setError(null);
+    customerSignInInProgress = true;
     let navigating = false;
 
     try {
@@ -167,6 +226,7 @@ function SignInContent() {
       if (!result.success) {
         if (result.error) {
           setError(result.error);
+          if (result.error === staffSignInError) router.replace('/signin?reason=staff_account');
         }
         return;
       }
@@ -182,6 +242,7 @@ function SignInContent() {
       redirectingRef.current = false;
       setError(err.message || 'Failed to sign in with Google. Please try again.');
     } finally {
+      customerSignInInProgress = false;
       if (!navigating) setGoogleLoading(false);
     }
   };
@@ -278,7 +339,7 @@ function SignInContent() {
             )}
 
             {/* Error Message */}
-            {error && (
+            {visibleError && (
               <Alert
                 color="red"
                 variant="light"
@@ -287,7 +348,7 @@ function SignInContent() {
                 title="Authentication Error"
                 className="text-xs"
               >
-                {error}
+                {visibleError}
               </Alert>
             )}
 

@@ -309,13 +309,16 @@ export async function syncUserClaimsAction(idToken: string) {
 
     const isManager = !!data.isManager;
     const isSuperAdmin = !!data.isSuperAdmin;
+    if (isManager || isSuperAdmin || data.isAdmin === true) {
+      return { error: 'Staff accounts must sign in through System Access.' };
+    }
     
     try {
       await adminAuth.setCustomUserClaims(userId, {
-        isManager,
-        isSuperAdmin,
+        isManager: false,
+        isSuperAdmin: false,
       });
-      console.log(`[syncUserClaimsAction] Custom claims set successfully for ${userId}: isManager=${isManager}, isSuperAdmin=${isSuperAdmin}`);
+      console.log(`[syncUserClaimsAction] Customer claims set successfully for ${userId}.`);
     } catch (claimErr) {
       console.warn(`[syncUserClaimsAction] setCustomUserClaims warning (Firestore profile active):`, claimErr);
     }

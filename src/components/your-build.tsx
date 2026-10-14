@@ -16,7 +16,7 @@ import {
   ThemeIcon,
   Title,
 } from "@mantine/core";
-import { AlertCircle, Bookmark, Cpu, FolderOpen, MoreHorizontal, Trash2, X } from "lucide-react";
+import { AlertCircle, Bookmark, Cpu, Download, FolderOpen, MoreHorizontal, Trash2, X } from "lucide-react";
 import { useFirestore, useDoc, useUser } from "@/firebase";
 import { addDoc, collection, doc, onSnapshot, orderBy, query, serverTimestamp } from "firebase/firestore";
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -25,6 +25,7 @@ import { AIProgressModal } from "@/components/ai-progress-modal";
 import { BuildContent } from "@/components/build/build-content";
 import { BuildActionFooter } from "@/components/build/build-action-footer";
 import { useBuildActions } from "@/hooks/use-build-actions";
+import { useBuildPdfDownload } from "@/hooks/use-build-pdf-download";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, cn } from "@/lib/utils";
 import type { ComponentData, FavoriteBuild, FavoriteBuildPart, Part, Resolution, WorkloadType } from "@/lib/types";
@@ -90,6 +91,7 @@ export function YourBuild({
     return Array.isArray(value) ? value.length === 0 : !value;
   });
   const isBuildComplete = missingCategories.length === 0;
+  const { download: downloadBuildPdf, isDownloading: isDownloadingPdf } = useBuildPdfDownload(build);
 
   useEffect(() => {
     if (isBuildComplete) setShowMissingValidation(false);
@@ -205,6 +207,17 @@ export function YourBuild({
         >
           Save Current Build
         </Menu.Item>
+
+        {!isManagerMode && (
+          <Menu.Item
+            leftSection={<Download size={15} className="text-cyan-500" />}
+            onClick={() => void downloadBuildPdf()}
+            disabled={!isBuildComplete || isDownloadingPdf}
+            className="min-h-11 text-xs font-medium rounded-md hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+          >
+            {isDownloadingPdf ? 'Preparing PDF...' : 'Download Your Build'}
+          </Menu.Item>
+        )}
 
         <Menu.Item
           color="red"

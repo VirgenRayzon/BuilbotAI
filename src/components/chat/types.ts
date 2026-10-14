@@ -2,6 +2,7 @@ import type { ComponentData } from "@/lib/types";
 
 export interface BuilderFloatingChatProps {
     build?: Record<string, ComponentData | ComponentData[] | null>;
+    onAddPart?: (partName: string, partId: string) => void;
 }
 
 export interface TelemetryInfo {

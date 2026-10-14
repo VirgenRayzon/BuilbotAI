@@ -9,6 +9,7 @@ import { getChatRecommendationFacts } from "@/lib/chat-recommendation-facts";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
 
 interface ChatRecommendationsCarouselProps {
+    category: string;
     partsList: StructuredPart[];
     isDark: boolean;
     addedPartIds: Record<string, boolean>;
@@ -29,7 +30,7 @@ function partImage(part: StructuredPart) {
         : getComponentPlaceholderImage(part.category, part.name);
 }
 
-export function ChatRecommendationsCarousel({ partsList, isDark, addedPartIds, hasBuildParts, build, onAddPart }: ChatRecommendationsCarouselProps) {
+export function ChatRecommendationsCarousel({ category, partsList, isDark, addedPartIds, hasBuildParts, build, onAddPart }: ChatRecommendationsCarouselProps) {
     const [carouselApi, setCarouselApi] = useState<CarouselApi>();
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -54,12 +55,20 @@ export function ChatRecommendationsCarousel({ partsList, isDark, addedPartIds, h
     }, [carouselApi, updateNavigation]);
 
     if (!Array.isArray(partsList) || partsList.length === 0) return null;
-    const currentMatches = filterChatRecommendations(partsList, partsList[0].category, build);
+    const currentMatches = filterChatRecommendations(partsList, category, build);
     const currentMatchIds = new Set(currentMatches.map(part => part.id));
     const addedParts = partsList.filter(part => addedPartIds[part.id] && !currentMatchIds.has(part.id));
     const recommendations = [...currentMatches, ...addedParts].slice(0, 4);
     if (recommendations.length === 0) {
-        return <Text size="xs" c="dimmed" className="px-5 py-3">These options no longer match Your Build. Ask for updated recommendations.</Text>;
+        const hasAvailablePart = partsList.some(part => !part.isArchived && typeof part.stock === 'number' && part.stock > 0);
+        const needsMotherboard = hasAvailablePart && (category === 'ram' || category === 'storage') && !build?.Motherboard;
+        return (
+            <Text size="xs" c="dimmed" className="px-5 py-3">
+                {needsMotherboard
+                    ? `Select a motherboard to see compatible ${category === 'ram' ? 'RAM' : 'storage'} options. These recommendations will update automatically.`
+                    : 'These earlier options are now unavailable or incompatible with Your Build. Ask Buildbot AI for updated recommendations.'}
+            </Text>
+        );
     }
 
     return (
