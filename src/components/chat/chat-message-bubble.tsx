@@ -103,7 +103,6 @@ export function ChatMessageBubble({
                         !isUser && hasTelemetry && !isStreaming && "pr-4"
                     )}>
                         <ReactMarkdown
-                            urlTransform={(url) => url}
                             components={{
                                 p: ({ children }) => <div className="mb-2 last:mb-0 leading-relaxed">{children}</div>,
                                 a: ({ href, children }) => (

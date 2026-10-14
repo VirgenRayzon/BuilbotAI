@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import type { Order, Part, PrebuiltSystem } from '@/lib/types';
-import { formatCurrency } from '@/lib/utils';
+import { getPopularityCategories } from '@/lib/popularity';
+import { downloadStyledWorkbook } from '@/lib/styled-excel';
 
 export interface ExportDataOptions {
     orders: Order[];
@@ -13,7 +14,7 @@ export interface ExportDataOptions {
 /**
  * Export complete Sales & Analytics data as a multi-sheet Microsoft Excel (.xlsx) file.
  */
-export function exportSalesAnalyticsToExcel({
+export function buildSalesAnalyticsWorkbook({
     orders,
     parts,
     prebuilts,
@@ -30,7 +31,7 @@ export function exportSalesAnalyticsToExcel({
 
     const pendingOrders = (orders || []).filter(o => o.status === 'pending');
     const buildingOrders = (orders || []).filter(o => o.status === 'building');
-    const finishedOrders = (orders || []).filter(o => o.status === 'finished building' || (o.status as any) === 'finished');
+    const finishedOrders = (orders || []).filter(o => o.status === 'finished building' || String(o.status) === 'finished');
 
     // 1. Sheet 1: Executive KPI Summary
     const summaryData = [
@@ -42,7 +43,7 @@ export function exportSalesAnalyticsToExcel({
         { Metric: 'Total Valid Reservations', Value: validOrders.length },
         { Metric: 'All-Time Total Orders', Value: (orders || []).length },
         { Metric: 'Average Order Value (AOV)', Value: Math.round(avgOrderValue * 100) / 100 },
-        { Metric: 'Cancellation Rate', Value: `${cancellationRate.toFixed(1)}%` },
+        { Metric: 'Cancellation Rate', Value: cancellationRate / 100 },
         { Metric: '', Value: '' },
         { Metric: 'Orders - Pending Review', Value: pendingOrders.length },
         { Metric: 'Orders - Assembly in Progress', Value: buildingOrders.length },
@@ -64,37 +65,27 @@ export function exportSalesAnalyticsToExcel({
     wsRevenue['!cols'] = [{ wch: 22 }, { wch: 20 }];
 
     // 3. Sheet 3: Component Popularity Matrix
-    const popularityRows: any[] = [];
-    const categoryGroups = (parts || []).reduce((acc, part) => {
-        if (!acc[part.category]) acc[part.category] = [];
-        acc[part.category].push(part);
-        return acc;
-    }, {} as Record<string, Part[]>);
-
-    Object.entries(categoryGroups).forEach(([category, catParts]) => {
-        const sorted = [...catParts]
-            .filter(p => ((p as any).popularity || 0) >= 0)
-            .sort((a, b) => ((b as any).popularity || 0) - ((a as any).popularity || 0));
-
-        const maxPop = sorted[0] ? ((sorted[0] as any).popularity || 1) : 1;
-
-        sorted.forEach((part, index) => {
-            const pop = (part as any).popularity || 0;
-            const relativeStrength = maxPop > 0 ? Math.round((pop / maxPop) * 100) : 0;
+    const popularityRows: Record<string, string | number>[] = [];
+    getPopularityCategories(parts || []).forEach(({ category, parts: rankedParts, maxPopularity }) => {
+        rankedParts.forEach((part, index) => {
+            const pop = part.popularity ?? 0;
+            const relativeStrength = maxPopularity > 0 ? pop / maxPopularity : 0;
             popularityRows.push({
                 'Category': category,
-                'Rank': `#${index + 1}`,
+                'Rank': index + 1,
                 'Component Name': part.name,
-                'Brand': part.brand || 'N/A',
+                'Brand': part.brand || 'Standard',
                 'Unit Price (PHP)': part.price,
-                'Purchase Demand Score': pop,
-                'Relative Category Demand': `${relativeStrength}%`,
-                'In Stock': part.stock ?? 'N/A'
+                'Orders': pop,
+                'Relative Category Demand': relativeStrength,
+                'In Stock': part.stock ?? 0,
             });
         });
     });
 
-    const wsPopularity = XLSX.utils.json_to_sheet(popularityRows);
+    const wsPopularity = XLSX.utils.json_to_sheet(popularityRows, {
+        header: ['Category', 'Rank', 'Component Name', 'Brand', 'Unit Price (PHP)', 'Orders', 'Relative Category Demand', 'In Stock'],
+    });
     wsPopularity['!cols'] = [
         { wch: 18 }, // Category
         { wch: 8 },  // Rank
@@ -114,9 +105,9 @@ export function exportSalesAnalyticsToExcel({
                 ? new Date(order.createdAt.seconds * 1000).toLocaleDateString()
                 : 'Recent');
 
-        const isPrebuilt = (order as any).type === 'prebuilt';
+        const isPrebuilt = order.type === 'prebuilt';
         const buildInfo = isPrebuilt
-            ? ((order as any).prebuiltName || 'Custom Prebuilt')
+            ? (order.prebuiltName || 'Custom Prebuilt')
             : `Custom Build (${order.items?.length || 0} parts)`;
 
         return {
@@ -131,7 +122,9 @@ export function exportSalesAnalyticsToExcel({
         };
     });
 
-    const wsOrders = XLSX.utils.json_to_sheet(orderRows);
+    const wsOrders = XLSX.utils.json_to_sheet(orderRows, {
+        header: ['Order ID', 'Customer Email', 'Order Type', 'Build / Rig Details', 'Status', 'Items Count', 'Total Price (PHP)', 'Reservation Date'],
+    });
     wsOrders['!cols'] = [
         { wch: 24 }, // Order ID
         { wch: 30 }, // Email
@@ -157,10 +150,10 @@ export function exportSalesAnalyticsToExcel({
         'Workstation': 0
     };
 
-    validOrders.filter(o => (o as any).type === 'prebuilt').forEach(order => {
-        const prebuiltId = (order as any).prebuiltId;
+    validOrders.filter(o => o.type === 'prebuilt').forEach(order => {
+        const prebuiltId = order.prebuiltId;
         const system = (prebuilts || []).find(s => s.id === prebuiltId);
-        const tier = system?.tier || (order as any).prebuiltTier || 'Mid-Range';
+        const tier = system?.tier || order.prebuiltTier || 'Mid-Range';
         if (tier in prebuiltTierCounts) {
             prebuiltTierCounts[tier]++;
             prebuiltTierRevenue[tier] += order.totalPrice || 0;
@@ -190,10 +183,12 @@ export function exportSalesAnalyticsToExcel({
         .map(([name, value]) => ({
             'Category': name,
             'Revenue (PHP)': value,
-            'Share of Revenue': totalGrossRevenue > 0 ? `${((value / totalGrossRevenue) * 100).toFixed(1)}%` : '0%'
+            'Share of Revenue': totalGrossRevenue > 0 ? value / totalGrossRevenue : 0,
         }));
 
-    const wsCategories = XLSX.utils.json_to_sheet(catRows);
+    const wsCategories = XLSX.utils.json_to_sheet(catRows, {
+        header: ['Category', 'Revenue (PHP)', 'Share of Revenue'],
+    });
     wsCategories['!cols'] = [{ wch: 22 }, { wch: 20 }, { wch: 18 }];
 
     // Construct the workbook
@@ -205,8 +200,23 @@ export function exportSalesAnalyticsToExcel({
     XLSX.utils.book_append_sheet(wb, wsPrebuilts, 'Prebuilt Tiers');
     XLSX.utils.book_append_sheet(wb, wsCategories, 'Category Revenue');
 
-    // Trigger download
+    [wsRevenue, wsPopularity, wsOrders, wsPrebuilts, wsCategories].forEach((sheet) => {
+        if (sheet['!ref']) sheet['!autofilter'] = { ref: sheet['!ref'] };
+    });
+
+    return wb;
+}
+
+export function exportSalesAnalyticsToExcel(options: ExportDataOptions) {
+    const wb = buildSalesAnalyticsWorkbook(options);
     const dateFormatted = new Date().toISOString().split('T')[0];
     const fileName = `BuildbotAI_Sales_Analytics_${dateFormatted}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+    downloadStyledWorkbook(wb, fileName, [
+        { currencyCells: ['B6', 'B9'], countCells: ['B7', 'B8', 'B12', 'B13', 'B14', 'B15', 'B17', 'B18'], percentCells: ['B10'] },
+        { currencyColumns: ['B'] },
+        { currencyColumns: ['E'], countColumns: ['B', 'F', 'H'], percentColumns: ['G'] },
+        { currencyColumns: ['G'], countColumns: ['F'] },
+        { currencyColumns: ['C'], countColumns: ['B'] },
+        { currencyColumns: ['B'], percentColumns: ['C'] },
+    ]);
 }

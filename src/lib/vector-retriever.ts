@@ -99,6 +99,7 @@ function formatMetadataToSpec(docId: string, category: string, metadata: Record<
 export interface VectorRetrieveOptions {
     category?: string;
     limit?: number;
+    searchAllCategories?: boolean;
 }
 
 /**
@@ -120,17 +121,16 @@ export async function retrieveHardwareVectorSpecs(
     // Determine target categories to search
     const categoriesToSearch: VectorCategory[] = inferred && VECTOR_CATEGORIES.includes(inferred as VectorCategory)
         ? [inferred as VectorCategory]
-        : ['cpu', 'gpu', 'motherboard', 'ram', 'cooler', 'psu', 'case', 'storage'];
+        : options.searchAllCategories
+            ? [...VECTOR_CATEGORIES]
+            : ['cpu', 'gpu', 'motherboard', 'ram', 'cooler', 'psu', 'case', 'storage'];
 
     console.log(`[Vector Search] Query: "${cleanQuery}" | Categories: [${categoriesToSearch.join(', ')}] | Limit: ${limit}`);
 
     try {
         const queryVector = await generateHardwareEmbedding(cleanQuery);
         const db = getAdminFirestore();
-        const results: string[] = [];
-
-        // Search category subcollections
-        for (const cat of categoriesToSearch) {
+        const searchCategory = async (cat: VectorCategory): Promise<string[]> => {
             try {
                 const itemsCol = db.collection('buildbot_hardware_vector').doc(cat).collection('items');
                 const vectorQuery = itemsCol.findNearest('embedding', queryVector, {
@@ -139,18 +139,31 @@ export async function retrieveHardwareVectorSpecs(
                 });
 
                 const snapshot = await vectorQuery.get();
+                const matches: string[] = [];
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     if (data.metadata) {
-                        results.push(formatMetadataToSpec(doc.id, cat, data.metadata));
+                        matches.push(formatMetadataToSpec(doc.id, cat, data.metadata));
                     }
                 });
-
-                // If specific category query satisfied limit, break early
-                if (results.length >= limit) break;
+                return matches;
             } catch (colErr: any) {
                 console.warn(`[Vector Search] Error querying category ${cat}:`, colErr.message);
+                return [];
             }
+        };
+
+        if (options.searchAllCategories) {
+            const byCategory = await Promise.all(categoriesToSearch.map(searchCategory));
+            const results = byCategory.flat();
+            console.log(`[Vector Search] Retrieved ${results.length} results in ${Date.now() - startTime}ms`);
+            return results;
+        }
+
+        const results: string[] = [];
+        for (const cat of categoriesToSearch) {
+            results.push(...await searchCategory(cat));
+            if (results.length >= limit) break;
         }
 
         console.log(`[Vector Search] Retrieved ${results.length} results in ${Date.now() - startTime}ms`);

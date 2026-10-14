@@ -6,10 +6,9 @@ import {
     Archive, Trash2, BarChart3, ShoppingBag,
     Shield, Sliders, Bot, FileText, Cpu, FileCode
 } from 'lucide-react';
-import { Tabs, Badge, Title, Text, SegmentedControl, ThemeIcon, Modal, Group, Stack, Button } from '@mantine/core';
+import { Tabs, Badge, Text, ThemeIcon, Modal, Group, Stack, Button } from '@mantine/core';
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/theme-provider";
-import { useLoading } from "@/context/loading-context";
 
 // Custom Hooks
 import { useAdminCore } from './hooks/use-admin-core';
@@ -103,12 +102,6 @@ export default function AdminPage() {
         { name: "High-End", selected: true },
         { name: "Workstation", selected: true }
     ]);
-
-    const handlePartCategoryChange = (name: string, selected: boolean) => {
-        setPartCategories(prev => prev.map(c =>
-            c.name === name ? { ...c, selected } : c
-        ));
-    };
 
     return (
         <RouteGuard requiredPermission="canAccessAdmin" fallbackPath="/system-access">
@@ -248,7 +241,6 @@ export default function AdminPage() {
                                 partsLoading={partsLoading}
                                 profile={profile}
                                 partCategories={partCategories}
-                                onCategoryChange={handlePartCategoryChange}
                                 onSetCategories={setPartCategories}
                                 onAddPart={handleAddPart}
                                 onUpdatePart={handleUpdatePart}

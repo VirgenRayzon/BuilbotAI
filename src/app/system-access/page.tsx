@@ -347,7 +347,7 @@ function SystemAccessContent() {
       <div className="w-full max-w-[480px] z-10 flex flex-col gap-2.5">
         <div className="flex items-center justify-between px-1">
           <Link
-            href="/"
+            href="/signin"
             className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-red-500 dark:text-slate-400 dark:hover:text-red-400 transition-all duration-200 group"
           >
             <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />

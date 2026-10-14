@@ -109,6 +109,7 @@ export function ChatMessageList({
                                                     toolName={toolName}
                                                     isComplete={isComplete}
                                                     isDark={isDark}
+                                                    output={isComplete ? part.part.output : undefined}
                                                 />
                                             </div>
                                         );

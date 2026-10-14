@@ -32,17 +32,39 @@ import { AddPartDialog } from '@/components/add-part-dialog';
 import { InventoryPartCard } from '@/components/inventory-part-card';
 import { InventoryTable } from '@/components/inventory-table';
 import { PaginationControls } from "@/components/pagination-controls";
-import { cn } from "@/lib/utils";
-import type { Part } from '@/lib/types';
+import type { Part, UserProfile } from '@/lib/types';
 import { AddPartFormSchema } from '@/hooks/use-part-form';
+
+type AvailabilityFilter = 'all' | 'in-stock' | 'out-of-stock';
+
+const availabilityOptions: { value: AvailabilityFilter; label: string }[] = [
+    { value: 'all', label: 'All' },
+    { value: 'in-stock', label: 'In Stock' },
+    { value: 'out-of-stock', label: 'Out of Stock' },
+];
+
+type PartSelection = { id: string; category: Part['category'] };
+type PartCategorySelection = { name: Part['category']; selected: boolean };
+type BulkConfirmAction = {
+    isOpen: boolean;
+    type: 'archive' | 'restore' | 'delete';
+    target: 'parts' | 'prebuilts';
+};
+
+function getCreatedAtTime(value: unknown): number {
+    if (value && typeof value === 'object' && 'toDate' in value && typeof value.toDate === 'function') {
+        return value.toDate().getTime();
+    }
+
+    return value ? new Date(value as string | number | Date).getTime() : 0;
+}
 
 interface StockTabProps {
     parts: Part[];
     partsLoading: boolean;
-    profile: any;
-    partCategories: { name: string, selected: boolean }[];
-    onCategoryChange: (name: string, selected: boolean) => void;
-    onSetCategories: (cats: any) => void;
+    profile: Pick<UserProfile, 'isSuperAdmin'> | null;
+    partCategories: PartCategorySelection[];
+    onSetCategories: (categories: PartCategorySelection[]) => void;
     onAddPart: (data: AddPartFormSchema) => Promise<void>;
     onUpdatePart: (id: string, category: Part['category'], data: AddPartFormSchema) => Promise<void>;
     onDeletePart: (id: string, category: Part['category']) => Promise<void>;
@@ -53,11 +75,11 @@ interface StockTabProps {
     // Bulk state from useBulkActions
     isPartSelectionMode: boolean;
     setIsPartSelectionMode: (val: boolean) => void;
-    selectedPartIds: { id: string, category: Part['category'] }[];
-    setSelectedPartIds: (val: any) => void;
+    selectedPartIds: PartSelection[];
+    setSelectedPartIds: (parts: PartSelection[]) => void;
     togglePartSelection: (id: string, category: Part['category']) => void;
     toggleAllPartsSelection: (parts: Part[]) => void;
-    setConfirmAction: (val: any) => void;
+    setConfirmAction: (action: BulkConfirmAction) => void;
 }
 
 export function StockTab({
@@ -65,7 +87,6 @@ export function StockTab({
     partsLoading,
     profile,
     partCategories,
-    onCategoryChange,
     onSetCategories,
     onAddPart,
     onUpdatePart,
@@ -83,6 +104,7 @@ export function StockTab({
 }: StockTabProps) {
     const [partSearchQuery, setPartSearchQuery] = useState('');
     const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+    const [availability, setAvailability] = useState<AvailabilityFilter>('all');
     const [partSortBy, setPartSortBy] = useState('Date Added');
     const [partSortDirection, setPartSortDirection] = useState<'asc' | 'desc'>('desc');
     const [activeView, setActiveView] = useState<'grid' | 'table'>('grid');
@@ -96,8 +118,11 @@ export function StockTab({
             const matchesCategory = selectedCategories.includes(part.category);
             const matchesSearch = part.name.toLowerCase().includes(partSearchQuery.toLowerCase()) ||
                 part.brand.toLowerCase().includes(partSearchQuery.toLowerCase());
+            const matchesAvailability = availability === 'all'
+                || (availability === 'in-stock' && part.stock > 0)
+                || (availability === 'out-of-stock' && part.stock <= 0);
             const isNotArchived = !part.isArchived;
-            return matchesCategory && matchesSearch && isNotArchived;
+            return matchesCategory && matchesSearch && matchesAvailability && isNotArchived;
         }) ?? [];
 
         return baseFilteredParts.filter(part => {
@@ -110,13 +135,11 @@ export function StockTab({
                 else if (partSortBy === 'Brand') compare = a.brand.localeCompare(b.brand);
                 else if (partSortBy === 'Stock') compare = a.stock - b.stock;
                 else if (partSortBy === 'Date Added') {
-                    const aDate = (a as any).createdAt?.toDate?.() || a.createdAt || 0;
-                    const bDate = (b as any).createdAt?.toDate?.() || b.createdAt || 0;
-                    compare = new Date(aDate).getTime() - new Date(bDate).getTime();
+                    compare = getCreatedAtTime(a.createdAt) - getCreatedAtTime(b.createdAt);
                 }
                 return partSortDirection === 'asc' ? compare : -compare;
             });
-    }, [parts, partCategories, partSortBy, partSortDirection, partSearchQuery, selectedBrands]);
+    }, [parts, partCategories, partSortBy, partSortDirection, partSearchQuery, selectedBrands, availability]);
 
     const availableBrands = useMemo(() => {
         const selectedCategories = partCategories.filter(c => c.selected).map(c => c.name);
@@ -270,6 +293,37 @@ export function StockTab({
                                 </Menu.Dropdown>
                             </Menu>
                         )}
+
+                        {/* Availability Dropdown Filter */}
+                        <Menu shadow="md" width={180} radius="md">
+                            <Menu.Target>
+                                <Button
+                                    variant={availability === 'all' ? 'default' : 'light'}
+                                    color={availability === 'all' ? undefined : 'cyan'}
+                                    size="xs"
+                                    radius="md"
+                                    leftSection={<PackageCheck size={13} className={availability === 'all' ? 'text-slate-400' : 'text-cyan-500'} />}
+                                >
+                                    <span className="hidden sm:inline text-slate-400 font-normal mr-1">Availability:</span>
+                                    {availabilityOptions.find((option) => option.value === availability)?.label}
+                                </Button>
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                                <Menu.Label>Filter by Availability</Menu.Label>
+                                {availabilityOptions.map((option) => (
+                                    <Menu.Item
+                                        key={option.value}
+                                        onClick={() => {
+                                            setAvailability(option.value);
+                                            setPartCurrentPage(1);
+                                        }}
+                                        rightSection={availability === option.value ? <Check size={14} className="text-cyan-500" /> : null}
+                                    >
+                                        {option.label}
+                                    </Menu.Item>
+                                ))}
+                            </Menu.Dropdown>
+                        </Menu>
 
                         {/* Sort Menu */}
                         <Menu shadow="md" width={180} radius="md">

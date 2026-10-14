@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useSyncExternalStore } from 'react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
     PieChart, Pie, Cell, BarChart, Bar
@@ -14,7 +14,6 @@ import {
     Activity,
     PieChart as PieIcon,
     BarChart3,
-    Calendar,
     Cpu,
     HardDrive,
     Zap,
@@ -26,41 +25,25 @@ import {
     Grid,
     Layers,
     FileSpreadsheet,
-    Search,
-    XCircle,
-    ArrowUpDown,
-    Award,
-    CheckCircle2,
-    Clock,
-    Sparkles,
-    ChevronRight
 } from 'lucide-react';
 import {
     Paper,
     Title,
     Text,
-    Group,
     Stack,
     Badge,
     Button,
-    ActionIcon,
     ThemeIcon,
-    Tooltip,
-    Select,
-    TextInput,
     Tabs,
-    Chip,
-    ScrollArea,
-    SimpleGrid,
     SegmentedControl,
-    Box as MantineBox
 } from '@mantine/core';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Order, Part, PrebuiltSystem } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { useTheme } from '@/context/theme-provider';
 import { useToast } from '@/hooks/use-toast';
 import { exportSalesAnalyticsToExcel } from '@/lib/export-excel';
+import { getPopularityCategories } from '@/lib/popularity';
 
 interface SalesAnalyticsProps {
     orders: Order[];
@@ -79,16 +62,15 @@ const COLORS = {
     ]
 };
 
+const subscribeToHydration = () => () => {};
+
 export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps) {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
     const { toast } = useToast();
 
     // SSR safety for Recharts
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    const mounted = useSyncExternalStore(subscribeToHydration, () => true, () => false);
 
     // Main Sub-Tab: 'overview' vs 'popularity'
     const [activeTab, setActiveTab] = useState<'overview' | 'popularity'>('overview');
@@ -168,7 +150,7 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
             const st = o.status || 'pending';
             if (st === 'pending') counts.pending++;
             else if (st === 'building') counts.building++;
-            else if (st === 'finished building' || (st as any) === 'finished') counts['finished building']++;
+            else if (st === 'finished building' || String(st) === 'finished') counts['finished building']++;
             else if (st === 'cancelled') counts.cancelled++;
         });
 
@@ -189,10 +171,10 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
             'Workstation': 0
         };
 
-        (orders || []).filter(o => o.status !== 'cancelled' && (o as any).type === 'prebuilt').forEach(order => {
-            const prebuiltId = (order as any).prebuiltId;
+        (orders || []).filter(o => o.status !== 'cancelled' && o.type === 'prebuilt').forEach(order => {
+            const prebuiltId = order.prebuiltId;
             const system = (prebuilts || []).find(s => s.id === prebuiltId);
-            const tier = system?.tier || (order as any).prebuiltTier || 'Mid-Range';
+            const tier = system?.tier || order.prebuiltTier || 'Mid-Range';
 
             if (tier && tier in counts) {
                 counts[tier as keyof typeof counts]++;
@@ -235,45 +217,7 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
     }, [orders]);
 
     // Popularity Matrix Data grouped by Category and sorted by Popularity
-    const popularityCategories = useMemo(() => {
-        const grouped = (parts || []).reduce((acc, part) => {
-            if (!acc[part.category]) acc[part.category] = [];
-            acc[part.category].push(part);
-            return acc;
-        }, {} as Record<string, Part[]>);
-
-        const result: { category: string; parts: Part[]; maxPopularity: number }[] = [];
-
-        Object.entries(grouped).forEach(([category, catParts]) => {
-            if (catParts.length === 0) return;
-
-            // Sort parts by popularity descending
-            const sortedParts = [...catParts].sort((a, b) => {
-                const popA = (a as any).popularity || 0;
-                const popB = (b as any).popularity || 0;
-                return popB - popA;
-            });
-
-            const top5 = sortedParts.slice(0, 5);
-            const maxPop = top5[0] ? ((top5[0] as any).popularity || 1) : 1;
-
-            result.push({
-                category,
-                parts: top5,
-                maxPopularity: Math.max(maxPop, 1)
-            });
-        });
-
-        return result.sort((a, b) => a.category.localeCompare(b.category));
-    }, [parts]);
-
-    // Top 3 Spotlight Components for Overview
-    const topSpotlightParts = useMemo(() => {
-        return [...(parts || [])]
-            .filter(p => ((p as any).popularity || 0) > 0)
-            .sort((a, b) => ((b as any).popularity || 0) - ((a as any).popularity || 0))
-            .slice(0, 3);
-    }, [parts]);
+    const popularityCategories = useMemo(() => getPopularityCategories(parts || []), [parts]);
 
     // Handle Export to Excel
     const handleExport = () => {
@@ -432,7 +376,9 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
 
                                 <SegmentedControl
                                     value={timeRange}
-                                    onChange={(v) => v && setTimeRange(v as any)}
+                                    onChange={(v) => {
+                                        if (v === 'week' || v === 'month' || v === 'year') setTimeRange(v);
+                                    }}
                                     data={[
                                         { label: '7 Days', value: 'week' },
                                         { label: '30 Days', value: 'month' },
@@ -803,7 +749,7 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                                             {/* Ranked Component Items List */}
                                             <div className="divide-y divide-slate-200 dark:divide-white/5">
                                                 {topParts.map((item, index) => {
-                                                    const pop = (item as any).popularity || 0;
+                                                    const pop = item.popularity ?? 0;
                                                     const relativeStrength = maxPopularity > 0 ? (pop / maxPopularity) * 100 : 0;
 
                                                     return (

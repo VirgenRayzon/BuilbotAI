@@ -60,6 +60,7 @@ export type Part = {
   category: 'CPU' | 'GPU' | 'Motherboard' | 'RAM' | 'Storage' | 'PSU' | 'Case' | 'Cooler' | 'Monitor' | 'Keyboard' | 'Mouse' | 'Headset';
   brand: string;
   price: number;
+  popularity?: number;
   usdSrp?: number;
   stock: number;
   imageUrl: string;
@@ -136,6 +137,10 @@ export type Order = {
   items: OrderItem[];
   totalPrice: number;
   status: 'pending' | 'building' | 'finished building' | 'cancelled';
+  type?: 'prebuilt' | 'custom';
+  prebuiltId?: string;
+  prebuiltName?: string;
+  prebuiltTier?: PrebuiltSystem['tier'];
   createdAt: any; // Firestore Timestamp
 };
 
