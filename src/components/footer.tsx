@@ -10,9 +10,9 @@ export function Footer() {
   return (
     <footer className="relative overflow-hidden transition-colors duration-1000 mt-32 font-body border-t border-slate-200/80 dark:border-white/10">
       <div className="w-full pt-20 pb-12 px-4 sm:px-6 md:px-8 lg:px-10">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-20">
+        <div className="flex flex-col md:flex-row justify-between items-start gap-12 mb-20">
           {/* Brand Column */}
-          <div className="col-span-1 md:col-span-8 space-y-5">
+          <div className="space-y-5 max-w-md">
             <Logo />
             <p className="text-slate-600 dark:text-slate-400 text-sm max-w-md leading-relaxed font-medium">
               The premier AI-assisted custom PC building platform. Intelligent hardware compatibility verification,
@@ -30,25 +30,13 @@ export function Footer() {
               </div>
             </div>
           </div>
-
-          {/* Links Columns */}
-          <div className="col-span-1 md:col-span-2 space-y-4">
-            <h3 className="text-xs font-black uppercase tracking-[0.25em] text-cyan-600 dark:text-cyan-400 font-headline">Platform</h3>
-            <nav className="flex flex-col gap-2.5">
-              <Link href="/builder" className="text-sm text-slate-600 dark:text-slate-400 font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">PC Builder</Link>
-              <Link href="/pre-builts" className="text-sm text-slate-600 dark:text-slate-400 font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">Pre-Built Systems</Link>
-              <Link href="/ai-build-advisor" className="text-sm text-slate-600 dark:text-slate-400 font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">AI Advisor</Link>
-              <Link href="/admin" className="text-sm text-slate-600 dark:text-slate-400 font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">Inventory Portal</Link>
-            </nav>
-          </div>
-
-          <div className="col-span-1 md:col-span-2 space-y-4">
+          <div className="space-y-4 md:text-right">
             <h3 className="text-xs font-black uppercase tracking-[0.25em] text-cyan-600 dark:text-cyan-400 font-headline">Support</h3>
-            <nav className="flex flex-col gap-2.5">
-              <Link href="/faq" className="text-sm text-slate-600 dark:text-slate-400 font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">Help Center & FAQ</Link>
-              <Link href="/about" className="text-sm text-slate-600 dark:text-slate-400 font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">About BuildbotAI</Link>
-              <Link href="/team" className="text-sm text-slate-600 dark:text-slate-400 font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">Engineering Team</Link>
-              <Link href="/contact" className="text-sm text-slate-600 dark:text-slate-400 font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">Contact Support</Link>
+            <nav className="flex flex-col gap-2.5 md:items-end">
+              <Link href="/faq" className="text-sm text-slate-600 dark:text-slate-400 font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">FAQ</Link>
+              <Link href="/about" className="text-sm text-slate-600 dark:text-slate-400 font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">About</Link>
+              <Link href="/team" className="text-sm text-slate-600 dark:text-slate-400 font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">Group</Link>
+              <Link href="/contact" className="text-sm text-slate-600 dark:text-slate-400 font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">Contact</Link>
             </nav>
           </div>
         </div>

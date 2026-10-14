@@ -51,7 +51,7 @@ export function TeamSection() {
       <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 relative z-10 max-w-7xl mx-auto">
         <SectionHeader
           badge="STI College Cubao • BSIT Capstone"
-          title="Meet The Team"
+          title="Meet The Group"
           subtitle="Building the future of accessible custom PC configuration. An academic capstone project dedicated to eliminating hardware guesswork through innovation."
         />
 

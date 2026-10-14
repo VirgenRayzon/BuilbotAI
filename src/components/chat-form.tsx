@@ -229,7 +229,7 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
                   </Text>
                 </Group>
                 <Text size="xs" c="dimmed" className="text-[10px] sm:text-[11px] leading-tight">
-                  Allows AI to recommend parts outside of our inventory.
+                  Allows AI to recommend parts based on it's knowledge.
                 </Text>
               </Stack>
               <Switch
