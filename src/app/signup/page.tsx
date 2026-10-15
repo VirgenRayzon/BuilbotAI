@@ -201,7 +201,7 @@ export default function SignUpPage() {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center gap-3 bg-slate-50 text-slate-600 dark:bg-[#0c0f14] dark:text-slate-300" role="status">
         <Loader size="sm" color="cyan" />
-        <Text size="sm">Opening your workspace...</Text>
+        <Text size="sm">Verifying your account...</Text>
       </div>
     );
   }

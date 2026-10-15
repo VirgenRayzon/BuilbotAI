@@ -142,6 +142,7 @@ export default function AdminPage() {
                         radius="md"
                         color="cyan"
                         className="w-full"
+                        keepMounted={false}
                     >
                         {/* Horizontal Tab Strip Container with Fluid Touch Scrolling */}
                         <div className="w-full mb-6 border-b border-slate-200 dark:border-white/10 pb-3">

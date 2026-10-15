@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "@/context/theme-provider";
-import { Paper, Text } from "@mantine/core";
+import { Card, Stack, Group, Box, Paper, Text } from "@mantine/core";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
 import { PrebuiltSystemCard } from "@/components/prebuilt-system-card";
 import type { PrebuiltSystem } from "@/lib/types";
@@ -174,13 +174,59 @@ export default function PreBuiltsPage() {
                 />
               </div>
 
-              {loading ? null : filteredAndSortedSystems.length > 0 ? (
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <Card
+                      key={`prebuilt-skeleton-${i}`}
+                      withBorder
+                      radius="lg"
+                      padding={0}
+                      className="flex flex-col justify-between h-full relative overflow-hidden bg-white/85 dark:bg-[#111722] border-slate-200/80 dark:border-white/10 animate-pulse select-none"
+                    >
+                      <Stack gap={0}>
+                        <Group justify="space-between" align="center" wrap="nowrap" className="px-3 pt-3 pb-2">
+                          <div className="h-5 w-16 bg-slate-200 dark:bg-white/10 rounded-sm" />
+                          <div className="h-5 w-20 bg-slate-200/60 dark:bg-white/5 rounded-sm" />
+                        </Group>
+
+                        <Box className="aspect-[4/3] relative w-full overflow-hidden bg-slate-100/80 dark:bg-white/[0.03] border-y border-slate-200/70 dark:border-white/10 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-lg bg-slate-200/60 dark:bg-white/5" />
+                        </Box>
+
+                        <Stack gap={4} className="px-3 pt-3">
+                          <div className="min-h-[2.5rem] flex flex-col justify-center gap-1.5">
+                            <div className="h-4 bg-slate-200 dark:bg-white/10 rounded w-4/5" />
+                            <div className="h-4 bg-slate-200 dark:bg-white/10 rounded w-1/2" />
+                          </div>
+                          <div className="min-h-[2rem] flex flex-col justify-center gap-1.5">
+                            <div className="h-3 bg-slate-100 dark:bg-white/5 rounded w-full" />
+                            <div className="h-3 bg-slate-100 dark:bg-white/5 rounded w-2/3" />
+                          </div>
+                        </Stack>
+                      </Stack>
+
+                      <Stack gap="xs" className="px-3 pt-3 pb-3">
+                        <Group justify="space-between" align="center">
+                          <Stack gap={4}>
+                            <div className="h-2.5 w-14 bg-slate-200/80 dark:bg-white/10 rounded" />
+                            <div className="h-5 w-24 bg-slate-200 dark:bg-white/10 rounded" />
+                          </Stack>
+                          <div className="h-7 w-7 rounded-md bg-slate-200/60 dark:bg-white/5" />
+                        </Group>
+                        <div className="h-9 w-full rounded-md bg-slate-200 dark:bg-white/10" />
+                      </Stack>
+                    </Card>
+                  ))}
+                </div>
+              ) : filteredAndSortedSystems.length > 0 ? (
                 view === "grid" ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-                    {filteredAndSortedSystems.map((system) => (
+                    {filteredAndSortedSystems.map((system, index) => (
                       <PrebuiltSystemCard
                         key={system.id}
                         system={system}
+                        priority={index < 4}
                         expanded={showAllDetails}
                         onToggle={() => setShowAllDetails(!showAllDetails)}
                       />

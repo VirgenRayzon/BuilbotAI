@@ -1,5 +1,5 @@
 import React from "react";
-import { BrainCircuit, RotateCcw, X } from "lucide-react";
+import { BrainCircuit, Maximize2, Minimize2, RotateCcw, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActionIcon, Badge, Text } from "@mantine/core";
 
@@ -7,11 +7,21 @@ interface ChatHeaderProps {
     isDark: boolean;
     isAiKillSwitch: boolean;
     buildPartCount: number;
+    isExpanded?: boolean;
+    onToggleExpand?: () => void;
     onClear: () => void;
     onClose: () => void;
 }
 
-export function ChatHeader({ isDark, isAiKillSwitch, buildPartCount, onClear, onClose }: ChatHeaderProps) {
+export function ChatHeader({
+    isDark,
+    isAiKillSwitch,
+    buildPartCount,
+    isExpanded = false,
+    onToggleExpand,
+    onClear,
+    onClose,
+}: ChatHeaderProps) {
     return (
         <div className={cn("p-3 flex items-center justify-between flex-none border-b", isDark ? "border-white/10" : "border-slate-200")}>
             <div className="flex items-center gap-2.5">
@@ -48,6 +58,18 @@ export function ChatHeader({ isDark, isAiKillSwitch, buildPartCount, onClear, on
                     aria-label="Clear chat history"
                     title="Clear chat history"
                 ><RotateCcw size={16} /></ActionIcon>
+                {onToggleExpand && (
+                    <ActionIcon
+                        variant="subtle"
+                        color="gray"
+                        onClick={onToggleExpand}
+                        aria-label={isExpanded ? "Collapse chat" : "Expand chat"}
+                        title={isExpanded ? "Collapse chat" : "Expand chat"}
+                        className="hidden sm:inline-flex"
+                    >
+                        {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                    </ActionIcon>
+                )}
                 <ActionIcon
                     variant="subtle"
                     color="gray"

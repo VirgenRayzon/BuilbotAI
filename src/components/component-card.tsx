@@ -134,7 +134,6 @@ export function ComponentCard({ name, component, icon: Icon }: ComponentCardProp
           src={imgSrc}
           alt={component.description || component.model || name}
           fill
-          unoptimized
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
           className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
           data-ai-hint={component.imageHint}

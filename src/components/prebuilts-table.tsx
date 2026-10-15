@@ -251,7 +251,6 @@ function PrebuiltTableRow({
                 src={getOptimizedStorageUrl(system.imageUrl, shouldCorruptImages) || "/placeholder-system.png"}
                 alt={system.name}
                 fill
-                unoptimized
                 sizes="64px"
                 className="object-cover"
               />

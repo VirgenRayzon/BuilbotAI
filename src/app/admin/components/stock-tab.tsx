@@ -32,6 +32,8 @@ import { AddPartDialog } from '@/components/add-part-dialog';
 import { InventoryPartCard } from '@/components/inventory-part-card';
 import { InventoryTable } from '@/components/inventory-table';
 import { PaginationControls } from "@/components/pagination-controls";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import type { Part, UserProfile } from '@/lib/types';
 import { AddPartFormSchema } from '@/hooks/use-part-form';
 
@@ -485,11 +487,56 @@ export function StockTab({
 
             {activeView === 'grid' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
-                    {partsLoading ? null : (
-                        currentParts.map((part) => (
+                    {partsLoading ? (
+                        Array.from({ length: 8 }).map((_, i) => (
+                            <Card
+                                key={`stock-skeleton-${i}`}
+                                className="flex flex-col justify-between overflow-hidden relative border border-border/80 bg-white/80 dark:bg-card/40 animate-pulse select-none h-full"
+                            >
+                                <div className="p-2 md:p-3.5 flex flex-col justify-between h-full space-y-2 md:space-y-3">
+                                    <div className="space-y-1.5 md:space-y-2">
+                                        <div className="flex justify-between items-start gap-1">
+                                            <div className="min-w-0 flex-1 space-y-1">
+                                                <div className="h-2.5 w-12 bg-cyan-500/20 rounded" />
+                                                <div className="h-3.5 w-3/4 bg-slate-200 dark:bg-white/10 rounded" />
+                                                <div className="h-2.5 w-1/3 bg-slate-200/60 dark:bg-white/5 rounded" />
+                                            </div>
+                                            <div className="h-7 w-7 rounded bg-slate-200/40 dark:bg-white/5 shrink-0" />
+                                        </div>
+
+                                        <div className="aspect-square relative -mx-2 md:-mx-3.5 w-auto overflow-hidden border-y border-slate-200 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.03] flex items-center justify-center p-2">
+                                            <PackageCheck className="h-10 w-10 text-slate-300/70 dark:text-white/10" />
+                                        </div>
+
+                                        <div className="flex justify-between items-center gap-2 pt-0.5">
+                                            <div className="h-5 md:h-6 w-20 md:w-24 bg-slate-200 dark:bg-white/10 rounded" />
+                                            <div className="h-4 w-16 bg-slate-200/60 dark:bg-white/5 rounded-full" />
+                                        </div>
+
+                                        <Separator className="bg-border/40" />
+
+                                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 md:gap-x-3 md:gap-y-1.5 py-0.5">
+                                            {Array.from({ length: 4 }).map((_, s) => (
+                                                <div key={s} className="space-y-1">
+                                                    <div className="h-2 w-10 bg-slate-200/50 dark:bg-white/5 rounded" />
+                                                    <div className="h-3 w-16 bg-slate-200 dark:bg-white/10 rounded" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-auto p-2 md:p-3 pt-0">
+                                        <div className="w-full h-8 md:h-9 rounded-md bg-slate-200 dark:bg-white/10" />
+                                    </div>
+                                </div>
+                            </Card>
+                        ))
+                    ) : (
+                        currentParts.map((part, index) => (
                             <InventoryPartCard
                                 key={part.id}
                                 part={part}
+                                priority={index < 4}
                                 onDelete={onDeletePart}
                                 onArchive={onArchivePart}
                                 onUpdateStock={onUpdatePartStock}

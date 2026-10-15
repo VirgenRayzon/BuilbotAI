@@ -20,13 +20,13 @@ export function OptimizedImage({
     sizes,
     ...props 
 }: OptimizedImageProps) {
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(!priority);
     const [error, setError] = useState(false);
 
-    // Fail-safe: if image hasn't loaded in 5 seconds, clear the loading state
+    // Fail-safe: if image hasn't loaded in 3 seconds, clear the loading state
     useEffect(() => {
         if (isLoading && src) {
-            const timer = setTimeout(() => setIsLoading(false), 5000);
+            const timer = setTimeout(() => setIsLoading(false), 3000);
             return () => clearTimeout(timer);
         }
     }, [isLoading, src]);
@@ -50,9 +50,9 @@ export function OptimizedImage({
             !fill && "w-full h-full",
             className
         )}>
-            {/* Loading Placeholder Overlay */}
-            {isLoading && !error && (
-                <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+            {/* Loading Placeholder Overlay (only displayed when non-priority and loading) */}
+            {isLoading && !priority && !error && (
+                <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
                     <div className="w-full h-full flex items-center justify-center bg-white/[0.02] backdrop-blur-[2px] animate-pulse">
                         <div className="w-1/4 h-1/4 opacity-10">
                             {fallbackIcon || <ImageIcon className="w-full h-full" />}
@@ -79,8 +79,8 @@ export function OptimizedImage({
                 unoptimized={unoptimized}
                 sizes={sizes}
                 className={cn(
-                    "transition-all duration-700 ease-in-out",
-                    isLoading ? "scale-105 blur-md opacity-0" : "scale-100 blur-0 opacity-100",
+                    "transition-opacity duration-300 ease-out",
+                    priority ? "opacity-100" : (isLoading ? "opacity-80" : "opacity-100"),
                     className
                 )}
                 onLoad={() => setIsLoading(false)}

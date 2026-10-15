@@ -104,7 +104,6 @@ export function InventoryTable({
                   alt={part.name}
                   width={40}
                   height={40}
-                  unoptimized
                   className="rounded-sm object-cover"
                 />
                 <AddPartDialog

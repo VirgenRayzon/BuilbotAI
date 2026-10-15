@@ -69,6 +69,7 @@ export function PrebuiltShowcase() {
                                         >
                                             <PrebuiltSystemCard
                                                 system={system}
+                                                priority={index < 2}
                                                 expanded={showAllSpecs}
                                                 onToggle={() => setShowAllSpecs(!showAllSpecs)}
                                                 showReserveButton={false}

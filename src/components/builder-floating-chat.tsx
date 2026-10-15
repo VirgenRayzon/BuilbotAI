@@ -14,6 +14,7 @@ import { ChatInputBar } from "./chat/chat-input-bar";
 export function BuilderFloatingChat({ build, onAddPart }: BuilderFloatingChatProps) {
     const { theme } = useTheme();
     const isDark = theme === "dark";
+    const [isExpanded, setIsExpanded] = React.useState(false);
 
     const {
         isOpen,
@@ -39,6 +40,17 @@ export function BuilderFloatingChat({ build, onAddPart }: BuilderFloatingChatPro
         stop,
     } = useFloatingChat(build);
 
+    React.useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                toggleOpen();
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen, toggleOpen]);
+
     return (
         <div className={cn(
             "fixed right-4 sm:right-6 flex flex-col items-end gap-3 sm:gap-4 max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-3rem)] transition-all duration-300",
@@ -52,15 +64,33 @@ export function BuilderFloatingChat({ build, onAddPart }: BuilderFloatingChatPro
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.92, y: 20 }}
                         transition={{ duration: 0.22, ease: "easeOut" }}
-                        className="w-[calc(100vw-2rem)] sm:w-[420px] md:w-[440px]"
+                        className={cn(
+                            "w-[calc(100vw-2rem)] transition-[width] duration-300 ease-out",
+                            isExpanded
+                                ? "sm:w-[50vw] sm:min-w-[480px] sm:max-w-[840px]"
+                                : "sm:w-[420px] md:w-[440px]"
+                        )}
                     >
-                        <Paper withBorder radius="lg" shadow="xl" className="h-[65vh] sm:h-[540px] max-h-[calc(100dvh-7.5rem)] min-h-[360px] overflow-hidden" style={{ display: 'flex', flexDirection: 'column', backgroundColor: isDark ? '#111722' : '#ffffff' }}>
+                        <Paper
+                            withBorder
+                            radius="lg"
+                            shadow="xl"
+                            className={cn(
+                                "overflow-hidden transition-[height] duration-300 ease-out flex flex-col",
+                                isExpanded
+                                    ? "h-[80vh] max-h-[calc(100dvh-6rem)] min-h-[500px]"
+                                    : "h-[65vh] sm:h-[540px] max-h-[calc(100dvh-7.5rem)] min-h-[360px]"
+                            )}
+                            style={{ display: 'flex', flexDirection: 'column', backgroundColor: isDark ? '#111722' : '#ffffff' }}
+                        >
 
                             {/* Header */}
                             <ChatHeader
                                 isDark={isDark}
                                 isAiKillSwitch={isAiKillSwitch}
                                 buildPartCount={buildPartCount}
+                                isExpanded={isExpanded}
+                                onToggleExpand={() => setIsExpanded(prev => !prev)}
                                 onClear={handleClearChat}
                                 onClose={toggleOpen}
                             />
@@ -74,6 +104,7 @@ export function BuilderFloatingChat({ build, onAddPart }: BuilderFloatingChatPro
                                     elapsedTime={elapsedTime}
                                     timerActive={timerActive}
                                     isDark={isDark}
+                                    isExpanded={isExpanded}
                                     telemetryState={telemetryState}
                                     addedPartIds={addedPartIds}
                                     hasBuildParts={hasBuildParts}

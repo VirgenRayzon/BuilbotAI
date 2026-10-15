@@ -47,6 +47,7 @@ import { useSiteSettings } from "@/context/site-settings-context";
 
 interface PrebuiltSystemCardProps {
   system: PrebuiltSystem;
+  priority?: boolean;
   expanded?: boolean;
   onToggle?: () => void;
   showReserveButton?: boolean;
@@ -55,6 +56,7 @@ interface PrebuiltSystemCardProps {
 
 export function PrebuiltSystemCard({
   system,
+  priority = false,
   expanded = false,
   onToggle,
   showReserveButton = true,
@@ -353,7 +355,7 @@ export function PrebuiltSystemCard({
               src={getOptimizedStorageUrl(system.imageUrl, shouldCorruptImages) || "/placeholder-system.png"}
               alt={system.name}
               fill
-              unoptimized
+              priority={priority}
               sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
               className="object-contain p-2"
             />

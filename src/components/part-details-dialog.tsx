@@ -162,7 +162,6 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
                                 src={getOptimizedStorageUrl(allImages[currentImageIndex] || part.imageUrl) || "/placeholder-part.png"}
                                 alt={`${part.name} - Photo ${currentImageIndex + 1}`}
                                 fill
-                                unoptimized
                                 className="object-contain p-6 transition-all duration-300"
                                 sizes="(max-width: 768px) 100vw, 380px"
                             />
@@ -295,7 +294,6 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
                                                     src={getOptimizedStorageUrl(image) || "/placeholder-part.png"}
                                                     alt={`${part.name} thumbnail ${index + 1}`}
                                                     fill
-                                                    unoptimized
                                                     sizes="56px"
                                                     className="object-contain p-1"
                                                 />
@@ -666,7 +664,6 @@ export function PartDetailsDialog({ part, children, isAdded, onToggle, isDisable
                             alt={`${part.name} full-size photo ${currentImageIndex + 1}`}
                             fill
                             priority={currentImageIndex === 0}
-                            unoptimized
                             sizes="(max-width: 1024px) 94vw, 1200px"
                             className="object-contain"
                         />

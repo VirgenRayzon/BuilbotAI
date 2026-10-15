@@ -12,6 +12,7 @@ import { PartDetailsDialog } from "./part-details-dialog";
 
 interface PartCardProps {
     part: Part;
+    priority?: boolean;
     onToggleBuild: (part: Part) => void;
     isSelected: boolean;
     compatibility?: { compatible: boolean; message: string };
@@ -20,6 +21,7 @@ interface PartCardProps {
 
 export function PartCard({
     part,
+    priority = false,
     onToggleBuild,
     isSelected,
     compatibility,
@@ -121,7 +123,7 @@ export function PartCard({
                         src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || "/placeholder-part.png"}
                         alt={part.name}
                         fill
-                        unoptimized
+                        priority={priority}
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         className="object-contain p-2 transition-transform duration-500 group-hover:scale-105"
                     />

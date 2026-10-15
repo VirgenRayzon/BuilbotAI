@@ -18,6 +18,7 @@ interface ChatMessageListProps {
     elapsedTime: number;
     timerActive: boolean;
     isDark: boolean;
+    isExpanded?: boolean;
     telemetryState: Record<string, TelemetryInfo>;
     addedPartIds: Record<string, boolean>;
     hasBuildParts: boolean;
@@ -32,6 +33,7 @@ export function ChatMessageList({
     status,
     isLoading,
     isDark,
+    isExpanded = false,
     telemetryState,
     addedPartIds,
     hasBuildParts,
@@ -137,6 +139,7 @@ export function ChatMessageList({
                                     category={group.category}
                                     partsList={group.parts}
                                     isDark={isDark}
+                                    isExpanded={isExpanded}
                                     addedPartIds={addedPartIds}
                                     hasBuildParts={hasBuildParts}
                                     build={build}

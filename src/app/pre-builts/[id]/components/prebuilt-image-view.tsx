@@ -75,7 +75,6 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                     alt={`${systemName} photo ${currentImageIndex + 1}`}
                     fill
                     priority={currentImageIndex === 0}
-                    unoptimized
                     sizes="(max-width: 768px) calc(100vw - 32px), 50vw"
                     className="object-contain p-3 sm:p-5"
                 />
@@ -225,7 +224,6 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                             alt={`${systemName} full-size photo ${currentImageIndex + 1}`}
                             fill
                             priority={currentImageIndex === 0}
-                            unoptimized
                             sizes="(max-width: 1024px) 94vw, 1200px"
                             className="object-contain"
                         />
