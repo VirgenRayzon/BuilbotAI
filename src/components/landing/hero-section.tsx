@@ -24,8 +24,10 @@ import {
   Activity,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { CanvasText } from '@/components/ui/canvas-text';
+import heroImage from '@/assets/landing/hero-custom.webp';
 
 interface HeroSectionProps {
   isDark: boolean;
@@ -67,10 +69,13 @@ export function HeroSection({ isDark }: HeroSectionProps) {
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Full Screen Background Image */}
       <div className="absolute inset-0 z-0">
-        <img
-          src="/hero-custom.webp"
+        <Image
+          src={heroImage}
           alt="BuildbotAI Custom PC Rig"
-          className="w-full h-full object-cover opacity-70"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover opacity-70"
         />
         {/* Gradients for Content Legibility */}
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-transparent" />

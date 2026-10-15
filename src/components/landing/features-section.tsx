@@ -1,11 +1,15 @@
 "use client";
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { SectionHeader } from '@/components/landing/section-header';
 import { FeatureShowcase } from '@/components/landing/feature-showcase';
 import { Layers, Zap, Sparkles, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { AnimatedBotIcon } from '@/components/ui/animated-icons';
 import { cn } from '@/lib/utils';
+import bottleneckImage from '@/assets/landing/feature-1.webp';
+import critiqueImage from '@/assets/landing/feature-2.webp';
+import generationImage from '@/assets/landing/feature-3.webp';
 
 interface FeaturesSectionProps {
   isDark: boolean;
@@ -27,10 +31,12 @@ export function FeaturesSection({ isDark }: FeaturesSectionProps) {
           description="Shift between 1080p, 1440p, and 4K workloads. BuildbotAI analyzes the performance tier of your CPU vs your GPU to warn you if components will choke its performance."
           visual={
             <div className="relative w-full h-full overflow-hidden group">
-              <img
-                src="/feature-1.webp"
+              <Image
+                src={bottleneckImage}
                 alt="Bottleneck Analysis"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                fill
+                sizes="(max-width: 1023px) 100vw, 50vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
               <div className="absolute inset-0 flex flex-col justify-end p-8 gap-4">
@@ -83,10 +89,12 @@ export function FeaturesSection({ isDark }: FeaturesSectionProps) {
           description="Not sure about your components? Buildbot Critique analyzes your entire hardware selection for value, thermal efficiency, and compatibility, providing professional feedback on every choice."
           visual={
             <div className="relative w-full h-full overflow-hidden group">
-              <img
-                src="/feature-2.webp"
+              <Image
+                src={critiqueImage}
                 alt="Buildbot Build Critique"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                fill
+                sizes="(max-width: 1023px) 100vw, 50vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-l from-background/90 via-background/20 to-transparent" />
               <div className="absolute inset-0 flex items-center justify-end p-8">
@@ -105,7 +113,7 @@ export function FeaturesSection({ isDark }: FeaturesSectionProps) {
                     "text-sm leading-relaxed font-body italic",
                     isDark ? "text-slate-200" : "text-slate-700"
                   )}>
-                    "Scan Complete: The Ryzen 7 7800X3D choice is optimal. However, your PSU is 100w shy of recommended for a 4090 build. Consider a 850w unit..."
+                    &ldquo;Scan Complete: The Ryzen 7 7800X3D choice is optimal. However, your PSU is 100w shy of recommended for a 4090 build. Consider a 850w unit...&rdquo;
                   </p>
                 </div>
               </div>
@@ -119,10 +127,12 @@ export function FeaturesSection({ isDark }: FeaturesSectionProps) {
           description="Tell Buildbot your budget, target resolution, and performance goals. Within seconds, Buildbot builds a complete, perfectly matched PC build from our live inventory."
           visual={
             <div className="relative w-full h-full overflow-hidden group">
-              <img
-                src="/feature-3.webp"
+              <Image
+                src={generationImage}
                 alt="AI Build Generation"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                fill
+                sizes="(max-width: 1023px) 100vw, 50vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-gradient-to-l from-background/80 via-transparent to-transparent" />
               <div className="absolute inset-0 flex flex-col justify-center p-8 gap-3 items-end">
