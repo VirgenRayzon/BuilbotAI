@@ -324,6 +324,29 @@ export function useBuilderLogic(allParts: Part[]) {
 
         setBuild(newBuild);
 
+        if (favorite.loadContext?.type === 'prebuilt') {
+            const unavailableParts = Array.from(new Set([
+                ...favorite.loadContext.unavailableParts,
+                ...skipped,
+                ...outOfStock,
+            ]));
+            const loadedCount = favorite.parts.length - skipped.length - outOfStock.length;
+
+            if (unavailableParts.length > 0) {
+                toast({
+                    variant: 'warning',
+                    title: `Pre-built loaded with ${unavailableParts.length} missing part${unavailableParts.length === 1 ? '' : 's'}`,
+                    description: `${loadedCount} available component${loadedCount === 1 ? '' : 's'} loaded. Add ${unavailableParts.join(', ')} to complete ${favorite.loadContext.systemName}.`,
+                });
+            } else {
+                toast({
+                    title: 'Pre-built loaded into PC Builder',
+                    description: `${loadedCount} components from ${favorite.loadContext.systemName} are ready to customize.`,
+                });
+            }
+            return;
+        }
+
         if (skipped.length > 0) {
             toast({
                 variant: 'destructive',

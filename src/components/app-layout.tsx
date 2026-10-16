@@ -6,10 +6,9 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { NeutralPageLoader } from "@/components/neutral-page-loader";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { MaintenanceScreen } from "@/components/maintenance-screen";
-import { useDoc, useFirestore } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useSiteSettings } from "@/context/site-settings-context";
 import { cn } from "@/lib/utils";
 
 import { Button, Paper, Text, Title } from "@mantine/core";
@@ -19,19 +18,11 @@ import { SignOutTransitionContext } from "@/context/sign-out-transition";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { loading, status, authUser, profile } = useUserProfile();
-  const firestore = useFirestore();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [signOutStartedAt, setSignOutStartedAt] = useState<number | null>(null);
 
-  // Fetch Site Settings (Kill Switch)
-  const settingsDocRef = useMemo(() => {
-    if (firestore) return doc(firestore, 'siteSettings', 'main');
-    return null;
-  }, [firestore]);
-
-  const { data: settings } = useDoc<any>(settingsDocRef);
-  const isMaintenanceMode = settings?.isMaintenanceMode || false;
+  const { isMaintenanceMode } = useSiteSettings();
   const isSuperAdmin = profile?.isSuperAdmin || false;
   const isManager = profile?.isManager || false;
   const isAdmin = isSuperAdmin || isManager;

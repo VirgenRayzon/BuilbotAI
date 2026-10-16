@@ -182,3 +182,141 @@ test('delayed staff profile stays on neutral verification UI', async ({ page }) 
   expect(delayedRequests).toBeGreaterThan(0);
   expect(await page.evaluate(() => (window as any).__customerNavSeen)).toBe(false);
 });
+
+test('advisor loads on first visit and keeps a pending job across client navigation', async ({ page }) => {
+  test.skip(!credentials.user.email || !credentials.user.password, 'Set E2E_USER_* in .env');
+  await signIn(page, 'user');
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  let requests = 0;
+  let releaseResponse: (() => void) | undefined;
+  await page.route('**/api/ai/build-advisor/recommendations', async route => {
+    requests++;
+    await new Promise<void>(resolve => { releaseResponse = resolve; });
+    await route.fulfill({ status: 400, json: { error: 'Performance regression test completed.' } }).catch(() => {});
+  });
+  try {
+    await page.locator('header nav a[href="/ai-build-advisor"]').click();
+    await expect(page.getByRole('textbox', { name: 'Intended Use', exact: true })).toBeVisible();
+    await page.getByRole('textbox', { name: 'Intended Use', exact: true }).click();
+    await page.getByRole('option', { name: 'Gaming', exact: true }).click();
+    await page.getByRole('textbox', { name: 'Gaming priority', exact: true }).click();
+    await page.getByRole('option', { name: 'Balanced 1440p gaming', exact: true }).click();
+    await page.getByLabel('Budget', { exact: true }).fill('50000');
+    await page.getByRole('button', { name: 'Get Recommendations', exact: true }).click();
+    await expect.poll(() => requests).toBe(1);
+    await expect(page.getByRole('button', { name: 'Stop Generation' })).toBeVisible();
+    await page.locator('header nav a[href="/builder"]').click();
+    await expect(page).toHaveURL(/\/builder(?:\?|$)/);
+    await page.locator('header nav a[href="/ai-build-advisor"]').click();
+    await expect(page.getByRole('button', { name: 'Stop Generation' })).toBeVisible();
+    expect(requests).toBe(1);
+    await page.getByRole('button', { name: 'Stop Generation' }).click();
+    await expect(page.getByRole('button', { name: 'Get Recommendations', exact: true })).toBeVisible();
+    expect(errors).toEqual([]);
+  } finally {
+    releaseResponse?.();
+  }
+});
+
+for (const role of ['manager', 'superAdmin'] as const) {
+  test(`${role} sign-out removes protected access without listener errors`, async ({ page }) => {
+    test.skip(!credentials[role].email || !credentials[role].password || !credentials[role].key, 'Set E2E staff credentials in .env');
+    await signIn(page, role);
+    const errors: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.getByRole('button', { name: 'User account menu' }).click();
+    await page.getByRole('menuitem', { name: 'Sign Out' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Sign Out' }).click();
+    await expect(page).toHaveURL(/\/system-access(?:\?|$)/);
+    await page.goto(`${baseURL}/admin`);
+    await expect(page).toHaveURL(/\/system-access(?:\?|$)/);
+    expect(errors).toEqual([]);
+  });
+}
+
+test('builder details, analyzer and chat work after loading on demand', async ({ page }) => {
+  test.skip(!credentials.user.email || !credentials.user.password, 'Set E2E_USER_* in .env');
+  await signIn(page, 'user');
+  const firstImage = page.locator('main img').first();
+  await expect(firstImage).toBeVisible({ timeout: 30000 });
+  const name = await firstImage.getAttribute('alt');
+  await firstImage.click();
+  const details = page.getByRole('dialog');
+  await expect(details.getByRole('heading', { name: name!, exact: true })).toBeVisible();
+  await details.getByRole('button', { name: 'Close product details', exact: true }).click();
+  await expect(details).toHaveCount(0);
+  // Reopening uses the loaded dialog and keeps its gallery functional.
+  await firstImage.click();
+  await expect(details.getByRole('heading', { name: name!, exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.getByText('Analyzer', { exact: true }).first().click();
+  await expect(page.getByText('Select a CPU and GPU to calculate real-time FPS estimates.', { exact: true }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Open Buildbot chat', exact: true }).click();
+  const message = page.getByRole('textbox', { name: 'Message Buildbot AI', exact: true });
+  await expect(message).toBeVisible();
+  await message.fill('Keep this draft while the chat is closed');
+  await page.getByRole('button', { name: 'Close Buildbot chat', exact: true }).click();
+  await page.getByRole('button', { name: 'Open Buildbot chat', exact: true }).click();
+  await expect(message).toHaveValue('Keep this draft while the chat is closed');
+});
+
+test('incomplete pre-built explains missing parts after loading into builder', async ({ page }) => {
+  test.skip(!credentials.user.email || !credentials.user.password, 'Set E2E_USER_* in .env');
+  await signIn(page, 'user');
+  await page.goto(`${baseURL}/pre-builts`);
+
+  const incompleteCard = page.locator('a').filter({ hasText: 'Missing Parts' }).first();
+  await expect(incompleteCard).toBeVisible({ timeout: 30000 });
+  await incompleteCard.getByRole('button', { name: 'Customize Pre-built', exact: true }).click();
+
+  await expect(page).toHaveURL(/\/builder(?:\?|$)/);
+  await expect(page.getByText(/Pre-built loaded with \d+ missing part/)).toBeVisible({ timeout: 30000 });
+  await expect(page.getByLabel('Notifications (F8)').getByText(/available components? loaded\. Add .+ to complete/i).first()).toBeVisible();
+});
+
+test('admin editors and all permitted tabs remain available after code splitting', async ({ page }) => {
+  test.skip(!credentials.superAdmin.email || !credentials.superAdmin.password || !credentials.superAdmin.key, 'Set E2E_SUPER_ADMIN_* in .env');
+  await signIn(page, 'superAdmin');
+  const image = page.locator('main img').first();
+  await expect(image).toBeVisible({ timeout: 30000 });
+  const name = await image.getAttribute('alt');
+  await image.click();
+  let dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('heading', { name: 'Edit Component', exact: true })).toBeVisible();
+  await expect(dialog.getByRole('textbox', { name: 'Part Name', exact: true })).toHaveValue(name!);
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await page.getByRole('button', { name: 'Add Part', exact: true }).click();
+  dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('heading', { name: 'Add New Component', exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+  for (const tab of ['Manage Prebuilts', 'Reservations', 'Sales & Analytics', 'Archive', 'Audit Logs', 'Management Portal', 'AI', 'Site Content']) {
+    await page.getByRole('tab', { name: tab, exact: tab !== 'AI' }).first().click();
+    const panel = page.getByRole('tabpanel').first();
+    await expect(panel).toBeVisible();
+    await expect(panel).not.toContainText('Loading section...');
+    await expect(panel.locator('button:visible, input:visible, table:visible, [role="combobox"]:visible').first()).toBeVisible({ timeout: 20000 });
+  }
+});
+
+for (const width of [390, 1440]) {
+  for (const role of ['user', 'superAdmin'] as const) {
+    test(`${role} inventory images match the visible grid at ${width}px`, async ({ page }) => {
+      test.skip(!credentials[role].email || !credentials[role].password, 'Set E2E credentials in .env');
+      await page.setViewportSize({ width, height: 900 });
+      await signIn(page, role);
+      const images = page.locator('main img');
+      await expect(images.first()).toBeVisible({ timeout: 30000 });
+      await expect.poll(() => images.first().evaluate(element => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+      await expect(page.locator('main img[fetchpriority="high"]')).toHaveCount(width < 640 ? 1 : 4);
+      await expect(images.first()).not.toHaveAttribute('loading', 'lazy');
+      await expect(images.nth(width < 640 ? 1 : 4)).toHaveAttribute('loading', 'lazy');
+      if (width === 1440) {
+        const size = await images.first().evaluate(element => ({ natural: (element as HTMLImageElement).naturalWidth, rendered: element.getBoundingClientRect().width }));
+        expect(size.natural).toBeGreaterThanOrEqual(size.rendered);
+        expect(size.natural).toBeLessThan(size.rendered * 2);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    });
+  }
+}

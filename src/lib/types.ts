@@ -211,4 +211,9 @@ export type FavoriteBuild = {
   totalPrice: number;
   source: 'builder' | 'advisor';
   createdAt: any; // Firestore Timestamp
+  loadContext?: {
+    type: 'prebuilt';
+    systemName: string;
+    unavailableParts: string[];
+  };
 };

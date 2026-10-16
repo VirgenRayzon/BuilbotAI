@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import {
     Package, Monitor,
     Archive, Trash2, BarChart3, ShoppingBag,
@@ -22,17 +23,18 @@ import { useSiteSettings } from '@/context/site-settings-context';
 
 // Sub-components
 import { StockTab } from './components/stock-tab';
-import { PrebuiltTab } from './components/prebuilt-tab';
-import { ReservationsTab } from './components/reservations-tab';
-import { SalesTab } from './components/sales-tab';
-import { ArchiveTab } from './components/archive-tab';
 import { AdminTabHeader } from './components/admin-tab-header';
 import { useSalesActions } from './hooks/use-sales-actions';
-import { SuperAdminSettings } from '@/components/super-admin-settings';
-import { AuditLogsSection } from '@/app/profile/components/audit-logs-section';
-import { AiModelSettings } from '@/components/ai-model-settings';
-import { AiSystemPromptsSettings } from '@/components/ai-system-prompts-settings';
-import { AboutManagement } from '@/components/about-management';
+const PanelLoading = () => <div role="status" className="min-h-40 flex items-center justify-center text-slate-600 dark:text-slate-400">Loading section...</div>;
+const PrebuiltTab = dynamic(() => import('./components/prebuilt-tab').then(module => module.PrebuiltTab), { loading: PanelLoading });
+const ReservationsTab = dynamic(() => import('./components/reservations-tab').then(module => module.ReservationsTab), { loading: PanelLoading });
+const SalesTab = dynamic(() => import('./components/sales-tab').then(module => module.SalesTab), { loading: PanelLoading });
+const ArchiveTab = dynamic(() => import('./components/archive-tab').then(module => module.ArchiveTab), { loading: PanelLoading });
+const SuperAdminSettings = dynamic(() => import('@/components/super-admin-settings').then(module => module.SuperAdminSettings), { loading: PanelLoading });
+const AuditLogsSection = dynamic(() => import('@/app/profile/components/audit-logs-section').then(module => module.AuditLogsSection), { loading: PanelLoading });
+const AiModelSettings = dynamic(() => import('@/components/ai-model-settings').then(module => module.AiModelSettings), { loading: PanelLoading });
+const AiSystemPromptsSettings = dynamic(() => import('@/components/ai-system-prompts-settings').then(module => module.AiSystemPromptsSettings), { loading: PanelLoading });
+const AboutManagement = dynamic(() => import('@/components/about-management').then(module => module.AboutManagement), { loading: PanelLoading });
 
 /**
  * Admin Dashboard - Orchestrator Component
@@ -49,7 +51,7 @@ export default function AdminPage() {
     const [aiSubTab, setAiSubTab] = useState<'intelligence' | 'prompts'>('intelligence');
 
     // Relocated data hooks
-    const { auditLogs, auditLogsLoading } = useAuditLogs();
+    const { auditLogs, auditLogsLoading } = useAuditLogs(currentTab === 'audit');
     const { featureModelRouting, aiModelProvider } = useSiteSettings();
     const routingValues = featureModelRouting ? Object.values(featureModelRouting) : [aiModelProvider];
     const allVertex = routingValues.every((v) => v === 'finetuned');

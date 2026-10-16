@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { Trash2, Archive, RotateCcw, Plus } from "lucide-react";
 import { formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
 import type { Part } from "@/lib/types";
@@ -99,13 +99,15 @@ export function InventoryTable({
             </TableCell>
             <TableCell className="font-medium">
               <div className="flex items-center gap-3">
-                <Image
-                  src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || "/placeholder-part.png"}
-                  alt={part.name}
-                  width={40}
-                  height={40}
-                  className="rounded-sm object-cover"
-                />
+                <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-sm">
+                  <OptimizedImage
+                    src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || "/placeholder-part.png"}
+                    alt={part.name}
+                    fill
+                    sizes="40px"
+                    className="object-cover"
+                  />
+                </div>
                 <AddPartDialog
                   initialData={part}
                   onSave={(data) => onUpdatePart(part.id, part.category, data)}

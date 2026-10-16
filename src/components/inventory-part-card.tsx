@@ -34,6 +34,7 @@ import React from 'react';
 interface InventoryPartCardProps {
     part: Part;
     priority?: boolean;
+    imageSizes?: string;
     onDelete: (partId: string, category: Part['category']) => void;
     onArchive: (partId: string, category: Part['category'], isArchived?: boolean) => void;
     onUpdateStock: (partId: string, category: Part['category'], newStock: number) => void;
@@ -64,6 +65,7 @@ const categorySpecsMap: Record<string, string[]> = {
 export function InventoryPartCard({
     part,
     priority = false,
+    imageSizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
     onDelete,
     onArchive,
     onUpdateStock,
@@ -154,12 +156,12 @@ export function InventoryPartCard({
 
                         {isSelectionMode ? (
                             <div className={cn("aspect-square relative -mx-2 md:-mx-3.5 w-auto overflow-hidden border-y p-2 cursor-pointer", isOutOfStock ? "bg-transparent border-yellow-500/30 dark:border-yellow-400/20" : "bg-white border-slate-200")}>
-                                <OptimizedImage src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || '/placeholder-part.png'} alt={part.name} fill priority={priority} sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" className="object-contain transition-transform duration-500" />
+                                <OptimizedImage src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || '/placeholder-part.png'} alt={part.name} fill priority={priority} sizes={imageSizes} className="object-contain transition-transform duration-500" />
                             </div>
                         ) : (
                             <AddPartDialog initialData={part} onSave={(data) => onUpdatePart(part.id, part.category, data)}>
                                 <div className={cn("aspect-square relative -mx-2 md:-mx-3.5 w-auto overflow-hidden border-y p-2 cursor-pointer", isOutOfStock ? "bg-transparent border-yellow-500/30 dark:border-yellow-400/20" : "bg-white border-slate-200")}>
-                                    <OptimizedImage src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || '/placeholder-part.png'} alt={part.name} fill priority={priority} sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" className="object-contain transition-transform duration-500" />
+                                    <OptimizedImage src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || '/placeholder-part.png'} alt={part.name} fill priority={priority} sizes={imageSizes} className="object-contain transition-transform duration-500" />
                                 </div>
                             </AddPartDialog>
                         )}

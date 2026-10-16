@@ -6,7 +6,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import {
   Card,
   Text,
@@ -130,7 +130,7 @@ export function ComponentCard({ name, component, icon: Icon }: ComponentCardProp
           "transition-colors duration-300 group-hover:bg-slate-100 dark:group-hover:bg-white/[0.05]"
         )}
       >
-        <Image
+        <OptimizedImage
           src={imgSrc}
           alt={component.description || component.model || name}
           fill

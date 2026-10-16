@@ -79,7 +79,7 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
         return null;
     }, [firestore]);
 
-    const { data: settings } = useDoc<any>(settingsDocRef);
+    const { data: settings } = useDoc<SiteSettings>(settingsDocRef);
     
     const isMaintenanceMode = settings?.isMaintenanceMode || false;
     const isStorageKillSwitch = settings?.isStorageKillSwitch || false;
@@ -106,7 +106,7 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
     const shouldCorruptImages = isStorageKillSwitch && !profile?.isSuperAdmin;
 
     const value = useMemo(() => ({
-        settings: settings as SiteSettings,
+        settings,
         isMaintenanceMode,
         isStorageKillSwitch,
         shouldCorruptImages,

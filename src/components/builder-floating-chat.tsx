@@ -11,7 +11,7 @@ import { ChatMessageList } from "./chat/chat-message-list";
 import { ChatPresetChips } from "./chat/chat-preset-chips";
 import { ChatInputBar } from "./chat/chat-input-bar";
 
-export function BuilderFloatingChat({ build, onAddPart }: BuilderFloatingChatProps) {
+export function BuilderFloatingChat({ build, onAddPart, initiallyOpen = false }: BuilderFloatingChatProps & { initiallyOpen?: boolean }) {
     const { theme } = useTheme();
     const isDark = theme === "dark";
     const [isExpanded, setIsExpanded] = React.useState(false);
@@ -38,7 +38,7 @@ export function BuilderFloatingChat({ build, onAddPart }: BuilderFloatingChatPro
         handleClearChat,
         handleAddPart,
         stop,
-    } = useFloatingChat(build);
+    } = useFloatingChat(build, initiallyOpen);
 
     React.useEffect(() => {
         if (!isOpen) return;

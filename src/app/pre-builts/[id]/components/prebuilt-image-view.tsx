@@ -5,6 +5,7 @@ import { Badge, Paper } from "@mantine/core";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn, getOptimizedStorageUrl } from "@/lib/utils";
 import { OptimizedImage } from "@/components/ui/optimized-image";
+import { SlidingImage } from "@/components/ui/sliding-image";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 interface PrebuiltImageViewProps {
@@ -20,6 +21,7 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
         [imageUrl, images]
     );
     const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
+    const [slideDirection, setSlideDirection] = React.useState<-1 | 1>(1);
     const [previewOpen, setPreviewOpen] = React.useState(false);
 
     React.useEffect(() => {
@@ -40,10 +42,12 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
     const coverUrl = currentImage || "/placeholder-system.png";
 
     const showPrevious = () => {
+        setSlideDirection(-1);
         setCurrentImageIndex((current) => (current === 0 ? allImages.length - 1 : current - 1));
     };
 
     const showNext = () => {
+        setSlideDirection(1);
         setCurrentImageIndex((current) => (current === allImages.length - 1 ? 0 : current + 1));
     };
 
@@ -70,7 +74,9 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                 onClick={() => setPreviewOpen(true)}
                 onKeyDown={openPreviewFromKeyboard}
             >
-                <OptimizedImage
+                <SlidingImage
+                    imageKey={`system-${currentImageIndex}`}
+                    direction={slideDirection}
                     src={coverUrl}
                     alt={`${systemName} photo ${currentImageIndex + 1}`}
                     fill
@@ -144,7 +150,10 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                                 role="tab"
                                 aria-selected={isCurrent}
                                 aria-label={`View system photo ${index + 1}`}
-                                onClick={() => setCurrentImageIndex(index)}
+                                onClick={() => {
+                                    setSlideDirection(index >= currentImageIndex ? 1 : -1);
+                                    setCurrentImageIndex(index);
+                                }}
                                 className={cn(
                                     "relative h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 bg-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 dark:ring-offset-[#111722]",
                                     isCurrent
@@ -219,7 +228,9 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                     )}
 
                     <div className="relative flex-1 min-h-0 w-full overflow-hidden rounded-xl bg-transparent">
-                        <OptimizedImage
+                        <SlidingImage
+                            imageKey={`preview-${currentImageIndex}`}
+                            direction={slideDirection}
                             src={coverUrl}
                             alt={`${systemName} full-size photo ${currentImageIndex + 1}`}
                             fill

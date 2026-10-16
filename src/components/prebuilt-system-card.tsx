@@ -278,6 +278,13 @@ export function PrebuiltSystemCard({
       });
     });
 
+    const unavailableParts = Array.from(new Set([
+      ...missingParts,
+      ...Object.entries(partsStock)
+        .filter(([, stock]) => stock <= 0)
+        .map(([category]) => resolvedParts[category]?.name || categoryMap[category] || category),
+    ]));
+
     const prebuiltBuildPayload: FavoriteBuild = {
       id: system.id,
       name: `${system.name} (Customized)`,
@@ -285,6 +292,11 @@ export function PrebuiltSystemCard({
       totalPrice: system.price,
       source: "builder",
       createdAt: new Date().toISOString(),
+      loadContext: {
+        type: "prebuilt",
+        systemName: system.name,
+        unavailableParts,
+      },
     };
 
     localStorage.setItem("pc_builder_load_favorite", JSON.stringify(prebuiltBuildPayload));

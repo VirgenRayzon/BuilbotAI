@@ -14,7 +14,7 @@ import {
   Box,
   Paper,
 } from "@mantine/core";
-import Image from "next/image";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import {
   Trash2,
   ShieldCheck,
@@ -247,7 +247,7 @@ function PrebuiltTableRow({
         <Table.Td>
           <Group gap="sm" wrap="nowrap">
             <Box className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-slate-200/70 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.03]">
-              <Image
+              <OptimizedImage
                 src={getOptimizedStorageUrl(system.imageUrl, shouldCorruptImages) || "/placeholder-system.png"}
                 alt={system.name}
                 fill

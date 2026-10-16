@@ -20,8 +20,14 @@ export function OptimizedImage({
     sizes,
     ...props 
 }: OptimizedImageProps) {
-    const [isLoading, setIsLoading] = useState(!priority);
+    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(false);
+
+    // Reset the loading treatment when a card or gallery swaps to another image.
+    useEffect(() => {
+        setIsLoading(true);
+        setError(false);
+    }, [src]);
 
     // Fail-safe: if image hasn't loaded in 3 seconds, clear the loading state
     useEffect(() => {
@@ -50,13 +56,12 @@ export function OptimizedImage({
             !fill && "w-full h-full",
             className
         )}>
-            {/* Loading Placeholder Overlay (only displayed when non-priority and loading) */}
-            {isLoading && !priority && !error && (
-                <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                    <div className="w-full h-full flex items-center justify-center bg-white/[0.02] backdrop-blur-[2px] animate-pulse">
-                        <div className="w-1/4 h-1/4 opacity-10">
-                            {fallbackIcon || <ImageIcon className="w-full h-full" />}
-                        </div>
+            {/* Lightweight shimmer for every card image, including prioritized LCP images. */}
+            {isLoading && !error && (
+                <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-slate-100/85 pointer-events-none dark:bg-slate-900/80" aria-hidden="true">
+                    <div className="absolute inset-0 animate-shimmer bg-[linear-gradient(105deg,transparent_25%,rgba(6,182,212,0.16)_45%,rgba(255,255,255,0.55)_50%,rgba(6,182,212,0.16)_55%,transparent_75%)] bg-[length:220%_100%] dark:bg-[linear-gradient(105deg,transparent_25%,rgba(34,211,238,0.08)_45%,rgba(255,255,255,0.12)_50%,rgba(34,211,238,0.08)_55%,transparent_75%)]" />
+                    <div className="relative h-12 w-12 rounded-xl border border-slate-300/70 bg-white/50 p-3 text-slate-400 shadow-sm animate-pulse dark:border-white/10 dark:bg-white/5 dark:text-slate-500">
+                        {fallbackIcon || <ImageIcon className="h-full w-full" />}
                     </div>
                 </div>
             )}
@@ -76,11 +81,12 @@ export function OptimizedImage({
                 alt={alt}
                 fill={fill}
                 priority={priority}
+                fetchPriority={priority ? 'high' : undefined}
                 unoptimized={unoptimized}
                 sizes={sizes}
                 className={cn(
                     "transition-opacity duration-300 ease-out",
-                    priority ? "opacity-100" : (isLoading ? "opacity-80" : "opacity-100"),
+                    "opacity-100",
                     className
                 )}
                 onLoad={() => setIsLoading(false)}

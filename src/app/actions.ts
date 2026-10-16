@@ -208,85 +208,17 @@ export async function logAdminAction(action: string, details: string, data?: any
 // In-memory catalog cache variables
 import { getAdminFirestore, getAdminAuth } from "@/firebase/server-init";
 import type { Part } from "@/lib/types";
-import { INVENTORY_CATEGORY_SLUGS, inventoryItemsPath } from "@/lib/inventory-paths";
-
-let catalogCache: Part[] | null = null;
-let catalogCacheTime = 0;
-const CATALOG_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-
-function serializeDate(val: any) {
-  if (!val) return undefined;
-  if (typeof val.toDate === 'function') {
-    return val.toDate().toISOString();
-  }
-  if (val instanceof Date) {
-    return val.toISOString();
-  }
-  if (typeof val === 'string' || typeof val === 'number') {
-    return new Date(val).toISOString();
-  }
-  return undefined;
-}
+import { getBuilderCatalog, clearBuilderCatalogCache } from '@/lib/server/builder-catalog';
 
 export async function getCachedInventory(): Promise<Part[]> {
-  const now = Date.now();
-  // Older in-memory entries predate gallery support and do not include
-  // `images`. Treat them as stale so a deployed update takes effect at once.
-  const hasGalleryShape = catalogCache?.every(part => Array.isArray(part.images));
-  if (catalogCache && hasGalleryShape && (now - catalogCacheTime < CATALOG_CACHE_TTL)) {
-    console.log("[getCachedInventory] Catalog cache hit");
-    return catalogCache;
-  }
-  
-  console.log("[getCachedInventory] Cache miss, fetching catalog from Firestore...");
-  const db = getAdminFirestore();
-  
-  const snapshots = await Promise.all(INVENTORY_CATEGORY_SLUGS.map(slug =>
-    db.collection(inventoryItemsPath(slug)).where('isArchived', '==', false).get()
-  ));
-  const fetchedParts: Part[] = [];
-
-  snapshots.flatMap(snapshot => snapshot.docs).forEach(doc => {
-    const data = doc.data();
-    const category = data.category as Part['category'];
-    fetchedParts.push({
-      id: doc.id,
-      name: data.name || '',
-      category,
-      brand: data.brand || '',
-      price: Number(data.price) || 0,
-      usdSrp: data.usdSrp ? Number(data.usdSrp) : undefined,
-      stock: Number(data.stock) || 0,
-      imageUrl: data.imageUrl || '',
-      // Preserve the full gallery for builder product details. The admin editor
-      // reads Firestore directly, while the builder consumes this serialized,
-      // cached catalog payload.
-      images: Array.isArray(data.images) ? data.images.filter((image): image is string => typeof image === 'string' && image.length > 0) : [],
-      specifications: data.specifications || {},
-      wattage: data.wattage !== undefined ? Number(data.wattage) : undefined,
-      performanceTier: data.performanceTier !== undefined ? Number(data.performanceTier) : undefined,
-      performanceScore: data.performanceScore !== undefined ? Number(data.performanceScore) : undefined,
-      socket: data.socket || undefined,
-      ramType: data.ramType || undefined,
-      dimensions: data.dimensions || undefined,
-      description: data.description || undefined,
-      packageType: data.packageType || undefined,
-      createdAt: serializeDate(data.createdAt),
-      isArchived: data.isArchived || false
-    });
-  });
-  
-  catalogCache = fetchedParts;
-  catalogCacheTime = now;
-  return fetchedParts;
+  return getBuilderCatalog();
 }
 
 import { clearInventoryCache } from "@/lib/inventory-fetcher";
 
 export async function clearCatalogCache() {
   console.log("[clearCatalogCache] Invalidating catalog cache...");
-  catalogCache = null;
-  catalogCacheTime = 0;
+  clearBuilderCatalogCache();
   clearInventoryCache();
   return { success: true };
 }

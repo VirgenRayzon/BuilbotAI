@@ -74,6 +74,7 @@ export function HeroSection({ isDark }: HeroSectionProps) {
           alt="BuildbotAI Custom PC Rig"
           fill
           priority
+          fetchPriority="high"
           sizes="100vw"
           className="object-cover opacity-70"
         />

@@ -14,12 +14,13 @@ import {
   Stack,
   Box,
 } from "@mantine/core";
-import Image from "next/image";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { formatCurrency, cn, getOptimizedStorageUrl } from "@/lib/utils";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
 import { PartCard } from "@/components/part-card";
 import { PaginationControls } from "@/components/pagination-controls";
 import type { Part } from "@/lib/types";
+import { useInventoryImageCount } from '@/hooks/use-inventory-image-count';
 
 interface InventoryViewProps {
   loading: boolean;
@@ -49,6 +50,7 @@ interface InventoryViewProps {
   onHideIncompatibleChange?: (val: boolean) => void;
   className?: string;
   gridCols?: number;
+  imageSizes?: string;
 }
 
 export function InventoryView({
@@ -79,7 +81,9 @@ export function InventoryView({
   onHideIncompatibleChange,
   className,
   gridCols,
+  imageSizes,
 }: InventoryViewProps) {
+  const priorityImageCount = useInventoryImageCount('builder', gridCols === 5);
   const gridColsClass =
     gridCols === 5
       ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
@@ -167,7 +171,8 @@ export function InventoryView({
                   <PartCard
                     key={part.id}
                     part={part}
-                    priority={index < 4}
+                    priority={index < priorityImageCount}
+                    imageSizes={imageSizes}
                     effectiveStock={part.effectiveStock}
                     onToggleBuild={onTogglePart}
                     isSelected={isSelected(part)}
@@ -226,7 +231,7 @@ export function InventoryView({
                           <Table.Td>
                             <Group gap="sm" wrap="nowrap">
                               <Box className="relative w-11 h-11 rounded-lg overflow-hidden shrink-0 border border-slate-200/70 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.03]">
-                                <Image
+                                <OptimizedImage
                                   src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"}
                                   alt={part.name}
                                   fill

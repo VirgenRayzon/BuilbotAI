@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
@@ -24,8 +25,6 @@ import { useUserProfile } from "@/context/user-profile";
 import { useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { ThemeToggle } from "./theme-toggle";
-import { UserNotifications } from "./user-notifications";
-import { NotificationCenter } from "./notification-center";
 import {
   Avatar,
   Badge,
@@ -46,6 +45,11 @@ import { useDisclosure } from "@mantine/hooks";
 import classes from "./header.module.css";
 import { HeaderMegaMenu } from "./header-mega-menu";
 import { useSignOutTransition } from "@/context/sign-out-transition";
+
+// These widgets only render after role verification; public navigation does not
+// need their notification, date formatting, and order-detail code.
+const UserNotifications = dynamic(() => import('./user-notifications').then(module => module.UserNotifications));
+const NotificationCenter = dynamic(() => import('./notification-center').then(module => module.NotificationCenter));
 
 interface NavTab {
   href: string;
@@ -168,6 +172,7 @@ export function Header() {
           <div className="flex-none">
             <Link
               href={logoHref}
+              prefetch={false}
               className="flex items-center no-underline focus:outline-none"
             >
               <Logo />
@@ -188,6 +193,9 @@ export function Header() {
                       <Link
                         key={tab.href}
                         href={tab.href}
+                        prefetch={false}
+                        onMouseEnter={() => router.prefetch(tab.href)}
+                        onFocus={() => router.prefetch(tab.href)}
                         className={classes.tabLink}
                         data-active={isActive || undefined}
                       >
@@ -492,6 +500,9 @@ export function Header() {
                   <Link
                     key={tab.href}
                     href={tab.href}
+                    prefetch={false}
+                    onMouseEnter={() => router.prefetch(tab.href)}
+                    onFocus={() => router.prefetch(tab.href)}
                     className={classes.drawerLink}
                     data-active={isActive || undefined}
                     onClick={closeDrawer}

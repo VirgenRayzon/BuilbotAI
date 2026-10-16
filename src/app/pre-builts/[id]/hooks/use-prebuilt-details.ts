@@ -261,14 +261,19 @@ export function usePrebuiltDetails(systemId: string) {
             totalPrice: system.price,
             source: "builder",
             createdAt: new Date().toISOString(),
+            loadContext: {
+                type: "prebuilt",
+                systemName: system.name,
+                unavailableParts: Array.from(new Set([
+                    ...missingParts,
+                    ...Object.entries(components)
+                        .filter(([, part]) => !part || part.stock <= 0)
+                        .map(([category, part]) => part?.name || categoryMap[category] || category),
+                ])),
+            },
         };
 
         localStorage.setItem("pc_builder_load_favorite", JSON.stringify(prebuiltBuildPayload));
-
-        toast({
-            title: "Loaded into PC Builder",
-            description: `Transferred ${system.name} components into your custom build session.`,
-        });
 
         router.push("/builder");
     };

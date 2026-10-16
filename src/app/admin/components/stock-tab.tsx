@@ -36,6 +36,8 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { Part, UserProfile } from '@/lib/types';
 import { AddPartFormSchema } from '@/hooks/use-part-form';
+import { useInventoryImageCount } from '@/hooks/use-inventory-image-count';
+import { ADMIN_PART_IMAGE_SIZES } from '@/lib/inventory-image-sizes';
 
 type AvailabilityFilter = 'all' | 'in-stock' | 'out-of-stock';
 
@@ -104,6 +106,7 @@ export function StockTab({
     toggleAllPartsSelection,
     setConfirmAction
 }: StockTabProps) {
+    const priorityImageCount = useInventoryImageCount('admin');
     const [partSearchQuery, setPartSearchQuery] = useState('');
     const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
     const [availability, setAvailability] = useState<AvailabilityFilter>('all');
@@ -536,7 +539,8 @@ export function StockTab({
                             <InventoryPartCard
                                 key={part.id}
                                 part={part}
-                                priority={index < 4}
+                                priority={index < priorityImageCount}
+                                imageSizes={ADMIN_PART_IMAGE_SIZES}
                                 onDelete={onDeletePart}
                                 onArchive={onArchivePart}
                                 onUpdateStock={onUpdatePartStock}

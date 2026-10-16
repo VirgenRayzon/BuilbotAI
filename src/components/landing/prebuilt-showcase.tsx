@@ -41,7 +41,7 @@ export function PrebuiltShowcase() {
 
     return (
         <section className="py-32 relative overflow-hidden transition-colors duration-1000">
-            <div id="prebuilts" className="w-full scroll-mt-24 px-4 sm:px-6 md:px-8 lg:px-10 relative z-10">
+            <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 relative z-10">
                 <SectionHeader
                     badge="Battle-Ready"
                     title="Featured Systems"
@@ -69,7 +69,6 @@ export function PrebuiltShowcase() {
                                         >
                                             <PrebuiltSystemCard
                                                 system={system}
-                                                priority={index < 2}
                                                 expanded={showAllSpecs}
                                                 onToggle={() => setShowAllSpecs(!showAllSpecs)}
                                                 showReserveButton={false}
