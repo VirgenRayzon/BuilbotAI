@@ -30,6 +30,7 @@ export default function AiBuildAdvisorPage() {
     const isDark = theme === "dark";
     const { authUser, profile, loading: userLoading } = useUserProfile();
     const router = useRouter();
+    const [activeTab, setActiveTab] = useState<string | null>('critique');
     const lastLoadedKeyRef = useRef<string>("");
 
     // Data Layer
@@ -62,6 +63,13 @@ export default function AiBuildAdvisorPage() {
 
     useEffect(() => {
         window.scrollTo(0, 0);
+    }, []);
+
+    useEffect(() => {
+        const syncTabWithHash = () => setActiveTab(window.location.hash === '#generate' ? 'generate' : 'critique');
+        syncTabWithHash();
+        window.addEventListener('hashchange', syncTabWithHash);
+        return () => window.removeEventListener('hashchange', syncTabWithHash);
     }, []);
 
     // Automatically load or reset critique when state changes
@@ -113,7 +121,10 @@ export default function AiBuildAdvisorPage() {
                     <AdvisorHeader isAiKillSwitch={isAiKillSwitch} />
 
                     {builderState ? (
-                        <Tabs defaultValue="critique" variant="pills" radius="xl" color="cyan" className="w-full h-full">
+                        <Tabs value={activeTab} onChange={(value) => {
+                            setActiveTab(value);
+                            if (value) window.location.hash = value;
+                        }} variant="pills" radius="xl" color="cyan" className="w-full h-full">
                             <div className="flex justify-center mb-6">
                                 <Tabs.List className="bg-slate-100/90 dark:bg-[#141a23] p-1.5 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm backdrop-blur-md gap-1.5">
                                     <Tabs.Tab

@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { getAiBuildCritique } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
+import { showAdvisorProgressToast, showAdvisorReadyToast } from '@/components/advisor-job-toast';
 
 /**
  * Helper to generate a unique key for a given build state.
@@ -43,12 +45,14 @@ export function getCritiqueCacheKey(state: any, preferences?: { intendedUse?: st
  */
 export function useCritiqueLogic(isAiKillSwitch: boolean) {
     const { toast } = useToast();
+    const router = useRouter();
     const [critiqueAnalysis, setCritiqueAnalysis] = useState<any>(null);
     const [critiqueDuration, setCritiqueDuration] = useState<number | null>(null);
     const [critiqueLoading, setCritiqueLoading] = useState(false);
     const [critiqueError, setCritiqueError] = useState<string | null>(null);
     const [activeCritiqueKey, setActiveCritiqueKey] = useState<string | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
+    const progressToastRef = useRef<ReturnType<typeof showAdvisorProgressToast> | null>(null);
 
     // Cleanup abort controller on unmount
     useEffect(() => {
@@ -65,6 +69,8 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
             abortControllerRef.current = null;
         }
         setCritiqueLoading(false);
+        progressToastRef.current?.dismiss();
+        progressToastRef.current = null;
         toast({
             title: "Analysis Cancelled",
             description: "Stopped showing this analysis.",
@@ -148,6 +154,8 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
         });
 
         const startTime = Date.now();
+        const progressToast = showAdvisorProgressToast('Reviewing your build', startTime);
+        progressToastRef.current = progressToast;
         try {
             const result = await getAiBuildCritique({
                 build: buildData,
@@ -176,7 +184,7 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
                     if (keys.length > 10) delete parsedCache[keys[0]];
                     localStorage.setItem('pc_critique_cache', JSON.stringify(parsedCache));
                 } catch (e) {}
-                toast({ title: 'Build review ready', description: 'Your analysis is complete. Open Build Advisor to view it.' });
+                showAdvisorReadyToast('Build review ready', startTime, () => router.push('/ai-build-advisor#critique'));
             }
         } catch (err: any) {
             if (err.name === 'AbortError' || err.message === 'ABORTED') {
@@ -186,12 +194,14 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
             setCritiqueError("An unexpected error occurred during analysis.");
             toast({ title: 'Build review failed', description: 'An unexpected error occurred during analysis.', variant: 'destructive' });
         } finally {
+            progressToast.dismiss();
+            if (progressToastRef.current === progressToast) progressToastRef.current = null;
             if (abortControllerRef.current === controller) {
                 abortControllerRef.current = null;
                 setCritiqueLoading(false);
             }
         }
-    }, [isAiKillSwitch, toast]);
+    }, [isAiKillSwitch, router, toast]);
 
     return {
         critiqueAnalysis,

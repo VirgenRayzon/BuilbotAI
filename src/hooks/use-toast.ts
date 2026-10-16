@@ -165,15 +165,15 @@ function toast({ ...props }: Toast) {
     },
   })
 
-  // Automatically dismiss after 8 seconds
-  const autoDismissTimer = setTimeout(() => {
-    dismiss()
-  }, (props as any).duration ?? DEFAULT_TOAST_DURATION)
+  const duration = props.duration ?? DEFAULT_TOAST_DURATION
+  const autoDismissTimer = Number.isFinite(duration)
+    ? setTimeout(dismiss, duration)
+    : null
 
   return {
     id: id,
     dismiss: () => {
-      clearTimeout(autoDismissTimer)
+      if (autoDismissTimer) clearTimeout(autoDismissTimer)
       dismiss()
     },
     update,

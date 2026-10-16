@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { experimental_useObject as useObject } from '@ai-sdk/react';
 import { useToast } from "@/hooks/use-toast";
+import { showAdvisorProgressToast, showAdvisorReadyToast } from '@/components/advisor-job-toast';
 import type { Build, Part, ComponentData, AdvisorWebResearchInfo } from "@/lib/types";
 import {
   AiBuildAdvisorRecommendationsOutputSchema,
@@ -41,6 +43,7 @@ function summarizeCatalogDescription(value: string): string {
  */
 export function useRecommendationLogic(isAiKillSwitch: boolean, allParts: Part[]) {
     const { toast } = useToast();
+    const router = useRouter();
     const [savedBuild, setSavedBuild] = useState<Build | null>(null);
     const [elapsedTime, setElapsedTime] = useState(0);
     const [finalResponseTime, setFinalResponseTime] = useState<number | null>(null);
@@ -48,6 +51,8 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, allParts: Part[]
     const [webResearchInfo, setWebResearchInfo] = useState<AdvisorWebResearchInfo | null>(null);
     const [webSearchEnabled, setWebSearchEnabled] = useState(false);
     const generationStartTimeRef = useRef<number | null>(null);
+    const toastStartedAtRef = useRef<number | null>(null);
+    const progressToastRef = useRef<ReturnType<typeof showAdvisorProgressToast> | null>(null);
     const firstPartialReportedRef = useRef(false);
     const firstCardReportedRef = useRef(false);
     const lastRequestRef = useRef<AiBuildAdvisorRecommendationsInput | null>(null);
@@ -200,6 +205,8 @@ function getSmartDescription(type: string, modelName: string): string {
         schema: AiBuildAdvisorRecommendationsOutputSchema,
         fetch: fetchRecommendations,
         onError: (err) => {
+            progressToastRef.current?.dismiss();
+            progressToastRef.current = null;
             console.error("[useRecommendationLogic] Stream error:", err);
             let msg = err.message || "Failed to get recommendations.";
             try { msg = JSON.parse(msg).error || msg; } catch { /* Non-JSON provider error. */ }
@@ -243,6 +250,8 @@ function getSmartDescription(type: string, modelName: string): string {
                     }).filter(issue => issue.severity === 'critical')
                     : [];
                 if (missingStoreIds || unknownStoreIds || compatibility.length > 0 || (limit && actualTotal > limit + 1)) {
+                    progressToastRef.current?.dismiss();
+                    progressToastRef.current = null;
                     const message = missingStoreIds || unknownStoreIds
                         ? 'The AI could not verify every suggested part against store inventory. Please try again.'
                         : compatibility.length > 0
@@ -265,10 +274,13 @@ function getSmartDescription(type: string, modelName: string): string {
                         console.warn("Failed to persist recommendation to localStorage:", e);
                     }
                 }
-                toast({
-                    title: 'Build recommendations ready',
-                    description: 'Your compatible build is ready. Open Build Advisor to view it.',
-                });
+                progressToastRef.current?.dismiss();
+                progressToastRef.current = null;
+                showAdvisorReadyToast('Build recommendations ready', toastStartedAtRef.current ?? Date.now(),
+                    () => router.push('/ai-build-advisor#generate'));
+            } else {
+                progressToastRef.current?.dismiss();
+                progressToastRef.current = null;
             }
         }
     });
@@ -310,6 +322,8 @@ function getSmartDescription(type: string, modelName: string): string {
 
     const handleCancelRecommendations = useCallback(() => {
         stop();
+        progressToastRef.current?.dismiss();
+        progressToastRef.current = null;
         setWebResearchInfo(null);
         toast({
             title: "Recommendation Cancelled",
@@ -329,6 +343,9 @@ function getSmartDescription(type: string, modelName: string): string {
         if (data.allowWebSearch) localStorage.removeItem('pc_ai_build_recommendation');
         lastRequestRef.current = data;
         generationStartTimeRef.current = Date.now();
+        toastStartedAtRef.current = generationStartTimeRef.current;
+        progressToastRef.current?.dismiss();
+        progressToastRef.current = showAdvisorProgressToast('Building your recommendations', generationStartTimeRef.current);
         firstPartialReportedRef.current = false;
         firstCardReportedRef.current = false;
         submit(data);
