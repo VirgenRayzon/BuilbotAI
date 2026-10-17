@@ -1,104 +1,116 @@
-# 🌌 Buildbot AI: Forge Architect
+# BuildbotAI
 
-> **Elevating the PC Building Experience through Intelligent Orchestration and Immersive Design.**
+BuildbotAI is a Next.js PC building and reservation application. Customers can assemble a build from the Firestore inventory, check compatibility and estimated performance, request AI advice, browse prebuilt systems, and reserve parts. Staff manage inventory and reservations through a separate access flow. This description reflects the checked-in implementation; see the documentation for limits and unverified deployment details.
 
-Buildbot AI is a state-of-the-art PC building assistant that bridges the gap between complex hardware specifications and user intent. Powered by Google's Gemini and Genkit, it offers a seamless, AI-driven journey from component selection to performance optimization.
+## Get the project and run it
 
-![Buildbot AI Banner](public/landing-hero.png)
+The project is hosted at [github.com/VirgenRayzon/BuilbotAI](https://github.com/VirgenRayzon/BuilbotAI). If you have **Git** and **Node.js** installed, open **PowerShell** on Windows (or a terminal on macOS/Linux) and run these commands to download it and install its packages:
 
----
-
-## ✨ Key Features
-
-| 🤖 AI Build Advisor | 📊 Performance Analytics | 🛠️ Prebuilt Builder |
-| :--- | :--- | :--- |
-| Get real-time critiques and hardware recommendations based on your budget and needs. | Visualize FPS estimations across different resolutions and games before you buy. | Professional-grade tools for creating and managing optimized system configurations. |
-
-| 💎 Immersive UI | 🛡️ Admin Command Center | ⚡ Real-time Sync |
-| :--- | :--- | :--- |
-| A "Sleek Tech" aesthetic featuring glassmorphism, fluid animations, and premium dark mode. | Comprehensive management of inventory, sales, and system reservations. | Powered by Firebase for instantaneous updates across all user sessions. |
-
----
-
-## 🏗️ The 3-Layer Architecture
-
-Buildbot AI follows a rigorous 3-layer architecture to ensure that probabilistic AI decision-making is grounded in deterministic execution.
-
-1.  **Directive (What to do):** Standard Operating Procedures (SOPs) defined in Markdown (`directives/`).
-2.  **Orchestration (Decision making):** The AI Agent layer that interprets intent and routes tasks.
-3.  **Execution (Doing the work):** Deterministic scripts (`execution/`) and CLI tools for reliable operations.
-
----
-
-## 🛠️ Tech Stack
-
-- **Frontend:** [Next.js 15](https://nextjs.org/) (App Router), [React 19](https://react.dev/), [Tailwind CSS](https://tailwindcss.com/)
-- **AI Engine:** [Google Gemini](https://aistudio.google.com/), [Firebase Genkit](https://firebase.google.com/docs/genkit), [Vercel AI SDK](https://sdk.vercel.ai/)
-- **Backend:** [Firebase](https://firebase.google.com/) (Auth, Firestore, Hosting)
-- **3D & Motion:** [React Three Fiber](https://r3f.docs.pmnd.rs/), [Three.js](https://threejs.org/), [Framer Motion](https://www.framer.com/motion/)
-- **Analytics:** [Recharts](https://recharts.org/)
-
----
-
-## 🚀 Getting Started
-
-### 1. Prerequisites
-- Node.js 18+
-- npm
-
-### 2. Installation
 ```bash
 git clone https://github.com/VirgenRayzon/BuilbotAI.git
 cd BuilbotAI
 npm install
 ```
 
-### 3. Environment Configuration
-Create a `.env` file in the root and add your credentials:
-```env
-# Firebase Configuration
-NEXT_PUBLIC_FIREBASE_API_KEY=your_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_domain
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_bucket
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+Before the first run, create `.env.local` using [the configuration steps below](#3-add-your-configuration). Then, from the `BuilbotAI` folder, start the app with:
 
-# AI Configuration
-GEMINI_API_KEY=your_gemini_api_key
-```
-
-### 4. Running the Development Environment
-Buildbot AI requires two concurrent processes:
-
-**Terminal 1 (Web Interface):**
 ```bash
 npm run dev
 ```
-*Access at: [http://localhost:9002](http://localhost:9002)*
 
-**Terminal 2 (AI Services):**
+Open [http://localhost:9002](http://localhost:9002). To get newer code later, stop the app with **Ctrl+C** and run `git pull --ff-only origin main` followed by `npm install` and `npm run dev` in the same folder. Read the [update instructions](#update-an-existing-local-copy) first if you have edited any files.
+
+## Beginner's guide: install and run locally
+
+These steps are for someone who wants to run the project on their own computer. A **terminal** is the window where you type commands; on Windows, you can use PowerShell or the terminal in VS Code. Run the commands one line at a time, pressing Enter after each line.
+
+### 1. Install the tools
+
+Install [Git](https://git-scm.com/downloads) and a current LTS version of [Node.js](https://nodejs.org/) (Node includes npm). After installation, open a **new** terminal and check that all three commands work:
+
 ```bash
-npm run genkit:dev
+git --version
+node --version
+npm --version
 ```
-*Required for Build Advisor and AI flows.*
 
----
+If your terminal says a command is not recognized, close and reopen it. If that does not help, reinstall the missing tool and make sure its installer adds it to your PATH.
 
-## 🎨 Design Philosophy
-The project adheres to the **"Sleek Tech & Immersive"** aesthetic defined in `DESIGN.md`.
-- **Primary Color:** Tech Blue (#448FC4)
-- **Background:** Midnight Canvas (#21262B)
-- **Accents:** Cyan Glow and Vibrant Purple Gradients
+### 2. Download the project
 
----
+Choose a folder where you keep projects and open a terminal there. For example, in Windows PowerShell, `cd "$HOME\Documents"` moves to your Documents folder. Then run:
 
-## 📄 Documentation
-For deeper insights into the project, refer to:
-- [DESIGN.md](DESIGN.md) - Visual identity and UI rules.
-- [AGENTS.md](AGENTS.md) - Instructions for AI collaborators.
-- [PROJECT_STRUCTURE.md](docs/project_structure.md) - Codebase organization.
+```bash
+git clone https://github.com/VirgenRayzon/BuilbotAI.git
+cd BuilbotAI
+npm install
+```
 
----
+`git clone` downloads the code, `cd` enters its folder, and `npm install` downloads the packages the app needs. The install may take a few minutes. If you already downloaded the repository as a ZIP, extract it, open a terminal inside the extracted folder (the one containing `package.json`), and run only `npm install`.
 
-Built with ❤️ by the Buildbot AI Team.
+### 3. Add your configuration
+
+Create a file named `.env.local` in the project folder, beside `package.json`. Paste this template and replace each placeholder with the matching value from **your Firebase project's web app settings**:
+
+```dotenv
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_web_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_firebase_app_id
+
+# Needed for Gemini-powered features such as Build Advisor:
+GOOGLE_API_KEY=your_google_ai_api_key
+```
+
+You need a Firebase project with its web app registered and the app's Firebase services configured. The public Firebase values come from that web app's configuration; the Google AI key is a separate credential. Some server features also require Firebase Admin credentials (`FB_SERVICE_ACCOUNT` or `FIREBASE_SERVICE_ACCOUNT`). See [Firebase configuration](docs/firebase-and-data.md#configuration) for what each part of the app reads. If you do not have access to the required project and keys, ask the project maintainer for setup instructions. A local server can start without them, but sign-in, inventory, reservations, and AI features may fail.
+
+Keep `.env.local` private. It is ignored by Git; do not paste API keys or service account JSON into issues, screenshots, or commits. After changing this file, restart the development server.
+
+### 4. Start the app
+
+From the project folder, run:
+
+```bash
+npm run dev
+```
+
+Leave that terminal open. When it says the server is ready, visit [http://localhost:9002](http://localhost:9002) in your browser. This project uses **port 9002**, so `localhost:3000` is the wrong address. To stop the server, return to the terminal and press **Ctrl+C**.
+
+The Genkit development UI is optional. If you are working on AI flows, open a **second** terminal in the same project folder and run `npm run genkit:dev`. The web app itself starts with `npm run dev`.
+
+## Update an existing local copy
+
+Open a terminal in the project folder and stop the running server with **Ctrl+C**. Then run:
+
+```bash
+git status
+git pull --ff-only origin main
+npm install
+npm run dev
+```
+
+`git status` shows whether you have local edits. If it lists changed files you want to keep, save or commit them before pulling; do not discard them just to update. `git pull --ff-only origin main` gets the latest code from this project's GitHub `main` branch without creating a merge commit. If it refuses because you have local changes or your branch has diverged, stop there and resolve that with the maintainer instead of forcing the update. `npm install` picks up any dependency changes, and the last command starts the updated app. Keep your `.env.local` file and check whether the updated documentation calls for any new settings.
+
+If you downloaded a ZIP instead of using `git clone`, `git pull` will not work. Download and extract a new ZIP, copy your private `.env.local` into the new project folder, then run `npm install` and `npm run dev` there. Save any code changes you made in the old folder before replacing it.
+
+## Common setup problems
+
+| What you see | What to try |
+| --- | --- |
+| `npm` or `git` is not recognized | Install the missing tool, then reopen the terminal. |
+| `npm run dev` reports that port 9002 is in use | Stop the other app using port 9002, then try again. |
+| The page opens but data, sign-in, or AI does not work | Check the values in `.env.local`, the Firebase services and permissions for your project, and the error shown in the terminal. Restart after editing the file. |
+| `git pull --ff-only origin main` fails | Run `git status` and preserve your edits; ask a maintainer for help if the branch has diverged. |
+
+## Documentation
+
+- [Technology stack, project structure, and architecture](docs/architecture.md)
+- [Firebase configuration, authentication, and data model](docs/firebase-and-data.md)
+- [Every App Router page](docs/pages.md)
+- [HTTP API routes, server actions, and external integrations](docs/api-and-integrations.md)
+
+## Checks
+
+`npm run typecheck`, `npm run lint`, `npm run build`, and `npx playwright test` are the repository's declared checks. See [verification limits](docs/architecture.md#verification-limits) for what source inspection can and cannot establish.
