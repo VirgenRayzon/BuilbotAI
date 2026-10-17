@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-10-18]
+
+### Features
+- **admin**: Streamline AI tab and standardize admin color palettes and touch targets ([4cf3627](https://github.com/VirgenRayzon/BuilbotAI/commit/4cf3627))
+
 ## [2026-10-17]
 
 ### Documentation

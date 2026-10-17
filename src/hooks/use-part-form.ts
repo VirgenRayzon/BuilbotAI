@@ -48,10 +48,18 @@ interface UsePartFormProps {
   isAiKillSwitch: boolean;
 }
 
+export interface AiComponentWarning {
+  partName: string;
+  message: string;
+}
+
+const NON_EXISTENT_PREFIX = /^non[- ]existent component:\s*/i;
+
 export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormProps) {
   const [isAiPending, setIsAiPending] = useState(false);
   const [aiDuration, setAiDuration] = useState<number | null>(null);
   const [tokensUsed, setTokensUsed] = useState<number | null>(null);
+  const [aiComponentWarning, setAiComponentWarning] = useState<AiComponentWarning | null>(null);
   const aiAbortRef = useRef(false);
   const { toast } = useToast();
 
@@ -78,6 +86,7 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
 
   useEffect(() => {
     setAiDuration(null);
+    setAiComponentWarning(null);
     if (open && initialData) {
       form.reset({
         partName: initialData.name,
@@ -112,6 +121,17 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
       });
     }
   }, [open, initialData, form]);
+
+  const watchedPartName = form.watch("partName");
+
+  useEffect(() => {
+    if (
+      aiComponentWarning &&
+      watchedPartName.trim().toLowerCase() !== aiComponentWarning.partName.trim().toLowerCase()
+    ) {
+      setAiComponentWarning(null);
+    }
+  }, [aiComponentWarning, watchedPartName]);
 
   const selectedCategory = form.watch("category");
 
@@ -183,6 +203,25 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
       const endTime = performance.now();
       setAiDuration((endTime - startTime) / 1000);
       if (result && !("error" in result)) {
+        const returnedName = String(result.partName || partName).trim();
+        const hasLegacyNonExistentPrefix = NON_EXISTENT_PREFIX.test(returnedName);
+        const cleanPartName = returnedName.replace(NON_EXISTENT_PREFIX, "").trim() || partName.trim();
+        const componentDoesNotExist = result.exists === false || hasLegacyNonExistentPrefix;
+
+        if (componentDoesNotExist) {
+          const message = result.verificationMessage ||
+            "Buildbot AI could not verify this exact model in the available hardware sources. Check the model name before adding it to inventory.";
+          form.setValue("partName", cleanPartName, { shouldValidate: true });
+          setAiComponentWarning({ partName: cleanPartName, message });
+          toast({
+            variant: "destructive",
+            title: "Component could not be verified",
+            description: "Review the model name before saving this inventory item.",
+          });
+          return;
+        }
+
+        setAiComponentWarning(null);
         setTokensUsed(Math.round(JSON.stringify(result).length / 4));
         form.setValue("partName", result.partName, { shouldValidate: true });
         form.setValue("category", result.category, { shouldValidate: true });
@@ -320,6 +359,7 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
     isAiPending,
     aiDuration,
     tokensUsed,
+    aiComponentWarning,
     handleGetAiDetails,
     handleCancelAiDetails,
     setSpecValue,

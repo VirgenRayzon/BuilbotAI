@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { ScrollArea } from "./ui/scroll-area";
 import { ThemeIcon, Text, Badge, Paper } from "@mantine/core";
-import { Plus, BrainCircuit, Loader2 } from "lucide-react";
+import { Plus, BrainCircuit, Loader2, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
@@ -57,6 +57,7 @@ export function AddPartEditor({ children, onSave, initialData, title, initiallyO
     isAiPending,
     aiDuration,
     tokensUsed,
+    aiComponentWarning,
     handleGetAiDetails,
     handleCancelAiDetails,
     setSpecValue,
@@ -194,6 +195,36 @@ export function AddPartEditor({ children, onSave, initialData, title, initiallyO
           </div>
         )}
 
+        {aiComponentWarning && !isAiPending && (
+          <Paper
+            role="alert"
+            radius={0}
+            className="border-x-0 border-t-0 border-b border-red-300 bg-red-50 px-3 py-3 dark:border-red-500/30 dark:bg-red-500/10"
+          >
+            <div className="flex items-start gap-3">
+              <ThemeIcon size={38} radius="xl" color="red" variant="light" className="mt-0.5 shrink-0">
+                <ShieldAlert className="h-5 w-5" aria-hidden="true" />
+              </ThemeIcon>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Text fw={800} size="sm" c="red" className="tracking-tight">
+                    Component could not be verified
+                  </Text>
+                  <Badge color="red" variant="filled" size="xs">
+                    Do not add to inventory
+                  </Badge>
+                </div>
+                <Text size="xs" mt={3} className="text-red-800 dark:text-red-200">
+                  {aiComponentWarning.message}
+                </Text>
+                <Text size="xs" mt={5} fw={700} className="break-words text-slate-700 dark:text-slate-200">
+                  Searched model: {aiComponentWarning.partName}
+                </Text>
+              </div>
+            </div>
+          </Paper>
+        )}
+
         {/* Form Body */}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col">
@@ -233,7 +264,7 @@ export function AddPartEditor({ children, onSave, initialData, title, initiallyO
                   </DialogClose>
                   <Button
                     type="submit"
-                    disabled={isSubmitting || isAiPending}
+                    disabled={isSubmitting || isAiPending || Boolean(aiComponentWarning)}
                     className="h-10 px-8 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold uppercase tracking-wider text-xs shadow-md shadow-cyan-500/20 transition-all duration-200"
                   >
                     {isSubmitting ? (
