@@ -158,25 +158,6 @@
     animation: sparkle 2s ease-in-out infinite;
   }
 
-  @keyframes shimmer {
-    from {
-      background-position: -200% 0;
-    }
-
-    to {
-      background-position: 200% 0;
-    }
-  }
-
-  .animate-shimmer {
-    background: linear-gradient(90deg,
-        transparent,
-        rgba(255, 255, 255, 0.1),
-        transparent);
-    background-size: 200% 100%;
-    animation: shimmer 2.5s infinite;
-  }
-
   @keyframes shinesweep {
     0% {
       transform: translateX(-100%);

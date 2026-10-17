@@ -231,7 +231,7 @@ export function SuperAdminSettings() {
     if (loading) {
         return (
             <div className="flex justify-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <Loader2 className="h-8 w-8 animate-spin text-cyan-600 dark:text-cyan-400" />
             </div>
         );
     }
@@ -241,7 +241,7 @@ export function SuperAdminSettings() {
             <Card className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-sm">
                 <CardHeader className="p-3 pb-3">
                     <CardTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
-                        <Key className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                        <Key className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                         Default Manager Access Key
                         <CompactInfo
                             label="About the default manager access key"
@@ -275,7 +275,7 @@ export function SuperAdminSettings() {
             <Card className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-sm">
                 <CardHeader className="p-3 pb-3">
                     <CardTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
-                        <Shield className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                        <Shield className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                         Manager Accounts
                         <CompactInfo
                             label="About manager accounts"
@@ -340,7 +340,7 @@ export function SuperAdminSettings() {
             <Card className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-sm">
                 <CardHeader className="p-3 pb-3">
                     <CardTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
-                        <RefreshCw className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                        <RefreshCw className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                         Key Reset Requests
                         <CompactInfo
                             label="About key reset requests"

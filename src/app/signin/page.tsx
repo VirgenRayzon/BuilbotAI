@@ -224,10 +224,10 @@ function SignInContent() {
       const result = await executeCustomerGoogleAuth(auth, firestore, { isSignUp: false });
 
       if (!result.success) {
-        if (result.error) {
-          setError(result.error);
-          if (result.error === staffSignInError) router.replace('/signin?reason=staff_account');
-        }
+        const googleSignInError = result.error
+          ?? 'Google sign-in was cancelled. Please try again when you are ready.';
+        setError(googleSignInError);
+        if (googleSignInError === staffSignInError) router.replace('/signin?reason=staff_account');
         return;
       }
 

@@ -2,10 +2,113 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-10-17]
+
+### Documentation
+- Add implementation plan and results documentation ([d744690](https://github.com/VirgenRayzon/BuilbotAI/commit/d744690))
+- Detail behavior when running server without Firebase/AI credentials ([6616517](https://github.com/VirgenRayzon/BuilbotAI/commit/6616517))
+- Clarify Firebase credentials and environment setup requirements in README ([713fd99](https://github.com/VirgenRayzon/BuilbotAI/commit/713fd99))
+- Expand setup guide and comprehensive codebase documentation ([04c1c94](https://github.com/VirgenRayzon/BuilbotAI/commit/04c1c94))
+
+## [2026-10-16]
+
+### Features
+- **advisor**: Add background advisor job notifications and improve toast feedback ([962aa57](https://github.com/VirgenRayzon/BuilbotAI/commit/962aa57))
+- **perf**: Optimize landing and inventory rendering performance, lazy load heavy dialogs and showcase ([b6837c3](https://github.com/VirgenRayzon/BuilbotAI/commit/b6837c3))
+- Optimize LCP image loading and add expand modal to floating chatbot ([a156e3e](https://github.com/VirgenRayzon/BuilbotAI/commit/a156e3e))
+
+## [2026-10-15]
+
+### Refactoring
+- **landing**: Relocate static images to src/assets and update hero/features imports ([02fe56c](https://github.com/VirgenRayzon/BuilbotAI/commit/02fe56c))
+
+## [2026-10-14]
+
+### Features
+- **chat,analytics**: Enhance chat part specs, vector retrieval, and sales export styling ([e66fedd](https://github.com/VirgenRayzon/BuilbotAI/commit/e66fedd))
+- **builder**: Fit build export PDF onto single Letter page with curated specs ([a931765](https://github.com/VirgenRayzon/BuilbotAI/commit/a931765))
+- **builder**: Add PDF build export, improve auth UX, session timeout and carousel components ([8bb9b5f](https://github.com/VirgenRayzon/BuilbotAI/commit/8bb9b5f))
+- **ui**: Align footer support right, update chat form copy, and refine team page ([7527609](https://github.com/VirgenRayzon/BuilbotAI/commit/7527609))
+
+### Documentation
+- Update AGENTS.md, GEMINI.md, and agent guidelines to agents.md standard ([5a6e178](https://github.com/VirgenRayzon/BuilbotAI/commit/5a6e178))
+
+## [2026-10-13]
+
+### Features
+- **advisor**: Optimize AI build advisor, add web research and clean up visualizer assets ([8143605](https://github.com/VirgenRayzon/BuilbotAI/commit/8143605))
+- **ui**: Enhance component card specs, part details dialog, and prebuilt card styling ([b5354aa](https://github.com/VirgenRayzon/BuilbotAI/commit/b5354aa))
+- **ui**: Refine builder actions, layout, notifications, and auth styling ([6cc666c](https://github.com/VirgenRayzon/BuilbotAI/commit/6cc666c))
+
+## [2026-10-12]
+
+### Features
+- **auth**: Enhance password reset feedback and add verification directive ([daf1bcf](https://github.com/VirgenRayzon/BuilbotAI/commit/daf1bcf))
+
+## [2026-10-11]
+
+### Features
+- Add landing page components, prebuilt system card, and builder logic hook ([d950f2f](https://github.com/VirgenRayzon/BuilbotAI/commit/d950f2f))
+- Enhance stock management, out-of-stock UI, and category migration ([b4ebeda](https://github.com/VirgenRayzon/BuilbotAI/commit/b4ebeda))
+- Mobile-first refactoring for builder, profile, admin, and prebuilt-builder pages ([f87a94c](https://github.com/VirgenRayzon/BuilbotAI/commit/f87a94c))
+
+### Bug Fixes
+- Refine UI layout, image preview modal, about page sticky navigation, and public header visibility ([d19dffa](https://github.com/VirgenRayzon/BuilbotAI/commit/d19dffa))
+
+### Styling & UI/UX
+- Standardize dialog and modal components to Mantine UI aesthetic ([209e411](https://github.com/VirgenRayzon/BuilbotAI/commit/209e411))
+
+### Miscellaneous
+- Polish admin, profile, and catalog image workflows ([7d593dc](https://github.com/VirgenRayzon/BuilbotAI/commit/7d593dc))
+
+## [2026-10-10]
+
+### Bug Fixes
+- Remove redundant floating bottleneck analyzer and chat from ai-build-advisor ([1f21beb](https://github.com/VirgenRayzon/BuilbotAI/commit/1f21beb))
+
+### Styling & UI/UX
+- Standardize all pop-up modals to sleek compact Mantine aesthetic ([9d46841](https://github.com/VirgenRayzon/BuilbotAI/commit/9d46841))
+- Standardize card containers, toolbars, and auth portals with Mantine UI aesthetic ([a31892b](https://github.com/VirgenRayzon/BuilbotAI/commit/a31892b))
+
+### Miscellaneous
+- Unify admin tab headers with two-tone italic headline, overline tags, and refined tab strip ([11c3338](https://github.com/VirgenRayzon/BuilbotAI/commit/11c3338))
+- Standardize modal and border div padding to 12px, update design rules, and auto-open terms modal on signup ([5c634a3](https://github.com/VirgenRayzon/BuilbotAI/commit/5c634a3))
+- Update BuildbotAI application components, chat recommendations, and admin UI ([cb39a96](https://github.com/VirgenRayzon/BuilbotAI/commit/cb39a96))
+- Support persistent staff sessions and manager accounts ([081e3f3](https://github.com/VirgenRayzon/BuilbotAI/commit/081e3f3))
+- Improve chat recommendations and resilience ([a71643b](https://github.com/VirgenRayzon/BuilbotAI/commit/a71643b))
+- Refine admin and prebuilt interfaces ([49be5b7](https://github.com/VirgenRayzon/BuilbotAI/commit/49be5b7))
+- Migrate inventory to lowercase Firestore hierarchy ([a7235af](https://github.com/VirgenRayzon/BuilbotAI/commit/a7235af))
+
+## [2026-10-09]
+
+### Features
+- **ui**: Refine chat header layout, add bottleneck analyzer components, and update build advisor ([5ae9f28](https://github.com/VirgenRayzon/BuilbotAI/commit/5ae9f28))
+- **advisor**: Align build advisor cards with Mantine UI aesthetic and update CTA button styling ([b649d0d](https://github.com/VirgenRayzon/BuilbotAI/commit/b649d0d))
+
+### Miscellaneous
+- UI enhancements: single line inventory toolbar and rounded DropdownMenuCheckboxItem ([e59b566](https://github.com/VirgenRayzon/BuilbotAI/commit/e59b566))
+- Improve Build Advisor speed and targeting ([162431c](https://github.com/VirgenRayzon/BuilbotAI/commit/162431c))
+- UI fixes, admin tab headers, loader adjustments ([0984707](https://github.com/VirgenRayzon/BuilbotAI/commit/0984707))
+- Apply minimalist Mantine UI aesthetic ([3ac2ab2](https://github.com/VirgenRayzon/BuilbotAI/commit/3ac2ab2))
+
+## [2026-10-08]
+
+### Features
+- Update component mapping and AI search terminology ([70f67fe](https://github.com/VirgenRayzon/BuilbotAI/commit/70f67fe))
+
+### Performance Improvements
+- **ai**: Optimize generation time with line-based chunking and templated descriptions ([b2c7519](https://github.com/VirgenRayzon/BuilbotAI/commit/b2c7519))
+
+### Miscellaneous
+- Refine navigation, auth flow, and build interface ([967bfa2](https://github.com/VirgenRayzon/BuilbotAI/commit/967bfa2))
+
 ## [2026-10-07]
 
 ### Features
 - Replace generic placeholder images with realistic hardware component photos for advisor recommendations ([3f1c605](https://github.com/VirgenRayzon/BuilbotAI/commit/3f1c605))
+
+### Bug Fixes
+- Header spacing consistency and remove part.wattage falsy render ([d42c448](https://github.com/VirgenRayzon/BuilbotAI/commit/d42c448))
 
 ## [2026-10-06]
 

@@ -104,7 +104,7 @@ export function AdminTabHeader({
             tag: "Decommissioned Assets",
             titlePrefix: "Inventory & Systems ",
             titleHighlight: "Archive",
-            description: "Review decommissioned components and archived prebuilt systems, or restore them to active stock.",
+            description: "Review archived components, prebuilt systems, and reservations.",
         },
         audit: {
             tag: "Security Ledger",
@@ -210,7 +210,7 @@ export function AdminTabHeader({
                         )}
 
                         {currentTab === 'audit' && auditLogsCount > 0 && (
-                            <Badge size="sm" color="indigo" variant="light" className="font-bold">
+                            <Badge size="sm" color="cyan" variant="light" className="font-bold">
                                 {auditLogsCount} Records
                             </Badge>
                         )}

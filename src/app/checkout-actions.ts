@@ -1,7 +1,7 @@
 
 "use server";
 
-import { getAdminFirestore } from "@/firebase/server-init";
+import { getAdminAuth, getAdminFirestore } from "@/firebase/server-init";
 import * as admin from 'firebase-admin';
 import { Order, OrderItem } from "@/lib/types";
 import { inventoryItemPath } from "@/lib/inventory-paths";
@@ -131,13 +131,25 @@ export async function processCheckout(userId: string, userEmail: string, items: 
 export async function updateReservationStatus(
     orderId: string, 
     newStatus: Order['status'], 
-    actor?: { id: string, name: string, isManager: boolean, isSuperAdmin?: boolean }
+    idToken: string
 ) {
     const firestore = getAdminFirestore();
 
     let targetUserId: string | null = null;
 
     try {
+        const decoded = await getAdminAuth().verifyIdToken(idToken, true);
+        const actorSnap = await firestore.collection('users').doc(decoded.uid).get();
+        const actorProfile = actorSnap.data();
+        const isStaff = (decoded.isManager === true && actorProfile?.isManager === true) ||
+            (decoded.isSuperAdmin === true && actorProfile?.isSuperAdmin === true);
+        const actor = isStaff ? {
+            id: decoded.uid,
+            name: actorProfile?.name || actorProfile?.email || decoded.email || 'Staff',
+            isManager: true,
+            isSuperAdmin: decoded.isSuperAdmin === true && actorProfile?.isSuperAdmin === true,
+        } : undefined;
+
         await firestore.runTransaction(async (transaction) => {
             const orderRef = firestore.collection("orders").doc(orderId);
             const orderSnap = await transaction.get(orderRef);
@@ -148,6 +160,11 @@ export async function updateReservationStatus(
 
             const orderData = orderSnap.data() as Order;
             const currentStatus = orderData.status;
+            if (orderData.isArchived) throw new Error('Restore the reservation before changing its status.');
+            if (!isStaff && (decoded.uid !== orderData.userId || newStatus !== 'cancelled' ||
+                (currentStatus !== 'pending' && currentStatus !== 'building'))) {
+                throw new Error('You do not have permission to change this reservation.');
+            }
             targetUserId = orderData.userId;
 
             // Prevent redundant processing if status is already the same

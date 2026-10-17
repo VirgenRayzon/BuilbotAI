@@ -174,21 +174,21 @@ export function AboutManagement() {
   if (loading) {
     return (
       <div className="flex justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-cyan-600 dark:text-cyan-400" />
       </div>
     );
   }
 
   return (
-    <Card className="border-white/5 bg-muted/10 overflow-hidden">
-      <CardHeader className="p-3 border-b border-white/5">
+    <Card className="border-slate-200/80 dark:border-white/10 bg-white/85 dark:bg-[#111722] text-slate-900 dark:text-slate-100 shadow-sm overflow-hidden">
+      <CardHeader className="p-3 border-b border-slate-200/80 dark:border-white/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-              <FileText className="h-5 w-5 text-primary" />
+            <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+              <FileText className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
             </div>
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
                 About Page Editor
                 <CompactInfo
                   label="About editing the public About page"
@@ -197,7 +197,7 @@ export function AboutManagement() {
               </CardTitle>
             </div>
           </div>
-          <Button onClick={handleSave} disabled={saving} className="shadow-lg shadow-primary/20">
+          <Button onClick={handleSave} disabled={saving} className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs uppercase tracking-wider shadow-sm">
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
             Save Changes
           </Button>
@@ -206,31 +206,31 @@ export function AboutManagement() {
       <CardContent className="p-3 space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Main Title</Label>
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Main Title</Label>
             <Input 
               value={content?.title} 
               onChange={(e) => setContent(c => c ? { ...c, title: e.target.value } : null)}
-              className="bg-background/50 border-white/5"
+              className="bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100"
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Subtitle</Label>
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Subtitle</Label>
             <Input 
               value={content?.subtitle} 
               onChange={(e) => setContent(c => c ? { ...c, subtitle: e.target.value } : null)}
-              className="bg-background/50 border-white/5"
+              className="bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100"
             />
           </div>
         </div>
 
-        <div className="space-y-4 pt-4 border-t border-white/5">
+        <div className="space-y-4 pt-4 border-t border-slate-200/80 dark:border-white/10">
           <div className="flex items-center justify-between">
-            <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Page Sections</Label>
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Page Sections</Label>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={handleAddSection}
-              className="h-7 text-[10px] uppercase tracking-wider bg-primary/5 border-primary/20 hover:bg-primary/10"
+              className="h-7 text-xs font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 border-cyan-500/30 hover:bg-cyan-500/20"
             >
               <Plus className="h-3 w-3 mr-1" /> Add Section
             </Button>
@@ -241,7 +241,9 @@ export function AboutManagement() {
                 key={section.id} 
                 className={cn(
                   "border rounded-xl transition-all duration-300 relative group/section",
-                  expandedSection === section.id ? "border-primary/30 bg-primary/5" : "border-white/5 bg-background/30"
+                  expandedSection === section.id 
+                    ? "border-cyan-500/40 bg-cyan-500/[0.03] dark:bg-cyan-500/[0.05]" 
+                    : "border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-black/20"
                 )}
               >
                 <div className="flex items-center">
@@ -249,11 +251,11 @@ export function AboutManagement() {
                     className="flex-1 px-4 py-3 flex items-center justify-between text-left"
                     onClick={() => setExpandedSection(expandedSection === section.id ? null : section.id)}
                   >
-                    <span className="font-bold text-sm flex items-center gap-2">
-                      <div className={cn("w-1.5 h-1.5 rounded-full", expandedSection === section.id ? "bg-primary" : "bg-muted-foreground/30")} />
+                    <span className="font-bold text-sm flex items-center gap-2 text-slate-900 dark:text-white">
+                      <div className={cn("w-1.5 h-1.5 rounded-full", expandedSection === section.id ? "bg-cyan-500" : "bg-slate-400 dark:bg-slate-600")} />
                       {section.title}
                     </span>
-                    {expandedSection === section.id ? <ChevronUp className="h-4 w-4 opacity-50" /> : <ChevronDown className="h-4 w-4 opacity-50" />}
+                    {expandedSection === section.id ? <ChevronUp className="h-4 w-4 opacity-50 text-slate-600 dark:text-slate-400" /> : <ChevronDown className="h-4 w-4 opacity-50 text-slate-600 dark:text-slate-400" />}
                   </button>
                   <Button
                     variant="ghost"
@@ -271,52 +273,52 @@ export function AboutManagement() {
                 {expandedSection === section.id && (
                   <div className="px-4 pb-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                     <div className="space-y-2">
-                      <Label className="text-[9px] uppercase tracking-tighter text-muted-foreground">Section Header</Label>
+                      <Label className="text-[10px] uppercase tracking-wider font-bold text-slate-600 dark:text-slate-400">Section Header</Label>
                       <Input 
                         value={section.title} 
                         onChange={(e) => updateSection(section.id, 'title', e.target.value)}
-                        className="bg-background/40 border-white/5 text-sm h-9"
+                        className="bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 text-sm h-9"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[9px] uppercase tracking-tighter text-muted-foreground">Section Image</Label>
+                      <Label className="text-[10px] uppercase tracking-wider font-bold text-slate-600 dark:text-slate-400">Section Image</Label>
                       <ImageUpload 
                         value={section.imageUrl || ''} 
                         onChange={(val) => updateSection(section.id, 'imageUrl', val)}
-                        className="bg-background/40"
+                        className="bg-white dark:bg-slate-900"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[9px] uppercase tracking-tighter text-muted-foreground">Body Content</Label>
+                      <Label className="text-[10px] uppercase tracking-wider font-bold text-slate-600 dark:text-slate-400">Body Content</Label>
                       <Textarea 
                         value={section.content} 
                         onChange={(e) => updateSection(section.id, 'content', e.target.value)}
-                        className="bg-background/40 border-white/5 text-sm min-h-[120px] leading-relaxed"
+                        className="bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 text-sm min-h-[120px] leading-relaxed"
                       />
                     </div>
 
                     <div className="space-y-3 pt-2">
                       <div className="flex items-center justify-between">
-                        <Label className="text-[9px] uppercase tracking-tighter text-muted-foreground">Sub-Topics</Label>
+                        <Label className="text-[10px] uppercase tracking-wider font-bold text-slate-600 dark:text-slate-400">Sub-Topics</Label>
                         <Button 
                           variant="ghost" 
                           size="sm" 
                           onClick={() => handleAddSubItem(section.id)}
-                          className="h-6 px-2 text-[9px] hover:bg-primary/10"
+                          className="h-6 px-2 text-[10px] font-bold text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10"
                         >
                           <Plus className="h-3 w-3 mr-1" /> Add Sub-topic
                         </Button>
                       </div>
                       
-                      <div className="space-y-3 pl-4 border-l border-white/10">
+                      <div className="space-y-3 pl-4 border-l border-slate-200 dark:border-white/10">
                         {section.subItems?.map((sub, idx) => (
-                          <div key={idx} className="space-y-2 relative group/subitem pb-3 border-b border-white/5 last:border-0 last:pb-0">
+                          <div key={idx} className="space-y-2 relative group/subitem pb-3 border-b border-slate-200/80 dark:border-white/5 last:border-0 last:pb-0">
                             <div className="flex gap-2">
                               <Input 
                                 value={sub.title} 
                                 onChange={(e) => updateSubItem(section.id, idx, 'title', e.target.value)}
                                 placeholder="Sub-topic Title"
-                                className="bg-background/40 border-white/5 text-[13px] h-8 font-bold"
+                                className="bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 text-[13px] h-8 font-bold"
                               />
                               <Button
                                 variant="ghost"
@@ -330,13 +332,13 @@ export function AboutManagement() {
                             <ImageUpload 
                               value={sub.imageUrl || ''} 
                               onChange={(val) => updateSubItem(section.id, idx, 'imageUrl', val)}
-                              className="bg-background/40"
+                              className="bg-white dark:bg-slate-900"
                             />
                             <Textarea 
                               value={sub.content} 
                               onChange={(e) => updateSubItem(section.id, idx, 'content', e.target.value)}
                               placeholder="Sub-topic Content"
-                              className="bg-background/40 border-white/5 text-[12px] min-h-[60px] leading-relaxed"
+                              className="bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 text-[12px] min-h-[60px] leading-relaxed"
                             />
                           </div>
                         ))}

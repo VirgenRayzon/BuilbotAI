@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image, { ImageProps } from "next/image";
 import { cn } from "@/lib/utils";
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, LoaderCircle } from "lucide-react";
 
 interface OptimizedImageProps extends ImageProps {
     fallbackIcon?: React.ReactNode;
@@ -22,9 +22,14 @@ export function OptimizedImage({
 }: OptimizedImageProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(false);
+    const previousSrcRef = useRef(src);
 
-    // Reset the loading treatment when a card or gallery swaps to another image.
+    // Reset only when an already-mounted image changes. Resetting after the
+    // initial mount can turn the loader back on after a cached image has loaded.
     useEffect(() => {
+        if (previousSrcRef.current === src) return;
+
+        previousSrcRef.current = src;
         setIsLoading(true);
         setError(false);
     }, [src]);
@@ -56,13 +61,14 @@ export function OptimizedImage({
             !fill && "w-full h-full",
             className
         )}>
-            {/* Lightweight shimmer for every card image, including prioritized LCP images. */}
+            {/* One quiet rotating indicator keeps image loading feedback consistent. */}
             {isLoading && !error && (
-                <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-slate-100/85 pointer-events-none dark:bg-slate-900/80" aria-hidden="true">
-                    <div className="absolute inset-0 animate-shimmer bg-[linear-gradient(105deg,transparent_25%,rgba(6,182,212,0.16)_45%,rgba(255,255,255,0.55)_50%,rgba(6,182,212,0.16)_55%,transparent_75%)] bg-[length:220%_100%] dark:bg-[linear-gradient(105deg,transparent_25%,rgba(34,211,238,0.08)_45%,rgba(255,255,255,0.12)_50%,rgba(34,211,238,0.08)_55%,transparent_75%)]" />
-                    <div className="relative h-12 w-12 rounded-xl border border-slate-300/70 bg-white/50 p-3 text-slate-400 shadow-sm animate-pulse dark:border-white/10 dark:bg-white/5 dark:text-slate-500">
-                        {fallbackIcon || <ImageIcon className="h-full w-full" />}
-                    </div>
+                <div
+                    className="absolute inset-0 z-20 flex items-center justify-center bg-slate-100/85 text-cyan-600 pointer-events-none dark:bg-slate-900/80 dark:text-cyan-400"
+                    role="status"
+                    aria-label="Loading image"
+                >
+                    {fallbackIcon || <LoaderCircle className="h-6 w-6 animate-spin" aria-hidden="true" />}
                 </div>
             )}
 

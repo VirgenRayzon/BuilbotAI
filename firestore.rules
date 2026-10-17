@@ -55,13 +55,11 @@ service cloud.firestore {
       allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isManager());
       // Users can cancel their own orders
       allow update: if request.auth != null && (
-        (request.auth.uid == resource.data.userId && request.resource.data.status == 'cancelled') ||
+        (request.auth.uid == resource.data.userId && request.resource.data.status == 'cancelled'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])) ||
         isManager()
       );
-      allow delete: if request.auth != null && (
-        (request.auth.uid == resource.data.userId && resource.data.status == 'cancelled') || 
-        isManager()
-      );
+      allow delete: if isSuperAdmin();
     }
 
     match /notifications/{notifId} {

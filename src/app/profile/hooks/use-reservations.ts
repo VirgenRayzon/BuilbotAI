@@ -3,11 +3,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useUserProfile } from "@/context/user-profile";
 import { useFirestore } from "@/firebase";
-import { collection, query, where, onSnapshot, deleteDoc, doc } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { Order } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { updateReservationStatus } from "@/app/checkout-actions";
-import { createUserAuditLog } from "@/firebase/audit";
 
 /**
  * Hook to manage user reservations (fetching, cancelling, deleting).
@@ -58,7 +57,8 @@ export function useReservations() {
     const handleCancelReservation = async (reservationId: string) => {
         if (!firestore) return;
         try {
-            const result = await updateReservationStatus(reservationId, 'cancelled');
+            if (!authUser) throw new Error('Please sign in again.');
+            const result = await updateReservationStatus(reservationId, 'cancelled', await authUser.getIdToken());
             if (result.success) {
                 toast({ title: "Reservation Cancelled", description: "Order has been cancelled." });
             } else {
@@ -67,26 +67,6 @@ export function useReservations() {
         } catch (error) {
             console.error("Error cancelling reservation:", error);
             toast({ title: "Error", description: "Failed to cancel reservation.", variant: "destructive" });
-        }
-    };
-
-    const handleDeleteReservation = async (reservationId: string) => {
-        if (!firestore || !authUser) return;
-        try {
-            await deleteDoc(doc(firestore, "orders", reservationId));
-            await createUserAuditLog(firestore, {
-                userId: authUser.uid,
-                userEmail: authUser.email || undefined,
-                actionName: 'deleted',
-                scope: 'Order',
-                resourceName: `Reservation #${reservationId.substring(0, 8)}`,
-                resourceId: reservationId,
-                details: 'Permanently removed cancelled reservation from your history'
-            });
-            toast({ title: "Reservation Removed", description: "Order record deleted." });
-        } catch (error) {
-            console.error("Error deleting reservation:", error);
-            toast({ title: "Error", description: "Failed to delete record.", variant: "destructive" });
         }
     };
 
@@ -103,7 +83,6 @@ export function useReservations() {
         reservations,
         loading,
         handleCancelReservation,
-        handleDeleteReservation,
         stats
     };
 }

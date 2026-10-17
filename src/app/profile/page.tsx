@@ -57,14 +57,6 @@ import { UserAuditLogsSection } from "./components/user-audit-logs-section";
 import { CompactInfo } from "@/components/ui/compact-info";
 
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
   Dialog,
@@ -94,7 +86,6 @@ export default function ProfilePage() {
   const favoritesHook = useFavorites();
 
   const [cancelModalOrder, setCancelModalOrder] = useState<Order | null>(null);
-  const [deleteActionId, setDeleteActionId] = useState<string | null>(null);
 
   // Role booleans
   const isSuperAdmin = Boolean(profile?.isSuperAdmin);
@@ -304,18 +295,9 @@ export default function ProfilePage() {
                         <ReservationsList
                           reservations={reservations.reservations}
                           loading={reservations.loading}
-                          onCancel={(id) => {
-                            const target = reservations.reservations.find((r) => r.id === id);
+                          onConfirm={({ id, order }) => {
+                            const target = order || reservations.reservations.find((r) => r.id === id);
                             if (target) setCancelModalOrder(target);
-                          }}
-                          onDelete={(id) => setDeleteActionId(id)}
-                          onConfirm={({ id, type, order }) => {
-                            if (type === "cancel") {
-                              const target = order || reservations.reservations.find((r) => r.id === id);
-                              if (target) setCancelModalOrder(target);
-                            } else {
-                              setDeleteActionId(id);
-                            }
                           }}
                         />
                       </div>
@@ -493,35 +475,6 @@ export default function ProfilePage() {
             </DialogContent>
           </Dialog>
 
-          {/* Delete Cancelled Record Confirmation */}
-          <AlertDialog open={!!deleteActionId} onOpenChange={(open) => !open && setDeleteActionId(null)}>
-            <AlertDialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 rounded-2xl shadow-xl">
-              <AlertDialogHeader>
-                <AlertDialogTitle className="text-xl font-bold font-headline uppercase text-slate-900 dark:text-white">
-                  Remove Reservation Record?
-                </AlertDialogTitle>
-                <AlertDialogDescription className="text-slate-600 dark:text-slate-300 font-medium">
-                  This will remove the cancelled reservation entry from your history.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="rounded-xl border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-semibold">
-                  Cancel
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    if (deleteActionId) {
-                      reservations.handleDeleteReservation(deleteActionId);
-                      setDeleteActionId(null);
-                    }
-                  }}
-                  className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold"
-                >
-                  Delete Record
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </div>
       </div>
     </RouteGuard>

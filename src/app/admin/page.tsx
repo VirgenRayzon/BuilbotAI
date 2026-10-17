@@ -80,7 +80,7 @@ export default function AdminPage() {
         componentCategories: initialCategories
     } = useInventory(profile);
 
-    const { orders, ordersLoading, handleDeleteOrder, handleUpdateOrder, stats } = useOrders(profile);
+    const { orders, ordersLoading, handleReservationAction, handleUpdateOrder, stats } = useOrders(profile);
 
     const salesActions = useSalesActions({
         orders: orders || [],
@@ -285,9 +285,10 @@ export default function AdminPage() {
 
                         <Tabs.Panel value="reservations" className="mt-6">
                             <ReservationsTab
-                                orders={orders || []}
+                                orders={(orders || []).filter(order => !order.isArchived)}
                                 ordersLoading={ordersLoading}
-                                onDeleteOrder={handleDeleteOrder}
+                                isSuperAdmin={profile?.isSuperAdmin === true}
+                                onReservationAction={handleReservationAction}
                                 onUpdateOrder={handleUpdateOrder}
                             />
                         </Tabs.Panel>
@@ -308,6 +309,10 @@ export default function AdminPage() {
                                 partsLoading={partsLoading}
                                 prebuiltSystems={prebuiltSystems || []}
                                 prebuiltsLoading={prebuiltsLoading}
+                                orders={(orders || []).filter(order => Boolean(order.isArchived))}
+                                ordersLoading={ordersLoading}
+                                onReservationAction={handleReservationAction}
+                                onUpdateOrder={handleUpdateOrder}
                                 profile={profile}
                                 onDeletePart={handleDeletePart}
                                 onArchivePart={handleArchivePart}

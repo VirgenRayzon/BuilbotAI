@@ -11,6 +11,7 @@ import { getAdminFirestore } from '@/firebase/server-init';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { GoogleAuth } from 'google-auth-library';
 import type { LanguageModel } from 'ai';
+import { resolveVertexTunedEndpoint } from './vertex-tuned-endpoint';
 export type AiFeatureKey = 'chatbot' | 'buildAdvisor' | 'prebuiltAdvisor';
 
 export interface FeatureModelRouting {
@@ -91,8 +92,6 @@ export function normalizeModelId(rawId?: string): string {
 
 export async function getActiveAiModelConfig(feature?: AiFeatureKey): Promise<ActiveAiModelConfig> {
     const now = Date.now();
-    const degraded = isCurrentlyDegraded();
-
     if (!cachedSettings || (now - lastCacheTime >= CACHE_TTL_MS)) {
         let globalProvider: 'default' | 'finetuned' = 'default';
         let rawModelId = DEFAULT_TUNED_MODEL_ID;
@@ -143,7 +142,17 @@ export async function getActiveAiModelConfig(feature?: AiFeatureKey): Promise<Ac
             }
         }
 
-        const normalizedModelId = normalizeModelId(rawModelId);
+        let normalizedModelId = normalizeModelId(rawModelId);
+        if (normalizedModelId.includes('/models/')) {
+            try {
+                const token = await getVertexAccessToken();
+                if (!token) throw new Error('No Vertex AI access token available');
+                normalizedModelId = await resolveVertexTunedEndpoint(normalizedModelId, token);
+            } catch (error) {
+                console.warn('[AI Model Resolver] Could not resolve tuned model endpoint:', error);
+                markTunedModelDegraded(error instanceof Error ? error.message : 'Endpoint lookup failed');
+            }
+        }
         let projectId = '781722135778';
         let location = 'us-central1';
 
@@ -168,6 +177,7 @@ export async function getActiveAiModelConfig(feature?: AiFeatureKey): Promise<Ac
         ? cachedSettings.featureRouting[feature]
         : cachedSettings.globalProvider;
 
+    const degraded = isCurrentlyDegraded();
     const isFineTuned = effectiveProvider === 'finetuned' && !degraded;
     const modelId = effectiveProvider === 'finetuned'
         ? cachedSettings.normalizedModelId

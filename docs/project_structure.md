@@ -222,7 +222,17 @@ BuilbotAI
 │   ├── inspect-advisor-inventory.ts
 │   ├── smoke-advisor.cjs
 │   ├── smoke-new-build.cjs
-│   └── validate-advisor-result.ts
+│   ├── validate-advisor-result.ts
+│   ├── verify-advisor-background.cjs
+│   ├── verify-advisor-parallel.cjs
+│   ├── verify-advisor-web-search.ts
+│   ├── verify-advisor-web-ui.cjs
+│   ├── web-search-mobile-dark.png
+│   ├── web-search-mobile-light.png
+│   ├── web-search-mobile.png
+│   ├── web-search-result-dark.png
+│   ├── web-search-result-light.png
+│   └── web-search-result.png
 ├── .vscode
 │   └── settings.json
 ├── design_mocks
@@ -237,25 +247,43 @@ BuilbotAI
 │   ├── admin_prebuilt_ai_assist.md
 │   ├── admin_prebuilt_pricing.md
 │   ├── admin_session_and_idle_timeout.md
+│   ├── ai_model_routing.md
 │   ├── build_advisor_performance.md
 │   ├── chatbot_build_context.md
 │   ├── component_description_formatting.md
+│   ├── customer_build_pdf.md
 │   ├── customer_ui_spacing.md
+│   ├── google_auth_feedback.md
 │   ├── import_catalog_images.md
 │   ├── ingest_knowledge.md
 │   ├── inventory_hierarchy_migration.md
-│   └── password_reset.md
+│   ├── inventory_performance.md
+│   ├── landing_static_assets.md
+│   ├── password_reset.md
+│   └── sales_analytics_export.md
 ├── docs
+│   ├── api-and-integrations.md
+│   ├── architecture.md
 │   ├── backend.json
 │   ├── blueprint.md
 │   ├── build_advisor_performance_plan.md
+│   ├── build_advisor_web_search_plan.md
 │   ├── database_scalability_plan.md
-│   └── project_structure.md
+│   ├── firebase-and-data.md
+│   ├── implementation-plan-and-results.md
+│   ├── inventory_performance_audit.md
+│   ├── landing_performance_audit.md
+│   ├── pages.md
+│   ├── project_structure.md
+│   └── ui-pages-and-overlays-audit.md
 ├── execution
+│   ├── audit_inventory_performance.mjs
+│   ├── audit_landing_performance.mjs
 │   ├── benchmark_build_advisor.mjs
 │   ├── benchmark_build_critique.ts
 │   ├── consolidate_collections.ts
 │   ├── delete-test-builders.js
+│   ├── generate_favicon.js
 │   ├── generate_project_structure.js
 │   ├── ingest_website.py
 │   ├── migrate_audit_logs.ts
@@ -263,6 +291,9 @@ BuilbotAI
 │   ├── update_changelog.js
 │   ├── verify_inventory_hierarchy.ts
 │   └── verify_public_firestore_reads.ts
+├── output
+│   └── pdf
+│       └── buildbotai-ui-pages-and-overlays-audit.pdf
 ├── public
 │   ├── placeholders
 │   │   └── components
@@ -285,10 +316,7 @@ BuilbotAI
 │   │   ├── ui_m.png
 │   │   └── ui.png
 │   ├── cosmic-bg.png
-│   ├── feature-1.webp
-│   ├── feature-2.webp
-│   ├── feature-3.webp
-│   ├── hero-custom.webp
+│   ├── favicon.ico
 │   ├── hero-pc.png
 │   └── landing-hero.png
 ├── scratch
@@ -367,7 +395,8 @@ BuilbotAI
 │   │   │   │   └── use-sales-actions.ts
 │   │   │   ├── prebuilt-builder
 │   │   │   │   └── page.tsx
-│   │   │   └── page.tsx
+│   │   │   ├── page.tsx
+│   │   │   └── reservation-actions.ts
 │   │   ├── ai-build-advisor
 │   │   │   ├── components
 │   │   │   │   ├── advisor-header.tsx
@@ -385,6 +414,9 @@ BuilbotAI
 │   │   │   │       ├── critique
 │   │   │   │       └── recommendations
 │   │   │   │           └── route.ts
+│   │   │   ├── builder
+│   │   │   │   └── download
+│   │   │   │       └── route.ts
 │   │   │   └── chat
 │   │   │       └── route.ts
 │   │   ├── builder
@@ -395,6 +427,7 @@ BuilbotAI
 │   │   │   │   ├── use-builder-logic.ts
 │   │   │   │   ├── use-filtered-inventory.ts
 │   │   │   │   └── use-inventory-query.ts
+│   │   │   ├── builder-page.tsx
 │   │   │   └── page.tsx
 │   │   ├── contact
 │   │   │   └── page.tsx
@@ -429,6 +462,7 @@ BuilbotAI
 │   │   │   │   ├── use-admin-keys.ts
 │   │   │   │   ├── use-audit-logs.ts
 │   │   │   │   ├── use-emergency-controls.ts
+│   │   │   │   ├── use-favorite-inventory.ts
 │   │   │   │   ├── use-favorites.ts
 │   │   │   │   ├── use-profile-state.ts
 │   │   │   │   ├── use-reservations.ts
@@ -448,14 +482,22 @@ BuilbotAI
 │   │   ├── team
 │   │   │   └── page.tsx
 │   │   ├── actions.ts
+│   │   ├── apple-icon.png
 │   │   ├── checkout-actions.ts
 │   │   ├── favicon.ico
 │   │   ├── globals.css
+│   │   ├── icon.svg
 │   │   ├── image-actions.ts
 │   │   ├── layout.tsx
 │   │   ├── loading.tsx
 │   │   ├── page.tsx
 │   │   └── prebuilt-reservation-actions.ts
+│   ├── assets
+│   │   └── landing
+│   │       ├── feature-1.webp
+│   │       ├── feature-2.webp
+│   │       ├── feature-3.webp
+│   │       └── hero-custom.webp
 │   ├── components
 │   │   ├── auth
 │   │   │   ├── route-guard.tsx
@@ -489,9 +531,11 @@ BuilbotAI
 │   │   ├── landing
 │   │   │   ├── accessories-section.tsx
 │   │   │   ├── cta-section.tsx
+│   │   │   ├── deferred-prebuilt-showcase.tsx
 │   │   │   ├── feature-showcase.tsx
 │   │   │   ├── features-section.tsx
 │   │   │   ├── hero-section.tsx
+│   │   │   ├── landing-page.tsx
 │   │   │   ├── prebuilt-showcase.tsx
 │   │   │   ├── section-header.tsx
 │   │   │   ├── team-section.tsx
@@ -524,6 +568,7 @@ BuilbotAI
 │   │   │   ├── checkbox.tsx
 │   │   │   ├── collapsible.tsx
 │   │   │   ├── compact-info.tsx
+│   │   │   ├── deferred-dialog.tsx
 │   │   │   ├── dialog.tsx
 │   │   │   ├── dropdown-menu.tsx
 │   │   │   ├── form.tsx
@@ -541,6 +586,7 @@ BuilbotAI
 │   │   │   ├── sheet.tsx
 │   │   │   ├── sidebar.tsx
 │   │   │   ├── slider.tsx
+│   │   │   ├── sliding-image.tsx
 │   │   │   ├── sparkle-button.tsx
 │   │   │   ├── switch.tsx
 │   │   │   ├── table.tsx
@@ -553,18 +599,22 @@ BuilbotAI
 │   │   │   └── tooltip.tsx
 │   │   ├── about-management.tsx
 │   │   ├── add-part-dialog.tsx
+│   │   ├── add-part-editor.tsx
 │   │   ├── add-prebuilt-dialog.tsx
 │   │   ├── add-stock-dialog.tsx
+│   │   ├── advisor-job-toast.tsx
 │   │   ├── ai-build-critique.tsx
 │   │   ├── ai-model-settings.tsx
 │   │   ├── ai-progress-modal.tsx
 │   │   ├── ai-system-prompts-settings.tsx
 │   │   ├── app-layout.tsx
+│   │   ├── build-recommendation-notes.tsx
 │   │   ├── build-summary.tsx
 │   │   ├── builder-floating-analytics.tsx
 │   │   ├── builder-floating-chat.tsx
 │   │   ├── chat-form.tsx
 │   │   ├── component-card.tsx
+│   │   ├── deferred-builder-chat.tsx
 │   │   ├── footer.tsx
 │   │   ├── full-page-loader.tsx
 │   │   ├── header-mega-menu.tsx
@@ -582,6 +632,7 @@ BuilbotAI
 │   │   ├── order-details-modal.tsx
 │   │   ├── pagination-controls.tsx
 │   │   ├── part-card.tsx
+│   │   ├── part-details-content.tsx
 │   │   ├── part-details-dialog.tsx
 │   │   ├── prebuilt-builder-add-dialog.tsx
 │   │   ├── prebuilt-card-specs.tsx
@@ -595,6 +646,8 @@ BuilbotAI
 │   │   ├── user-notifications.tsx
 │   │   └── your-build.tsx
 │   ├── context
+│   │   ├── advisor-jobs-context.tsx
+│   │   ├── advisor-jobs-scope.tsx
 │   │   ├── loading-context.tsx
 │   │   ├── sign-out-transition.tsx
 │   │   ├── site-settings-context.tsx
@@ -621,8 +674,11 @@ BuilbotAI
 │   ├── hooks
 │   │   ├── use-admin-session-guard.ts
 │   │   ├── use-build-actions.ts
+│   │   ├── use-build-pdf-download.ts
 │   │   ├── use-idle-timeout.ts
+│   │   ├── use-inventory-image-count.ts
 │   │   ├── use-mobile.tsx
+│   │   ├── use-near-viewport.ts
 │   │   ├── use-part-form.ts
 │   │   ├── use-persistent-state.ts
 │   │   ├── use-quick-build-checks.ts
@@ -648,14 +704,20 @@ BuilbotAI
 │       ├── constants
 │       │   ├── category-specs.ts
 │       │   └── default-system-prompts.ts
+│       ├── server
+│       │   └── builder-catalog.ts
 │       ├── advisor-inventory.ts
 │       ├── advisor-timing.ts
+│       ├── advisor-web-research.ts
 │       ├── ai-model-resolver.ts
 │       ├── auth-utils.ts
 │       ├── bottleneck.ts
 │       ├── build-advisor-goals.ts
+│       ├── build-pdf-categories.ts
+│       ├── build-pdf.ts
 │       ├── chat-message-parts.test.ts
 │       ├── chat-message-parts.ts
+│       ├── chat-part-specifications.ts
 │       ├── chat-recommendation-facts.test.ts
 │       ├── chat-recommendation-facts.ts
 │       ├── chat-recommendations.test.ts
@@ -666,29 +728,113 @@ BuilbotAI
 │       ├── export-excel.ts
 │       ├── fps-estimator.ts
 │       ├── inventory-fetcher.ts
+│       ├── inventory-image-sizes.ts
 │       ├── inventory-paths.test.ts
 │       ├── inventory-paths.ts
 │       ├── knowledge-retriever.ts
 │       ├── normalize-product-description.ts
 │       ├── parse-peso-budget.ts
 │       ├── placeholder-images.ts
+│       ├── popularity.ts
 │       ├── prebuilt-utils.ts
+│       ├── styled-excel.ts
 │       ├── system-prompts.ts
 │       ├── types.ts
 │       ├── utils.ts
-│       └── vector-retriever.ts
+│       ├── validate-advisor-build.test.ts
+│       ├── validate-advisor-build.ts
+│       ├── vector-retriever.ts
+│       └── vertex-tuned-endpoint.ts
 ├── test-results
 │   └── .last-run.json
 ├── tests
-│   └── auth-role-navigation.spec.ts
+│   ├── auth-role-navigation.spec.ts
+│   ├── chat-part-specifications.spec.ts
+│   ├── landing-performance.spec.ts
+│   └── sales-export.spec.ts
 ├── tmp
+│   ├── pdfs
+│   │   ├── audit-page-1.png
+│   │   ├── audit-page-2.png
+│   │   ├── audit-page-3.png
+│   │   ├── audit-page-4.png
+│   │   ├── audit-page-5.png
+│   │   ├── audit-page-6.png
+│   │   ├── audit-page-7.png
+│   │   ├── contact-sheet.png
+│   │   ├── create_ui_audit_pdf.py
+│   │   ├── live-approved-page-1.png
+│   │   ├── live-approved-page-5.png
+│   │   ├── live-final-last.png
+│   │   ├── live-final-page-1.png
+│   │   ├── live-final-page-5.png
+│   │   ├── live-page-1.png
+│   │   ├── live-page-5.png
+│   │   ├── make_ui_audit_pdf.py
+│   │   ├── page-1.png
+│   │   ├── page-4.png
+│   │   └── your-build-sample.pdf
+│   ├── performance
+│   │   ├── hosted-before-desktop.png
+│   │   ├── hosted-before-mobile.png
+│   │   ├── hosted-before.json
+│   │   ├── inventory-after-admin-desktop.png
+│   │   ├── inventory-after-builder-desktop.png
+│   │   ├── inventory-before-admin-desktop.png
+│   │   ├── inventory-before-admin-mobile.png
+│   │   ├── inventory-before-builder-desktop.png
+│   │   ├── inventory-before-builder-mobile.png
+│   │   ├── inventory-before.json
+│   │   ├── inventory-final-admin-desktop.png
+│   │   ├── inventory-final-admin-mobile.png
+│   │   ├── inventory-final-builder-desktop.png
+│   │   ├── inventory-final-builder-mobile.png
+│   │   ├── inventory-final.json
+│   │   ├── local-after-desktop.png
+│   │   ├── local-after-mobile.png
+│   │   ├── local-after.json
+│   │   ├── local-before-desktop.png
+│   │   ├── local-before-mobile.png
+│   │   ├── local-before.json
+│   │   ├── local-final-desktop.png
+│   │   ├── local-final-mobile.png
+│   │   ├── local-final.json
+│   │   ├── trace-sample-desktop.png
+│   │   ├── trace-sample-mobile.png
+│   │   ├── trace-sample-mobile.trace.json
+│   │   └── trace-sample.json
+│   ├── playwright
+│   │   ├── tests-auth-role-navigation-6f874-ustomer-route-after-refresh
+│   │   │   └── error-context.md
+│   │   ├── tests-auth-role-navigation-78924-ut-removes-protected-access
+│   │   │   └── error-context.md
+│   │   ├── tests-auth-role-navigation-82e0d-ob-across-client-navigation
+│   │   │   └── error-context.md
+│   │   └── .last-run.json
+│   ├── playwright-advisor
+│   │   └── .last-run.json
+│   ├── playwright-final
+│   │   ├── tests-auth-role-navigation-82e0d-ob-across-client-navigation
+│   │   │   └── error-context.md
+│   │   └── .last-run.json
+│   ├── playwright-image-motion
+│   │   └── .last-run.json
+│   ├── playwright-inventory
+│   │   └── .last-run.json
+│   ├── playwright-inventory-final
+│   │   └── .last-run.json
+│   ├── playwright-prebuilt-toast
+│   │   └── .last-run.json
+│   ├── playwright-verified
+│   │   └── .last-run.json
 │   ├── test_knowledge_tools.ts
 │   ├── test_local_extraction.ts
 │   ├── test_search.ts
+│   ├── v2-model-verified.png
 │   ├── verify_google_search.ts
-│   └── verify_local_db.ts
+│   ├── verify_local_db.ts
+│   └── verify-build-pdf.ts
 ├── .env
-├── .eslintrc.json
 ├── .firebaserc
 ├── .gitignore
 ├── .modified
@@ -699,6 +845,7 @@ BuilbotAI
 ├── components.json
 ├── debug-response.json
 ├── DESIGN.md
+├── eslint.config.mjs
 ├── firebase.json
 ├── firestore.indexes.json
 ├── firestore.rules

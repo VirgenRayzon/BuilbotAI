@@ -3,6 +3,7 @@ import { after } from 'next/server';
 import { generateText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { getVertexAccessToken, markTunedModelHealthy, DEFAULT_TUNED_MODEL_ID, type FeatureModelRouting } from '@/lib/ai-model-resolver';
+import { resolveVertexTunedEndpoint } from '@/lib/vertex-tuned-endpoint';
 
 
 import {
@@ -597,9 +598,10 @@ export async function testAiModelConnectionAction(
       };
     }
 
+    const resolvedEndpoint = await resolveVertexTunedEndpoint(targetModel, token);
     let projectId = '781722135778';
     let location = 'us-central1';
-    const match = targetModel.match(/projects\/([^\/]+)\/locations\/([^\/]+)/);
+    const match = resolvedEndpoint.match(/projects\/([^\/]+)\/locations\/([^\/]+)/);
     if (match) {
       projectId = match[1];
       location = match[2];
@@ -623,7 +625,7 @@ export async function testAiModelConnectionAction(
       fetch: vertexFetch,
     });
 
-    let cleanModelName = targetModel;
+    let cleanModelName = resolvedEndpoint;
     const endpointsIdx = cleanModelName.indexOf('/endpoints/');
     const modelsIdx = cleanModelName.indexOf('/models/');
     if (endpointsIdx !== -1) {
@@ -644,6 +646,7 @@ export async function testAiModelConnectionAction(
     return {
       success: true,
       model: targetModel,
+      resolvedEndpoint,
       provider: 'finetuned',
       response: result.text.trim(),
       latencyMs: Date.now() - startTime
@@ -680,20 +683,35 @@ export async function updateSiteSettingsAction(settings: {
 }) {
   try {
     const db = getAdminFirestore();
+    const activeProject = settings.fineTunedProjects?.find((project) => project.id === settings.activeFineTunedProjectId);
+    if (settings.fineTunedProjects && !activeProject) {
+      throw new Error('Select a registered fine-tuned project before applying AI settings.');
+    }
+    let resolvedEndpoint = settings.fineTunedModelId;
+    let resolvedProjects = settings.fineTunedProjects;
+    if (activeProject) {
+      const needsLookup = activeProject.endpoint.includes('/models/');
+      const token = needsLookup ? await getVertexAccessToken() : '';
+      if (needsLookup && !token) throw new Error('Vertex AI credentials are required to verify the selected tuned model.');
+      resolvedEndpoint = await resolveVertexTunedEndpoint(activeProject.endpoint, token || '');
+      resolvedProjects = settings.fineTunedProjects?.map((project) =>
+        project.id === activeProject.id ? { ...project, endpoint: resolvedEndpoint! } : project
+      );
+    }
     const updatePayload: Record<string, any> = {
       aiModelProvider: settings.aiModelProvider,
       lastUpdated: new Date().toISOString(),
       updatedBy: settings.updatedBy || 'Super Admin'
     };
 
-    if (settings.fineTunedModelId !== undefined) {
-      updatePayload.fineTunedModelId = settings.fineTunedModelId;
+    if (resolvedEndpoint !== undefined) {
+      updatePayload.fineTunedModelId = resolvedEndpoint;
     }
     if (settings.defaultGeminiModel !== undefined) {
       updatePayload.defaultGeminiModel = settings.defaultGeminiModel;
     }
-    if (settings.fineTunedProjects !== undefined) {
-      updatePayload.fineTunedProjects = settings.fineTunedProjects;
+    if (resolvedProjects !== undefined) {
+      updatePayload.fineTunedProjects = resolvedProjects;
     }
     if (settings.activeFineTunedProjectId !== undefined) {
       updatePayload.activeFineTunedProjectId = settings.activeFineTunedProjectId;
@@ -703,7 +721,7 @@ export async function updateSiteSettingsAction(settings: {
     }
 
     await db.collection('siteSettings').doc('main').set(updatePayload, { merge: true });
-    return { success: true };
+    return { success: true, resolvedEndpoint, resolvedProjects };
   } catch (err: any) {
     console.error("Failed to update siteSettings via admin action:", err);
     return { success: false, error: err.message };

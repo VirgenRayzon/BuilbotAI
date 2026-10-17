@@ -137,6 +137,9 @@ export type Order = {
   items: OrderItem[];
   totalPrice: number;
   status: 'pending' | 'building' | 'finished building' | 'cancelled';
+  isArchived?: boolean;
+  archivedAt?: unknown;
+  archivedBy?: string;
   type?: 'prebuilt' | 'custom';
   prebuiltId?: string;
   prebuiltName?: string;

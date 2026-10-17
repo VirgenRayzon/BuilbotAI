@@ -110,7 +110,7 @@ export function AiSystemPromptsSettings() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-200 dark:border-white/10 pb-3">
             <div>
               <Group gap="xs">
-                <ThemeIcon size="md" radius="md" color="indigo" variant="light">
+                <ThemeIcon size="md" radius="md" color="cyan" variant="light">
                   <FileCode size={18} />
                 </ThemeIcon>
                 <Title order={3} className="text-lg font-bold font-headline text-slate-900 dark:text-white">

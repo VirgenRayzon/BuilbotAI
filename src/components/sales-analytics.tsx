@@ -280,14 +280,14 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                             <Tabs.Tab
                                 value="overview"
                                 leftSection={<TrendingUp className="h-4 w-4" />}
-                                className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+                                className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
                             >
                                 Performance & Revenue
                             </Tabs.Tab>
                             <Tabs.Tab
                                 value="popularity"
                                 leftSection={<Activity className="h-4 w-4" />}
-                                className="font-headline font-bold text-xs uppercase tracking-wider py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+                                className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
                             >
                                 Popularity Matrix
                             </Tabs.Tab>
@@ -298,7 +298,7 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
                     <Button
                         onClick={handleExport}
                         loading={isExporting}
-                        color="teal"
+                        color="cyan"
                         variant="filled"
                         radius="md"
                         size="sm"
