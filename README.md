@@ -12,7 +12,7 @@ cd BuilbotAI
 npm install
 ```
 
-Before the first run, create `.env.local` using [the configuration steps below](#3-add-your-configuration). Then, from the `BuilbotAI` folder, start the app with:
+**The download does not include API keys or a ready-to-use `.env.local` file.** Ask the project maintainer for the required credentials or configure your own Firebase and Google AI projects. Before the first run, create `.env.local` using [the configuration steps below](#3-add-your-configuration). Then, from the `BuilbotAI` folder, start the app with:
 
 ```bash
 npm run dev
@@ -64,7 +64,9 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_firebase_app_id
 GOOGLE_API_KEY=your_google_ai_api_key
 ```
 
-You need a Firebase project with its web app registered and the app's Firebase services configured. The public Firebase values come from that web app's configuration; the Google AI key is a separate credential. Some server features also require Firebase Admin credentials (`FB_SERVICE_ACCOUNT` or `FIREBASE_SERVICE_ACCOUNT`). See [Firebase configuration](docs/firebase-and-data.md#configuration) for what each part of the app reads. If you do not have access to the required project and keys, ask the project maintainer for setup instructions. A local server can start without them, but sign-in, inventory, reservations, and AI features may fail.
+Cloning or pulling the repository does **not** give you these values: `.env` files are excluded from Git. The repository contains a Firebase project ID in `.firebaserc`, but that ID alone does not connect your local app, grant you access to its data, or copy the database to your computer. To use the existing Firebase project, obtain its web app configuration from the project maintainer and add it to `.env.local`. Your signed-in account will still be limited by that project's authentication setup and security rules. If you cannot get access to the existing project, set up your own Firebase project; it will have its own data and may need initial configuration and inventory.
+
+The public Firebase values come from the registered web app's configuration; the Google AI key is a separate credential. Server features such as reservations can also require Firebase Admin credentials (`FB_SERVICE_ACCOUNT` or `FIREBASE_SERVICE_ACCOUNT`) that must be supplied separately. See [Firebase configuration](docs/firebase-and-data.md#configuration) for what each part of the app reads. If you do not have access to the required project and keys, ask the project maintainer for setup instructions. A local server can start without them, but sign-in, inventory, reservations, and AI features may fail.
 
 Keep `.env.local` private. It is ignored by Git; do not paste API keys or service account JSON into issues, screenshots, or commits. After changing this file, restart the development server.
 
