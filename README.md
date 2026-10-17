@@ -12,13 +12,13 @@ cd BuilbotAI
 npm install
 ```
 
-**The download does not include API keys or a ready-to-use `.env.local` file.** Ask the project maintainer for the required credentials or configure your own Firebase and Google AI projects. Before the first run, create `.env.local` using [the configuration steps below](#3-add-your-configuration). Then, from the `BuilbotAI` folder, start the app with:
+**The download does not include API keys, database contents, or a ready-to-use `.env.local` file.** You can start the local development server after installing the packages. To use the app's Firebase-backed pages and AI features, first create `.env.local` using [the configuration steps below](#3-add-your-configuration). Ask the project maintainer for access to the existing services or configure your own Firebase and Google AI projects. From the `BuilbotAI` folder, start the server with:
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:9002](http://localhost:9002). To get newer code later, stop the app with **Ctrl+C** and run `git pull --ff-only origin main` followed by `npm install` and `npm run dev` in the same folder. Read the [update instructions](#update-an-existing-local-copy) first if you have edited any files.
+Open [http://localhost:9002](http://localhost:9002). Without Firebase configuration, the server can start but pages that initialize Firebase may show errors; catalog data and sign-in will not work. Without a Google AI API key, AI requests will not work. To get newer code later, stop the app with **Ctrl+C** and run `git pull --ff-only origin main` followed by `npm install` and `npm run dev` in the same folder. Read the [update instructions](#update-an-existing-local-copy) first if you have edited any files.
 
 ## Beginner's guide: install and run locally
 
