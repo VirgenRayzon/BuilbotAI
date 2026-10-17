@@ -112,6 +112,7 @@ If you downloaded a ZIP instead of using `git clone`, `git pull` will not work. 
 - [Firebase configuration, authentication, and data model](docs/firebase-and-data.md)
 - [Every App Router page](docs/pages.md)
 - [HTTP API routes, server actions, and external integrations](docs/api-and-integrations.md)
+- [Implementation plan and documented results](docs/implementation-plan-and-results.md)
 
 ## Checks
 
