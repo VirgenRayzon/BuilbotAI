@@ -64,7 +64,7 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
             p={0}
             withBorder
             style={{ display: "flex" }}
-            className="flex aspect-square w-full flex-col overflow-hidden border-slate-200/80 bg-transparent shadow-sm select-none dark:border-white/10"
+            className="flex aspect-square w-full flex-col overflow-hidden border-slate-200/80 bg-transparent shadow-sm select-none dark:border-white/10 md:aspect-auto md:h-full"
         >
             <div
                 className="relative min-h-0 flex-1 cursor-zoom-in bg-transparent"

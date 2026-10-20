@@ -8,6 +8,10 @@ On a prebuilt product page, show every configured component, including unresolve
 
 Place unavailable cards first in the component carousel. Give them a yellow border, a dark amber surface in dark mode, and a clear **Out of stock** or **Missing part** badge. Available cards keep their normal appearance. Resolve every RAM and storage entry separately and treat quantities beyond current stock as unavailable.
 
+## Product layout
+
+On desktop, stretch the left system image carousel to the full height of the right product-details column. Preserve the square gallery layout on mobile, where the columns stack vertically.
+
 ## Verification
 
 - Open a prebuilt with an out-of-stock item and confirm its name appears in the warning and its highlighted card appears first.

@@ -162,8 +162,8 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                         </div>
                     </Grid.Col>
 
-                    {/* The image defines the desktop row height. */}
-                    <Grid.Col span={{ base: 12, md: 6 }} order={{ base: 2, md: 1 }}>
+                    {/* Match the gallery card to the details column height on desktop. */}
+                    <Grid.Col span={{ base: 12, md: 6 }} order={{ base: 2, md: 1 }} className="flex">
                         <PrebuiltImageView
                             imageUrl={system.imageUrl}
                             images={system.images}
