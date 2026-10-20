@@ -46,6 +46,7 @@ import { logAdminAction } from "@/app/actions";
 
 
 import { RouteGuard } from "@/components/auth/route-guard";
+import { usePrebuiltBuilderImport } from "@/app/admin/hooks/use-prebuilt-builder-import";
 
 type PartWithoutCategory = Omit<Part, 'category'>;
 
@@ -86,6 +87,8 @@ export default function PrebuiltBuilderPage() {
     const [workload, setWorkload] = useState<WorkloadType>('Balanced');
     const [analysis, setAnalysis] = useState<any>(null);
     const [isLoaded, setIsLoaded] = useState(false);
+
+    usePrebuiltBuilderImport(allParts, isLoaded, setBuild);
 
     const handleApplySuggestion = (category: string, partId: string) => {
         const event = new CustomEvent('add-suggestion', {

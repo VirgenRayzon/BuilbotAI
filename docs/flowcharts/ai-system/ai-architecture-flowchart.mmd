@@ -1,0 +1,25 @@
+flowchart LR
+  Browser[/Customer or staff UI/] --> Chat[POST api/chat]
+  Browser --> Advisor[POST api/ai/build-advisor/recommendations]
+  Browser --> Actions[Next.js AI server actions]
+  Chat --> Routing[Model resolver]
+  Advisor --> Routing
+  Actions --> Routing
+  Routing --> Settings[(Firestore siteSettings/main)]
+  Routing --> Gemini[Google Gemini API]
+  Routing --> Vertex[Configured Vertex AI endpoint]
+  Actions --> Genkit[Genkit flows]
+  Genkit --> Gemini
+  Genkit --> Vertex
+  Chat --> Local[Local Markdown knowledge]
+  Chat --> Inventory[(Firestore inventory)]
+  Chat --> Vector[(Firestore hardware vector records)]
+  Chat --> Search[Optional Google Search for exact part specs]
+  Advisor --> Local
+  Advisor --> Inventory
+  Advisor --> Search
+  Advisor --> Cache[(Recommendation cache)]
+  Actions --> Cache2[(Critique cache)]
+  Gemini --> Output[/Structured or streamed AI output/]
+  Vertex --> Output
+  Output --> Browser

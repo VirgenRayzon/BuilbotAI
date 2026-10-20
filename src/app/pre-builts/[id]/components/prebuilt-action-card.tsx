@@ -1,15 +1,16 @@
 "use client";
 
 import React from "react";
-import { Paper, Group, Stack, Text, Title, Button as MantineButton, Badge } from "@mantine/core";
+import { Paper, Text, Title, Button as MantineButton } from "@mantine/core";
 import { formatCurrency } from "@/lib/utils";
 import { SlidersHorizontal, ShieldCheck, AlertCircle } from "lucide-react";
+import type { PrebuiltPartStatus } from "@/lib/prebuilt-utils";
 
 interface PrebuiltActionCardProps {
     children?: React.ReactNode;
     price: number;
     isComplete: boolean;
-    missingPartsCount: number;
+    unavailableParts: PrebuiltPartStatus[];
     isInStock: boolean;
     loadingParts: boolean;
     isReserving: boolean;
@@ -23,7 +24,7 @@ export function PrebuiltActionCard({
     children,
     price,
     isComplete,
-    missingPartsCount,
+    unavailableParts,
     isInStock,
     loadingParts,
     isReserving,
@@ -98,18 +99,23 @@ export function PrebuiltActionCard({
                 </div>
             </div>
 
-            {/* Error or Warning Banners */}
-            {!isComplete && (
-                <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-white/10 flex items-center gap-2 text-rose-600 dark:text-rose-400 text-xs font-semibold">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>Configuration incomplete: missing {missingPartsCount} required component{missingPartsCount > 1 ? "s" : ""}.</span>
-                </div>
-            )}
-
-            {isComplete && !loadingParts && !isInStock && (
-                <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-white/10 flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-semibold">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>One or more components are currently out of stock. You can customize the build to swap components.</span>
+            {!loadingParts && unavailableParts.length > 0 && (
+                <div role="alert" className="mt-4 rounded-lg border border-amber-500/60 bg-amber-50 p-3 text-amber-950 dark:border-amber-400/60 dark:bg-[#211e18] dark:text-amber-100">
+                    <div className="flex items-center gap-2 text-xs font-bold">
+                        <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <span>{unavailableParts.length} component{unavailableParts.length === 1 ? " needs" : "s need"} replacement</span>
+                    </div>
+                    <ul className="mt-2 flex flex-wrap gap-1.5">
+                        {unavailableParts.map(item => (
+                            <li key={item.key} className="rounded-md border border-amber-400/60 bg-white/70 px-2 py-1 text-xs font-semibold dark:border-amber-400/30 dark:bg-black/20">
+                                {item.name}
+                                <span className="ml-1 font-normal text-amber-800 dark:text-amber-300">
+                                    ({item.issue === "out-of-stock" ? "out of stock" : "missing"})
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                    <p className="mt-2 text-xs text-amber-800 dark:text-amber-300">Customize this build to choose replacements.</p>
                 </div>
             )}
         </Paper>

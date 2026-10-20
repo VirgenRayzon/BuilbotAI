@@ -1,0 +1,15 @@
+flowchart TD
+  Start([Open prebuilt detail]) --> Role{Staff profile?}
+  Role -- No --> Read[/View previously published AI report or empty state/]
+  Role -- Yes --> Generate{Generate, re-evaluate, or retry?}
+  Generate -- No --> Read
+  Generate -- Yes --> Parts[Build input from resolved component names, brands and prices]
+  Parts --> Call[Call getAiPrebuiltPerformance]
+  Call --> Research[Genkit Google Search pre-research]
+  Research --> Structured[Genkit structured strengths output]
+  Structured --> Valid{Output present and call succeeds?}
+  Valid -- No --> Error[/Analysis error and Try Again control/] --> Generate
+  Valid -- Yes --> Save{Firestore prebuiltSystems aiReport update succeeds?}
+  Save -- No --> Error
+  Save -- Yes --> Result[/Render and publish strengths; success toast/]
+  Result --> Generate

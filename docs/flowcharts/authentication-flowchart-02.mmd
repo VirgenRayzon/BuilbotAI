@@ -1,0 +1,29 @@
+flowchart TD
+  Entry([System Access]) --> Role{Manager or Super Admin tab?}
+  Role --> Credentials[/Email and password plus role key, or Google popup/]
+  Credentials --> Auth{Firebase Auth succeeds?}
+  Auth -- No --> FormError[/Show error; remain on form/]
+  Auth -- Google --> KeyModal[/Role key modal/]
+  KeyModal -- Cancel or close --> SignOutGoogle[Sign out temporary Google session] --> Entry
+  KeyModal -- Verify --> ServerKey[Send ID token, key and requested role to server action]
+  Auth -- Email and password --> ServerKey
+  ServerKey --> KeyValid{Profile and key accepted?}
+  KeyValid -- No --> SignOutFailed[Clear marker and sign out; show error] --> Entry
+  KeyValid -- Yes --> RoleWrite[Update profile and attempt custom claims]
+  RoleWrite --> Marker[Store UID in tab session marker]
+  Marker --> Admin([Admin dashboard])
+  Entry --> Register{Manager registration?}
+  Register -- Yes --> ManagerForm[/Account details plus manager key/]
+  ManagerForm --> RegisterAction{Firebase account and server key validation succeed?}
+  RegisterAction -- No --> RegisterError[/Show error; clear staff marker/] --> ManagerForm
+  RegisterAction -- Yes --> Marker
+  Entry --> RequestKey[/Request key modal/]
+  RequestKey --> RequestValid{Valid request and Firestore write?}
+  RequestValid -- No --> RequestError[/Keep modal with error/]
+  RequestValid -- Yes --> RequestDone([Request recorded])
+  Admin --> Guard{Live profile, permission, marker valid?}
+  Guard -- No --> Deny[Withhold protected UI; redirect or sign out] --> Entry
+  Guard -- Yes --> Admin
+  Admin --> Idle{Idle warning?}
+  Idle -- Stay logged in --> Admin
+  Idle -- Logout or timeout --> Exit([Sign out])

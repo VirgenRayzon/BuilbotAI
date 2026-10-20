@@ -1,0 +1,11 @@
+flowchart TD
+  SStart([Super Admin staff sign-in]) --> SHome{Choose feature}
+  SHome -- Shared staff features --> SShared[All Manager stock, prebuilt, builder, order, archive, audit and profile flows]
+  SShared --> SDelete[Additional confirmed delete for eligible parts, prebuilts and reservations]
+  SHome -- Sales --> SSales[Review charts and popularity; filter; export Excel]
+  SSales --> SSalesMutate[Confirm sample-data ingestion or sales reset]
+  SHome -- Management --> SManagement[Manage manager key, key requests and accounts]
+  SHome -- AI settings --> SAi[Choose/test model routing; edit, save or reset system prompts]
+  SHome -- Site content --> SContent[Edit and save About-page content]
+  SHome -- Safeguards --> SGuard[Confirm maintenance, storage or AI switches]
+  SHome -- Sign out --> SExit([Confirm and sign out])

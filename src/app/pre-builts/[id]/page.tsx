@@ -15,6 +15,8 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
         system,
         loadingSystem,
         components,
+        componentStatuses,
+        unavailableParts,
         loadingParts,
         analysis,
         loadingAnalysis,
@@ -23,7 +25,6 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
         isManagerOrAdmin,
         canGenerateReport,
         isComplete,
-        missingParts,
         isInStock,
         backLink,
         backText,
@@ -138,7 +139,7 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                                 <PrebuiltActionCard
                                     price={system.price}
                                     isComplete={isComplete}
-                                    missingPartsCount={missingParts.length}
+                                    unavailableParts={unavailableParts}
                                     isInStock={isInStock}
                                     loadingParts={loadingParts}
                                     isReserving={isReserving}
@@ -153,7 +154,7 @@ export default function PrebuiltProductPage({ params }: { params: Promise<{ id: 
                                         analysisError={analysisError}
                                         canGenerateReport={canGenerateReport}
                                         onAnalyze={handleAnalyze}
-                                        components={components}
+                                        componentStatuses={componentStatuses}
                                         loadingParts={loadingParts}
                                     />
                                 </PrebuiltActionCard>

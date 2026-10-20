@@ -1,0 +1,12 @@
+flowchart TD
+  Start([If SmartBudget is mounted]) --> Input[/Budget and preferences/]
+  Input --> Valid{AI enabled and numeric budget valid?}
+  Valid -- No --> Toast[/Disabled or invalid-budget toast/]
+  Valid -- Yes --> Call[Call getAiSmartBudget]
+  Call --> Flow[Genkit structured build suggestion]
+  Flow --> Result{Response or error?}
+  Result -- Error --> Error[/Error toast; remain in component/]
+  Result -- Response --> Review[/Display suggested inventory parts/]
+  Review --> Choice{Apply or close?}
+  Choice -- Apply --> Event[Apply matching parts to supplied build callback]
+  Choice -- Close --> End([Close component])

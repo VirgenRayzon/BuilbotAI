@@ -1,0 +1,32 @@
+flowchart TD
+  Start([Customer session]) --> Header{Choose navigation}
+  Header -- Builder --> Builder[Browse, filter and select catalog parts]
+  Builder --> Complete{Eight core categories selected?}
+  Complete -- No --> Missing[/Missing-part feedback; continue builder/]
+  Complete -- Yes --> BuildActions{Build action}
+  BuildActions -- Reserve --> Reservation[Review confirmation and stock transaction]
+  BuildActions -- Analyze --> Advisor[AI critique route]
+  BuildActions -- Save --> Favorites[Name and save favorite]
+  BuildActions -- PDF --> Pdf[Authenticated PDF download]
+  Builder --> Chat[Open floating chatbot]
+  Header -- Advisor --> Advisor
+  Advisor --> AiChoice{Critique or recommendations?}
+  AiChoice -- Critique --> Critique[Analyze selected build]
+  AiChoice -- Recommendations --> Recs[Enter goal and budget; generate build]
+  Header -- Prebuilts --> Prebuilt[Search, filter, sort, open detail]
+  Prebuilt --> PrebuiltChoice{Customize or reserve?}
+  PrebuiltChoice -- Customize --> Builder
+  PrebuiltChoice -- Reserve --> Reservation
+  Header -- Profile --> Profile{Profile tab}
+  Profile -- Account or settings --> Edit[Update allowed profile fields]
+  Profile -- Favorites --> Favorites
+  Profile -- Reservations --> Reservations[Review status and cancellation path]
+  Profile -- Activity --> Activity[Filter and inspect user audit records]
+  Header -- Notifications --> Notifications[Read, filter, mark or delete; open order details]
+  Header -- Public pages --> Public[About, team, FAQ, contact]
+  Header -- Sign out --> Confirm{Confirm sign-out?}
+  Confirm -- Cancel --> Header
+  Confirm -- Confirm --> End([Signed out])
+  Missing --> Builder
+  Reservation --> Reservations
+  Favorites --> Builder

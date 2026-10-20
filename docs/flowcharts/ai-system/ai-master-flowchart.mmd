@@ -1,0 +1,20 @@
+flowchart TD
+  Start([AI interaction]) --> Entry{Entry point}
+  Entry -- Floating builder chat --> Chat([Chatbot workflow])
+  Entry -- Build Advisor recommendations --> Recs([Recommendation workflow])
+  Entry -- Build Advisor critique --> Critique([Critique workflow])
+  Entry -- Manager part editor autofill --> Part([Part extraction workflow])
+  Entry -- Manager prebuilt editor or builder --> Prebuilt([Prebuilt assist workflow])
+  Entry -- Staff prebuilt product review --> Performance([Prebuilt performance workflow])
+  Entry -- Super Admin AI tab --> Settings([Models, routing and prompts])
+  Entry -- SmartBudget component --> Dormant([Source present; no page mount found])
+  Chat --> Model[Model resolver and provider]
+  Recs --> Model
+  Critique --> Model
+  Part --> Model
+  Prebuilt --> Model
+  Performance --> Model
+  Settings --> Model
+  Model --> Result{Successful result?}
+  Result -- Yes --> UI[/Render or save result/]
+  Result -- No --> Error([Feature-specific error and fallback])

@@ -1,0 +1,20 @@
+flowchart TD
+  Start([User action]) --> Layer{Where does it fail?}
+  Layer -- Profile unresolved --> Wait[/Loading UI; protected content withheld/]
+  Wait --> Resolved{Resolved?}
+  Resolved -- Missing or error --> Denied[/No protected children rendered/]
+  Resolved -- Ready --> RetryAction([Continue action])
+  Layer -- Form schema --> Form[/Field validation; stay on form/]
+  Layer -- Firebase Auth --> Auth[/Provider or credential error; stay on auth page/]
+  Layer -- Client Firestore --> Firestore[/Loading, empty, permission or fetch error state/]
+  Layer -- Inventory check --> Stock[/Missing item, out of stock or incompatible toast/]
+  Layer -- Server action --> Action[/Returned error or thrown exception; UI toast/]
+  Layer -- AI endpoint --> Ai([AI retry, fallback or error path])
+  Layer -- PDF endpoint --> Pdf[/401, 403, 400 or 500; download error toast/]
+  Layer -- User cancel --> Cancel([No mutation; close or abort])
+  Auth --> RetryAction
+  Form --> RetryAction
+  Firestore --> RetryAction
+  Stock --> RetryAction
+  Action --> RetryAction
+  Pdf --> RetryAction

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
     Paper,
     Text,
@@ -16,7 +16,6 @@ import {
     AlertCircle,
     RefreshCw,
     Cpu,
-    Package,
 } from "lucide-react";
 import {
     Carousel,
@@ -26,11 +25,8 @@ import {
     CarouselPrevious,
 } from "@/components/ui/carousel";
 import { SparkleButton } from "@/components/ui/sparkle-button";
-import { OptimizedImage } from "@/components/ui/optimized-image";
-import { PartDetailsDialog } from "@/components/part-details-dialog";
-import { formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
-import type { Part } from "@/lib/types";
+import type { PrebuiltPartStatus } from "@/lib/prebuilt-utils";
+import { PrebuiltComponentCarousel } from "./prebuilt-component-carousel";
 
 interface PrebuiltAiReviewProps {
     analysis: { pros?: string[] } | null;
@@ -38,7 +34,7 @@ interface PrebuiltAiReviewProps {
     analysisError: string | null;
     canGenerateReport: boolean;
     onAnalyze: () => void;
-    components?: Record<string, Part | null>;
+    componentStatuses: PrebuiltPartStatus[];
     loadingParts?: boolean;
 }
 
@@ -48,17 +44,12 @@ export function PrebuiltAiReview({
     analysisError,
     canGenerateReport,
     onAnalyze,
-    components = {},
+    componentStatuses,
     loadingParts = false,
 }: PrebuiltAiReviewProps) {
-    const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<"components" | "highlights">("components");
 
     const pros = analysis?.pros || [];
-    const populatedParts = useMemo(
-        () => Object.entries(components || {}).filter(([, part]) => Boolean(part)) as [string, Part][],
-        [components]
-    );
 
     return (
         <div className="space-y-3">
@@ -76,9 +67,9 @@ export function PrebuiltAiReview({
                                 <div className="flex items-center gap-1.5 px-1 py-0.5">
                                     <Cpu size={13} className="text-cyan-500 shrink-0" />
                                     <span className="font-semibold text-xs">Components</span>
-                                    {populatedParts.length > 0 && (
+                                    {componentStatuses.length > 0 && (
                                         <Badge size="xs" variant="light" color="cyan" circle>
-                                            {populatedParts.length}
+                                            {componentStatuses.length}
                                         </Badge>
                                     )}
                                 </div>
@@ -110,131 +101,8 @@ export function PrebuiltAiReview({
                 )}
             </div>
 
-            {/* TAB 1: INSTALLED COMPONENTS CAROUSEL (3 PER VIEW, DEFAULT TAB) */}
             {activeTab === "components" && (
-                <>
-                    {loadingParts ? (
-                        <Paper
-                            radius="xl"
-                            p="xl"
-                            withBorder
-                            className="bg-white/80 dark:bg-[#141a23]/80 border-slate-200 dark:border-white/10 flex flex-col items-center justify-center py-16 text-center gap-3"
-                        >
-                            <Loader size="md" color="cyan" />
-                            <div>
-                                <Text fw={700} size="sm" className="text-slate-900 dark:text-slate-100">
-                                    Loading Installed Parts
-                                </Text>
-                                <Text size="xs" c="dimmed">
-                                    Fetching verified component specifications...
-                                </Text>
-                            </div>
-                        </Paper>
-                    ) : populatedParts.length === 0 ? (
-                        <Paper
-                            radius="xl"
-                            p="xl"
-                            withBorder
-                            className="bg-white/80 dark:bg-[#141a23]/80 border-slate-200 dark:border-white/10 py-12 text-center"
-                        >
-                            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-400 flex items-center justify-center mx-auto mb-3">
-                                <Package className="w-5 h-5" />
-                            </div>
-                            <Text fw={700} size="sm" className="text-slate-900 dark:text-slate-100 mb-1">
-                                No Installed Components
-                            </Text>
-                            <Text size="xs" c="dimmed">
-                                Component specifications have not been configured for this prebuilt yet.
-                            </Text>
-                        </Paper>
-                    ) : (
-                        <div className="relative px-0 sm:px-6">
-                            <Carousel
-                                opts={{
-                                    align: "start",
-                                    loop: populatedParts.length > 2,
-                                }}
-                                className="w-full"
-                            >
-                                <CarouselContent className="-ml-2 items-stretch">
-                                    {populatedParts.map(([category, part]) => (
-                                        <CarouselItem
-                                            key={category}
-                                            className="flex h-auto basis-full pl-2 md:basis-1/2"
-                                        >
-                                            <PartDetailsDialog
-                                                part={part}
-                                                isAdded={true}
-                                                onToggle={() => {
-                                                    toast({
-                                                        title: "Included Hardware",
-                                                        description: `${part.name} is pre-configured. Use "Customize in Builder" to swap parts.`,
-                                                    });
-                                                }}
-                                            >
-                                                <Paper
-                                                    radius="md"
-                                                    p={0}
-                                                    withBorder
-                                                    className="flex h-full min-h-[220px] flex-1 flex-col justify-between bg-white shadow-xs transition-all select-none dark:bg-[#141a23] border-slate-200/90 dark:border-white/10 hover:border-cyan-500/50 dark:hover:border-cyan-400/50 hover:shadow-md cursor-pointer group overflow-hidden"
-                                                >
-                                                    {/* Top Section: Brand Badge & Component Title */}
-                                                    <div className="p-3.5 pb-2">
-                                                        <div className="flex items-center justify-between">
-                                                            <Badge
-                                                                variant="filled"
-                                                                color="dark"
-                                                                size="xs"
-                                                                radius="sm"
-                                                                className="bg-slate-800 text-slate-200 uppercase font-bold text-[10px] tracking-wider px-2 py-0.5"
-                                                            >
-                                                                {part.brand || category}
-                                                            </Badge>
-                                                        </div>
-                                                        <Text
-                                                            size="xs"
-                                                            fw={700}
-                                                            className="line-clamp-2 leading-snug text-slate-900 dark:text-slate-100 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors mt-2"
-                                                        >
-                                                            {part.name}
-                                                        </Text>
-                                                    </div>
-
-                                                    {/* Middle Section: Full Horizontal Width Showcase Canvas */}
-                                                    <div className="w-full bg-white aspect-[16/10] relative flex items-center justify-center border-y border-slate-100 dark:border-white/5 overflow-hidden">
-                                                        <OptimizedImage
-                                                            src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"}
-                                                            alt={part.name}
-                                                            fill
-                                                            sizes="(max-width: 768px) 100vw, 300px"
-                                                            className="object-contain p-2"
-                                                        />
-                                                    </div>
-
-                                                    {/* Bottom Section: Price Display */}
-                                                    <div className="p-3.5 pt-2 mt-auto">
-                                                        <Text size="10px" fw={800} c="dimmed" className="uppercase tracking-[0.14em]">
-                                                            PRICE
-                                                        </Text>
-                                                        <Text
-                                                            size="md"
-                                                            fw={800}
-                                                            className="font-mono font-bold text-slate-900 dark:text-slate-100 tracking-tight leading-none mt-1"
-                                                        >
-                                                            {formatCurrency(part.price)}
-                                                        </Text>
-                                                    </div>
-                                                </Paper>
-                                            </PartDetailsDialog>
-                                        </CarouselItem>
-                                    ))}
-                                </CarouselContent>
-                                <CarouselPrevious className="hidden sm:flex -left-4 w-8 h-8 rounded-full border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a2230]" />
-                                <CarouselNext className="hidden sm:flex -right-4 w-8 h-8 rounded-full border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a2230]" />
-                            </Carousel>
-                        </div>
-                    )}
-                </>
+                <PrebuiltComponentCarousel parts={componentStatuses} loading={loadingParts} />
             )}
 
             {/* TAB 2: AI HIGHLIGHTS */}

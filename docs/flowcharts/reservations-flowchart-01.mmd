@@ -1,0 +1,11 @@
+flowchart TD
+  Start([Customer confirms custom build or prebuilt]) --> Call[Call processCheckout or reservePrebuiltSystem]
+  Call --> Read[Admin SDK transaction reads canonical inventory items]
+  Read --> Stock{Every required item exists and has stock?}
+  Stock -- No --> Fail[/Return error; UI shows failure toast/] --> End([Stay in builder or product])
+  Stock -- Yes --> Write[Decrement stock; increment popularity]
+  Write --> Order[Create pending order]
+  Order --> Notice[Create customer and staff notifications plus user audit log]
+  Notice --> Commit{Transaction commits?}
+  Commit -- No --> Fail
+  Commit -- Yes --> Success[/Success toast; clear custom build or navigate to profile/] --> Done([Reservation visible])
