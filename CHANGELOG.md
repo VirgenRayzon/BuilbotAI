@@ -2,9 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-10-20]
+
+### Features
+- **prebuilts**: Improve prebuilt availability, carousel, admin navigation, and documentation flowcharts ([6ab1d65](https://github.com/VirgenRayzon/BuilbotAI/commit/6ab1d65))
+
+### Styling & UI/UX
+- **prebuilts**: Match image gallery height to details column on desktop ([59fe0a5](https://github.com/VirgenRayzon/BuilbotAI/commit/59fe0a5))
+
 ## [2026-10-18]
 
 ### Features
+- **inventory**: Handle unverified component models gracefully in AI autofill ([bd6c023](https://github.com/VirgenRayzon/BuilbotAI/commit/bd6c023))
 - **admin**: Streamline AI tab and standardize admin color palettes and touch targets ([4cf3627](https://github.com/VirgenRayzon/BuilbotAI/commit/4cf3627))
 
 ## [2026-10-17]

@@ -19,6 +19,7 @@ import {
   History,
   Settings,
   Activity,
+  MessageCircle,
   LogOut,
   ChevronRight,
   Cpu,
@@ -143,6 +144,15 @@ export function ProfileSidebar({
 
   // 2. Administration Items (Super Admin Tools - System Safeguards retained in Profile)
   const adminItems: NavItem[] = [];
+  if (isManager || isSuperAdmin) {
+    adminItems.push({
+      id: "contact-inbox",
+      label: "Contact Inbox",
+      icon: MessageCircle,
+      color: "cyan",
+      badge: null,
+    });
+  }
   if (isSuperAdmin) {
     adminItems.push({
       id: "safeguards",

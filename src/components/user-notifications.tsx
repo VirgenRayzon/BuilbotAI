@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useUserProfile } from "@/context/user-profile";
 import { useFirestore } from "@/firebase";
 import { collection, query, orderBy, limit, doc, updateDoc, deleteDoc, writeBatch } from "firebase/firestore";
@@ -11,6 +12,7 @@ import {
   Check,
   Trash2,
   Package,
+  MessageCircle,
   CheckCheck,
   SlidersHorizontal,
   Clock,
@@ -57,12 +59,13 @@ function playSoftTick() {
 }
 
 /* ── Categories ── */
-const USER_CATEGORIES = ["All", "Orders", "Updates", "Alerts"] as const;
+const USER_CATEGORIES = ["All", "Orders", "Support", "Updates", "Alerts"] as const;
 type UserCategoryType = (typeof USER_CATEGORIES)[number];
 
 export function UserNotifications() {
   const { authUser, loading } = useUserProfile();
   const firestore = useFirestore();
+  const router = useRouter();
   const [popoverOpened, setPopoverOpened] = useState(false);
   const [activeCategory, setActiveCategory] = useState<UserCategoryType>("All");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -94,6 +97,7 @@ export function UserNotifications() {
   }, [notifications]);
 
   const getCategoryForNotification = useCallback((n: Notification): UserCategoryType => {
+    if (n.type === 'support_reply' || n.type === 'support_status') return 'Support';
     const titleLower = n.title?.toLowerCase() || "";
     const msgLower = n.message?.toLowerCase() || "";
 
@@ -110,6 +114,7 @@ export function UserNotifications() {
     const counts: Record<UserCategoryType, number> = {
       All: notifications.length,
       Orders: 0,
+      Support: 0,
       Updates: 0,
       Alerts: 0,
     };
@@ -147,6 +152,12 @@ export function UserNotifications() {
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.read) {
       markAsRead(notification.id);
+    }
+
+    if ((notification.type === 'support_reply' || notification.type === 'support_status') && notification.targetId) {
+      setPopoverOpened(false);
+      router.push(`/support-requests?inquiry=${encodeURIComponent(notification.targetId)}`);
+      return;
     }
 
     if (notification.orderId) {
@@ -250,7 +261,7 @@ export function UserNotifications() {
 
           {/* Spring Pill Filter Bar (Rauno Freiberg craft inspired) */}
           <div className="px-3.5 py-2 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01]">
-            <div className="flex items-center gap-1.5 py-0.5">
+            <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
               {USER_CATEGORIES.map((cat) => {
                 const isActive = cat === activeCategory;
                 const count = categoryCounts[cat];
@@ -338,7 +349,7 @@ export function UserNotifications() {
                           variant="light"
                           className="mt-0.5 shrink-0"
                         >
-                          {isCancelled ? <Trash2 size={14} /> : <Package size={14} />}
+                          {isCancelled ? <Trash2 size={14} /> : notification.type?.startsWith('support_') ? <MessageCircle size={14} /> : <Package size={14} />}
                         </ThemeIcon>
 
                         <div className="flex-1 min-w-0 space-y-0.5">

@@ -66,7 +66,7 @@ function playSoftTick() {
 }
 
 /* ── Categories ── */
-const CATEGORIES = ["All", "Reservations", "Stock", "Status", "Archived"] as const;
+const CATEGORIES = ["All", "Reservations", "Support", "Stock", "Status", "Archived"] as const;
 type CategoryType = (typeof CATEGORIES)[number];
 
 export function NotificationCenter() {
@@ -103,6 +103,9 @@ export function NotificationCenter() {
       case "reservation_received":
       case "user_cancelled":
         return "Reservations";
+      case "contact_inquiry":
+      case "contact_reply_received":
+        return "Support";
       case "stock_added":
         return "Stock";
       case "status_changed":
@@ -118,6 +121,7 @@ export function NotificationCenter() {
     const counts: Record<CategoryType, number> = {
       All: notifications.length,
       Reservations: 0,
+      Support: 0,
       Stock: 0,
       Status: 0,
       Archived: 0,
@@ -218,7 +222,7 @@ export function NotificationCenter() {
       <Popover
         opened={popoverOpened}
         onChange={setPopoverOpened}
-        width={460}
+        width={600}
         position="bottom-end"
         withArrow={false}
         shadow="xl"
@@ -250,7 +254,7 @@ export function NotificationCenter() {
           </div>
         </Popover.Target>
 
-        <Popover.Dropdown p={0} className="bg-white dark:bg-[#111722] border-0 shadow-lg rounded-md overflow-hidden w-[420px] max-w-[95vw]">
+        <Popover.Dropdown p={0} className="w-full max-w-[calc(100vw-1rem)] overflow-hidden rounded-md border-0 bg-white shadow-lg dark:bg-[#111722]">
           {/* Header */}
           <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-white/5">
             <div className="flex items-center gap-2">
@@ -279,8 +283,8 @@ export function NotificationCenter() {
           </div>
 
           {/* Spring Pill Filter Bar (Rauno Freiberg craft inspired) */}
-          <div className="px-3 py-1.5 border-b border-slate-100 dark:border-white/5">
-            <div className="flex items-center gap-1.5 py-0.5">
+          <div className="overflow-x-auto overscroll-x-contain border-b border-slate-100 px-3 py-1.5 [scrollbar-width:thin] dark:border-white/5 sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden" aria-label="Alert category filters">
+            <div className="flex min-w-max items-center gap-1.5 py-0.5 sm:min-w-full">
               {CATEGORIES.map((cat) => {
                 const isActive = cat === activeCategory;
                 const count = categoryCounts[cat];
@@ -526,19 +530,36 @@ export function NotificationCenter() {
             >
               Close
             </Button>
-            <Button
-              color="indigo"
-              size="xs"
-              radius="md"
-              leftSection={<History size={14} />}
-              onClick={() => {
-                setSelectedNotification(null);
-                router.push("/admin?tab=audit");
-              }}
-              className="text-xs font-semibold shadow-sm shadow-indigo-500/20"
-            >
-              Open Audit Log
-            </Button>
+            {selectedNotification?.type === 'contact_inquiry' || selectedNotification?.type === 'contact_reply_received' ? (
+              <Button
+                color="cyan"
+                size="xs"
+                radius="md"
+                leftSection={<ExternalLink size={14} />}
+                onClick={() => {
+                  const inquiryId = selectedNotification?.targetId;
+                  setSelectedNotification(null);
+                  if (inquiryId) router.push(`/profile?tab=contact-inbox&inquiry=${encodeURIComponent(inquiryId)}`);
+                }}
+                className="text-xs font-semibold"
+              >
+                Open Inquiry
+              </Button>
+            ) : (
+              <Button
+                color="indigo"
+                size="xs"
+                radius="md"
+                leftSection={<History size={14} />}
+                onClick={() => {
+                  setSelectedNotification(null);
+                  router.push("/admin?tab=audit");
+                }}
+                className="text-xs font-semibold shadow-sm shadow-indigo-500/20"
+              >
+                Open Audit Log
+              </Button>
+            )}
           </Group>
         </Stack>
       </Modal>

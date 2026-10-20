@@ -54,6 +54,7 @@ import { EmergencyControlsCard } from "./components/emergency-controls-card";
 import { ReservationsList } from "./components/reservations-list";
 import { FavoritesList } from "./components/favorites-list";
 import { UserAuditLogsSection } from "./components/user-audit-logs-section";
+import { ContactInboxTab } from "./components/contact-inbox-tab";
 import { CompactInfo } from "@/components/ui/compact-info";
 
 import {
@@ -95,10 +96,10 @@ export default function ProfilePage() {
   // Define permitted tabs per role (Safeguards remains for Super Admin)
   const getAllowedTabs = useCallback(() => {
     if (isSuperAdmin) {
-      return ["profile", "settings", "account", "safeguards"];
+      return ["profile", "settings", "account", "contact-inbox", "safeguards"];
     }
     if (isManager) {
-      return ["profile", "settings", "account"];
+      return ["profile", "settings", "account", "contact-inbox"];
     }
     return ["profile", "settings", "account", "reservations", "favorites", "activity"];
   }, [isSuperAdmin, isManager]);
@@ -160,6 +161,7 @@ export default function ProfilePage() {
       const url = new URL(window.location.href);
       url.searchParams.set("tab", tabId);
       url.searchParams.delete("sub");
+      if (tabId !== "contact-inbox") url.searchParams.delete("inquiry");
       window.history.replaceState({}, "", url.toString());
     }
   };
@@ -267,6 +269,11 @@ export default function ProfilePage() {
                           {...adminKeys}
                         />
                       </div>
+                    )}
+
+                    {/* TAB: Contact Inbox (Managers and Super Admins) */}
+                    {activeTab === "contact-inbox" && (isManager || isSuperAdmin) && (
+                      <ContactInboxTab />
                     )}
 
                     {/* TAB 2: Store Reservations (Regular Customers Only) */}

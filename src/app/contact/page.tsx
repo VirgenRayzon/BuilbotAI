@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Paper,
@@ -17,9 +19,8 @@ import {
   Alert,
 } from "@mantine/core";
 import {
-  Mail,
+  MessageCircle,
   MapPin,
-  Phone,
   Send,
   CheckCircle2,
   Clock,
@@ -27,9 +28,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/theme-provider";
+import { useUserProfile } from "@/context/user-profile";
 
 export default function ContactPage() {
   const { theme } = useTheme();
+  const { authUser, profile } = useUserProfile();
+  const searchParams = useSearchParams();
   const isDark = theme === "dark";
 
   const [fullName, setFullName] = useState("");
@@ -38,15 +42,47 @@ export default function ContactPage() {
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState("");
+  const [inquiryId, setInquiryId] = useState("");
+  const [companyWebsite, setCompanyWebsite] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!authUser) return;
+    setEmail(authUser.email ?? profile?.email ?? "");
+    setFullName(current => current || authUser.displayName || profile?.name || "");
+  }, [authUser, profile?.email, profile?.name]);
+
+  useEffect(() => {
+    const cancellationSubject = searchParams.get('subject');
+    const orderReference = cancellationSubject?.match(/Cancellation Request for Order #(\w+)/i)?.[1];
+    if (!orderReference) return;
+    setSubject('Order & Reservation Status');
+    setMessage(current => current || `I would like to request cancellation for order #${orderReference}.`);
+  }, [searchParams]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    // Simulate sending message
-    setTimeout(() => {
-      setSubmitting(false);
+    setSubmissionError("");
+    try {
+      const idToken = await authUser?.getIdToken();
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+        },
+        body: JSON.stringify({ fullName, email, subject, message, companyWebsite }),
+      });
+      const result = await response.json() as { success?: boolean; inquiryId?: string; error?: string };
+      if (!response.ok || !result.success) throw new Error(result.error || "We could not submit your message. Please try again.");
+      setInquiryId(result.inquiryId ?? "");
       setSubmitted(true);
-    }, 600);
+    } catch (error) {
+      setSubmissionError(error instanceof Error ? error.message : "We could not submit your message. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -85,11 +121,11 @@ export default function ContactPage() {
 
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 mb-10 font-medium leading-relaxed">
               Have a question about component compatibility, reservation orders, or custom builds?
-              Our hardware specialists are ready to assist you.
+              Send a message to our hardware specialists and keep the conversation in BuildbotAI.
             </p>
 
             <Stack gap="sm" className="mb-6">
-              {/* Channel 1: Email */}
+              {/* Support is handled in-app; no email notifications are sent. */}
               <Paper
                 withBorder
                 radius="xl"
@@ -103,47 +139,17 @@ export default function ContactPage() {
               >
                 <div className="flex items-start gap-4">
                   <ThemeIcon size={48} radius="xl" variant="light" color="cyan">
-                    <Mail size={22} />
+                    <MessageCircle size={22} />
                   </ThemeIcon>
                   <div>
                     <Text size="xs" fw={700} className="uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
-                      Email Inquiries
+                      In-App Support
                     </Text>
                     <Text size="lg" fw={800} className="text-slate-900 dark:text-slate-100 font-headline">
-                      support@buildbot.ai
+                      BuildbotAI conversations
                     </Text>
                     <Text size="xs" c="dimmed" mt={2}>
-                      Replies within 24 hours on business days
-                    </Text>
-                  </div>
-                </div>
-              </Paper>
-
-              {/* Channel 2: Phone */}
-              <Paper
-                withBorder
-                radius="xl"
-                p={12}
-                className={cn(
-                  "transition-all duration-300",
-                  isDark
-                    ? "bg-[#111722]/80 border-white/10 hover:border-cyan-500/30"
-                    : "bg-white/90 border-slate-200 hover:border-cyan-500/30 shadow-sm"
-                )}
-              >
-                <div className="flex items-start gap-4">
-                  <ThemeIcon size={48} radius="xl" variant="light" color="cyan">
-                    <Phone size={22} />
-                  </ThemeIcon>
-                  <div>
-                    <Text size="xs" fw={700} className="uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
-                      Customer Hotline
-                    </Text>
-                    <Text size="lg" fw={800} className="text-slate-900 dark:text-slate-100 font-headline">
-                      +63 (02) 8911-0000
-                    </Text>
-                    <Text size="xs" c="dimmed" mt={2}>
-                      Monday – Friday: 9:00 AM – 6:00 PM PHT
+                      Sign in before submitting to view and reply to staff updates in Support Requests. Guest inquiries are submit-only.
                     </Text>
                   </div>
                 </div>
@@ -203,8 +209,8 @@ export default function ContactPage() {
                 <Title order={3} className="text-2xl sm:text-3xl font-bold font-headline uppercase tracking-tight text-slate-900 dark:text-slate-100 mb-2">
                   Send a Message
                 </Title>
-                <Text size="sm" className="text-slate-600 dark:text-slate-400 font-medium">
-                  Fill in your details below and our team will get back to you with guidance.
+                  <Text size="sm" className="text-slate-600 dark:text-slate-400 font-medium">
+                  Submit your request here. Sign in first to continue the conversation and see staff updates in BuildbotAI.
                 </Text>
               </div>
 
@@ -220,6 +226,12 @@ export default function ContactPage() {
                   <Text size="sm" mt="xs">
                     Thank you, <strong>{fullName || "Valued Builder"}</strong>! We have received your inquiry regarding &quot;{subject}&quot; and will review your hardware requirements shortly.
                   </Text>
+                  {inquiryId && <Text size="xs" mt="xs" c="dimmed">Reference: {inquiryId.slice(0, 8).toUpperCase()}. {authUser ? 'Continue the conversation in Support Requests; updates stay in BuildbotAI.' : 'This guest inquiry is visible to staff only. Sign in before submitting if you want to view replies in BuildbotAI.'}</Text>}
+                  {authUser && inquiryId && (
+                    <MantineButton component={Link} href={`/support-requests?inquiry=${encodeURIComponent(inquiryId)}`} variant="light" color="teal" size="sm" className="mt-3">
+                      Open Support Requests
+                    </MantineButton>
+                  )}
                   <MantineButton
                     variant="subtle"
                     color="teal"
@@ -230,6 +242,8 @@ export default function ContactPage() {
                       setFullName("");
                       setEmail("");
                       setMessage("");
+                      setSubmissionError("");
+                      setInquiryId("");
                     }}
                   >
                     Send Another Message
@@ -237,7 +251,12 @@ export default function ContactPage() {
                 </Alert>
               ) : (
                 <form onSubmit={handleSubmit}>
+                  <div aria-hidden="true" className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden">
+                    <label htmlFor="companyWebsite">Leave this field empty</label>
+                    <input id="companyWebsite" tabIndex={-1} autoComplete="off" value={companyWebsite} onChange={event => setCompanyWebsite(event.target.value)} />
+                  </div>
                   <Stack gap="sm">
+                    {submissionError && <Alert color="red" variant="light" title="Message not sent">{submissionError}</Alert>}
                     <div className="grid sm:grid-cols-2 gap-4">
                       <TextInput
                         label="Full Name"
@@ -256,6 +275,7 @@ export default function ContactPage() {
                         label="Email Address"
                         type="email"
                         placeholder="alex@example.com"
+                        description="For reference only. BuildbotAI does not send inquiry updates by email."
                         required
                         radius="md"
                         size="md"

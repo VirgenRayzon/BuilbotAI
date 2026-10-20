@@ -71,6 +71,41 @@ service cloud.firestore {
       allow read, write: if isManager();
     }
 
+    // Contact inquiries are written only by verified server routes. Customers
+    // can read their own signed-in conversations; guests communicate by email.
+    match /contactInquiries/{inquiryId} {
+      allow read: if isManager() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if isManager() || (
+          request.auth != null &&
+          get(/databases/$(database)/documents/contactInquiries/$(inquiryId)).data.userId == request.auth.uid
+        );
+        allow create, update, delete: if false;
+      }
+    }
+
+    match /contactRateLimits/{limitId} {
+      allow read, write: if false;
+    }
+
+    match /contactMailAliases/{aliasId} {
+      allow read, write: if false;
+    }
+
+    match /contactOAuthStates/{stateId} {
+      allow read, write: if false;
+    }
+
+    match /contactSecrets/{secretId} {
+      allow read, write: if false;
+    }
+
+    match /contactMailboxes/{mailboxId} {
+      allow read, write: if false;
+    }
+
     match /auditLogs/{logId} {
       allow read: if isManager();
       allow create: if isManager();

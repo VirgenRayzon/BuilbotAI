@@ -160,12 +160,14 @@ export type Notification = {
   title: string;
   message: string;
   orderId: string;
+  targetId?: string;
+  type?: 'support_reply' | 'support_status';
   read: boolean;
   createdAt: any; // Firestore Timestamp
 };
 export type SystemNotification = {
   id: string;
-  type: 'reservation_received' | 'item_archived' | 'status_changed' | 'user_cancelled' | 'stock_added';
+  type: 'reservation_received' | 'item_archived' | 'status_changed' | 'user_cancelled' | 'stock_added' | 'contact_inquiry' | 'contact_reply_received';
   actorId: string;
   actorName: string;
   title: string;

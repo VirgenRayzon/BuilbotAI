@@ -83,7 +83,7 @@ const faqData = [
       },
       {
         question: "How do I get technical support for my build?",
-        answer: "You can reach us through our 24/7 AI chatbot assistant, submit a ticket via our Contact page, or email support@buildbot.ai directly with your system specifications and order details."
+        answer: "You can reach our team through the Contact page. Sign in before submitting to view and continue the conversation in Support Requests; guest inquiries are submit-only."
       }
     ]
   }

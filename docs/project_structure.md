@@ -245,6 +245,7 @@ BuilbotAI
 ├── directives
 │   ├── admin_inventory_dialog_saving.md
 │   ├── admin_prebuilt_ai_assist.md
+│   ├── admin_prebuilt_builder_navigation.md
 │   ├── admin_prebuilt_pricing.md
 │   ├── admin_session_and_idle_timeout.md
 │   ├── ai_model_routing.md
@@ -260,14 +261,85 @@ BuilbotAI
 │   ├── inventory_performance.md
 │   ├── landing_static_assets.md
 │   ├── password_reset.md
+│   ├── prebuilt_product_availability.md
 │   └── sales_analytics_export.md
 ├── docs
+│   ├── flowcharts
+│   │   ├── ai-system
+│   │   │   ├── ai-architecture-flowchart.md
+│   │   │   ├── ai-architecture-flowchart.mmd
+│   │   │   ├── ai-build-critique-flowchart.md
+│   │   │   ├── ai-build-critique-flowchart.mmd
+│   │   │   ├── ai-chatbot-flowchart.md
+│   │   │   ├── ai-chatbot-flowchart.mmd
+│   │   │   ├── ai-data-processing-flowchart.md
+│   │   │   ├── ai-data-processing-flowchart.mmd
+│   │   │   ├── ai-decision-flowchart.md
+│   │   │   ├── ai-decision-flowchart.mmd
+│   │   │   ├── ai-error-handling-flowchart.md
+│   │   │   ├── ai-error-handling-flowchart.mmd
+│   │   │   ├── ai-interaction-inventory.md
+│   │   │   ├── ai-master-flowchart.md
+│   │   │   ├── ai-master-flowchart.mmd
+│   │   │   ├── ai-part-extraction-flowchart.md
+│   │   │   ├── ai-part-extraction-flowchart.mmd
+│   │   │   ├── ai-prebuilt-assist-flowchart.md
+│   │   │   ├── ai-prebuilt-assist-flowchart.mmd
+│   │   │   ├── ai-prebuilt-performance-flowchart.md
+│   │   │   ├── ai-prebuilt-performance-flowchart.mmd
+│   │   │   ├── ai-recommendations-flowchart.md
+│   │   │   ├── ai-recommendations-flowchart.mmd
+│   │   │   ├── ai-settings-flowchart.md
+│   │   │   ├── ai-settings-flowchart.mmd
+│   │   │   ├── ai-smart-budget-flowchart.md
+│   │   │   └── ai-smart-budget-flowchart.mmd
+│   │   ├── admin-inventory-flowchart.md
+│   │   ├── admin-inventory-flowchart.mmd
+│   │   ├── admin-operations-flowchart.md
+│   │   ├── admin-operations-flowchart.mmd
+│   │   ├── authentication-flowchart-01.mmd
+│   │   ├── authentication-flowchart-02.mmd
+│   │   ├── authentication-flowchart.md
+│   │   ├── builder-flowchart.md
+│   │   ├── builder-flowchart.mmd
+│   │   ├── error-handling-flowcharts.md
+│   │   ├── error-handling-flowcharts.mmd
+│   │   ├── interaction-inventory.md
+│   │   ├── manager-flowchart.md
+│   │   ├── manager-flowchart.mmd
+│   │   ├── master-system-flowchart.md
+│   │   ├── master-system-flowchart.mmd
+│   │   ├── popup-decision-flowcharts-01.mmd
+│   │   ├── popup-decision-flowcharts-02.mmd
+│   │   ├── popup-decision-flowcharts-03.mmd
+│   │   ├── popup-decision-flowcharts-04.mmd
+│   │   ├── popup-decision-flowcharts.md
+│   │   ├── prebuilts-flowchart.md
+│   │   ├── prebuilts-flowchart.mmd
+│   │   ├── profile-flowchart.md
+│   │   ├── profile-flowchart.mmd
+│   │   ├── public-navigation-flowchart.md
+│   │   ├── public-navigation-flowchart.mmd
+│   │   ├── README.md
+│   │   ├── reservations-flowchart-01.mmd
+│   │   ├── reservations-flowchart-02.mmd
+│   │   ├── reservations-flowchart.md
+│   │   ├── simplified-all-features-flowchart-01.mmd
+│   │   ├── simplified-all-features-flowchart-02.mmd
+│   │   ├── simplified-all-features-flowchart-03.mmd
+│   │   ├── simplified-all-features-flowchart-04.mmd
+│   │   ├── simplified-all-features-flowchart.md
+│   │   ├── super-admin-flowchart.md
+│   │   ├── super-admin-flowchart.mmd
+│   │   ├── user-flowchart.md
+│   │   └── user-flowchart.mmd
 │   ├── api-and-integrations.md
 │   ├── architecture.md
 │   ├── backend.json
 │   ├── blueprint.md
 │   ├── build_advisor_performance_plan.md
 │   ├── build_advisor_web_search_plan.md
+│   ├── contact-inquiries-setup.md
 │   ├── database_scalability_plan.md
 │   ├── firebase-and-data.md
 │   ├── implementation-plan-and-results.md
@@ -387,11 +459,14 @@ BuilbotAI
 │   │   │   │   ├── reservations-tab.tsx
 │   │   │   │   ├── sales-tab.tsx
 │   │   │   │   └── stock-tab.tsx
+│   │   │   ├── contact-inquiries
+│   │   │   │   └── page.tsx
 │   │   │   ├── hooks
 │   │   │   │   ├── use-admin-core.ts
 │   │   │   │   ├── use-bulk-actions.ts
 │   │   │   │   ├── use-inventory.ts
 │   │   │   │   ├── use-orders.ts
+│   │   │   │   ├── use-prebuilt-builder-import.ts
 │   │   │   │   └── use-sales-actions.ts
 │   │   │   ├── prebuilt-builder
 │   │   │   │   └── page.tsx
@@ -417,7 +492,27 @@ BuilbotAI
 │   │   │   ├── builder
 │   │   │   │   └── download
 │   │   │   │       └── route.ts
-│   │   │   └── chat
+│   │   │   ├── chat
+│   │   │   │   └── route.ts
+│   │   │   └── contact
+│   │   │       ├── gmail
+│   │   │       │   ├── oauth
+│   │   │       │   │   ├── callback
+│   │   │       │   │   │   └── route.ts
+│   │   │       │   │   └── start
+│   │   │       │   │       └── route.ts
+│   │   │       │   ├── renew
+│   │   │       │   │   └── route.ts
+│   │   │       │   └── webhook
+│   │   │       │       └── route.ts
+│   │   │       ├── messages
+│   │   │       │   ├── retry
+│   │   │       │   │   └── route.ts
+│   │   │       │   └── route.ts
+│   │   │       ├── read
+│   │   │       │   └── route.ts
+│   │   │       ├── status
+│   │   │       │   └── route.ts
 │   │   │       └── route.ts
 │   │   ├── builder
 │   │   │   ├── components
@@ -440,6 +535,7 @@ BuilbotAI
 │   │   │   │   ├── components
 │   │   │   │   │   ├── prebuilt-action-card.tsx
 │   │   │   │   │   ├── prebuilt-ai-review.tsx
+│   │   │   │   │   ├── prebuilt-component-carousel.tsx
 │   │   │   │   │   ├── prebuilt-image-view.tsx
 │   │   │   │   │   └── prebuilt-parts-accordion.tsx
 │   │   │   │   ├── hooks
@@ -450,6 +546,7 @@ BuilbotAI
 │   │   │   ├── components
 │   │   │   │   ├── account-details.tsx
 │   │   │   │   ├── audit-logs-section.tsx
+│   │   │   │   ├── contact-inbox-tab.tsx
 │   │   │   │   ├── emergency-controls-card.tsx
 │   │   │   │   ├── favorites-list.tsx
 │   │   │   │   ├── mantine-profile-view.tsx
@@ -461,6 +558,7 @@ BuilbotAI
 │   │   │   ├── hooks
 │   │   │   │   ├── use-admin-keys.ts
 │   │   │   │   ├── use-audit-logs.ts
+│   │   │   │   ├── use-contact-inbox.ts
 │   │   │   │   ├── use-emergency-controls.ts
 │   │   │   │   ├── use-favorite-inventory.ts
 │   │   │   │   ├── use-favorites.ts
@@ -472,6 +570,8 @@ BuilbotAI
 │   │   ├── signin
 │   │   │   └── page.tsx
 │   │   ├── signup
+│   │   │   └── page.tsx
+│   │   ├── support-requests
 │   │   │   └── page.tsx
 │   │   ├── system-access
 │   │   │   ├── components
@@ -528,6 +628,8 @@ BuilbotAI
 │   │   │   ├── chat-telemetry-drawer.tsx
 │   │   │   ├── chat-tool-status.tsx
 │   │   │   └── types.ts
+│   │   ├── contact
+│   │   │   └── contact-thread.tsx
 │   │   ├── landing
 │   │   │   ├── accessories-section.tsx
 │   │   │   ├── cta-section.tsx
@@ -705,7 +807,9 @@ BuilbotAI
 │       │   ├── category-specs.ts
 │       │   └── default-system-prompts.ts
 │       ├── server
-│       │   └── builder-catalog.ts
+│       │   ├── builder-catalog.ts
+│       │   ├── contact-auth.ts
+│       │   └── gmail.ts
 │       ├── advisor-inventory.ts
 │       ├── advisor-timing.ts
 │       ├── advisor-web-research.ts
@@ -725,6 +829,9 @@ BuilbotAI
 │       ├── chat-stream-fallback.test.ts
 │       ├── chat-stream-fallback.ts
 │       ├── compatibility.ts
+│       ├── contact-config.ts
+│       ├── contact-schemas.ts
+│       ├── contact-types.ts
 │       ├── export-excel.ts
 │       ├── fps-estimator.ts
 │       ├── inventory-fetcher.ts
@@ -736,6 +843,7 @@ BuilbotAI
 │       ├── parse-peso-budget.ts
 │       ├── placeholder-images.ts
 │       ├── popularity.ts
+│       ├── prebuilt-utils.test.ts
 │       ├── prebuilt-utils.ts
 │       ├── styled-excel.ts
 │       ├── system-prompts.ts

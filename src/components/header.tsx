@@ -16,6 +16,8 @@ import {
   Heart,
   History,
   Settings,
+  MailQuestion,
+  MessageCircle,
   Cpu,
   Database,
   Sliders,
@@ -319,6 +321,13 @@ export function Header() {
                     {!isStaff && (
                       <>
                         <Menu.Item
+                          leftSection={<MailQuestion size={16} className="text-cyan-500" />}
+                          onClick={() => router.push("/support-requests")}
+                          className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
+                        >
+                          Support Requests
+                        </Menu.Item>
+                        <Menu.Item
                           leftSection={<Package size={16} className="text-cyan-500" />}
                           onClick={() => router.push("/profile?tab=reservations")}
                           className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
@@ -344,6 +353,16 @@ export function Header() {
                         className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
                       >
                         Management Portal
+                      </Menu.Item>
+                    )}
+
+                    {isStaff && (
+                      <Menu.Item
+                        leftSection={<MessageCircle size={16} className="text-cyan-500" />}
+                        onClick={() => router.push("/profile?tab=contact-inbox")}
+                        className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
+                      >
+                        Contact Inbox
                       </Menu.Item>
                     )}
 
@@ -537,6 +556,16 @@ export function Header() {
                   {!isStaff && (
                     <>
                       <Link
+                        href="/support-requests"
+                        className={classes.drawerLink}
+                        onClick={closeDrawer}
+                      >
+                        <span className="flex items-center gap-2">
+                          <MailQuestion size={16} className="text-cyan-500" />
+                          Support Requests
+                        </span>
+                      </Link>
+                      <Link
                         href="/profile?tab=reservations"
                         className={classes.drawerLink}
                         onClick={closeDrawer}
@@ -569,6 +598,19 @@ export function Header() {
                       <span className="flex items-center gap-2">
                         <Sliders size={16} className="text-cyan-500" />
                         Management Portal
+                      </span>
+                    </Link>
+                  )}
+
+                  {isStaff && (
+                    <Link
+                      href="/profile?tab=contact-inbox"
+                      className={classes.drawerLink}
+                      onClick={closeDrawer}
+                    >
+                      <span className="flex items-center gap-2">
+                        <MessageCircle size={16} className="text-cyan-500" />
+                        Contact Inbox
                       </span>
                     </Link>
                   )}
