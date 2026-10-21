@@ -23,6 +23,8 @@ import { useSiteSettings } from '@/context/site-settings-context';
 
 // Sub-components
 import { StockTab } from './components/stock-tab';
+import { AdminProductFocus } from '@/components/admin-product-focus';
+import { safeStaffProductReturn } from '@/lib/product-identity';
 import { AdminTabHeader } from './components/admin-tab-header';
 import { useSalesActions } from './hooks/use-sales-actions';
 const PanelLoading = () => <div role="status" className="min-h-40 flex items-center justify-center text-slate-600 dark:text-slate-400">Loading section...</div>;
@@ -42,7 +44,8 @@ const AboutManagement = dynamic(() => import('@/components/about-management').th
 export default function AdminPage() {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
-    const { profile, handleTabAccess, currentTab } = useAdminCore();
+    const { profile, handleTabAccess, currentTab, searchParams } = useAdminCore();
+    const itemReturn = safeStaffProductReturn(`/admin?tab=${searchParams.get('tab') || 'stock'}&product=${searchParams.get('product') || ''}`);
 
     // Horizontal tabs scroll reference
     const tabsScrollRef = useRef<HTMLDivElement>(null);
@@ -106,7 +109,7 @@ export default function AdminPage() {
     ]);
 
     return (
-        <RouteGuard requiredPermission="canAccessAdmin" fallbackPath="/system-access">
+        <RouteGuard requiredPermission="canAccessAdmin" fallbackPath={itemReturn === '/admin' ? '/system-access' : `/system-access?returnTo=${encodeURIComponent(itemReturn)}`}>
             <div className={cn(
                 "min-h-screen transition-colors duration-500 overflow-x-hidden",
                 isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
@@ -137,6 +140,7 @@ export default function AdminPage() {
                         onConfirmResetSales={salesActions.handleResetSales}
                     />
 
+                    <AdminProductFocus parts={parts || []} systems={prebuiltSystems || []} loading={partsLoading || prebuiltsLoading} updatePart={handleUpdatePart} updateSystem={handleUpdatePrebuilt} />
                     <Tabs
                         value={currentTab}
                         onChange={(val) => val && handleTabAccess(val)}

@@ -3,6 +3,12 @@ import type { NextConfig } from 'next';
 import path from 'path';
 
 const nextConfig: NextConfig = {
+  // Browser verification uses its own build output so a normal dev server cannot
+  // overwrite the emulator client's compiled Firebase configuration.
+  distDir: process.env.QR_INVENTORY_TEST === 'true' ? '.next-qr-test' : '.next',
+  async headers() {
+    return process.env.QR_INVENTORY_TEST === 'true' ? [{ source: '/:path*', headers: [{ key: 'X-Buildbot-QR-Test', value: 'demo-buildbot-qr' }] }] : [];
+  },
   /* config options here */
   outputFileTracingRoot: path.join(__dirname),
   experimental: {

@@ -52,7 +52,7 @@ interface YourBuildProps {
   className?: string;
   isManagerMode?: boolean;
   allParts?: Part[];
-  onAddPrebuilt?: (data: PrebuiltBuilderAddFormSchema) => void | Promise<void>;
+  onAddPrebuilt?: (data: PrebuiltBuilderAddFormSchema, operationId?: string) => void | Promise<import('@/lib/product-identity').CreatedProduct | void>;
   analysis?: unknown;
   onAnalysisUpdate?: (analysis: any) => void;
   onCategorySelect?: (category: string) => void;

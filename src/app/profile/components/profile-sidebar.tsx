@@ -132,6 +132,13 @@ export function ProfileSidebar({
         badgeColor: "pink",
       },
       {
+        id: "contact-inbox",
+        label: "Contact Inbox",
+        icon: MessageCircle,
+        color: "cyan",
+        badge: null,
+      },
+      {
         id: "activity",
         label: "Activity Logs",
         icon: History,

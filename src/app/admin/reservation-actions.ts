@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { getAdminAuth, getAdminFirestore } from '@/firebase/server-init';
 import { inventoryItemPath } from '@/lib/inventory-paths';
 import type { Order } from '@/lib/types';
+import { invalidatePublicPartsCatalog } from '@/lib/server/public-products';
 
 const requestSchema = z.object({
     orderId: z.string().min(1).max(128).regex(/^[a-zA-Z0-9_-]+$/),
@@ -101,6 +102,7 @@ export async function manageReservation(input: z.infer<typeof requestSchema>) {
                 createdAt: now,
             });
         });
+        if (action !== 'restore') invalidatePublicPartsCatalog();
 
         return { success: true };
     } catch (error) {

@@ -549,7 +549,7 @@ export function PrebuiltSystemCard({
   }
 
   return (
-    <Link href={`/pre-builts/${system.id}`} className="block h-full">
+    <Link href={`/pre-builts/${system.productId || system.id}`} className="block h-full">
       {mainBody}
     </Link>
   );

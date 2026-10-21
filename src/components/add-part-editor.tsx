@@ -26,10 +26,13 @@ import { PartSpecificationsSection } from "./parts/part-specifications-section";
 import { AiActionButton } from "./ui/ai-action-button";
 import type { Part } from "@/lib/types";
 import { normalizeProductDescription } from "@/lib/normalize-product-description";
+import { useProductSaveOperation } from '@/hooks/use-product-save-operation';
+import type { CreatedProduct } from '@/lib/product-identity';
+import { ToastAction } from './ui/toast';
 
 export interface AddPartEditorProps {
   children?: React.ReactNode;
-  onSave: (data: AddPartFormSchema) => Promise<void>;
+  onSave: (data: AddPartFormSchema, operationId?: string) => Promise<CreatedProduct | void>;
   initialData?: Part;
   title?: string;
   initiallyOpen?: boolean;
@@ -37,6 +40,7 @@ export interface AddPartEditorProps {
 
 export function AddPartEditor({ children, onSave, initialData, title, initiallyOpen = false }: AddPartEditorProps) {
   const [open, setOpen] = useState(initiallyOpen);
+  const { getOperation, resetOperation } = useProductSaveOperation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [justAutofilled, setJustAutofilled] = useState(false);
@@ -79,13 +83,15 @@ export function AddPartEditor({ children, onSave, initialData, title, initiallyO
         description: normalizeProductDescription(values.description),
       };
       form.setValue("description", normalizedValues.description);
-      await onSave(normalizedValues);
+      const saved = await onSave(normalizedValues, getOperation(normalizedValues));
       toast({ 
         title: initialData ? "Part Updated!" : "Part Added!", 
-        description: `${values.partName} has been ${initialData ? "updated" : "added to"} the inventory.` 
+        description: `${values.partName} has been ${initialData ? "updated" : "added to"} the inventory.`,
+        action: saved ? <ToastAction altText="View item" onClick={() => window.location.assign(saved.adminUrl)}>View item</ToastAction> : undefined,
       });
       if (!initialData) form.reset();
       setOpen(false);
+      resetOperation();
     } catch (error: any) {
       toast({ 
         variant: "destructive", 
@@ -233,6 +239,7 @@ export function AddPartEditor({ children, onSave, initialData, title, initiallyO
                 <PartIdentitySection 
                   form={form} 
                   onCategoryChange={handleCategoryChange} 
+                  product={initialData}
                   justAutofilled={justAutofilled}
                 />
                 <PartSpecificationsSection 

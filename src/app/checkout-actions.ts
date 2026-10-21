@@ -5,6 +5,7 @@ import { getAdminAuth, getAdminFirestore } from "@/firebase/server-init";
 import * as admin from 'firebase-admin';
 import { Order, OrderItem } from "@/lib/types";
 import { inventoryItemPath } from "@/lib/inventory-paths";
+import { invalidatePublicPartsCatalog } from '@/lib/server/public-products';
 
 /**
  * Prunes notifications for a given user, maintaining a maximum limit (default: 30)
@@ -114,6 +115,7 @@ export async function processCheckout(userId: string, userEmail: string, items: 
                 createdAt: admin.firestore.Timestamp.now()
             });
         });
+        invalidatePublicPartsCatalog();
 
         // Prune old notifications for this user in the background
         pruneUserNotifications(firestore, userId).catch(() => {});
@@ -264,6 +266,7 @@ export async function updateReservationStatus(
                 createdAt: admin.firestore.Timestamp.now()
             });
         });
+        if (newStatus === 'cancelled') invalidatePublicPartsCatalog();
 
         // Prune old notifications for this user in background
         if (targetUserId) {

@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [2026-10-20]
 
 ### Features
+- **contact**: Implement contact inquiries system with gmail sync and user inbox ([adac168](https://github.com/VirgenRayzon/BuilbotAI/commit/adac168))
 - **prebuilts**: Improve prebuilt availability, carousel, admin navigation, and documentation flowcharts ([6ab1d65](https://github.com/VirgenRayzon/BuilbotAI/commit/6ab1d65))
 
 ### Styling & UI/UX

@@ -4,6 +4,7 @@
  * Part names are clickable to open the AddPartDialog for editing.
  */
 
+import { ProductIdentityLink } from './product-identity-link';
 import {
   Table,
   TableBody,
@@ -116,6 +117,7 @@ export function InventoryTable({
                     {part.name}
                   </span>
                 </AddPartDialog>
+                <ProductIdentityLink product={part} kind="part" />
               </div>
             </TableCell>
             <TableCell>{part.category}</TableCell>

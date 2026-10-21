@@ -48,7 +48,7 @@ export function ContactInboxTab() {
         </Group>
       </Paper>
 
-      <Alert color="blue" variant="light" title="In-app support">Signed-in customers can read and reply through Support Requests. Guest inquiries are submit-only and visible to staff.</Alert>
+      <Alert color="blue" variant="light" title="In-app support">Signed-in customers can read and reply from the Contact Inbox in their Profile. Guest inquiries are submit-only and visible to staff.</Alert>
       {inbox.error && <Alert color="red" variant="light" title="Could not complete action">{inbox.error}</Alert>}
 
       <div className="grid gap-4 xl:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.5fr)]">

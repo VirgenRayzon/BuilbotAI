@@ -149,7 +149,7 @@ export default function ContactPage() {
                       BuildbotAI conversations
                     </Text>
                     <Text size="xs" c="dimmed" mt={2}>
-                      Sign in before submitting to view and reply to staff updates in Support Requests. Guest inquiries are submit-only.
+                      Sign in before submitting to view and reply to staff updates in your Profile contact inbox. Guest inquiries are submit-only.
                     </Text>
                   </div>
                 </div>
@@ -226,10 +226,10 @@ export default function ContactPage() {
                   <Text size="sm" mt="xs">
                     Thank you, <strong>{fullName || "Valued Builder"}</strong>! We have received your inquiry regarding &quot;{subject}&quot; and will review your hardware requirements shortly.
                   </Text>
-                  {inquiryId && <Text size="xs" mt="xs" c="dimmed">Reference: {inquiryId.slice(0, 8).toUpperCase()}. {authUser ? 'Continue the conversation in Support Requests; updates stay in BuildbotAI.' : 'This guest inquiry is visible to staff only. Sign in before submitting if you want to view replies in BuildbotAI.'}</Text>}
+                  {inquiryId && <Text size="xs" mt="xs" c="dimmed">Reference: {inquiryId.slice(0, 8).toUpperCase()}. {authUser ? 'Continue the conversation from the Contact Inbox in your Profile.' : 'This guest inquiry is visible to staff only. Sign in before submitting if you want to view replies in BuildbotAI.'}</Text>}
                   {authUser && inquiryId && (
-                    <MantineButton component={Link} href={`/support-requests?inquiry=${encodeURIComponent(inquiryId)}`} variant="light" color="teal" size="sm" className="mt-3">
-                      Open Support Requests
+                    <MantineButton component={Link} href={`/profile?tab=contact-inbox&inquiry=${encodeURIComponent(inquiryId)}`} variant="light" color="teal" size="sm" className="mt-3">
+                      Open Contact Inbox
                     </MantineButton>
                   )}
                   <MantineButton

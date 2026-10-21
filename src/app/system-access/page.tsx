@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
+import { safeStaffProductReturn } from '@/lib/product-identity';
 import Link from 'next/link';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -71,6 +72,7 @@ function SystemAccessContent() {
   const { authUser, profile, loading: authLoading } = useUserProfile();
 
   const reason = searchParams?.get('reason');
+  const returnTo = safeStaffProductReturn(searchParams?.get('returnTo') ?? null);
   let reasonNotice: { title: string; message: string } | null = null;
   if (reason === 'idle_timeout') {
     reasonNotice = {
@@ -98,12 +100,12 @@ function SystemAccessContent() {
 
       // Only redirect to /admin if the staff user has an active, verified admin session marker in this tab
       if (isStaff && activeAdminMarker === authUser.uid) {
-        router.push('/admin');
+        router.push(returnTo);
       } else if (!isStaff) {
         router.push('/builder');
       }
     }
-  }, [authUser, profile, authLoading, router, loading, googleLoading]);
+  }, [authUser, profile, authLoading, router, loading, googleLoading, returnTo]);
 
   const {
     control,
@@ -163,7 +165,7 @@ function SystemAccessContent() {
         description: 'Welcome to the administrator dashboard.',
       });
 
-      router.push('/admin');
+      router.push(returnTo);
     } catch (err: any) {
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('buildbot_admin_session_active');
@@ -221,7 +223,7 @@ function SystemAccessContent() {
         description: 'Administrator session authenticated with Google.',
       });
 
-      router.push('/admin');
+      router.push(returnTo);
     } catch (err: any) {
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('buildbot_admin_session_active');

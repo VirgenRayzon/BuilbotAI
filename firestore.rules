@@ -4,7 +4,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     function isManager() {
-      return request.auth != null && request.auth.token.isManager == true;
+      return request.auth != null && (request.auth.token.get('isManager', false) == true || request.auth.token.get('isSuperAdmin', false) == true);
     }
 
     function isSuperAdmin() {
@@ -15,6 +15,19 @@ service cloud.firestore {
       return category in ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu',
                           'case', 'cooler', 'monitor', 'keyboard', 'mouse', 'headset'];
     }
+
+    function identityUnchanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['productId', 'sku', 'qrToken', 'schemaVersion']);
+    }
+
+    // Private allocation and routing metadata is accessed only by verified server code.
+    match /catalogCounters/{id} { allow read, write: if false; }
+    match /catalogOperations/{id} { allow read, write: if false; }
+    match /catalogNames/{id} { allow read, write: if false; }
+    match /productIds/{id} { allow read, write: if false; }
+    match /productSkus/{id} { allow read, write: if false; }
+    match /qrLinks/{id} { allow read, write: if false; }
+    match /reservationOperations/{id} { allow read, write: if false; }
 
     match /siteSettings/{settingId} {
       allow read: if true;
@@ -127,7 +140,9 @@ service cloud.firestore {
 
     match /prebuiltSystems/{systemId} {
       allow read: if true;
-      allow write: if isManager();
+      allow create: if false;
+      allow update: if isManager() && identityUnchanged();
+      allow delete: if isSuperAdmin();
     }
 
     match /siteContent/{contentId} {
@@ -141,7 +156,9 @@ service cloud.firestore {
 
       match /items/{partId} {
         allow read: if isInventoryCategory(categorySlug);
-        allow write: if isInventoryCategory(categorySlug) && isManager();
+        allow create: if false;
+        allow update: if isInventoryCategory(categorySlug) && isManager() && identityUnchanged();
+        allow delete: if isInventoryCategory(categorySlug) && isSuperAdmin();
       }
     }
 

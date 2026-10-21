@@ -55,6 +55,7 @@ import { ReservationsList } from "./components/reservations-list";
 import { FavoritesList } from "./components/favorites-list";
 import { UserAuditLogsSection } from "./components/user-audit-logs-section";
 import { ContactInboxTab } from "./components/contact-inbox-tab";
+import { CustomerSupportTab } from "./components/customer-support-tab";
 import { CompactInfo } from "@/components/ui/compact-info";
 
 import {
@@ -101,7 +102,7 @@ export default function ProfilePage() {
     if (isManager) {
       return ["profile", "settings", "account", "contact-inbox"];
     }
-    return ["profile", "settings", "account", "reservations", "favorites", "activity"];
+    return ["profile", "settings", "account", "contact-inbox", "reservations", "favorites", "activity"];
   }, [isSuperAdmin, isManager]);
 
   const defaultTab = "profile";
@@ -271,9 +272,9 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* TAB: Contact Inbox (Managers and Super Admins) */}
-                    {activeTab === "contact-inbox" && (isManager || isSuperAdmin) && (
-                      <ContactInboxTab />
+                    {/* TAB: Contact Inbox */}
+                    {activeTab === "contact-inbox" && (
+                      isRegularUser ? <CustomerSupportTab /> : <ContactInboxTab />
                     )}
 
                     {/* TAB 2: Store Reservations (Regular Customers Only) */}

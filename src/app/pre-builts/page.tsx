@@ -109,7 +109,7 @@ export default function PreBuiltsPage() {
   }, []);
 
   return (
-    <RouteGuard requiredPermission="isClientOnly">
+    <>
       <div
         className={cn(
           "min-h-screen transition-colors duration-500 overflow-x-hidden",
@@ -274,6 +274,6 @@ export default function PreBuiltsPage() {
           </motion.div>
         </main>
       </div>
-    </RouteGuard>
+    </>
   );
 }

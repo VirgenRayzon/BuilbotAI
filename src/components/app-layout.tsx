@@ -33,6 +33,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const isLandingRedirect = pathname === "/" && !!authUser;
   const isAuthPage = ['/signin', '/signup', '/system-access'].includes(pathname);
+  const isPublicCatalog = pathname === '/parts' || pathname.startsWith('/parts/') || pathname === '/pre-builts' || pathname.startsWith('/pre-builts/') || pathname.startsWith('/q/');
   const isCustomerSignInPage = pathname === '/signin';
 
   // Keep the sign-out overlay mounted across the route change, then let its
@@ -63,12 +64,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   // 2. Landing page is redirecting an authenticated user
   // 3. User is authenticated on an auth page other than /signin while route redirection completes
   const showLoaderOverlay = signOutStartedAt === null && (
-    (loading && !isCustomerSignInPage) ||
+    (loading && !isCustomerSignInPage && !isPublicCatalog) ||
     isLandingRedirect ||
     (isAuthPage && !isCustomerSignInPage && !!authUser)
   );
 
-  if ((status === 'missing' || status === 'error') && !isCustomerSignInPage) {
+  if ((status === 'missing' || status === 'error') && !isCustomerSignInPage && !isPublicCatalog) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 text-slate-900 dark:bg-[#0c0f14] dark:text-slate-100">
         <Paper withBorder radius="lg" p="xl" className="w-full max-w-md border-slate-200 bg-white text-center dark:border-white/10 dark:bg-[#111722]">

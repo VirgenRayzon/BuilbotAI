@@ -497,15 +497,16 @@ export default function PrebuiltBuilderPage() {
         return (build[part.category] as ComponentData)?.model === part.name;
     };
 
-    const handleAddPrebuilt = async (data: PrebuiltBuilderAddFormSchema) => {
+    const handleAddPrebuilt = async (data: PrebuiltBuilderAddFormSchema, operationId?: string) => {
         if (!firestore) throw new Error("Firestore not initialized");
-        await addPrebuiltSystem(firestore, data);
+        const saved = await addPrebuiltSystem(firestore, data, operationId);
         await logAdminAction('Prebuilt Builder - Deploy', `${data.name} deployed from builder`, data);
         toast({
             title: "Prebuilt Added Successfully!",
             description: `${data.name} is now available in the Prebuilt Overview tab.`,
             variant: "default"
         });
+        return saved;
     };
 
     const isBuilderLoading = partsLoading || authLoading;

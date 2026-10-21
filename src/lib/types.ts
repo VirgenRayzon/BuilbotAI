@@ -55,6 +55,9 @@ export type AdvisorWebResearchInfo = {
 export type AiRecommendation = AiBuildAdvisorRecommendationsOutput;
 
 export type Part = {
+  productId?: string;
+  sku?: string;
+  qrToken?: string;
   id: string;
   name: string;
   category: 'CPU' | 'GPU' | 'Motherboard' | 'RAM' | 'Storage' | 'PSU' | 'Case' | 'Cooler' | 'Monitor' | 'Keyboard' | 'Mouse' | 'Headset';
@@ -83,6 +86,9 @@ export type Part = {
 };
 
 export type PrebuiltSystem = {
+  productId?: string;
+  sku?: string;
+  qrToken?: string;
   id: string;
   name: string;
   tier: 'Entry' | 'Mid-Range' | 'High-End' | 'Workstation';

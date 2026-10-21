@@ -114,6 +114,7 @@ export function Header() {
     { href: "/builder", label: "Builder" },
     { href: "/ai-build-advisor", label: "Build Advisor" },
     { href: "/pre-builts", label: "Pre-builts" },
+    { href: "/parts", label: "Parts" },
   ];
 
   const adminTabs: NavTab[] = [
@@ -322,10 +323,10 @@ export function Header() {
                       <>
                         <Menu.Item
                           leftSection={<MailQuestion size={16} className="text-cyan-500" />}
-                          onClick={() => router.push("/support-requests")}
+                          onClick={() => router.push("/profile?tab=contact-inbox")}
                           className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
                         >
-                          Support Requests
+                          Contact Inbox
                         </Menu.Item>
                         <Menu.Item
                           leftSection={<Package size={16} className="text-cyan-500" />}
@@ -556,13 +557,13 @@ export function Header() {
                   {!isStaff && (
                     <>
                       <Link
-                        href="/support-requests"
+                        href="/profile?tab=contact-inbox"
                         className={classes.drawerLink}
                         onClick={closeDrawer}
                       >
                         <span className="flex items-center gap-2">
                           <MailQuestion size={16} className="text-cyan-500" />
-                          Support Requests
+                          Contact Inbox
                         </span>
                       </Link>
                       <Link

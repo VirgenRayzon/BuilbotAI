@@ -1,14 +1,13 @@
 "use client";
 
-import { Badge, Loader, Paper, Text } from "@mantine/core";
-import { AlertCircle, Package } from "lucide-react";
+import Link from "next/link";
+import { Badge, Button, Loader, Paper, Text } from "@mantine/core";
+import { AlertCircle, ExternalLink, Package } from "lucide-react";
 import {
     Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious,
 } from "@/components/ui/carousel";
 import { OptimizedImage } from "@/components/ui/optimized-image";
-import { PartDetailsDialog } from "@/components/part-details-dialog";
 import { formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
 import type { PrebuiltPartStatus } from "@/lib/prebuilt-utils";
 
 interface PrebuiltComponentCarouselProps {
@@ -72,14 +71,27 @@ function PrebuiltComponentCard({ item }: { item: PrebuiltPartStatus }) {
                     : "text-slate-900 dark:text-slate-100"}`}>
                     {part ? formatCurrency(part.price) : "Replacement needed"}
                 </Text>
+                {part?.productId && (
+                    <Button
+                        component={Link}
+                        href={`/parts/${part.productId}`}
+                        variant="light"
+                        color="cyan"
+                        size="xs"
+                        fullWidth
+                        mt="sm"
+                        rightSection={<ExternalLink className="h-3.5 w-3.5" />}
+                        className="h-9 font-semibold"
+                    >
+                        View part
+                    </Button>
+                )}
             </div>
         </Paper>
     );
 }
 
 export function PrebuiltComponentCarousel({ parts, loading }: PrebuiltComponentCarouselProps) {
-    const { toast } = useToast();
-
     if (loading) {
         return (
             <Paper radius="xl" p="xl" withBorder className="flex flex-col items-center justify-center gap-3 border-slate-200 bg-white/80 py-16 text-center dark:border-white/10 dark:bg-[#141a23]/80">
@@ -106,20 +118,7 @@ export function PrebuiltComponentCarousel({ parts, loading }: PrebuiltComponentC
                 <CarouselContent className="-ml-2 items-stretch">
                     {parts.map(item => (
                         <CarouselItem key={item.key} className="flex h-auto basis-full pl-2 md:basis-1/2">
-                            {item.part ? (
-                                <PartDetailsDialog
-                                    part={item.part}
-                                    isAdded={true}
-                                    onToggle={() => toast({
-                                        title: "Included Hardware",
-                                        description: `${item.name} is pre-configured. Use "Customize in Builder" to swap parts.`,
-                                    })}
-                                >
-                                    <PrebuiltComponentCard item={item} />
-                                </PartDetailsDialog>
-                            ) : (
-                                <PrebuiltComponentCard item={item} />
-                            )}
+                            <PrebuiltComponentCard item={item} />
                         </CarouselItem>
                     ))}
                 </CarouselContent>

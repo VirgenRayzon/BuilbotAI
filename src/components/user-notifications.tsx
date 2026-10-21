@@ -156,7 +156,7 @@ export function UserNotifications() {
 
     if ((notification.type === 'support_reply' || notification.type === 'support_status') && notification.targetId) {
       setPopoverOpened(false);
-      router.push(`/support-requests?inquiry=${encodeURIComponent(notification.targetId)}`);
+      router.push(`/profile?tab=contact-inbox&inquiry=${encodeURIComponent(notification.targetId)}`);
       return;
     }
 

@@ -5,6 +5,7 @@
 'use client';
 
 import { AddPartDialog } from './add-part-dialog';
+import { ProductIdentityLink } from './product-identity-link';
 import { type AddPartFormSchema } from '@/hooks/use-part-form';
 import { OptimizedImage } from './ui/optimized-image';
 import { Card, CardTitle } from '@/components/ui/card';
@@ -112,6 +113,7 @@ export function InventoryPartCard({
                                         {part.name.length > 60 ? `${part.name.substring(0, 57)}...` : part.name}
                                     </CardTitle>
                                 </div>
+                                <ProductIdentityLink product={part} kind="part" />
                             </div>
                             <div className="flex items-start gap-1">
                                 <AlertDialog>

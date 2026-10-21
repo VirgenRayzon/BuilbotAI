@@ -1,4 +1,6 @@
 "use client";
+import { ProductIdentityLink } from './product-identity-link';
+import Link from 'next/link';
 
 import { useState, useEffect } from "react";
 import { cn, formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
@@ -210,12 +212,6 @@ function PrebuiltTableRow({
     fetchStock();
   }, [firestore, isComplete, system.components]);
 
-  const handleReserve = (systemName: string) => {
-    toast({
-      title: "Reservation Initiated",
-      description: `${systemName} has been recorded. Check your profile for details.`,
-    });
-  };
 
   return (
     <>
@@ -280,6 +276,7 @@ function PrebuiltTableRow({
               <Text size="xs" c="dimmed" lineClamp={1}>
                 {system.description}
               </Text>
+              {showActions && <ProductIdentityLink product={system} kind="prebuilt" />}
             </Stack>
           </Group>
         </Table.Td>
@@ -411,15 +408,15 @@ function PrebuiltTableRow({
 
             {!showActions && (
               <Button
+                component={Link}
+                href={`/pre-builts/${system.productId || system.id}`}
                 size="xs"
                 radius="md"
                 variant="light"
                 color="cyan"
-                disabled={stockStatus !== "in-stock" || !isComplete}
-                onClick={() => handleReserve(system.name)}
                 leftSection={<ShieldCheck size={14} />}
               >
-                Reserve
+                View product
               </Button>
             )}
           </div>

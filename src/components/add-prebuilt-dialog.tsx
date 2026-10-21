@@ -38,6 +38,10 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
+import { ProductIdentification } from './product-identification';
+import { useProductSaveOperation } from '@/hooks/use-product-save-operation';
+import type { CreatedProduct } from '@/lib/product-identity';
+import { ToastAction } from './ui/toast';
 import { ScrollArea } from "./ui/scroll-area";
 import { MultiImageUpload } from "./parts/multi-image-upload";
 import { 
@@ -126,7 +130,7 @@ function getSelectedPartIds(values: AddPrebuiltFormSchema): string[] {
 
 interface AddPrebuiltDialogProps {
     children: React.ReactNode;
-    onSave: (data: AddPrebuiltFormSchema) => void;
+    onSave: (data: AddPrebuiltFormSchema, operationId?: string) => Promise<CreatedProduct | void>;
     parts: Part[];
     initialData?: PrebuiltSystem;
     title?: string;
@@ -152,6 +156,7 @@ function PartSelector({
 }) {
     const [query, setQuery] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -183,6 +188,9 @@ function PartSelector({
                 <Button
                     variant="outline"
                     role="combobox"
+                    type="button"
+                    aria-label={`Select ${category}`}
+                    ref={triggerRef}
                     className="w-full justify-between bg-slate-50 dark:bg-[#141a23] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white h-10 px-3 text-sm font-normal rounded-xl hover:border-cyan-500/50 transition-colors shadow-sm hover:scale-100 active:scale-100"
                 >
                     <span className="truncate">
@@ -193,7 +201,9 @@ function PartSelector({
             </PopoverTrigger>
             <PopoverContent 
                 portalled={false}
-                className="w-[var(--radix-popover-trigger-width)] p-0 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] text-slate-900 dark:text-white shadow-2xl rounded-2xl overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-100 data-[state=open]:slide-in-from-top-0 duration-0" 
+                collisionBoundary={triggerRef.current?.closest<HTMLElement>('[data-radix-scroll-area-viewport]')}
+                collisionPadding={12}
+                className="z-[200] w-[var(--radix-popover-trigger-width)] p-0 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] text-slate-900 dark:text-white shadow-2xl rounded-2xl overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-100 data-[state=open]:slide-in-from-top-0 duration-0"
                 align="start"
                 sideOffset={8}
             >
@@ -223,7 +233,7 @@ function PartSelector({
                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">{category} Inventory</span>
                     <span className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400">{filtered.length} Results</span>
                 </div>
-                <ScrollArea className="h-[340px]">
+                <ScrollArea className="h-[min(340px,calc(var(--radix-popover-content-available-height)-96px))]">
                     <div className="p-1.5">
                         {filtered.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
@@ -338,6 +348,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
     const [showTelemetry, setShowTelemetry] = useState(false);
     const startTimeRef = useRef<number>(0);
     const { toast } = useToast();
+    const { getOperation, resetOperation } = useProductSaveOperation();
 
     const firestore = useFirestore();
     const settingsDocRef = useMemo(() => {
@@ -647,10 +658,12 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
             values.ram = validRam;
             values.storage = values.storage.slice(0, nSlots + sSlots).filter(Boolean);
 
-            await onSave(values);
-            toast({ title: initialData ? "Prebuilt Updated!" : "Prebuilt System Added!", description: `${values.name} has been ${initialData ? 'updated' : 'added'}.` });
+            const saved = await onSave(values, getOperation(values));
+            toast({ title: initialData ? "Prebuilt Updated!" : "Prebuilt System Added!", description: `${values.name} has been ${initialData ? 'updated' : 'added'}.`,
+              action: saved ? <ToastAction altText="View item" onClick={() => window.location.assign(saved.adminUrl)}>View item</ToastAction> : undefined });
             if (!initialData) form.reset();
             setOpen(false);
+            resetOperation();
         } catch (error: any) {
             toast({
                 variant: "destructive",
@@ -916,6 +929,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                 </FormItem>
                                             )} />
 
+                                            <div className="col-span-2"><ProductIdentification category="PC" product={initialData} /></div>
                                             <FormField control={form.control} name="price" render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">

@@ -1,5 +1,6 @@
 'use client';
 
+import { safeProductReturn } from '@/lib/product-identity';
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -66,6 +67,7 @@ function SignInContent() {
   const { toast } = useToast();
   const { authUser, profile, loading: authLoading, status: profileStatus } = useUserProfile();
 
+  const returnTo = safeProductReturn(searchParams?.get('returnTo') ?? null);
   const reason = searchParams?.get('reason');
   const visibleError = error || (!loading && !googleLoading && reason === 'staff_account' ? staffSignInError : null);
 
@@ -96,9 +98,9 @@ function SignInContent() {
         return;
       }
       redirectingRef.current = true;
-      router.replace('/builder');
+      router.replace(returnTo);
     }
-  }, [auth, authUser, profile, authLoading, profileStatus, router, loading, googleLoading]);
+  }, [auth, authUser, profile, authLoading, profileStatus, router, loading, googleLoading, returnTo]);
 
   const {
     control,
@@ -185,7 +187,7 @@ function SignInContent() {
       });
 
       redirectingRef.current = true;
-      router.replace('/builder');
+      router.replace(returnTo);
       navigating = true;
     } catch (err: any) {
       redirectingRef.current = false;
@@ -236,7 +238,7 @@ function SignInContent() {
         description: 'Welcome back to Buildbot AI!',
       });
       redirectingRef.current = true;
-      router.replace('/builder');
+      router.replace(returnTo);
       navigating = true;
     } catch (err: any) {
       redirectingRef.current = false;

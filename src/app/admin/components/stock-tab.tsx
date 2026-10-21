@@ -69,7 +69,7 @@ interface StockTabProps {
     profile: Pick<UserProfile, 'isSuperAdmin'> | null;
     partCategories: PartCategorySelection[];
     onSetCategories: (categories: PartCategorySelection[]) => void;
-    onAddPart: (data: AddPartFormSchema) => Promise<void>;
+    onAddPart: (data: AddPartFormSchema, operationId?: string) => Promise<import('@/lib/product-identity').CreatedProduct | void>;
     onUpdatePart: (id: string, category: Part['category'], data: AddPartFormSchema) => Promise<void>;
     onDeletePart: (id: string, category: Part['category']) => Promise<void>;
     onArchivePart: (id: string, category: Part['category'], isArchived?: boolean) => Promise<void>;
@@ -121,7 +121,7 @@ export function StockTab({
         
         const baseFilteredParts = parts?.filter(part => {
             const matchesCategory = selectedCategories.includes(part.category);
-            const matchesSearch = part.name.toLowerCase().includes(partSearchQuery.toLowerCase()) ||
+            const matchesSearch = `${part.name} ${part.sku || ''} ${part.productId || ''}`.toLowerCase().includes(partSearchQuery.toLowerCase()) ||
                 part.brand.toLowerCase().includes(partSearchQuery.toLowerCase());
             const matchesAvailability = availability === 'all'
                 || (availability === 'in-stock' && part.stock > 0)
@@ -151,7 +151,7 @@ export function StockTab({
         
         const baseFilteredParts = parts?.filter(part => {
             const matchesCategory = selectedCategories.includes(part.category);
-            const matchesSearch = part.name.toLowerCase().includes(partSearchQuery.toLowerCase()) ||
+            const matchesSearch = `${part.name} ${part.sku || ''} ${part.productId || ''}`.toLowerCase().includes(partSearchQuery.toLowerCase()) ||
                 part.brand.toLowerCase().includes(partSearchQuery.toLowerCase());
             const isNotArchived = !part.isArchived;
             return matchesCategory && matchesSearch && isNotArchived;

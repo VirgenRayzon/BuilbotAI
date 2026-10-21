@@ -210,6 +210,7 @@ export async function logAdminAction(action: string, details: string, data?: any
 import { getAdminFirestore, getAdminAuth } from "@/firebase/server-init";
 import type { Part } from "@/lib/types";
 import { getBuilderCatalog, clearBuilderCatalogCache } from '@/lib/server/builder-catalog';
+import { invalidatePublicPartsCatalog } from '@/lib/server/public-products';
 
 export async function getCachedInventory(): Promise<Part[]> {
   return getBuilderCatalog();
@@ -220,6 +221,7 @@ import { clearInventoryCache } from "@/lib/inventory-fetcher";
 export async function clearCatalogCache() {
   console.log("[clearCatalogCache] Invalidating catalog cache...");
   clearBuilderCatalogCache();
+  invalidatePublicPartsCatalog();
   clearInventoryCache();
   return { success: true };
 }

@@ -4,6 +4,7 @@
  * specs dropdown (Collapse + Paper), image canvas, and side-by-side admin action buttons.
  */
 'use client';
+import { ProductIdentityLink } from './product-identity-link';
 
 import React, { useMemo } from 'react';
 import Link from 'next/link';
@@ -280,6 +281,7 @@ export function InventoryPrebuiltCard({
             >
               {system.name}
             </Text>
+            <ProductIdentityLink product={system} kind="prebuilt" />
             <Text
               size="xs"
               c="dimmed"

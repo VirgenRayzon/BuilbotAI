@@ -85,7 +85,7 @@ export function ContactThread({
             {error && <Alert color="red" variant="light" title="Reply status">{error}</Alert>}
             <Textarea
               label={isStaff ? 'Reply to customer' : 'Your reply'}
-              description={isStaff ? 'Your reply is saved here. Signed-in customers can read it in Support Requests.' : 'Your reply will be saved to this BuildbotAI conversation.'}
+              description={isStaff ? 'Your reply is saved here. Signed-in customers can read it from their Profile contact inbox.' : 'Your reply will be saved to this BuildbotAI conversation.'}
               placeholder="Write your message…"
               value={reply}
               onChange={event => setReply(event.currentTarget.value)}

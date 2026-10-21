@@ -11,8 +11,10 @@ import { getAiPrebuiltPerformance } from "@/app/actions";
 import { getMissingParts, getPrebuiltPartStatuses, type ResolvedPrebuiltPart } from "@/lib/prebuilt-utils";
 import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
 import type { PrebuiltSystem, Part, FavoriteBuild, FavoriteBuildPart } from "@/lib/types";
+import { useProductSaveOperation } from '@/hooks/use-product-save-operation';
 
 export function usePrebuiltDetails(systemId: string) {
+    const { getOperation } = useProductSaveOperation();
     const [system, setSystem] = useState<PrebuiltSystem | null>(null);
     const [loadingSystem, setLoadingSystem] = useState(true);
 
@@ -206,7 +208,9 @@ export function usePrebuiltDetails(systemId: string) {
                 profile.email,
                 profile.name || profile.email.split("@")[0],
                 sanitizedSystem,
-                componentsMap
+                componentsMap,
+                await authUser.getIdToken(),
+                getOperation({ systemId })
             );
 
             if (result.success) {

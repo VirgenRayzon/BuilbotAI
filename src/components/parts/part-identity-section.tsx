@@ -10,14 +10,17 @@ import { componentCategories } from "@/lib/constants/category-specs";
 import { UseFormReturn } from "react-hook-form";
 import { AddPartFormSchema } from "@/hooks/use-part-form";
 import { cn } from "@/lib/utils";
+import { ProductIdentification } from '../product-identification';
+import type { Part } from '@/lib/types';
 
 interface PartIdentitySectionProps {
   form: UseFormReturn<AddPartFormSchema>;
   onCategoryChange: (category: string) => void;
   justAutofilled?: boolean;
+  product?: Part;
 }
 
-export function PartIdentitySection({ form, onCategoryChange, justAutofilled }: PartIdentitySectionProps) {
+export function PartIdentitySection({ form, onCategoryChange, justAutofilled, product }: PartIdentitySectionProps) {
   const selectedCategory = form.watch("category");
   const watchedImages = form.watch("images");
   const watchedImageUrl = form.watch("imageUrl");
@@ -133,6 +136,7 @@ export function PartIdentitySection({ form, onCategoryChange, justAutofilled }: 
             </FormItem>
           )} />
 
+          <div className="col-span-2"><ProductIdentification category={selectedCategory} product={product} /></div>
           <FormField control={form.control} name="price" render={({ field }) => (
             <FormItem>
               <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">

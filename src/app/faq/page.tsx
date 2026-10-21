@@ -83,7 +83,7 @@ const faqData = [
       },
       {
         question: "How do I get technical support for my build?",
-        answer: "You can reach our team through the Contact page. Sign in before submitting to view and continue the conversation in Support Requests; guest inquiries are submit-only."
+        answer: "You can reach our team through the Contact page. Sign in before submitting to view and continue the conversation from the Contact Inbox in your Profile; guest inquiries are submit-only."
       }
     ]
   }

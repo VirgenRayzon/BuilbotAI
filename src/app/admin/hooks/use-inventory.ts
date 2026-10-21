@@ -54,15 +54,12 @@ export function useInventory(profile: any) {
     }, [rawParts]);
 
     // Handlers
-    const handleAddPart = async (newPartData: AddPartFormSchema) => {
-        if (!firestore) return;
-        if (parts.some(part => part.name.toLowerCase() === newPartData.partName.toLowerCase())) {
-            throw new Error(`A part named "${newPartData.partName}" already exists.`);
-        }
-        await addPart(firestore, newPartData);
-        await logAdminAction('Add Part', `${newPartData.partName} added to ${newPartData.category}`, newPartData);
+    const handleAddPart = async (newPartData: AddPartFormSchema, operationId?: string) => {
+        if (!firestore) throw new Error('Inventory is not connected. Please retry.');
+        const saved = await addPart(firestore, newPartData, operationId);
+        await Promise.allSettled([logAdminAction('Add Part', `${newPartData.partName} added to ${newPartData.category}`, newPartData),
         
-        await createAuditLog(firestore, {
+        createAuditLog(firestore, {
             actionName: 'created',
             actorId: profile?.id || 'unknown',
             actorName: profile?.name || profile?.email || 'Unknown User',
@@ -70,8 +67,9 @@ export function useInventory(profile: any) {
             scope: 'Part',
             resourceName: newPartData.partName,
             details: `Added new part in category ${newPartData.category}`
-        });
-        await clearCatalogCache();
+        }),
+        clearCatalogCache()]);
+        return saved;
     };
 
     const handleUpdatePart = async (partId: string, category: Part['category'], data: AddPartFormSchema) => {
@@ -255,12 +253,12 @@ export function useInventory(profile: any) {
         }
     };
 
-    const handleAddPrebuilt = async (newPrebuiltData: AddPrebuiltFormSchema) => {
-        if (!firestore) return;
-        await addPrebuiltSystem(firestore, newPrebuiltData);
-        await logAdminAction('Deploy System', `${newPrebuiltData.name} deployed in ${newPrebuiltData.tier} tier`, newPrebuiltData);
+    const handleAddPrebuilt = async (newPrebuiltData: AddPrebuiltFormSchema, operationId?: string) => {
+        if (!firestore) throw new Error('Inventory is not connected. Please retry.');
+        const saved = await addPrebuiltSystem(firestore, newPrebuiltData, operationId);
+        await Promise.allSettled([logAdminAction('Deploy System', `${newPrebuiltData.name} deployed in ${newPrebuiltData.tier} tier`, newPrebuiltData),
         
-        await createAuditLog(firestore, {
+        createAuditLog(firestore, {
             actionName: 'created',
             actorId: profile?.id || 'unknown',
             actorName: profile?.name || profile?.email || 'Unknown User',
@@ -268,8 +266,9 @@ export function useInventory(profile: any) {
             scope: 'Prebuilt',
             resourceName: newPrebuiltData.name,
             details: `Added new prebuilt system`
-        });
-        await clearCatalogCache();
+        }),
+        clearCatalogCache()]);
+        return saved;
     };
 
     const handleUpdatePrebuilt = async (systemId: string, data: AddPrebuiltFormSchema) => {
