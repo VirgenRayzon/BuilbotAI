@@ -63,7 +63,10 @@ export async function decodeFrame(
   // 1. Try native BarcodeDetector API if supported
   if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
     try {
-      const detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
+      const Detector = Reflect.get(window, 'BarcodeDetector') as new (options: { formats: string[] }) => {
+        detect(source: HTMLVideoElement): Promise<Array<{ rawValue?: string }>>;
+      };
+      const detector = new Detector({ formats: ['qr_code'] });
       const barcodes = await detector.detect(video);
       if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
         return barcodes[0].rawValue;
@@ -74,13 +77,18 @@ export async function decodeFrame(
   }
 
   // 2. Fallback to jsQR via canvas
-  canvas.width = width;
-  canvas.height = height;
+  const scale = Math.min(1, 720 / Math.max(width, height));
+  const scanWidth = Math.max(1, Math.round(width * scale));
+  const scanHeight = Math.max(1, Math.round(height * scale));
+  if (canvas.width !== scanWidth || canvas.height !== scanHeight) {
+    canvas.width = scanWidth;
+    canvas.height = scanHeight;
+  }
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) return null;
 
-  ctx.drawImage(video, 0, 0, width, height);
-  const imageData = ctx.getImageData(0, 0, width, height);
+  ctx.drawImage(video, 0, 0, scanWidth, scanHeight);
+  const imageData = ctx.getImageData(0, 0, scanWidth, scanHeight);
   const code = jsQR(imageData.data, imageData.width, imageData.height, {
     inversionAttempts: 'dontInvert',
   });

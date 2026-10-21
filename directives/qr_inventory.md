@@ -38,6 +38,13 @@
 - The authenticated health endpoint checks both token claims and current profile before returning even cached results. Its read-only snapshot has a 10,000-product/registry limit and a one-minute process-local cache. Oversized or failed audits must not appear healthy. Report intentional disabled/archive states separately from defects.
 - Reuse `execution/verify_product_identities.ts --project=<project> --report=<local-json-path>` for structured diagnostics. Reports never repair mappings, regenerate identifiers or alter stock. Production reports and release evidence belong under ignored `.tmp/`.
 
+## Camera scanner lifecycle
+
+- Keep camera-start effects independent of inline scan callbacks. Store the latest scan handler in a ref so status renders do not close and reopen the stream.
+- Stop tracks when a camera request resolves after the dialog closes or the user switches tabs/cameras. Ignore scan frames from an earlier camera session.
+- Browser camera access requires HTTPS or localhost. Show actionable permission, missing-device and busy-device errors, with a retry action and manual lookup available.
+- Browser regression coverage should count camera starts while the dialog stays open and verify one new start after switching away and back.
+
 ## Production data and rollout
 
 1. Confirm `--project=studio-3150054754-c7d0b` and take a recoverable managed Firestore export in the separate `<project>-private-backups` bucket with public access prevention and uniform IAM access enforced. Never use the public Firebase asset bucket for database exports. `execution/backup_qr_catalog.ts` checks the private bucket and supports an Admin identity with export permissions. If that identity is denied, use an already authorized gcloud account; do not grant additional IAM privileges as a workaround.

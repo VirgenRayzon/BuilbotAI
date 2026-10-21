@@ -14,6 +14,9 @@ export function useQRScanner(onScan: (result: DecodedQRResult) => void) {
   const streamRef = useRef<MediaStream | null>(null);
   const frameRequestRef = useRef<number | null>(null);
   const detectedRef = useRef(false);
+  const cameraSessionRef = useRef(0);
+  const onScanRef = useRef(onScan);
+  onScanRef.current = onScan;
 
   // Check available camera devices
   useEffect(() => {
@@ -28,7 +31,8 @@ export function useQRScanner(onScan: (result: DecodedQRResult) => void) {
   }, []);
 
   const stopCamera = useCallback(() => {
-    if (frameRequestRef.current) {
+    cameraSessionRef.current += 1;
+    if (frameRequestRef.current !== null) {
       cancelAnimationFrame(frameRequestRef.current);
       frameRequestRef.current = null;
     }
@@ -42,19 +46,20 @@ export function useQRScanner(onScan: (result: DecodedQRResult) => void) {
     setIsScanning(false);
   }, []);
 
-  const scanLoopRef = useRef<() => void>(() => {});
+  const scanLoopRef = useRef<(session: number) => void>(() => {});
 
-  const scanLoop = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current || detectedRef.current) return;
+  const scanLoop = useCallback(async (session: number) => {
+    if (session !== cameraSessionRef.current || !videoRef.current || !canvasRef.current || detectedRef.current) return;
 
     try {
       const raw = await decodeFrame(videoRef.current, canvasRef.current);
+      if (session !== cameraSessionRef.current) return;
       if (raw && !detectedRef.current) {
         const parsed = parseScannedContent(raw);
         if (parsed) {
           detectedRef.current = true;
           stopCamera();
-          onScan(parsed);
+          onScanRef.current(parsed);
           return;
         }
       }
@@ -62,23 +67,29 @@ export function useQRScanner(onScan: (result: DecodedQRResult) => void) {
       // Ignore frame errors and continue next frame
     }
 
-    if (!detectedRef.current) {
+    if (session === cameraSessionRef.current && !detectedRef.current) {
       frameRequestRef.current = requestAnimationFrame(() => {
-        scanLoopRef.current();
+        scanLoopRef.current(session);
       });
     }
-  }, [onScan, stopCamera]);
+  }, [stopCamera]);
 
   scanLoopRef.current = scanLoop;
 
 
   const startCamera = useCallback(async () => {
     stopCamera();
+    const session = cameraSessionRef.current;
     detectedRef.current = false;
     setCameraError(null);
 
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      setCameraError('Camera access requires HTTPS or localhost. Open the secure site on this device, or use manual lookup.');
+      return;
+    }
+
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      setCameraError('Camera access is not supported by your browser.');
+      setCameraError('This browser does not provide camera access. Check camera permissions or use manual lookup.');
       return;
     }
 
@@ -93,40 +104,45 @@ export function useQRScanner(onScan: (result: DecodedQRResult) => void) {
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (session !== cameraSessionRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       streamRef.current = stream;
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.setAttribute('playsinline', 'true'); // Required for iOS Safari
         await videoRef.current.play();
+        if (session !== cameraSessionRef.current) return;
         setIsScanning(true);
         frameRequestRef.current = requestAnimationFrame(() => {
-          void scanLoop();
+          void scanLoopRef.current(session);
         });
+      } else {
+        stopCamera();
       }
     } catch (err) {
+      if (session !== cameraSessionRef.current) return;
+      stopCamera();
       const error = err as Error;
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
         setCameraError('Camera permission was denied. Please allow camera access or use manual lookup.');
       } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
         setCameraError('No camera was found on your device.');
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        setCameraError('The camera is in use by another app or could not start. Close other camera apps and try again.');
+      } else if (error.name === 'OverconstrainedError') {
+        setCameraError('This camera cannot meet the requested video settings. Try another camera or use manual lookup.');
       } else {
         setCameraError('Failed to access camera: ' + (error.message || 'Unknown error'));
       }
       setIsScanning(false);
     }
-  }, [facingMode, scanLoop, stopCamera]);
+  }, [facingMode, stopCamera]);
 
   const switchCamera = useCallback(() => {
     setFacingMode((prev) => (prev === 'environment' ? 'user' : 'environment'));
   }, []);
-
-  // Restart camera when facingMode changes
-  useEffect(() => {
-    if (isScanning) {
-      void startCamera();
-    }
-  }, [facingMode]);
 
   // Clean up stream on unmount
   useEffect(() => {

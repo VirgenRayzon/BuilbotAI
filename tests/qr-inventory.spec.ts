@@ -94,6 +94,36 @@ test('staff QR opens exact item and downloaded PNG contains approved hosted URL'
   await expect(page.getByRole('heading', { name: 'QR Browser PC' })).toBeVisible();
 });
 
+test('scanner starts once per camera tab activation', async ({ page }) => {
+  await page.addInitScript(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 640;
+    canvas.height = 480;
+    const context = canvas.getContext('2d');
+    context?.fillRect(0, 0, canvas.width, canvas.height);
+    let starts = 0;
+    Object.defineProperty(window, '__qrCameraStarts', { get: () => starts });
+    Object.defineProperty(navigator.mediaDevices, 'getUserMedia', {
+      configurable: true,
+      value: async () => {
+        starts += 1;
+        return canvas.captureStream(10);
+      },
+    });
+  });
+
+  await signIn(page, true);
+  await page.getByRole('button', { name: 'Scan item' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Scan or Lookup Item' });
+  await expect(dialog.locator('video')).toHaveJSProperty('readyState', 4);
+  await page.waitForTimeout(1000);
+  expect(await page.evaluate(() => Reflect.get(window, '__qrCameraStarts') as number)).toBe(1);
+  await dialog.getByText('Manual Lookup', { exact: true }).click();
+  await dialog.getByText('Camera Scan', { exact: true }).click();
+  await expect(dialog.locator('video')).toHaveJSProperty('readyState', 4);
+  expect(await page.evaluate(() => Reflect.get(window, '__qrCameraStarts') as number)).toBe(2);
+});
+
 test('Add Part previews allocate nothing, save assigns identifiers, editing preserves them', async ({ page }) => {
   await signIn(page, true);
   const counter = (await db.doc('catalogCounters/products').get()).get('value');

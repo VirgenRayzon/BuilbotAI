@@ -204,6 +204,7 @@ export function QRScannerDialog() {
                 <video
                   ref={videoRef}
                   className="w-full h-full object-cover"
+                  autoPlay
                   playsInline
                   muted
                 />
@@ -250,15 +251,14 @@ export function QRScannerDialog() {
                 <Alert color="red" variant="light" title="Camera Error" radius="md">
                   <Stack gap="xs">
                     <Text size="xs">{cameraError}</Text>
-                    <Button
-                      size="xs"
-                      variant="light"
-                      color="red"
-                      onClick={() => setActiveTab('manual')}
-                      mih={36}
-                    >
-                      Switch to manual lookup
-                    </Button>
+                    <Group gap="xs">
+                      <Button size="xs" variant="light" color="red" onClick={() => void startCamera()} mih={44}>
+                        Try camera again
+                      </Button>
+                      <Button size="xs" variant="subtle" color="red" onClick={() => setActiveTab('manual')} mih={44}>
+                        Switch to manual lookup
+                      </Button>
+                    </Group>
                   </Stack>
                 </Alert>
               )}
@@ -313,9 +313,14 @@ export function QRScannerDialog() {
           )}
 
           {errorMessage && (
-            <Text size="xs" c="red" role="alert">
-              {errorMessage}
-            </Text>
+            <Stack gap="xs">
+              <Text size="xs" c="red" role="alert">{errorMessage}</Text>
+              {activeTab === 'camera' && !isScanning && !cameraError && (
+                <Button size="xs" variant="light" color="red" onClick={() => void startCamera()} mih={44}>
+                  Scan again
+                </Button>
+              )}
+            </Stack>
           )}
         </Stack>
       </Modal>
