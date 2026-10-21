@@ -41,7 +41,7 @@ export function PrebuiltShowcase() {
 
     return (
         <section className="py-32 relative overflow-hidden transition-colors duration-1000">
-            <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 relative z-10">
+            <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 relative z-10">
                 <SectionHeader
                     badge="Battle-Ready"
                     title="Featured Systems"
@@ -72,6 +72,7 @@ export function PrebuiltShowcase() {
                                                 expanded={showAllSpecs}
                                                 onToggle={() => setShowAllSpecs(!showAllSpecs)}
                                                 showReserveButton={false}
+                                                showLaunchButton={true}
                                                 isClickable={false}
                                             />
                                         </motion.div>

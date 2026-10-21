@@ -47,8 +47,8 @@ export function usePrebuiltDetails(systemId: string) {
     const unavailableParts = componentStatuses.filter(part => part.issue !== null);
     const isInStock = resolvedSystemId === system?.id && unavailableParts.length === 0;
 
-    const backLink = isStaff ? "/admin?tab=prebuilts" : "/pre-builts";
-    const backText = isStaff ? "Back to Prebuilts Management" : "Back to Pre-built Rigs";
+    const backLink = isStaff ? "/admin?tab=prebuilts" : "/";
+    const backText = isStaff ? "Back to Prebuilts Management" : "Back to Landing Page";
 
     // 1. Fetch System
     useEffect(() => {
@@ -67,7 +67,7 @@ export function usePrebuiltDetails(systemId: string) {
                             description: "This system is no longer available.",
                             variant: "destructive",
                         });
-                        router.push("/pre-builts");
+                        router.push("/");
                         return;
                     }
                     setSystem({ ...data, id: snap.id });

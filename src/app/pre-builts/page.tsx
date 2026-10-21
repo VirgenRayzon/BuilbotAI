@@ -128,7 +128,7 @@ export default function PreBuiltsPage() {
           }}
         />
 
-        <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-4 md:py-6 pt-4 md:pt-6 relative z-10">
+        <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 py-4 md:py-6 pt-4 md:pt-6 relative z-10">
           <div className="relative mb-4">
             <motion.div
               initial={{ opacity: 0, y: -4 }}

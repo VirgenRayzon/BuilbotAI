@@ -9,7 +9,7 @@ export function Footer() {
 
   return (
     <footer className="relative overflow-hidden transition-colors duration-1000 mt-32 font-body border-t border-slate-200/80 dark:border-white/10">
-      <div className="w-full pt-20 pb-12 px-4 sm:px-6 md:px-8 lg:px-10">
+      <div className="w-full max-w-[1600px] mx-auto pt-20 pb-12 px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10">
         <div className="flex flex-col md:flex-row justify-between items-start gap-12 mb-20">
           {/* Brand Column */}
           <div className="space-y-5 max-w-md">

@@ -109,7 +109,7 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
                     isDark ? "invert" : ""
                 )} style={{ backgroundImage: 'radial-gradient(currentColor 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-                <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 py-4 md:py-6 pb-24 lg:pb-12 pt-4 md:pt-6 relative z-10">
+                <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 py-4 md:py-6 pb-24 lg:pb-12 pt-4 md:pt-6 relative z-10">
                     <BuilderHeader />
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">

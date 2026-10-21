@@ -93,7 +93,7 @@ export function HeroSection({ isDark }: HeroSectionProps) {
         )}
       />
 
-      <div className="w-full relative z-10 px-4 sm:px-6 md:px-8 lg:px-10 py-20">
+      <div className="w-full max-w-[1600px] mx-auto relative z-10 px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 py-20">
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           {/* Left Column: Heading & Value Proposition */}
           <motion.div

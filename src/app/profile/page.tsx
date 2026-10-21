@@ -187,7 +187,7 @@ export default function ProfilePage() {
           }}
         />
 
-        <div className="relative z-10 pt-6 md:pt-8">
+        <div className="relative z-10 pt-6 md:pt-8 max-w-[1600px] mx-auto">
           {/* Full-Width Prominent User Identity Banner below Header */}
           <ProfileHero
             profile={profile}
@@ -195,7 +195,7 @@ export default function ProfilePage() {
             stats={reservations.stats}
           />
 
-          <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 pb-12">
+          <main className="w-full px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 pb-12">
             {/* Facebook / Mantine UI 2-Column Architecture */}
             <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8 items-start">
               {/* Left Column: Sticky Navigation Sidebar */}

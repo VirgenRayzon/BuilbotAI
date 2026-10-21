@@ -135,7 +135,7 @@ export default function AboutPage() {
     : DEFAULT_ABOUT_CONTENT.sections;
 
   return (
-    <div className="min-h-screen bg-background font-body text-foreground pt-24 pb-20 px-3 sm:px-6 md:px-8 w-full relative">
+    <div className="min-h-screen bg-background font-body text-foreground pt-24 pb-20 w-full relative">
       {/* Lightbox Modal using Mantine Modal */}
       <Modal
         opened={!!selectedImage}
@@ -164,7 +164,7 @@ export default function AboutPage() {
         )}
       </Modal>
 
-      <div className="w-full">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10">
         {/* Editorial Hero Header */}
         <div className="mb-10 md:mb-14 text-center md:text-left">
           <Badge

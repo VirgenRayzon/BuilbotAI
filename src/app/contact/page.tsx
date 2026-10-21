@@ -93,7 +93,7 @@ export default function ContactPage() {
         <div className="absolute bottom-[10%] left-[10%] w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[140px]" />
       </div>
 
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10">
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           {/* Left Column: Contact Channels & Info */}
           <motion.div

@@ -19,7 +19,7 @@ export function AccessoriesSection({ isDark }: AccessoriesSectionProps) {
         isDark ? "border-white/5" : "border-slate-200"
       )}
     >
-      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10">
         <SectionHeader
           badge="Complete Setups"
           title="Beyond The Tower"
@@ -61,7 +61,7 @@ export function AccessoriesSection({ isDark }: AccessoriesSectionProps) {
               <div className="pt-6">
                 <MantineButton
                   component={Link}
-                  href="/pre-builts"
+                  href="/#prebuilts"
                   variant="light"
                   color="cyan"
                   size="sm"

@@ -23,6 +23,7 @@ import {
   Loader2,
   CheckCircle2,
   SlidersHorizontal,
+  ExternalLink,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getMissingParts } from "@/lib/prebuilt-utils";
@@ -51,6 +52,7 @@ interface PrebuiltSystemCardProps {
   expanded?: boolean;
   onToggle?: () => void;
   showReserveButton?: boolean;
+  showLaunchButton?: boolean;
   isClickable?: boolean;
 }
 
@@ -60,6 +62,7 @@ export function PrebuiltSystemCard({
   expanded = false,
   onToggle,
   showReserveButton = true,
+  showLaunchButton = false,
   isClickable = true,
 }: PrebuiltSystemCardProps) {
   const { shouldCorruptImages } = useSiteSettings();
@@ -469,6 +472,23 @@ export function PrebuiltSystemCard({
                 {isReserving ? "Processing..." : "Reserve Rig"}
               </Button>
             )
+          )}
+
+          {showLaunchButton && (
+            <Button
+              component={Link}
+              href={`/pre-builts/${system.productId || system.id}`}
+              variant="outline"
+              color="gray"
+              size="sm"
+              radius="md"
+              fullWidth
+              rightSection={<ExternalLink size={14} />}
+              className="font-headline font-bold text-xs uppercase tracking-wider h-8 border-slate-200 dark:border-white/10 hover:border-cyan-500/40 text-slate-700 dark:text-slate-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Launch Page
+            </Button>
           )}
         </Stack>
       </Card>

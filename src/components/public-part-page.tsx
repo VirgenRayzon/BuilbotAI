@@ -18,7 +18,7 @@ export function PublicPartPage({ product }: { product: PublicProduct }) {
   return (
     <div className="min-h-screen overflow-x-hidden bg-white text-slate-900 transition-colors dark:bg-[#0c0f14] dark:text-slate-50">
       <div className="pointer-events-none fixed inset-0 opacity-[0.03] dark:invert" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
-      <div className="relative z-10 w-full px-4 py-8 sm:px-6 md:px-8 lg:px-10">
+      <div className="relative z-10 w-full max-w-[1600px] mx-auto px-4 py-8 sm:px-6 md:px-8 lg:px-8 xl:px-10">
         <Button component={Link} href="/parts" variant="subtle" color="gray" size="xs" leftSection={<ArrowLeft className="h-3.5 w-3.5" />} className="mb-8 text-xs font-semibold uppercase tracking-wider text-slate-600 hover:text-cyan-600 dark:text-slate-400 dark:hover:text-cyan-400">
           Back to parts
         </Button>

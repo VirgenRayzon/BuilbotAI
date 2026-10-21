@@ -70,7 +70,7 @@ export function PublicPartsCatalog({ products }: { products: PublicCatalogPart[]
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-slate-50 text-slate-900 transition-colors dark:bg-[#0c0f14] dark:text-slate-50">
-      <main className="relative z-10 w-full px-4 py-4 pb-24 sm:px-6 md:px-8 md:py-6 lg:px-10 lg:pb-12">
+      <main className="relative z-10 w-full max-w-[1600px] mx-auto px-4 py-4 pb-24 sm:px-6 md:px-8 lg:px-8 xl:px-10 lg:pb-12">
         <motion.header initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="mb-4 flex flex-col gap-0.5">
           <span className="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-600 dark:text-cyan-400">Parts Catalog</span>
           <h1 className="font-headline text-2xl font-bold uppercase tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">

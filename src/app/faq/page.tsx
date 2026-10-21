@@ -111,7 +111,7 @@ export default function FAQPage() {
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-[120px] -z-10" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] -z-10" />
 
-      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 relative z-10">
+      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 relative z-10">
         {/* Header */}
         <div className="text-center mb-12 sm:mb-16">
           <motion.div

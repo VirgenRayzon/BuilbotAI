@@ -73,7 +73,7 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
                 style={{ backgroundImage: "radial-gradient(#000 0.5px, transparent 0.5px)", backgroundSize: "24px 24px" }}
             />
 
-            <div className="relative z-10 w-full px-4 py-8 sm:px-6 md:px-8 lg:px-10">
+            <div className="relative z-10 w-full max-w-[1600px] mx-auto px-4 py-8 sm:px-6 md:px-8 lg:px-8 xl:px-10">
                 {/* Top Navigation */}
                 <div className="mb-8">
                     <Button

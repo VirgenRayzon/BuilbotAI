@@ -120,7 +120,7 @@ export default function AdminPage() {
                     isDark ? "invert" : ""
                 )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-                <div className="w-full px-3 sm:px-6 md:px-8 lg:px-10 py-4 sm:py-6 md:py-8 relative z-10">
+                <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 py-4 sm:py-6 md:py-8 relative z-10">
                     <AdminTabHeader
                         currentTab={currentTab}
                         isSuperAdmin={profile?.isSuperAdmin}
