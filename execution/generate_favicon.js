@@ -63,15 +63,15 @@ async function generateIcons() {
     return Buffer.concat([header, ...directoryEntries, ...images.map(img => img.data)]);
   }
 
-  const icoBuffer = createIco([
-    { width: 16, height: 16, data: png16 },
+  const icoBuffer = createIco([\n    { width: 16, height: 16, data: png16 },
     { width: 32, height: 32, data: png32 },
     { width: 48, height: 48, data: png48 },
     { width: 64, height: 64, data: png64 },
   ]);
 
+  // Next.js App Router serves file-based metadata from src/app/favicon.ico
+  // Do not write to public/favicon.ico as it causes a conflict error in Next.js
   fs.writeFileSync(path.join(rootDir, 'src/app/favicon.ico'), icoBuffer);
-  fs.writeFileSync(path.join(rootDir, 'public/favicon.ico'), icoBuffer);
   console.log('Successfully generated favicon.ico, icon.svg, and apple-icon.png');
 }
 

@@ -129,11 +129,13 @@ function getSelectedPartIds(values: AddPrebuiltFormSchema): string[] {
 }
 
 interface AddPrebuiltDialogProps {
-    children: React.ReactNode;
+    children?: React.ReactNode;
     onSave: (data: AddPrebuiltFormSchema, operationId?: string) => Promise<CreatedProduct | void>;
     parts: Part[];
     initialData?: PrebuiltSystem;
     title?: string;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }
 
 /** Inline searchable part selector — sits inside a FormField */
@@ -334,8 +336,18 @@ const PART_SLOTS = [
     { key: "cooler", label: "Cooler" },
 ] as const;
 
-export function AddPrebuiltDialog({ children, onSave, parts, initialData, title }: AddPrebuiltDialogProps) {
-    const [open, setOpen] = useState(false);
+export function AddPrebuiltDialog({
+    children,
+    onSave,
+    parts,
+    initialData,
+    title,
+    open: controlledOpen,
+    onOpenChange: controlledOnOpenChange,
+}: AddPrebuiltDialogProps) {
+    const isControlled = controlledOpen !== undefined;
+    const [internalOpen, setInternalOpen] = useState(false);
+    const open = isControlled ? controlledOpen : internalOpen;
     const [isSaving, setIsSaving] = useState(false);
     const [isAiPending, setIsAiPending] = useState(false);
     const [aiDuration, setAiDuration] = useState<number | null>(null);
@@ -662,7 +674,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
             toast({ title: initialData ? "Prebuilt Updated!" : "Prebuilt System Added!", description: `${values.name} has been ${initialData ? 'updated' : 'added'}.`,
               action: saved ? <ToastAction altText="View item" onClick={() => window.location.assign(saved.adminUrl)}>View item</ToastAction> : undefined });
             if (!initialData) form.reset();
-            setOpen(false);
+            handleOpenChange(false);
             resetOperation();
         } catch (error: any) {
             toast({
@@ -717,7 +729,10 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
     const handleOpenChange = (isOpen: boolean) => {
         if (!isOpen && (isAiPending || isSaving)) return;
         if (!isOpen) setOpenSlot(null);
-        setOpen(isOpen);
+        if (!isControlled) {
+            setInternalOpen(isOpen);
+        }
+        controlledOnOpenChange?.(isOpen);
         if (!isOpen) { 
             form.reset(); 
             setAiDuration(null);
@@ -771,7 +786,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>{children}</DialogTrigger>
+            {children && <DialogTrigger asChild>{children}</DialogTrigger>}
             <DialogContent
                 onEscapeKeyDown={(event) => { if (isSaving) event.preventDefault(); }}
                 onPointerDownOutside={(event) => { if (isSaving) event.preventDefault(); }}

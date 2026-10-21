@@ -36,10 +36,31 @@ export interface AddPartEditorProps {
   initialData?: Part;
   title?: string;
   initiallyOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function AddPartEditor({ children, onSave, initialData, title, initiallyOpen = false }: AddPartEditorProps) {
-  const [open, setOpen] = useState(initiallyOpen);
+export function AddPartEditor({
+  children,
+  onSave,
+  initialData,
+  title,
+  initiallyOpen = false,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+}: AddPartEditorProps) {
+  const isControlled = controlledOpen !== undefined;
+  const [internalOpen, setInternalOpen] = useState(initiallyOpen);
+  const open = isControlled ? controlledOpen : internalOpen;
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen && (isAiPending || isSubmitting)) return;
+    if (!isControlled) {
+      setInternalOpen(isOpen);
+    }
+    controlledOnOpenChange?.(isOpen);
+  };
+
   const { getOperation, resetOperation } = useProductSaveOperation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -90,7 +111,7 @@ export function AddPartEditor({ children, onSave, initialData, title, initiallyO
         action: saved ? <ToastAction altText="View item" onClick={() => window.location.assign(saved.adminUrl)}>View item</ToastAction> : undefined,
       });
       if (!initialData) form.reset();
-      setOpen(false);
+      handleOpenChange(false);
       resetOperation();
     } catch (error: any) {
       toast({ 
@@ -131,12 +152,9 @@ export function AddPartEditor({ children, onSave, initialData, title, initiallyO
   return (
     <Dialog
       open={open}
-      onOpenChange={(isOpen) => {
-        if (!isOpen && (isAiPending || isSubmitting)) return;
-        setOpen(isOpen);
-      }}
+      onOpenChange={handleOpenChange}
     >
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent
         onEscapeKeyDown={(event) => { if (isSubmitting) event.preventDefault(); }}
         onPointerDownOutside={(event) => { if (isSubmitting) event.preventDefault(); }}

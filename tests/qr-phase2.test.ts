@@ -15,16 +15,16 @@ test('QR decoder: parseScannedContent identifies valid formats correctly', () =>
   assert.equal(skuResult?.sku, 'SKU-CPU7K4M2Q8X');
 
   // Raw 32-char token
-  const rawToken = '6c76dd2b30a11fb1b904de040384e646';
+  const rawToken = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
   const tokenResult = parseScannedContent(rawToken);
   assert.equal(tokenResult?.token, rawToken);
 
   // Full hosted QR link
-  const urlResult = parseScannedContent('https://buildbotai--studio-3150054754-c7d0b.us-central1.hosted.app/q/6c76dd2b30a11fb1b904de040384e646');
+  const urlResult = parseScannedContent('https://buildbotai--studio-3150054754-c7d0b.us-central1.hosted.app/q/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
   assert.equal(urlResult?.token, rawToken);
 
   // Relative QR link
-  const relativeResult = parseScannedContent('/q/6c76dd2b30a11fb1b904de040384e646');
+  const relativeResult = parseScannedContent('/q/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
   assert.equal(relativeResult?.token, rawToken);
 
   // Invalid strings & arbitrary non-QR URLs
