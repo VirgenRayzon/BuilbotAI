@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { before, after, test } from 'node:test';
+import { before, after, test, mock } from 'node:test';
 import { initializeApp as initializeAdmin, deleteApp as deleteAdmin } from 'firebase-admin/app';
 import { getFirestore as adminFirestore } from 'firebase-admin/firestore';
 import { getAuth as adminAuth } from 'firebase-admin/auth';
@@ -21,6 +21,8 @@ import { inventoryItemPath } from '../src/lib/inventory-paths';
 import { reservePrebuiltSystem } from '../src/app/prebuilt-reservation-actions';
 import type { CreatedProduct } from '../src/lib/product-identity';
 import type { OrderItem } from '../src/lib/types';
+import { auditQRHealth } from '../src/lib/server/qr-health';
+import { GET as qrHealth } from '../src/app/api/admin/qr-health/route';
 
 if (!process.env.FIRESTORE_EMULATOR_HOST || !process.env.FIREBASE_AUTH_EMULATOR_HOST) throw new Error('Run this suite only through Firebase emulators.');
 const projectId = 'demo-buildbot-qr';
@@ -145,6 +147,68 @@ test('downloaded QR PNG decodes to selected hosted origin', async () => {
   assert.equal(decoded?.data, `https://buildbotai--studio-3150054754-c7d0b.us-central1.hosted.app/q/${saved.qrToken}`);
   assert.throws(() => qrUrl(saved.qrToken, 'http://localhost:9002'));
   assert.throws(() => qrUrl(saved.qrToken, 'https://example.com/path'));
+});
+
+test('QR failures are typed, never cached, and scanning never changes stock', async () => {
+  const ref = db.doc(`inventory/gpu/items/${saved.id}`);
+  const stock = (await ref.get()).get('stock');
+  const call = (token = saved.qrToken, bearer?: string) => resolveQR(new NextRequest(`http://localhost:9002/api/qr/${token}`, { headers: bearer ? { Authorization: `Bearer ${bearer}` } : {} }), { params: Promise.resolve({ token }) });
+  const check = async (response: Response, status: number, code: string) => {
+    assert.equal(response.status, status);
+    assert.equal((await response.json()).code, code);
+    assert.match(response.headers.get('cache-control') || '', /no-store/);
+    assert.equal(response.headers.get('vary'), 'Authorization');
+  };
+  await check(await call('invalid'), 404, 'INVALID_QR');
+  await check(await call('0'.repeat(32)), 404, 'UNAVAILABLE');
+  await check(await call(saved.qrToken, 'forged'), 401, 'AUTH_EXPIRED');
+  await db.doc(`qrLinks/${saved.qrToken}`).update({ enabled: false });
+  await check(await call(), 404, 'UNAVAILABLE');
+  await db.doc(`qrLinks/${saved.qrToken}`).update({ enabled: true });
+  assert.equal((await call()).status, 200);
+  await db.doc('users/manager').update({ isManager: false });
+  await check(await call(saved.qrToken, managerToken), 401, 'AUTH_EXPIRED');
+  await db.doc('users/manager').update({ isManager: true });
+  const broken = 'f'.repeat(32);
+  await db.doc(`qrLinks/${broken}`).set({ productId: saved.productId, enabled: true });
+  await check(await call(broken), 503, 'SERVICE_UNAVAILABLE');
+  await db.doc(`qrLinks/${broken}`).delete();
+  const failure = mock.method(db, 'doc', () => { throw new Error('Simulated database outage'); });
+  try { await check(await call(), 503, 'SERVICE_UNAVAILABLE'); } finally { failure.mock.restore(); }
+  assert.equal((await ref.get()).get('stock'), stock);
+  assert.equal(safeProductReturn(`/q/${saved.qrToken}`), `/q/${saved.qrToken}`);
+  assert.equal(safeProductReturn(`/q/${saved.qrToken}?next=https://evil.test`), '/builder');
+});
+
+test('health report detects defects and missing targets without modifying catalog or registries', async () => {
+  const ref = db.doc('inventory/mouse/items/health-fixture');
+  await ref.set({ ...payload('Health fixture', 'Mouse'), productId: saved.productId, sku: 'malformed', qrToken: saved.qrToken });
+  await db.doc('productIds/PRD-999998').set({ path: 'inventory/mouse/items/deleted', kind: 'part' });
+  await db.doc('inventory/mouse/items/health-missing').set(payload('Missing identity', 'Mouse'));
+  const productRef = db.doc(`inventory/gpu/items/${saved.id}`);
+  await productRef.update({ isArchived: true });
+  await db.doc(`qrLinks/${saved.qrToken}`).update({ enabled: false });
+  const paths = ['inventory/mouse/items', 'inventory/gpu/items', 'productIds', 'productSkus', 'qrLinks', 'catalogCounters'];
+  const capture = async () => Promise.all(paths.map(async path => (await db.collection(path).get()).docs.map(doc => ({ path: doc.ref.path, data: doc.data(), updated: doc.updateTime.toMillis() }))));
+  const before = await capture();
+  const report = await auditQRHealth(db);
+  assert.deepEqual(await capture(), before);
+  for (const code of ['MISSING_IDENTITY', 'MALFORMED_IDENTITY', 'DUPLICATE_IDENTITY', 'MISSING_TARGET', 'COUNTER']) assert.ok(report.issues.some(issue => issue.code === code), code);
+  assert.ok(report.archived >= 1);
+  assert.ok(report.disabled >= 1);
+  assert.equal(report.issues.some(issue => issue.code === 'DISABLED' || issue.code === 'ARCHIVED'), false);
+  const call = (bearer?: string) => qrHealth(new NextRequest('http://localhost:9002/api/admin/qr-health', { headers: bearer ? { Authorization: `Bearer ${bearer}` } : {} }));
+  assert.equal((await call()).status, 401);
+  assert.equal((await call(customerToken)).status, 403);
+  const response = await call(managerToken);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('cache-control') || '', /no-store/);
+  assert.ok((await response.json()).issues.length > 0);
+  // Authorization is checked even after a successful report has been cached.
+  assert.equal((await call(customerToken)).status, 403);
+  await Promise.all([ref.delete(), db.doc('productIds/PRD-999998').delete(), db.doc('inventory/mouse/items/health-missing').delete()]);
+  await productRef.update({ isArchived: false });
+  await db.doc(`qrLinks/${saved.qrToken}`).update({ enabled: true });
 });
 
 test('reservations count repeated RAM, reject shortages and replay without double deduction', async () => {

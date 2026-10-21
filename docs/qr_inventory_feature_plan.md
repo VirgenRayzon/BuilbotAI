@@ -1,6 +1,6 @@
 # QR inventory and public product catalog — implementation plan
 
-Date: 2026-10-20. Updated: 2026-10-21 (Asia/Manila). Status: implemented and verified locally; additive production metadata migration completed. Hosted application/rules rollout is pending as a coordinated release step.
+Date: 2026-10-20. Updated: 2026-10-21 (Asia/Manila). Status: original QR feature deployed; production metadata migration and rules rollout verified. A physical printed-label scan remains a manual release check. Phase 1 follow-up changes are tracked in `docs/qr_system_improvement_plan.md`.
 
 ## Confirmed requirements
 
@@ -202,7 +202,7 @@ Multiple entries of the same item, per-unit or delivery tracking, unit tags, inv
 - Read-only checks against the normal local app passed for the migrated parts catalog, part detail, active prebuilt detail, guest QR destinations and public prebuilt listing. Mobile part detail had no horizontal overflow or browser errors. Archived products remain unavailable publicly.
 - Managed Firestore export retained at `gs://studio-3150054754-c7d0b-private-backups/backups/qr-inventory-2026-10-20-v1`. Public access prevention and uniform IAM access are enforced. All 316 export objects were checked by size/checksum after relocation; guest/customer access was denied. The temporary export in the public asset bucket was removed and its absence verified. It had been readable before removal; external access was not audited.
 - Local audit snapshots and migration manifests are retained under ignored `.tmp/`. The ordinary development preview is restored on port 9002.
-- Hosted application source and Firestore rules have not been deployed. Release both together, then recheck for products created by older clients during the transition. The fixed hosted QR URL requires that release before distributed labels can resolve there.
+- Release verification on 2026-10-21 confirmed hosted commit `3676b1456485c6076428176661a11684b1cb8f8d` with a successful rollout. The deployed rules were still missing QR protections; after explicit user approval, the matching repository rules were deployed and their contents verified at 20:37 Asia/Manila. All 23 hosted role/destination and public-page checks passed again afterward. The migration dry-run found no pending identities and the before/after audit found no catalog-field changes.
 - Automated PNG decoding was verified. A physical printed-label scan remains a manual release check.
 
 ## Technical references

@@ -1,7 +1,8 @@
 /** Run inside `firebase emulators:exec` with the demo project, never live Firebase. */
 import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, realpath, rm } from 'node:fs/promises';
+import { resolve, sep } from 'node:path';
 
 if (!process.env.FIRESTORE_EMULATOR_HOST || !process.env.FIREBASE_AUTH_EMULATOR_HOST) throw new Error('Start the Firebase demo emulators first.');
 const env = { ...process.env, NEXT_PUBLIC_FIREBASE_PROJECT_ID: 'demo-buildbot-qr', NEXT_PUBLIC_FIREBASE_API_KEY: 'fake-api-key',
@@ -17,6 +18,15 @@ await mkdir('.tmp', { recursive: true });
 let occupied = false;
 try { await fetch('http://localhost:9002/signin', { signal: AbortSignal.timeout(3000) }); occupied = true; } catch { /* Port is free. */ }
 if (occupied) throw new Error('Port 9002 is in use. Stop this workspace dev server before isolated browser verification.');
+// Emulator fixtures are recreated on each run; persisted Next data must not refer
+// to a prior run's products. Remove only this test server's validated fetch cache.
+const cachePath = resolve('.next-qr-test/cache/fetch-cache');
+try {
+  const actual = await realpath(cachePath);
+  const workspace = await realpath(process.cwd());
+  if (actual !== cachePath || !actual.startsWith(workspace + sep)) throw new Error('Refusing to clear a test cache outside this workspace.');
+  await rm(actual, { recursive: true, force: true });
+} catch (error) { if (error.code !== 'ENOENT') throw error; }
 const log = createWriteStream('.tmp/qr-browser-server.log');
 const server = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev', '--turbopack', '-p', '9002'], { env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
 server.stdout.pipe(log); server.stderr.pipe(log);

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-10-21]
+
+### Features
+- **qr**: Implement QR inventory tracking, public parts catalog, and customer support portal ([850169d](https://github.com/VirgenRayzon/BuilbotAI/commit/850169d))
+
+### Bug Fixes
+- **ui**: Update pricing currency formatting and prebuilt card details ([3676b14](https://github.com/VirgenRayzon/BuilbotAI/commit/3676b14))
+
 ## [2026-10-20]
 
 ### Features

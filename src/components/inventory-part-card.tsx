@@ -5,14 +5,16 @@
 'use client';
 
 import { AddPartDialog } from './add-part-dialog';
-import { ProductIdentityLink } from './product-identity-link';
 import { type AddPartFormSchema } from '@/hooks/use-part-form';
 import { OptimizedImage } from './ui/optimized-image';
 import { Card, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, getOptimizedStorageUrl } from '@/lib/utils';
 import type { Part } from '@/lib/types';
-import { Trash2, Archive, RotateCcw, Check } from 'lucide-react';
+import Link from 'next/link';
+import { productAdminUrl } from '@/lib/product-identity';
+import { Trash2, Archive, RotateCcw, Check, QrCode } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useSiteSettings } from '@/context/site-settings-context';
@@ -113,9 +115,22 @@ export function InventoryPartCard({
                                         {part.name.length > 60 ? `${part.name.substring(0, 57)}...` : part.name}
                                     </CardTitle>
                                 </div>
-                                <ProductIdentityLink product={part} kind="part" />
                             </div>
                             <div className="flex items-start gap-1">
+                                {part.productId && (
+                                    <Button
+                                        asChild
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground/40 hover:text-cyan-500 hover:bg-cyan-500/10 transition-colors -mt-1"
+                                        onClick={(event) => event.stopPropagation()}
+                                        title="Open QR & item details"
+                                    >
+                                        <Link href={productAdminUrl('part', part.productId, isArchiveView)}>
+                                            <QrCode className="h-3 w-3 md:h-4 md:w-4" />
+                                        </Link>
+                                    </Button>
+                                )}
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors -mt-1" onClick={(event) => event.stopPropagation()} title={isArchiveView ? "Restore" : "Archive"}>

@@ -28,6 +28,15 @@
 4. Browser checks cover public part/accessory/prebuilt pages, customer sign-in return, staff QR destinations, actual PNG decoding, Add Part, Add System and mobile overflow. Do not weaken compatibility validation to accommodate incomplete fixtures.
 5. Prebuilt selectors need explicit `type="button"`, accessible category labels and collision bounds inside the modal scroll viewport. Keep popups within the visible interactive surface; do not force test clicks through an overlay.
 6. Verify every existing catalog field with the before/after read-only hash audit. Metadata assignment must preserve stock, prices, images, descriptions and component/order references.
+7. Clear only the isolated server's validated `.next-qr-test/cache/fetch-cache` before each browser run. Fresh emulator fixtures must not reuse the prior run's persisted public-catalog results. Keep selectors aligned with the current UI; scope alert assertions to exclude Next's route announcer. A disabled QR download has no href and is not exposed as a navigable link.
+
+## QR recovery and diagnostics
+
+- All resolver responses, including failures, carry private/no-store caching and Vary: Authorization. Use typed public-safe errors; stale staff roles require sign-in again rather than a customer downgrade. Preserve only allowlisted internal QR paths through reauthentication.
+- Keep QR images keyed to the current token, SKU and rendering attempt. Hide stale images synchronously when props change; rendering retries never create catalog records.
+- Preserve the existing UI. Copy QR link joins the current QR actions; retain the existing View product page action. QR health is an on-demand dialog in the existing stock/prebuilt header, not a new dashboard layout.
+- The authenticated health endpoint checks both token claims and current profile before returning even cached results. Its read-only snapshot has a 10,000-product/registry limit and a one-minute process-local cache. Oversized or failed audits must not appear healthy. Report intentional disabled/archive states separately from defects.
+- Reuse `execution/verify_product_identities.ts --project=<project> --report=<local-json-path>` for structured diagnostics. Reports never repair mappings, regenerate identifiers or alter stock. Production reports and release evidence belong under ignored `.tmp/`.
 
 ## Production data and rollout
 
@@ -48,4 +57,4 @@
 - Project `studio-3150054754-c7d0b`: 324 parts plus 56 prebuilts received 380 unique identities; counter 380, unassigned zero. The original-field hash audit passed for every record.
 - Private export: `gs://studio-3150054754-c7d0b-private-backups/backups/qr-inventory-2026-10-20-v1`; 316 objects, 819135661 bytes, size/checksum verification completed. A temporary copy in the public asset bucket was removed after the verified private copy was secured. Never repeat that export destination.
 - Evidence: ignored `.tmp/qr-backup.json`, `.tmp/qr-original-fields.json`, `.tmp/qr-migration-applied.json` (interrupted initial run), `.tmp/qr-migration-resumed.json` (completed), and `.tmp/qr-private-copy-check.json`. Preserve these for release reconciliation.
-- Source and rules remain pending a coordinated hosted release. Re-run the read-only audit and migration dry-run at cutover to find any new legacy-client products; take a fresh private backup before another apply.
+- Release reconciliation on 2026-10-21: hosted commit `3676b1456485c6076428176661a11684b1cb8f8d` was already live. After explicit user approval, deployed the matching QR rules at 20:35 Asia/Manila and verified exact normalized contents at 20:37. The dry-run found zero pending identities; all 23 hosted checks passed and original catalog-field hashes stayed unchanged. Evidence: `.tmp/qr-phase0-release.json`, `.tmp/qr-phase0-hosted-checks.json`, `.tmp/qr-phase01-before.json`, `.tmp/qr-phase01-dry-run.json`, `.tmp/qr-phase01-health.json`. No additional backfill was needed. Physical printed-label scanning remains a manual check.

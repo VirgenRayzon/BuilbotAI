@@ -36,7 +36,11 @@ export function useCustomerSupport() {
     setSelectedId(inquiryId);
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", "contact-inbox");
-    params.set("inquiry", inquiryId);
+    if (inquiryId) {
+      params.set("inquiry", inquiryId);
+    } else {
+      params.delete("inquiry");
+    }
     router.replace(`/profile?${params.toString()}`, { scroll: false });
   };
 

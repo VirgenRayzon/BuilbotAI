@@ -4,7 +4,7 @@
  * specs dropdown (Collapse + Paper), image canvas, and side-by-side admin action buttons.
  */
 'use client';
-import { ProductIdentityLink } from './product-identity-link';
+import { productAdminUrl } from '@/lib/product-identity';
 
 import React, { useMemo } from 'react';
 import Link from 'next/link';
@@ -36,6 +36,7 @@ import {
   Check,
   Edit3,
   ExternalLink,
+  QrCode,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -164,6 +165,23 @@ export function InventoryPrebuiltCard({
                 </Badge>
               )}
 
+              {/* Open QR & details action */}
+              {system.productId && (
+                <ActionIcon
+                  component={Link}
+                  href={productAdminUrl('prebuilt', system.productId, isArchiveView)}
+                  variant="subtle"
+                  color="gray"
+                  size="sm"
+                  radius="md"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Open QR & item details"
+                  className="text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors"
+                >
+                  <QrCode size={15} />
+                </ActionIcon>
+              )}
+
               {/* Archive / Restore Action */}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -281,7 +299,6 @@ export function InventoryPrebuiltCard({
             >
               {system.name}
             </Text>
-            <ProductIdentityLink product={system} kind="prebuilt" />
             <Text
               size="xs"
               c="dimmed"

@@ -29,6 +29,8 @@ import {
 } from '@mantine/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from "@/lib/utils";
+import { QRHealthDialog } from '@/components/qr-health-dialog';
+import { QRScannerDialog } from '@/components/qr-scanner-dialog';
 
 export interface AdminTabHeaderProps {
     currentTab: string;
@@ -167,6 +169,12 @@ export function AdminTabHeader({
 
                     {/* Dynamic Action Slots */}
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-1 sm:pt-0">
+                        {(currentTab === 'stock' || currentTab === 'prebuilts') && (
+                            <>
+                                <QRScannerDialog />
+                                <QRHealthDialog />
+                            </>
+                        )}
                         {currentTab === 'sales' && (
                             <Group gap="xs">
                                 <Button

@@ -53,12 +53,13 @@ async function signIn(page: Page, staff: boolean, returnTo = '') {
 
 test('guest catalog, public accessories and prebuilt pages, QR and sign-in return', async ({ page }) => {
   await page.goto(`${baseURL}/parts`);
-  await expect(page.getByRole('heading', { name: 'PC parts & accessories' })).toBeVisible();
-  await page.getByLabel('Search parts').fill(part.sku);
+  await expect(page.getByRole('heading', { name: 'Explore PC Components' })).toBeVisible();
+  await page.getByRole('region', { name: 'Parts catalog' }).getByRole('textbox', { name: 'Search...' }).fill(part.sku);
   await page.getByRole('link', { name: 'View product', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/parts/${part.productId}`));
   await expect(page.getByRole('heading', { name: 'QR Browser Mouse' })).toBeVisible();
-  await expect(page.getByRole('cell', { name: '16000' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Technical specifications' })).toBeVisible();
+  await expect(page.getByText('16000', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sign in to reserve' })).toBeEnabled();
   await page.screenshot({ path: '.tmp/qr-part-desktop.png', fullPage: true });
   await page.goto(`${baseURL}/pre-builts`);
@@ -152,4 +153,90 @@ test('Add System previews and save use the shared PRD sequence and PC SKU', asyn
   await page.getByRole('button', { name: 'View item', exact: true }).click();
   await expect(page.getByRole('heading', { name })).toBeVisible();
   await expect(page.getByText(/SKU-PC[23456789ABCDEFGHJKMNPQRSTVWXYZ]{8}/).first()).toBeVisible();
+});
+
+test('QR retries network errors and timeouts and rejects external destinations', async ({ page }) => {
+  const endpoint = `**/api/qr/${part.qrToken}`;
+  await page.route(endpoint, route => route.abort('failed'));
+  await page.goto(`${baseURL}/q/${part.qrToken}`);
+  await expect(page.getByRole('button', { name: 'Retry', exact: true })).toBeVisible();
+  await page.unroute(endpoint);
+  await page.getByRole('button', { name: 'Retry', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/parts/${part.productId}`));
+
+  await page.route(endpoint, route => route.fulfill({ json: { destination: 'https://example.com/' } }));
+  await page.goto(`${baseURL}/q/${part.qrToken}`);
+  await expect(page.getByRole('button', { name: 'Retry', exact: true })).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`/q/${part.qrToken}`));
+  await page.unroute(endpoint);
+
+  await page.route(endpoint, async route => { await new Promise(resolve => setTimeout(resolve, 17000)); await route.abort().catch(() => {}); });
+  await page.goto(`${baseURL}/q/${part.qrToken}`);
+  await expect(page.getByRole('alert').filter({ hasText: 'took too long' })).toBeVisible({ timeout: 25000 });
+  await page.unroute(endpoint);
+  await page.getByRole('button', { name: 'Retry', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/parts/${part.productId}`));
+});
+
+test('expired staff session returns to the same QR after System Access', async ({ page }) => {
+  await signIn(page, true);
+  const endpoint = `**/api/qr/${part.qrToken}`;
+  await page.route(endpoint, route => route.fulfill({ status: 401, json: { code: 'AUTH_EXPIRED', error: 'Please sign in again.' } }));
+  await page.goto(`${baseURL}/q/${part.qrToken}`);
+  await page.getByRole('button', { name: 'Sign in again' }).click();
+  await expect(page).toHaveURL(new RegExp(`/system-access\\?returnTo=${encodeURIComponent(`/q/${part.qrToken}`)}`));
+  await page.unroute(endpoint);
+  await page.getByRole('textbox', { name: /Email Address/i }).fill('manager@test.com');
+  await page.locator('form input[type=password]').first().fill('123456');
+  await page.locator('form input[type=password]').nth(1).fill('00216764');
+  await page.locator('form').getByRole('button', { name: 'Authenticate Session', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/admin\\?tab=stock&product=${part.productId}`), { timeout: 60000 });
+});
+
+test('switching products cannot download the old QR when rendering fails', async ({ page }) => {
+  await signIn(page, true);
+  await page.goto(`${baseURL}/admin?tab=stock&product=${part.productId}`);
+  await expect(page.getByRole('link', { name: 'Download QR' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Copy QR link' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'View product page', exact: true }).first()).toHaveAttribute('href', `/parts/${part.productId}`);
+  await page.evaluate(productId => {
+    const original = HTMLCanvasElement.prototype.toDataURL;
+    HTMLCanvasElement.prototype.toDataURL = function () { HTMLCanvasElement.prototype.toDataURL = original; throw new Error('Simulated QR rendering failure'); };
+    window.history.pushState(null, '', `/admin?tab=prebuilts&product=${productId}`);
+  }, prebuilt.productId);
+  await expect(page.getByRole('button', { name: 'Retry QR' })).toBeVisible();
+  await expect(page.getByRole('img', { name: `QR for ${part.sku}` })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Download QR', exact: true })).toBeDisabled();
+  await expect(page.locator('a[download]')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Retry QR' }).click();
+  const event = page.waitForEvent('download');
+  await page.getByRole('link', { name: 'Download QR' }).click();
+  const download = await event;
+  expect(download.suggestedFilename()).toBe(`${prebuilt.sku}.png`);
+  const png = PNG.sync.read(await readFile((await download.path())!));
+  expect(jsQR(new Uint8ClampedArray(png.data), png.width, png.height)?.data).toContain(`/q/${prebuilt.qrToken}`);
+});
+
+test('health report is on demand, retains prior results after failure, and fits existing themes', async ({ page }) => {
+  let requests = 0;
+  page.on('request', request => { if (request.url().includes('/api/admin/qr-health')) requests++; });
+  await signIn(page, true);
+  await page.getByRole('button', { name: 'QR health', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'QR health', exact: true });
+  expect(requests).toBe(0);
+  await dialog.getByRole('button', { name: 'Run report' }).click();
+  await expect(dialog.getByText('Last completed audit:', { exact: false })).toBeVisible();
+  expect(requests).toBe(1);
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate(value => { document.documentElement.classList.remove('light', 'dark'); document.documentElement.classList.add(value); document.documentElement.setAttribute('data-mantine-color-scheme', value); }, theme);
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: 844 });
+      expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+      await page.screenshot({ path: `.tmp/qr-health-${theme}-${width}.png` });
+    }
+  }
+  await page.route('**/api/admin/qr-health', route => route.fulfill({ status: 503, json: { code: 'SERVICE_UNAVAILABLE', error: 'Unavailable' } }));
+  await dialog.getByRole('button', { name: 'Refresh report' }).click();
+  await expect(dialog.getByRole('alert')).toContainText('could not be completed');
+  await expect(dialog.getByText('(previous result)', { exact: false })).toBeVisible();
 });

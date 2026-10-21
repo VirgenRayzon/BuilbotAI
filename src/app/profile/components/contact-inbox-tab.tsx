@@ -1,9 +1,12 @@
 "use client";
 
-import { Alert, Badge, Button, Group, Paper, SegmentedControl, Stack, Text, Title } from "@mantine/core";
-import { Inbox, MailCheck, MessageCircle, MessagesSquare, RefreshCw } from "lucide-react";
+import { useState } from "react";
+import { Alert, Badge, Button, Group, Modal, Paper, SegmentedControl, Stack, Text, Title } from "@mantine/core";
+import { Inbox, MailCheck, MessageCircle, MessagesSquare, RefreshCw, Trash2 } from "lucide-react";
 import { ContactThread } from "@/components/contact/contact-thread";
 import { CompactInfo } from "@/components/ui/compact-info";
+import { useUserProfile } from "@/context/user-profile";
+import { useToast } from "@/hooks/use-toast";
 import type { ContactInquiry } from "@/lib/contact-types";
 import { CONTACT_EMAIL_ENABLED } from "@/lib/contact-config";
 import { useContactInbox, type ContactInboxFilter } from "../hooks/use-contact-inbox";
@@ -30,6 +33,49 @@ function InquiryButton({ inquiry, selected, unread, onSelect }: { inquiry: Conta
 
 export function ContactInboxTab() {
   const inbox = useContactInbox();
+  const { authUser } = useUserProfile();
+  const { toast } = useToast();
+
+  const [inquiryToDelete, setInquiryToDelete] = useState<ContactInquiry | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  const handleConfirmDelete = async () => {
+    if (!inquiryToDelete || !authUser) return;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const token = await authUser.getIdToken();
+      const response = await fetch("/api/contact/delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ inquiryId: inquiryToDelete.id }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to delete conversation.");
+      }
+      toast({
+        title: "Conversation deleted",
+        description: "The conversation was permanently removed.",
+      });
+      if (inbox.selectedId === inquiryToDelete.id) {
+        const params = new URLSearchParams(window.location.search);
+        params.delete("inquiry");
+        window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+      }
+      setInquiryToDelete(null);
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Failed to delete conversation."
+      );
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -69,13 +115,16 @@ export function ContactInboxTab() {
             </div>
           ) : (
             <Stack gap="md">
-              <Group justify="space-between" align="flex-start" wrap="wrap">
+              <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
                 <div className="min-w-0">
                   <Group gap="xs"><Title order={4}>{inbox.selectedInquiry.subject}</Title><Badge color={inbox.selectedInquiry.status === "open" ? "cyan" : "gray"} variant="light">{inbox.selectedInquiry.status}</Badge></Group>
                   <Text size="sm" c="dimmed" mt={5}>{inbox.selectedInquiry.fullName} · {inbox.selectedInquiry.email}</Text>
                   <Text size="xs" c="dimmed" mt={3}>Received {formatDate(inbox.selectedInquiry.createdAt)} · {inbox.selectedInquiry.userId ? "BuildbotAI account" : "Guest"}</Text>
                 </div>
-                <Button className="min-h-11" variant="light" color={inbox.selectedInquiry.status === "open" ? "gray" : "cyan"} loading={inbox.updating} onClick={() => void inbox.updateStatus()}>{inbox.selectedInquiry.status === "open" ? "Mark Resolved" : "Reopen"}</Button>
+                <Group gap="xs">
+                  <Button className="min-h-11" variant="light" color={inbox.selectedInquiry.status === "open" ? "gray" : "cyan"} loading={inbox.updating} onClick={() => void inbox.updateStatus()}>{inbox.selectedInquiry.status === "open" ? "Mark Resolved" : "Reopen"}</Button>
+                  <Button className="min-h-11" variant="subtle" color="red" leftSection={<Trash2 size={16} />} onClick={() => setInquiryToDelete(inbox.selectedInquiry)}>Delete</Button>
+                </Group>
               </Group>
               {!inbox.selectedInquiry.userId && <Alert color="yellow" variant="light" title="Guest inquiry">This guest cannot view replies in BuildbotAI. Ask them to sign in and submit a new request for an ongoing conversation.</Alert>}
               <ContactThread inquiryId={inbox.selectedInquiry.id} isStaff canReply={Boolean(inbox.selectedInquiry.userId)} />
@@ -83,6 +132,57 @@ export function ContactInboxTab() {
           )}
         </Paper>
       </div>
+
+      <Modal
+        opened={Boolean(inquiryToDelete)}
+        onClose={() => !deleting && setInquiryToDelete(null)}
+        title={
+          <Group gap="xs">
+            <Trash2 className="h-5 w-5 text-red-500" />
+            <Text fw={700} size="md">
+              Delete Conversation?
+            </Text>
+          </Group>
+        }
+        centered
+        radius="lg"
+        size="sm"
+        classNames={{
+          header: "p-4 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722]",
+          body: "!p-4 !pt-4 bg-white dark:bg-[#111722]",
+        }}
+      >
+        <Stack gap="md" className="pt-2">
+          <Text size="sm" c="dimmed" className="leading-relaxed">
+            Are you sure you want to delete <strong className="text-slate-800 dark:text-slate-200">“{inquiryToDelete?.subject}”</strong>? This will permanently remove this conversation and all its messages.
+          </Text>
+
+          {deleteError && (
+            <Alert color="red" variant="light" title="Deletion failed">
+              {deleteError}
+            </Alert>
+          )}
+
+          <Group justify="flex-end" gap="sm">
+            <Button
+              variant="subtle"
+              color="gray"
+              disabled={deleting}
+              onClick={() => setInquiryToDelete(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="red"
+              loading={deleting}
+              leftSection={<Trash2 size={15} />}
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </div>
   );
 }

@@ -13,9 +13,18 @@ interface PrebuiltImageViewProps {
     images?: string[];
     systemName: string;
     tier?: string;
+    itemLabel?: string;
+    placeholderSrc?: string;
 }
 
-export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: PrebuiltImageViewProps) {
+export function PrebuiltImageView({
+    imageUrl,
+    images = [],
+    systemName,
+    tier,
+    itemLabel = "system",
+    placeholderSrc = "/placeholder-system.png",
+}: PrebuiltImageViewProps) {
     const allImages = React.useMemo(
         () => Array.from(new Set([imageUrl, ...images].filter((image): image is string => Boolean(image)))),
         [imageUrl, images]
@@ -39,7 +48,7 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
     }, [allImages]);
 
     const currentImage = allImages[currentImageIndex] || imageUrl;
-    const coverUrl = currentImage || "/placeholder-system.png";
+    const coverUrl = currentImage || placeholderSrc;
 
     const showPrevious = () => {
         setSlideDirection(-1);
@@ -101,7 +110,7 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                     <>
                         <button
                             type="button"
-                            aria-label="Previous system photo"
+                            aria-label={`Previous ${itemLabel} photo`}
                             onClick={(event) => {
                                 event.stopPropagation();
                                 showPrevious();
@@ -112,7 +121,7 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                         </button>
                         <button
                             type="button"
-                            aria-label="Next system photo"
+                            aria-label={`Next ${itemLabel} photo`}
                             onClick={(event) => {
                                 event.stopPropagation();
                                 showNext();
@@ -136,7 +145,7 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
 
             <div
                 className="shrink-0 border-t border-slate-200/80 bg-slate-50/90 p-3 dark:border-white/10 dark:bg-[#111722]"
-                aria-label="System photos"
+                aria-label={`${systemName} photos`}
                 role="tablist"
             >
                 <div className="mx-auto flex w-max min-w-full justify-center gap-2 overflow-x-auto pb-0.5 [scrollbar-color:rgb(6_182_212)_transparent] [scrollbar-width:thin]">
@@ -149,7 +158,7 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                                 type="button"
                                 role="tab"
                                 aria-selected={isCurrent}
-                                aria-label={`View system photo ${index + 1}`}
+                                aria-label={`View ${itemLabel} photo ${index + 1}`}
                                 onClick={() => {
                                     setSlideDirection(index >= currentImageIndex ? 1 : -1);
                                     setCurrentImageIndex(index);
@@ -162,7 +171,7 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                                 )}
                             >
                                 <OptimizedImage
-                                    src={getOptimizedStorageUrl(image) || "/placeholder-system.png"}
+                                    src={getOptimizedStorageUrl(image) || placeholderSrc}
                                     alt={`${systemName} thumbnail ${index + 1}`}
                                     fill
                                     sizes="64px"

@@ -4,7 +4,8 @@
  * Part names are clickable to open the AddPartDialog for editing.
  */
 
-import { ProductIdentityLink } from './product-identity-link';
+import Link from 'next/link';
+import { productAdminUrl } from '@/lib/product-identity';
 import {
   Table,
   TableBody,
@@ -15,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { OptimizedImage } from "@/components/ui/optimized-image";
-import { Trash2, Archive, RotateCcw, Plus } from "lucide-react";
+import { Trash2, Archive, RotateCcw, Plus, QrCode } from "lucide-react";
 import { formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
 import type { Part } from "@/lib/types";
 import { AddPartDialog } from "./add-part-dialog";
@@ -77,6 +78,8 @@ export function InventoryTable({
             />
           </TableHead>
           <TableHead>Item</TableHead>
+          <TableHead className="w-[140px]">SKU</TableHead>
+          <TableHead className="w-[60px] text-center">QR</TableHead>
           <TableHead>Category</TableHead>
           <TableHead>Brand</TableHead>
           <TableHead className="text-center">Stock</TableHead>
@@ -117,8 +120,26 @@ export function InventoryTable({
                     {part.name}
                   </span>
                 </AddPartDialog>
-                <ProductIdentityLink product={part} kind="part" />
               </div>
+            </TableCell>
+            <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+              {part.sku || "—"}
+            </TableCell>
+            <TableCell className="text-center">
+              {part.productId && (
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground/40 hover:text-cyan-500 hover:bg-cyan-500/10 transition-colors mx-auto"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Open QR & item details"
+                >
+                  <Link href={productAdminUrl('part', part.productId, isArchiveView)}>
+                    <QrCode className="h-4 w-4" />
+                  </Link>
+                </Button>
+              )}
             </TableCell>
             <TableCell>{part.category}</TableCell>
             <TableCell>{part.brand}</TableCell>

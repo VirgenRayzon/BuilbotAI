@@ -1,26 +1,141 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { Button, Group, Stack, Text } from '@mantine/core';
-import { qrUrl } from '@/lib/product-identity';
 
-export function ProductQR({ token, sku }: { token?: string; sku?: string }) {
-  const [image, setImage] = useState('');
-  const [error, setError] = useState('');
-  const [attempt, retry] = useState(0);
-  useEffect(() => {
-    if (!token) return;
-    let active = true;
-    setError('');
-    void import('qrcode').then(qr => qr.toDataURL(qrUrl(token, process.env.NEXT_PUBLIC_QR_ORIGIN || undefined), {
-      width: 768, margin: 4, errorCorrectionLevel: 'M', color: { dark: '#000000ff', light: '#ffffffff' },
-    })).then(url => { if (active) setImage(url); }).catch(() => { if (active) setError('Could not render QR. Please retry.'); });
-    return () => { active = false; };
-  }, [token, attempt]);
+import { useState } from 'react';
+import { ActionIcon, Badge, CopyButton, Group, Stack, Text, Tooltip } from '@mantine/core';
+import { Check, Copy, Download, RefreshCcw, Settings2 } from 'lucide-react';
+import { useProductQR } from '@/hooks/use-product-qr';
+import { useQRStatus } from '@/hooks/use-qr-status';
+import { AdminQRLifecycleModal } from './admin-qr-lifecycle-modal';
+
+export function ProductQR({
+  token,
+  sku,
+  showLifecycle = false,
+  extraActions,
+}: {
+  token?: string;
+  sku?: string;
+  showLifecycle?: boolean;
+  extraActions?: React.ReactNode;
+}) {
+  const { image, url, error, retry } = useProductQR(token, sku);
+  const { status } = useQRStatus(showLifecycle ? token : undefined);
+  const [modalOpened, setModalOpened] = useState(false);
+
   if (!token || !sku) return <Text size="sm" c="dimmed">QR pending migration.</Text>;
-  return <Stack gap="xs" align="flex-start">
-    {image && <img src={image} width={192} height={192} alt={`QR for ${sku}`} className="rounded-lg bg-white" />}
-    {error && <Text c="red" size="sm">{error}</Text>}
-    <Group><Button component="a" href={image || undefined} download={`${sku}.png`} disabled={!image} mih={44}>Download QR</Button>
-      {error && <Button variant="default" onClick={() => retry(v => v + 1)}>Retry QR</Button>}</Group>
-  </Stack>;
+
+  const isEnabled = status?.enabled ?? true;
+
+  return (
+    <Stack gap="xs" align="center" className="w-full">
+      {showLifecycle && (
+        <Badge size="xs" color={isEnabled ? 'teal' : 'red'} variant="light">
+          {isEnabled ? 'Active QR' : 'Disabled QR'}
+        </Badge>
+      )}
+
+      {image && (
+        <div className="relative p-2.5 rounded-xl bg-white shadow-md border border-slate-200 dark:border-white/10 flex items-center justify-center">
+          <img
+            src={image}
+            width={180}
+            height={180}
+            alt={`QR for ${sku}`}
+            className={`rounded-lg ${!isEnabled ? 'opacity-40 grayscale' : ''}`}
+          />
+        </div>
+      )}
+
+      {!image && !error && (
+        <div className="w-[180px] h-[180px] rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center">
+          <Text size="sm" c="dimmed" role="status">Preparing QR…</Text>
+        </div>
+      )}
+
+      {error && (
+        <Group gap="xs">
+          <Text c="red" size="xs" role="alert">{error}</Text>
+          <ActionIcon size="sm" variant="subtle" color="red" onClick={retry} title="Retry QR generation">
+            <RefreshCcw size={14} />
+          </ActionIcon>
+        </Group>
+      )}
+
+      {!isEnabled && (
+        <Text size="xs" c="red" fw={500}>
+          This QR code is currently disabled.
+        </Text>
+      )}
+
+      {/* Centered Action Toolbar: Pen button, Small Download button, Copy Link, etc. */}
+      <Group gap="xs" justify="center" wrap="wrap" mt="xs">
+        {extraActions}
+
+        {image ? (
+          <Tooltip label="Download QR code" withArrow position="bottom">
+            <ActionIcon
+              component="a"
+              href={image}
+              download={`${sku}.png`}
+              size={42}
+              radius="md"
+              color="cyan"
+              variant="filled"
+              className="bg-cyan-600 hover:bg-cyan-500 text-white shadow-sm transition-colors"
+              aria-label="Download QR"
+            >
+              <Download size={18} />
+            </ActionIcon>
+          </Tooltip>
+        ) : (
+          <ActionIcon size={42} radius="md" disabled variant="default">
+            <Download size={18} />
+          </ActionIcon>
+        )}
+
+        {url && (
+          <CopyButton value={url}>
+            {({ copied, copy }) => (
+              <Tooltip label={copied ? 'Copied link!' : 'Copy QR link'} withArrow position="bottom">
+                <ActionIcon
+                  size={42}
+                  radius="md"
+                  variant="default"
+                  className="border-slate-300 dark:border-white/10 hover:border-cyan-400 dark:hover:border-cyan-400 transition-colors"
+                  onClick={copy}
+                  aria-label="Copy QR link"
+                >
+                  {copied ? <Check size={18} className="text-teal-400" /> : <Copy size={18} />}
+                </ActionIcon>
+              </Tooltip>
+            )}
+          </CopyButton>
+        )}
+
+        {showLifecycle && (
+          <Tooltip label="Manage QR status" withArrow position="bottom">
+            <ActionIcon
+              size={42}
+              radius="md"
+              variant="default"
+              className="border-slate-300 dark:border-white/10 hover:border-cyan-400 dark:hover:border-cyan-400 transition-colors"
+              onClick={() => setModalOpened(true)}
+              aria-label="Manage QR status"
+            >
+              <Settings2 size={18} />
+            </ActionIcon>
+          </Tooltip>
+        )}
+      </Group>
+
+      {showLifecycle && (
+        <AdminQRLifecycleModal
+          token={token}
+          sku={sku}
+          opened={modalOpened}
+          onClose={() => setModalOpened(false)}
+        />
+      )}
+    </Stack>
+  );
 }

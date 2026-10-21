@@ -39,7 +39,7 @@ export function qrUrl(token: string, origin = DEFAULT_QR_ORIGIN): string {
 }
 
 export function safeProductReturn(value: string | null): string {
-  return value && /^\/(parts|pre-builts)\/PRD-\d{6,}$/.test(value) ? value : '/builder';
+  return value && (/^\/(parts|pre-builts)\/PRD-\d{6,}$/.test(value) || /^\/q\/[a-f0-9]{32}$/.test(value)) ? value : '/builder';
 }
 
 export function safeStaffProductReturn(value: string | null): string {

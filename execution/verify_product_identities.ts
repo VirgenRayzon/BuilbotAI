@@ -7,6 +7,7 @@ import { DocumentReference } from 'firebase-admin/firestore';
 import { getAdminFirestore } from '../src/firebase/server-init';
 import { inventoryItemsPath, INVENTORY_CATEGORY_SLUGS } from '../src/lib/inventory-paths';
 import { PRODUCT_ID_PATTERN, QR_TOKEN_PATTERN } from '../src/lib/product-identity';
+import { auditQRHealth } from '../src/lib/server/qr-health';
 
 function originalContentHash(data: Record<string, unknown>): string {
   const original = { ...data };
@@ -25,6 +26,15 @@ async function main() {
   const snapshotFile = process.argv.find(a => a.startsWith('--snapshot='))?.slice(11);
   const beforeFile = process.argv.find(a => a.startsWith('--before='))?.slice(9);
   const db = getAdminFirestore();
+  const reportFile = process.argv.find(arg => arg.startsWith('--report='))?.slice(9);
+  if (reportFile) {
+    const report = await auditQRHealth(db);
+    await mkdir(dirname(reportFile), { recursive: true });
+    await writeFile(reportFile, JSON.stringify({ projectId, ...report }, null, 2));
+    console.log(JSON.stringify({ projectId, products: report.products, issues: report.issues.length, archived: report.archived, disabled: report.disabled, completedAt: report.completedAt, report: reportFile }));
+    if (report.issues.length) process.exitCode = 1;
+    if (!snapshotFile && !beforeFile) return;
+  }
   const groups = await Promise.all([...INVENTORY_CATEGORY_SLUGS.map(inventoryItemsPath), 'prebuiltSystems'].map(path => db.collection(path).get()));
   const documents = groups.flatMap(g => g.docs);
   const hashes: Record<string, string> = {};
