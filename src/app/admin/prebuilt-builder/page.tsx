@@ -65,6 +65,21 @@ const componentCategories = [
     { name: "Headset", icon: Headphones },
 ];
 
+const isIncludedStockCooler = (component: ComponentData | null | undefined): boolean =>
+    Boolean(
+        component && (
+            component.id === 'included-stock-cooler' ||
+            component.id === 'uGiAh2JerLwnDe5VW431' ||
+            (component.price === 0 && (
+                component.imageHint === 'included cooler' ||
+                component.description?.includes('Bundled cooler') ||
+                component.model?.toLowerCase().includes('stock cooler') ||
+                component.model?.toLowerCase().includes('laminar') ||
+                component.model?.toLowerCase().includes('wraith')
+            ))
+        )
+    );
+
 export default function PrebuiltBuilderPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -104,6 +119,10 @@ export default function PrebuiltBuilderPage() {
         if (saved) {
             try {
                 const parsedState = JSON.parse(saved);
+                // Sanitize orphaned stock cooler if no CPU is present in saved state
+                if (!parsedState.CPU && isIncludedStockCooler(parsedState.Cooler)) {
+                    parsedState.Cooler = null;
+                }
                 setBuild(prev => ({ ...prev, ...parsedState }));
             } catch (e) {
                 console.error("Failed to parse saved builder state", e);
@@ -120,12 +139,19 @@ export default function PrebuiltBuilderPage() {
             let changed = false;
             const updatedBuild = { ...prevBuild };
 
+            // Clean up orphaned stock cooler if CPU is missing
+            if (!updatedBuild['CPU'] && isIncludedStockCooler(updatedBuild['Cooler'] as ComponentData | null)) {
+                updatedBuild['Cooler'] = null;
+                changed = true;
+            }
+
             // Check single-slot categories
             const singleSlotCategories = ['Case', 'Motherboard', 'CPU', 'GPU', 'PSU', 'Cooler', 'Monitor', 'Keyboard', 'Mouse', 'Headset'];
             
             for (const cat of singleSlotCategories) {
                 const item = updatedBuild[cat] as ComponentData | null;
                 if (!item || !item.id) continue;
+                if (cat === 'Cooler' && isIncludedStockCooler(item)) continue;
                 
                 // Find matching live part from catalog by ID or model
                 const livePart = allParts.find(p => p.id === item.id || p.name === item.model);
@@ -197,7 +223,7 @@ export default function PrebuiltBuilderPage() {
             }
 
             const currentCooler = next['Cooler'] as ComponentData | null;
-            if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
+            if (category === 'CPU' && isIncludedStockCooler(currentCooler)) {
                 next['Cooler'] = null;
                 toastToFire = { title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' };
             }
@@ -321,7 +347,7 @@ export default function PrebuiltBuilderPage() {
 
             // Handle CPU stock cooler logic
             const currentCooler = next['Cooler'] as ComponentData | null;
-            if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
+            if (category === 'CPU' && isIncludedStockCooler(currentCooler)) {
                 next['Cooler'] = null;
                 toastsToShow.push({ title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' });
             }
@@ -386,14 +412,15 @@ export default function PrebuiltBuilderPage() {
 
             // Handle CPU stock cooler logic
             if (category === 'CPU') {
-                const isBoxed = (part as any).packageType === 'BOX';
+                const isBoxed = (part as any).packageType?.toUpperCase() === 'BOX' ||
+                    (part as any).specifications?.['Package Type']?.toString().toUpperCase() === 'BOX';
                 if (isBoxed) {
                     const isIntel = part.name.toLowerCase().includes('intel');
                     const isAmd = part.name.toLowerCase().includes('amd');
                     const coolerModel = isIntel ? "Intel Laminar RM1 CPU Cooler" : isAmd ? "AMD Wraith MAX CPU Cooler with RGB LED" : "Stock Cooler";
 
                     next['Cooler'] = {
-                        id: isAmd ? 'uGiAh2JerLwnDe5VW431' : 'included-stock-cooler',
+                        id: 'included-stock-cooler',
                         model: coolerModel,
                         price: 0,
                         description: `Bundled cooler.`,
@@ -405,7 +432,7 @@ export default function PrebuiltBuilderPage() {
                     };
                 } else {
                     // If tray and currently have stock cooler, remove it
-                    if ((next['Cooler'] as ComponentData)?.id === 'included-stock-cooler') {
+                    if (isIncludedStockCooler(next['Cooler'] as ComponentData | null)) {
                         next['Cooler'] = null;
                     }
                 }

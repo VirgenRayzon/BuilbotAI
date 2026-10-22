@@ -17,7 +17,14 @@ const componentIcons: Record<string, any> = {
 
 const isIncludedStockCooler = (component: ComponentData | null | undefined) =>
     component?.id === 'included-stock-cooler'
-    || (component?.price === 0 && component.imageHint === 'included cooler');
+    || component?.id === 'uGiAh2JerLwnDe5VW431'
+    || (component?.price === 0 && (
+        component.imageHint === 'included cooler'
+        || component.description?.includes('Bundled cooler')
+        || component.model?.toLowerCase().includes('stock cooler')
+        || component.model?.toLowerCase().includes('laminar')
+        || component.model?.toLowerCase().includes('wraith')
+    ));
 
 /**
  * Hook to manage the PC build logic, including part toggling, removal, and compatibility.
@@ -36,6 +43,9 @@ export function useBuilderLogic(allParts: Part[]) {
         if (saved) {
             try {
                 const parsedState = JSON.parse(saved);
+                if (!parsedState.CPU && isIncludedStockCooler(parsedState.Cooler)) {
+                    parsedState.Cooler = null;
+                }
                 setBuild(prev => ({ ...prev, ...parsedState }));
             } catch (e) {
                 console.error("Failed to parse saved build", e);
@@ -216,7 +226,9 @@ export function useBuilderLogic(allParts: Part[]) {
             }
 
             if (category === 'CPU') {
-                if (part.packageType === 'BOX') {
+                const isBoxed = part.packageType === 'BOX' ||
+                    (part as any).specifications?.['Package Type']?.toString().toUpperCase() === 'BOX';
+                if (isBoxed) {
                     const isIntel = part.brand.toLowerCase().includes('intel');
                     const isAmd = part.brand.toLowerCase().includes('amd');
                     const coolerModel = isIntel ? "Intel Laminar RM1 CPU Cooler" : isAmd ? "AMD Wraith MAX CPU Cooler with RGB LED" : "Stock Cooler";
@@ -233,7 +245,7 @@ export function useBuilderLogic(allParts: Part[]) {
                         wattage: 0,
                         specifications: { "Type": "Air (Stock)" }
                     };
-                } else if (part.packageType === 'TRAY' && isIncludedStockCooler(nextBuild['Cooler'] as ComponentData | null)) {
+                } else if (isIncludedStockCooler(nextBuild['Cooler'] as ComponentData | null)) {
                     nextBuild['Cooler'] = null;
                 }
             }
