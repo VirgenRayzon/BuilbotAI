@@ -138,6 +138,15 @@ export function Header() {
   // Standard customers see Builder, Build Advisor, and Pre-builts.
   const tabs: NavTab[] = isStaff ? adminTabs : mainTabs;
 
+  const activeTabHref = (() => {
+    const exact = tabs.find((t) => t.href === pathname);
+    if (exact) return exact.href;
+    const prefixes = tabs
+      .filter((t) => t.href !== "/" && pathname.startsWith(t.href + "/"))
+      .sort((a, b) => b.href.length - a.href.length);
+    return prefixes[0]?.href;
+  })();
+
   // Render HeaderMegaMenu on onboarding/landing page, auth pages, or for unauthenticated visitors on public pages
   const isPublicCatalogOrInfoPage =
     pathname === "/parts" ||
@@ -198,7 +207,7 @@ export function Header() {
                 {/* Desktop Tabs aligned with user */}
                 <nav className="hidden sm:flex items-center gap-1" aria-label="Main Navigation">
                   {tabs.map((tab) => {
-                    const isActive = pathname === tab.href || (tab.href !== "/" && pathname.startsWith(tab.href + "/"));
+                    const isActive = tab.href === activeTabHref;
                     return (
                       <Link
                         key={tab.href}
@@ -522,7 +531,7 @@ export function Header() {
 
             <Stack gap={4}>
               {tabs.map((tab) => {
-                const isActive = pathname === tab.href;
+                const isActive = tab.href === activeTabHref;
                 return (
                   <Link
                     key={tab.href}
