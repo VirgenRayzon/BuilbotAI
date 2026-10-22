@@ -139,10 +139,17 @@ export function Header() {
   const tabs: NavTab[] = isStaff ? adminTabs : mainTabs;
 
   // Render HeaderMegaMenu on onboarding/landing page, auth pages, or for unauthenticated visitors on public pages
+  const isPublicCatalogOrInfoPage =
+    pathname === "/parts" ||
+    pathname.startsWith("/parts/") ||
+    pathname === "/pre-builts" ||
+    pathname.startsWith("/pre-builts/") ||
+    ["/about", "/faq", "/team", "/contact"].includes(pathname);
+
   if (
     pathname === "/" ||
     ["/signin", "/signup", "/system-access", "/system-access/signup", "/forgot-password"].includes(pathname) ||
-    (!authUser && ["/about", "/faq", "/team", "/contact"].includes(pathname))
+    (!authUser && isPublicCatalogOrInfoPage)
   ) {
     return <HeaderMegaMenu />;
   }
@@ -191,7 +198,7 @@ export function Header() {
                 {/* Desktop Tabs aligned with user */}
                 <nav className="hidden sm:flex items-center gap-1" aria-label="Main Navigation">
                   {tabs.map((tab) => {
-                    const isActive = pathname === tab.href;
+                    const isActive = pathname === tab.href || (tab.href !== "/" && pathname.startsWith(tab.href + "/"));
                     return (
                       <Link
                         key={tab.href}

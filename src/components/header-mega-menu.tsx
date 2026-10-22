@@ -6,6 +6,7 @@ import { Burger, Button, Divider, Drawer, Group, ScrollArea, Text } from "@manti
 import { useDisclosure } from "@mantine/hooks";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useUserProfile } from "@/context/user-profile";
 import classes from "./header.module.css";
 
 const navigation = [
@@ -19,7 +20,15 @@ const navigation = [
 
 export function HeaderMegaMenu() {
   const pathname = usePathname();
+  const { authUser, profile } = useUserProfile();
   const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] = useDisclosure(false);
+
+  const isTabActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    if (href === "/parts") return pathname === "/parts" || pathname.startsWith("/parts/");
+    if (href === "/#prebuilts" || href === "/pre-builts") return pathname === "/pre-builts" || pathname.startsWith("/pre-builts/");
+    return pathname === href;
+  };
 
   return (
     <header className={classes.header}>
@@ -35,7 +44,7 @@ export function HeaderMegaMenu() {
                 key={label}
                 href={href}
                 className={classes.tabLink}
-                data-active={(pathname === href && href !== "/") || undefined}
+                data-active={isTabActive(href) || undefined}
               >
                 {label}
               </Link>
@@ -46,29 +55,43 @@ export function HeaderMegaMenu() {
 
           <ThemeToggle />
 
-          <Group gap="xs">
+          {authUser ? (
             <Button
               component={Link}
-              href="/signin"
-              variant="default"
-              size="sm"
-              radius="md"
-              className="text-xs font-semibold"
-            >
-              Log in
-            </Button>
-            <Button
-              component={Link}
-              href="/signup"
+              href={profile?.isSuperAdmin || profile?.isManager ? "/admin" : "/builder"}
               variant="filled"
               color="blue"
               size="sm"
               radius="md"
               className="text-xs font-semibold shadow-md shadow-blue-500/20"
             >
-              Sign up
+              {profile?.isSuperAdmin || profile?.isManager ? "Dashboard" : "Open Builder"}
             </Button>
-          </Group>
+          ) : (
+            <Group gap="xs">
+              <Button
+                component={Link}
+                href="/signin"
+                variant="default"
+                size="sm"
+                radius="md"
+                className="text-xs font-semibold"
+              >
+                Log in
+              </Button>
+              <Button
+                component={Link}
+                href="/signup"
+                variant="filled"
+                color="blue"
+                size="sm"
+                radius="md"
+                className="text-xs font-semibold shadow-md shadow-blue-500/20"
+              >
+                Sign up
+              </Button>
+            </Group>
+          )}
         </div>
 
         {/* Mobile Burger Toggle */}
@@ -110,7 +133,13 @@ export function HeaderMegaMenu() {
 
           <nav aria-label="Mobile Navigation">
             {navigation.map(({ label, href }) => (
-              <Link key={label} href={href} className={classes.drawerLink} onClick={closeDrawer}>
+              <Link
+                key={label}
+                href={href}
+                className={classes.drawerLink}
+                data-active={isTabActive(href) || undefined}
+                onClick={closeDrawer}
+              >
                 {label}
               </Link>
             ))}
@@ -118,31 +147,47 @@ export function HeaderMegaMenu() {
 
           <Divider my="md" className="border-slate-100 dark:border-white/10" />
 
-          <Group justify="center" grow pb="xl">
+          {authUser ? (
             <Button
               component={Link}
-              href="/signin"
-              variant="default"
-              size="sm"
-              radius="md"
-              onClick={closeDrawer}
-              className="text-xs font-semibold"
-            >
-              Log in
-            </Button>
-            <Button
-              component={Link}
-              href="/signup"
+              href={profile?.isSuperAdmin || profile?.isManager ? "/admin" : "/builder"}
               variant="filled"
               color="blue"
               size="sm"
               radius="md"
               onClick={closeDrawer}
+              fullWidth
               className="text-xs font-semibold shadow-md shadow-blue-500/20"
             >
-              Sign up
+              {profile?.isSuperAdmin || profile?.isManager ? "Dashboard" : "Open Builder"}
             </Button>
-          </Group>
+          ) : (
+            <Group justify="center" grow pb="xl">
+              <Button
+                component={Link}
+                href="/signin"
+                variant="default"
+                size="sm"
+                radius="md"
+                onClick={closeDrawer}
+                className="text-xs font-semibold"
+              >
+                Log in
+              </Button>
+              <Button
+                component={Link}
+                href="/signup"
+                variant="filled"
+                color="blue"
+                size="sm"
+                radius="md"
+                onClick={closeDrawer}
+                className="text-xs font-semibold shadow-md shadow-blue-500/20"
+              >
+                Sign up
+              </Button>
+            </Group>
+          )}
         </ScrollArea>
       </Drawer>
     </header>
