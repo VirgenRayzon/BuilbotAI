@@ -36,6 +36,7 @@ import { UnifiedBackground } from '@/components/landing/unified-background';
 import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/context/user-profile';
+import { Logo } from '@/components/logo';
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -292,11 +293,11 @@ export default function ManagerSignupPage() {
           className="w-full bg-white/85 dark:bg-[#111722] border-red-500/30 dark:border-red-500/30 shadow-sm relative transition-all"
         >
           <Stack gap="md">
-            {/* Header with Red Badge & Shield Icon */}
+            {/* Header with Red Netcodex Emblem */}
             <div className="text-center flex flex-col items-center gap-1.5">
-              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 shadow-sm">
-                <ShieldAlert size={22} />
-              </div>
+              <Link href="/" className="mb-0.5">
+                <Logo showText={false} size="lg" variant="red" />
+              </Link>
               <Title
                 order={2}
                 className="text-xl sm:text-2xl font-bold font-headline tracking-tight text-slate-900 dark:text-slate-100"

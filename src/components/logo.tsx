@@ -10,14 +10,17 @@ export interface LogoProps {
   className?: string;
   showText?: boolean;
   size?: "sm" | "md" | "lg" | "xl";
+  variant?: "cyan" | "red";
 }
 
 export function NetcodexEmblem({
   size = "md",
   className,
+  variant = "cyan",
 }: {
   size?: "sm" | "md" | "lg" | "xl";
   className?: string;
+  variant?: "cyan" | "red";
 }) {
   const containerSizes = {
     sm: "w-8 h-8 p-1",
@@ -33,12 +36,22 @@ export function NetcodexEmblem({
     xl: 54,
   };
 
+  const variantStyles = {
+    cyan: cn(
+      "bg-slate-100/90 dark:bg-[#071322] border-slate-300 dark:border-cyan-400/40",
+      "shadow-[0_0_14px_rgba(6,182,212,0.2)] dark:shadow-[0_0_18px_rgba(34,211,238,0.25)]"
+    ),
+    red: cn(
+      "bg-red-50/80 dark:bg-[#18080b] border-red-300 dark:border-red-500/50",
+      "shadow-[0_0_14px_rgba(239,68,68,0.25)] dark:shadow-[0_0_20px_rgba(239,68,68,0.35)]"
+    ),
+  };
+
   return (
     <div
       className={cn(
-        "relative flex items-center justify-center rounded-full shrink-0 transition-all duration-300",
-        "bg-slate-100/90 dark:bg-[#071322] border border-slate-300 dark:border-cyan-400/40",
-        "shadow-[0_0_14px_rgba(6,182,212,0.2)] dark:shadow-[0_0_18px_rgba(34,211,238,0.25)]",
+        "relative flex items-center justify-center rounded-full shrink-0 transition-all duration-300 border",
+        variantStyles[variant],
         containerSizes[size],
         className
       )}
@@ -61,11 +74,12 @@ export function Logo({
   className,
   showText = true,
   size = "md",
+  variant = "cyan",
 }: LogoProps) {
   if (!showText) {
     return (
       <div className={cn("inline-flex items-center group select-none", className)}>
-        <NetcodexEmblem size={size} className="group-hover:scale-105 transition-transform" />
+        <NetcodexEmblem size={size} variant={variant} className="group-hover:scale-105 transition-transform" />
       </div>
     );
   }
