@@ -35,7 +35,7 @@ import {
 } from '@mantine/core';
 import { LogIn, Mail, Lock, AlertCircle, ArrowLeft, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { UnifiedBackground } from '@/components/landing/unified-background';
+import { AuthBackground } from '@/components/auth/auth-background';
 import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/context/user-profile';
@@ -267,7 +267,7 @@ function SignInContent() {
         isDark ? 'text-foreground' : 'text-slate-900'
       )}
     >
-      <UnifiedBackground />
+      <AuthBackground />
 
       <div className="w-full max-w-[440px] z-10 flex flex-col gap-2.5">
         {/* Navigation & Brand Header */}

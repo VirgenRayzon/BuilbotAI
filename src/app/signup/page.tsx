@@ -33,7 +33,7 @@ import { Mail, Lock, AlertCircle, ArrowLeft, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { createUserProfile } from '@/firebase/database';
 import { syncUserClaimsAction } from '@/app/actions';
-import { UnifiedBackground } from '@/components/landing/unified-background';
+import { AuthBackground } from '@/components/auth/auth-background';
 import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/context/user-profile';
@@ -213,7 +213,7 @@ export default function SignUpPage() {
         isDark ? 'text-foreground' : 'text-slate-900'
       )}
     >
-      <UnifiedBackground />
+      <AuthBackground />
 
       <div className="w-full max-w-[440px] z-10 flex flex-col gap-2.5">
         {/* Top bar back link */}

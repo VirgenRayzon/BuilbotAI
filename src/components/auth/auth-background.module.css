@@ -1,0 +1,71 @@
+.background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  background:
+    radial-gradient(ellipse 42% 62% at 3% 54%, rgb(14 165 233 / 8%), transparent 75%),
+    radial-gradient(ellipse 44% 55% at 97% 45%, rgb(15 118 110 / 7%), transparent 76%),
+    linear-gradient(135deg, #f8fafc, #edf3f7 54%, #f8fafc);
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(15 118 110 / 8%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(15 118 110 / 8%) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 95% at 50% 50%, transparent 31%, #000 89%);
+}
+
+.motherboard,
+.gpu {
+  position: absolute;
+  display: none;
+  color: #0e7490;
+  opacity: 0.23;
+  height: auto;
+}
+
+@media (min-width: 1280px) {
+  .motherboard,
+  .gpu {
+    display: block;
+  }
+
+  .motherboard {
+    top: 50%;
+    left: clamp(20px, 4vw, 110px);
+    width: min(28vw, 460px);
+    transform: translateY(-50%) rotate(-6deg);
+  }
+
+  .gpu {
+    top: 50%;
+    right: clamp(20px, 3vw, 90px);
+    width: min(31vw, 520px);
+    transform: translateY(-50%) rotate(7deg);
+  }
+}
+
+:global(.dark) .background {
+  background:
+    radial-gradient(ellipse 46% 64% at 2% 53%, rgb(14 116 144 / 14%), transparent 76%),
+    radial-gradient(ellipse 46% 59% at 98% 46%, rgb(30 64 95 / 23%), transparent 77%),
+    linear-gradient(135deg, #0a1019, #0e1722 52%, #0a1019);
+}
+
+:global(.dark) .grid {
+  background-image:
+    linear-gradient(rgb(103 232 249 / 6%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(103 232 249 / 6%) 1px, transparent 1px);
+}
+
+:global(.dark) .motherboard,
+:global(.dark) .gpu {
+  color: #67e8f9;
+  opacity: 0.14;
+}
