@@ -312,8 +312,8 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
   const total = parts.reduce((sum, part) => sum + part.price, 0);
   const totalWattage = parts.reduce((sum, part) => sum + (part.wattage || 0), 0);
 
-  pdf.setTitle('Buildbot AI - Your PC Build');
-  pdf.setAuthor('Buildbot AI');
+  pdf.setTitle('Netcodex - Your PC Build');
+  pdf.setAuthor('Netcodex');
   pdf.setCreationDate(generatedAt);
 
   // Exactly ONE single page with Letter dimensions (612 x 792 pt)
@@ -339,7 +339,7 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
   });
 
   // Left header brand & title
-  page.drawText('BUILDBOT AI', {
+  page.drawText('NETCODEX \u00b7 POWERED BY BUILDBOT AI', {
     x: MARGIN_X,
     y: HEIGHT - 22,
     size: 8.5,
@@ -564,7 +564,7 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
     color: LIGHT_BORDER,
   });
 
-  page.drawText('Buildbot AI  \u00b7  Official PC Build Specification  \u00b7  100% Hardware Compatibility Verified', {
+  page.drawText('Netcodex  \u00b7  Official PC Build Specification  \u00b7  Validated by Buildbot AI', {
     x: MARGIN_X,
     y: 18,
     size: 7,

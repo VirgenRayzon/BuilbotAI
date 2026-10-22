@@ -25,6 +25,8 @@ import {
   CheckCircle2,
   Clock,
   Sparkles,
+  Phone,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/theme-provider";
@@ -111,7 +113,7 @@ export default function ContactPage() {
                 leftSection={<Sparkles size={14} />}
                 className="font-bold tracking-widest uppercase py-2 px-3.5"
               >
-                Direct Support
+                Customer Support
               </Badge>
             </div>
 
@@ -119,13 +121,13 @@ export default function ContactPage() {
               Get in <span className="text-cyan-600 dark:text-cyan-400">Touch</span>
             </h1>
 
-            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 mb-10 font-medium leading-relaxed">
+            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 mb-8 font-medium leading-relaxed">
               Have a question about component compatibility, reservation orders, or custom builds?
-              Send a message to our hardware specialists and keep the conversation in BuildbotAI.
+              Send a message to our hardware specialists. All replies stay conveniently inside the app.
             </p>
 
             <Stack gap="sm" className="mb-6">
-              {/* Support is handled in-app; no email notifications are sent. */}
+              {/* Channel 1: In-App Support Inbox */}
               <Paper
                 withBorder
                 radius="xl"
@@ -138,24 +140,24 @@ export default function ContactPage() {
                 )}
               >
                 <div className="flex items-start gap-4">
-                  <ThemeIcon size={48} radius="xl" variant="light" color="cyan">
-                    <MessageCircle size={22} />
+                  <ThemeIcon size={44} radius="xl" variant="light" color="cyan">
+                    <MessageCircle size={20} />
                   </ThemeIcon>
                   <div>
-                    <Text size="xs" fw={700} className="uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
-                      In-App Support
+                    <Text size="xs" fw={700} className="uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-0.5">
+                      In-App Support Desk
                     </Text>
-                    <Text size="lg" fw={800} className="text-slate-900 dark:text-slate-100 font-headline">
-                      BuildbotAI conversations
+                    <Text size="base" fw={800} className="text-slate-900 dark:text-slate-100 font-headline">
+                      Profile Contact Inbox
                     </Text>
-                    <Text size="xs" c="dimmed" mt={2}>
-                      Sign in before submitting to view and reply to staff updates in your Profile contact inbox. Guest inquiries are submit-only.
+                    <Text size="xs" c="dimmed" mt={2} className="leading-relaxed">
+                      Staff replies stay inside the app. Sign in before submitting to view and reply to staff updates in your Profile contact inbox. <strong>Guest inquiries cannot be followed in-app.</strong>
                     </Text>
                   </div>
                 </div>
               </Paper>
 
-              {/* Channel 3: Headquarters */}
+              {/* Channel 2: Headquarters & Warehouse */}
               <Paper
                 withBorder
                 radius="xl"
@@ -168,19 +170,94 @@ export default function ContactPage() {
                 )}
               >
                 <div className="flex items-start gap-4">
-                  <ThemeIcon size={48} radius="xl" variant="light" color="cyan">
-                    <MapPin size={22} />
+                  <ThemeIcon size={44} radius="xl" variant="light" color="cyan">
+                    <MapPin size={20} />
                   </ThemeIcon>
                   <div>
-                    <Text size="xs" fw={700} className="uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
-                      STI College Cubao
+                    <Text size="xs" fw={700} className="uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-0.5">
+                      Headquarters &amp; Warehouse
                     </Text>
-                    <Text size="lg" fw={800} className="text-slate-900 dark:text-slate-100 font-headline">
-                      Cubao, Quezon City
+                    <Text size="base" fw={800} className="text-slate-900 dark:text-slate-100 font-headline">
+                      Netcodex Computer Center
                     </Text>
-                    <Text size="xs" c="dimmed" mt={2}>
-                      Metro Manila, Philippines
+                    <Text size="xs" className="text-slate-600 dark:text-slate-300 font-medium mt-1">
+                      35G Liberty Avenue, corner 9th Ave, Socorro, Cubao, Quezon City
                     </Text>
+                    <Text size="xs" c="dimmed">
+                      Metro Manila, Philippines 1109
+                    </Text>
+                  </div>
+                </div>
+              </Paper>
+
+              {/* Channel 3: Daily Operating Hours */}
+              <Paper
+                withBorder
+                radius="xl"
+                p={12}
+                className={cn(
+                  "transition-all duration-300",
+                  isDark
+                    ? "bg-[#111722]/80 border-white/10 hover:border-cyan-500/30"
+                    : "bg-white/90 border-slate-200 hover:border-cyan-500/30 shadow-sm"
+                )}
+              >
+                <div className="flex items-start gap-4">
+                  <ThemeIcon size={44} radius="xl" variant="light" color="cyan">
+                    <Clock size={20} />
+                  </ThemeIcon>
+                  <div>
+                    <Text size="xs" fw={700} className="uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-0.5">
+                      Daily Operating Hours
+                    </Text>
+                    <Text size="base" fw={800} className="text-slate-900 dark:text-slate-100 font-headline">
+                      Monday – Sunday, 10:00 AM – 7:00 PM
+                    </Text>
+                    <Text size="xs" c="dimmed" mt={1}>
+                      Fulfillment and customer support available 7 days a week.
+                    </Text>
+                  </div>
+                </div>
+              </Paper>
+
+              {/* Channel 4: Phone & Verified Email */}
+              <Paper
+                withBorder
+                radius="xl"
+                p={12}
+                className={cn(
+                  "transition-all duration-300",
+                  isDark
+                    ? "bg-[#111722]/80 border-white/10 hover:border-cyan-500/30"
+                    : "bg-white/90 border-slate-200 hover:border-cyan-500/30 shadow-sm"
+                )}
+              >
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="flex items-start gap-3">
+                    <ThemeIcon size={36} radius="lg" variant="light" color="cyan">
+                      <Phone size={16} />
+                    </ThemeIcon>
+                    <div>
+                      <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        Phone
+                      </Text>
+                      <Text size="sm" fw={700} className="text-slate-900 dark:text-slate-100">
+                        0927-014-1681
+                      </Text>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <ThemeIcon size={36} radius="lg" variant="light" color="cyan">
+                      <Mail size={16} />
+                    </ThemeIcon>
+                    <div>
+                      <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        Verified Email
+                      </Text>
+                      <Text size="sm" fw={700} className="text-slate-900 dark:text-slate-100 truncate">
+                        techbrain@netcodex.ph
+                      </Text>
+                    </div>
                   </div>
                 </div>
               </Paper>
@@ -209,8 +286,8 @@ export default function ContactPage() {
                 <Title order={3} className="text-2xl sm:text-3xl font-bold font-headline uppercase tracking-tight text-slate-900 dark:text-slate-100 mb-2">
                   Send a Message
                 </Title>
-                  <Text size="sm" className="text-slate-600 dark:text-slate-400 font-medium">
-                  Submit your request here. Sign in first to continue the conversation and see staff updates in BuildbotAI.
+                <Text size="sm" className="text-slate-600 dark:text-slate-400 font-medium">
+                  Submit your request here. <strong>All replies stay inside the app</strong> via your Profile Contact Inbox. Sign in first to follow your thread—guest inquiries cannot be followed in-app.
                 </Text>
               </div>
 
@@ -224,9 +301,13 @@ export default function ContactPage() {
                   className="py-6"
                 >
                   <Text size="sm" mt="xs">
-                    Thank you, <strong>{fullName || "Valued Builder"}</strong>! We have received your inquiry regarding &quot;{subject}&quot; and will review your hardware requirements shortly.
+                    Thank you, <strong>{fullName || "Valued Customer"}</strong>! We have received your inquiry regarding &quot;{subject}&quot; and our team will review your requirements shortly.
                   </Text>
-                  {inquiryId && <Text size="xs" mt="xs" c="dimmed">Reference: {inquiryId.slice(0, 8).toUpperCase()}. {authUser ? 'Continue the conversation from the Contact Inbox in your Profile.' : 'This guest inquiry is visible to staff only. Sign in before submitting if you want to view replies in BuildbotAI.'}</Text>}
+                  {inquiryId && (
+                    <Text size="xs" mt="xs" c="dimmed">
+                      Reference ID: {inquiryId.slice(0, 8).toUpperCase()}. {authUser ? 'Replies from our staff will appear in your Profile Contact Inbox.' : 'Submitted as guest. Since you are not signed in, replies cannot be followed in-app. Sign in before submitting in the future to keep conversations connected to your account.'}
+                    </Text>
+                  )}
                   {authUser && inquiryId && (
                     <MantineButton component={Link} href={`/profile?tab=contact-inbox&inquiry=${encodeURIComponent(inquiryId)}`} variant="light" color="teal" size="sm" className="mt-3">
                       Open Contact Inbox

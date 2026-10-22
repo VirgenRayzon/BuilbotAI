@@ -13,7 +13,7 @@ test('hero preload is discoverable before JavaScript or authentication resolves'
   const candidates = await preload.getAttribute('imagesrcset') || await preload.getAttribute('href');
   expect(candidates).toContain('hero-custom');
   // Preloading a public asset must not expose gated page content.
-  await expect(page.locator('img[alt="BuildbotAI Custom PC Rig"]')).toHaveCount(0);
+  await expect(page.locator('img[alt="Netcodex Custom PC Rig"]')).toHaveCount(0);
   await context.close();
 });
 
@@ -23,7 +23,7 @@ for (const width of [390, 1440]) {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(baseURL);
-    const hero = page.getByRole('img', { name: 'BuildbotAI Custom PC Rig', exact: true });
+    const hero = page.getByRole('img', { name: 'Netcodex Custom PC Rig', exact: true });
     await expect(hero).toBeVisible({ timeout: 30000 });
     await expect.poll(() => hero.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
     await expect(hero).toHaveAttribute('fetchpriority', 'high');

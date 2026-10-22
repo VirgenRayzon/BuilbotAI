@@ -290,7 +290,7 @@ test('admin editors and all permitted tabs remain available after code splitting
   dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('heading', { name: 'Add New Component', exact: true })).toBeVisible();
   await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
-  for (const tab of ['Manage Prebuilts', 'Reservations', 'Sales & Analytics', 'Archive', 'Audit Logs', 'Management Portal', 'AI', 'Site Content']) {
+  for (const tab of ['Manage Prebuilts', 'Reservations', 'Sales & Analytics', 'Archive', 'Audit Logs', 'Management Portal', 'AI']) {
     await page.getByRole('tab', { name: tab, exact: tab !== 'AI' }).first().click();
     const panel = page.getByRole('tabpanel').first();
     await expect(panel).toBeVisible();

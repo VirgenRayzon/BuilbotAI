@@ -143,7 +143,7 @@ export default function SignUpPage() {
 
       toast({
         title: 'Account Created',
-        description: "Welcome to Buildbot AI! You've been successfully signed up.",
+        description: "Welcome to Netcodex! You've been successfully signed up.",
       });
 
       redirectingRef.current = true;
@@ -184,7 +184,7 @@ export default function SignUpPage() {
 
       toast({
         title: 'Account Connected',
-        description: 'Signed up with Google successfully! Welcome to Buildbot AI.',
+        description: 'Signed up with Google successfully! Welcome to Netcodex.',
       });
       redirectingRef.current = true;
       router.replace('/builder');
@@ -237,7 +237,7 @@ export default function SignUpPage() {
             {/* Header / Logo + Title */}
             <div className="text-center flex flex-col items-center gap-1.5">
               <Link href="/" className="mb-0.5">
-                <Logo showText={false} />
+                <Logo showText={false} size="lg" />
               </Link>
               <Title
                 order={2}
@@ -246,7 +246,7 @@ export default function SignUpPage() {
                 Create an account
               </Title>
               <Text size="xs" className="text-slate-500 dark:text-slate-400">
-                Join Buildbot AI to configure, optimize, and simulate your custom PC builds.
+                Join Netcodex to configure, optimize, and simulate your custom PC builds.
               </Text>
             </div>
 

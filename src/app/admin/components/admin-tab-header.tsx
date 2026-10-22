@@ -10,7 +10,6 @@ import {
     Shield, 
     Sliders, 
     Bot, 
-    FileText,
     Clock,
     Plus,
     RefreshCcw,
@@ -125,12 +124,6 @@ export function AdminTabHeader({
             titlePrefix: "AI Engine & ",
             titleHighlight: "Directives",
             description: "Configure foundation models, provider routing, and agent persona system instructions.",
-        },
-        content: {
-            tag: "Brand & Story",
-            titlePrefix: "Site Content & ",
-            titleHighlight: "Branding",
-            description: "Update customer-facing company information, mission statement, and story.",
         },
     };
 

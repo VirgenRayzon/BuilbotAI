@@ -158,7 +158,7 @@ export function AddPartEditor({
       <DialogContent
         onEscapeKeyDown={(event) => { if (isSubmitting) event.preventDefault(); }}
         onPointerDownOutside={(event) => { if (isSubmitting) event.preventDefault(); }}
-        className="w-[calc(100%-24px)] sm:max-w-[70vw] max-h-[calc(100vh-24px)] p-0 gap-0 overflow-hidden border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#111722] shadow-lg rounded-xl [&>button.absolute]:hidden"
+        className="w-[90vw] max-w-[90vw] max-h-[calc(100vh-24px)] p-0 gap-0 overflow-hidden border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#111722] shadow-lg rounded-xl [&>button.absolute]:hidden"
       >
         
         {/* Header */}

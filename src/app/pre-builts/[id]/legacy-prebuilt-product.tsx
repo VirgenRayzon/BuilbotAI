@@ -91,8 +91,8 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
 
                 {/* Desktop layout: visual at left, build details at right. */}
                 <Grid gutter={{ base: "xl", lg: 40 }} align="stretch">
-                    {/* Product information is first in the document for a better mobile reading order. */}
-                    <Grid.Col span={{ base: 12, md: 6 }} order={{ base: 1, md: 2 }} className="flex">
+                    {/* Details follow the gallery on mobile and stay on the right on desktop. */}
+                    <Grid.Col span={{ base: 12, md: 6 }} order={{ base: 2, md: 2 }} className="flex">
                         <div className="flex h-full w-full flex-col">
                             {/* Product Header */}
                             <div>
@@ -162,8 +162,8 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
                         </div>
                     </Grid.Col>
 
-                    {/* Match the gallery card to the details column height on desktop. */}
-                    <Grid.Col span={{ base: 12, md: 6 }} order={{ base: 2, md: 1 }} className="flex">
+                    {/* Lead with the gallery on mobile; keep it on the left on desktop. */}
+                    <Grid.Col span={{ base: 12, md: 6 }} order={{ base: 1, md: 1 }} className="flex">
                         <PrebuiltImageView
                             imageUrl={system.imageUrl}
                             images={system.images}

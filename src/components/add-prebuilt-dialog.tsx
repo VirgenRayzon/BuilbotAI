@@ -790,7 +790,7 @@ export function AddPrebuiltDialog({
             <DialogContent
                 onEscapeKeyDown={(event) => { if (isSaving) event.preventDefault(); }}
                 onPointerDownOutside={(event) => { if (isSaving) event.preventDefault(); }}
-                className="w-[calc(100%-24px)] sm:max-w-[75vw] max-h-[calc(100vh-24px)] p-0 gap-0 overflow-hidden border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#111722] shadow-lg rounded-xl [&>button.absolute]:hidden"
+                className="w-[90vw] max-w-[90vw] max-h-[calc(100vh-24px)] p-0 gap-0 overflow-hidden border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#111722] shadow-lg rounded-xl [&>button.absolute]:hidden"
             >
 
                 {/* ── Header ── */}
@@ -862,7 +862,7 @@ export function AddPrebuiltDialog({
                                 <div className="grid grid-cols-12 gap-8 items-start">
                                     
                                     {/* Left Column: Image Preview */}
-                                    <div className="col-span-12 md:col-span-4 sticky top-0">
+                                    <div className="col-span-12 md:col-span-4 md:sticky md:top-0">
                                         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-400 mb-4 flex items-center gap-2.5">
                                             <span className="inline-block w-3.5 h-0.5 bg-cyan-500/60 rounded-full" />
                                             Visual Identity

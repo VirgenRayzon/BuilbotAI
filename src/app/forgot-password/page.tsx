@@ -103,7 +103,7 @@ export default function ForgotPasswordPage() {
             {/* Header / Logo + Title */}
             <div className="text-center flex flex-col items-center gap-1.5">
               <Link href="/" className="mb-0.5">
-                <Logo showText={false} />
+                <Logo showText={false} size="lg" />
               </Link>
               <Title
                 order={2}

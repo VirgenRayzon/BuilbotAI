@@ -1,171 +1,207 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { useFirestore } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import Image from 'next/image';
 import {
   Paper,
   Title,
   Text,
   Badge,
   ThemeIcon,
-  Modal,
   Button as MantineButton,
   Group,
   Stack,
-  Loader,
 } from '@mantine/core';
 import {
   FileText,
   Sparkles,
-  Maximize2,
   ChevronRight,
   ShieldCheck,
   Cpu,
-  Layers,
+  Truck,
+  Wrench,
+  Award,
   ArrowRight,
+  CheckCircle2,
+  Headphones,
 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/theme-provider';
 
+const STOREFRONT_PILLARS = [
+  {
+    title: 'Expertise You Can Trust',
+    description:
+      'Built on over 25 years of IT industry experience. Our technicians are enthusiasts who understand high-performance requirements for gaming and professional workstations.',
+  },
+  {
+    title: 'Authorized & Authentic',
+    description:
+      'Shop with zero worries. We are a SEC-registered corporation and an authorized reseller. Every product we sell is 100% brand new and backed by official manufacturer warranties.',
+  },
+  {
+    title: 'Nationwide Logistics',
+    description:
+      'We ship anywhere in the Philippines. We partner with trusted couriers like LBC and fast local delivery services to ensure your rig arrives safe and on time.',
+  },
+  {
+    title: 'After-Sales Support',
+    description:
+      'Our relationship doesn’t end at checkout. We provide dedicated technical support and warranty assistance to keep your system running at peak performance.',
+  },
+];
+
 interface AboutSection {
   id: string;
+  number: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
   title: string;
-  content: string;
-  imageUrl?: string;
-  subItems?: { title: string; content: string; imageUrl?: string }[];
+  lead: string;
+  subItems?: { title: string; content: string }[];
 }
 
-interface AboutContent {
-  title: string;
-  subtitle: string;
-  sections: AboutSection[];
-}
+const ABOUT_SECTIONS: AboutSection[] = [
+  {
+    id: 'who-we-are',
+    number: '01',
+    icon: Award,
+    title: 'A Nationwide Online Computer & Tech Store',
+    lead: 'Established in 2020, Netcodex Computer Center has grown into a premier nationwide online technology store serving gamers, professionals, and enterprise clients across Luzon, Visayas, and Mindanao. Built as an online-first platform, our logistics and operations are designed specifically for fast nationwide fulfillment, competitive market pricing, and a stress-free buying experience.',
+    subItems: [
+      {
+        title: 'Online-First Architecture',
+        content: 'Engineered for rapid order processing, live inventory sync, and dependable nationwide dispatch rather than walk-in retail bottlenecks.',
+      },
+      {
+        title: 'Extensive Catalog',
+        content: 'Covering thousands of SKUs across processors, graphics cards, motherboards, memory, power supplies, cooling, cases, and complete turnkey builds.',
+      },
+    ],
+  },
+  {
+    id: 'our-roots',
+    number: '02',
+    icon: Cpu,
+    title: 'From the C:\\> Prompt to Custom Rigs',
+    lead: 'While Netcodex was established in 2020, our founder’s journey began decades before RGB lighting existed. Known in the enthusiast community as nievz, he started as a teenager writing code in BASIC and C, navigating MS-DOS, and compiling custom Linux kernels and drivers when plug-and-play was non-existent. This lifelong passion for computer hardware evolved into a trusted nationwide service.',
+    subItems: [
+      {
+        title: 'Community Reputation Since 2007',
+        content: 'Backed by verified positive feedback on TipidPC since 2007, building a trusted reputation across the Filipino PC building community.',
+      },
+      {
+        title: 'Global Enthusiast Tuning (Overclock.net)',
+        content: 'An active contributor to Overclock.net since 2011, mastering CPU curve optimization, memory sub-timings, and advanced thermal management across CPU and GPU architectures.',
+      },
+    ],
+  },
+  {
+    id: 'hardware-expertise',
+    number: '03',
+    icon: ShieldCheck,
+    title: '25+ Years of Enterprise IT Leadership',
+    lead: 'Behind our custom rigs is enterprise-grade discipline. Having directed mission-critical IT operations and large-scale workstation deployments for major BPO and corporate organizations, Netcodex brings a Chief Technology Officer (CTO) level of insight to every build.',
+    subItems: [
+      {
+        title: 'ITIL® Methodology Standards',
+        content: 'We don’t just assemble parts; we apply ITIL service standards, structured testing workflows, and rigorous cable management to ensure maximum uptime.',
+      },
+      {
+        title: 'Mission-Critical Reliability',
+        content: 'We apply the same 99.999% availability mindset to small businesses and creator workstations that enterprise data centers require.',
+      },
+    ],
+  },
+  {
+    id: 'authentic-products',
+    number: '04',
+    icon: CheckCircle2,
+    title: '100% Authentic Hardware with Official Warranties',
+    lead: 'Netcodex is an authorized reseller and SEC-registered enterprise. Every single component—from entry-level power supplies to halo-tier GPUs—is 100% brand new, authentic, and backed by legitimate manufacturer and distributor warranties.',
+    subItems: [
+      {
+        title: 'Zero Gray-Market Risk',
+        content: 'We source exclusively through authorized Philippine distributors and direct vendor channels with legitimate local warranty support.',
+      },
+      {
+        title: 'Fair Market Pricing',
+        content: 'Continuous supplier monitoring ensures our prices remain competitive with traditional IT hubs like Gilmore without the hassle of travel.',
+      },
+    ],
+  },
+  {
+    id: 'custom-pc-building',
+    number: '05',
+    icon: Wrench,
+    title: 'Intelligent Custom PC Building with Buildbot AI',
+    lead: 'Our Custom PC Builder brings together 25+ years of hands-on assembly knowledge and advanced artificial intelligence. Powered by the Buildbot AI assistant, our platform cross-validates socket layouts, physical clearances, DDR generations, and PSU wattage headroom in real time.',
+    subItems: [
+      {
+        title: 'Zero-Bottleneck Verification',
+        content: 'Dynamic bottleneck analysis evaluates hardware synergy across 1080p, 1440p, and 4K gaming and workstation workloads.',
+      },
+      {
+        title: 'Hand-Built Craftsmanship',
+        content: 'Every custom order is reviewed, assembled, and cable-managed by experienced technicians, followed by thermal stress testing before packaging.',
+      },
+    ],
+  },
+  {
+    id: 'nationwide-logistics',
+    number: '06',
+    icon: Truck,
+    title: 'Nationwide Logistics & Delivery',
+    lead: 'Centrally operated from our online warehouse in Quezon City, Netcodex ships securely across the entire Philippine archipelago. We prioritize fast turnaround from order placement to delivery.',
+    subItems: [
+      {
+        title: 'Nationwide Insured Courier (LBC)',
+        content: 'Secure, tracked, and insured shipping via LBC to any destination in Luzon, Visayas, and Mindanao with anti-static packaging.',
+      },
+      {
+        title: 'Same-Day Metro Manila Delivery',
+        content: 'Rapid same-day dispatch via Grab, Lalamove, and Transportify for customers within Metro Manila and nearby provinces.',
+      },
+    ],
+  },
+  {
+    id: 'after-sales-support',
+    number: '07',
+    icon: Headphones,
+    title: 'Dedicated After-Sales Support & Customer Trust',
+    lead: 'Our relationship does not end when your order is delivered. Netcodex provides comprehensive after-sales technical support, warranty RMA assistance, and fast communication to keep your system performing at its peak.',
+    subItems: [
+      {
+        title: '2-Year Complete System Protection',
+        content: 'Turnkey and custom-built systems assembled through Netcodex include comprehensive parts and labor warranty coverage.',
+      },
+      {
+        title: 'In-App Support Desk',
+        content: 'Track your inquiries and talk directly with technical staff through the Contact page and your Profile Contact Inbox.',
+      },
+    ],
+  },
+];
 
-const DEFAULT_ABOUT_CONTENT: AboutContent = {
-  title: 'Engineering the Future of Custom PCs',
-  subtitle: 'BuildbotAI empowers builders and gamers with instant compatibility validation, real-time bottleneck checks, and intelligent component matching.',
-  sections: [
-    {
-      id: 'mission',
-      title: 'Our Mission & Vision',
-      content: 'Custom PC building has traditionally required hours of cross-referencing socket diagrams, clearance tolerances, PCIe bandwidth splits, and power requirements. BuildbotAI was founded to bridge hardware knowledge with machine intelligence—giving every enthusiast the confidence of an expert technician.',
-      subItems: [
-        {
-          title: 'Verified Hardware Baselines',
-          content: 'Every component in our system index is verified for mechanical clearance, socket compatibility, thermal requirements, and power supply headroom.',
-        },
-        {
-          title: 'Algorithmic Bottleneck Detection',
-          content: 'Instead of generic rules of thumb, our system evaluates the performance balance between CPU and GPU workloads across 1080p, 1440p, and 4K resolution targets.',
-        },
-      ],
-    },
-    {
-      id: 'technology',
-      title: 'The Technology Platform',
-      content: 'Built on Next.js, Firebase Cloud Services, and Genkit AI orchestration, BuildbotAI merges live inventory tracking with multi-modal reasoning. Whether you are assembling a budget esports rig or a workstation titan, the system validates parts dynamically as you make changes.',
-      subItems: [
-        {
-          title: 'Live Stock Integration',
-          content: 'No phantom parts or outdated pricing. Our database syncs with warehouse inventory to ensure reserved configurations can be assembled immediately.',
-        },
-        {
-          title: '2-Year Hardware Protection',
-          content: 'Every turnkey system and custom assembly is backed by our full 2-year parts and labor warranty, stress-tested before handover.',
-        },
-      ],
-    },
-    {
-      id: 'community',
-      title: 'Capstone Heritage',
-      content: 'Developed as a Senior Capstone Project by STI College BSIT students in Quezon City, BuildbotAI reflects real-world engineering rigor, deep research into hardware synergy, and a passion for modern web technologies.',
-    },
-  ],
-};
+const KEY_FACTS = [
+  { label: 'Founded', value: '2020' },
+  { label: 'IT Experience', value: '25+ Years' },
+  { label: 'Headquarters', value: 'Quezon City, PH' },
+  { label: 'Coverage', value: 'Nationwide (Luzon, Visayas, Mindanao)' },
+  { label: 'Warranties', value: 'Official Manufacturer Warranties' },
+  { label: 'AI Partner', value: 'Powered by Buildbot AI' },
+];
 
 export default function AboutPage() {
-  const [content, setContent] = useState<AboutContent>(DEFAULT_ABOUT_CONTENT);
-  const [loading, setLoading] = useState(true);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [activeSectionId, setActiveSectionId] = useState<string>('mission');
-
+  const [activeSectionId, setActiveSectionId] = useState<string>('who-we-are');
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const firestore = useFirestore();
-
-  useEffect(() => {
-    async function fetchAboutContent() {
-      if (!firestore) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const docRef = doc(firestore, 'siteContent', 'about');
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data() as AboutContent;
-          if (data.sections && data.sections.length > 0) {
-            setContent(data);
-            setActiveSectionId(data.sections[0].id);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching about content:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchAboutContent();
-  }, [firestore]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader color="cyan" size="lg" />
-      </div>
-    );
-  }
-
-  const sectionsToRender = content.sections && content.sections.length > 0
-    ? content.sections
-    : DEFAULT_ABOUT_CONTENT.sections;
 
   return (
     <div className="min-h-screen bg-background font-body text-foreground pt-24 pb-20 w-full relative">
-      {/* Lightbox Modal using Mantine Modal */}
-      <Modal
-        opened={!!selectedImage}
-        onClose={() => setSelectedImage(null)}
-        size="xl"
-        radius="lg"
-        centered
-        withCloseButton
-        overlayProps={{
-          backgroundOpacity: 0.75,
-          blur: 6,
-        }}
-        classNames={{
-          content: isDark ? 'bg-[#141a23]/95 backdrop-blur-md border border-white/10 shadow-xl rounded-xl' : 'bg-white/95 backdrop-blur-md border border-slate-200/80 shadow-xl rounded-xl',
-          body: '!p-3',
-        }}
-      >
-        {selectedImage && (
-          <div className="p-2 flex flex-col items-center">
-            <img
-              src={selectedImage}
-              alt="Expanded preview"
-              className="w-full h-auto max-h-[75vh] object-contain rounded-xl"
-            />
-          </div>
-        )}
-      </Modal>
-
       <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10">
-        {/* Editorial Hero Header */}
+        {/* Hero Header */}
         <div className="mb-10 md:mb-14 text-center md:text-left">
           <Badge
             variant="light"
@@ -175,16 +211,39 @@ export default function AboutPage() {
             leftSection={<Sparkles size={14} />}
             className="font-bold tracking-widest uppercase mb-4 py-2 px-3.5"
           >
-            About BuildbotAI
+            About Netcodex
           </Badge>
 
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-black font-headline uppercase tracking-tight text-slate-900 dark:text-slate-100 mb-4 leading-tight">
-            {content.title}
+            Nationwide Computer &amp; Tech Store <span className="text-cyan-600 dark:text-cyan-400">In The Philippines</span>
           </h1>
 
           <p className="text-base sm:text-xl text-slate-600 dark:text-slate-400 font-medium leading-relaxed max-w-4xl">
-            {content.subtitle}
+            Built on over 25 years of IT infrastructure expertise, Netcodex delivers authentic PC components, custom high-performance rigs, and transparent pricing—powered by Buildbot AI intelligence.
           </p>
+
+          {/* Key Facts Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mt-8">
+            {KEY_FACTS.map((fact) => (
+              <Paper
+                key={fact.label}
+                withBorder
+                radius="lg"
+                p="xs"
+                className={cn(
+                  'text-left transition-colors',
+                  isDark ? 'bg-[#111722]/80 border-white/10' : 'bg-white/90 border-slate-200 shadow-xs'
+                )}
+              >
+                <Text size="xs" fw={700} c="dimmed" className="uppercase tracking-wider">
+                  {fact.label}
+                </Text>
+                <Text size="sm" fw={800} className="text-slate-900 dark:text-slate-100 truncate font-headline mt-0.5">
+                  {fact.value}
+                </Text>
+              </Paper>
+            ))}
+          </div>
         </div>
 
         {/* Content Layout: Sticky Navigation + Story Cards */}
@@ -212,7 +271,7 @@ export default function AboutPage() {
               </Group>
 
               <nav className="flex flex-col gap-1.5 overflow-y-auto pr-1 flex-1 [scrollbar-color:rgb(6_182_212)_transparent] [scrollbar-width:thin]">
-                {sectionsToRender.map((section) => (
+                {ABOUT_SECTIONS.map((section) => (
                   <a
                     key={section.id}
                     href={`#${section.id}`}
@@ -252,80 +311,89 @@ export default function AboutPage() {
 
           {/* Right Column: Editorial Sections */}
           <div className="col-span-1 md:col-span-8 lg:col-span-9 space-y-6">
-            {sectionsToRender.map((section, sIndex) => (
-              <section key={section.id} id={section.id} className="scroll-mt-32">
-                <Paper
-                  withBorder
-                  radius="2xl"
-                  p={12}
-                  className={cn(
-                    'transition-all duration-300 shadow-xl',
-                    isDark
-                      ? 'bg-[#111722]/85 border-white/10 shadow-black/40'
-                      : 'bg-white/95 border-slate-200 shadow-slate-200/60'
-                  )}
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="text-xs font-black uppercase tracking-widest text-cyan-600 dark:text-cyan-400">
-                      0{sIndex + 1}
-                    </span>
-                    <div className="h-px w-8 bg-cyan-500/40" />
-                    <Title order={2} className="text-2xl sm:text-3xl font-black font-headline uppercase tracking-tight text-slate-900 dark:text-slate-100">
-                      {section.title}
-                    </Title>
-                  </div>
-
-                  <div className="prose prose-slate dark:prose-invert max-w-none text-slate-600 dark:text-slate-300 text-base sm:text-lg leading-relaxed mb-4 font-medium">
-                    <ReactMarkdown>{section.content}</ReactMarkdown>
-                  </div>
-
-                  {section.imageUrl && (
-                    <div
-                      onClick={() => setSelectedImage(section.imageUrl!)}
-                      className="cursor-zoom-in relative rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 mb-4 group"
-                    >
-                      <img
-                        src={section.imageUrl}
-                        alt={section.title}
-                        className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Badge variant="filled" color="cyan" size="lg" radius="xl" leftSection={<Maximize2 size={14} />}>
-                          Click to Expand
-                        </Badge>
-                      </div>
+            {ABOUT_SECTIONS.map((section) => {
+              const SectionIcon = section.icon;
+              return (
+                <section key={section.id} id={section.id} className="scroll-mt-32">
+                  <Paper
+                    withBorder
+                    radius="2xl"
+                    p={12}
+                    className={cn(
+                      'transition-all duration-300 shadow-xl',
+                      isDark
+                        ? 'bg-[#111722]/85 border-white/10 shadow-black/40'
+                        : 'bg-white/95 border-slate-200 shadow-slate-200/60'
+                    )}
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-xs font-black uppercase tracking-widest text-cyan-600 dark:text-cyan-400">
+                        {section.number}
+                      </span>
+                      <div className="h-px w-8 bg-cyan-500/40" />
+                      <ThemeIcon size={24} radius="sm" variant="light" color="cyan">
+                        <SectionIcon size={14} />
+                      </ThemeIcon>
+                      <Title order={2} className="text-xl sm:text-2xl font-black font-headline uppercase tracking-tight text-slate-900 dark:text-slate-100">
+                        {section.title}
+                      </Title>
                     </div>
-                  )}
 
-                  {/* Sub-Items (Feature Grid) */}
-                  {section.subItems && section.subItems.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-200/60 dark:border-white/10">
-                      {section.subItems.map((sub, subIdx) => (
-                        <Paper
-                          key={subIdx}
-                          withBorder
-                          radius="xl"
-                          p={12}
-                          className={cn(
-                            'transition-all',
-                            isDark
-                              ? 'bg-slate-900/50 border-white/5 hover:border-cyan-500/30'
-                              : 'bg-slate-50/80 border-slate-200 hover:border-cyan-500/30'
-                          )}
-                        >
-                          <Text size="md" fw={700} className="text-slate-900 dark:text-slate-100 mb-2 font-headline">
-                            {sub.title}
-                          </Text>
-                          <div className="prose prose-slate dark:prose-invert text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-                            <ReactMarkdown>{sub.content}</ReactMarkdown>
+                    {/* Storefront Facade & Core Pillars Showcase for Who We Are */}
+                    {section.id === 'who-we-are' && (
+                      <div className="mb-6 rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-[#0c121d] shadow-sm">
+                        <div className="relative w-full aspect-[1535/513] overflow-hidden bg-slate-950">
+                          <Image
+                            src="/netcodex-storefront.png"
+                            alt="Netcodex Computer Center Storefront - 35G Liberty Ave, Cubao, Quezon City"
+                            fill
+                            sizes="(max-width: 1024px) 100vw, 900px"
+                            className="object-cover"
+                          />
+                        </div>
+
+                        {/* 4 Pillars Under Photo */}
+                        <div className="p-4 sm:p-5 lg:p-6 border-t border-slate-200/80 dark:border-white/10">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                            {STOREFRONT_PILLARS.map((pillar, idx) => (
+                              <div key={idx} className="flex flex-col">
+                                <Text fw={800} size="sm" className="text-slate-900 dark:text-slate-100 font-headline mb-1.5">
+                                  {pillar.title}
+                                </Text>
+                                <Text size="xs" className="text-slate-600 dark:text-slate-400 leading-relaxed font-normal">
+                                  {pillar.description}
+                                </Text>
+                              </div>
+                            ))}
                           </div>
-                        </Paper>
-                      ))}
-                    </div>
-                  )}
-                </Paper>
-              </section>
-            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed mb-4 font-medium">
+                      {section.lead}
+                    </p>
+
+                    {/* Secondary Texts as Clean Bullet Points */}
+                    {section.subItems && section.subItems.length > 0 && (
+                      <ul className="mt-4 pt-3.5 border-t border-slate-200/60 dark:border-white/10 space-y-2.5 list-none p-0 m-0">
+                        {section.subItems.map((sub, subIdx) => (
+                          <li key={subIdx} className="flex items-start gap-2.5 text-xs sm:text-sm leading-relaxed">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-500 dark:bg-cyan-400 mt-2 shrink-0 shadow-[0_0_6px_rgba(6,182,212,0.7)]" />
+                            <div className="text-slate-600 dark:text-slate-300">
+                              <strong className="font-bold text-slate-900 dark:text-slate-100 mr-1.5 font-headline">
+                                {sub.title}:
+                              </strong>
+                              <span>{sub.content}</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </Paper>
+                </section>
+              );
+            })}
           </div>
         </div>
       </div>

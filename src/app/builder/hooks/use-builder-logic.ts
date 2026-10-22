@@ -15,6 +15,10 @@ const componentIcons: Record<string, any> = {
   Monitor: Monitor, Keyboard: Keyboard, Mouse: Mouse, Headset: Headphones
 };
 
+const isIncludedStockCooler = (component: ComponentData | null | undefined) =>
+    component?.id === 'included-stock-cooler'
+    || (component?.price === 0 && component.imageHint === 'included cooler');
+
 /**
  * Hook to manage the PC build logic, including part toggling, removal, and compatibility.
  */
@@ -87,7 +91,7 @@ export function useBuilderLogic(allParts: Part[]) {
             }
 
             const currentCooler = next['Cooler'] as ComponentData | null;
-            if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
+            if (category === 'CPU' && isIncludedStockCooler(currentCooler)) {
                 next['Cooler'] = null;
                 toastMsg = { title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' };
             }
@@ -159,7 +163,7 @@ export function useBuilderLogic(allParts: Part[]) {
             }
 
             const currentCooler = nextBuild['Cooler'] as ComponentData | null;
-            if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
+            if (category === 'CPU' && isIncludedStockCooler(currentCooler)) {
                 nextBuild['Cooler'] = null;
                 toastsToShow.push({ title: 'Cooler Removed', description: 'Stock cooler removed.' });
             }
@@ -217,7 +221,9 @@ export function useBuilderLogic(allParts: Part[]) {
                     const isAmd = part.brand.toLowerCase().includes('amd');
                     const coolerModel = isIntel ? "Intel Laminar RM1 CPU Cooler" : isAmd ? "AMD Wraith MAX CPU Cooler with RGB LED" : "Stock Cooler";
                     nextBuild['Cooler'] = {
-                        id: isAmd ? 'uGiAh2JerLwnDe5VW431' : 'included-stock-cooler',
+                        // Bundled coolers use a reserved identity so CPU removal and
+                        // boxed-to-tray CPU replacement can clean them up reliably.
+                        id: 'included-stock-cooler',
                         model: coolerModel,
                         price: 0,
                         description: `Bundled cooler.`,
@@ -227,7 +233,7 @@ export function useBuilderLogic(allParts: Part[]) {
                         wattage: 0,
                         specifications: { "Type": "Air (Stock)" }
                     };
-                } else if (part.packageType === 'TRAY' && (nextBuild['Cooler'] as ComponentData)?.id === 'included-stock-cooler') {
+                } else if (part.packageType === 'TRAY' && isIncludedStockCooler(nextBuild['Cooler'] as ComponentData | null)) {
                     nextBuild['Cooler'] = null;
                 }
             }

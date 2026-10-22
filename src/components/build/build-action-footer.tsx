@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, Button, Group, Modal, Paper, ScrollArea, Text, TextInput, ThemeIcon, Title } from "@mantine/core";
+import { ActionIcon, Badge, Button, Group, Modal, Paper, ScrollArea, Text, TextInput, ThemeIcon, Title } from "@mantine/core";
 import { ShieldCheck, Sparkles } from "lucide-react";
 import type { ComponentData } from "@/lib/types";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -75,9 +75,24 @@ export function BuildActionFooter({
           </Button>
         </>
       ) : (
-        <>
+        <Group gap="xs" wrap="nowrap" align="stretch">
+          <ActionIcon
+            size={42}
+            radius="md"
+            variant="light"
+            color="cyan"
+            aria-label={analysis ? "Refresh build analysis" : "Analyze build"}
+            aria-disabled={!complete}
+            title={!complete ? "Select every highlighted core part before analyzing." : analysis ? "Refresh build analysis" : "Analyze build"}
+            onClick={() => complete ? onAnalyze() : onIncompleteAction()}
+            className={cn(
+              "h-[42px] w-[42px] shrink-0 border border-cyan-500/30 dark:border-cyan-400/20 transition-all duration-200",
+              "hover:border-cyan-500/50 hover:scale-[1.03] active:scale-[0.97] shadow-xs"
+            )}
+          >
+            <Sparkles size={15} />
+          </ActionIcon>
           <Button
-            fullWidth
             size="md"
             radius="md"
             color="teal"
@@ -86,30 +101,13 @@ export function BuildActionFooter({
             title={!complete ? "Select every highlighted core part before reserving." : undefined}
             onClick={() => complete ? setReserveOpen(true) : onIncompleteAction()}
             className={cn(
-              "font-headline font-bold text-xs uppercase tracking-wider transition-all duration-200",
+              "h-[42px] flex-1 font-headline font-bold text-xs uppercase tracking-wider transition-all duration-200",
               "shadow-md shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.99]"
             )}
           >
             Reserve Build
           </Button>
-          <Button
-            fullWidth
-            size="md"
-            radius="md"
-            variant="light"
-            color="cyan"
-            leftSection={<Sparkles size={17} />}
-            aria-disabled={!complete}
-            title={!complete ? "Select every highlighted core part before analyzing." : undefined}
-            onClick={() => complete ? onAnalyze() : onIncompleteAction()}
-            className={cn(
-              "font-headline font-bold text-xs uppercase tracking-wider border border-cyan-500/30 dark:border-cyan-400/20 transition-all duration-200",
-              "hover:border-cyan-500/50 hover:scale-[1.01] active:scale-[0.99] shadow-xs"
-            )}
-          >
-            {analysis ? "Refresh Analysis" : "Analyze Build"}
-          </Button>
-        </>
+        </Group>
       )}
 
       <Modal
@@ -268,5 +266,3 @@ export function BuildActionFooter({
     </div>
   );
 }
-
-

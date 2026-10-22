@@ -42,7 +42,7 @@ export function MaintenanceScreen() {
             transition={{ delay: 0.2 }}
             className="text-5xl md:text-6xl font-black font-headline tracking-tighter text-white"
           >
-            SYSTEM <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">EVOLUTION</span>
+            SYSTEM <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">MAINTENANCE</span>
           </motion.h1>
           
           <motion.p 
@@ -51,8 +51,8 @@ export function MaintenanceScreen() {
             transition={{ delay: 0.3 }}
             className="text-xl text-slate-400 leading-relaxed font-medium"
           >
-            BuildbotAI is currently undergoing an architected upgrade. 
-            Our synthesis cores are being recalibrated for enhanced performance.
+            Netcodex is currently undergoing scheduled platform maintenance. 
+            We are updating our systems to provide faster performance and enhanced inventory reliability.
           </motion.p>
         </div>
 

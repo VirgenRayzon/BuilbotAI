@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -13,97 +13,58 @@ import {
   ThemeIcon,
   Button as MantineButton,
   Group,
-  Stack,
 } from "@mantine/core";
 import {
   Search,
-  Cpu,
-  ShieldCheck,
-  Truck,
   HelpCircle,
   ArrowRight,
   MessageSquare,
   Sparkles,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/theme-provider";
-
-const faqData = [
-  {
-    category: "AI Compatibility & Building",
-    icon: Cpu,
-    questions: [
-      {
-        question: "How does the AI PC Builder check compatibility?",
-        answer: "BuildbotAI cross-references thousands of hardware combinations, manufacturer specifications, socket layouts, and thermal requirements. It analyzes your target performance and budget in real time to recommend balanced part configurations with zero clearance or power conflicts."
-      },
-      {
-        question: "What is Bottleneck Analysis?",
-        answer: "Bottleneck Analysis identifies if any single component—typically the CPU or GPU—will significantly constrain overall system throughput at your chosen resolution (1080p, 1440p, or 4K). We provide a percentage-based score and clear recommendations to ensure optimal component balance."
-      },
-      {
-        question: "Can I customize the recommended parts list?",
-        answer: "Yes. The AI provides an optimized starting baseline. You can swap out any component—such as choosing a higher-capacity SSD or an alternative case—and BuildbotAI will instantly re-validate the entire build for compatibility and power headroom."
-      }
-    ]
-  },
-  {
-    category: "Orders, Shipping & Reservations",
-    icon: Truck,
-    questions: [
-      {
-        question: "How long does shipping take for systems?",
-        answer: "Standard pre-built systems typically ship within 3–5 business days. Custom-built rigs undergo a comprehensive 24-hour stress test and quality assurance check, generally shipping within 5–7 business days."
-      },
-      {
-        question: "Do you ship internationally?",
-        answer: "Currently, BuildbotAI services customers throughout the Philippines. All orders are carefully packaged with anti-static protection and insured shipping."
-      },
-      {
-        question: "How can I track my reservation status?",
-        answer: "Once your build leaves our assembly facility, you will receive an email containing courier tracking details. You can also view live build milestones directly in your User Profile under Reservations."
-      },
-      {
-        question: "How do I cancel or modify an active reservation?",
-        answer: "Because components are immediately allocated and reserved from our live warehouse inventory upon booking, direct self-cancellation is restricted. To modify or cancel an order, please reach out via our Contact page with your Order ID, and a representative will assist you."
-      }
-    ]
-  },
-  {
-    category: "Warranty & Support",
-    icon: ShieldCheck,
-    questions: [
-      {
-        question: "What kind of warranty is included?",
-        answer: "All complete systems assembled through BuildbotAI include a comprehensive 2-year parts and labor warranty. Individual retail components also carry their respective official manufacturer warranties."
-      },
-      {
-        question: "What is your return policy?",
-        answer: "We offer a 30-day satisfaction window. If you experience hardware defects or issues upon receipt, our technical support team will troubleshoot, replace components, or facilitate returns according to our standard warranty guidelines."
-      },
-      {
-        question: "How do I get technical support for my build?",
-        answer: "You can reach our team through the Contact page. Sign in before submitting to view and continue the conversation from the Contact Inbox in your Profile; guest inquiries are submit-only."
-      }
-    ]
-  }
-];
+import { FAQ_CATEGORIES } from "./faq-data";
 
 export default function FAQPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const filteredFaq = faqData
-    .map(category => ({
+  // Handle URL hash on initial load (e.g. #shipping-amp-delivery)
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash) {
+      const hash = window.location.hash.replace("#", "");
+      if (hash) {
+        const found = FAQ_CATEGORIES.find((c) => c.id === hash);
+        if (found) {
+          setSelectedCategory(found.id);
+          const el = document.getElementById(hash);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth" });
+          }
+        }
+      }
+    }
+  }, []);
+
+  const filteredFaq = FAQ_CATEGORIES
+    .filter((cat) => selectedCategory === "all" || cat.id === selectedCategory)
+    .map((category) => ({
       ...category,
       questions: category.questions.filter(
-        q =>
+        (q) =>
           q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
           q.answer.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      ),
     }))
-    .filter(category => category.questions.length > 0);
+    .filter((category) => category.questions.length > 0);
+
+  const totalQuestions = FAQ_CATEGORIES.reduce(
+    (acc, cat) => acc + cat.questions.length,
+    0
+  );
 
   return (
     <main className="min-h-screen bg-background pt-32 pb-24 px-4 overflow-hidden relative">
@@ -113,7 +74,7 @@ export default function FAQPage() {
 
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 relative z-10">
         {/* Header */}
-        <div className="text-center mb-12 sm:mb-16">
+        <div className="text-center mb-10 sm:mb-14">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -127,7 +88,7 @@ export default function FAQPage() {
               leftSection={<HelpCircle size={14} />}
               className="font-bold tracking-widest uppercase py-2 px-3.5"
             >
-              Help Center & Knowledge Base
+              Netcodex Knowledge Base &amp; FAQ
             </Badge>
           </motion.div>
 
@@ -144,10 +105,9 @@ export default function FAQPage() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-slate-600 dark:text-slate-400 text-base sm:text-xl max-w-2xl mx-auto font-medium leading-relaxed"
+            className="text-slate-600 dark:text-slate-400 text-base sm:text-xl max-w-3xl mx-auto font-medium leading-relaxed"
           >
-            Find quick answers regarding our AI parts matching, assembly benchmarks,
-            shipping policies, and comprehensive warranty coverage.
+            Find comprehensive answers about nationwide delivery, store pickup, genuine warranties, custom PC builds, and dedicated after-sales support across all {totalQuestions} official topics.
           </motion.p>
         </div>
 
@@ -156,10 +116,10 @@ export default function FAQPage() {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.25 }}
-          className="mb-14 max-w-3xl mx-auto"
+          className="mb-8 max-w-3xl mx-auto"
         >
           <TextInput
-            placeholder="Search questions, warranties, or build policies..."
+            placeholder="Search shipping, warranties, custom PC builds, or store policies..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             size="lg"
@@ -171,55 +131,124 @@ export default function FAQPage() {
                 isDark
                   ? "bg-[#111722]/80 border-white/10 text-slate-100 placeholder:text-slate-500 focus:border-cyan-400"
                   : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-cyan-600"
-              )
+              ),
             }}
           />
         </motion.div>
 
+        {/* Category Navigation Quick Filter Chips */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-12 max-w-4xl mx-auto">
+          <button
+            type="button"
+            onClick={() => setSelectedCategory("all")}
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold font-headline transition-all cursor-pointer border",
+              selectedCategory === "all"
+                ? "bg-cyan-600 text-white border-cyan-600 shadow-sm"
+                : "bg-white/80 dark:bg-[#141a23] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/10 hover:border-cyan-500/40"
+            )}
+          >
+            <Layers size={14} />
+            <span>All Topics ({totalQuestions})</span>
+          </button>
+          {FAQ_CATEGORIES.map((cat) => {
+            const CatIcon = cat.icon;
+            const isSelected = selectedCategory === cat.id;
+            return (
+              <a
+                key={cat.id}
+                href={`#${cat.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setSelectedCategory(cat.id);
+                  if (typeof window !== "undefined") {
+                    window.history.replaceState(null, "", `#${cat.id}`);
+                    const el = document.getElementById(cat.id);
+                    if (el) {
+                      el.scrollIntoView({ behavior: "smooth" });
+                    }
+                  }
+                }}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold font-headline transition-all cursor-pointer border",
+                  isSelected
+                    ? "bg-cyan-600 text-white border-cyan-600 shadow-sm"
+                    : "bg-white/80 dark:bg-[#141a23] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/10 hover:border-cyan-500/40"
+                )}
+              >
+                <CatIcon
+                  size={14}
+                  className={isSelected ? "text-white" : "text-cyan-600 dark:text-cyan-400"}
+                />
+                <span>{cat.category}</span>
+                <span className={cn("text-[10px] ml-0.5 opacity-80", isSelected ? "text-white" : "text-slate-400")}>
+                  ({cat.questions.length})
+                </span>
+              </a>
+            );
+          })}
+        </div>
+
         {/* FAQ Categories & Separated Mantine Accordions */}
         <div className="space-y-12">
           {filteredFaq.length > 0 ? (
-            filteredFaq.map((cat, catIndex) => (
-              <motion.div
-                key={cat.category}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * catIndex }}
-              >
-                <Group gap="sm" className="mb-3">
-                  <ThemeIcon size={36} radius="md" variant="light" color="cyan">
-                    <cat.icon size={18} />
-                  </ThemeIcon>
-                  <Title order={3} className="text-xl font-bold font-headline uppercase tracking-wider text-slate-900 dark:text-slate-100">
-                    {cat.category}
-                  </Title>
-                </Group>
-
-                <Accordion
-                  variant="separated"
-                  radius="lg"
-                  classNames={{
-                    item: cn(
-                      "transition-all duration-200 border",
-                      isDark
-                        ? "bg-[#111722]/85 border-white/10 hover:border-cyan-500/30 shadow-md shadow-black/20"
-                        : "bg-white border-slate-200 hover:border-cyan-500/30 shadow-sm"
-                    ),
-                    control: "px-3 py-3 hover:bg-slate-50/60 dark:hover:bg-white/5",
-                    label: "font-bold text-slate-900 dark:text-slate-100 text-base sm:text-lg",
-                    panel: "px-3 pb-3 pt-1 text-slate-600 dark:text-slate-300 font-medium text-sm sm:text-base leading-relaxed border-t border-slate-100 dark:border-white/5",
-                    chevron: "text-cyan-600 dark:text-cyan-400",
-                  }}
+            filteredFaq.map((cat, catIndex) => {
+              const CatIcon = cat.icon;
+              return (
+                <section
+                  key={cat.id}
+                  id={cat.id}
+                  className="scroll-mt-28"
                 >
-                  {cat.questions.map((q) => (
-                    <Accordion.Item key={q.question} value={q.question}>
-                      <Accordion.Control>{q.question}</Accordion.Control>
-                      <Accordion.Panel>{q.answer}</Accordion.Panel>
-                    </Accordion.Item>
-                  ))}
-                </Accordion>
-              </motion.div>
-            ))
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 * catIndex }}
+                  >
+                    <div className="flex items-center justify-between mb-3.5 pb-2 border-b border-slate-200/60 dark:border-white/10">
+                      <Group gap="sm">
+                        <ThemeIcon size={34} radius="md" variant="light" color="cyan">
+                          <CatIcon size={18} />
+                        </ThemeIcon>
+                        <Title
+                          order={3}
+                          className="text-lg sm:text-xl font-bold font-headline uppercase tracking-wider text-slate-900 dark:text-slate-100"
+                        >
+                          {cat.category}
+                        </Title>
+                      </Group>
+                      <Badge size="sm" variant="light" color="cyan" className="font-bold">
+                        {cat.questions.length} {cat.questions.length === 1 ? "question" : "questions"}
+                      </Badge>
+                    </div>
+
+                    <Accordion
+                      variant="separated"
+                      radius="lg"
+                      classNames={{
+                        item: cn(
+                          "transition-all duration-200 border",
+                          isDark
+                            ? "bg-[#111722]/85 border-white/10 hover:border-cyan-500/30 shadow-md shadow-black/20"
+                            : "bg-white border-slate-200 hover:border-cyan-500/30 shadow-sm"
+                        ),
+                        control: "px-3.5 py-3 hover:bg-slate-50/60 dark:hover:bg-white/5",
+                        label: "font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base font-headline",
+                        panel: "px-3.5 pb-3.5 pt-1 text-slate-600 dark:text-slate-300 font-medium text-xs sm:text-sm leading-relaxed border-t border-slate-100 dark:border-white/5",
+                        chevron: "text-cyan-600 dark:text-cyan-400",
+                      }}
+                    >
+                      {cat.questions.map((q) => (
+                        <Accordion.Item key={q.question} value={q.question}>
+                          <Accordion.Control>{q.question}</Accordion.Control>
+                          <Accordion.Panel>{q.answer}</Accordion.Panel>
+                        </Accordion.Item>
+                      ))}
+                    </Accordion>
+                  </motion.div>
+                </section>
+              );
+            })
           ) : (
             <Paper
               withBorder
@@ -235,7 +264,7 @@ export default function FAQPage() {
                 No matching questions found
               </Text>
               <Text size="sm" c="dimmed">
-                Try searching with different terms or reach out directly to our support specialists.
+                Try searching with different terms or select &quot;All Topics&quot; to browse our full catalog of answers.
               </Text>
             </Paper>
           )}
@@ -245,8 +274,8 @@ export default function FAQPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="mt-10"
+          transition={{ delay: 0.3 }}
+          className="mt-14"
         >
           <Paper
             withBorder
@@ -259,7 +288,7 @@ export default function FAQPage() {
                 : "bg-white/95 border-slate-200"
             )}
           >
-            <div className="max-w-xl mx-auto space-y-3">
+            <div className="max-w-xl mx-auto space-y-3 py-2">
               <ThemeIcon size={52} radius="xl" variant="light" color="cyan" className="mx-auto">
                 <MessageSquare size={24} />
               </ThemeIcon>
@@ -268,11 +297,11 @@ export default function FAQPage() {
                 Still have questions?
               </Title>
 
-              <Text size="base" className="text-slate-600 dark:text-slate-400 font-medium">
-                Can&apos;t find the answer you&apos;re looking for? Our hardware support team is ready to help you directly.
+              <Text size="sm" className="text-slate-600 dark:text-slate-400 font-medium">
+                Can&apos;t find the exact answer you&apos;re looking for? Our enthusiast hardware support team is available Monday to Sunday from 10:00 AM to 7:00 PM.
               </Text>
 
-              <div className="pt-2">
+              <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
                 <MantineButton
                   component={Link}
                   href="/contact"
@@ -282,7 +311,18 @@ export default function FAQPage() {
                   rightSection={<ArrowRight size={18} />}
                   className="font-headline font-bold uppercase tracking-wider text-white shadow-md shadow-cyan-500/20"
                 >
-                  Contact Support Team
+                  Contact Support Desk
+                </MantineButton>
+                <MantineButton
+                  component={Link}
+                  href="/builder"
+                  size="md"
+                  radius="md"
+                  variant="default"
+                  rightSection={<Sparkles size={16} className="text-cyan-500" />}
+                  className="font-headline font-bold uppercase tracking-wider"
+                >
+                  Launch PC Builder
                 </MantineButton>
               </div>
             </div>

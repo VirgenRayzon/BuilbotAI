@@ -67,7 +67,7 @@ export function TermsOfAgreementModal({
               Terms and Conditions
             </Title>
             <Text size="xs" className="text-slate-500 dark:text-slate-400">
-              Last updated: October 2026 • Please read carefully before using Buildbot AI
+              Last updated: October 2026 • Please read carefully before using Netcodex
             </Text>
           </div>
         </Group>
@@ -90,7 +90,7 @@ export function TermsOfAgreementModal({
           <Group gap="xs" wrap="nowrap" align="flex-start">
             <Info size={18} className="text-cyan-600 dark:text-cyan-400 shrink-0 mt-0.5" />
             <Text size="xs" className="leading-relaxed">
-              Welcome to <strong>Buildbot AI</strong>. Please review our Terms and Conditions, including our AI-assisted recommendations disclaimer, hardware pricing and reservation policies, and assembly safety guidelines.
+              Welcome to <strong>Netcodex</strong>. Please review our Terms and Conditions, including our Buildbot AI-assisted recommendations disclaimer, hardware pricing and reservation policies, and assembly safety guidelines.
             </Text>
           </Group>
         </Paper>
@@ -110,7 +110,7 @@ export function TermsOfAgreementModal({
                 </Text>
               </Group>
               <Text>
-                By creating an account, browsing component inventories, or using any feature on Buildbot AI (&ldquo;the Platform&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;), you confirm that you agree to be bound by these Terms and Conditions. If you disagree with any part of these terms, please do not register or use the service.
+                By creating an account, browsing component inventories, or using any feature on Netcodex (&ldquo;the Platform&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;), you confirm that you agree to be bound by these Terms and Conditions. If you disagree with any part of these terms, please do not register or use the service.
               </Text>
             </div>
 
@@ -127,7 +127,7 @@ export function TermsOfAgreementModal({
                 </Text>
               </Group>
               <Text>
-                Buildbot AI provides automated hardware recommendations, bottleneck calculations, wattage estimates, and compatibility validation powered by AI models and component databases.
+                Netcodex provides automated hardware recommendations, bottleneck calculations, wattage estimates, and compatibility validation powered by Buildbot AI models and component databases.
               </Text>
               <ul className="list-disc pl-5 space-y-1 text-slate-500 dark:text-slate-400">
                 <li>
@@ -198,7 +198,7 @@ export function TermsOfAgreementModal({
               </Text>
               <ul className="list-disc pl-5 space-y-1 text-slate-500 dark:text-slate-400">
                 <li>
-                  Buildbot AI and its team members are not liable for any physical injury, electrostatic discharge (ESD) damage, bent CPU or socket pins, electrical shorts, thermal paste errors, or voided manufacturer warranties that occur during handling or assembly.
+                  Netcodex and its team members are not liable for any physical injury, electrostatic discharge (ESD) damage, bent CPU or socket pins, electrical shorts, thermal paste errors, or voided manufacturer warranties that occur during handling or assembly.
                 </li>
                 <li>
                   Always adhere to manufacturer manuals, safety guidelines, and anti-static precautions when assembling custom hardware.
@@ -236,7 +236,7 @@ export function TermsOfAgreementModal({
                 </Text>
               </Group>
               <Text>
-                We may revise these Terms and Conditions periodically to reflect updates to our services or changes in applicable laws. Continued use of Buildbot AI after modifications are published signifies your agreement to the updated terms.
+                We may revise these Terms and Conditions periodically to reflect updates to our services or changes in applicable laws. Continued use of Netcodex after modifications are published signifies your agreement to the updated terms.
               </Text>
             </div>
 
@@ -254,7 +254,7 @@ export function TermsOfAgreementModal({
             size="sm"
             label={
               <Text size="xs" fw={600} className="text-slate-800 dark:text-slate-200 cursor-pointer">
-                I have read, understood, and agree to the Buildbot AI Terms and Conditions.
+                I have read, understood, and agree to the Netcodex Terms and Conditions.
               </Text>
             }
           />

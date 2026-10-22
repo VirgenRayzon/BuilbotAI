@@ -2,39 +2,32 @@ const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
 
-function createSvg(size) {
-  return `<svg width="${size}" height="${size}" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <!-- Dark Background Circle -->
-    <circle cx="32" cy="32" r="29" fill="#071322" stroke="#22d3ee" stroke-width="2.5" />
-    
-    <!-- Centered Lucide Bot Icon -->
-    <g transform="translate(16, 16) scale(1.3333)" fill="none" stroke="#22d3ee" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 8V4H8" />
-      <rect width="16" height="12" x="4" y="8" rx="2" />
-      <path d="M2 14h2" />
-      <path d="M20 14h2" />
-      <path d="M15 13v2" />
-      <path d="M9 13v2" />
-    </g>
-  </svg>`;
-}
-
 async function generateIcons() {
   const rootDir = process.cwd();
-  const svgContent = createSvg(64);
+  const emblemPath = path.join(rootDir, 'public/netcodex-emblem.png');
 
-  // Write icon.svg
+  if (!fs.existsSync(emblemPath)) {
+    throw new Error(`Emblem not found at ${emblemPath}`);
+  }
+
+  // Generate crisp PNGs at standard sizes
+  const png16 = await sharp(emblemPath).resize(16, 16).png().toBuffer();
+  const png32 = await sharp(emblemPath).resize(32, 32).png().toBuffer();
+  const png48 = await sharp(emblemPath).resize(48, 48).png().toBuffer();
+  const png64 = await sharp(emblemPath).resize(64, 64).png().toBuffer();
+  const png180 = await sharp(emblemPath).resize(180, 180).png().toBuffer();
+
+  // Write apple-icon.png
+  fs.writeFileSync(path.join(rootDir, 'src/app/apple-icon.png'), png180);
+
+  // Write icon.svg using crisp embedded data URI
+  const base64Png64 = png64.toString('base64');
+  const svgContent = `<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <image href="data:image/png;base64,${base64Png64}" width="64" height="64" />
+</svg>`;
   fs.writeFileSync(path.join(rootDir, 'src/app/icon.svg'), svgContent, 'utf8');
 
-  // Generate PNGs at multiple sizes for crisp rendering across resolutions
-  const png16 = await sharp(Buffer.from(createSvg(16))).png().toBuffer();
-  const png32 = await sharp(Buffer.from(createSvg(32))).png().toBuffer();
-  const png48 = await sharp(Buffer.from(createSvg(48))).png().toBuffer();
-  const png64 = await sharp(Buffer.from(createSvg(64))).png().toBuffer();
-
-  // Also write an Apple touch icon / standard icon in src/app
-  fs.writeFileSync(path.join(rootDir, 'src/app/apple-icon.png'), await sharp(Buffer.from(createSvg(180))).png().toBuffer());
-
+  // Multi-resolution ICO builder
   function createIco(images) {
     const numImages = images.length;
     const header = Buffer.alloc(6);
@@ -42,7 +35,7 @@ async function generateIcons() {
     header.writeUInt16LE(1, 2); // 1 = ICO
     header.writeUInt16LE(numImages, 4);
 
-    let offset = 6 + (16 * numImages);
+    let offset = 6 + 16 * numImages;
     const directoryEntries = [];
 
     for (const img of images) {
@@ -60,22 +53,21 @@ async function generateIcons() {
       offset += img.data.length;
     }
 
-    return Buffer.concat([header, ...directoryEntries, ...images.map(img => img.data)]);
+    return Buffer.concat([header, ...directoryEntries, ...images.map((img) => img.data)]);
   }
 
-  const icoBuffer = createIco([\n    { width: 16, height: 16, data: png16 },
+  const icoBuffer = createIco([
+    { width: 16, height: 16, data: png16 },
     { width: 32, height: 32, data: png32 },
     { width: 48, height: 48, data: png48 },
     { width: 64, height: 64, data: png64 },
   ]);
 
-  // Next.js App Router serves file-based metadata from src/app/favicon.ico
-  // Do not write to public/favicon.ico as it causes a conflict error in Next.js
   fs.writeFileSync(path.join(rootDir, 'src/app/favicon.ico'), icoBuffer);
-  console.log('Successfully generated favicon.ico, icon.svg, and apple-icon.png');
+  console.log('Successfully generated favicon.ico, icon.svg, and apple-icon.png with Netcodex emblem.');
 }
 
-generateIcons().catch(err => {
+generateIcons().catch((err) => {
   console.error('Error generating icons:', err);
   process.exit(1);
 });

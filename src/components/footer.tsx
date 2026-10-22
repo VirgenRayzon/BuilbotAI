@@ -15,24 +15,31 @@ export function Footer() {
           <div className="space-y-5 max-w-md">
             <Logo />
             <p className="text-slate-600 dark:text-slate-400 text-sm max-w-md leading-relaxed font-medium">
-              The premier AI-assisted custom PC building platform. Intelligent hardware compatibility verification,
-              real-time bottleneck analysis, and smart component recommendations.
+              Nationwide online computer and tech store in the Philippines. Authentic components, custom gaming PCs,
+              and intelligent hardware compatibility guided by Buildbot AI.
             </p>
             <div className="flex gap-3">
+              <a
+                href="https://www.facebook.com/NetcodeX/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Netcodex Facebook"
+                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-white/10 flex items-center justify-center hover:bg-cyan-500/10 hover:border-cyan-500/30 transition-all cursor-pointer"
+              >
+                <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">FB</span>
+              </a>
               <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-white/10 flex items-center justify-center hover:bg-cyan-500/10 hover:border-cyan-500/30 transition-all cursor-pointer">
                 <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">X</span>
-              </div>
-              <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-white/10 flex items-center justify-center hover:bg-cyan-500/10 hover:border-cyan-500/30 transition-all cursor-pointer">
-                <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">GH</span>
               </div>
               <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-white/10 flex items-center justify-center hover:bg-cyan-500/10 hover:border-cyan-500/30 transition-all cursor-pointer">
                 <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">DC</span>
               </div>
             </div>
           </div>
-          <div className="space-y-4 md:text-right">
+          {/* Support Column - Aligned to right side, text left-justified */}
+          <div className="space-y-4 text-left">
             <h3 className="text-xs font-black uppercase tracking-[0.25em] text-cyan-600 dark:text-cyan-400 font-headline">Support</h3>
-            <nav className="flex flex-col gap-2.5 md:items-end">
+            <nav className="flex flex-col gap-2.5 items-start text-left">
               <Link href="/faq" className="text-sm text-slate-600 dark:text-slate-400 font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">FAQ</Link>
               <Link href="/about" className="text-sm text-slate-600 dark:text-slate-400 font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">About</Link>
               <Link href="/team" className="text-sm text-slate-600 dark:text-slate-400 font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">Group</Link>
@@ -49,7 +56,7 @@ export function Footer() {
             transition={{ duration: 1, ease: [0.23, 1, 0.32, 1] }}
             className="text-[12vw] md:text-[14vw] font-black font-headline text-center leading-none tracking-tighter text-slate-900/[0.03] dark:text-white/[0.03] uppercase italic"
           >
-            BuildbotAI
+            Netcodex
           </motion.h1>
           <div className="absolute inset-0 flex items-center justify-center">
             <motion.p
@@ -58,14 +65,14 @@ export function Footer() {
               transition={{ delay: 0.3, duration: 1 }}
               className="text-[1.8vw] md:text-[1.3vw] font-black font-headline uppercase tracking-[0.5em] text-cyan-600/40 dark:text-cyan-400/40 text-center"
             >
-              Intelligent PC Customizer
+              Nationwide Computer & Tech Store
             </motion.p>
           </div>
         </div>
 
         {/* Bottom Legal Section */}
         <div className="pt-8 border-t border-slate-200/60 dark:border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
-          <p>&copy; {currentYear} BuildbotAI. All rights reserved.</p>
+          <p>&copy; {currentYear} Netcodex. All rights reserved.</p>
           <div className="flex gap-6">
             <Link href="/faq" className="hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">Privacy Policy</Link>
             <Link href="/faq" className="hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">Terms of Service</Link>

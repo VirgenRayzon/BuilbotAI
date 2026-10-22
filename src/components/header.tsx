@@ -113,8 +113,8 @@ export function Header() {
   const mainTabs: NavTab[] = [
     { href: "/builder", label: "Builder" },
     { href: "/ai-build-advisor", label: "Build Advisor" },
-    { href: "/pre-builts", label: "Pre-builts" },
-    { href: "/parts", label: "Parts" },
+    { href: "/pre-builts", label: "Prebuilts" },
+    { href: "/parts", label: "Catalog" },
   ];
 
   const adminTabs: NavTab[] = [

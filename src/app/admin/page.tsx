@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import {
     Package, Monitor,
     Archive, Trash2, BarChart3, ShoppingBag,
-    Shield, Sliders, Bot, FileText, Cpu, FileCode
+    Shield, Sliders, Bot, Cpu, FileCode
 } from 'lucide-react';
 import { Tabs, Badge, Text, ThemeIcon, Modal, Group, Stack, Button } from '@mantine/core';
 import { cn } from "@/lib/utils";
@@ -36,7 +36,6 @@ const SuperAdminSettings = dynamic(() => import('@/components/super-admin-settin
 const AuditLogsSection = dynamic(() => import('@/app/profile/components/audit-logs-section').then(module => module.AuditLogsSection), { loading: PanelLoading });
 const AiModelSettings = dynamic(() => import('@/components/ai-model-settings').then(module => module.AiModelSettings), { loading: PanelLoading });
 const AiSystemPromptsSettings = dynamic(() => import('@/components/ai-system-prompts-settings').then(module => module.AiSystemPromptsSettings), { loading: PanelLoading });
-const AboutManagement = dynamic(() => import('@/components/about-management').then(module => module.AboutManagement), { loading: PanelLoading });
 
 /**
  * Admin Dashboard - Orchestrator Component
@@ -228,16 +227,6 @@ export default function AdminPage() {
                                             AI
                                         </Tabs.Tab>
                                     )}
-
-                                    {profile?.isSuperAdmin && (
-                                        <Tabs.Tab
-                                            value="content"
-                                            leftSection={<FileText className="h-4 w-4" />}
-                                            className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
-                                        >
-                                            Site Content
-                                        </Tabs.Tab>
-                                    )}
                                 </Tabs.List>
                             </div>
                         </div>
@@ -391,14 +380,6 @@ export default function AdminPage() {
                                     ) : (
                                         <AiSystemPromptsSettings />
                                     )}
-                                </div>
-                            </Tabs.Panel>
-                        )}
-
-                        {profile?.isSuperAdmin && (
-                            <Tabs.Panel value="content" className="mt-6">
-                                <div className="space-y-6">
-                                    <AboutManagement />
                                 </div>
                             </Tabs.Panel>
                         )}

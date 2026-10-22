@@ -35,7 +35,7 @@ export function buildSalesAnalyticsWorkbook({
 
     // 1. Sheet 1: Executive KPI Summary
     const summaryData = [
-        { Metric: 'Report Title', Value: 'Buildbot AI - Sales & Analytics Report' },
+        { Metric: 'Report Title', Value: 'Netcodex - Sales & Analytics Report' },
         { Metric: 'Generated At', Value: new Date().toLocaleString() },
         { Metric: 'Selected Time Range Filter', Value: timeRange.toUpperCase() },
         { Metric: '', Value: '' },
@@ -210,7 +210,7 @@ export function buildSalesAnalyticsWorkbook({
 export function exportSalesAnalyticsToExcel(options: ExportDataOptions) {
     const wb = buildSalesAnalyticsWorkbook(options);
     const dateFormatted = new Date().toISOString().split('T')[0];
-    const fileName = `BuildbotAI_Sales_Analytics_${dateFormatted}.xlsx`;
+    const fileName = `Netcodex_Sales_Analytics_${dateFormatted}.xlsx`;
     downloadStyledWorkbook(wb, fileName, [
         { currencyCells: ['B6', 'B9'], countCells: ['B7', 'B8', 'B12', 'B13', 'B14', 'B15', 'B17', 'B18'], percentCells: ['B10'] },
         { currencyColumns: ['B'] },

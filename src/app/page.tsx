@@ -5,7 +5,7 @@ import LandingPage from '@/components/landing/landing-page';
 export default function StartPage() {
   const { props } = getImageProps({
     src: heroImage,
-    alt: 'BuildbotAI Custom PC Rig',
+    alt: 'Netcodex Custom PC Rig',
     fill: true,
     sizes: '100vw',
     priority: true,

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
-import { Badge, Button, Grid, Group, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Badge, Button, Group, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { ArrowLeft, ExternalLink, ShieldCheck, Wrench } from 'lucide-react';
 import type { PublicProduct } from '@/lib/public-product-types';
 import { productAdminUrl } from '@/lib/product-identity';
@@ -25,49 +25,8 @@ export function PublicPartPage({ product }: { product: PublicProduct }) {
           Back to parts
         </Button>
 
-        <Grid gutter={{ base: 'xl', lg: 40 }} align="stretch">
-          <Grid.Col span={{ base: 12, md: 6 }} order={{ base: 1, md: 2 }} className="flex">
-            <div className="flex h-full w-full flex-col">
-              <Group gap="xs" mb="xs">
-                <Badge color="cyan" variant="filled" radius="sm" className="font-bold uppercase tracking-wider">{product.category}</Badge>
-                <Badge color={product.inStock ? 'teal' : 'gray'} variant="light" radius="sm" leftSection={product.inStock ? <ShieldCheck className="h-3.5 w-3.5" /> : undefined}>{product.inStock ? 'Available' : 'Out of stock'}</Badge>
-              </Group>
-              <Text size="sm" c="dimmed" fw={600}>{product.brand}</Text>
-              <Title order={1} className="mb-3 text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl">{product.name}</Title>
-              <Group gap="md" mb="md"><Text size="xs" ff="monospace">Product ID: {product.productId}</Text><Text size="xs" ff="monospace">SKU: {product.sku}</Text></Group>
-              <div className="prose prose-sm max-w-none text-slate-600 dark:prose-invert dark:text-slate-400"><ReactMarkdown>{product.description || 'Product description coming soon.'}</ReactMarkdown></div>
-
-              <Paper withBorder radius="md" p={{ base: 'sm', sm: 'md' }} mt="auto" className="border-slate-200 bg-white/90 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-[#141a23]/90">
-                <Stack gap="md">
-                  <div><Text size="sm" fw={800} c="dimmed" className="uppercase tracking-[0.16em]">Price</Text><Title order={2} className="font-mono font-black tracking-tight text-cyan-600 dark:text-cyan-400" style={{ fontSize: 'clamp(2rem, 3vw, 3.25rem)', lineHeight: 1 }}>{formatCurrency(product.price)}</Title></div>
-                  {actions.isStaff ? (
-                    <Button component={Link} href={productAdminUrl(product.kind, product.productId)} variant="default" mih={44} rightSection={<ExternalLink className="h-4 w-4" />}>Manage in inventory</Button>
-                  ) : (
-                    <Button onClick={actions.reserve} loading={actions.busy} disabled={!product.inStock || actions.loading} color="teal" mih={44}>{actions.signedIn ? 'Reserve this item' : 'Sign in to reserve'}</Button>
-                  )}
-                  <Button
-                    variant="light"
-                    color="cyan"
-                    mih={44}
-                    leftSection={<Wrench className="h-4 w-4" />}
-                    onClick={() => setCompatOpened(true)}
-                  >
-                    Check with my build
-                  </Button>
-                  {actions.error && <Text role="alert" c="red" size="sm">{actions.error}</Text>}
-                  <Text size="xs" c="dimmed">Availability is checked again when you reserve.</Text>
-                </Stack>
-              </Paper>
-
-              <PartBuilderCompatibilityModal
-                product={product}
-                opened={compatOpened}
-                onClose={() => setCompatOpened(false)}
-              />
-            </div>
-          </Grid.Col>
-
-          <Grid.Col span={{ base: 12, md: 6 }} order={{ base: 2, md: 1 }} className="flex">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:grid-rows-[auto_1fr_auto] md:gap-x-10 md:gap-y-4">
+          <div className="order-1 md:col-start-1 md:row-start-1 md:row-span-3">
             <PrebuiltImageView
               imageUrl={primaryImage}
               images={galleryImages}
@@ -76,8 +35,44 @@ export function PublicPartPage({ product }: { product: PublicProduct }) {
               itemLabel="product"
               placeholderSrc="/placeholder-part.png"
             />
-          </Grid.Col>
-        </Grid>
+          </div>
+
+          <div className="order-2 md:col-start-2 md:row-start-1">
+            <Group gap="xs" mb="xs">
+              <Badge color="cyan" variant="filled" radius="sm" className="font-bold uppercase tracking-wider">{product.category}</Badge>
+              <Badge color={product.inStock ? 'teal' : 'gray'} variant="light" radius="sm" leftSection={product.inStock ? <ShieldCheck className="h-3.5 w-3.5" /> : undefined}>{product.inStock ? 'Available' : 'Out of stock'}</Badge>
+            </Group>
+            <Text size="sm" c="dimmed" fw={600}>{product.brand}</Text>
+            <Title order={1} className="mb-3 text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl">{product.name}</Title>
+            <Group gap="md"><Text size="xs" ff="monospace">Product ID: {product.productId}</Text><Text size="xs" ff="monospace">SKU: {product.sku}</Text></Group>
+          </div>
+
+          <Paper withBorder radius="md" p={{ base: 'sm', sm: 'md' }} className="order-3 border-slate-200 bg-white/90 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-[#141a23]/90 md:col-start-2 md:row-start-3 md:order-4">
+            <Stack gap="md">
+              <div><Text size="sm" fw={800} c="dimmed" className="uppercase tracking-[0.16em]">Price</Text><Title order={2} className="font-mono font-black tracking-tight text-cyan-600 dark:text-cyan-400" style={{ fontSize: 'clamp(2rem, 3vw, 3.25rem)', lineHeight: 1 }}>{formatCurrency(product.price)}</Title></div>
+              {actions.isStaff ? (
+                <Button component={Link} href={productAdminUrl(product.kind, product.productId)} variant="default" mih={44} rightSection={<ExternalLink className="h-4 w-4" />}>Manage in inventory</Button>
+              ) : (
+                <Button onClick={actions.reserve} loading={actions.busy} disabled={!product.inStock || actions.loading} color="teal" mih={44}>{actions.signedIn ? 'Reserve this item' : 'Sign in to reserve'}</Button>
+              )}
+              <Button variant="light" color="cyan" mih={44} leftSection={<Wrench className="h-4 w-4" />} onClick={() => setCompatOpened(true)}>
+                Check with my build
+              </Button>
+              {actions.error && <Text role="alert" c="red" size="sm">{actions.error}</Text>}
+              <Text size="xs" c="dimmed">Availability is checked again when you reserve.</Text>
+            </Stack>
+          </Paper>
+
+          <div className="order-4 prose prose-sm max-w-none text-slate-600 dark:prose-invert dark:text-slate-400 md:col-start-2 md:row-start-2 md:order-3">
+            <ReactMarkdown>{product.description || 'Product description coming soon.'}</ReactMarkdown>
+          </div>
+        </div>
+
+        <PartBuilderCompatibilityModal
+          product={product}
+          opened={compatOpened}
+          onClose={() => setCompatOpened(false)}
+        />
 
         {Object.keys(product.specifications).length > 0 && (
           <Paper withBorder radius="md" p={{ base: 'sm', sm: 'md' }} mt="xl" className="border-slate-200 bg-white/90 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-[#141a23]/90">

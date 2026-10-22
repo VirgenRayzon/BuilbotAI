@@ -24,8 +24,8 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Buildbot AI",
-  description: "Your AI-powered PC building guide.",
+  title: "Netcodex | Nationwide PC & Tech Store",
+  description: "Netcodex is a nationwide online computer and technology store in the Philippines. Authentic PC parts, custom gaming rigs, workstations, and intelligent compatibility guided by Buildbot AI.",
 };
 
 export default function RootLayout({

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useUserProfile } from "@/context/user-profile";
 import { useTheme } from "@/context/theme-provider";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { cn, formatCurrency } from "@/lib/utils";
 import {
   Paper,
@@ -78,6 +78,7 @@ export default function ProfilePage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Logic Layers
   const profileState = useProfileState();
@@ -108,49 +109,38 @@ export default function ProfilePage() {
   const defaultTab = "profile";
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
 
-  // Synchronize and sanitize URL query params with legacy redirections to /admin
+  // Synchronize and sanitize URL query params with legacy redirections to /admin.
+  // App Router navigations do not emit `popstate`, so the search params must be
+  // observed directly for links that change tabs while this page stays mounted.
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const syncTabs = () => {
-        const params = new URLSearchParams(window.location.search);
-        const tab = params.get("tab");
+    const tab = searchParams.get("tab");
 
-        // Graceful automatic redirections for relocated tabs
-        if (tab === "audit" || tab === "audit-logs") {
-          router.replace("/admin?tab=audit");
-          return;
-        }
-        if (tab === "management") {
-          router.replace("/admin?tab=management");
-          return;
-        }
-        if (tab === "ai-models" || tab === "prompts") {
-          router.replace("/admin?tab=ai");
-          return;
-        }
-        if (tab === "content") {
-          router.replace("/admin?tab=content");
-          return;
-        }
-
-        const allowed = getAllowedTabs();
-
-        if (tab && allowed.includes(tab)) {
-          if (tab === "account" || tab === "overview") {
-            setActiveTab("profile");
-          } else {
-            setActiveTab(tab);
-          }
-        } else {
-          setActiveTab(defaultTab);
-        }
-      };
-
-      syncTabs();
-      window.addEventListener("popstate", syncTabs);
-      return () => window.removeEventListener("popstate", syncTabs);
+    // Graceful automatic redirections for relocated tabs
+    if (tab === "audit" || tab === "audit-logs") {
+      router.replace("/admin?tab=audit");
+      return;
     }
-  }, [profile, isSuperAdmin, isManager, getAllowedTabs]);
+    if (tab === "management") {
+      router.replace("/admin?tab=management");
+      return;
+    }
+    if (tab === "ai-models" || tab === "prompts") {
+      router.replace("/admin?tab=ai");
+      return;
+    }
+    if (tab === "content") {
+      router.replace("/admin?tab=content");
+      return;
+    }
+
+    const allowed = getAllowedTabs();
+
+    if (tab && allowed.includes(tab)) {
+      setActiveTab(tab === "account" || tab === "overview" ? "profile" : tab);
+    } else {
+      setActiveTab(defaultTab);
+    }
+  }, [getAllowedTabs, router, searchParams]);
 
   // Tab switch handler with URL synchronization
   const handleTabChange = (tabId: string) => {

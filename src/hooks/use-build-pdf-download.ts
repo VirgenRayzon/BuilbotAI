@@ -44,7 +44,7 @@ export function useBuildPdfDownload(build: CurrentBuild) {
       const url = URL.createObjectURL(await response.blob());
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = 'buildbot-ai-your-build.pdf';
+      anchor.download = 'netcodex-your-build.pdf';
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();

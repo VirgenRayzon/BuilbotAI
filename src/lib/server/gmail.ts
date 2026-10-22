@@ -138,16 +138,16 @@ export async function sendInquiryReply(args: {
   const subject = `Re: ${safeHeader(args.subject)}`;
   const threadHeaders = args.threadId ? await getThreadReplyHeaders(args.threadId) : [];
   const mime = [
-    `From: BuildbotAI Support <${SUPPORT_EMAIL}>`,
+    `From: Netcodex Support <${SUPPORT_EMAIL}>`,
     `To: ${safeHeader(args.to)}`,
-    `Reply-To: BuildbotAI Support <${replyTo}>`,
+    `Reply-To: Netcodex Support <${replyTo}>`,
     ...threadHeaders,
     `Subject: =?UTF-8?B?${Buffer.from(subject, 'utf8').toString('base64')}?=`,
     'MIME-Version: 1.0',
     'Content-Type: text/plain; charset=UTF-8',
     'Content-Transfer-Encoding: base64',
     '',
-    wrapBase64(Buffer.from(`Hello ${args.customerName},\n\n${args.body}\n\nBuildbotAI Support`, 'utf8').toString('base64')),
+    wrapBase64(Buffer.from(`Hello ${args.customerName},\n\n${args.body}\n\nNetcodex Support`, 'utf8').toString('base64')),
   ].join('\r\n');
 
   const result = await gmailFetch<{ id: string; threadId: string }>('/messages/send', {
