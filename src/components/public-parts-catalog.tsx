@@ -138,7 +138,7 @@ function ProductCard({ product, priority }: { product: PublicCatalogPart; priori
       radius="lg"
       padding={0}
       className={cn(
-        'group flex h-full flex-col justify-between overflow-hidden border-slate-200/80 bg-white/85 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-500/40 hover:shadow-md dark:border-white/10 dark:bg-[#111722] dark:hover:border-cyan-500/40',
+        'group flex h-full flex-col justify-between overflow-hidden border-slate-200/80 bg-white/85 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-cyan-500/40 hover:shadow-lg dark:border-white/10 dark:bg-[#111722] dark:hover:border-cyan-500/40',
         !product.inStock && 'opacity-60 grayscale'
       )}
     >
@@ -150,7 +150,7 @@ function ProductCard({ product, priority }: { product: PublicCatalogPart; priori
         <Text size="sm" fw={600} lineClamp={2} className="min-h-[2.5rem] leading-snug transition-colors group-hover:text-cyan-600 dark:group-hover:text-cyan-400">{product.name}</Text>
       </Stack>
       <Link href={`/parts/${product.productId}`} aria-label={`View ${product.name}`}>
-        <Box className="relative aspect-[4/3] w-full overflow-hidden border-y border-slate-200/70 bg-white dark:border-white/10">
+        <Box className="relative aspect-[4/3] w-full overflow-hidden border-y border-slate-200/70 bg-pure-white dark:border-white/10">
           <OptimizedImage src={product.imageUrl || '/placeholder-part.png'} alt={product.name} fill priority={priority} sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw" className="object-contain p-2" />
         </Box>
       </Link>
@@ -169,7 +169,7 @@ function ProductListItem({ product, priority }: { product: PublicCatalogPart; pr
   return (
     <Paper withBorder radius="lg" p={12} className={cn('border-slate-200/80 bg-white/85 dark:border-white/10 dark:bg-[#111722]', !product.inStock && 'opacity-60 grayscale')}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Link href={`/parts/${product.productId}`} className="relative h-36 w-full shrink-0 overflow-hidden rounded-lg border border-slate-200/70 bg-white sm:h-24 sm:w-32 dark:border-white/10">
+        <Link href={`/parts/${product.productId}`} className="relative h-36 w-full shrink-0 overflow-hidden rounded-lg border border-slate-200/70 bg-pure-white sm:h-24 sm:w-32 dark:border-white/10">
           <OptimizedImage src={product.imageUrl || '/placeholder-part.png'} alt={product.name} fill priority={priority} sizes="(max-width: 640px) 100vw, 128px" className="object-contain p-2" />
         </Link>
         <div className="min-w-0 flex-1">

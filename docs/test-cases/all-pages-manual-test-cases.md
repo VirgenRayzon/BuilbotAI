@@ -1,8 +1,45 @@
+# Final testing documentation
+
+| Item | BuildbotAI testing overview |
+| --- | --- |
+| Project title | BuildbotAI - AI-powered PC building, compatibility checking, and product reservation web application. |
+| Introduction | This document records page-level positive and negative test cases for the implemented public, customer, Manager, and Super Admin experiences. It combines repository review with observed browser results; it does not treat source code alone as proof that a test passed. |
+| Objectives | Verify that the tested pages load and navigate correctly, authorized roles reach their intended workspaces, invalid input and unauthorized access are handled, compatible parts can be selected, and permitted actions produce the expected Firebase-backed results. Record failures and limits without claiming unobserved behavior. |
+| Execution summary | 47 cases: 46 Pass, 1 Fail, 0 Not run. The failed positive case is TC-017-P, where the AI Build Advisor returned a case/motherboard incompatibility error instead of a validated recommendation. Results were observed on 23 October 2026. |
+
+## Test modules
+
+| Module group | Pages and workflows represented in the cases |
+| --- | --- |
+| Public pages | Home, About, Team, FAQ, Contact, parts and prebuilt catalogs and details, and QR product resolution. |
+| Customer account | Sign-in, sign-up, password reset, Builder, Profile, saved builds, contact inbox, and product reservation. |
+| Manager | Staff sign-in and onboarding, shared Admin dashboard tabs, stock browsing, prebuilt management, and staff prebuilt creation. |
+| Super Admin | Staff sign-in and Super Admin-only dashboard sections: Sales & Analytics, Management Portal, and AI. |
+| AI flows | Customer Build Advisor recommendation request and Manager prebuilt description/tier generation. The former failed its positive case; the latter saved a labeled test prebuilt. |
+
+## Test approach and types
+
+| Area | Approach used for this document |
+| --- | --- |
+| Page-level functional testing | Run the listed valid and invalid user journeys in a local headless Chrome browser, then compare the visible result and navigation with each expected result. |
+| Integration checks | Where authorized, confirm Firebase-backed outcomes through the UI, including an inquiry, saved build, prebuilt catalog entry, and reservation. These are targeted workflow checks, not a comprehensive backend integration suite. |
+| Authorization and validation | Exercise guest/customer/staff route guards, role-specific sections, invalid credentials or keys, malformed form input, and incompatible hardware selection. These checks do not constitute a full security audit. |
+| Test design | Positive cases use valid inputs and expected permissions. Negative cases use invalid inputs, unavailable resources, or unauthorized access to confirm handled outcomes. Source review is used to define expectations; Pass/Fail comes from observed execution. |
+
+## Test environment and tools
+
+| Item | Verified setup or limit |
+| --- | --- |
+| Application | Next.js development server at `http://localhost:9002/`, with the repository's configured Firebase services. |
+| Browser and automation | Headless Google Chrome controlled through the installed Playwright package on the local Windows environment. The repository also contains Playwright spec files under `tests/`, but this document's 47 outcomes are from the recorded page checks, not a claim that every spec file passed. |
+| Accounts and test data | Project-provided Customer, Manager, and Super Admin test identities were used. Clearly labeled disposable accounts and catalog/support records were created with the owner's permission and left in Firebase as requested; credentials are not recorded. |
+| Coverage limits | No cross-browser, mobile-device, performance, accessibility, penetration, or complete unit-test result is claimed here. The QR positive case verified an existing active link; the password-reset case verified the success UI, not receipt of the email. |
+
 # Manual test cases for all page routes
 
 Source-reviewed and executed: 23 October 2026. Of 47 cases, 46 passed, 1 failed, and 0 remain unrun. The cases follow the supplied seven-column format. `Pass` means the listed steps and expected result were observed in a local headless Chrome session; `Fail` means the observed result contradicted the expectation; `Not run` means no outcome is claimed. No case is marked Pass solely because its source code exists. The owner authorized Firebase writes and asked that clearly labeled test data be left in place. New accounts, an inquiry, a saved build, a prebuilt, a synthetic inventory part, and a reservation were created in the configured Firebase project. The project-provided customer test account was used after the owner permitted sign-in's authentication-side writes. This sign-in flow can create a missing Firestore profile and attempts to update Firebase custom claims. Substitute seeded IDs and tokens for placeholders such as `{productId}` and `{token}`. Test expected behavior is based on the checked-in implementation, not on the sample screenshots' kiosk application.
 
-The scope is every `src/app/**/page.tsx` route (22 routes). API endpoints are exercised only through the page actions below; this is not a separate API test suite. For static pages with no form or mutable control, the negative case checks an unsupported URL parameter or non-link element rather than inventing a validation workflow.
+The cases cover 22 primary page experiences. The repository contains 23 `src/app/**/page.tsx` files because `/group` re-exports the Team page from `src/app/group/page.tsx`; that alias was source-reviewed but not separately executed. API endpoints are exercised only through the page actions below; this is not a separate API test suite. For static pages with no form or mutable control, the negative case checks an unsupported URL parameter or non-link element rather than inventing a validation workflow.
 
 ## Positive test cases
 

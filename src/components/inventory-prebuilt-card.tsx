@@ -110,12 +110,12 @@ export function InventoryPrebuiltCard({
         radius="lg"
         padding={12}
         className={cn(
-          "flex flex-col justify-between h-full relative group transition-all duration-300",
-          "bg-white/85 dark:bg-[#111722] hover:shadow-md hover:-translate-y-1",
+          "flex flex-col justify-between h-full relative group transition-all duration-300 shadow-lg",
+          "bg-white/85 dark:bg-[#111722] hover:shadow-lg hover:-translate-y-1",
           "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
           isSelected && "border-cyan-500 border-2 shadow-cyan-500/20 bg-cyan-500/[0.03]",
-          hasMissingPart && "border-red-500/80 dark:border-red-500/80 bg-red-50/40 dark:bg-red-950/20 shadow-sm shadow-red-500/15 hover:border-red-500",
-          inventoryStatus === 'out-of-stock' && "border-yellow-500/60 dark:border-yellow-400/60 bg-yellow-50/50 dark:!bg-black/30 shadow-sm shadow-yellow-500/10 dark:shadow-black/30 hover:border-yellow-500/80 dark:hover:border-yellow-400/80"
+          hasMissingPart && "border-red-500/80 dark:border-red-500/80 bg-red-50/40 dark:bg-red-950/20 shadow-lg shadow-red-500/15 hover:border-red-500",
+          inventoryStatus === 'out-of-stock' && "border-yellow-500/60 dark:border-yellow-400/60 bg-yellow-50/50 dark:!bg-black/30 shadow-lg shadow-yellow-500/10 dark:shadow-black/30 hover:border-yellow-500/80 dark:hover:border-yellow-400/80"
         )}
         onClick={() => {
           if (isSelectionMode) {

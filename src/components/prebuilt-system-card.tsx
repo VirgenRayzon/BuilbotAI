@@ -313,11 +313,11 @@ export function PrebuiltSystemCard({
       radius="lg"
       padding={0}
       className={cn(
-        "flex flex-col justify-between h-full relative group overflow-hidden transition-all duration-300",
-        isClickable ? "cursor-pointer hover:shadow-md hover:-translate-y-1 hover:border-cyan-500/40 dark:hover:border-cyan-500/40" : "cursor-default",
+        "flex flex-col justify-between h-full relative group overflow-hidden transition-all duration-300 shadow-lg",
+        isClickable ? "cursor-pointer hover:shadow-lg hover:-translate-y-1 hover:border-cyan-500/40 dark:hover:border-cyan-500/40" : "cursor-default",
         "bg-white/85 dark:bg-[#111722]",
         "border-slate-200/80 dark:border-white/10",
-        needsCustomization && "border-yellow-500/60 dark:border-yellow-400/60 bg-yellow-50/50 dark:!bg-black/30 shadow-sm shadow-yellow-500/10 dark:shadow-black/30 hover:border-yellow-500/80 dark:hover:border-yellow-400/80"
+        needsCustomization && "border-yellow-500/60 dark:border-yellow-400/60 bg-yellow-50/50 dark:!bg-black/30 shadow-lg shadow-yellow-500/10 dark:shadow-black/30 hover:border-yellow-500/80 dark:hover:border-yellow-400/80"
       )}
     >
         {/* Top Content Area */}

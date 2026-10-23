@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/theme-provider";
+import { AuthBackground } from "@/components/auth/auth-background";
 import { FAQ_CATEGORIES } from "./faq-data";
 
 export default function FAQPage() {
@@ -67,10 +68,8 @@ export default function FAQPage() {
   );
 
   return (
-    <main className="min-h-screen bg-background pt-32 pb-24 px-4 overflow-hidden relative">
-      {/* Ambient Lighting */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-[120px] -z-10" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] -z-10" />
+    <main className="min-h-screen bg-transparent pt-32 pb-24 px-4 overflow-hidden relative">
+      <AuthBackground className="fixed" />
 
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 relative z-10">
         {/* Header */}

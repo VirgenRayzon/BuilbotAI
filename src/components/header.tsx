@@ -180,8 +180,14 @@ export function Header() {
   const roleBadgeColor = profile?.isSuperAdmin
     ? "cyan"
     : profile?.isManager
-      ? "amber"
+      ? "yellow"
       : "blue";
+
+  const roleBadgeClass = profile?.isSuperAdmin
+    ? "border border-cyan-300 !bg-cyan-100 !text-cyan-800 dark:border-cyan-400/40 dark:!bg-cyan-400/15 dark:!text-cyan-300"
+    : profile?.isManager
+      ? "border border-amber-300 !bg-amber-100 !text-amber-800 dark:border-amber-400/40 dark:!bg-amber-400/15 dark:!text-amber-300"
+      : "border border-blue-300 !bg-blue-100 !text-blue-800 dark:border-blue-400/40 dark:!bg-blue-400/15 dark:!text-blue-300";
 
   return (
     <>
@@ -224,7 +230,12 @@ export function Header() {
                             size="xs"
                             variant="light"
                             color={tab.role === "Super Admin" ? "cyan" : "yellow"}
-                            className="text-[9px] uppercase tracking-tighter ml-1"
+                            className={cn(
+                              "text-[9px] uppercase tracking-tighter ml-1 border",
+                              tab.role === "Super Admin"
+                                ? "border-cyan-300 !bg-cyan-100 !text-cyan-800 dark:border-cyan-400/40 dark:!bg-cyan-400/15 dark:!text-cyan-300"
+                                : "border-amber-300 !bg-amber-100 !text-amber-800 dark:border-amber-400/40 dark:!bg-amber-400/15 dark:!text-amber-300"
+                            )}
                           >
                             {tab.role}
                           </Badge>
@@ -314,7 +325,7 @@ export function Header() {
                           size="xs"
                           variant="light"
                           color={roleBadgeColor}
-                          className="font-bold tracking-wider uppercase text-[9px]"
+                          className={cn("font-bold tracking-wider uppercase text-[9px]", roleBadgeClass)}
                         >
                           {roleLabel}
                         </Badge>
@@ -517,7 +528,7 @@ export function Header() {
                     <Text fw={700} size="sm" className="text-slate-900 dark:text-slate-100 leading-tight">
                       {userName}
                     </Text>
-                    <Badge size="xs" variant="light" color={roleBadgeColor} className="mt-2">
+                    <Badge size="xs" variant="light" color={roleBadgeColor} className={cn("mt-2", roleBadgeClass)}>
                       {roleLabel}
                     </Badge>
                   </div>

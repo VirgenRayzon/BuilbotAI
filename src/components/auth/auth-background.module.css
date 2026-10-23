@@ -8,7 +8,7 @@
   background:
     radial-gradient(ellipse 42% 62% at 3% 54%, rgb(14 165 233 / 8%), transparent 75%),
     radial-gradient(ellipse 44% 55% at 97% 45%, rgb(15 118 110 / 7%), transparent 76%),
-    linear-gradient(135deg, #f8fafc, #edf3f7 54%, #f8fafc);
+    linear-gradient(135deg, #faf8f4, #f2eee7 54%, #faf8f4);
 }
 
 .grid {

@@ -31,6 +31,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/theme-provider";
 import { useUserProfile } from "@/context/user-profile";
+import { AuthBackground } from "@/components/auth/auth-background";
 
 export default function ContactPage() {
   const { theme } = useTheme();
@@ -88,14 +89,10 @@ export default function ContactPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background pt-32 pb-24 px-4 overflow-hidden relative">
-      {/* Ambient Lighting */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
-        <div className="absolute top-[10%] right-[10%] w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-[140px]" />
-        <div className="absolute bottom-[10%] left-[10%] w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[140px]" />
-      </div>
+    <main className="min-h-screen bg-transparent pt-32 pb-24 px-4 overflow-hidden relative">
+      <AuthBackground className="fixed" />
 
-      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 relative z-10">
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           {/* Left Column: Contact Channels & Info */}
           <motion.div

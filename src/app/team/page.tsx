@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { UnifiedBackground } from '@/components/landing/unified-background';
+import { AuthBackground } from '@/components/auth/auth-background';
 import { TeamSection } from '@/components/landing/team-section';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/theme-provider';
@@ -12,10 +12,10 @@ export default function TeamPage() {
 
   return (
     <div className={cn(
-      "relative min-h-screen transition-colors duration-1000 selection:bg-primary/30 selection:text-primary",
+      "relative min-h-screen transition-colors duration-1000 selection:bg-primary/30 selection:text-primary overflow-hidden",
       isDark ? "text-foreground" : "text-slate-900"
     )}>
-      <UnifiedBackground />
+      <AuthBackground className="fixed" />
 
       <div className="relative z-10">
         <TeamSection />

@@ -18,8 +18,8 @@ const ThemeProviderContext = createContext<ThemeProviderState | undefined>(undef
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'dark',
-  storageKey = 'buildbot-ui-theme',
+  defaultTheme = 'light',
+  storageKey = 'buildbot-ui-theme-v2',
 }: {
   children: ReactNode;
   defaultTheme?: Theme;

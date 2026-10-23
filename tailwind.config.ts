@@ -25,6 +25,13 @@ export default {
         code: ['monospace'],
       },
       colors: {
+        white: 'hsl(var(--white) / <alpha-value>)',
+        'pure-white': '#ffffff',
+        slate: {
+          50: 'hsl(var(--surface-subtle) / <alpha-value>)',
+          100: 'hsl(var(--surface-muted) / <alpha-value>)',
+          200: 'hsl(var(--surface-border) / <alpha-value>)',
+        },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {

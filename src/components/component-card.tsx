@@ -53,10 +53,10 @@ export function ComponentCard({ name, component, icon: Icon }: ComponentCardProp
       radius="lg"
       padding="md"
       className={cn(
-        "flex flex-col justify-between h-full relative group transition-all duration-300",
-        "bg-white/85 dark:bg-[#111722] hover:shadow-md hover:-translate-y-1",
+        "flex flex-col justify-between h-full relative group transition-all duration-300 shadow-lg",
+        "bg-white/85 dark:bg-[#111722] hover:shadow-lg hover:-translate-y-1",
         "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
-        isAiSuggested && "border-yellow-500/70 dark:border-yellow-400/70 bg-yellow-50/40 dark:bg-yellow-950/15 shadow-sm shadow-yellow-500/10 hover:border-yellow-500 dark:hover:border-yellow-400"
+        isAiSuggested && "border-yellow-500/70 dark:border-yellow-400/70 bg-yellow-50/40 dark:bg-yellow-950/15 shadow-lg shadow-yellow-500/10 hover:border-yellow-500 dark:hover:border-yellow-400"
       )}
     >
       {/* --- Top Header: Slot Icon, Badges & Model Name --- */}

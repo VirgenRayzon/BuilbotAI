@@ -30,6 +30,9 @@ Keep customer-facing cards and panels compact and consistent with the product ca
 22. Standalone public part pages follow the prebuilt detail composition: full-width responsive page gutters, a bordered gallery at left, unboxed identity content at right, and a compact action surface anchored below the description. Keep technical specifications in a separate responsive section beneath the hero.
 23. Public product image arrays keep the authoritative `imageUrl` first, followed by deduplicated gallery images. Catalog cards with no available stock use the builder's shared `opacity-60 grayscale` treatment in grid and list views while keeping product details accessible.
 24. The public Parts toolbar exposes the same **Hide incompatible parts** toggle as the Builder. Evaluate products with the shared compatibility engine against the persisted `pc_builder_state`, keep the toggle off by default, and reset pagination when it changes.
+25. Light mode is the default across customer and staff routes. Its shared page, card, popover, muted, border, and cyan colors come from the semantic tokens in `src/app/globals.css`, the matching Mantine theme, and the Tailwind color map. Tailwind `white` intentionally resolves to the warm card surface; use `bg-pure-white` only for product image wells that need a neutral photography backdrop.
+26. When intentionally resetting every account to a new default theme, version the theme storage key once and keep the same key in the root layout and theme provider defaults. Subsequent light or dark choices must persist normally.
+27. Use `shadow-lg` as the shared elevation for cards, panels, menus, popovers, selects, tooltips, dialogs, and sheets. Apply elevation to the containing surface rather than to text, icons, badges, or layout-only wrappers.
 
 ## Verification
 

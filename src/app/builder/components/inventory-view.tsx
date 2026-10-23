@@ -145,7 +145,7 @@ export function InventoryView({
                 </Stack>
 
                 {/* --- Clean Image Showcase Surface --- */}
-                <Box className="aspect-[4/3] relative w-full overflow-hidden bg-white dark:bg-[#111722] border-y border-slate-200/70 dark:border-white/10 flex items-center justify-center">
+                <Box className="aspect-[4/3] relative w-full overflow-hidden bg-pure-white dark:bg-[#111722] border-y border-slate-200/70 dark:border-white/10 flex items-center justify-center">
                   <div className="w-12 h-12 rounded-lg bg-slate-200/60 dark:bg-white/5" />
                 </Box>
 

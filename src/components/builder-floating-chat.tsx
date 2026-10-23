@@ -81,7 +81,7 @@ export function BuilderFloatingChat({ build, onAddPart, initiallyOpen = false }:
                                     ? "h-[80vh] max-h-[calc(100dvh-6rem)] min-h-[500px]"
                                     : "h-[65vh] sm:h-[540px] max-h-[calc(100dvh-7.5rem)] min-h-[360px]"
                             )}
-                            style={{ display: 'flex', flexDirection: 'column', backgroundColor: isDark ? '#111722' : '#ffffff' }}
+                            style={{ display: 'flex', flexDirection: 'column', backgroundColor: isDark ? '#111722' : '#FDFBF7' }}
                         >
 
                             {/* Header */}

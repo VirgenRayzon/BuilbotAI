@@ -36,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn(inter.variable, spaceGrotesk.variable, "font-body antialiased", "flex flex-col min-h-screen")}>
-        <ThemeProvider defaultTheme="dark" storageKey="buildbot-ui-theme">
+        <ThemeProvider defaultTheme="light" storageKey="buildbot-ui-theme-v2">
           <FirebaseClientProvider>
             <UserProfileProvider>
               <LoadingProvider>

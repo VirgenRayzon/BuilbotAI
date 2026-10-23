@@ -90,7 +90,7 @@ export function InventoryPartCard({
                 <Card
                     className={cn(
                         "flex flex-col justify-between h-full transform transition-all duration-500 ease-out relative group overflow-hidden border-primary/10 bg-background/40 backdrop-blur-xl shadow-lg cursor-pointer",
-                        isOutOfStock && "border-yellow-500/60 dark:border-yellow-400/60 bg-yellow-50/50 dark:!bg-black/30 shadow-sm shadow-yellow-500/10 dark:shadow-black/30 hover:border-yellow-500/80 dark:hover:border-yellow-400/80",
+                        isOutOfStock && "border-yellow-500/60 dark:border-yellow-400/60 bg-yellow-50/50 dark:!bg-black/30 shadow-lg shadow-yellow-500/10 dark:shadow-black/30 hover:border-yellow-500/80 dark:hover:border-yellow-400/80",
                         isSelected ? "border-primary border-2 shadow-primary/20 bg-primary/[0.05] -translate-y-2" : "hover:-translate-y-2 hover:shadow-primary/10 hover:border-primary/40",
                     )}
                     onClick={() => {
@@ -172,12 +172,12 @@ export function InventoryPartCard({
                         </div>
 
                         {isSelectionMode ? (
-                            <div className={cn("aspect-square relative -mx-2 md:-mx-3.5 w-auto overflow-hidden border-y p-2 cursor-pointer", isOutOfStock ? "bg-transparent border-yellow-500/30 dark:border-yellow-400/20" : "bg-white border-slate-200")}>
+                            <div className={cn("aspect-square relative -mx-2 md:-mx-3.5 w-auto overflow-hidden border-y p-2 cursor-pointer", isOutOfStock ? "bg-transparent border-yellow-500/30 dark:border-yellow-400/20" : "bg-pure-white border-slate-200")}>
                                 <OptimizedImage src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || '/placeholder-part.png'} alt={part.name} fill priority={priority} sizes={imageSizes} className="object-contain transition-transform duration-500" />
                             </div>
                         ) : (
                             <AddPartDialog initialData={part} onSave={(data) => onUpdatePart(part.id, part.category, data)}>
-                                <div className={cn("aspect-square relative -mx-2 md:-mx-3.5 w-auto overflow-hidden border-y p-2 cursor-pointer", isOutOfStock ? "bg-transparent border-yellow-500/30 dark:border-yellow-400/20" : "bg-white border-slate-200")}>
+                                <div className={cn("aspect-square relative -mx-2 md:-mx-3.5 w-auto overflow-hidden border-y p-2 cursor-pointer", isOutOfStock ? "bg-transparent border-yellow-500/30 dark:border-yellow-400/20" : "bg-pure-white border-slate-200")}>
                                     <OptimizedImage src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || '/placeholder-part.png'} alt={part.name} fill priority={priority} sizes={imageSizes} className="object-contain transition-transform duration-500" />
                                 </div>
                             </AddPartDialog>

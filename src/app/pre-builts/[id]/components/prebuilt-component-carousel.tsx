@@ -24,10 +24,10 @@ function PrebuiltComponentCard({ item }: { item: PrebuiltPartStatus }) {
             radius="md"
             p={0}
             withBorder
-            className={`flex h-full min-h-[220px] flex-1 flex-col overflow-hidden border shadow-xs transition-colors select-none group ${unavailable
+            className={`flex h-full min-h-[220px] flex-1 flex-col overflow-hidden border shadow-lg transition-colors select-none group ${unavailable
                 ? "border-amber-500 bg-amber-50 dark:border-amber-400 dark:!bg-[#211e18]"
                 : "border-slate-200/90 bg-white dark:border-white/10 dark:bg-[#141a23] hover:border-cyan-500/50 dark:hover:border-cyan-400/50"
-                } ${part ? "cursor-pointer hover:shadow-md" : ""}`}
+                } ${part ? "cursor-pointer hover:shadow-lg" : ""}`}
         >
             <div className="p-3 pb-2">
                 <div className="flex flex-wrap items-center justify-between gap-1.5">
@@ -45,7 +45,7 @@ function PrebuiltComponentCard({ item }: { item: PrebuiltPartStatus }) {
                 </Text>
             </div>
 
-            <div className="relative flex aspect-[16/10] w-full items-center justify-center overflow-hidden border-y border-slate-100 bg-white dark:border-white/10">
+            <div className="relative flex aspect-[16/10] w-full items-center justify-center overflow-hidden border-y border-slate-100 bg-pure-white dark:border-white/10">
                 {part ? (
                     <OptimizedImage
                         src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"}

@@ -1,9 +1,14 @@
+import { cn } from '@/lib/utils';
 import styles from './auth-background.module.css';
 
-/** Decorative hardware drawings for the customer sign-in and sign-up pages. */
-export function AuthBackground() {
+interface AuthBackgroundProps {
+  className?: string;
+}
+
+/** Decorative hardware drawings for authentication and public informational pages. */
+export function AuthBackground({ className }: AuthBackgroundProps = {}) {
   return (
-    <div className={styles.background} aria-hidden="true">
+    <div className={cn(styles.background, className)} aria-hidden="true">
       <div className={styles.grid} />
 
       <svg className={styles.motherboard} viewBox="0 0 460 560" fill="none" xmlns="http://www.w3.org/2000/svg">

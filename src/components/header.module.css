@@ -7,8 +7,8 @@
   z-index: 50;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  background-color: rgba(255, 255, 255, 0.92);
-  border-bottom: 1px solid #e2e8f0;
+  background-color: rgb(253 251 247 / 92%);
+  border-bottom: 1px solid #e1ddd5;
   transition: background-color 200ms ease, border-color 200ms ease;
 }
 
@@ -66,13 +66,13 @@
 
 .tabLink:hover {
   color: #0f172a;
-  background-color: #f1f5f9;
+  background-color: #f0ece5;
 }
 
 .tabLink[data-active="true"] {
-  background-color: #eff6ff;
-  color: #2563eb;
-  border-color: #bfdbfe;
+  background-color: #e7f2f2;
+  color: #0e7490;
+  border-color: #acd6db;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
@@ -106,13 +106,13 @@
 }
 
 .user:hover {
-  background-color: #f1f5f9;
-  border-color: #e2e8f0;
+  background-color: #f0ece5;
+  border-color: #e1ddd5;
 }
 
 .userActive {
-  background-color: #f1f5f9;
-  border-color: #cbd5e1;
+  background-color: #f0ece5;
+  border-color: #c9c3b9;
 }
 
 :global(.dark) .user {
@@ -143,13 +143,13 @@
 }
 
 .drawerLink:hover {
-  background-color: #f1f5f9;
+  background-color: #f0ece5;
   color: #0f172a;
 }
 
 .drawerLink[data-active="true"] {
-  background-color: #eff6ff;
-  color: #2563eb;
+  background-color: #e7f2f2;
+  color: #0e7490;
 }
 
 :global(.dark) .drawerLink {

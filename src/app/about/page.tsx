@@ -28,6 +28,7 @@ import {
   Headphones,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { AuthBackground } from '@/components/auth/auth-background';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/theme-provider';
 
@@ -200,8 +201,9 @@ export default function AboutPage() {
   const isDark = theme === 'dark';
 
   return (
-    <div className="min-h-screen bg-background font-body text-foreground pt-24 pb-20 w-full relative">
-      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10">
+    <div className="min-h-screen bg-transparent font-body text-foreground pt-24 pb-20 w-full relative overflow-hidden">
+      <AuthBackground className="fixed" />
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 relative z-10">
         {/* Hero Header */}
         <div className="mb-10 md:mb-14 text-center md:text-left">
           <Badge
