@@ -1,18 +1,23 @@
 'use client';
 
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { SectionHeader } from './section-header';
 import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';
 import { Paper, ThemeIcon, Text, Badge, Group } from '@mantine/core';
 import { Code, FileText, UserCheck, Palette, Github, Linkedin, Twitter } from 'lucide-react';
+import devImage from '@/assets/team/developer_m.png';
+import docImage from '@/assets/team/documentation_m.png';
+import pmImage from '@/assets/team/pm_m.png';
+import uiImage from '@/assets/team/ui_m.png';
 
 const teamMembers = [
   {
     role: "Lead Full-Stack Developer",
     name: "Rayzon Virgen",
     description: "Responsible for core application architecture, Firebase integration, AI flow orchestration, and real-time validation engines.",
-    image: "/team/developer_m.png",
+    image: devImage,
     icon: Code,
     color: "cyan",
   },
@@ -20,7 +25,7 @@ const teamMembers = [
     role: "Technical Documentation",
     name: "Robert Codilla",
     description: "Led technical research, curated component tier hierarchies, and authored platform documentation and system specifications.",
-    image: "/team/documentation_m.png",
+    image: docImage,
     icon: FileText,
     color: "blue",
   },
@@ -28,7 +33,7 @@ const teamMembers = [
     role: "Project Manager",
     name: "John Vincent Dela Rosa",
     description: "Coordinated development milestones, aligned research outcomes, and ensured technical deliverables adhered to capstone standards.",
-    image: "/team/pm_m.png",
+    image: pmImage,
     icon: UserCheck,
     color: "violet",
   },
@@ -36,7 +41,7 @@ const teamMembers = [
     role: "UI/UX Designer",
     name: "John Christian Gripon",
     description: "Created user interface prototypes, interactive design systems, and responsive layouts focused on accessibility and usability.",
-    image: "/team/ui_m.png",
+    image: uiImage,
     icon: Palette,
     color: "pink",
   }
@@ -79,15 +84,18 @@ export function TeamSection() {
                 <div>
                   {/* Member Image Wrapper */}
                   <div className="relative mb-6 aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 group-hover:border-cyan-500/40 transition-colors duration-300">
-                    <img
+                    <Image
                       src={member.image}
                       alt={member.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      fill
+                      unoptimized
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 z-10" />
 
                     {/* Role Icon Floating */}
-                    <div className="absolute top-3 right-3">
+                    <div className="absolute top-3 right-3 z-20">
                       <ThemeIcon size={38} radius="md" variant="light" color={member.color} className="backdrop-blur-md shadow-md">
                         <member.icon size={18} />
                       </ThemeIcon>

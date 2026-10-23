@@ -1,8 +1,8 @@
-# Landing static images on App Hosting
+# Static assets and images on App Hosting
 
-The landing page's hero and three feature visuals live in `src/assets/landing/` and are imported by their components. Next.js emits these files under `/_next/static/media/` during `npm run build`.
+Landing visuals live in `src/assets/landing/`, branding logos/emblems live in `src/assets/branding/`, storefront photos live in `src/assets/about/`, and team photos live in `src/assets/team/`. These are statically imported by their components. Next.js emits these files under `/_next/static/media/` during `npm run build`.
 
-The Firebase App Hosting deployment returned the application's 404 page for root-level `public/` image URLs such as `/feature-1.webp`, even though those files loaded in `next dev` and were tracked in Git. For landing visuals, use static imports and `next/image` rather than root-relative `public/` paths. After a change, run `npm run typecheck`, lint the touched components, and `npm run build`; confirm the expected files appear in `.next/static/media/`. After rollout, open the landing page and verify each image has a nonzero natural width in the browser.
+The Firebase App Hosting deployment returns the application's 404 page for root-level `public/` image URLs such as `/feature-1.webp` or `/netcodex-emblem.png`, even though those files load in `next dev` and are tracked in Git. Additionally, Firebase App Hosting does not provide built-in server-side image optimization (`/_next/image`), so `images: { unoptimized: true }` is enabled in `next.config.ts`. For all static app imagery, use static imports and `next/image` rather than root-relative `public/` string paths. After a change, run `npm run typecheck`, lint the touched components, and `npm run build`; confirm the expected files appear in `.next/static/media/`. After rollout, verify each image renders with a nonzero natural width in the browser.
 
 `npm run lint` was verified to run cleanly on 2026-10-16. Next.js 15 prints a deprecation notice for `next lint`; this is separate from ESLint warnings. Run the normal repository command before using a fallback.
 

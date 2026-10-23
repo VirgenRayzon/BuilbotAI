@@ -271,8 +271,14 @@ test('incomplete pre-built explains missing parts after loading into builder', a
   await incompleteCard.getByRole('button', { name: 'Customize Pre-built', exact: true }).click();
 
   await expect(page).toHaveURL(/\/builder(?:\?|$)/);
-  await expect(page.getByText(/Pre-built loaded with \d+ missing part/)).toBeVisible({ timeout: 30000 });
-  await expect(page.getByLabel('Notifications (F8)').getByText(/available components? loaded\. Add .+ to complete/i).first()).toBeVisible();
+  const notifications = page.getByLabel('Notifications (F8)');
+  await expect(notifications.getByText(/Pre-built loaded with \d+ missing part/).first()).toBeVisible({ timeout: 30000 });
+  const loadDescription = notifications.getByText(/available components? loaded\. Add .+ to complete/i).first();
+  await expect(loadDescription).toBeVisible();
+
+  const reportedLoadedCount = Number((await loadDescription.textContent())?.match(/^(\d+) available component/)?.[1]);
+  expect(reportedLoadedCount).toBeGreaterThan(0);
+  await expect(page.getByText(`${reportedLoadedCount} / 8 Parts`, { exact: true }).first()).toBeVisible();
 });
 
 test('admin editors and all permitted tabs remain available after code splitting', async ({ page }) => {

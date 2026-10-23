@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import storefrontImage from '@/assets/about/netcodex-storefront.png';
 import {
   Paper,
   Title,
@@ -344,9 +345,10 @@ export default function AboutPage() {
                       <div className="mb-6 rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-[#0c121d] shadow-sm">
                         <div className="relative w-full aspect-[1535/513] overflow-hidden bg-slate-950">
                           <Image
-                            src="/netcodex-storefront.png"
+                            src={storefrontImage}
                             alt="Netcodex Computer Center Storefront - 35G Liberty Ave, Cubao, Quezon City"
                             fill
+                            unoptimized
                             sizes="(max-width: 1024px) 100vw, 900px"
                             className="object-cover"
                           />

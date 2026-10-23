@@ -5,6 +5,8 @@
 import React from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import netcodexEmblem from "@/assets/branding/netcodex-emblem.png";
+import netcodexLogoWhite from "@/assets/branding/netcodex_cc_2026_white.png.webp";
 
 export interface LogoProps {
   className?: string;
@@ -57,10 +59,12 @@ export function NetcodexEmblem({
       )}
     >
       <Image
-        src="/netcodex-emblem.png"
+        src={netcodexEmblem}
         alt="Netcodex Emblem"
         width={imageSizes[size]}
         height={imageSizes[size]}
+        unoptimized
+        priority
         className="w-full h-full object-contain drop-shadow-sm"
       />
     </div>
@@ -94,10 +98,12 @@ export function Logo({
         )}
       >
         <Image
-          src="/netcodex_cc_2026_white.png.webp"
+          src={netcodexLogoWhite}
           alt="Netcodex Computer Center"
           width={160}
           height={32}
+          unoptimized
+          priority
           className="h-7 sm:h-8 w-auto object-contain"
         />
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Part, ComponentData, Build, FavoriteBuild } from '@/lib/types';
 import { checkCompatibility } from "@/lib/compatibility";
 import { useToast } from "@/hooks/use-toast";
@@ -36,9 +36,17 @@ export function useBuilderLogic(allParts: Part[]) {
         Monitor: null, Keyboard: null, Mouse: null, Headset: null,
     });
     const [isLoaded, setIsLoaded] = useState(false);
+    const hasRestoredBuildRef = useRef(false);
+    const hasProcessedPendingBuildRef = useRef(false);
 
     // Persistence
     useEffect(() => {
+        // React Strict Mode replays mount effects in development. Restoring only
+        // once prevents that replay from replacing a freshly imported pre-built
+        // with the older persisted draft after the transfer payload is consumed.
+        if (hasRestoredBuildRef.current) return;
+        hasRestoredBuildRef.current = true;
+
         const saved = localStorage.getItem('pc_builder_state');
         if (saved) {
             try {
@@ -389,12 +397,14 @@ export function useBuilderLogic(allParts: Part[]) {
         window.addEventListener('load-favorite-build', handleLoadFavorite);
 
         // Also check if there's a pending favorite in localStorage (from profile page redirect)
-        if (allParts.length > 0) {
+        if (allParts.length > 0 && !hasProcessedPendingBuildRef.current) {
             const pending = localStorage.getItem('pc_builder_load_favorite');
             if (pending) {
-                localStorage.removeItem('pc_builder_load_favorite');
                 try {
-                    loadFavoriteBuild(JSON.parse(pending));
+                    const pendingBuild = JSON.parse(pending) as FavoriteBuild;
+                    hasProcessedPendingBuildRef.current = true;
+                    loadFavoriteBuild(pendingBuild);
+                    localStorage.removeItem('pc_builder_load_favorite');
                 } catch (e) { /* ignore parse errors */ }
             }
         }
