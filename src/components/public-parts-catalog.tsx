@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Badge, Box, Button, Card, Group, Paper, Stack, Text } from '@mantine/core';
-import { ArrowRight } from 'lucide-react';
+import { ActionIcon, Badge, Box, Button, Card, Group, Paper, Stack, Text, Tooltip } from '@mantine/core';
+import { ArrowRight, ShoppingCart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { InventoryToolbar } from '@/components/inventory-toolbar';
 import { PaginationControls } from '@/components/pagination-controls';
@@ -11,6 +11,8 @@ import { OptimizedImage } from '@/components/ui/optimized-image';
 import type { PublicCatalogPart } from '@/lib/public-product-types';
 import { cn, formatCurrency } from '@/lib/utils';
 import { usePublicPartsCompatibility } from '@/hooks/use-public-parts-compatibility';
+import { useSiteSettings } from '@/context/site-settings-context';
+import { useEcommerce } from '@/context/ecommerce-context';
 
 const ITEMS_PER_PAGE = 8;
 type CatalogView = 'grid' | 'list';
@@ -18,6 +20,8 @@ type SortDirection = 'asc' | 'desc';
 
 export function PublicPartsCatalog({ products }: { products: PublicCatalogPart[] }) {
   const { hideIncompatible, setHideIncompatible, isCompatible } = usePublicPartsCompatibility();
+  const { isEcommerceMode } = useSiteSettings();
+  const { addToCart } = useEcommerce();
   const categoryNames = useMemo(() => [...new Set(products.map((product) => product.category))].sort(), [products]);
   const availableBrands = useMemo(
     () => [...new Set(products.map((product) => product.brand).filter(Boolean))].sort(),
@@ -44,6 +48,9 @@ export function PublicPartsCatalog({ products }: { products: PublicCatalogPart[]
           && searchableText.includes(normalizedQuery);
       })
       .sort((a, b) => {
+        if (a.inStock !== b.inStock) {
+          return a.inStock ? -1 : 1;
+        }
         const comparison = sortBy === 'Price'
           ? a.price - b.price
           : sortBy === 'Date Added'
@@ -66,6 +73,23 @@ export function PublicPartsCatalog({ products }: { products: PublicCatalogPart[]
         : current.filter((category) => category !== categoryName));
     }
     resetToFirstPage();
+  };
+
+  const handleQuickAdd = (product: PublicCatalogPart) => {
+    if (!product.inStock) return;
+    addToCart(
+      {
+        id: `part-${product.productId}`,
+        kind: 'part',
+        name: product.name,
+        price: product.price,
+        category: product.category,
+        brand: product.brand,
+        sku: product.sku,
+        imageUrl: product.imageUrl,
+      },
+      true
+    );
   };
 
   return (
@@ -106,11 +130,27 @@ export function PublicPartsCatalog({ products }: { products: PublicCatalogPart[]
           {visibleProducts.length > 0 ? (
             view === 'grid' ? (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-                {visibleProducts.map((product, index) => <ProductCard key={product.productId} product={product} priority={index < 4} />)}
+                {visibleProducts.map((product, index) => (
+                  <ProductCard
+                    key={product.productId}
+                    product={product}
+                    priority={index < 4}
+                    isEcommerceMode={isEcommerceMode}
+                    onQuickAdd={() => handleQuickAdd(product)}
+                  />
+                ))}
               </div>
             ) : (
               <div className="space-y-3">
-                {visibleProducts.map((product, index) => <ProductListItem key={product.productId} product={product} priority={index < 2} />)}
+                {visibleProducts.map((product, index) => (
+                  <ProductListItem
+                    key={product.productId}
+                    product={product}
+                    priority={index < 2}
+                    isEcommerceMode={isEcommerceMode}
+                    onQuickAdd={() => handleQuickAdd(product)}
+                  />
+                ))}
               </div>
             )
           ) : (
@@ -131,7 +171,17 @@ export function PublicPartsCatalog({ products }: { products: PublicCatalogPart[]
   );
 }
 
-function ProductCard({ product, priority }: { product: PublicCatalogPart; priority: boolean }) {
+function ProductCard({
+  product,
+  priority,
+  isEcommerceMode,
+  onQuickAdd,
+}: {
+  product: PublicCatalogPart;
+  priority: boolean;
+  isEcommerceMode: boolean;
+  onQuickAdd: () => void;
+}) {
   return (
     <Card
       withBorder
@@ -159,13 +209,52 @@ function ProductCard({ product, priority }: { product: PublicCatalogPart; priori
           <Text size="xs" c="dimmed" tt="uppercase" fw={600} className="text-[10px] tracking-wider">Price</Text>
           <Text size="lg" fw={700} className="font-mono leading-none text-slate-900 dark:text-slate-100">{formatCurrency(product.price)}</Text>
         </Stack>
-        <Button component={Link} href={`/parts/${product.productId}`} fullWidth radius="md" size="sm" variant="light" color="cyan" rightSection={<ArrowRight size={15} />}>View product</Button>
+        <Group gap="xs" wrap="nowrap">
+          <Button
+            component={Link}
+            href={`/parts/${product.productId}`}
+            fullWidth
+            radius="md"
+            size="sm"
+            variant="light"
+            color="cyan"
+            rightSection={<ArrowRight size={15} />}
+            className="flex-1"
+          >
+            View product
+          </Button>
+          {isEcommerceMode && product.inStock && (
+            <Tooltip label="Add to Cart" withArrow>
+              <ActionIcon
+                size={36}
+                radius="md"
+                variant="filled"
+                color="teal"
+                onClick={onQuickAdd}
+                aria-label={`Add ${product.name} to cart`}
+                className="shrink-0"
+              >
+                <ShoppingCart size={16} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+        </Group>
       </Stack>
     </Card>
   );
 }
 
-function ProductListItem({ product, priority }: { product: PublicCatalogPart; priority: boolean }) {
+function ProductListItem({
+  product,
+  priority,
+  isEcommerceMode,
+  onQuickAdd,
+}: {
+  product: PublicCatalogPart;
+  priority: boolean;
+  isEcommerceMode: boolean;
+  onQuickAdd: () => void;
+}) {
   return (
     <Paper withBorder radius="lg" p={12} className={cn('border-slate-200/80 bg-white/85 dark:border-white/10 dark:bg-[#111722]', !product.inStock && 'opacity-60 grayscale')}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -182,7 +271,21 @@ function ProductListItem({ product, priority }: { product: PublicCatalogPart; pr
         </div>
         <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end">
           <Text fw={700} className="font-mono text-slate-900 dark:text-slate-100">{formatCurrency(product.price)}</Text>
-          <Button component={Link} href={`/parts/${product.productId}`} radius="md" size="sm" variant="light" color="cyan" rightSection={<ArrowRight size={15} />}>View product</Button>
+          <Group gap="xs">
+            <Button component={Link} href={`/parts/${product.productId}`} radius="md" size="sm" variant="light" color="cyan" rightSection={<ArrowRight size={15} />}>View product</Button>
+            {isEcommerceMode && product.inStock && (
+              <Button
+                radius="md"
+                size="sm"
+                variant="filled"
+                color="teal"
+                leftSection={<ShoppingCart size={15} />}
+                onClick={onQuickAdd}
+              >
+                Add to Cart
+              </Button>
+            )}
+          </Group>
         </div>
       </div>
     </Paper>

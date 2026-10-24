@@ -2,15 +2,18 @@
 
 import { use } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Container, Grid, Title, Text, Badge, Group, Paper, Button, Loader } from "@mantine/core";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { usePrebuiltDetails } from "./hooks/use-prebuilt-details";
 import { PrebuiltImageView } from "./components/prebuilt-image-view";
 import { PrebuiltActionCard } from "./components/prebuilt-action-card";
 import { PrebuiltAiReview } from "./components/prebuilt-ai-review";
+import { getEcommerceFallbackImage } from "@/context/ecommerce-context";
 
 export default function LegacyPrebuiltProductPage({ params }: { params: Promise<{ id: string }> }) {
     const { id: systemId } = use(params);
+    const router = useRouter();
     const {
         system,
         loadingSystem,
@@ -32,6 +35,18 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
         handleCustomizePrebuilt,
         handleAnalyze,
     } = usePrebuiltDetails(systemId);
+
+    const handleBackClick = (e: React.MouseEvent) => {
+        if (
+            typeof window !== "undefined" &&
+            window.history.length > 1 &&
+            document.referrer &&
+            document.referrer.startsWith(window.location.origin)
+        ) {
+            e.preventDefault();
+            router.back();
+        }
+    };
 
     // 1. Loading State
     if (loadingSystem) {
@@ -56,7 +71,7 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
                     <Text size="sm" c="dimmed" className="mb-6">
                         The requested prebuilt rig might have been unlisted or relocated.
                     </Text>
-                    <Button component={Link} href={backLink} variant="default" radius="md">
+                    <Button component={Link} href={backLink} onClick={handleBackClick} variant="default" radius="md">
                         {backText}
                     </Button>
                 </Paper>
@@ -65,6 +80,17 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
     }
 
     const hasComponents = Object.values(components).some(Boolean);
+    const ecommerceSubComponents = Object.entries(components)
+        .filter(([, part]) => Boolean(part))
+        .map(([cat, part]) => ({
+            category: cat.toUpperCase(),
+            name: part!.name,
+            price: part!.price || 0,
+            imageUrl:
+                part!.imageUrl ||
+                part!.images?.[0] ||
+                getEcommerceFallbackImage(cat, "part"),
+        }));
 
     return (
         <div className="min-h-screen overflow-x-hidden bg-white text-slate-900 transition-colors duration-500 dark:bg-[#0c0f14] dark:text-slate-50">
@@ -79,6 +105,7 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
                     <Button
                         component={Link}
                         href={backLink}
+                        onClick={handleBackClick}
                         variant="subtle"
                         color="gray"
                         size="xs"
@@ -137,6 +164,11 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
                             {/* Anchor the purchase controls to the base of the image column. */}
                             <div className="mt-auto pt-6">
                                 <PrebuiltActionCard
+                                    systemId={system.id}
+                                    systemName={system.name}
+                                    tier={system.tier}
+                                    imageUrl={system.imageUrl || system.images?.[0]}
+                                    componentList={ecommerceSubComponents}
                                     price={system.price}
                                     isComplete={isComplete}
                                     unavailableParts={unavailableParts}

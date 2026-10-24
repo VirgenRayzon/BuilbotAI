@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useUserProfile } from "@/context/user-profile";
@@ -15,6 +14,8 @@ import { Button, Paper, Text, Title } from "@mantine/core";
 import { AnimatePresence } from "framer-motion";
 import { SignOutLoader } from "@/components/auth/sign-out-loader";
 import { SignOutTransitionContext } from "@/context/sign-out-transition";
+import { EcommerceProvider } from "@/context/ecommerce-context";
+import { CartDrawer } from "@/components/ecommerce/cart-drawer";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { loading, status, authUser, profile } = useUserProfile();
@@ -33,7 +34,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const isLandingRedirect = pathname === "/" && !!authUser;
   const isAuthPage = ['/signin', '/signup', '/system-access'].includes(pathname);
-  const isPublicCatalog = pathname === '/parts' || pathname.startsWith('/parts/') || pathname === '/pre-builts' || pathname.startsWith('/pre-builts/') || pathname.startsWith('/q/');
+  const isPublicCatalog = pathname === '/parts' || pathname.startsWith('/parts/') || pathname === '/pre-builts' || pathname.startsWith('/pre-builts/') || pathname === '/checkout' || pathname.startsWith('/q/');
   const isCustomerSignInPage = pathname === '/signin';
 
   // Keep the sign-out overlay mounted across the route change, then let its
@@ -88,31 +89,34 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   if (showMaintenance) return <MaintenanceScreen />;
 
   return (
-    <SignOutTransitionContext.Provider value={{
-      startSignOut: () => setSignOutStartedAt(Date.now()),
-      cancelSignOut: () => setSignOutStartedAt(null),
-    }}>
-      <div className="flex flex-col min-h-screen overflow-x-clip relative">
-        <AnimatePresence>
-          {showLoaderOverlay && (
-            <NeutralPageLoader
-              key="neutral-page-loader"
-              isOverlay
-            />
-          )}
-        </AnimatePresence>
-        <SignOutLoader visible={signOutStartedAt !== null} />
+    <EcommerceProvider>
+      <SignOutTransitionContext.Provider value={{
+        startSignOut: () => setSignOutStartedAt(Date.now()),
+        cancelSignOut: () => setSignOutStartedAt(null),
+      }}>
+        <div className="flex flex-col min-h-screen overflow-x-clip relative">
+          <AnimatePresence>
+            {showLoaderOverlay && (
+              <NeutralPageLoader
+                key="neutral-page-loader"
+                isOverlay
+              />
+            )}
+          </AnimatePresence>
+          <SignOutLoader visible={signOutStartedAt !== null} />
 
-        {signOutStartedAt === null && <Header />}
-        <main className={cn(
-          "flex-1 min-h-[calc(100vh-4rem)]",
-          !isHeaderHidden && "pt-16",
-          isMaintenanceMode && !isAdmin && !isAdminRoute && "grayscale-[0.5] contrast-125"
-        )}>
-          {signOutStartedAt === null && children}
-        </main>
-        {mounted && signOutStartedAt === null && shouldShowFooter && <Footer />}
-      </div>
-    </SignOutTransitionContext.Provider>
+          {signOutStartedAt === null && <Header />}
+          {signOutStartedAt === null && <CartDrawer />}
+          <main className={cn(
+            "flex-1 min-h-[calc(100vh-4rem)]",
+            !isHeaderHidden && "pt-16",
+            isMaintenanceMode && !isAdmin && !isAdminRoute && "grayscale-[0.5] contrast-125"
+          )}>
+            {signOutStartedAt === null && children}
+          </main>
+          {mounted && signOutStartedAt === null && shouldShowFooter && <Footer />}
+        </div>
+      </SignOutTransitionContext.Provider>
+    </EcommerceProvider>
   );
 }

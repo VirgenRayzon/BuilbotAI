@@ -14,8 +14,7 @@ BuildbotAI is an AI-powered PC building, compatibility validation, and e-commerc
 Run all commands from the repository root:
 - **Install dependencies:** `npm install`
 - **Start dev server:** `npm run dev` (Runs strictly on **Port `9002`**: `http://localhost:9002/`)
-- **Start Genkit AI dev server:** `npm run genkit:dev` (`genkit start -- tsx src/ai/dev.ts`)
-- **Watch Genkit AI flows:** `npm run genkit:watch`
+- **Start Genkit AI dev server:** `npm run genkit:dev` (`genkit start -- tsx src/ai/dev.ts`)\n- **Watch Genkit AI flows:** `npm run genkit:watch`
 - **Update changelog:** `npm run changelog` (`node execution/update_changelog.js`)
 
 ## Build & Testing Instructions
@@ -87,3 +86,9 @@ Agents must execute relevant programmatic checks and fix failures before complet
   2. Implement deterministic fixes.
   3. Verify locally against dev server on port `9002` (`npm run dev`).
   4. Update the corresponding directive in `directives/` with lessons learned.
+
+## Agent Workspace & File Access Bounds
+- Strict Scope: Only open, analyze, or edit files explicitly mentioned by the user or their direct imports.
+- Do NOT perform exploratory repository scans, workspace-wide grep searches, or edits across unrelated directories unless requested.
+- Skip Non-Target Files: Never read or touch config roots, mock directories, scratch files, or documentation unless directly relevant to the current task.
+- Plan Before Reading: If you need to inspect more than 2 files not specified in the prompt, ask for confirmation first. Make use of /grill-me command.

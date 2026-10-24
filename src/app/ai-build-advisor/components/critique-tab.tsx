@@ -66,6 +66,7 @@ export function CritiqueTab({
                         onWorkloadChange={setWorkload}
                         showSystemBalance={false}
                         analysis={critiqueAnalysis}
+                        isAiPending={critiqueLoading}
                         onCategorySelect={(cat) => router.push(`/builder?category=${cat}`)}
                     />
                 </motion.div>

@@ -47,8 +47,64 @@ export function usePrebuiltDetails(systemId: string) {
     const unavailableParts = componentStatuses.filter(part => part.issue !== null);
     const isInStock = resolvedSystemId === system?.id && unavailableParts.length === 0;
 
-    const backLink = isStaff ? "/admin?tab=prebuilts" : "/";
-    const backText = isStaff ? "Back to Prebuilts Management" : "Back to Landing Page";
+    const [backNavigation, setBackNavigation] = useState<{ link: string; text: string }>(() => {
+        const fromParam = searchParams.get("from");
+        if (fromParam === "admin") {
+            return { link: "/admin?tab=prebuilts", text: "Back to Prebuilts Management" };
+        }
+        if (fromParam === "home" || fromParam === "landing") {
+            return { link: "/", text: "Back to Landing Page" };
+        }
+        if (fromParam === "parts") {
+            return { link: "/parts", text: "Back to Parts" };
+        }
+        return { link: "/pre-builts", text: "Back to Pre-builts" };
+    });
+
+    useEffect(() => {
+        const fromParam = searchParams.get("from");
+        if (fromParam === "admin") {
+            setBackNavigation({ link: "/admin?tab=prebuilts", text: "Back to Prebuilts Management" });
+            return;
+        }
+        if (fromParam === "home" || fromParam === "landing") {
+            setBackNavigation({ link: "/", text: "Back to Landing Page" });
+            return;
+        }
+        if (fromParam === "parts") {
+            setBackNavigation({ link: "/parts", text: "Back to Parts" });
+            return;
+        }
+
+        if (typeof document !== "undefined" && document.referrer) {
+            try {
+                const referrerUrl = new URL(document.referrer);
+                if (referrerUrl.origin === window.location.origin) {
+                    if (referrerUrl.pathname === "/admin" || referrerUrl.pathname.startsWith("/admin/")) {
+                        setBackNavigation({ link: "/admin?tab=prebuilts", text: "Back to Prebuilts Management" });
+                        return;
+                    }
+                    if (referrerUrl.pathname === "/parts" || referrerUrl.pathname.startsWith("/parts/")) {
+                        setBackNavigation({ link: "/parts", text: "Back to Parts" });
+                        return;
+                    }
+                    if (referrerUrl.pathname === "/" || referrerUrl.pathname === "") {
+                        setBackNavigation({ link: "/", text: "Back to Landing Page" });
+                        return;
+                    }
+                    if (referrerUrl.pathname === "/pre-builts" || referrerUrl.pathname.startsWith("/pre-builts")) {
+                        setBackNavigation({ link: "/pre-builts", text: "Back to Pre-builts" });
+                        return;
+                    }
+                }
+            } catch {}
+        }
+
+        setBackNavigation({ link: "/pre-builts", text: "Back to Pre-builts" });
+    }, [searchParams]);
+
+    const backLink = backNavigation.link;
+    const backText = backNavigation.text;
 
     // 1. Fetch System
     useEffect(() => {

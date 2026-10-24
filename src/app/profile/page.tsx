@@ -10,16 +10,11 @@ import {
   Title,
   Text,
   Badge,
-  Group,
-  ThemeIcon,
   Button,
-  SegmentedControl,
 } from "@mantine/core";
 import {
   User,
   Package,
-  Shield,
-  FileText,
   Settings,
   Activity,
   Heart,
@@ -28,26 +23,23 @@ import {
   Cpu,
   History,
   Truck,
-  Bot,
-  FileCode,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RouteGuard } from "@/components/auth/route-guard";
 import type { Order } from "@/lib/types";
+import { useSiteSettings } from "@/context/site-settings-context";
 
 // Custom Hooks
 import { useProfileState } from "./hooks/use-profile-state";
 import { useReservations } from "./hooks/use-reservations";
 import { useEmergencyControls } from "./hooks/use-emergency-controls";
 import { useAdminKeys } from "./hooks/use-admin-keys";
-import { useAuditLogs } from "./hooks/use-audit-logs";
 import { useUserAuditLogs } from "./hooks/use-user-audit-logs";
 import { useFavorites } from "./hooks/use-favorites";
 
 // Sub-components
 import { ProfileHero } from "./components/profile-hero";
 import { ProfileSidebar } from "./components/profile-sidebar";
-import { AccountDetails } from "./components/account-details";
 import { MantineProfileView } from "./components/mantine-profile-view";
 import { MantineSettingsView } from "./components/mantine-settings-view";
 import { EmergencyControlsCard } from "./components/emergency-controls-card";
@@ -56,10 +48,9 @@ import { FavoritesList } from "./components/favorites-list";
 import { UserAuditLogsSection } from "./components/user-audit-logs-section";
 import { ContactInboxTab } from "./components/contact-inbox-tab";
 import { CustomerSupportTab } from "./components/customer-support-tab";
+import { MockOrdersSection } from "@/components/ecommerce/mock-orders-section";
 import { CompactInfo } from "@/components/ui/compact-info";
 
-import {
-} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -79,6 +70,7 @@ export default function ProfilePage() {
   const isDark = theme === "dark";
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isEcommerceMode } = useSiteSettings();
 
   // Logic Layers
   const profileState = useProfileState();
@@ -267,9 +259,11 @@ export default function ProfilePage() {
                       isRegularUser ? <CustomerSupportTab /> : <ContactInboxTab />
                     )}
 
-                    {/* TAB 2: Store Reservations (Regular Customers Only) */}
+                    {/* TAB 2: Store Reservations & E-Commerce Shipments (Regular Customers Only) */}
                     {activeTab === "reservations" && isRegularUser && (
                       <div className="space-y-6">
+                        {isEcommerceMode && <MockOrdersSection />}
+
                         <Paper
                           withBorder
                           radius="lg"
@@ -279,7 +273,11 @@ export default function ProfilePage() {
                           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div>
                               <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
-                                <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                {isEcommerceMode ? (
+                                  <Truck className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                                ) : (
+                                  <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                )}
                                 <span>Store Reservations</span>
                                 <CompactInfo message="Track active component reservation tickets, assembly progress, and pick-up readiness." />
                               </Title>
@@ -375,7 +373,7 @@ export default function ProfilePage() {
                           <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
                             <Activity className="h-5 w-5 text-amber-500" />
                             <span>System Safeguards & Emergency Overrides</span>
-                            <CompactInfo message="Real-time emergency kill switches, maintenance mode locks, and storage fallbacks." />
+                            <CompactInfo message="Real-time emergency kill switches, maintenance mode locks, storage fallbacks, and E-Commerce UI mode." />
                           </Title>
                         </Paper>
 

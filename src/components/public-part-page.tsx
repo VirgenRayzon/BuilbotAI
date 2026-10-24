@@ -3,19 +3,57 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
-import { Badge, Button, Group, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
-import { ArrowLeft, ExternalLink, ShieldCheck, Wrench } from 'lucide-react';
+import { ActionIcon, Badge, Button, Group, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { ArrowLeft, ExternalLink, Minus, Plus, ShieldCheck, ShoppingCart, Wrench, Zap } from 'lucide-react';
 import type { PublicProduct } from '@/lib/public-product-types';
 import { productAdminUrl } from '@/lib/product-identity';
 import { usePublicProductActions } from '@/hooks/use-public-product-actions';
 import { formatCurrency } from '@/lib/utils';
 import { PrebuiltImageView } from '@/app/pre-builts/[id]/components/prebuilt-image-view';
 import { PartBuilderCompatibilityModal } from './part-builder-compatibility-modal';
+import { useSiteSettings } from '@/context/site-settings-context';
+import { useEcommerce } from '@/context/ecommerce-context';
 
 export function PublicPartPage({ product }: { product: PublicProduct }) {
   const actions = usePublicProductActions(product);
+  const { isEcommerceMode } = useSiteSettings();
+  const { addToCart, buyNow } = useEcommerce();
   const [compatOpened, setCompatOpened] = useState(false);
+  const [quantity, setQuantity] = useState(1);
   const [primaryImage = '', ...galleryImages] = product.images;
+
+  const handleAddPartToCart = () => {
+    if (!product.inStock) return;
+    addToCart(
+      {
+        id: `part-${product.productId}`,
+        kind: 'part',
+        name: product.name,
+        price: product.price,
+        quantity,
+        category: product.category,
+        brand: product.brand,
+        sku: product.sku,
+        imageUrl: primaryImage,
+      },
+      true
+    );
+  };
+
+  const handleBuyPartNow = () => {
+    if (!product.inStock) return;
+    buyNow({
+      id: `part-${product.productId}`,
+      kind: 'part',
+      name: product.name,
+      price: product.price,
+      quantity,
+      category: product.category,
+      brand: product.brand,
+      sku: product.sku,
+      imageUrl: primaryImage,
+    });
+  };
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-white text-slate-900 transition-colors dark:bg-[#0c0f14] dark:text-slate-50">
@@ -49,17 +87,82 @@ export function PublicPartPage({ product }: { product: PublicProduct }) {
 
           <Paper withBorder radius="md" p={{ base: 'sm', sm: 'md' }} className="order-3 border-slate-200 bg-white/90 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-[#141a23]/90 md:col-start-2 md:row-start-3 md:order-4">
             <Stack gap="md">
-              <div><Text size="sm" fw={800} c="dimmed" className="uppercase tracking-[0.16em]">Price</Text><Title order={2} className="font-mono font-black tracking-tight text-cyan-600 dark:text-cyan-400" style={{ fontSize: 'clamp(2rem, 3vw, 3.25rem)', lineHeight: 1 }}>{formatCurrency(product.price)}</Title></div>
+              <Group justify="space-between" align="flex-end">
+                <div>
+                  <Text size="sm" fw={800} c="dimmed" className="uppercase tracking-[0.16em]">Price</Text>
+                  <Title order={2} className="font-mono font-black tracking-tight text-cyan-600 dark:text-cyan-400" style={{ fontSize: 'clamp(2rem, 3vw, 3.25rem)', lineHeight: 1 }}>
+                    {formatCurrency(product.price)}
+                  </Title>
+                </div>
+
+                {isEcommerceMode && !actions.isStaff && product.inStock && (
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0e131d] px-2 py-1">
+                    <Text size="xs" c="dimmed" fw={700} className="uppercase text-[10px]">
+                      Qty
+                    </Text>
+                    <ActionIcon
+                      size="sm"
+                      variant="subtle"
+                      color="gray"
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      aria-label="Decrease quantity"
+                    >
+                      <Minus size={14} />
+                    </ActionIcon>
+                    <Text size="sm" fw={800} ff="monospace" className="min-w-[22px] text-center">
+                      {quantity}
+                    </Text>
+                    <ActionIcon
+                      size="sm"
+                      variant="subtle"
+                      color="gray"
+                      onClick={() => setQuantity((q) => Math.min(20, q + 1))}
+                      aria-label="Increase quantity"
+                    >
+                      <Plus size={14} />
+                    </ActionIcon>
+                  </div>
+                )}
+              </Group>
+
               {actions.isStaff ? (
                 <Button component={Link} href={productAdminUrl(product.kind, product.productId)} variant="default" mih={44} rightSection={<ExternalLink className="h-4 w-4" />}>Manage in inventory</Button>
+              ) : isEcommerceMode ? (
+                <Group gap="xs" grow>
+                  <Button
+                    onClick={handleAddPartToCart}
+                    disabled={!product.inStock}
+                    color="cyan"
+                    mih={44}
+                    leftSection={<ShoppingCart className="h-4 w-4" />}
+                    className="font-headline font-bold uppercase tracking-wider text-xs"
+                  >
+                    {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+                  </Button>
+                  <Button
+                    onClick={handleBuyPartNow}
+                    disabled={!product.inStock}
+                    color="teal"
+                    mih={44}
+                    leftSection={<Zap className="h-4 w-4" />}
+                    className="font-headline font-bold uppercase tracking-wider text-xs"
+                  >
+                    Buy Now
+                  </Button>
+                </Group>
               ) : (
                 <Button onClick={actions.reserve} loading={actions.busy} disabled={!product.inStock || actions.loading} color="teal" mih={44}>{actions.signedIn ? 'Reserve this item' : 'Sign in to reserve'}</Button>
               )}
+
               <Button variant="light" color="cyan" mih={44} leftSection={<Wrench className="h-4 w-4" />} onClick={() => setCompatOpened(true)}>
                 Check with my build
               </Button>
               {actions.error && <Text role="alert" c="red" size="sm">{actions.error}</Text>}
-              <Text size="xs" c="dimmed">Availability is checked again when you reserve.</Text>
+              <Text size="xs" c="dimmed">
+                {isEcommerceMode
+                  ? 'Supports LBC / J&T Nationwide Courier, Same-Day Express, GCash, Maya, QRPh, Card & COD.'
+                  : 'Availability is checked again when you reserve.'}
+              </Text>
             </Stack>
           </Paper>
 

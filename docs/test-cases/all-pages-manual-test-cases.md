@@ -9,22 +9,48 @@
 
 ## Test modules
 
-| Module group | Pages and workflows represented in the cases |
+| Page | Route |
 | --- | --- |
-| Public pages | Home, About, Team, FAQ, Contact, parts and prebuilt catalogs and details, and QR product resolution. |
-| Customer account | Sign-in, sign-up, password reset, Builder, Profile, saved builds, contact inbox, and product reservation. |
-| Manager | Staff sign-in and onboarding, shared Admin dashboard tabs, stock browsing, prebuilt management, and staff prebuilt creation. |
-| Super Admin | Staff sign-in and Super Admin-only dashboard sections: Sales & Analytics, Management Portal, and AI. |
-| AI flows | Customer Build Advisor recommendation request and Manager prebuilt description/tier generation. The former failed its positive case; the latter saved a labeled test prebuilt. |
+| Home | `/` |
+| About | `/about` |
+| Team | `/team` |
+| FAQ | `/faq` |
+| Contact | `/contact` |
+| Parts catalog | `/parts` |
+| Part details | `/parts/{productId}` |
+| Prebuilt catalog | `/pre-builts` |
+| Prebuilt details | `/pre-builts/{id}` |
+| QR resolver | `/q/{token}` |
+| Customer sign-in | `/signin` |
+| Customer sign-up | `/signup` |
+| Forgot password | `/forgot-password` |
+| Staff sign-in | `/system-access` |
+| Manager sign-up | `/system-access/signup` |
+| Builder | `/builder` |
+| AI Build Advisor | `/ai-build-advisor` |
+| Profile | `/profile` |
+| Admin dashboard | `/admin` |
+| Staff prebuilt builder | `/admin/prebuilt-builder` |
+| Support redirect | `/support-requests` |
+| Admin inquiry redirect | `/admin/contact-inquiries` |
 
-## Test approach and types
+## Test approach
 
-| Area | Approach used for this document |
+| Approach | How it was applied |
 | --- | --- |
-| Page-level functional testing | Run the listed valid and invalid user journeys in a local headless Chrome browser, then compare the visible result and navigation with each expected result. |
-| Integration checks | Where authorized, confirm Firebase-backed outcomes through the UI, including an inquiry, saved build, prebuilt catalog entry, and reservation. These are targeted workflow checks, not a comprehensive backend integration suite. |
-| Authorization and validation | Exercise guest/customer/staff route guards, role-specific sections, invalid credentials or keys, malformed form input, and incompatible hardware selection. These checks do not constitute a full security audit. |
-| Test design | Positive cases use valid inputs and expected permissions. Negative cases use invalid inputs, unavailable resources, or unauthorized access to confirm handled outcomes. Source review is used to define expectations; Pass/Fail comes from observed execution. |
+| Source review | Inspect the relevant page, component, route guard, and action implementations to define project-specific steps and expected results. Source code alone does not establish a Pass. |
+| Browser execution | Run the listed journeys in a local headless Chrome session and compare rendered content, feedback, and navigation with each expected result. |
+| Result verification | Where authorized, confirm Firebase-backed outcomes through the UI, including an inquiry, saved build, prebuilt catalog entry, and reservation. Record a Fail when the observed result contradicts the expectation. |
+
+## Test types
+
+| Type | Coverage in this document |
+| --- | --- |
+| Positive functional testing | Use valid inputs and authorized accounts to check expected page workflows and successful outcomes. |
+| Negative functional testing | Use invalid input, unknown resources, or unavailable items to check validation and handled error states. |
+| Navigation and access-control testing | Check page redirects, guest/customer/staff route guards, role-specific sections, and rejection of invalid credentials or staff keys. These checks are not a full security audit. |
+| Hardware compatibility testing | Check that a CPU with a different socket is identified as incompatible with the selected motherboard and cannot be added. This is not cross-browser/device compatibility testing. |
+| Targeted integration testing | Check selected UI-to-Firebase workflows and an AI recommendation/prebuilt generation request. This is not a comprehensive backend or AI evaluation suite. |
 
 ## Test environment and tools
 

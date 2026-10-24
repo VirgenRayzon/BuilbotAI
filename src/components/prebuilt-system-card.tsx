@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   SlidersHorizontal,
   ExternalLink,
+  ShoppingCart,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getMissingParts } from "@/lib/prebuilt-utils";
@@ -45,6 +46,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useSiteSettings } from "@/context/site-settings-context";
+import { useEcommerce, getEcommerceFallbackImage } from "@/context/ecommerce-context";
 
 interface PrebuiltSystemCardProps {
   system: PrebuiltSystem;
@@ -65,7 +67,8 @@ export function PrebuiltSystemCard({
   showLaunchButton = false,
   isClickable = true,
 }: PrebuiltSystemCardProps) {
-  const { shouldCorruptImages } = useSiteSettings();
+  const { shouldCorruptImages, isEcommerceMode } = useSiteSettings();
+  const { addToCart } = useEcommerce();
   const [isExpandedLocal, setIsExpandedLocal] = useState(false);
   const isExpanded = expanded || isExpandedLocal;
   const { toast } = useToast();
@@ -177,6 +180,39 @@ export function PrebuiltSystemCard({
   const openCheckoutDialog = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (isEcommerceMode) {
+      if (!isComplete || !isInStock) return;
+      const componentsList = Object.entries(resolvedParts)
+        .filter(([, part]) => Boolean(part))
+        .map(([cat, part]) => ({
+          category: cat.toUpperCase(),
+          name: part.name,
+          price: part.price || 0,
+          imageUrl:
+            part.imageUrl ||
+            part.images?.[0] ||
+            getEcommerceFallbackImage(cat, "part"),
+        }));
+      addToCart(
+        {
+          id: `prebuilt-${system.id}`,
+          kind: "prebuilt",
+          name: system.name,
+          price: system.price,
+          tier: system.tier,
+          imageUrl:
+            system.imageUrl ||
+            system.images?.[0] ||
+            getEcommerceFallbackImage(undefined, "prebuilt"),
+          components: componentsList,
+          includeAssembly: true,
+        },
+        true
+      );
+      return;
+    }
+
     if (!isComplete || !authUser || !profile || isReserving || !isInStock) {
       if (!authUser) {
         toast({
@@ -463,13 +499,19 @@ export function PrebuiltSystemCard({
                 leftSection={
                   isReserving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : isEcommerceMode ? (
+                    <ShoppingCart className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" />
                   ) : (
                     <ShieldCheck className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" />
                   )
                 }
                 className="font-medium hover:bg-cyan-500 hover:text-white transition-all duration-200"
               >
-                {isReserving ? "Processing..." : "Reserve Rig"}
+                {isReserving
+                  ? "Processing..."
+                  : isEcommerceMode
+                    ? "Add System to Cart"
+                    : "Reserve Rig"}
               </Button>
             )
           )}

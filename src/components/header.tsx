@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 import {
   Loader2,
   Shield,
-  ShieldCheck,
   LogOut,
   ChevronDown,
   Package,
@@ -18,8 +17,6 @@ import {
   Settings,
   MailQuestion,
   MessageCircle,
-  Cpu,
-  Database,
   Sliders,
   User as UserIcon,
 } from "lucide-react";
@@ -47,6 +44,7 @@ import { useDisclosure } from "@mantine/hooks";
 import classes from "./header.module.css";
 import { HeaderMegaMenu } from "./header-mega-menu";
 import { useSignOutTransition } from "@/context/sign-out-transition";
+import { HeaderCartButton } from "./ecommerce/header-cart-button";
 
 // These widgets only render after role verification; public navigation does not
 // need their notification, date formatting, and order-detail code.
@@ -254,8 +252,9 @@ export function Header() {
                   className="hidden sm:block border-slate-200 dark:border-white/10"
                 />
 
-                {/* Notification Center */}
-                <div className="flex items-center gap-1">
+                {/* Notification Center & E-Commerce Cart */}
+                <div className="flex items-center gap-1.5">
+                  <HeaderCartButton />
                   {!profile?.isManager && <UserNotifications />}
                   {profile?.isManager && <NotificationCenter />}
                   <ThemeToggle />
@@ -458,6 +457,7 @@ export function Header() {
             ) : (
               /* Public / Logged-out State */
               <div className="flex items-center gap-2">
+                <HeaderCartButton />
                 {pathname === "/signin" || pathname === "/signup" ? (
                   <Button
                     component={Link}

@@ -16,6 +16,7 @@ import { useUserProfile } from "@/context/user-profile";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { RouteGuard } from "@/components/auth/route-guard";
+import { getMissingParts } from "@/lib/prebuilt-utils";
 
 const prebuiltCategories = [
   { name: "Entry", selected: true },
@@ -80,6 +81,10 @@ export default function PreBuiltsPage() {
         return isNotArchived && matchesCategory && matchesSearch;
       })
       .sort((a, b) => {
+        const completeA = getMissingParts(a).length === 0;
+        const completeB = getMissingParts(b).length === 0;
+        if (completeA !== completeB) return completeA ? -1 : 1;
+
         let compare = 0;
         if (sortBy === "Name") compare = a.name.localeCompare(b.name);
         else if (sortBy === "Price") compare = a.price - b.price;

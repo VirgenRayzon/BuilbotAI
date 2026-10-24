@@ -18,7 +18,16 @@ export function validateAdvisorBuild(
 
   for (const category of CATEGORIES) {
     const component = output[category];
-    if (!component?.model?.trim() || !Number.isFinite(component.estimatedPrice) || component.estimatedPrice <= 0) {
+    const isZeroPriceAllowed =
+      (category === 'gpu' && (component?.estimatedPrice === 0 || /integrated|uhd|iris|radeon|vega|apu|none|n\/a|onboard/i.test(component?.model || ''))) ||
+      (category === 'cooler' && (component?.estimatedPrice === 0 || /stock|bundled|included/i.test(component?.model || '')));
+
+    if (
+      !component?.model?.trim() ||
+      !Number.isFinite(component.estimatedPrice) ||
+      component.estimatedPrice < 0 ||
+      (component.estimatedPrice === 0 && !isZeroPriceAllowed)
+    ) {
       issues.push(`The ${category} is missing a valid model or price.`);
       continue;
     }
@@ -29,8 +38,10 @@ export function validateAdvisorBuild(
       continue;
     }
     if (!allowAiSearch && !storePart) {
-      issues.push(`The ${category} must be selected from current store inventory.`);
-      continue;
+      if (!isZeroPriceAllowed) {
+        issues.push(`The ${category} must be selected from current store inventory.`);
+        continue;
+      }
     }
 
     const key = category === 'cpu' ? 'CPU' : category === 'gpu' ? 'GPU' : category === 'psu'

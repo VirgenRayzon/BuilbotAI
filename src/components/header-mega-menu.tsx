@@ -7,6 +7,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useUserProfile } from "@/context/user-profile";
+import { HeaderCartButton } from "@/components/ecommerce/header-cart-button";
 import classes from "./header.module.css";
 
 const navigation = [
@@ -53,6 +54,7 @@ export function HeaderMegaMenu() {
 
           <Divider orientation="vertical" h={24} className="border-slate-200 dark:border-white/10" />
 
+          <HeaderCartButton />
           <ThemeToggle />
 
           {authUser ? (
@@ -96,6 +98,7 @@ export function HeaderMegaMenu() {
 
         {/* Mobile Burger Toggle */}
         <div className="flex items-center gap-2 lg:hidden">
+          <HeaderCartButton />
           <ThemeToggle />
           <Burger
             opened={drawerOpened}

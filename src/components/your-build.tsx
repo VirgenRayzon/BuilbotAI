@@ -58,6 +58,7 @@ interface YourBuildProps {
   onCategorySelect?: (category: string) => void;
   categories?: { name: string; selected?: boolean }[];
   onApplySuggestion?: (category: string, partId: string) => void;
+  isAiPending?: boolean;
 }
 
 const requiredCategories = ["Motherboard", "CPU", "GPU", "RAM", "Storage", "PSU", "Cooler", "Case"];
@@ -67,7 +68,7 @@ export function YourBuild({
   build, onClearBuild, onRemovePart, onAnalyze, showSystemBalance = true,
   className, isManagerMode = false, onAddPrebuilt, analysis, onAnalysisUpdate,
   onCategorySelect, categories, resolution, onResolutionChange, workload, onWorkloadChange,
-  onApplySuggestion,
+  onApplySuggestion, isAiPending: externalIsAiPending,
 }: YourBuildProps) {
   const [sidebarTab, setSidebarTab] = useState<"parts" | "analytics">("parts");
   const user = useUser();
@@ -119,12 +120,14 @@ export function YourBuild({
 
   const {
     isCheckingOut, showLocalAiProgress, setShowLocalAiProgress,
-    aiPhase, isAiPending, tokensUsed, handleAddPrebuiltWithAi,
+    aiPhase, isAiPending: internalIsAiPending, tokensUsed, handleAddPrebuiltWithAi,
     handleCancelAi, handleCheckout, handleAnalyze,
   } = useBuildActions({
     build, user, isAiKillSwitch: settings?.isAiKillSwitch || false,
     onClearBuild, onAnalyze, onAddPrebuilt, totalPrice, onAnalysisUpdate,
   });
+
+  const effectiveIsAiPending = Boolean(externalIsAiPending ?? internalIsAiPending);
 
   useEffect(() => {
     if (isManagerMode || !user || !firestore) return;
@@ -283,7 +286,7 @@ export function YourBuild({
         selectedParts={selectedParts}
         missingCategories={missingCategories}
         isManagerMode={isManagerMode}
-        isAiPending={isAiPending}
+        isAiPending={effectiveIsAiPending}
         isCheckingOut={isCheckingOut}
         analysis={analysis}
         onAnalyze={() => { if (isBuildComplete) void handleAnalyze(); }}

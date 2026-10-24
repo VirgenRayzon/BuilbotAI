@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import {
+  Badge as MantineBadge,
   Card as MantineCard,
   MantineProvider,
   Paper as MantinePaper,
@@ -12,7 +13,7 @@ import "@mantine/core/styles.css";
 
 const mantineTheme = createTheme({
   primaryColor: "cyan",
-  primaryShade: { light: 6, dark: 4 },
+  primaryShade: { light: 6, dark: 8 },
   white: "#FDFBF7",
   black: "#252B31",
   colors: {
@@ -55,6 +56,11 @@ const mantineTheme = createTheme({
     Paper: MantinePaper.extend({
       defaultProps: {
         shadow: "lg",
+      },
+    }),
+    Badge: MantineBadge.extend({
+      defaultProps: {
+        radius: "sm",
       },
     }),
   },

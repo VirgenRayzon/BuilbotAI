@@ -465,10 +465,15 @@ export default function PrebuiltBuilderPage() {
             }
             return true;
         }).sort((a, b) => {
-            let compare = 0;
+            const aInStock = (a.stock || 0) > 0;
+            const bInStock = (b.stock || 0) > 0;
+            if (aInStock !== bInStock) return aInStock ? -1 : 1;
+
             const compA = checkCompatibility(a, build).compatible;
             const compB = checkCompatibility(b, build).compatible;
             if (compA !== compB) return compA ? -1 : 1;
+
+            let compare = 0;
 
             if (sortBy === 'Name') compare = (a.name || '').localeCompare(b.name || '');
             else if (sortBy === 'Price') compare = (a.price || 0) - (b.price || 0);

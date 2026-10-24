@@ -1,13 +1,20 @@
 "use client";
 
 import React from "react";
-import { Paper, Text, Title, Button as MantineButton } from "@mantine/core";
+import { Paper, Text, Title, Button as MantineButton, Group } from "@mantine/core";
 import { formatCurrency } from "@/lib/utils";
-import { SlidersHorizontal, ShieldCheck, AlertCircle } from "lucide-react";
+import { SlidersHorizontal, ShieldCheck, AlertCircle, ShoppingCart, Zap } from "lucide-react";
 import type { PrebuiltPartStatus } from "@/lib/prebuilt-utils";
+import { useSiteSettings } from "@/context/site-settings-context";
+import { useEcommerce, type EcommerceSubComponent } from "@/context/ecommerce-context";
 
 interface PrebuiltActionCardProps {
     children?: React.ReactNode;
+    systemId?: string;
+    systemName?: string;
+    tier?: string;
+    imageUrl?: string;
+    componentList?: EcommerceSubComponent[];
     price: number;
     isComplete: boolean;
     unavailableParts: PrebuiltPartStatus[];
@@ -22,6 +29,11 @@ interface PrebuiltActionCardProps {
 
 export function PrebuiltActionCard({
     children,
+    systemId = "prebuilt-system",
+    systemName = "Prebuilt Gaming System",
+    tier = "Mid-Range",
+    imageUrl,
+    componentList = [],
     price,
     isComplete,
     unavailableParts,
@@ -33,6 +45,39 @@ export function PrebuiltActionCard({
     onReserve,
     onCustomize,
 }: PrebuiltActionCardProps) {
+    const { isEcommerceMode } = useSiteSettings();
+    const { addToCart, buyNow } = useEcommerce();
+
+    const canPurchase = isComplete && !loadingParts && isInStock && !isReserving;
+
+    const handleAddToCart = () => {
+        if (!canPurchase) return;
+        addToCart({
+            id: `prebuilt-${systemId}`,
+            kind: "prebuilt",
+            name: systemName,
+            price,
+            tier,
+            imageUrl,
+            components: componentList,
+            includeAssembly: true,
+        }, true);
+    };
+
+    const handleBuyNow = () => {
+        if (!canPurchase) return;
+        buyNow({
+            id: `prebuilt-${systemId}`,
+            kind: "prebuilt",
+            name: systemName,
+            price,
+            tier,
+            imageUrl,
+            components: componentList,
+            includeAssembly: true,
+        });
+    };
+
     return (
         <Paper
             radius="md"
@@ -76,25 +121,56 @@ export function PrebuiltActionCard({
                         Customize in Builder
                     </MantineButton>
 
-                    {/* Reserve Button — STRICTLY HIDDEN for Managers and Super Admins */}
+                    {/* Reserve / E-Commerce Buttons — STRICTLY HIDDEN for Managers and Super Admins */}
                     {!isManagerOrAdmin && (
-                        <MantineButton
-                            onClick={onReserve}
-                            loading={isReserving}
-                            disabled={!isComplete || loadingParts || !isInStock || isReserving}
-                            color="teal"
-                            size="md"
-                            radius="md"
-                            fullWidth
-                            leftSection={<ShieldCheck className="h-[18px] w-[18px]" />}
-                            className="h-11 text-xs font-bold uppercase tracking-wider shadow-md shadow-emerald-500/20 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
-                        >
-                            {loadingParts
-                                ? "Checking Stock..."
-                                : !isInStock
-                                    ? "Out of Stock"
-                                    : "Reserve this Build"}
-                        </MantineButton>
+                        isEcommerceMode ? (
+                            <Group gap="xs" wrap="nowrap" className="w-full">
+                                <MantineButton
+                                    onClick={handleAddToCart}
+                                    disabled={!canPurchase}
+                                    color="cyan"
+                                    size="md"
+                                    radius="md"
+                                    leftSection={<ShoppingCart className="h-[17px] w-[17px]" />}
+                                    className="h-11 flex-1 text-xs font-bold uppercase tracking-wider shadow-md shadow-cyan-500/20"
+                                >
+                                    {loadingParts
+                                        ? "Checking..."
+                                        : !isInStock
+                                            ? "Out of Stock"
+                                            : "Add to Cart"}
+                                </MantineButton>
+                                <MantineButton
+                                    onClick={handleBuyNow}
+                                    disabled={!canPurchase}
+                                    color="teal"
+                                    size="md"
+                                    radius="md"
+                                    leftSection={<Zap className="h-[16px] w-[16px]" />}
+                                    className="h-11 px-3.5 text-xs font-bold uppercase tracking-wider shadow-md shadow-emerald-500/20"
+                                >
+                                    Buy Now
+                                </MantineButton>
+                            </Group>
+                        ) : (
+                            <MantineButton
+                                onClick={onReserve}
+                                loading={isReserving}
+                                disabled={!isComplete || loadingParts || !isInStock || isReserving}
+                                color="teal"
+                                size="md"
+                                radius="md"
+                                fullWidth
+                                leftSection={<ShieldCheck className="h-[18px] w-[18px]" />}
+                                className="h-11 text-xs font-bold uppercase tracking-wider shadow-md shadow-emerald-500/20 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
+                            >
+                                {loadingParts
+                                    ? "Checking Stock..."
+                                    : !isInStock
+                                        ? "Out of Stock"
+                                        : "Reserve this Build"}
+                            </MantineButton>
+                        )
                     )}
                 </div>
             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Badge, Button, Loader, Paper, Text } from "@mantine/core";
+import { ActionIcon, Badge, Loader, Paper, Text, Tooltip } from "@mantine/core";
 import { AlertCircle, ExternalLink, Package } from "lucide-react";
 import {
     Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious,
@@ -30,7 +30,7 @@ function PrebuiltComponentCard({ item }: { item: PrebuiltPartStatus }) {
                 } ${part ? "cursor-pointer hover:shadow-lg" : ""}`}
         >
             <div className="p-3 pb-2">
-                <div className="flex flex-wrap items-center justify-between gap-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 min-h-[20px]">
                     <Badge variant="filled" color="dark" size="xs" radius="sm" className="uppercase font-bold text-[10px] tracking-wider">
                         {part?.brand || item.categoryLabel}
                     </Badge>
@@ -40,7 +40,7 @@ function PrebuiltComponentCard({ item }: { item: PrebuiltPartStatus }) {
                         </Badge>
                     )}
                 </div>
-                <Text size="xs" fw={700} className="mt-2 line-clamp-2 leading-snug text-slate-900 dark:text-slate-100">
+                <Text size="xs" fw={700} className="mt-2 h-9 line-clamp-2 leading-snug text-slate-900 dark:text-slate-100">
                     {item.name}
                 </Text>
             </div>
@@ -63,29 +63,33 @@ function PrebuiltComponentCard({ item }: { item: PrebuiltPartStatus }) {
             </div>
 
             <div className="mt-auto p-3 pt-2">
-                <Text size="10px" fw={800} className="uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
-                    {part ? "Price" : "Status"}
-                </Text>
-                <Text size="md" fw={800} className={`mt-1 font-mono leading-none ${unavailable
-                    ? "text-amber-800 dark:text-amber-300"
-                    : "text-slate-900 dark:text-slate-100"}`}>
-                    {part ? formatCurrency(part.price) : "Replacement needed"}
-                </Text>
-                {part?.productId && (
-                    <Button
-                        component={Link}
-                        href={`/parts/${part.productId}`}
-                        variant="light"
-                        color="cyan"
-                        size="xs"
-                        fullWidth
-                        mt="sm"
-                        rightSection={<ExternalLink className="h-3.5 w-3.5" />}
-                        className="h-9 font-semibold"
-                    >
-                        View part
-                    </Button>
-                )}
+                <div className="flex items-center justify-between gap-2 min-h-[38px]">
+                    <div>
+                        <Text size="10px" fw={800} className="uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                            {part ? "Price" : "Status"}
+                        </Text>
+                        <Text size="md" fw={800} className={`mt-1 font-mono leading-none ${unavailable
+                            ? "text-amber-800 dark:text-amber-300"
+                            : "text-slate-900 dark:text-slate-100"}`}>
+                            {part ? formatCurrency(part.price) : "Replacement needed"}
+                        </Text>
+                    </div>
+                    {part?.productId && (
+                        <Tooltip label="View part" withArrow position="top">
+                            <ActionIcon
+                                component={Link}
+                                href={`/parts/${part.productId}`}
+                                variant="light"
+                                color="cyan"
+                                size="md"
+                                radius="md"
+                                aria-label="View part"
+                            >
+                                <ExternalLink className="h-3.5 w-3.5" />
+                            </ActionIcon>
+                        </Tooltip>
+                    )}
+                </div>
             </div>
         </Paper>
     );
