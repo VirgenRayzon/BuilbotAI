@@ -7,11 +7,14 @@ import { estimateFPS } from "@/lib/fps-estimator";
 import { useTheme } from "@/context/theme-provider";
 import type { ComponentData, Resolution, WorkloadType } from "@/lib/types";
 
-interface FpsPerformanceChartProps {
+export interface FpsPerformanceChartProps {
   build: Record<string, ComponentData | ComponentData[] | null>;
   resolution: Resolution;
   workload: WorkloadType;
   chartHeight?: number;
+  className?: string;
+  withBorder?: boolean;
+  hideHeader?: boolean;
 }
 
 export function FpsPerformanceChart({
@@ -19,6 +22,9 @@ export function FpsPerformanceChart({
   resolution,
   workload,
   chartHeight = 180,
+  className,
+  withBorder = true,
+  hideHeader = false,
 }: FpsPerformanceChartProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -29,8 +35,10 @@ export function FpsPerformanceChart({
       <Paper
         radius="md"
         p="sm"
-        withBorder
-        className="bg-slate-50/80 dark:bg-slate-900/50 border-slate-200 dark:border-white/10 text-center shadow-xs"
+        withBorder={withBorder}
+        bg={withBorder ? undefined : "transparent"}
+        style={{ backgroundColor: withBorder ? undefined : "transparent" }}
+        className={className || "bg-slate-50/80 dark:bg-slate-900/50 border-slate-200 dark:border-white/10 text-center shadow-xs"}
       >
         <Text size="xs" c="dimmed">
           Select a CPU and GPU to calculate real-time FPS estimates.
@@ -45,26 +53,32 @@ export function FpsPerformanceChart({
   return (
     <Paper
       radius="md"
-      p="sm"
-      withBorder
-      className="bg-slate-50/80 dark:bg-slate-900/50 border-slate-200 dark:border-white/10 shadow-xs"
+      p={className ? undefined : "sm"}
+      withBorder={withBorder}
+      bg={withBorder ? undefined : "transparent"}
+      style={{ backgroundColor: withBorder ? undefined : "transparent" }}
+      className={className || "bg-slate-50/80 dark:bg-slate-900/50 border-slate-200 dark:border-white/10 shadow-xs"}
     >
       {/* Header */}
-      <Group justify="space-between" align="center" className="mb-2">
-        <Text size="xs" fw={800} className="tracking-wider uppercase text-slate-800 dark:text-slate-200">
-          Estimated Performance
-        </Text>
-        <span className="text-[10px] font-mono text-cyan-600 dark:text-cyan-400 font-bold">
-          {resolution} • {workload}
-        </span>
-      </Group>
+      {!hideHeader && (
+        <Group justify="space-between" align="center" className="mb-2">
+          <Text size="xs" fw={800} className="tracking-wider uppercase text-slate-800 dark:text-slate-200">
+            Estimated Performance
+          </Text>
+          <span className="text-[10px] font-mono text-cyan-600 dark:text-cyan-400 font-bold">
+            {resolution} • {workload}
+          </span>
+        </Group>
+      )}
 
       {/* Metrics Row */}
       <Paper
         radius="sm"
         p="xs"
         withBorder
-        className="bg-white/80 dark:bg-slate-950/40 border-slate-200/80 dark:border-white/5 mb-2.5 shadow-none"
+        bg={withBorder ? undefined : "transparent"}
+        style={{ backgroundColor: withBorder ? undefined : "transparent" }}
+        className={withBorder ? "bg-white/80 dark:bg-slate-950/40 border-slate-200/80 dark:border-white/5 mb-2.5 shadow-none" : "bg-transparent border-slate-200/60 dark:border-white/10 mb-2.5 shadow-none"}
       >
         <Group justify="space-around" align="center" gap="xs">
           <Stack gap={0} align="center">

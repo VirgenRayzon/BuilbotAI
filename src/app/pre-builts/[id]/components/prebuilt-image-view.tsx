@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { Badge, Paper } from "@mantine/core";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn, getOptimizedStorageUrl } from "@/lib/utils";
@@ -15,6 +16,9 @@ interface PrebuiltImageViewProps {
     tier?: string;
     itemLabel?: string;
     placeholderSrc?: string;
+    className?: string;
+    showDisclaimer?: boolean;
+    disclaimer?: React.ReactNode;
 }
 
 export function PrebuiltImageView({
@@ -24,6 +28,9 @@ export function PrebuiltImageView({
     tier,
     itemLabel = "system",
     placeholderSrc = "/placeholder-system.png",
+    className,
+    showDisclaimer,
+    disclaimer,
 }: PrebuiltImageViewProps) {
     const allImages = React.useMemo(
         () => Array.from(new Set([imageUrl, ...images].filter((image): image is string => Boolean(image)))),
@@ -49,6 +56,7 @@ export function PrebuiltImageView({
 
     const currentImage = allImages[currentImageIndex] || imageUrl;
     const coverUrl = currentImage || placeholderSrc;
+    const shouldShowDisclaimer = showDisclaimer ?? (itemLabel === "system");
 
     const showPrevious = () => {
         setSlideDirection(-1);
@@ -73,7 +81,10 @@ export function PrebuiltImageView({
             p={0}
             withBorder
             style={{ display: "flex" }}
-            className="flex aspect-square w-full flex-col overflow-hidden border-slate-200/80 bg-transparent shadow-sm select-none dark:border-white/10 md:aspect-auto md:h-full"
+            className={cn(
+                "flex aspect-square w-full flex-col overflow-hidden border-slate-200/80 bg-transparent shadow-sm select-none dark:border-white/10 md:min-h-[460px]",
+                className
+            )}
         >
             <div
                 className="relative min-h-0 flex-1 cursor-zoom-in bg-transparent"
@@ -182,6 +193,23 @@ export function PrebuiltImageView({
                     })}
                 </div>
             </div>
+
+            {shouldShowDisclaimer && (
+                <div className="shrink-0 border-t border-slate-200/80 bg-slate-50/60 p-3 sm:p-3.5 dark:border-white/10 dark:bg-white/[0.01]">
+                    {disclaimer || (
+                        <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                            Product images used on this page are for illustrative purposes only and are not indicative of exact components used at the time of manufacture. Component make and models may vary from depictions of product in product images but will adhere to the specifications outlined in the product description. Particulars such as I/O or graphical ports may vary. Please{" "}
+                            <Link
+                                href="/contact"
+                                className="text-cyan-600 dark:text-cyan-400 underline underline-offset-2 hover:text-cyan-500 font-medium transition-colors"
+                            >
+                                contact
+                            </Link>{" "}
+                            us for more details.
+                        </p>
+                    )}
+                </div>
+            )}
 
             <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
                 <DialogContent

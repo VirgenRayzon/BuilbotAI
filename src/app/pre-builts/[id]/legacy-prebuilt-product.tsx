@@ -3,12 +3,16 @@
 import { use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Container, Grid, Title, Text, Badge, Group, Paper, Button, Loader } from "@mantine/core";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { Container, Grid, Title, Text, Paper, Button, Loader } from "@mantine/core";
+import { ArrowLeft } from "lucide-react";
 import { usePrebuiltDetails } from "./hooks/use-prebuilt-details";
 import { PrebuiltImageView } from "./components/prebuilt-image-view";
+import { PrebuiltPerformanceAnalyzer } from "./components/prebuilt-performance-analyzer";
 import { PrebuiltActionCard } from "./components/prebuilt-action-card";
-import { PrebuiltAiReview } from "./components/prebuilt-ai-review";
+import { PrebuiltHeaderCard } from "./components/prebuilt-header-card";
+import { PrebuiltAiHighlights } from "./components/prebuilt-ai-highlights";
+import { PrebuiltPartsList } from "./components/prebuilt-parts-list";
+import { PrebuiltShowcase } from "@/components/landing/prebuilt-showcase";
 import { getEcommerceFallbackImage } from "@/context/ecommerce-context";
 
 export default function LegacyPrebuiltProductPage({ params }: { params: Promise<{ id: string }> }) {
@@ -101,7 +105,7 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
 
             <div className="relative z-10 w-full max-w-[1600px] mx-auto px-4 py-8 sm:px-6 md:px-8 lg:px-8 xl:px-10">
                 {/* Top Navigation */}
-                <div className="mb-8">
+                <div className="mb-6">
                     <Button
                         component={Link}
                         href={backLink}
@@ -116,95 +120,109 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
                     </Button>
                 </div>
 
-                {/* Desktop layout: visual at left, build details at right. */}
-                <Grid gutter={{ base: "xl", lg: 40 }} align="stretch">
-                    {/* Details follow the gallery on mobile and stay on the right on desktop. */}
-                    <Grid.Col span={{ base: 12, md: 6 }} order={{ base: 2, md: 2 }} className="flex">
-                        <div className="flex h-full w-full flex-col">
-                            {/* Product Header */}
-                            <div>
-                                <Group gap="xs" mb="xs">
-                                    <Badge
-                                        variant="filled"
-                                        color="cyan"
-                                        size="md"
-                                        radius="sm"
-                                        className="font-bold tracking-wider uppercase text-[10px]"
-                                    >
-                                        {system.tier} Tier
-                                    </Badge>
-                                    {isComplete && (
-                                        <Badge
-                                            variant="light"
-                                            color="teal"
-                                            size="md"
-                                            radius="sm"
-                                            leftSection={<ShieldCheck className="w-3.5 h-3.5" />}
-                                            className="font-semibold text-[10px]"
-                                        >
-                                            Verified Build
-                                        </Badge>
-                                    )}
-                                </Group>
+                {/* 2-Column Blueprint Layout */}
+                <Grid gutter={{ base: "xl", lg: 32 }} align="start">
+                    {/* LEFT COLUMN: Image Preview + (Desktop only: Performance Analyzer & AI Highlights) */}
+                    <Grid.Col span={{ base: 12, lg: 6 }}>
+                        <div className="flex flex-col gap-8">
+                            {/* Image Preview */}
+                            <PrebuiltImageView
+                                imageUrl={system.imageUrl}
+                                images={system.images}
+                                systemName={system.name}
+                                tier={system.tier}
+                            />
 
-                                <Title
-                                    order={1}
-                                    className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50 mb-3"
-                                >
-                                    {system.name}
-                                </Title>
-
-                                {system.description && (
-                                    <Text size="md" c="dimmed" className="leading-relaxed">
-                                        {system.description}
-                                    </Text>
-                                )}
-                            </div>
-
-                            {/* Anchor the purchase controls to the base of the image column. */}
-                            <div className="mt-auto pt-6">
-                                <PrebuiltActionCard
-                                    systemId={system.id}
-                                    systemName={system.name}
-                                    tier={system.tier}
-                                    imageUrl={system.imageUrl || system.images?.[0]}
-                                    componentList={ecommerceSubComponents}
-                                    price={system.price}
-                                    isComplete={isComplete}
-                                    unavailableParts={unavailableParts}
-                                    isInStock={isInStock}
+                            {/* Desktop-only: Performance Analyzer & AI Highlights */}
+                            <div className="hidden lg:flex flex-col gap-8">
+                                <PrebuiltPerformanceAnalyzer
+                                    components={components}
+                                    componentStatuses={componentStatuses}
                                     loadingParts={loadingParts}
-                                    isReserving={isReserving}
-                                    isManagerOrAdmin={isManagerOrAdmin}
-                                    hasComponents={hasComponents}
-                                    onReserve={handleReserve}
                                     onCustomize={handleCustomizePrebuilt}
-                                >
-                                    <PrebuiltAiReview
-                                        analysis={analysis}
-                                        loadingAnalysis={loadingAnalysis}
-                                        analysisError={analysisError}
-                                        canGenerateReport={canGenerateReport}
-                                        onAnalyze={handleAnalyze}
-                                        componentStatuses={componentStatuses}
-                                        loadingParts={loadingParts}
-                                    />
-                                </PrebuiltActionCard>
+                                />
+
+                                <PrebuiltAiHighlights
+                                    analysis={analysis}
+                                    loadingAnalysis={loadingAnalysis}
+                                    analysisError={analysisError}
+                                    canGenerateReport={canGenerateReport}
+                                    onAnalyze={handleAnalyze}
+                                />
                             </div>
                         </div>
                     </Grid.Col>
 
-                    {/* Lead with the gallery on mobile; keep it on the left on desktop. */}
-                    <Grid.Col span={{ base: 12, md: 6 }} order={{ base: 1, md: 1 }} className="flex">
-                        <PrebuiltImageView
-                            imageUrl={system.imageUrl}
-                            images={system.images}
-                            systemName={system.name}
-                            tier={system.tier}
-                        />
+                    {/* RIGHT COLUMN: Header Card (Badges, Name, Description, Starting At + Customize on right), Parts List, Bottom Action Card */}
+                    <Grid.Col span={{ base: 12, lg: 6 }}>
+                        <div className="flex flex-col gap-5">
+                            {/* Combined Header Card: Badges, Prebuilt Name, Description, Starting At + Price, and Customize on right */}
+                            <PrebuiltHeaderCard
+                                system={system}
+                                price={system.price}
+                                isComplete={isComplete}
+                                isInStock={isInStock}
+                                loadingParts={loadingParts}
+                                hasComponents={hasComponents}
+                                onCustomize={handleCustomizePrebuilt}
+                            />
+
+                            {/* Parts in List View */}
+                            <PrebuiltPartsList
+                                parts={componentStatuses}
+                                loading={loadingParts}
+                            />
+
+                            {/* Bottom Price Display and Action Buttons */}
+                            <PrebuiltActionCard
+                                systemId={system.id}
+                                systemName={system.name}
+                                tier={system.tier}
+                                imageUrl={system.imageUrl || system.images?.[0]}
+                                componentList={ecommerceSubComponents}
+                                price={system.price}
+                                priceLabel="Build Total"
+                                isComplete={isComplete}
+                                unavailableParts={unavailableParts}
+                                isInStock={isInStock}
+                                loadingParts={loadingParts}
+                                isReserving={isReserving}
+                                isManagerOrAdmin={isManagerOrAdmin}
+                                hasComponents={hasComponents}
+                                onReserve={handleReserve}
+                            />
+                        </div>
                     </Grid.Col>
                 </Grid>
 
+                {/* Mobile-only: Performance Analyzer and AI System Highlights placed at the end before "You might also like" */}
+                <div className="flex lg:hidden flex-col gap-8 mt-10">
+                    <PrebuiltPerformanceAnalyzer
+                        components={components}
+                        componentStatuses={componentStatuses}
+                        loadingParts={loadingParts}
+                        onCustomize={handleCustomizePrebuilt}
+                    />
+
+                    <PrebuiltAiHighlights
+                        analysis={analysis}
+                        loadingAnalysis={loadingAnalysis}
+                        analysisError={analysisError}
+                        canGenerateReport={canGenerateReport}
+                        onAnalyze={handleAnalyze}
+                    />
+                </div>
+
+                {/* Full-width Carousel: "You might also like." */}
+                <div className="mt-16 sm:mt-24 pt-8 border-t border-slate-200/80 dark:border-white/10">
+                    <PrebuiltShowcase
+                        badge="Battle-Ready"
+                        title="You might also like."
+                        subtitle="Expertly architected PC builds, validated by Buildbot AI for zero-bottleneck performance."
+                        excludeId={system.id}
+                        className="py-12 sm:py-16"
+                    />
+                </div>
             </div>
         </div>
     );

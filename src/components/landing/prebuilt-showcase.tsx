@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { useFirestore } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, limit, query, where } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import { PrebuiltSystem } from '@/lib/types';
 import { PrebuiltSystemCard } from '@/components/prebuilt-system-card';
 import { SectionHeader } from './section-header';
@@ -19,7 +19,21 @@ import {
     CarouselPrevious,
 } from "@/components/ui/carousel";
 
-export function PrebuiltShowcase() {
+export interface PrebuiltShowcaseProps {
+    badge?: string;
+    title?: string;
+    subtitle?: string;
+    excludeId?: string;
+    className?: string;
+}
+
+export function PrebuiltShowcase({
+    badge = "Battle-Ready",
+    title = "Featured Systems",
+    subtitle = "Expertly architected PC builds, validated by Buildbot AI for zero-bottleneck performance.",
+    excludeId,
+    className,
+}: PrebuiltShowcaseProps = {}) {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
     const firestore = useFirestore();
@@ -34,18 +48,21 @@ export function PrebuiltShowcase() {
 
     const activeSystems = useMemo(() => {
         if (!systems) return [];
-        return systems.filter(s => !s.isArchived);
-    }, [systems]);
+        const unarchived = systems.filter(s => !s.isArchived);
+        if (!excludeId) return unarchived;
+        const filtered = unarchived.filter(s => s.id !== excludeId && s.productId !== excludeId);
+        return filtered.length > 0 ? filtered : unarchived;
+    }, [systems, excludeId]);
 
     const [showAllSpecs, setShowAllSpecs] = React.useState(false);
 
     return (
-        <section className="py-32 relative overflow-hidden transition-colors duration-1000">
+        <section className={cn("py-32 relative overflow-hidden transition-colors duration-1000", className)}>
             <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 relative z-10">
                 <SectionHeader
-                    badge="Battle-Ready"
-                    title="Featured Systems"
-                    subtitle="Expertly architected PC builds, validated by Buildbot AI for zero-bottleneck performance."
+                    badge={badge}
+                    title={title}
+                    subtitle={subtitle}
                 />
 
                 <div className="relative mt-20 px-4 md:px-12">

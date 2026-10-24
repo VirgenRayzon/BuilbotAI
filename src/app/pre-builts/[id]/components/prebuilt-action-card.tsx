@@ -3,7 +3,7 @@
 import React from "react";
 import { Paper, Text, Title, Button as MantineButton, Group } from "@mantine/core";
 import { formatCurrency } from "@/lib/utils";
-import { SlidersHorizontal, ShieldCheck, AlertCircle, ShoppingCart, Zap } from "lucide-react";
+import { ShieldCheck, AlertCircle, ShoppingCart, Zap } from "lucide-react";
 import type { PrebuiltPartStatus } from "@/lib/prebuilt-utils";
 import { useSiteSettings } from "@/context/site-settings-context";
 import { useEcommerce, type EcommerceSubComponent } from "@/context/ecommerce-context";
@@ -16,6 +16,7 @@ interface PrebuiltActionCardProps {
     imageUrl?: string;
     componentList?: EcommerceSubComponent[];
     price: number;
+    priceLabel?: string;
     isComplete: boolean;
     unavailableParts: PrebuiltPartStatus[];
     isInStock: boolean;
@@ -24,7 +25,7 @@ interface PrebuiltActionCardProps {
     isManagerOrAdmin: boolean;
     hasComponents: boolean;
     onReserve: () => void;
-    onCustomize: () => void;
+    onCustomize?: () => void;
 }
 
 export function PrebuiltActionCard({
@@ -35,15 +36,14 @@ export function PrebuiltActionCard({
     imageUrl,
     componentList = [],
     price,
+    priceLabel = "Build Total",
     isComplete,
     unavailableParts,
     isInStock,
     loadingParts,
     isReserving,
     isManagerOrAdmin,
-    hasComponents,
     onReserve,
-    onCustomize,
 }: PrebuiltActionCardProps) {
     const { isEcommerceMode } = useSiteSettings();
     const { addToCart, buyNow } = useEcommerce();
@@ -81,7 +81,7 @@ export function PrebuiltActionCard({
     return (
         <Paper
             radius="md"
-            p={{ base: "sm", sm: "md" }}
+            p={{ base: "md", sm: "lg" }}
             withBorder
             className="bg-white/90 dark:bg-[#141a23]/90 border-slate-200 dark:border-white/10 shadow-sm backdrop-blur-md"
         >
@@ -91,11 +91,11 @@ export function PrebuiltActionCard({
                 </div>
             )}
 
-            <div className="flex flex-col justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 {/* Price Display */}
                 <div>
-                    <Text size="sm" fw={800} c="dimmed" className="mb-1 uppercase tracking-[0.16em]">
-                        Build Total
+                    <Text size="xs" fw={800} c="dimmed" className="mb-1 uppercase tracking-[0.16em]">
+                        {priceLabel}
                     </Text>
                     <Title
                         order={2}
@@ -106,25 +106,11 @@ export function PrebuiltActionCard({
                     </Title>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
-                    {/* Customize Prebuilt Button (Available for all, including staff) */}
-                    <MantineButton
-                        variant="default"
-                        size="lg"
-                        radius="md"
-                        leftSection={<SlidersHorizontal className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />}
-                        disabled={loadingParts || !hasComponents}
-                        onClick={onCustomize}
-                        className="h-11 w-full min-w-0 px-4 text-xs font-semibold uppercase tracking-wider border-slate-200 transition-colors hover:border-cyan-500/50 dark:border-white/15"
-                    >
-                        Customize in Builder
-                    </MantineButton>
-
-                    {/* Reserve / E-Commerce Buttons — STRICTLY HIDDEN for Managers and Super Admins */}
+                {/* Reserve / E-Commerce Buttons aligned beside the price */}
+                <div className="flex items-center gap-2.5 sm:shrink-0">
                     {!isManagerOrAdmin && (
                         isEcommerceMode ? (
-                            <Group gap="xs" wrap="nowrap" className="w-full">
+                            <Group gap="xs" wrap="nowrap" className="w-full sm:w-auto">
                                 <MantineButton
                                     onClick={handleAddToCart}
                                     disabled={!canPurchase}
@@ -132,7 +118,7 @@ export function PrebuiltActionCard({
                                     size="md"
                                     radius="md"
                                     leftSection={<ShoppingCart className="h-[17px] w-[17px]" />}
-                                    className="h-11 flex-1 text-xs font-bold uppercase tracking-wider shadow-md shadow-cyan-500/20"
+                                    className="h-11 px-5 text-xs font-bold uppercase tracking-wider shadow-md shadow-cyan-500/20"
                                 >
                                     {loadingParts
                                         ? "Checking..."
@@ -147,7 +133,7 @@ export function PrebuiltActionCard({
                                     size="md"
                                     radius="md"
                                     leftSection={<Zap className="h-[16px] w-[16px]" />}
-                                    className="h-11 px-3.5 text-xs font-bold uppercase tracking-wider shadow-md shadow-emerald-500/20"
+                                    className="h-11 px-5 text-xs font-bold uppercase tracking-wider shadow-md shadow-emerald-500/20"
                                 >
                                     Buy Now
                                 </MantineButton>
@@ -160,9 +146,8 @@ export function PrebuiltActionCard({
                                 color="teal"
                                 size="md"
                                 radius="md"
-                                fullWidth
                                 leftSection={<ShieldCheck className="h-[18px] w-[18px]" />}
-                                className="h-11 text-xs font-bold uppercase tracking-wider shadow-md shadow-emerald-500/20 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
+                                className="h-11 px-6 text-xs font-bold uppercase tracking-wider shadow-md shadow-emerald-500/20 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
                             >
                                 {loadingParts
                                     ? "Checking Stock..."
