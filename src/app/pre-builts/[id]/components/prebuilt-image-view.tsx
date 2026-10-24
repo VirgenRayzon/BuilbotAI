@@ -1,10 +1,12 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { Badge, Paper } from "@mantine/core";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn, getOptimizedStorageUrl } from "@/lib/utils";
 import { OptimizedImage } from "@/components/ui/optimized-image";
+import { SlidingImage } from "@/components/ui/sliding-image";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 interface PrebuiltImageViewProps {
@@ -12,28 +14,57 @@ interface PrebuiltImageViewProps {
     images?: string[];
     systemName: string;
     tier?: string;
+    itemLabel?: string;
+    placeholderSrc?: string;
+    className?: string;
+    showDisclaimer?: boolean;
+    disclaimer?: React.ReactNode;
 }
 
-export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: PrebuiltImageViewProps) {
+export function PrebuiltImageView({
+    imageUrl,
+    images = [],
+    systemName,
+    tier,
+    itemLabel = "system",
+    placeholderSrc = "/placeholder-system.png",
+    className,
+    showDisclaimer,
+    disclaimer,
+}: PrebuiltImageViewProps) {
     const allImages = React.useMemo(
         () => Array.from(new Set([imageUrl, ...images].filter((image): image is string => Boolean(image)))),
         [imageUrl, images]
     );
     const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
+    const [slideDirection, setSlideDirection] = React.useState<-1 | 1>(1);
     const [previewOpen, setPreviewOpen] = React.useState(false);
 
     React.useEffect(() => {
         setCurrentImageIndex(0);
     }, [imageUrl]);
 
+    // Fetch every gallery image as soon as the product page opens. The modal uses
+    // the same URLs, so previous/next navigation can swap from the browser cache
+    // instead of waiting for a full-size image request after the customer clicks.
+    React.useEffect(() => {
+        allImages.forEach((imageUrl) => {
+            const image = new window.Image();
+            image.src = getOptimizedStorageUrl(imageUrl) || imageUrl;
+        });
+    }, [allImages]);
+
     const currentImage = allImages[currentImageIndex] || imageUrl;
-    const coverUrl = currentImage || "/placeholder-system.png";
+    const coverUrl = currentImage || placeholderSrc;
+    const shouldShowDisclaimer = showDisclaimer ?? (itemLabel === "system");
 
     const showPrevious = () => {
+        setSlideDirection(-1);
         setCurrentImageIndex((current) => (current === 0 ? allImages.length - 1 : current - 1));
     };
 
     const showNext = () => {
+        setSlideDirection(1);
         setCurrentImageIndex((current) => (current === allImages.length - 1 ? 0 : current + 1));
     };
 
@@ -50,7 +81,10 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
             p={0}
             withBorder
             style={{ display: "flex" }}
-            className="flex aspect-square w-full flex-col overflow-hidden border-slate-200/80 bg-transparent shadow-sm select-none dark:border-white/10"
+            className={cn(
+                "flex aspect-square w-full flex-col overflow-hidden border-slate-200/80 bg-transparent shadow-sm select-none dark:border-white/10 md:min-h-[460px]",
+                className
+            )}
         >
             <div
                 className="relative min-h-0 flex-1 cursor-zoom-in bg-transparent"
@@ -60,12 +94,13 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                 onClick={() => setPreviewOpen(true)}
                 onKeyDown={openPreviewFromKeyboard}
             >
-                <OptimizedImage
+                <SlidingImage
+                    imageKey={`system-${currentImageIndex}`}
+                    direction={slideDirection}
                     src={coverUrl}
                     alt={`${systemName} photo ${currentImageIndex + 1}`}
                     fill
-                    priority
-                    unoptimized
+                    priority={currentImageIndex === 0}
                     sizes="(max-width: 768px) calc(100vw - 32px), 50vw"
                     className="object-contain p-3 sm:p-5"
                 />
@@ -86,7 +121,7 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                     <>
                         <button
                             type="button"
-                            aria-label="Previous system photo"
+                            aria-label={`Previous ${itemLabel} photo`}
                             onClick={(event) => {
                                 event.stopPropagation();
                                 showPrevious();
@@ -97,7 +132,7 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                         </button>
                         <button
                             type="button"
-                            aria-label="Next system photo"
+                            aria-label={`Next ${itemLabel} photo`}
                             onClick={(event) => {
                                 event.stopPropagation();
                                 showNext();
@@ -121,7 +156,7 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
 
             <div
                 className="shrink-0 border-t border-slate-200/80 bg-slate-50/90 p-3 dark:border-white/10 dark:bg-[#111722]"
-                aria-label="System photos"
+                aria-label={`${systemName} photos`}
                 role="tablist"
             >
                 <div className="mx-auto flex w-max min-w-full justify-center gap-2 overflow-x-auto pb-0.5 [scrollbar-color:rgb(6_182_212)_transparent] [scrollbar-width:thin]">
@@ -134,8 +169,11 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                                 type="button"
                                 role="tab"
                                 aria-selected={isCurrent}
-                                aria-label={`View system photo ${index + 1}`}
-                                onClick={() => setCurrentImageIndex(index)}
+                                aria-label={`View ${itemLabel} photo ${index + 1}`}
+                                onClick={() => {
+                                    setSlideDirection(index >= currentImageIndex ? 1 : -1);
+                                    setCurrentImageIndex(index);
+                                }}
                                 className={cn(
                                     "relative h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 bg-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 dark:ring-offset-[#111722]",
                                     isCurrent
@@ -144,7 +182,7 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                                 )}
                             >
                                 <OptimizedImage
-                                    src={getOptimizedStorageUrl(image) || "/placeholder-system.png"}
+                                    src={getOptimizedStorageUrl(image) || placeholderSrc}
                                     alt={`${systemName} thumbnail ${index + 1}`}
                                     fill
                                     sizes="64px"
@@ -155,6 +193,23 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                     })}
                 </div>
             </div>
+
+            {shouldShowDisclaimer && (
+                <div className="shrink-0 border-t border-slate-200/80 bg-slate-50/60 p-3 sm:p-3.5 dark:border-white/10 dark:bg-white/[0.01]">
+                    {disclaimer || (
+                        <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                            Product images used on this page are for illustrative purposes only and are not indicative of exact components used at the time of manufacture. Component make and models may vary from depictions of product in product images but will adhere to the specifications outlined in the product description. Particulars such as I/O or graphical ports may vary. Please{" "}
+                            <Link
+                                href="/contact"
+                                className="text-cyan-600 dark:text-cyan-400 underline underline-offset-2 hover:text-cyan-500 font-medium transition-colors"
+                            >
+                                contact
+                            </Link>{" "}
+                            us for more details.
+                        </p>
+                    )}
+                </div>
+            )}
 
             <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
                 <DialogContent
@@ -210,12 +265,13 @@ export function PrebuiltImageView({ imageUrl, images = [], systemName, tier }: P
                     )}
 
                     <div className="relative flex-1 min-h-0 w-full overflow-hidden rounded-xl bg-transparent">
-                        <OptimizedImage
+                        <SlidingImage
+                            imageKey={`preview-${currentImageIndex}`}
+                            direction={slideDirection}
                             src={coverUrl}
                             alt={`${systemName} full-size photo ${currentImageIndex + 1}`}
                             fill
-                            priority
-                            unoptimized
+                            priority={currentImageIndex === 0}
                             sizes="(max-width: 1024px) 94vw, 1200px"
                             className="object-contain"
                         />

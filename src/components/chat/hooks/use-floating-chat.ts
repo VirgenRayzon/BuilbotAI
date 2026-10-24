@@ -14,8 +14,8 @@ const SLEEK_GREETINGS = [
     "Welcome! I'm Buildbot AI. Need advice on choosing components or balancing your setup? Ask me anything!"
 ];
 
-export function useFloatingChat(build?: Record<string, ComponentData | ComponentData[] | null>) {
-    const [isOpen, setIsOpen] = useState(false);
+export function useFloatingChat(build?: Record<string, ComponentData | ComponentData[] | null>, initiallyOpen = false) {
+    const [isOpen, setIsOpen] = useState(initiallyOpen);
     const [input, setInput] = useState("");
     const [elapsedTime, setElapsedTime] = useState(0);
     const [timerActive, setTimerActive] = useState(false);

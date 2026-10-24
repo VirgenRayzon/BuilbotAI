@@ -3,23 +3,18 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useUserProfile } from "@/context/user-profile";
 import { useTheme } from "@/context/theme-provider";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { cn, formatCurrency } from "@/lib/utils";
 import {
   Paper,
   Title,
   Text,
   Badge,
-  Group,
-  ThemeIcon,
   Button,
-  SegmentedControl,
 } from "@mantine/core";
 import {
   User,
   Package,
-  Shield,
-  FileText,
   Settings,
   Activity,
   Heart,
@@ -28,44 +23,34 @@ import {
   Cpu,
   History,
   Truck,
-  Bot,
-  FileCode,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RouteGuard } from "@/components/auth/route-guard";
 import type { Order } from "@/lib/types";
+import { useSiteSettings } from "@/context/site-settings-context";
 
 // Custom Hooks
 import { useProfileState } from "./hooks/use-profile-state";
 import { useReservations } from "./hooks/use-reservations";
 import { useEmergencyControls } from "./hooks/use-emergency-controls";
 import { useAdminKeys } from "./hooks/use-admin-keys";
-import { useAuditLogs } from "./hooks/use-audit-logs";
 import { useUserAuditLogs } from "./hooks/use-user-audit-logs";
 import { useFavorites } from "./hooks/use-favorites";
 
 // Sub-components
 import { ProfileHero } from "./components/profile-hero";
 import { ProfileSidebar } from "./components/profile-sidebar";
-import { AccountDetails } from "./components/account-details";
 import { MantineProfileView } from "./components/mantine-profile-view";
 import { MantineSettingsView } from "./components/mantine-settings-view";
 import { EmergencyControlsCard } from "./components/emergency-controls-card";
 import { ReservationsList } from "./components/reservations-list";
 import { FavoritesList } from "./components/favorites-list";
 import { UserAuditLogsSection } from "./components/user-audit-logs-section";
+import { ContactInboxTab } from "./components/contact-inbox-tab";
+import { CustomerSupportTab } from "./components/customer-support-tab";
+import { MockOrdersSection } from "@/components/ecommerce/mock-orders-section";
 import { CompactInfo } from "@/components/ui/compact-info";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -84,6 +69,8 @@ export default function ProfilePage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { isEcommerceMode } = useSiteSettings();
 
   // Logic Layers
   const profileState = useProfileState();
@@ -94,7 +81,6 @@ export default function ProfilePage() {
   const favoritesHook = useFavorites();
 
   const [cancelModalOrder, setCancelModalOrder] = useState<Order | null>(null);
-  const [deleteActionId, setDeleteActionId] = useState<string | null>(null);
 
   // Role booleans
   const isSuperAdmin = Boolean(profile?.isSuperAdmin);
@@ -104,60 +90,49 @@ export default function ProfilePage() {
   // Define permitted tabs per role (Safeguards remains for Super Admin)
   const getAllowedTabs = useCallback(() => {
     if (isSuperAdmin) {
-      return ["profile", "settings", "account", "safeguards"];
+      return ["profile", "settings", "account", "contact-inbox", "safeguards"];
     }
     if (isManager) {
-      return ["profile", "settings", "account"];
+      return ["profile", "settings", "account", "contact-inbox"];
     }
-    return ["profile", "settings", "account", "reservations", "favorites", "activity"];
+    return ["profile", "settings", "account", "contact-inbox", "reservations", "favorites", "activity"];
   }, [isSuperAdmin, isManager]);
 
   const defaultTab = "profile";
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
 
-  // Synchronize and sanitize URL query params with legacy redirections to /admin
+  // Synchronize and sanitize URL query params with legacy redirections to /admin.
+  // App Router navigations do not emit `popstate`, so the search params must be
+  // observed directly for links that change tabs while this page stays mounted.
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const syncTabs = () => {
-        const params = new URLSearchParams(window.location.search);
-        const tab = params.get("tab");
+    const tab = searchParams.get("tab");
 
-        // Graceful automatic redirections for relocated tabs
-        if (tab === "audit" || tab === "audit-logs") {
-          router.replace("/admin?tab=audit");
-          return;
-        }
-        if (tab === "management") {
-          router.replace("/admin?tab=management");
-          return;
-        }
-        if (tab === "ai-models" || tab === "prompts") {
-          router.replace("/admin?tab=ai");
-          return;
-        }
-        if (tab === "content") {
-          router.replace("/admin?tab=content");
-          return;
-        }
-
-        const allowed = getAllowedTabs();
-
-        if (tab && allowed.includes(tab)) {
-          if (tab === "account" || tab === "overview") {
-            setActiveTab("profile");
-          } else {
-            setActiveTab(tab);
-          }
-        } else {
-          setActiveTab(defaultTab);
-        }
-      };
-
-      syncTabs();
-      window.addEventListener("popstate", syncTabs);
-      return () => window.removeEventListener("popstate", syncTabs);
+    // Graceful automatic redirections for relocated tabs
+    if (tab === "audit" || tab === "audit-logs") {
+      router.replace("/admin?tab=audit");
+      return;
     }
-  }, [profile, isSuperAdmin, isManager, getAllowedTabs]);
+    if (tab === "management") {
+      router.replace("/admin?tab=management");
+      return;
+    }
+    if (tab === "ai-models" || tab === "prompts") {
+      router.replace("/admin?tab=ai");
+      return;
+    }
+    if (tab === "content") {
+      router.replace("/admin?tab=content");
+      return;
+    }
+
+    const allowed = getAllowedTabs();
+
+    if (tab && allowed.includes(tab)) {
+      setActiveTab(tab === "account" || tab === "overview" ? "profile" : tab);
+    } else {
+      setActiveTab(defaultTab);
+    }
+  }, [getAllowedTabs, router, searchParams]);
 
   // Tab switch handler with URL synchronization
   const handleTabChange = (tabId: string) => {
@@ -169,6 +144,7 @@ export default function ProfilePage() {
       const url = new URL(window.location.href);
       url.searchParams.set("tab", tabId);
       url.searchParams.delete("sub");
+      if (tabId !== "contact-inbox") url.searchParams.delete("inquiry");
       window.history.replaceState({}, "", url.toString());
     }
   };
@@ -193,7 +169,7 @@ export default function ProfilePage() {
           }}
         />
 
-        <div className="relative z-10 pt-6 md:pt-8">
+        <div className="relative z-10 pt-6 md:pt-8 max-w-[1600px] mx-auto">
           {/* Full-Width Prominent User Identity Banner below Header */}
           <ProfileHero
             profile={profile}
@@ -201,7 +177,7 @@ export default function ProfilePage() {
             stats={reservations.stats}
           />
 
-          <main className="w-full px-4 sm:px-6 md:px-8 lg:px-10 pb-12">
+          <main className="w-full px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 pb-12">
             {/* Facebook / Mantine UI 2-Column Architecture */}
             <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8 items-start">
               {/* Left Column: Sticky Navigation Sidebar */}
@@ -278,9 +254,16 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* TAB 2: Store Reservations (Regular Customers Only) */}
+                    {/* TAB: Contact Inbox */}
+                    {activeTab === "contact-inbox" && (
+                      isRegularUser ? <CustomerSupportTab /> : <ContactInboxTab />
+                    )}
+
+                    {/* TAB 2: Store Reservations & E-Commerce Shipments (Regular Customers Only) */}
                     {activeTab === "reservations" && isRegularUser && (
                       <div className="space-y-6">
+                        {isEcommerceMode && <MockOrdersSection />}
+
                         <Paper
                           withBorder
                           radius="lg"
@@ -290,7 +273,11 @@ export default function ProfilePage() {
                           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div>
                               <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
-                                <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                {isEcommerceMode ? (
+                                  <Truck className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                                ) : (
+                                  <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                )}
                                 <span>Store Reservations</span>
                                 <CompactInfo message="Track active component reservation tickets, assembly progress, and pick-up readiness." />
                               </Title>
@@ -304,18 +291,9 @@ export default function ProfilePage() {
                         <ReservationsList
                           reservations={reservations.reservations}
                           loading={reservations.loading}
-                          onCancel={(id) => {
-                            const target = reservations.reservations.find((r) => r.id === id);
+                          onConfirm={({ id, order }) => {
+                            const target = order || reservations.reservations.find((r) => r.id === id);
                             if (target) setCancelModalOrder(target);
-                          }}
-                          onDelete={(id) => setDeleteActionId(id)}
-                          onConfirm={({ id, type, order }) => {
-                            if (type === "cancel") {
-                              const target = order || reservations.reservations.find((r) => r.id === id);
-                              if (target) setCancelModalOrder(target);
-                            } else {
-                              setDeleteActionId(id);
-                            }
                           }}
                         />
                       </div>
@@ -395,7 +373,7 @@ export default function ProfilePage() {
                           <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2.5">
                             <Activity className="h-5 w-5 text-amber-500" />
                             <span>System Safeguards & Emergency Overrides</span>
-                            <CompactInfo message="Real-time emergency kill switches, maintenance mode locks, and storage fallbacks." />
+                            <CompactInfo message="Real-time emergency kill switches, maintenance mode locks, storage fallbacks, and E-Commerce UI mode." />
                           </Title>
                         </Paper>
 
@@ -493,35 +471,6 @@ export default function ProfilePage() {
             </DialogContent>
           </Dialog>
 
-          {/* Delete Cancelled Record Confirmation */}
-          <AlertDialog open={!!deleteActionId} onOpenChange={(open) => !open && setDeleteActionId(null)}>
-            <AlertDialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 rounded-2xl shadow-xl">
-              <AlertDialogHeader>
-                <AlertDialogTitle className="text-xl font-bold font-headline uppercase text-slate-900 dark:text-white">
-                  Remove Reservation Record?
-                </AlertDialogTitle>
-                <AlertDialogDescription className="text-slate-600 dark:text-slate-300 font-medium">
-                  This will remove the cancelled reservation entry from your history.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="rounded-xl border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-semibold">
-                  Cancel
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    if (deleteActionId) {
-                      reservations.handleDeleteReservation(deleteActionId);
-                      setDeleteActionId(null);
-                    }
-                  }}
-                  className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold"
-                >
-                  Delete Record
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </div>
       </div>
     </RouteGuard>

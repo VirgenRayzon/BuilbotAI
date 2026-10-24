@@ -1,0 +1,28 @@
+flowchart TD
+  Start([Admin action]) --> Kind{Editor or confirmation?}
+  Kind -- Part or prebuilt editor --> Form[/Edit fields, images and component selections/]
+  Form --> Assist{Use AI autofill or assist?}
+  Assist -- Yes --> Ai[Progress, cancel, result or error; apply filled fields] --> Form
+  Assist -- No --> Save{Save or cancel?}
+  Form --> Save
+  Save -- Cancel or close --> Return([Return to admin list])
+  Save -- Submit --> Valid{Schema and write succeed?}
+  Valid -- No --> FormError[/Validation or toast; keep form/] --> Form
+  Valid -- Yes --> Return
+  Kind -- Add or reduce stock --> Stock[/Choose mode and quantity/]
+  Stock --> StockChoice{Valid nonzero change and confirm?}
+  StockChoice -- No or cancel --> Return
+  StockChoice -- Yes --> StockWrite[Apply stock mutation; toast] --> Return
+  Kind -- Archive, restore or delete --> Confirm{Confirm or cancel?}
+  Confirm -- Cancel or close --> Return
+  Confirm -- Confirm --> Permission{Role permits operation?}
+  Permission -- No --> Denied[/Permission toast/] --> Return
+  Permission -- Yes --> Write{Single or bulk write succeeds?}
+  Write -- No --> WriteError[/Error toast/] --> Return
+  Write -- Yes --> Return
+  Kind -- Sales reset or sample data --> SalesConfirm{Confirm or cancel?}
+  SalesConfirm -- Cancel --> Return
+  SalesConfirm -- Confirm --> SalesWrite[Run operation; toast] --> Return
+  Kind -- AI project delete or prompt reset --> AiConfirm{Confirm or cancel?}
+  AiConfirm -- Cancel --> Return
+  AiConfirm -- Confirm --> AiWrite[Delete browser project or reset stored prompt] --> Return

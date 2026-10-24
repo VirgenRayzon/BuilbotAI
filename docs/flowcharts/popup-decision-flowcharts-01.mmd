@@ -1,0 +1,26 @@
+flowchart TD
+  Start([Authentication page or idle warning]) --> Trigger{Overlay opened}
+  Trigger -- Terms --> Terms[/Read terms/]
+  Terms --> TermsChoice{Check acknowledgment or close?}
+  TermsChoice -- Check --> Checkbox{Accept & Continue?}
+  Checkbox -- Yes --> Accepted[Set terms accepted; close]
+  Checkbox -- Review Later --> Signup
+  TermsChoice -- Close --> Signup[Return to sign-up, terms still required]
+  Trigger -- Staff Google key --> Key[/Enter role key/]
+  Key --> KeyChoice{Verify or cancel?}
+  KeyChoice -- Cancel or close --> TempLogout[Sign out temporary Google session; close]
+  KeyChoice -- Verify --> Server{Key accepted by server?}
+  Server -- No --> KeyError[/Show error; keep modal open/] --> Key
+  Server -- Yes --> Admin([Mark staff session; navigate to admin])
+  Trigger -- Access key request --> Request[/Enter request details/]
+  Request --> RequestChoice{Submit or cancel?}
+  RequestChoice -- Cancel --> Close([Close without write])
+  RequestChoice -- Submit --> RequestWrite{Validation and Firestore write?}
+  RequestWrite -- No --> RequestError[/Show error; remain open/] --> Request
+  RequestWrite -- Yes --> RequestDone([Show success])
+  Trigger -- Idle timeout --> Idle{Stay logged in or logout?}
+  Idle -- Stay or close --> Reset[Reset idle timer; close]
+  Idle -- Logout or timer expires --> Logout([Sign out])
+  Trigger -- Header or profile sign out --> Signout{Confirm sign out?}
+  Signout -- Cancel or close --> Close
+  Signout -- Confirm --> Logout

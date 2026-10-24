@@ -1,0 +1,21 @@
+flowchart TD
+  Start([Customer entry]) --> Choice{Sign in, sign up, or reset?}
+  Choice -- Sign in --> Input[/Email, password, remember choice or Google/]
+  Input --> Valid{Form valid and Firebase Auth succeeds?}
+  Valid -- No --> Error[/Inline or provider error; stay on form/] --> Input
+  Valid -- Yes --> ServerProfile[Read users UID profile from server]
+  ServerProfile --> Staff{Staff profile?}
+  Staff -- Yes --> Reject[Sign out; show System Access message] --> StaffPage([System Access route available])
+  Staff -- No --> Claims[Attempt customer claim synchronization]
+  Claims --> Persist[Set local or session persistence]
+  Persist --> Builder([Navigate to builder])
+  Choice -- Sign up --> Terms[/Name, email, password, terms checkbox/]
+  Terms --> TermsModal{Terms accepted?}
+  TermsModal -- No --> Block[/Validation or terms modal; remain on form/] --> Terms
+  TermsModal -- Yes --> Create{Firebase registration succeeds?}
+  Create -- No --> SignupError[/Error; remain on form/] --> Terms
+  Create -- Yes --> UserDoc[Create users UID profile; sync claims] --> Builder
+  Choice -- Reset --> Reset[/Enter email/]
+  Reset --> ResetValid{Valid address and reset request succeeds?}
+  ResetValid -- No --> ResetError[/Error on reset page/] --> Reset
+  ResetValid -- Yes --> ResetDone([Reset email requested])

@@ -1,0 +1,17 @@
+flowchart TD
+  Start([Manager status choice or customer cancellation]) --> Token[Send Firebase ID token to updateReservationStatus]
+  Token --> Verify{Token valid and live profile authorizes action?}
+  Verify -- No --> Denied[/Return failure and show error/]
+  Verify -- Yes --> Load[Read order in transaction]
+  Load --> Allowed{Order exists, not archived, transition allowed?}
+  Allowed -- No --> Denied
+  Allowed -- Yes --> Same{Status unchanged?}
+  Same -- Yes --> Done([No new status write])
+  Same -- No --> Cancel{New status cancelled?}
+  Cancel -- Yes --> Restore[Return reserved stock]
+  Cancel -- No --> Update[Set pending, building, or finished building]
+  Restore --> Notify[Update order; create notifications and user audit]
+  Update --> Notify
+  Notify --> Result{Commit succeeds?}
+  Result -- No --> Denied
+  Result -- Yes --> Done

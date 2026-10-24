@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import {
     Paper,
+    TextInput,
     Button,
     ActionIcon,
     Menu,
@@ -10,8 +11,10 @@ import {
     ScrollArea,
     Badge,
     SegmentedControl,
+    Tooltip,
 } from "@mantine/core";
 import {
+    Search,
     Filter,
     CheckSquare,
     PackageCheck,
@@ -20,6 +23,10 @@ import {
     LayoutGrid,
     Table as TableIcon,
     Plus,
+    ArrowUpDown,
+    ArrowUpAZ,
+    ArrowDownAZ,
+    Check,
 } from 'lucide-react';
 import { AddPrebuiltDialog } from '@/components/add-prebuilt-dialog';
 import { InventoryPrebuiltCard } from '@/components/inventory-prebuilt-card';
@@ -36,7 +43,7 @@ interface PrebuiltTabProps {
     profile: any;
     prebuiltCategories: { name: string, selected: boolean }[];
     onSetCategories: (cats: any) => void;
-    onAddPrebuilt: (data: AddPrebuiltFormSchema) => Promise<void>;
+    onAddPrebuilt: (data: AddPrebuiltFormSchema, operationId?: string) => Promise<import('@/lib/product-identity').CreatedProduct | void>;
     onUpdatePrebuilt: (id: string, data: AddPrebuiltFormSchema) => Promise<void>;
     onDeletePrebuilt: (id: string) => Promise<void>;
     onArchivePrebuilt: (id: string, isArchived?: boolean) => Promise<void>;
@@ -77,9 +84,10 @@ export function PrebuiltTab({
     const [prebuiltItemsPerPage, setPrebuiltItemsPerPage] = useState(8);
     const [expandedPrebuiltIds, setExpandedPrebuiltIds] = useState<string[]>([]);
 
+    const [productSearch, setProductSearch] = useState('');
     const filteredAndSortedPrebuilts = useMemo(() => {
         const selectedCategories = prebuiltCategories.filter(c => c.selected).map(c => c.name);
-        return (prebuiltSystems?.filter(system => selectedCategories.includes(system.tier) && !system.isArchived) ?? [])
+        return (prebuiltSystems?.filter(system => selectedCategories.includes(system.tier) && !system.isArchived && `${system.name} ${system.sku || ''} ${system.productId || ''}`.toLowerCase().includes(productSearch.toLowerCase())) ?? [])
             .sort((a, b) => {
                 let compare = 0;
                 if (prebuiltSortBy === 'Name') compare = a.name.localeCompare(b.name);
@@ -92,7 +100,7 @@ export function PrebuiltTab({
                 }
                 return prebuiltSortDirection === 'asc' ? compare : -compare;
             });
-    }, [prebuiltSystems, prebuiltCategories, prebuiltSortBy, prebuiltSortDirection]);
+    }, [prebuiltSystems, prebuiltCategories, prebuiltSortBy, prebuiltSortDirection, productSearch]);
 
     const prebuiltTotalPages = Math.ceil(filteredAndSortedPrebuilts.length / prebuiltItemsPerPage);
     const currentPrebuilts = useMemo(() => {
@@ -115,8 +123,22 @@ export function PrebuiltTab({
                 className="bg-white/85 dark:bg-[#111722] border-slate-200/80 dark:border-white/10 shadow-xs"
             >
                 <div className="flex items-center justify-between gap-2 sm:gap-3 flex-nowrap overflow-x-auto no-scrollbar py-0.5">
-                    {/* Left Controls: Filter Tiers */}
+                    {/* Left Controls: Search, tiers, sort and direction */}
                     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                        <TextInput
+                            placeholder="Search systems by name or SKU..."
+                            aria-label="Search prebuilts"
+                            value={productSearch}
+                            onChange={(event) => {
+                                setProductSearch(event.currentTarget.value);
+                                setPrebuiltCurrentPage(1);
+                            }}
+                            leftSection={<Search size={14} className="text-slate-400" />}
+                            size="xs"
+                            radius="md"
+                            className="w-36 shrink-0 sm:w-48 lg:w-56"
+                        />
+
                         <Menu shadow="md" width={220} radius="md" closeOnItemClick={false}>
                             <Menu.Target>
                                 <Button
@@ -126,7 +148,7 @@ export function PrebuiltTab({
                                     radius="md"
                                     leftSection={<Filter size={13} className={!prebuiltCategories.every(c => c.selected) ? "text-cyan-500" : "text-slate-400"} />}
                                 >
-                                    Filter Tiers
+                                    Tiers
                                     {!prebuiltCategories.every(c => c.selected) && (
                                         <Badge size="xs" variant="filled" color="cyan" circle ml={5}>
                                             {prebuiltCategories.filter(c => c.selected).length}
@@ -143,6 +165,7 @@ export function PrebuiltTab({
                                         checked={prebuiltCategories.every(c => c.selected)}
                                         onChange={() => {
                                             onSetCategories(prebuiltCategories.map(c => ({ ...c, selected: true })));
+                                            setPrebuiltCurrentPage(1);
                                         }}
                                     />
                                 </div>
@@ -160,6 +183,7 @@ export function PrebuiltTab({
                                                         ...c,
                                                         selected: c.name === category.name
                                                     })));
+                                                    setPrebuiltCurrentPage(1);
                                                 }}
                                             />
                                         ))}
@@ -167,6 +191,56 @@ export function PrebuiltTab({
                                 </ScrollArea.Autosize>
                             </Menu.Dropdown>
                         </Menu>
+
+                        <Menu shadow="md" width={180} radius="md">
+                            <Menu.Target>
+                                <Button
+                                    variant="default"
+                                    size="xs"
+                                    radius="md"
+                                    leftSection={<ArrowUpDown size={13} className="text-slate-400" />}
+                                >
+                                    <span className="mr-1 hidden font-normal text-slate-400 sm:inline">Sort:</span>
+                                    {prebuiltSortBy}
+                                </Button>
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                                <Menu.Label>Sort By</Menu.Label>
+                                {['Date Added', 'Name', 'Price', 'Tier'].map((option) => (
+                                    <Menu.Item
+                                        key={option}
+                                        onClick={() => {
+                                            setPrebuiltSortBy(option);
+                                            setPrebuiltCurrentPage(1);
+                                        }}
+                                        rightSection={prebuiltSortBy === option ? <Check size={14} className="text-cyan-500" /> : null}
+                                    >
+                                        {option}
+                                    </Menu.Item>
+                                ))}
+                            </Menu.Dropdown>
+                        </Menu>
+
+                        <Tooltip
+                            label={prebuiltSortDirection === 'asc' ? 'Ascending order' : 'Descending order'}
+                            withArrow
+                            position="top"
+                        >
+                            <ActionIcon
+                                variant="default"
+                                size="input-xs"
+                                radius="md"
+                                onClick={() => {
+                                    setPrebuiltSortDirection((current) => current === 'asc' ? 'desc' : 'asc');
+                                    setPrebuiltCurrentPage(1);
+                                }}
+                                aria-label={`Sort Direction: ${prebuiltSortDirection.toUpperCase()}`}
+                            >
+                                {prebuiltSortDirection === 'asc'
+                                    ? <ArrowUpAZ size={15} className="text-cyan-500" />
+                                    : <ArrowDownAZ size={15} className="text-cyan-500" />}
+                            </ActionIcon>
+                        </Tooltip>
                     </div>
 
                     {/* Right Controls: Bulk Selection, Grid/Table Toggle & Add System */}

@@ -1,0 +1,26 @@
+flowchart TD
+  Start([Builder or product card]) --> Choose{Open overlay}
+  Choose -- Part details --> Details[Read specs, gallery and description]
+  Details --> DetailAction{Add/remove, image preview or close?}
+  DetailAction -- Add/remove --> Toggle[Run compatibility and stock check; toast outcome] --> Details
+  DetailAction -- Image --> Image[Full-size preview: previous, next, close] --> Details
+  DetailAction -- Close --> Return([Return to catalog])
+  Choose -- Save favorite --> Save[/Enter name/]
+  Save --> SaveChoice{Save or cancel?}
+  SaveChoice -- Cancel --> Return
+  SaveChoice -- Save --> SaveWrite{Valid and Firestore write?}
+  SaveWrite -- No --> SaveError[/Validation or toast; stay open/] --> Save
+  SaveWrite -- Yes --> Return
+  Choose -- Clear build --> Clear{Confirm or cancel?}
+  Clear -- Cancel --> Return
+  Clear -- Confirm --> Empty[Clear browser build state] --> Return
+  Choose -- Reserve build or card prebuilt --> Reserve[Review parts, price and stock]
+  Reserve --> ReserveChoice{Confirm or cancel?}
+  ReserveChoice -- Cancel --> Return
+  ReserveChoice -- Confirm --> Transaction{Server transaction succeeds?}
+  Transaction -- No --> ReserveError[/Error toast; remain in context/] --> Reserve
+  Transaction -- Yes --> Success([Success toast; clear build or navigate profile])
+  Choose -- Manager prebuilt name --> Name[/Enter prebuilt name/]
+  Name --> NameChoice{Generate or cancel?}
+  NameChoice -- Cancel --> Return
+  NameChoice -- Generate --> Generate[Start AI prebuilt generation] --> Return

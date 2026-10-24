@@ -38,6 +38,10 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
+import { ProductIdentification } from './product-identification';
+import { useProductSaveOperation } from '@/hooks/use-product-save-operation';
+import type { CreatedProduct } from '@/lib/product-identity';
+import { ToastAction } from './ui/toast';
 import { ScrollArea } from "./ui/scroll-area";
 import { MultiImageUpload } from "./parts/multi-image-upload";
 import { 
@@ -125,11 +129,13 @@ function getSelectedPartIds(values: AddPrebuiltFormSchema): string[] {
 }
 
 interface AddPrebuiltDialogProps {
-    children: React.ReactNode;
-    onSave: (data: AddPrebuiltFormSchema) => void;
+    children?: React.ReactNode;
+    onSave: (data: AddPrebuiltFormSchema, operationId?: string) => Promise<CreatedProduct | void>;
     parts: Part[];
     initialData?: PrebuiltSystem;
     title?: string;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }
 
 /** Inline searchable part selector — sits inside a FormField */
@@ -152,6 +158,7 @@ function PartSelector({
 }) {
     const [query, setQuery] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -183,6 +190,9 @@ function PartSelector({
                 <Button
                     variant="outline"
                     role="combobox"
+                    type="button"
+                    aria-label={`Select ${category}`}
+                    ref={triggerRef}
                     className="w-full justify-between bg-slate-50 dark:bg-[#141a23] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white h-10 px-3 text-sm font-normal rounded-xl hover:border-cyan-500/50 transition-colors shadow-sm hover:scale-100 active:scale-100"
                 >
                     <span className="truncate">
@@ -193,7 +203,9 @@ function PartSelector({
             </PopoverTrigger>
             <PopoverContent 
                 portalled={false}
-                className="w-[var(--radix-popover-trigger-width)] p-0 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] text-slate-900 dark:text-white shadow-2xl rounded-2xl overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-100 data-[state=open]:slide-in-from-top-0 duration-0" 
+                collisionBoundary={triggerRef.current?.closest<HTMLElement>('[data-radix-scroll-area-viewport]')}
+                collisionPadding={12}
+                className="z-[200] w-[var(--radix-popover-trigger-width)] p-0 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] text-slate-900 dark:text-white shadow-2xl rounded-2xl overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-100 data-[state=open]:slide-in-from-top-0 duration-0"
                 align="start"
                 sideOffset={8}
             >
@@ -223,7 +235,7 @@ function PartSelector({
                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">{category} Inventory</span>
                     <span className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400">{filtered.length} Results</span>
                 </div>
-                <ScrollArea className="h-[340px]">
+                <ScrollArea className="h-[min(340px,calc(var(--radix-popover-content-available-height)-96px))]">
                     <div className="p-1.5">
                         {filtered.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
@@ -324,8 +336,18 @@ const PART_SLOTS = [
     { key: "cooler", label: "Cooler" },
 ] as const;
 
-export function AddPrebuiltDialog({ children, onSave, parts, initialData, title }: AddPrebuiltDialogProps) {
-    const [open, setOpen] = useState(false);
+export function AddPrebuiltDialog({
+    children,
+    onSave,
+    parts,
+    initialData,
+    title,
+    open: controlledOpen,
+    onOpenChange: controlledOnOpenChange,
+}: AddPrebuiltDialogProps) {
+    const isControlled = controlledOpen !== undefined;
+    const [internalOpen, setInternalOpen] = useState(false);
+    const open = isControlled ? controlledOpen : internalOpen;
     const [isSaving, setIsSaving] = useState(false);
     const [isAiPending, setIsAiPending] = useState(false);
     const [aiDuration, setAiDuration] = useState<number | null>(null);
@@ -338,6 +360,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
     const [showTelemetry, setShowTelemetry] = useState(false);
     const startTimeRef = useRef<number>(0);
     const { toast } = useToast();
+    const { getOperation, resetOperation } = useProductSaveOperation();
 
     const firestore = useFirestore();
     const settingsDocRef = useMemo(() => {
@@ -647,10 +670,12 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
             values.ram = validRam;
             values.storage = values.storage.slice(0, nSlots + sSlots).filter(Boolean);
 
-            await onSave(values);
-            toast({ title: initialData ? "Prebuilt Updated!" : "Prebuilt System Added!", description: `${values.name} has been ${initialData ? 'updated' : 'added'}.` });
+            const saved = await onSave(values, getOperation(values));
+            toast({ title: initialData ? "Prebuilt Updated!" : "Prebuilt System Added!", description: `${values.name} has been ${initialData ? 'updated' : 'added'}.`,
+              action: saved ? <ToastAction altText="View item" onClick={() => window.location.assign(saved.adminUrl)}>View item</ToastAction> : undefined });
             if (!initialData) form.reset();
-            setOpen(false);
+            handleOpenChange(false);
+            resetOperation();
         } catch (error: any) {
             toast({
                 variant: "destructive",
@@ -704,7 +729,10 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
     const handleOpenChange = (isOpen: boolean) => {
         if (!isOpen && (isAiPending || isSaving)) return;
         if (!isOpen) setOpenSlot(null);
-        setOpen(isOpen);
+        if (!isControlled) {
+            setInternalOpen(isOpen);
+        }
+        controlledOnOpenChange?.(isOpen);
         if (!isOpen) { 
             form.reset(); 
             setAiDuration(null);
@@ -758,11 +786,11 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>{children}</DialogTrigger>
+            {children && <DialogTrigger asChild>{children}</DialogTrigger>}
             <DialogContent
                 onEscapeKeyDown={(event) => { if (isSaving) event.preventDefault(); }}
                 onPointerDownOutside={(event) => { if (isSaving) event.preventDefault(); }}
-                className="w-[calc(100%-24px)] sm:max-w-[75vw] max-h-[calc(100vh-24px)] p-0 gap-0 overflow-hidden border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#111722] shadow-lg rounded-xl [&>button.absolute]:hidden"
+                className="w-[90vw] max-w-[90vw] max-h-[calc(100vh-24px)] p-0 gap-0 overflow-hidden border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#111722] shadow-lg rounded-xl [&>button.absolute]:hidden"
             >
 
                 {/* ── Header ── */}
@@ -834,7 +862,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                 <div className="grid grid-cols-12 gap-8 items-start">
                                     
                                     {/* Left Column: Image Preview */}
-                                    <div className="col-span-12 md:col-span-4 sticky top-0">
+                                    <div className="col-span-12 md:col-span-4 md:sticky md:top-0">
                                         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-400 mb-4 flex items-center gap-2.5">
                                             <span className="inline-block w-3.5 h-0.5 bg-cyan-500/60 rounded-full" />
                                             Visual Identity
@@ -916,6 +944,7 @@ export function AddPrebuiltDialog({ children, onSave, parts, initialData, title 
                                                 </FormItem>
                                             )} />
 
+                                            <div className="col-span-2"><ProductIdentification category="PC" product={initialData} /></div>
                                             <FormField control={form.control} name="price" render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">

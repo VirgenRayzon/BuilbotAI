@@ -33,7 +33,7 @@ import { Mail, Lock, AlertCircle, ArrowLeft, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { createUserProfile } from '@/firebase/database';
 import { syncUserClaimsAction } from '@/app/actions';
-import { UnifiedBackground } from '@/components/landing/unified-background';
+import { AuthBackground } from '@/components/auth/auth-background';
 import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/context/user-profile';
@@ -143,7 +143,7 @@ export default function SignUpPage() {
 
       toast({
         title: 'Account Created',
-        description: "Welcome to Buildbot AI! You've been successfully signed up.",
+        description: "Welcome to Netcodex! You've been successfully signed up.",
       });
 
       redirectingRef.current = true;
@@ -184,7 +184,7 @@ export default function SignUpPage() {
 
       toast({
         title: 'Account Connected',
-        description: 'Signed up with Google successfully! Welcome to Buildbot AI.',
+        description: 'Signed up with Google successfully! Welcome to Netcodex.',
       });
       redirectingRef.current = true;
       router.replace('/builder');
@@ -201,7 +201,7 @@ export default function SignUpPage() {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center gap-3 bg-slate-50 text-slate-600 dark:bg-[#0c0f14] dark:text-slate-300" role="status">
         <Loader size="sm" color="cyan" />
-        <Text size="sm">Opening your workspace...</Text>
+        <Text size="sm">Verifying your account...</Text>
       </div>
     );
   }
@@ -213,7 +213,7 @@ export default function SignUpPage() {
         isDark ? 'text-foreground' : 'text-slate-900'
       )}
     >
-      <UnifiedBackground />
+      <AuthBackground />
 
       <div className="w-full max-w-[440px] z-10 flex flex-col gap-2.5">
         {/* Top bar back link */}
@@ -237,7 +237,7 @@ export default function SignUpPage() {
             {/* Header / Logo + Title */}
             <div className="text-center flex flex-col items-center gap-1.5">
               <Link href="/" className="mb-0.5">
-                <Logo showText={false} />
+                <Logo showText={false} size="lg" />
               </Link>
               <Title
                 order={2}
@@ -246,7 +246,7 @@ export default function SignUpPage() {
                 Create an account
               </Title>
               <Text size="xs" className="text-slate-500 dark:text-slate-400">
-                Join Buildbot AI to configure, optimize, and simulate your custom PC builds.
+                Join Netcodex to configure, optimize, and simulate your custom PC builds.
               </Text>
             </div>
 

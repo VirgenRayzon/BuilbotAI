@@ -87,7 +87,7 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
 
   return (
     <>
-      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 mb-6">
+      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 mb-6">
         <Paper
           withBorder
           radius="lg"

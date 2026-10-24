@@ -33,6 +33,8 @@ export type ExtractPartDetailsInput = z.infer<typeof ExtractPartDetailsInputSche
 const componentCategories = ["CPU", "GPU", "Motherboard", "RAM", "Storage", "PSU", "Case", "Cooler"] as const;
 
 const ExtractPartDetailsOutputSchema = z.object({
+  exists: z.boolean().describe("Whether the exact requested component can be verified as a real, officially released product."),
+  verificationMessage: z.string().optional().describe("A short explanation when the exact component cannot be verified. Do not add this explanation to partName."),
   partName: z.string().describe("The full, corrected name of the PC component."),
   category: z.enum(componentCategories).describe('The category of the component.'),
   brand: z.string().describe('The brand name of the component (e.g., "NVIDIA", "AMD", "Intel", "ASUS").'),
@@ -128,8 +130,10 @@ Target Component to extract: ${input.partName}
 LOGIC RULES:
 1. FIRST, check the GROUNDING CONTEXT above. If it is for the requested part (${input.partName}), use its details.
 2. If the context is NONE or for the wrong part, use the WEB SEARCH RESEARCH CONTEXT above for accurate specs and pricing.
-3. Once you have the data, format it strictly into the requested JSON schema.
-4. For prices: Convert USD street price to PHP by multiplying by 56 (e.g., $1000 = ₱56,000) or use local Philippine retailer pricing.
+3. Verify the exact model and variant. Set exists to false when the exact requested product cannot be verified. Never substitute a similarly named product.
+4. Keep partName clean. Never prepend labels such as "Non-existent Component:" or put warnings in partName. Put the explanation in verificationMessage instead.
+5. Once you have the data, format it strictly into the requested JSON schema.
+6. For prices: Convert USD street price to PHP by multiplying by 56 (e.g., $1000 = ₱56,000) or use local Philippine retailer pricing.
 
 SPECIFICATION RULES (Ensure these keys appear in the JSON 'specifications' array):
 - **CPU**: 'Architecture', 'Cores', 'Threads', 'Base Clock (GHz)', 'Boost Clock (GHz)', 'Socket', 'TDP / Peak Power', 'L3 Cache', 'Memory Support', 'Integrated Graphics'.

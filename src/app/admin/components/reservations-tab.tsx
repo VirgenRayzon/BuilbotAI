@@ -3,6 +3,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
     Package,
+    Archive,
+    RotateCcw,
     Monitor,
     Trash2,
     ChevronDown,
@@ -58,7 +60,9 @@ import type { Order } from '@/lib/types';
 interface ReservationsTabProps {
     orders: Order[];
     ordersLoading: boolean;
-    onDeleteOrder: (id: string, skipConfirm?: boolean) => Promise<void>;
+    archived?: boolean;
+    isSuperAdmin: boolean;
+    onReservationAction: (id: string, action: 'archive' | 'restore' | 'delete') => Promise<boolean>;
     onUpdateOrder: (id: string, status: Order['status']) => Promise<void>;
 }
 
@@ -122,7 +126,9 @@ const STATUS_CONFIG = {
 export function ReservationsTab({
     orders,
     ordersLoading,
-    onDeleteOrder,
+    archived = false,
+    isSuperAdmin,
+    onReservationAction,
     onUpdateOrder
 }: ReservationsTabProps) {
     const { theme } = useTheme();
@@ -142,9 +148,8 @@ export function ReservationsTab({
     const [orderItemsPerPage, setOrderItemsPerPage] = useState(8);
     const [showAllSpecs, setShowAllSpecs] = useState(false);
 
-    // Delete confirmation modal state
-    const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
+    const [pendingAction, setPendingAction] = useState<{ order: Order; action: 'archive' | 'restore' | 'delete' } | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
 
     // Compute Status Metrics & Pie Chart Data
     const metrics = useMemo(() => {
@@ -235,6 +240,7 @@ export function ReservationsTab({
         if (!orders) return [];
 
         let result = orders.filter(order => {
+            if (Boolean(order.isArchived) !== archived) return false;
             // Status Filter
             if (statusFilter !== 'all') {
                 if (statusFilter === 'finished') {
@@ -290,15 +296,14 @@ export function ReservationsTab({
         setShowAllSpecs(prev => !prev);
     };
 
-    // Execute Delete
-    const handleConfirmDelete = async () => {
-        if (!orderToDelete) return;
-        setIsDeleting(true);
+    const handleConfirmAction = async () => {
+        if (!pendingAction) return;
+        setIsSaving(true);
         try {
-            await onDeleteOrder(orderToDelete.id, true);
-            setOrderToDelete(null);
+            const success = await onReservationAction(pendingAction.order.id, pendingAction.action);
+            if (success) setPendingAction(null);
         } finally {
-            setIsDeleting(false);
+            setIsSaving(false);
         }
     };
 
@@ -838,7 +843,7 @@ export function ReservationsTab({
             ) : paginatedOrders.length > 0 ? (
                 <SimpleGrid cols={{ base: 1, sm: 2, lg: 3, xl: 4 } as any} spacing="sm">
                     {paginatedOrders.map(order => {
-                        const currentStatus = order.status || 'pending';
+                        const currentStatus = (order.status as string) === 'finished' ? 'finished building' : order.status || 'pending';
                         const isPrebuilt = (order as any).type === 'prebuilt';
                         const isPending = currentStatus === 'pending';
                         const isExpanded = showAllSpecs;
@@ -928,20 +933,36 @@ export function ReservationsTab({
                                             </div>
                                         </div>
 
-                                        {/* Delete Action Button */}
-                                        <Tooltip label="Delete reservation" withArrow>
-                                            <ActionIcon
-                                                size="sm"
-                                                color="red"
-                                                variant="subtle"
-                                                radius="md"
-                                                onClick={() => setOrderToDelete(order)}
-                                                className="text-slate-400 hover:text-red-500 hover:bg-red-500/10 shrink-0"
-                                                aria-label="Delete reservation"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </ActionIcon>
-                                        </Tooltip>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            <Tooltip label={archived ? 'Restore reservation' : 'Archive reservation'} withArrow>
+                                                <ActionIcon
+                                                    size="lg"
+                                                    color="cyan"
+                                                    variant="subtle"
+                                                    radius="md"
+                                                    onClick={() => setPendingAction({ order, action: archived ? 'restore' : 'archive' })}
+                                                    className="min-h-11 min-w-11"
+                                                    aria-label={archived ? 'Restore reservation' : 'Archive reservation'}
+                                                >
+                                                    {archived ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                                                </ActionIcon>
+                                            </Tooltip>
+                                            {isSuperAdmin && (
+                                                <Tooltip label="Delete reservation" withArrow>
+                                                    <ActionIcon
+                                                        size="lg"
+                                                        color="red"
+                                                        variant="subtle"
+                                                        radius="md"
+                                                        onClick={() => setPendingAction({ order, action: 'delete' })}
+                                                        className="min-h-11 min-w-11"
+                                                        aria-label="Delete reservation"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </ActionIcon>
+                                                </Tooltip>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Card Metadata: Rig / ID and Date */}
@@ -991,6 +1012,7 @@ export function ReservationsTab({
                                         <div className="w-[125px] sm:w-[135px] shrink-0">
                                             <Select
                                                 value={currentStatus}
+                                                disabled={archived}
                                                 onChange={(val) => val && onUpdateOrder(order.id, val as Order['status'])}
                                                 data={[
                                                     { label: 'Pending', value: 'pending' },
@@ -1089,12 +1111,12 @@ export function ReservationsTab({
                         </ThemeIcon>
                         <div className="space-y-1">
                             <Title order={3} className="text-lg font-headline font-bold text-slate-900 dark:text-white">
-                                No Reservations Found
+                                {archived ? 'No Archived Reservations' : 'No Reservations Found'}
                             </Title>
                             <Text size="xs" className="text-slate-600 dark:text-slate-400">
                                 {searchQuery || statusFilter !== 'all'
                                     ? "No reservations match your current filter criteria. Try clearing your filters or searching another keyword."
-                                    : "There are currently no reservations in the system database."}
+                                    : archived ? 'Archived reservations will appear here.' : "There are currently no reservations in the system database."}
                             </Text>
                         </div>
                         {(searchQuery || statusFilter !== 'all') && (
@@ -1129,17 +1151,17 @@ export function ReservationsTab({
                 </div>
             )}
 
-            {/* Mantine Modal for Delete Confirmation */}
+            {/* Reservation action confirmation */}
             <Modal
-                opened={!!orderToDelete}
-                onClose={() => setOrderToDelete(null)}
+                opened={!!pendingAction}
+                onClose={() => setPendingAction(null)}
                 title={
                     <Group gap="xs">
-                        <ThemeIcon size="md" color="red" variant="light" radius="md">
-                            <Trash2 size={16} />
+                        <ThemeIcon size="md" color={pendingAction?.action === 'delete' ? 'red' : 'cyan'} variant="light" radius="md">
+                            {pendingAction?.action === 'delete' ? <Trash2 size={16} /> : <Archive size={16} />}
                         </ThemeIcon>
                         <Text fw={700} className="font-headline text-base text-slate-900 dark:text-white uppercase tracking-tight">
-                            Confirm Deletion
+                            {pendingAction?.action === 'delete' ? 'Confirm Deletion' : pendingAction?.action === 'restore' ? 'Restore Reservation' : 'Archive Reservation'}
                         </Text>
                     </Group>
                 }
@@ -1155,20 +1177,27 @@ export function ReservationsTab({
             >
                 <div className="space-y-4 pt-2">
                     <Text size="sm" className="text-slate-600 dark:text-slate-300">
-                        Are you sure you want to permanently delete the reservation for{' '}
-                        <strong className="text-slate-900 dark:text-white">{orderToDelete?.userEmail}</strong>?
+                        {pendingAction?.action === 'delete' ? 'Permanently delete' : pendingAction?.action === 'restore' ? 'Restore' : 'Archive'} the reservation for{' '}
+                        <strong className="text-slate-900 dark:text-white">{pendingAction?.order.userEmail}</strong>?
                     </Text>
 
                     <div className="p-3 rounded-lg bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/5 space-y-1 text-xs">
-                        <p><span className="text-slate-500">Order ID:</span> <strong className="font-mono text-slate-800 dark:text-slate-200">#{orderToDelete?.id}</strong></p>
-                        <p><span className="text-slate-500">Total Price:</span> <strong className="font-mono text-emerald-600 dark:text-emerald-400">{formatCurrency(orderToDelete?.totalPrice || 0)}</strong></p>
-                        <p><span className="text-slate-500">Status:</span> <strong className="uppercase text-slate-800 dark:text-slate-200">{orderToDelete?.status}</strong></p>
+                        <p><span className="text-slate-500">Order ID:</span> <strong className="font-mono text-slate-800 dark:text-slate-200">#{pendingAction?.order.id}</strong></p>
+                        <p><span className="text-slate-500">Total Price:</span> <strong className="font-mono text-emerald-600 dark:text-emerald-400">{formatCurrency(pendingAction?.order.totalPrice || 0)}</strong></p>
+                        <p><span className="text-slate-500">Status:</span> <strong className="uppercase text-slate-800 dark:text-slate-200">{pendingAction?.order.status}</strong></p>
                     </div>
 
-                    <Text size="xs" c="red" className="font-semibold flex items-center gap-1.5">
-                        <AlertCircle size={14} />
-                        This action cannot be undone. All data for this order will be permanently erased.
-                    </Text>
+                    {pendingAction?.action !== 'restore' && (
+                        <Text size="xs" c={pendingAction?.action === 'delete' ? 'red' : 'dimmed'} className="font-semibold flex items-center gap-1.5">
+                            <AlertCircle size={14} />
+                            {pendingAction?.action === 'delete' && 'This action cannot be undone. '}
+                            {pendingAction?.order.status === 'finished building' || (pendingAction?.order.status as string) === 'finished'
+                                ? 'Finished reservations keep their finished status.'
+                                : pendingAction?.order.status === 'cancelled'
+                                    ? 'This reservation is already cancelled.'
+                                    : 'This reservation will be cancelled and reserved stock returned.'}
+                        </Text>
+                    )}
 
                     <Group justify="flex-end" gap="sm" className="pt-2">
                         <Button
@@ -1176,20 +1205,20 @@ export function ReservationsTab({
                             color="gray"
                             radius="md"
                             size="sm"
-                            onClick={() => setOrderToDelete(null)}
-                            disabled={isDeleting}
+                            onClick={() => setPendingAction(null)}
+                            disabled={isSaving}
                         >
                             Cancel
                         </Button>
                         <Button
-                            color="red"
+                            color={pendingAction?.action === 'delete' ? 'red' : 'cyan'}
                             radius="md"
                             size="sm"
-                            onClick={handleConfirmDelete}
-                            loading={isDeleting}
+                            onClick={handleConfirmAction}
+                            loading={isSaving}
                             className="font-bold uppercase tracking-wider text-xs"
                         >
-                            Delete Permanently
+                            {pendingAction?.action === 'delete' ? 'Delete Permanently' : pendingAction?.action === 'restore' ? 'Restore' : 'Archive'}
                         </Button>
                     </Group>
                 </div>

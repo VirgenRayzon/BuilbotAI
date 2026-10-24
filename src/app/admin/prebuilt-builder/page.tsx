@@ -46,6 +46,7 @@ import { logAdminAction } from "@/app/actions";
 
 
 import { RouteGuard } from "@/components/auth/route-guard";
+import { usePrebuiltBuilderImport } from "@/app/admin/hooks/use-prebuilt-builder-import";
 
 type PartWithoutCategory = Omit<Part, 'category'>;
 
@@ -63,6 +64,21 @@ const componentCategories = [
     { name: "Mouse", icon: Mouse },
     { name: "Headset", icon: Headphones },
 ];
+
+const isIncludedStockCooler = (component: ComponentData | null | undefined): boolean =>
+    Boolean(
+        component && (
+            component.id === 'included-stock-cooler' ||
+            component.id === 'uGiAh2JerLwnDe5VW431' ||
+            (component.price === 0 && (
+                component.imageHint === 'included cooler' ||
+                component.description?.includes('Bundled cooler') ||
+                component.model?.toLowerCase().includes('stock cooler') ||
+                component.model?.toLowerCase().includes('laminar') ||
+                component.model?.toLowerCase().includes('wraith')
+            ))
+        )
+    );
 
 export default function PrebuiltBuilderPage() {
     const firestore = useFirestore();
@@ -87,6 +103,8 @@ export default function PrebuiltBuilderPage() {
     const [analysis, setAnalysis] = useState<any>(null);
     const [isLoaded, setIsLoaded] = useState(false);
 
+    usePrebuiltBuilderImport(allParts, isLoaded, setBuild);
+
     const handleApplySuggestion = (category: string, partId: string) => {
         const event = new CustomEvent('add-suggestion', {
             detail: { id: partId, category }
@@ -101,6 +119,10 @@ export default function PrebuiltBuilderPage() {
         if (saved) {
             try {
                 const parsedState = JSON.parse(saved);
+                // Sanitize orphaned stock cooler if no CPU is present in saved state
+                if (!parsedState.CPU && isIncludedStockCooler(parsedState.Cooler)) {
+                    parsedState.Cooler = null;
+                }
                 setBuild(prev => ({ ...prev, ...parsedState }));
             } catch (e) {
                 console.error("Failed to parse saved builder state", e);
@@ -117,12 +139,19 @@ export default function PrebuiltBuilderPage() {
             let changed = false;
             const updatedBuild = { ...prevBuild };
 
+            // Clean up orphaned stock cooler if CPU is missing
+            if (!updatedBuild['CPU'] && isIncludedStockCooler(updatedBuild['Cooler'] as ComponentData | null)) {
+                updatedBuild['Cooler'] = null;
+                changed = true;
+            }
+
             // Check single-slot categories
             const singleSlotCategories = ['Case', 'Motherboard', 'CPU', 'GPU', 'PSU', 'Cooler', 'Monitor', 'Keyboard', 'Mouse', 'Headset'];
             
             for (const cat of singleSlotCategories) {
                 const item = updatedBuild[cat] as ComponentData | null;
                 if (!item || !item.id) continue;
+                if (cat === 'Cooler' && isIncludedStockCooler(item)) continue;
                 
                 // Find matching live part from catalog by ID or model
                 const livePart = allParts.find(p => p.id === item.id || p.name === item.model);
@@ -194,7 +223,7 @@ export default function PrebuiltBuilderPage() {
             }
 
             const currentCooler = next['Cooler'] as ComponentData | null;
-            if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
+            if (category === 'CPU' && isIncludedStockCooler(currentCooler)) {
                 next['Cooler'] = null;
                 toastToFire = { title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' };
             }
@@ -318,7 +347,7 @@ export default function PrebuiltBuilderPage() {
 
             // Handle CPU stock cooler logic
             const currentCooler = next['Cooler'] as ComponentData | null;
-            if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
+            if (category === 'CPU' && isIncludedStockCooler(currentCooler)) {
                 next['Cooler'] = null;
                 toastsToShow.push({ title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' });
             }
@@ -383,14 +412,15 @@ export default function PrebuiltBuilderPage() {
 
             // Handle CPU stock cooler logic
             if (category === 'CPU') {
-                const isBoxed = (part as any).packageType === 'BOX';
+                const isBoxed = (part as any).packageType?.toUpperCase() === 'BOX' ||
+                    (part as any).specifications?.['Package Type']?.toString().toUpperCase() === 'BOX';
                 if (isBoxed) {
                     const isIntel = part.name.toLowerCase().includes('intel');
                     const isAmd = part.name.toLowerCase().includes('amd');
                     const coolerModel = isIntel ? "Intel Laminar RM1 CPU Cooler" : isAmd ? "AMD Wraith MAX CPU Cooler with RGB LED" : "Stock Cooler";
 
                     next['Cooler'] = {
-                        id: isAmd ? 'uGiAh2JerLwnDe5VW431' : 'included-stock-cooler',
+                        id: 'included-stock-cooler',
                         model: coolerModel,
                         price: 0,
                         description: `Bundled cooler.`,
@@ -402,7 +432,7 @@ export default function PrebuiltBuilderPage() {
                     };
                 } else {
                     // If tray and currently have stock cooler, remove it
-                    if ((next['Cooler'] as ComponentData)?.id === 'included-stock-cooler') {
+                    if (isIncludedStockCooler(next['Cooler'] as ComponentData | null)) {
                         next['Cooler'] = null;
                     }
                 }
@@ -435,10 +465,15 @@ export default function PrebuiltBuilderPage() {
             }
             return true;
         }).sort((a, b) => {
-            let compare = 0;
+            const aInStock = (a.stock || 0) > 0;
+            const bInStock = (b.stock || 0) > 0;
+            if (aInStock !== bInStock) return aInStock ? -1 : 1;
+
             const compA = checkCompatibility(a, build).compatible;
             const compB = checkCompatibility(b, build).compatible;
             if (compA !== compB) return compA ? -1 : 1;
+
+            let compare = 0;
 
             if (sortBy === 'Name') compare = (a.name || '').localeCompare(b.name || '');
             else if (sortBy === 'Price') compare = (a.price || 0) - (b.price || 0);
@@ -494,15 +529,16 @@ export default function PrebuiltBuilderPage() {
         return (build[part.category] as ComponentData)?.model === part.name;
     };
 
-    const handleAddPrebuilt = async (data: PrebuiltBuilderAddFormSchema) => {
+    const handleAddPrebuilt = async (data: PrebuiltBuilderAddFormSchema, operationId?: string) => {
         if (!firestore) throw new Error("Firestore not initialized");
-        await addPrebuiltSystem(firestore, data);
+        const saved = await addPrebuiltSystem(firestore, data, operationId);
         await logAdminAction('Prebuilt Builder - Deploy', `${data.name} deployed from builder`, data);
         toast({
             title: "Prebuilt Added Successfully!",
             description: `${data.name} is now available in the Prebuilt Overview tab.`,
             variant: "default"
         });
+        return saved;
     };
 
     const isBuilderLoading = partsLoading || authLoading;
@@ -520,7 +556,7 @@ export default function PrebuiltBuilderPage() {
                     isDark ? "invert" : ""
                 )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-                <main className="w-full px-3 sm:px-6 md:px-8 lg:px-10 py-4 sm:py-6 md:py-8 pb-24 lg:pb-12 relative z-10">
+                <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 py-4 sm:py-6 md:py-8 pb-24 lg:pb-12 relative z-10">
                     <div className="relative mb-6">
                         <motion.div
                             initial={{ opacity: 0, y: -4 }}
@@ -680,7 +716,18 @@ export default function PrebuiltBuilderPage() {
                         </div>
                     </div>
 
-                    <BuilderFloatingChat build={build} />
+                    <BuilderFloatingChat
+                        build={build}
+                        onAddPart={(partName, partId) => {
+                            const part = allParts.find(item => item.id === partId);
+                            if (part) handlePartToggle(part);
+                            else toast({
+                                variant: 'destructive',
+                                title: 'Part Not Found',
+                                description: `${partName} is no longer in the current inventory.`,
+                            });
+                        }}
+                    />
                 </main>
             </div>
         </RouteGuard>

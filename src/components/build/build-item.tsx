@@ -14,6 +14,8 @@ interface BuildItemProps {
   onSelect?: (category: string) => void;
   isAccessory?: boolean;
   isActiveFilter?: boolean;
+  hasValidationError?: boolean;
+  isNested?: boolean;
 }
 
 export function BuildItem({
@@ -25,6 +27,8 @@ export function BuildItem({
   onSelect,
   isAccessory = false,
   isActiveFilter = false,
+  hasValidationError = false,
+  isNested = false,
 }: BuildItemProps) {
   const components = Array.isArray(component) ? component : (component ? [component] : []);
 
@@ -32,24 +36,31 @@ export function BuildItem({
     return (
       <div 
         className={cn(
-          "flex items-center gap-3 py-2 rounded-xl px-3 -mx-1 transition-all duration-300 border border-dashed",
+          "flex items-center gap-3 py-2 rounded-xl px-3 transition-all duration-300 border border-dashed",
+          isNested ? "w-full min-w-0" : "-mx-1",
           onSelect ? "cursor-pointer" : "cursor-default",
-          isActiveFilter 
-            ? "opacity-100 bg-primary/5 border-primary/30 shadow-[0_0_15px_rgba(34,211,238,0.1)]"
-            : "opacity-50 border-border/30 hover:opacity-80 hover:border-primary/20 hover:bg-primary/[0.02]"
+          isActiveFilter
+            ? "opacity-100 bg-transparent border-primary/30 shadow-[0_0_15px_rgba(34,211,238,0.1)]"
+            : hasValidationError
+              ? "opacity-100 bg-red-50 border-red-300 shadow-[0_0_15px_rgba(239,68,68,0.1)] dark:bg-red-950/25 dark:border-red-500/40"
+              : "opacity-50 border-border/30 hover:opacity-80 hover:border-primary/20 hover:bg-primary/[0.02]"
         )}
         onClick={() => onSelect?.(name)}
       >
         <div className={cn(
           "p-1.5 rounded-lg flex items-center justify-center transition-colors",
-          isActiveFilter ? "bg-primary/20 text-primary" : "bg-muted/50 text-muted-foreground/50"
+          isActiveFilter
+            ? "bg-primary/20 text-primary"
+            : hasValidationError
+              ? "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-300"
+              : "bg-muted/50 text-muted-foreground/50"
         )}>
           <Icon className={cn("w-3.5 h-3.5", isActiveFilter && "text-primary")} />
         </div>
         <div className="flex-1 min-w-0">
           <p className={cn(
             "text-[10px] font-bold uppercase tracking-wider leading-none",
-            isActiveFilter ? "text-primary" : "text-muted-foreground/60"
+            isActiveFilter ? "text-primary" : hasValidationError ? "text-red-700 dark:text-red-300" : "text-muted-foreground/60"
           )}>{label || name}</p>
         </div>
       </div>
@@ -62,7 +73,8 @@ export function BuildItem({
         <div 
           key={`${name}-${idx}`} 
           className={cn(
-            "flex items-center gap-4 py-1.5 animate-in fade-in slide-in-from-left-3 duration-300 group rounded-lg px-2 -mx-2 transition-all",
+            "flex items-center gap-4 py-1.5 animate-in fade-in slide-in-from-left-3 duration-300 group rounded-lg px-2 transition-all",
+            isNested ? "w-full min-w-0" : "-mx-2",
             isActiveFilter && "bg-primary/5 border border-primary/10 shadow-[0_0_10px_rgba(34,211,238,0.05)]"
           )}
         >

@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth, useUser } from '@/firebase';
 import { useUserProfile } from '@/context/user-profile';
 import { signOut } from 'firebase/auth';
 
 const ADMIN_SESSION_KEY = 'buildbot_admin_session_active';
-const ADMIN_SESSION_CHANNEL = 'buildbot_admin_session_channel';
 
 /**
  * useAdminSessionGuard
@@ -21,24 +20,24 @@ export function useAdminSessionGuard() {
   const user = useUser();
   const { profile, loading } = useUserProfile();
   const pathname = usePathname();
-  const validatedUidRef = useRef<string | null>(null);
-
   useEffect(() => {
-    // Skip if still loading, unauthenticated, or on authentication portals
-    if (!user || loading || !auth || !profile) {
-      validatedUidRef.current = null;
+    if (loading || !auth) return;
+    if (!user) {
+      sessionStorage.removeItem(ADMIN_SESSION_KEY);
       return;
     }
-    if (pathname === '/system-access' || pathname === '/signin') return;
+    if (!profile || pathname === '/system-access' || pathname === '/system-access/signup' || pathname === '/signin') return;
 
     // Only applies to privileged staff roles (Managers & Super Admins)
     const isStaff = Boolean(profile.isSuperAdmin || profile.isManager);
     if (!isStaff) return;
 
-    if (typeof window === 'undefined') return;
-
-    // Register this tab as an active admin session tab
-    sessionStorage.setItem(ADMIN_SESSION_KEY, user.uid);
-    validatedUidRef.current = user.uid;
+    // Only the access-key flow may create this marker. A password-only staff
+    // session must be ended rather than promoted when another route mounts.
+    if (sessionStorage.getItem(ADMIN_SESSION_KEY) !== user.uid) {
+      void signOut(auth).catch((error: unknown) => {
+        console.error('Failed to end an unverified staff session:', error);
+      });
+    }
   }, [loading, user, auth, profile, pathname]);
 }

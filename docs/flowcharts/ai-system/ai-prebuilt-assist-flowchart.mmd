@@ -1,0 +1,28 @@
+flowchart TD
+  Start([Staff opens prebuilt editor or builder]) --> Surface{Which surface?}
+  Surface -- Admin editor --> Edit[/Select components and enter product fields/]
+  Edit --> Assist{AI Assist?}
+  Assist -- No --> Manual[Continue manual editing]
+  Assist -- Yes --> Check{AI enabled and components selected?}
+  Surface -- Staff builder --> Build[/Select build components; enter prebuilt name/]
+  Build --> Generate{Generate Prebuilt?}
+  Generate -- Cancel --> Build
+  Generate -- Yes --> Check
+  Check -- No --> Error[/Toast; retain current input/] --> Surface
+  Check -- Yes --> Call[Call getAiPrebuiltSuggestions]
+  Call --> Pending{Staff builder cancels local wait?}
+  Pending -- Yes --> Cancel([Abort client-side continuation; show cancellation toast])
+  Pending -- No --> Flow[Genkit prebuilt advisor flow]
+  Flow --> Model[Resolve prebuiltAdvisor model; generate structured identity and description]
+  Model --> Valid{Nonempty result?}
+  Valid -- No --> Error
+  Valid -- Yes --> Return{Calling surface?}
+  Return -- Admin editor --> Apply[Fill eligible empty fields; retain entered values]
+  Apply --> Choice{Save, edit, or close?}
+  Choice -- Edit --> Manual
+  Choice -- Close --> End([Editor closed])
+  Choice -- Save --> Write{Form and Firestore write succeed?}
+  Return -- Staff builder --> Assemble[Use entered name, generated description and tier, selected parts and price]
+  Assemble --> Write
+  Write -- No --> SaveError[/Validation or toast; retain build/editor/] --> Surface
+  Write -- Yes --> Done([Prebuilt saved])

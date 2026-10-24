@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useUserProfile } from "@/context/user-profile";
@@ -6,32 +5,25 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { NeutralPageLoader } from "@/components/neutral-page-loader";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { MaintenanceScreen } from "@/components/maintenance-screen";
-import { useDoc, useFirestore } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useSiteSettings } from "@/context/site-settings-context";
 import { cn } from "@/lib/utils";
 
 import { Button, Paper, Text, Title } from "@mantine/core";
 import { AnimatePresence } from "framer-motion";
 import { SignOutLoader } from "@/components/auth/sign-out-loader";
 import { SignOutTransitionContext } from "@/context/sign-out-transition";
+import { EcommerceProvider } from "@/context/ecommerce-context";
+import { CartDrawer } from "@/components/ecommerce/cart-drawer";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { loading, status, authUser, profile } = useUserProfile();
-  const firestore = useFirestore();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [signOutStartedAt, setSignOutStartedAt] = useState<number | null>(null);
 
-  // Fetch Site Settings (Kill Switch)
-  const settingsDocRef = useMemo(() => {
-    if (firestore) return doc(firestore, 'siteSettings', 'main');
-    return null;
-  }, [firestore]);
-
-  const { data: settings } = useDoc<any>(settingsDocRef);
-  const isMaintenanceMode = settings?.isMaintenanceMode || false;
+  const { isMaintenanceMode } = useSiteSettings();
   const isSuperAdmin = profile?.isSuperAdmin || false;
   const isManager = profile?.isManager || false;
   const isAdmin = isSuperAdmin || isManager;
@@ -42,6 +34,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const isLandingRedirect = pathname === "/" && !!authUser;
   const isAuthPage = ['/signin', '/signup', '/system-access'].includes(pathname);
+  const isPublicCatalog = pathname === '/parts' || pathname.startsWith('/parts/') || pathname === '/pre-builts' || pathname.startsWith('/pre-builts/') || pathname === '/checkout' || pathname.startsWith('/q/');
+  const isCustomerSignInPage = pathname === '/signin';
 
   // Keep the sign-out overlay mounted across the route change, then let its
   // existing 400 ms exit animation reveal the ready sign-in page once.
@@ -67,16 +61,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isHeaderHidden = false;
 
   // Loader overlay condition:
-  // 1. Initial auth profile is loading (except when an unauthenticated guest lands directly on /signin)
+  // 1. Initial auth profile is loading (the customer sign-in form owns its transition)
   // 2. Landing page is redirecting an authenticated user
-  // 3. User is authenticated on an auth page (/signin, /signup, /system-access) while route redirection completes
+  // 3. User is authenticated on an auth page other than /signin while route redirection completes
   const showLoaderOverlay = signOutStartedAt === null && (
-    (loading && !(pathname === '/signin' && !authUser)) ||
+    (loading && !isCustomerSignInPage && !isPublicCatalog) ||
     isLandingRedirect ||
-    (isAuthPage && !!authUser)
+    (isAuthPage && !isCustomerSignInPage && !!authUser)
   );
 
-  if (status === 'missing' || status === 'error') {
+  if ((status === 'missing' || status === 'error') && !isCustomerSignInPage && !isPublicCatalog) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 text-slate-900 dark:bg-[#0c0f14] dark:text-slate-100">
         <Paper withBorder radius="lg" p="xl" className="w-full max-w-md border-slate-200 bg-white text-center dark:border-white/10 dark:bg-[#111722]">
@@ -95,31 +89,34 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   if (showMaintenance) return <MaintenanceScreen />;
 
   return (
-    <SignOutTransitionContext.Provider value={{
-      startSignOut: () => setSignOutStartedAt(Date.now()),
-      cancelSignOut: () => setSignOutStartedAt(null),
-    }}>
-      <div className="flex flex-col min-h-screen overflow-x-clip relative">
-        <AnimatePresence>
-          {showLoaderOverlay && (
-            <NeutralPageLoader
-              key="neutral-page-loader"
-              isOverlay
-            />
-          )}
-        </AnimatePresence>
-        <SignOutLoader visible={signOutStartedAt !== null} />
+    <EcommerceProvider>
+      <SignOutTransitionContext.Provider value={{
+        startSignOut: () => setSignOutStartedAt(Date.now()),
+        cancelSignOut: () => setSignOutStartedAt(null),
+      }}>
+        <div className="flex flex-col min-h-screen overflow-x-clip relative">
+          <AnimatePresence>
+            {showLoaderOverlay && (
+              <NeutralPageLoader
+                key="neutral-page-loader"
+                isOverlay
+              />
+            )}
+          </AnimatePresence>
+          <SignOutLoader visible={signOutStartedAt !== null} />
 
-        <Header />
-        <main className={cn(
-          "flex-1 min-h-[calc(100vh-4rem)]",
-          !isHeaderHidden && "pt-16",
-          isMaintenanceMode && !isAdmin && !isAdminRoute && "grayscale-[0.5] contrast-125"
-        )}>
-          {children}
-        </main>
-        {mounted && shouldShowFooter && <Footer />}
-      </div>
-    </SignOutTransitionContext.Provider>
+          {signOutStartedAt === null && <Header />}
+          {signOutStartedAt === null && <CartDrawer />}
+          <main className={cn(
+            "flex-1 min-h-[calc(100vh-4rem)]",
+            !isHeaderHidden && "pt-16",
+            isMaintenanceMode && !isAdmin && !isAdminRoute && "grayscale-[0.5] contrast-125"
+          )}>
+            {signOutStartedAt === null && children}
+          </main>
+          {mounted && signOutStartedAt === null && shouldShowFooter && <Footer />}
+        </div>
+      </SignOutTransitionContext.Provider>
+    </EcommerceProvider>
   );
 }

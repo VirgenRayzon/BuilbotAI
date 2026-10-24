@@ -1,0 +1,15 @@
+flowchart TD
+  MStart([Staff sign-in with role key]) --> MHome{Choose staff feature}
+  MHome -- Stock --> MStock[Search/filter parts; add, edit, adjust stock, archive or restore]
+  MStock --> MAutofill[Optional AI part autofill]
+  MHome -- Prebuilts --> MPrebuilt[Search/filter systems; add, edit, archive or restore]
+  MPrebuilt --> MAssist[Optional AI identity and description assist]
+  MHome -- Prebuilt Builder --> MBuilder[Select compatible parts; name and generate a prebuilt]
+  MBuilder --> MChat[Floating AI chatbot]
+  MHome -- Reservations --> MOrders[Search/filter orders; inspect and change status]
+  MHome -- Archive --> MArchive[Review and restore archived catalog or orders]
+  MHome -- Audit --> MAudit[Filter staff audit records]
+  MHome -- Product detail --> MReport[Generate or re-evaluate prebuilt AI report]
+  MHome -- Profile/notifications --> MProfile[Edit account; inspect staff notices]
+  MHome -- Public pages --> MPublic[Home, About, Team, FAQ and Contact]
+  MHome -- Sign out --> MExit([Confirm and sign out])

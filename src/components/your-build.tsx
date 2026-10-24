@@ -16,7 +16,7 @@ import {
   ThemeIcon,
   Title,
 } from "@mantine/core";
-import { AlertCircle, Bookmark, Cpu, FolderOpen, MoreHorizontal, Trash2, X } from "lucide-react";
+import { AlertCircle, Bookmark, Cpu, Download, FolderOpen, MoreHorizontal, Trash2, X } from "lucide-react";
 import { useFirestore, useDoc, useUser } from "@/firebase";
 import { addDoc, collection, doc, onSnapshot, orderBy, query, serverTimestamp } from "firebase/firestore";
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -25,6 +25,7 @@ import { AIProgressModal } from "@/components/ai-progress-modal";
 import { BuildContent } from "@/components/build/build-content";
 import { BuildActionFooter } from "@/components/build/build-action-footer";
 import { useBuildActions } from "@/hooks/use-build-actions";
+import { useBuildPdfDownload } from "@/hooks/use-build-pdf-download";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, cn } from "@/lib/utils";
 import type { ComponentData, FavoriteBuild, FavoriteBuildPart, Part, Resolution, WorkloadType } from "@/lib/types";
@@ -51,12 +52,13 @@ interface YourBuildProps {
   className?: string;
   isManagerMode?: boolean;
   allParts?: Part[];
-  onAddPrebuilt?: (data: PrebuiltBuilderAddFormSchema) => void | Promise<void>;
+  onAddPrebuilt?: (data: PrebuiltBuilderAddFormSchema, operationId?: string) => void | Promise<import('@/lib/product-identity').CreatedProduct | void>;
   analysis?: unknown;
   onAnalysisUpdate?: (analysis: any) => void;
   onCategorySelect?: (category: string) => void;
   categories?: { name: string; selected?: boolean }[];
   onApplySuggestion?: (category: string, partId: string) => void;
+  isAiPending?: boolean;
 }
 
 const requiredCategories = ["Motherboard", "CPU", "GPU", "RAM", "Storage", "PSU", "Cooler", "Case"];
@@ -66,7 +68,7 @@ export function YourBuild({
   build, onClearBuild, onRemovePart, onAnalyze, showSystemBalance = true,
   className, isManagerMode = false, onAddPrebuilt, analysis, onAnalysisUpdate,
   onCategorySelect, categories, resolution, onResolutionChange, workload, onWorkloadChange,
-  onApplySuggestion,
+  onApplySuggestion, isAiPending: externalIsAiPending,
 }: YourBuildProps) {
   const [sidebarTab, setSidebarTab] = useState<"parts" | "analytics">("parts");
   const user = useUser();
@@ -77,6 +79,7 @@ export function YourBuild({
   const [saveOpen, setSaveOpen] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
+  const [showMissingValidation, setShowMissingValidation] = useState(false);
 
   const settingsRef = useMemo(
     () => firestore ? doc(firestore, "siteSettings", "main") : null,
@@ -89,6 +92,12 @@ export function YourBuild({
     return Array.isArray(value) ? value.length === 0 : !value;
   });
   const isBuildComplete = missingCategories.length === 0;
+  const { download: downloadBuildPdf, isDownloading: isDownloadingPdf } = useBuildPdfDownload(build);
+
+  useEffect(() => {
+    if (isBuildComplete) setShowMissingValidation(false);
+  }, [isBuildComplete]);
+
   const selectedParts = Object.values(build).reduce<number>(
     (sum, value) => sum + (Array.isArray(value) ? value.length : value ? 1 : 0), 0
   );
@@ -111,12 +120,14 @@ export function YourBuild({
 
   const {
     isCheckingOut, showLocalAiProgress, setShowLocalAiProgress,
-    aiPhase, isAiPending, tokensUsed, handleAddPrebuiltWithAi,
+    aiPhase, isAiPending: internalIsAiPending, tokensUsed, handleAddPrebuiltWithAi,
     handleCancelAi, handleCheckout, handleAnalyze,
   } = useBuildActions({
     build, user, isAiKillSwitch: settings?.isAiKillSwitch || false,
     onClearBuild, onAnalyze, onAddPrebuilt, totalPrice, onAnalysisUpdate,
   });
+
+  const effectiveIsAiPending = Boolean(externalIsAiPending ?? internalIsAiPending);
 
   useEffect(() => {
     if (isManagerMode || !user || !firestore) return;
@@ -200,6 +211,17 @@ export function YourBuild({
           Save Current Build
         </Menu.Item>
 
+        {!isManagerMode && (
+          <Menu.Item
+            leftSection={<Download size={15} className="text-cyan-500" />}
+            onClick={() => void downloadBuildPdf()}
+            disabled={!isBuildComplete || isDownloadingPdf}
+            className="min-h-11 text-xs font-medium rounded-md hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+          >
+            {isDownloadingPdf ? 'Preparing PDF...' : 'Download Your Build'}
+          </Menu.Item>
+        )}
+
         <Menu.Item
           color="red"
           leftSection={<Trash2 size={15} className="text-rose-500" />}
@@ -250,6 +272,8 @@ export function YourBuild({
         onRemovePart={onRemovePart}
         onCategorySelect={onCategorySelect}
         activeFilter={activeCategory}
+        missingCategories={missingCategories}
+        showMissingValidation={showMissingValidation}
         categories={categories}
         showSystemBalance={showSystemBalance}
         totalWattage={totalWattage}
@@ -262,13 +286,14 @@ export function YourBuild({
         selectedParts={selectedParts}
         missingCategories={missingCategories}
         isManagerMode={isManagerMode}
-        isAiPending={isAiPending}
+        isAiPending={effectiveIsAiPending}
         isCheckingOut={isCheckingOut}
         analysis={analysis}
-        onCategorySelect={onCategorySelect}
         onAnalyze={() => { if (isBuildComplete) void handleAnalyze(); }}
         onReserve={(onSuccess) => { if (isBuildComplete) void handleCheckout(onSuccess); }}
         onAddPrebuilt={(name) => { if (isBuildComplete) handleAddPrebuiltWithAi(name); }}
+        onIncompleteAction={() => setShowMissingValidation(true)}
+        showMissingValidation={showMissingValidation}
       />
     </>
   );

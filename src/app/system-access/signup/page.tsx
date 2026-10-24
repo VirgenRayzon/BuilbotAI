@@ -10,7 +10,6 @@ import { useAuth, useFirestore, getGoogleProvider, formatGoogleAuthError, Google
 import {
   createUserWithEmailAndPassword,
   setPersistence,
-  browserLocalPersistence,
   browserSessionPersistence,
   signInWithPopup,
   signOut,
@@ -37,6 +36,7 @@ import { UnifiedBackground } from '@/components/landing/unified-background';
 import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/context/user-profile';
+import { Logo } from '@/components/logo';
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -129,8 +129,7 @@ export default function ManagerSignupPage() {
     let createdUser: any = null;
 
     try {
-      // Local persistence for seamless multi-tab administrative workflows
-      await setPersistence(auth, browserLocalPersistence);
+      await setPersistence(auth, browserSessionPersistence);
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       createdUser = userCredential.user;
 
@@ -294,11 +293,11 @@ export default function ManagerSignupPage() {
           className="w-full bg-white/85 dark:bg-[#111722] border-red-500/30 dark:border-red-500/30 shadow-sm relative transition-all"
         >
           <Stack gap="md">
-            {/* Header with Red Badge & Shield Icon */}
+            {/* Header with Red Netcodex Emblem */}
             <div className="text-center flex flex-col items-center gap-1.5">
-              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 shadow-sm">
-                <ShieldAlert size={22} />
-              </div>
+              <Link href="/" className="mb-0.5">
+                <Logo showText={false} size="lg" variant="red" />
+              </Link>
               <Title
                 order={2}
                 className="text-xl sm:text-2xl font-bold font-headline tracking-tight text-slate-900 dark:text-slate-100"
@@ -347,7 +346,7 @@ export default function ManagerSignupPage() {
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit(onSubmit)}>
+            <form onSubmit={handleSubmit(onSubmit)} autoComplete="on">
               <Stack gap="md">
                 <Controller
                   name="email"
@@ -379,6 +378,7 @@ export default function ManagerSignupPage() {
                       <PasswordInput
                         label="Password"
                         placeholder="Create your manager password"
+                        autoComplete="new-password"
                         radius="md"
                         size="md"
                         leftSection={<Lock size={16} className="text-slate-400" />}
@@ -427,6 +427,8 @@ export default function ManagerSignupPage() {
                     <PasswordInput
                       label="Default Manager Access Key"
                       placeholder="Enter assigned manager key"
+                      // This validates authorization; it must never be treated as the account password.
+                      autoComplete="one-time-code"
                       radius="md"
                       size="md"
                       leftSection={<Key size={16} className="text-slate-400" />}
@@ -529,6 +531,7 @@ export default function ManagerSignupPage() {
             </Text>
             <PasswordInput
               placeholder="Enter manager key"
+              autoComplete="one-time-code"
               value={googleManagerKey}
               onChange={(e) => setGoogleManagerKey(e.currentTarget.value)}
               leftSection={<Key size={16} className="text-slate-400" />}

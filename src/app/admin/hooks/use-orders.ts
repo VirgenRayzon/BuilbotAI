@@ -1,19 +1,21 @@
 "use client";
 
 import { useMemo } from 'react';
-import { useFirestore } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, doc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
-import type { Order } from '@/lib/types';
+import { collection, query, where, orderBy } from 'firebase/firestore';
+import type { Order, UserProfile } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
 import { updateReservationStatus } from '@/app/checkout-actions';
 import { createAuditLog } from '@/firebase/audit';
+import { manageReservation } from '../reservation-actions';
 
 /**
  * Hook to manage customer reservations and orders.
  */
-export function useOrders(profile: any) {
+export function useOrders(profile: UserProfile | null) {
     const firestore = useFirestore();
+    const auth = useAuth();
     const { toast } = useToast();
 
     const ordersQuery = useMemo(() => {
@@ -26,49 +28,49 @@ export function useOrders(profile: any) {
             orderBy('createdAt', 'desc')
         );
     }, [firestore]);
-    const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersQuery);
+    const archivedOrdersQuery = useMemo(() => firestore
+        ? query(collection(firestore, 'orders'), where('isArchived', '==', true))
+        : null, [firestore]);
+    const { data: recentOrders, loading: recentOrdersLoading } = useCollection<Order>(ordersQuery);
+    const { data: archivedOrders, loading: archivedOrdersLoading } = useCollection<Order>(archivedOrdersQuery);
+    const orders = useMemo(() => {
+        const byId = new Map<string, Order>();
+        for (const order of recentOrders || []) byId.set(order.id, order);
+        for (const order of archivedOrders || []) byId.set(order.id, order);
+        return Array.from(byId.values());
+    }, [recentOrders, archivedOrders]);
+    const ordersLoading = recentOrdersLoading || archivedOrdersLoading;
 
-    const handleDeleteOrder = async (orderId: string, skipConfirm = false) => {
-        if (!firestore) return;
-        if (!skipConfirm && !window.confirm("Are you sure you want to delete this reservation? This cannot be undone.")) return;
-
+    const handleReservationAction = async (orderId: string, action: 'archive' | 'restore' | 'delete') => {
         try {
-            await deleteDoc(doc(firestore, "orders", orderId));
-            await createAuditLog(firestore, {
-                actionName: 'deleted',
-                actorId: profile?.id || 'unknown',
-                actorName: profile?.name || profile?.email || 'Unknown User',
-                actorEmail: profile?.email,
-                scope: 'Order',
-                resourceName: `Order ${orderId.substring(0, 8)}`,
-                resourceId: orderId,
-                details: 'Deleted reservation'
-            });
+            const user = auth?.currentUser;
+            if (!user) throw new Error('Please sign in again.');
+            const idToken = await user.getIdToken();
+            const result = await manageReservation({ orderId, action, idToken });
+            if (!result.success) throw new Error(result.error);
+            const label = action === 'archive' ? 'Archived' : action === 'restore' ? 'Restored' : 'Deleted';
             toast({
-                title: "Reservation Deleted",
-                description: "The reservation has been permanently removed.",
+                title: `Reservation ${label}`,
+                description: action === 'delete' ? 'The reservation has been permanently removed.' : `The reservation has been ${label.toLowerCase()}.`,
             });
+            return true;
         } catch (error) {
-            console.error("Error deleting order:", error);
+            console.error(`Error performing reservation ${action}:`, error);
             toast({
                 title: "Error",
-                description: "Failed to delete the reservation.",
+                description: error instanceof Error ? error.message : 'Reservation action failed.',
                 variant: "destructive"
             });
+            return false;
         }
     };
 
     const handleUpdateOrder = async (orderId: string, newStatus: Order['status']) => {
         if (!firestore) return;
         try {
-            const actorInfo = profile ? {
-                id: profile.id,
-                name: profile.name || profile.email,
-                isManager: profile.isManager,
-                isSuperAdmin: profile.isSuperAdmin
-            } : undefined;
-
-            const result = await updateReservationStatus(orderId, newStatus, actorInfo);
+            const user = auth?.currentUser;
+            if (!user) throw new Error('Please sign in again.');
+            const result = await updateReservationStatus(orderId, newStatus, await user.getIdToken());
             if (result.success) {
                 await createAuditLog(firestore, {
                     actionName: 'status_changed',
@@ -98,7 +100,7 @@ export function useOrders(profile: any) {
     };
 
     const stats = useMemo(() => ({
-        pendingOrdersCount: orders?.filter(o => o.status === 'pending').length || 0,
+        pendingOrdersCount: orders?.filter(o => !o.isArchived && o.status === 'pending').length || 0,
         completedOrdersCount: orders?.filter(o => o.status === 'finished building').length || 0,
         cancelledOrdersCount: orders?.filter(o => o.status === 'cancelled').length || 0,
     }), [orders]);
@@ -106,7 +108,7 @@ export function useOrders(profile: any) {
     return {
         orders,
         ordersLoading,
-        handleDeleteOrder,
+        handleReservationAction,
         handleUpdateOrder,
         stats
     };

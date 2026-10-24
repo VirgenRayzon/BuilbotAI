@@ -32,18 +32,44 @@ import { AddPartDialog } from '@/components/add-part-dialog';
 import { InventoryPartCard } from '@/components/inventory-part-card';
 import { InventoryTable } from '@/components/inventory-table';
 import { PaginationControls } from "@/components/pagination-controls";
-import { cn } from "@/lib/utils";
-import type { Part } from '@/lib/types';
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import type { Part, UserProfile } from '@/lib/types';
 import { AddPartFormSchema } from '@/hooks/use-part-form';
+import { useInventoryImageCount } from '@/hooks/use-inventory-image-count';
+import { ADMIN_PART_IMAGE_SIZES } from '@/lib/inventory-image-sizes';
+
+type AvailabilityFilter = 'all' | 'in-stock' | 'out-of-stock';
+
+const availabilityOptions: { value: AvailabilityFilter; label: string }[] = [
+    { value: 'all', label: 'All' },
+    { value: 'in-stock', label: 'In Stock' },
+    { value: 'out-of-stock', label: 'Out of Stock' },
+];
+
+type PartSelection = { id: string; category: Part['category'] };
+type PartCategorySelection = { name: Part['category']; selected: boolean };
+type BulkConfirmAction = {
+    isOpen: boolean;
+    type: 'archive' | 'restore' | 'delete';
+    target: 'parts' | 'prebuilts';
+};
+
+function getCreatedAtTime(value: unknown): number {
+    if (value && typeof value === 'object' && 'toDate' in value && typeof value.toDate === 'function') {
+        return value.toDate().getTime();
+    }
+
+    return value ? new Date(value as string | number | Date).getTime() : 0;
+}
 
 interface StockTabProps {
     parts: Part[];
     partsLoading: boolean;
-    profile: any;
-    partCategories: { name: string, selected: boolean }[];
-    onCategoryChange: (name: string, selected: boolean) => void;
-    onSetCategories: (cats: any) => void;
-    onAddPart: (data: AddPartFormSchema) => Promise<void>;
+    profile: Pick<UserProfile, 'isSuperAdmin'> | null;
+    partCategories: PartCategorySelection[];
+    onSetCategories: (categories: PartCategorySelection[]) => void;
+    onAddPart: (data: AddPartFormSchema, operationId?: string) => Promise<import('@/lib/product-identity').CreatedProduct | void>;
     onUpdatePart: (id: string, category: Part['category'], data: AddPartFormSchema) => Promise<void>;
     onDeletePart: (id: string, category: Part['category']) => Promise<void>;
     onArchivePart: (id: string, category: Part['category'], isArchived?: boolean) => Promise<void>;
@@ -53,11 +79,11 @@ interface StockTabProps {
     // Bulk state from useBulkActions
     isPartSelectionMode: boolean;
     setIsPartSelectionMode: (val: boolean) => void;
-    selectedPartIds: { id: string, category: Part['category'] }[];
-    setSelectedPartIds: (val: any) => void;
+    selectedPartIds: PartSelection[];
+    setSelectedPartIds: (parts: PartSelection[]) => void;
     togglePartSelection: (id: string, category: Part['category']) => void;
     toggleAllPartsSelection: (parts: Part[]) => void;
-    setConfirmAction: (val: any) => void;
+    setConfirmAction: (action: BulkConfirmAction) => void;
 }
 
 export function StockTab({
@@ -65,7 +91,6 @@ export function StockTab({
     partsLoading,
     profile,
     partCategories,
-    onCategoryChange,
     onSetCategories,
     onAddPart,
     onUpdatePart,
@@ -81,8 +106,10 @@ export function StockTab({
     toggleAllPartsSelection,
     setConfirmAction
 }: StockTabProps) {
+    const priorityImageCount = useInventoryImageCount('admin');
     const [partSearchQuery, setPartSearchQuery] = useState('');
     const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+    const [availability, setAvailability] = useState<AvailabilityFilter>('all');
     const [partSortBy, setPartSortBy] = useState('Date Added');
     const [partSortDirection, setPartSortDirection] = useState<'asc' | 'desc'>('desc');
     const [activeView, setActiveView] = useState<'grid' | 'table'>('grid');
@@ -94,10 +121,13 @@ export function StockTab({
         
         const baseFilteredParts = parts?.filter(part => {
             const matchesCategory = selectedCategories.includes(part.category);
-            const matchesSearch = part.name.toLowerCase().includes(partSearchQuery.toLowerCase()) ||
+            const matchesSearch = `${part.name} ${part.sku || ''} ${part.productId || ''}`.toLowerCase().includes(partSearchQuery.toLowerCase()) ||
                 part.brand.toLowerCase().includes(partSearchQuery.toLowerCase());
+            const matchesAvailability = availability === 'all'
+                || (availability === 'in-stock' && part.stock > 0)
+                || (availability === 'out-of-stock' && part.stock <= 0);
             const isNotArchived = !part.isArchived;
-            return matchesCategory && matchesSearch && isNotArchived;
+            return matchesCategory && matchesSearch && matchesAvailability && isNotArchived;
         }) ?? [];
 
         return baseFilteredParts.filter(part => {
@@ -110,20 +140,18 @@ export function StockTab({
                 else if (partSortBy === 'Brand') compare = a.brand.localeCompare(b.brand);
                 else if (partSortBy === 'Stock') compare = a.stock - b.stock;
                 else if (partSortBy === 'Date Added') {
-                    const aDate = (a as any).createdAt?.toDate?.() || a.createdAt || 0;
-                    const bDate = (b as any).createdAt?.toDate?.() || b.createdAt || 0;
-                    compare = new Date(aDate).getTime() - new Date(bDate).getTime();
+                    compare = getCreatedAtTime(a.createdAt) - getCreatedAtTime(b.createdAt);
                 }
                 return partSortDirection === 'asc' ? compare : -compare;
             });
-    }, [parts, partCategories, partSortBy, partSortDirection, partSearchQuery, selectedBrands]);
+    }, [parts, partCategories, partSortBy, partSortDirection, partSearchQuery, selectedBrands, availability]);
 
     const availableBrands = useMemo(() => {
         const selectedCategories = partCategories.filter(c => c.selected).map(c => c.name);
         
         const baseFilteredParts = parts?.filter(part => {
             const matchesCategory = selectedCategories.includes(part.category);
-            const matchesSearch = part.name.toLowerCase().includes(partSearchQuery.toLowerCase()) ||
+            const matchesSearch = `${part.name} ${part.sku || ''} ${part.productId || ''}`.toLowerCase().includes(partSearchQuery.toLowerCase()) ||
                 part.brand.toLowerCase().includes(partSearchQuery.toLowerCase());
             const isNotArchived = !part.isArchived;
             return matchesCategory && matchesSearch && isNotArchived;
@@ -270,6 +298,37 @@ export function StockTab({
                                 </Menu.Dropdown>
                             </Menu>
                         )}
+
+                        {/* Availability Dropdown Filter */}
+                        <Menu shadow="md" width={180} radius="md">
+                            <Menu.Target>
+                                <Button
+                                    variant={availability === 'all' ? 'default' : 'light'}
+                                    color={availability === 'all' ? undefined : 'cyan'}
+                                    size="xs"
+                                    radius="md"
+                                    leftSection={<PackageCheck size={13} className={availability === 'all' ? 'text-slate-400' : 'text-cyan-500'} />}
+                                >
+                                    <span className="hidden sm:inline text-slate-400 font-normal mr-1">Availability:</span>
+                                    {availabilityOptions.find((option) => option.value === availability)?.label}
+                                </Button>
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                                <Menu.Label>Filter by Availability</Menu.Label>
+                                {availabilityOptions.map((option) => (
+                                    <Menu.Item
+                                        key={option.value}
+                                        onClick={() => {
+                                            setAvailability(option.value);
+                                            setPartCurrentPage(1);
+                                        }}
+                                        rightSection={availability === option.value ? <Check size={14} className="text-cyan-500" /> : null}
+                                    >
+                                        {option.label}
+                                    </Menu.Item>
+                                ))}
+                            </Menu.Dropdown>
+                        </Menu>
 
                         {/* Sort Menu */}
                         <Menu shadow="md" width={180} radius="md">
@@ -431,11 +490,57 @@ export function StockTab({
 
             {activeView === 'grid' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
-                    {partsLoading ? null : (
-                        currentParts.map((part) => (
+                    {partsLoading ? (
+                        Array.from({ length: 8 }).map((_, i) => (
+                            <Card
+                                key={`stock-skeleton-${i}`}
+                                className="flex flex-col justify-between overflow-hidden relative border border-border/80 bg-white/80 dark:bg-card/40 animate-pulse select-none h-full"
+                            >
+                                <div className="p-2 md:p-3.5 flex flex-col justify-between h-full space-y-2 md:space-y-3">
+                                    <div className="space-y-1.5 md:space-y-2">
+                                        <div className="flex justify-between items-start gap-1">
+                                            <div className="min-w-0 flex-1 space-y-1">
+                                                <div className="h-2.5 w-12 bg-cyan-500/20 rounded" />
+                                                <div className="h-3.5 w-3/4 bg-slate-200 dark:bg-white/10 rounded" />
+                                                <div className="h-2.5 w-1/3 bg-slate-200/60 dark:bg-white/5 rounded" />
+                                            </div>
+                                            <div className="h-7 w-7 rounded bg-slate-200/40 dark:bg-white/5 shrink-0" />
+                                        </div>
+
+                                        <div className="aspect-square relative -mx-2 md:-mx-3.5 w-auto overflow-hidden border-y border-slate-200 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.03] flex items-center justify-center p-2">
+                                            <PackageCheck className="h-10 w-10 text-slate-300/70 dark:text-white/10" />
+                                        </div>
+
+                                        <div className="flex justify-between items-center gap-2 pt-0.5">
+                                            <div className="h-5 md:h-6 w-20 md:w-24 bg-slate-200 dark:bg-white/10 rounded" />
+                                            <div className="h-4 w-16 bg-slate-200/60 dark:bg-white/5 rounded-full" />
+                                        </div>
+
+                                        <Separator className="bg-border/40" />
+
+                                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 md:gap-x-3 md:gap-y-1.5 py-0.5">
+                                            {Array.from({ length: 4 }).map((_, s) => (
+                                                <div key={s} className="space-y-1">
+                                                    <div className="h-2 w-10 bg-slate-200/50 dark:bg-white/5 rounded" />
+                                                    <div className="h-3 w-16 bg-slate-200 dark:bg-white/10 rounded" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-auto p-2 md:p-3 pt-0">
+                                        <div className="w-full h-8 md:h-9 rounded-md bg-slate-200 dark:bg-white/10" />
+                                    </div>
+                                </div>
+                            </Card>
+                        ))
+                    ) : (
+                        currentParts.map((part, index) => (
                             <InventoryPartCard
                                 key={part.id}
                                 part={part}
+                                priority={index < priorityImageCount}
+                                imageSizes={ADMIN_PART_IMAGE_SIZES}
                                 onDelete={onDeletePart}
                                 onArchive={onArchivePart}
                                 onUpdateStock={onUpdatePartStock}

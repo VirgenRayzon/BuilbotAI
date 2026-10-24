@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Paper,
@@ -17,19 +19,24 @@ import {
   Alert,
 } from "@mantine/core";
 import {
-  Mail,
+  MessageCircle,
   MapPin,
-  Phone,
   Send,
   CheckCircle2,
   Clock,
   Sparkles,
+  Phone,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/theme-provider";
+import { useUserProfile } from "@/context/user-profile";
+import { AuthBackground } from "@/components/auth/auth-background";
 
 export default function ContactPage() {
   const { theme } = useTheme();
+  const { authUser, profile } = useUserProfile();
+  const searchParams = useSearchParams();
   const isDark = theme === "dark";
 
   const [fullName, setFullName] = useState("");
@@ -38,26 +45,54 @@ export default function ContactPage() {
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState("");
+  const [inquiryId, setInquiryId] = useState("");
+  const [companyWebsite, setCompanyWebsite] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!authUser) return;
+    setEmail(authUser.email ?? profile?.email ?? "");
+    setFullName(current => current || authUser.displayName || profile?.name || "");
+  }, [authUser, profile?.email, profile?.name]);
+
+  useEffect(() => {
+    const cancellationSubject = searchParams.get('subject');
+    const orderReference = cancellationSubject?.match(/Cancellation Request for Order #(\w+)/i)?.[1];
+    if (!orderReference) return;
+    setSubject('Order & Reservation Status');
+    setMessage(current => current || `I would like to request cancellation for order #${orderReference}.`);
+  }, [searchParams]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    // Simulate sending message
-    setTimeout(() => {
-      setSubmitting(false);
+    setSubmissionError("");
+    try {
+      const idToken = await authUser?.getIdToken();
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+        },
+        body: JSON.stringify({ fullName, email, subject, message, companyWebsite }),
+      });
+      const result = await response.json() as { success?: boolean; inquiryId?: string; error?: string };
+      if (!response.ok || !result.success) throw new Error(result.error || "We could not submit your message. Please try again.");
+      setInquiryId(result.inquiryId ?? "");
       setSubmitted(true);
-    }, 600);
+    } catch (error) {
+      setSubmissionError(error instanceof Error ? error.message : "We could not submit your message. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <main className="min-h-screen bg-background pt-32 pb-24 px-4 overflow-hidden relative">
-      {/* Ambient Lighting */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
-        <div className="absolute top-[10%] right-[10%] w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-[140px]" />
-        <div className="absolute bottom-[10%] left-[10%] w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[140px]" />
-      </div>
+    <main className="min-h-screen bg-transparent pt-32 pb-24 px-4 overflow-hidden relative">
+      <AuthBackground className="fixed" />
 
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 relative z-10">
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           {/* Left Column: Contact Channels & Info */}
           <motion.div
@@ -75,7 +110,7 @@ export default function ContactPage() {
                 leftSection={<Sparkles size={14} />}
                 className="font-bold tracking-widest uppercase py-2 px-3.5"
               >
-                Direct Support
+                Customer Support
               </Badge>
             </div>
 
@@ -83,13 +118,13 @@ export default function ContactPage() {
               Get in <span className="text-cyan-600 dark:text-cyan-400">Touch</span>
             </h1>
 
-            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 mb-10 font-medium leading-relaxed">
+            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 mb-8 font-medium leading-relaxed">
               Have a question about component compatibility, reservation orders, or custom builds?
-              Our hardware specialists are ready to assist you.
+              Send a message to our hardware specialists. All replies stay conveniently inside the app.
             </p>
 
             <Stack gap="sm" className="mb-6">
-              {/* Channel 1: Email */}
+              {/* Channel 1: In-App Support Inbox */}
               <Paper
                 withBorder
                 radius="xl"
@@ -102,24 +137,24 @@ export default function ContactPage() {
                 )}
               >
                 <div className="flex items-start gap-4">
-                  <ThemeIcon size={48} radius="xl" variant="light" color="cyan">
-                    <Mail size={22} />
+                  <ThemeIcon size={44} radius="xl" variant="light" color="cyan">
+                    <MessageCircle size={20} />
                   </ThemeIcon>
                   <div>
-                    <Text size="xs" fw={700} className="uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
-                      Email Inquiries
+                    <Text size="xs" fw={700} className="uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-0.5">
+                      In-App Support Desk
                     </Text>
-                    <Text size="lg" fw={800} className="text-slate-900 dark:text-slate-100 font-headline">
-                      support@buildbot.ai
+                    <Text size="base" fw={800} className="text-slate-900 dark:text-slate-100 font-headline">
+                      Profile Contact Inbox
                     </Text>
-                    <Text size="xs" c="dimmed" mt={2}>
-                      Replies within 24 hours on business days
+                    <Text size="xs" c="dimmed" mt={2} className="leading-relaxed">
+                      Staff replies stay inside the app. Sign in before submitting to view and reply to staff updates in your Profile contact inbox. <strong>Guest inquiries cannot be followed in-app.</strong>
                     </Text>
                   </div>
                 </div>
               </Paper>
 
-              {/* Channel 2: Phone */}
+              {/* Channel 2: Headquarters & Warehouse */}
               <Paper
                 withBorder
                 radius="xl"
@@ -132,24 +167,27 @@ export default function ContactPage() {
                 )}
               >
                 <div className="flex items-start gap-4">
-                  <ThemeIcon size={48} radius="xl" variant="light" color="cyan">
-                    <Phone size={22} />
+                  <ThemeIcon size={44} radius="xl" variant="light" color="cyan">
+                    <MapPin size={20} />
                   </ThemeIcon>
                   <div>
-                    <Text size="xs" fw={700} className="uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
-                      Customer Hotline
+                    <Text size="xs" fw={700} className="uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-0.5">
+                      Headquarters &amp; Warehouse
                     </Text>
-                    <Text size="lg" fw={800} className="text-slate-900 dark:text-slate-100 font-headline">
-                      +63 (02) 8911-0000
+                    <Text size="base" fw={800} className="text-slate-900 dark:text-slate-100 font-headline">
+                      Netcodex Computer Center
                     </Text>
-                    <Text size="xs" c="dimmed" mt={2}>
-                      Monday – Friday: 9:00 AM – 6:00 PM PHT
+                    <Text size="xs" className="text-slate-600 dark:text-slate-300 font-medium mt-1">
+                      35G Liberty Avenue, corner 9th Ave, Socorro, Cubao, Quezon City
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      Metro Manila, Philippines 1109
                     </Text>
                   </div>
                 </div>
               </Paper>
 
-              {/* Channel 3: Headquarters */}
+              {/* Channel 3: Daily Operating Hours */}
               <Paper
                 withBorder
                 radius="xl"
@@ -162,19 +200,61 @@ export default function ContactPage() {
                 )}
               >
                 <div className="flex items-start gap-4">
-                  <ThemeIcon size={48} radius="xl" variant="light" color="cyan">
-                    <MapPin size={22} />
+                  <ThemeIcon size={44} radius="xl" variant="light" color="cyan">
+                    <Clock size={20} />
                   </ThemeIcon>
                   <div>
-                    <Text size="xs" fw={700} className="uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">
-                      STI College Cubao
+                    <Text size="xs" fw={700} className="uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-0.5">
+                      Daily Operating Hours
                     </Text>
-                    <Text size="lg" fw={800} className="text-slate-900 dark:text-slate-100 font-headline">
-                      Cubao, Quezon City
+                    <Text size="base" fw={800} className="text-slate-900 dark:text-slate-100 font-headline">
+                      Monday – Sunday, 10:00 AM – 7:00 PM
                     </Text>
-                    <Text size="xs" c="dimmed" mt={2}>
-                      Metro Manila, Philippines
+                    <Text size="xs" c="dimmed" mt={1}>
+                      Fulfillment and customer support available 7 days a week.
                     </Text>
+                  </div>
+                </div>
+              </Paper>
+
+              {/* Channel 4: Phone & Verified Email */}
+              <Paper
+                withBorder
+                radius="xl"
+                p={12}
+                className={cn(
+                  "transition-all duration-300",
+                  isDark
+                    ? "bg-[#111722]/80 border-white/10 hover:border-cyan-500/30"
+                    : "bg-white/90 border-slate-200 hover:border-cyan-500/30 shadow-sm"
+                )}
+              >
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="flex items-start gap-3">
+                    <ThemeIcon size={36} radius="lg" variant="light" color="cyan">
+                      <Phone size={16} />
+                    </ThemeIcon>
+                    <div>
+                      <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        Phone
+                      </Text>
+                      <Text size="sm" fw={700} className="text-slate-900 dark:text-slate-100">
+                        0927-014-1681
+                      </Text>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <ThemeIcon size={36} radius="lg" variant="light" color="cyan">
+                      <Mail size={16} />
+                    </ThemeIcon>
+                    <div>
+                      <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        Verified Email
+                      </Text>
+                      <Text size="sm" fw={700} className="text-slate-900 dark:text-slate-100 truncate">
+                        techbrain@netcodex.ph
+                      </Text>
+                    </div>
                   </div>
                 </div>
               </Paper>
@@ -204,7 +284,7 @@ export default function ContactPage() {
                   Send a Message
                 </Title>
                 <Text size="sm" className="text-slate-600 dark:text-slate-400 font-medium">
-                  Fill in your details below and our team will get back to you with guidance.
+                  Submit your request here. <strong>All replies stay inside the app</strong> via your Profile Contact Inbox. Sign in first to follow your thread—guest inquiries cannot be followed in-app.
                 </Text>
               </div>
 
@@ -218,8 +298,18 @@ export default function ContactPage() {
                   className="py-6"
                 >
                   <Text size="sm" mt="xs">
-                    Thank you, <strong>{fullName || "Valued Builder"}</strong>! We have received your inquiry regarding &quot;{subject}&quot; and will review your hardware requirements shortly.
+                    Thank you, <strong>{fullName || "Valued Customer"}</strong>! We have received your inquiry regarding &quot;{subject}&quot; and our team will review your requirements shortly.
                   </Text>
+                  {inquiryId && (
+                    <Text size="xs" mt="xs" c="dimmed">
+                      Reference ID: {inquiryId.slice(0, 8).toUpperCase()}. {authUser ? 'Replies from our staff will appear in your Profile Contact Inbox.' : 'Submitted as guest. Since you are not signed in, replies cannot be followed in-app. Sign in before submitting in the future to keep conversations connected to your account.'}
+                    </Text>
+                  )}
+                  {authUser && inquiryId && (
+                    <MantineButton component={Link} href={`/profile?tab=contact-inbox&inquiry=${encodeURIComponent(inquiryId)}`} variant="light" color="teal" size="sm" className="mt-3">
+                      Open Contact Inbox
+                    </MantineButton>
+                  )}
                   <MantineButton
                     variant="subtle"
                     color="teal"
@@ -230,6 +320,8 @@ export default function ContactPage() {
                       setFullName("");
                       setEmail("");
                       setMessage("");
+                      setSubmissionError("");
+                      setInquiryId("");
                     }}
                   >
                     Send Another Message
@@ -237,7 +329,12 @@ export default function ContactPage() {
                 </Alert>
               ) : (
                 <form onSubmit={handleSubmit}>
+                  <div aria-hidden="true" className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden">
+                    <label htmlFor="companyWebsite">Leave this field empty</label>
+                    <input id="companyWebsite" tabIndex={-1} autoComplete="off" value={companyWebsite} onChange={event => setCompanyWebsite(event.target.value)} />
+                  </div>
                   <Stack gap="sm">
+                    {submissionError && <Alert color="red" variant="light" title="Message not sent">{submissionError}</Alert>}
                     <div className="grid sm:grid-cols-2 gap-4">
                       <TextInput
                         label="Full Name"
@@ -256,6 +353,7 @@ export default function ContactPage() {
                         label="Email Address"
                         type="email"
                         placeholder="alex@example.com"
+                        description="For reference only. BuildbotAI does not send inquiry updates by email."
                         required
                         radius="md"
                         size="md"

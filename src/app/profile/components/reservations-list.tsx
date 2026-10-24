@@ -9,9 +9,7 @@ import {
   Stack,
   Badge,
   Button,
-  ActionIcon,
   ThemeIcon,
-  Tooltip,
 } from "@mantine/core";
 import {
   Package,
@@ -20,7 +18,6 @@ import {
   Truck,
   CheckCircle2,
   ServerCrash,
-  Trash2,
   ChevronRight,
   CreditCard,
   XCircle,
@@ -33,9 +30,7 @@ import Link from "next/link";
 interface ReservationsListProps {
   reservations: Order[];
   loading: boolean;
-  onCancel: (id: string) => void;
-  onDelete: (id: string) => void;
-  onConfirm: (action: { id: string; type: "cancel" | "delete"; order?: Order }) => void;
+  onConfirm: (action: { id: string; order?: Order }) => void;
 }
 
 export function ReservationsList({
@@ -145,27 +140,13 @@ export function ReservationsList({
                         variant="light"
                         radius="md"
                         leftSection={<XCircle size={14} />}
-                        onClick={() => onConfirm({ id: reservation.id, type: "cancel", order: reservation })}
+                        onClick={() => onConfirm({ id: reservation.id, order: reservation })}
                         className="font-bold uppercase tracking-wider text-[11px]"
                       >
                         Cancel Build
                       </Button>
                     )}
 
-                    {reservation.status === "cancelled" && (
-                      <Tooltip label="Delete cancelled reservation record" withArrow>
-                        <ActionIcon
-                          size="md"
-                          color="red"
-                          variant="subtle"
-                          radius="md"
-                          onClick={() => onConfirm({ id: reservation.id, type: "delete", order: reservation })}
-                          aria-label="Delete reservation record"
-                        >
-                          <Trash2 size={16} />
-                        </ActionIcon>
-                      </Tooltip>
-                    )}
                   </Group>
                 </div>
               </div>

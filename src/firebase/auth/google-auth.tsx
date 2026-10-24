@@ -10,7 +10,7 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
 } from 'firebase/auth';
-import { Firestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { Firestore, doc, getDocFromServer, setDoc } from 'firebase/firestore';
 import { syncUserClaimsAction } from '@/app/actions';
 
 /**
@@ -105,14 +105,27 @@ export async function executeCustomerGoogleAuth(
   firestore: Firestore,
   options?: { isSignUp?: boolean }
 ): Promise<CustomerGoogleAuthResult> {
+  let signedInUserId: string | null = null;
   try {
-    await setPersistence(auth, browserLocalPersistence);
+    sessionStorage.removeItem('buildbot_admin_session_active');
+    await setPersistence(auth, browserSessionPersistence);
     const provider = getGoogleProvider();
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
+    signedInUserId = user.uid;
+    const tokenResult = await user.getIdTokenResult(true);
+    const hasStaffClaim = tokenResult.claims.isManager === true ||
+      tokenResult.claims.isSuperAdmin === true || tokenResult.claims.isAdmin === true;
+    if (hasStaffClaim) {
+      await signOut(auth);
+      return {
+        success: false,
+        error: 'This is a staff account. Sign in through System Access with your access key.',
+      };
+    }
 
     const userDocRef = doc(firestore, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
+    const userDoc = await getDocFromServer(userDocRef);
 
     if (userDoc.exists()) {
       const userData = userDoc.data();
@@ -122,7 +135,7 @@ export async function executeCustomerGoogleAuth(
         await signOut(auth);
         return {
           success: false,
-          error: 'Administrator and Manager accounts must sign in via the System Access portal (/system-access).',
+          error: 'This is a staff account. Sign in through System Access with your access key.',
         };
       }
 
@@ -152,8 +165,17 @@ export async function executeCustomerGoogleAuth(
 
     // Sync claims and refresh client token
     const idToken = await user.getIdToken();
-    await syncUserClaimsAction(idToken);
+    const claimsResult = await syncUserClaimsAction(idToken);
+    if ('error' in claimsResult) throw new Error('Unable to verify account permissions. Please try again.');
+    if (claimsResult.isManager || claimsResult.isSuperAdmin) {
+      await signOut(auth);
+      return {
+        success: false,
+        error: 'This is a staff account. Sign in through System Access with your access key.',
+      };
+    }
     await user.getIdToken(true);
+    await setPersistence(auth, browserLocalPersistence);
 
     return {
       success: true,
@@ -161,6 +183,16 @@ export async function executeCustomerGoogleAuth(
       isNewUser: !userDoc.exists(),
     };
   } catch (err: any) {
+    if (signedInUserId && auth.currentUser?.uid === signedInUserId) {
+      try {
+        await signOut(auth);
+      } catch {
+        return {
+          success: false,
+          error: 'Unable to end the sign-in attempt. Please try again.',
+        };
+      }
+    }
     const errorMsg = formatGoogleAuthError(err);
     return {
       success: false,
@@ -185,13 +217,13 @@ export async function executeStaffGoogleAuthInitiate(
   firestore: Firestore
 ): Promise<StaffGoogleAuthResult> {
   try {
-    await setPersistence(auth, browserLocalPersistence);
+    await setPersistence(auth, browserSessionPersistence);
     const provider = getGoogleProvider();
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
     const userDocRef = doc(firestore, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
+    const userDoc = await getDocFromServer(userDocRef);
 
     if (!userDoc.exists()) {
       await signOut(auth);

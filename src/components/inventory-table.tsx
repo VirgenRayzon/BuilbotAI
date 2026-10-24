@@ -4,6 +4,8 @@
  * Part names are clickable to open the AddPartDialog for editing.
  */
 
+import Link from 'next/link';
+import { productAdminUrl } from '@/lib/product-identity';
 import {
   Table,
   TableBody,
@@ -13,8 +15,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
-import { Trash2, Archive, RotateCcw, Plus } from "lucide-react";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+import { Trash2, Archive, RotateCcw, Plus, QrCode } from "lucide-react";
 import { formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
 import type { Part } from "@/lib/types";
 import { AddPartDialog } from "./add-part-dialog";
@@ -76,6 +78,8 @@ export function InventoryTable({
             />
           </TableHead>
           <TableHead>Item</TableHead>
+          <TableHead className="w-[140px]">SKU</TableHead>
+          <TableHead className="w-[60px] text-center">QR</TableHead>
           <TableHead>Category</TableHead>
           <TableHead>Brand</TableHead>
           <TableHead className="text-center">Stock</TableHead>
@@ -99,14 +103,15 @@ export function InventoryTable({
             </TableCell>
             <TableCell className="font-medium">
               <div className="flex items-center gap-3">
-                <Image
-                  src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || "/placeholder-part.png"}
-                  alt={part.name}
-                  width={40}
-                  height={40}
-                  unoptimized
-                  className="rounded-sm object-cover"
-                />
+                <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-sm">
+                  <OptimizedImage
+                    src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || "/placeholder-part.png"}
+                    alt={part.name}
+                    fill
+                    sizes="40px"
+                    className="object-cover"
+                  />
+                </div>
                 <AddPartDialog
                   initialData={part}
                   onSave={(data) => onUpdatePart(part.id, part.category, data)}
@@ -116,6 +121,25 @@ export function InventoryTable({
                   </span>
                 </AddPartDialog>
               </div>
+            </TableCell>
+            <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+              {part.sku || "—"}
+            </TableCell>
+            <TableCell className="text-center">
+              {part.productId && (
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground/40 hover:text-cyan-500 hover:bg-cyan-500/10 transition-colors mx-auto"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Open QR & item details"
+                >
+                  <Link href={productAdminUrl('part', part.productId, isArchiveView)}>
+                    <QrCode className="h-4 w-4" />
+                  </Link>
+                </Button>
+              )}
             </TableCell>
             <TableCell>{part.category}</TableCell>
             <TableCell>{part.brand}</TableCell>

@@ -1,13 +1,17 @@
 "use client";
 
 import React from "react";
+import dynamic from 'next/dynamic';
 import { SegmentedControl, Group, Select, Box } from "@mantine/core";
 import { Monitor, Zap, Gauge, Cpu } from "lucide-react";
 import type { ComponentData, Resolution, WorkloadType } from "@/lib/types";
 import { SynergyGaugeCard } from "./synergy-gauge-card";
 import { BottleneckStatusCard } from "./bottleneck-status-card";
-import { FpsPerformanceChart } from "./fps-performance-chart";
 import { OptimizationSwapsCard } from "./optimization-swaps-card";
+
+const FpsPerformanceChart = dynamic(() => import('./fps-performance-chart').then(module => module.FpsPerformanceChart), {
+  loading: () => <div className="min-h-[220px]" role="status" aria-label="Loading performance chart" />,
+});
 
 interface DualSidebarAnalyzerProps {
   build: Record<string, ComponentData | ComponentData[] | null>;

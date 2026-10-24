@@ -20,11 +20,18 @@ export default {
     },
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Space Grotesk', 'sans-serif'],
+        body: ['var(--font-body)', 'Inter', 'sans-serif'],
+        headline: ['var(--font-headline)', 'Space Grotesk', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
+        white: 'hsl(var(--white) / <alpha-value>)',
+        'pure-white': '#ffffff',
+        slate: {
+          50: 'hsl(var(--surface-subtle) / <alpha-value>)',
+          100: 'hsl(var(--surface-muted) / <alpha-value>)',
+          200: 'hsl(var(--surface-border) / <alpha-value>)',
+        },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {
@@ -98,10 +105,23 @@ export default {
             height: '0',
           },
         },
+        breathe: {
+          '0%, 100%': {
+            transform: 'scale(1)',
+            boxShadow: '0 0 0 0 rgba(6, 182, 212, 0.35), 0 0 6px 1px rgba(6, 182, 212, 0.2)',
+            borderColor: 'rgba(6, 182, 212, 0.4)',
+          },
+          '50%': {
+            transform: 'scale(1.045)',
+            boxShadow: '0 0 0 4px rgba(6, 182, 212, 0.2), 0 0 18px 4px rgba(6, 182, 212, 0.55), 0 0 28px 6px rgba(6, 182, 212, 0.25)',
+            borderColor: 'rgba(34, 211, 238, 0.95)',
+          },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        breathe: 'breathe 2.4s ease-in-out infinite',
       },
     },
   },

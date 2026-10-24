@@ -1,6 +1,6 @@
 import { streamText, tool, convertToModelMessages, stepCountIs, createUIMessageStream, createUIMessageStreamResponse } from 'ai';
 import { retrieveLocalKnowledge } from "@/lib/knowledge-retriever";
-import { retrieveHardwareVectorSpecs } from "@/lib/vector-retriever";
+import { getChatPartSpecifications } from "@/lib/chat-part-specifications";
 import { getStructuredInventory } from "@/lib/inventory-fetcher";
 import { filterChatRecommendations } from "@/lib/chat-recommendations";
 import { ChatStreamFailure, forwardTunedChatStream } from "@/lib/chat-stream-fallback";
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
 
         // Dynamically resolve active system instruction from Firestore with baseline fallback
         const { getActiveSystemPrompt } = await import("@/lib/system-prompts");
-        const systemInstruction = `${await getActiveSystemPrompt('chatbot')}\n\nFor part recommendations, once the category, budget, and use case or target resolution are known across the conversation, call searchInventory and show the available compatible options now. Do not keep asking optional questions before searching. For one user question, use tools before writing an explanation, search each category at most once, and give one concise final answer after the tool results. Do not repeat an introductory explanation or narrate the same recommendation in multiple steps; the UI renders the product cards.`;
+        const systemInstruction = `${await getActiveSystemPrompt('chatbot')}\n\nFor part recommendations, once the category, budget, and use case or target resolution are known across the conversation, call searchInventory and show the available compatible options now. Do not keep asking optional questions before searching. For one user question, use tools before writing an explanation, search each category at most once, and give one concise final answer after the tool results. Do not repeat an introductory explanation or narrate the same recommendation in multiple steps; the UI renders the product cards. For a named component review or detailed specifications, call queryPartSpecifications with the full product name and category when known. That tool checks the local vector store and uses Google Search when there is no exact product match. Use only facts about the requested model. Never introduce or change a numeric specification that is absent from the tool result. If the result source is web, cite its supplied links in your answer. If the result source is none, say that the exact specifications could not be verified; never replace them with a similar model's specifications.`;
 
 
         const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
@@ -250,14 +250,14 @@ USER PROFILE:
                         }
                     }),
                     queryPartSpecifications: tool({
-                        description: "Search the hardware vector database (Firestore buildbot_hardware_vector) for detailed hardware specifications (frequencies, ports, sockets, dimensions, power limits).",
+                        description: "Get specifications for a named PC component in any hardware category. Pass its full product name and category when known. Checks the local hardware vector database first and uses grounded Google Search when no exact product match is found. Results identify whether they came from the vector store or the web and include web source links.",
                         inputSchema: z.object({
-                            query: z.string().describe("Part name or brand keywords to lookup (e.g., 'Ryzen 5 7600X', 'RTX 4070', 'Corsair RM850x').")
+                            query: z.string().describe("Full product name to lookup (e.g., 'Ryzen 5 7600X', 'RTX 4070', 'Corsair RM850x')."),
+                            category: z.enum(['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler', 'monitor', 'keyboard', 'mouse', 'headset']).optional(),
                         }),
-                        execute: async ({ query }) => {
+                        execute: async ({ query, category }) => {
                             console.log(`[Tool: queryPartSpecifications] Query: "${query}"`);
-                            const specs = await retrieveHardwareVectorSpecs(query);
-                            return { specs };
+                            return getChatPartSpecifications(query, category);
                         }
                     })
                 },

@@ -1,4 +1,6 @@
 "use client";
+import Link from 'next/link';
+import { productAdminUrl } from '@/lib/product-identity';
 
 import { useState, useEffect } from "react";
 import { cn, formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
@@ -14,7 +16,7 @@ import {
   Box,
   Paper,
 } from "@mantine/core";
-import Image from "next/image";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import {
   Trash2,
   ShieldCheck,
@@ -23,6 +25,7 @@ import {
   Archive,
   RotateCcw,
   AlertCircle,
+  QrCode,
 } from "lucide-react";
 import type { PrebuiltSystem, Part } from "@/lib/types";
 import {
@@ -93,6 +96,12 @@ export function PrebuiltsTable({
           <Table.Th className="w-[40px]"></Table.Th>
           <Table.Th className="text-[11px] font-semibold tracking-wider uppercase text-slate-500">
             System Name
+          </Table.Th>
+          <Table.Th className="w-[140px] text-[11px] font-semibold tracking-wider uppercase text-slate-500">
+            SKU
+          </Table.Th>
+          <Table.Th className="w-[60px] text-center text-[11px] font-semibold tracking-wider uppercase text-slate-500">
+            QR
           </Table.Th>
           <Table.Th className="w-[140px] whitespace-nowrap text-[11px] font-semibold tracking-wider uppercase text-slate-500">
             Tier
@@ -210,12 +219,6 @@ function PrebuiltTableRow({
     fetchStock();
   }, [firestore, isComplete, system.components]);
 
-  const handleReserve = (systemName: string) => {
-    toast({
-      title: "Reservation Initiated",
-      description: `${systemName} has been recorded. Check your profile for details.`,
-    });
-  };
 
   return (
     <>
@@ -247,11 +250,10 @@ function PrebuiltTableRow({
         <Table.Td>
           <Group gap="sm" wrap="nowrap">
             <Box className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-slate-200/70 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.03]">
-              <Image
+              <OptimizedImage
                 src={getOptimizedStorageUrl(system.imageUrl, shouldCorruptImages) || "/placeholder-system.png"}
                 alt={system.name}
                 fill
-                unoptimized
                 sizes="64px"
                 className="object-cover"
               />
@@ -283,6 +285,27 @@ function PrebuiltTableRow({
               </Text>
             </Stack>
           </Group>
+        </Table.Td>
+
+        {/* SKU */}
+        <Table.Td className="font-mono text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+          {system.sku || '—'}
+        </Table.Td>
+
+        {/* QR Button */}
+        <Table.Td className="text-center" onClick={(e) => e.stopPropagation()}>
+          {system.productId && (
+            <ActionIcon
+              component={Link}
+              href={productAdminUrl('prebuilt', system.productId, isArchiveView)}
+              variant="subtle"
+              size="sm"
+              className="text-muted-foreground/40 hover:text-cyan-500 hover:bg-cyan-500/10 transition-colors mx-auto"
+              title="Open QR & item details"
+            >
+              <QrCode size={16} />
+            </ActionIcon>
+          )}
         </Table.Td>
 
         {/* Tier & Stock badge */}
@@ -412,15 +435,15 @@ function PrebuiltTableRow({
 
             {!showActions && (
               <Button
+                component={Link}
+                href={`/pre-builts/${system.productId || system.id}`}
                 size="xs"
                 radius="md"
                 variant="light"
                 color="cyan"
-                disabled={stockStatus !== "in-stock" || !isComplete}
-                onClick={() => handleReserve(system.name)}
                 leftSection={<ShieldCheck size={14} />}
               >
-                Reserve
+                View product
               </Button>
             )}
           </div>
@@ -430,7 +453,7 @@ function PrebuiltTableRow({
       {/* Expanded Specs Row */}
       {isExpanded && (
         <Table.Tr className="bg-slate-50/30 dark:bg-white/[0.01]">
-          <Table.Td colSpan={showActions ? 6 : 5} className="p-4 pt-1">
+          <Table.Td colSpan={showActions ? 8 : 7} className="p-4 pt-1">
             <Paper
               withBorder
               radius="md"

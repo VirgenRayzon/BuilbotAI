@@ -13,8 +13,8 @@ import { RouteGuard } from "@/components/auth/route-guard";
 // Custom Hooks
 import { useAdvisorData } from "./hooks/use-advisor-data";
 import { useAdvisorState } from "./hooks/use-advisor-state";
-import { getCritiqueCacheKey, useCritiqueLogic } from "./hooks/use-critique-logic";
-import { useRecommendationLogic } from "./hooks/use-recommendation-logic";
+import { getCritiqueCacheKey } from "./hooks/use-critique-logic";
+import { useAdvisorJobs } from "@/context/advisor-jobs-context";
 
 // Components
 import { AdvisorHeader } from "./components/advisor-header";
@@ -30,6 +30,7 @@ export default function AiBuildAdvisorPage() {
     const isDark = theme === "dark";
     const { authUser, profile, loading: userLoading } = useUserProfile();
     const router = useRouter();
+    const [activeTab, setActiveTab] = useState<string | null>('critique');
     const lastLoadedKeyRef = useRef<string>("");
 
     // Data Layer
@@ -37,20 +38,26 @@ export default function AiBuildAdvisorPage() {
 
     // State Layer
     const {
-        builderState, handleRemovePart, handleClearBuild,
+        builderState, hydrated, handleRemovePart, handleClearBuild,
         resolution, setResolution, workload, setWorkload
     } = useAdvisorState(allParts);
 
     // Logic Layers
+    const { critique, recommendation, setAdvisorData } = useAdvisorJobs();
     const {
         critiqueAnalysis, critiqueDuration, setCritiqueAnalysis, setCritiqueDuration,
-        critiqueLoading, critiqueError, handleCritique, handleCancelCritique
-    } = useCritiqueLogic(isAiKillSwitch);
+        critiqueLoading, critiqueError, handleCritique, handleCancelCritique, activeCritiqueKey
+    } = critique;
 
     const {
         build, totalPrice, isPending, handleGetRecommendations, handleCancelRecommendations,
-        elapsedTime, finalResponseTime, error
-    } = useRecommendationLogic(isAiKillSwitch, allParts);
+        elapsedTime, finalResponseTime, error, webResearchInfo, webSearchEnabled
+    } = recommendation;
+
+    useEffect(() => {
+        if (dataLoading) return;
+        setAdvisorData(allParts, isAiKillSwitch);
+    }, [allParts, isAiKillSwitch, dataLoading, setAdvisorData]);
 
     // Route Protection handled by RouteGuard wrapper in return
 
@@ -58,8 +65,16 @@ export default function AiBuildAdvisorPage() {
         window.scrollTo(0, 0);
     }, []);
 
+    useEffect(() => {
+        const syncTabWithHash = () => setActiveTab(window.location.hash === '#generate' ? 'generate' : 'critique');
+        syncTabWithHash();
+        window.addEventListener('hashchange', syncTabWithHash);
+        return () => window.removeEventListener('hashchange', syncTabWithHash);
+    }, []);
+
     // Automatically load or reset critique when state changes
     useEffect(() => {
+        if (!hydrated) return;
         if (!builderState) {
             setCritiqueAnalysis(null);
             setCritiqueDuration(null);
@@ -67,6 +82,11 @@ export default function AiBuildAdvisorPage() {
             return;
         }
         const buildKey = getCritiqueCacheKey(builderState, { intendedUse: workload, performanceLevel: resolution });
+
+        if (activeCritiqueKey === buildKey && (critiqueLoading || critiqueAnalysis)) {
+            lastLoadedKeyRef.current = buildKey;
+            return;
+        }
 
         // Guard: If this key has already been processed (either loaded or cleared), do nothing
         if (lastLoadedKeyRef.current === buildKey) {
@@ -89,7 +109,7 @@ export default function AiBuildAdvisorPage() {
         setCritiqueAnalysis(null);
         setCritiqueDuration(null);
         lastLoadedKeyRef.current = buildKey;
-    }, [builderState, workload, resolution, handleCritique, setCritiqueAnalysis, setCritiqueDuration]);
+    }, [builderState, hydrated, workload, resolution, activeCritiqueKey, critiqueLoading, critiqueAnalysis, handleCritique, setCritiqueAnalysis, setCritiqueDuration]);
 
     return (
         <RouteGuard requiredPermission="isClientOnly">
@@ -97,11 +117,14 @@ export default function AiBuildAdvisorPage() {
                 "min-h-screen transition-colors duration-500 overflow-x-hidden relative",
                 isDark ? "bg-[#0c0f14] text-slate-50" : "bg-slate-50 text-slate-900"
             )}>
-                <main className="flex-1 w-full px-4 sm:px-6 md:px-8 lg:px-10 py-4 md:py-6 pt-4 md:pt-6 relative z-10">
+                <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 py-4 md:py-6 pt-4 md:pt-6 relative z-10">
                     <AdvisorHeader isAiKillSwitch={isAiKillSwitch} />
 
                     {builderState ? (
-                        <Tabs defaultValue="critique" variant="pills" radius="xl" color="cyan" className="w-full h-full">
+                        <Tabs value={activeTab} onChange={(value) => {
+                            setActiveTab(value);
+                            if (value) window.location.hash = value;
+                        }} variant="pills" radius="xl" color="cyan" className="w-full h-full">
                             <div className="flex justify-center mb-6">
                                 <Tabs.List className="bg-slate-100/90 dark:bg-[#141a23] p-1.5 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm backdrop-blur-md gap-1.5">
                                     <Tabs.Tab
@@ -150,6 +173,8 @@ export default function AiBuildAdvisorPage() {
                                     finalResponseTime={finalResponseTime}
                                     totalPrice={totalPrice}
                                     error={error}
+                                    webResearchInfo={webResearchInfo}
+                                    webSearchEnabled={webSearchEnabled}
                                 />
                             </Tabs.Panel>
                         </Tabs>
@@ -164,6 +189,8 @@ export default function AiBuildAdvisorPage() {
                             finalResponseTime={finalResponseTime}
                             totalPrice={totalPrice}
                             error={error}
+                            webResearchInfo={webResearchInfo}
+                            webSearchEnabled={webSearchEnabled}
                         />
                     )}
                 </main>

@@ -3,6 +3,7 @@ import { after } from 'next/server';
 import { generateText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { getVertexAccessToken, markTunedModelHealthy, DEFAULT_TUNED_MODEL_ID, type FeatureModelRouting } from '@/lib/ai-model-resolver';
+import { resolveVertexTunedEndpoint } from '@/lib/vertex-tuned-endpoint';
 
 
 import {
@@ -208,85 +209,19 @@ export async function logAdminAction(action: string, details: string, data?: any
 // In-memory catalog cache variables
 import { getAdminFirestore, getAdminAuth } from "@/firebase/server-init";
 import type { Part } from "@/lib/types";
-import { INVENTORY_CATEGORY_SLUGS, inventoryItemsPath } from "@/lib/inventory-paths";
-
-let catalogCache: Part[] | null = null;
-let catalogCacheTime = 0;
-const CATALOG_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-
-function serializeDate(val: any) {
-  if (!val) return undefined;
-  if (typeof val.toDate === 'function') {
-    return val.toDate().toISOString();
-  }
-  if (val instanceof Date) {
-    return val.toISOString();
-  }
-  if (typeof val === 'string' || typeof val === 'number') {
-    return new Date(val).toISOString();
-  }
-  return undefined;
-}
+import { getBuilderCatalog, clearBuilderCatalogCache } from '@/lib/server/builder-catalog';
+import { invalidatePublicPartsCatalog } from '@/lib/server/public-products';
 
 export async function getCachedInventory(): Promise<Part[]> {
-  const now = Date.now();
-  // Older in-memory entries predate gallery support and do not include
-  // `images`. Treat them as stale so a deployed update takes effect at once.
-  const hasGalleryShape = catalogCache?.every(part => Array.isArray(part.images));
-  if (catalogCache && hasGalleryShape && (now - catalogCacheTime < CATALOG_CACHE_TTL)) {
-    console.log("[getCachedInventory] Catalog cache hit");
-    return catalogCache;
-  }
-  
-  console.log("[getCachedInventory] Cache miss, fetching catalog from Firestore...");
-  const db = getAdminFirestore();
-  
-  const snapshots = await Promise.all(INVENTORY_CATEGORY_SLUGS.map(slug =>
-    db.collection(inventoryItemsPath(slug)).where('isArchived', '==', false).get()
-  ));
-  const fetchedParts: Part[] = [];
-
-  snapshots.flatMap(snapshot => snapshot.docs).forEach(doc => {
-    const data = doc.data();
-    const category = data.category as Part['category'];
-    fetchedParts.push({
-      id: doc.id,
-      name: data.name || '',
-      category,
-      brand: data.brand || '',
-      price: Number(data.price) || 0,
-      usdSrp: data.usdSrp ? Number(data.usdSrp) : undefined,
-      stock: Number(data.stock) || 0,
-      imageUrl: data.imageUrl || '',
-      // Preserve the full gallery for builder product details. The admin editor
-      // reads Firestore directly, while the builder consumes this serialized,
-      // cached catalog payload.
-      images: Array.isArray(data.images) ? data.images.filter((image): image is string => typeof image === 'string' && image.length > 0) : [],
-      specifications: data.specifications || {},
-      wattage: data.wattage !== undefined ? Number(data.wattage) : undefined,
-      performanceTier: data.performanceTier !== undefined ? Number(data.performanceTier) : undefined,
-      performanceScore: data.performanceScore !== undefined ? Number(data.performanceScore) : undefined,
-      socket: data.socket || undefined,
-      ramType: data.ramType || undefined,
-      dimensions: data.dimensions || undefined,
-      description: data.description || undefined,
-      packageType: data.packageType || undefined,
-      createdAt: serializeDate(data.createdAt),
-      isArchived: data.isArchived || false
-    });
-  });
-  
-  catalogCache = fetchedParts;
-  catalogCacheTime = now;
-  return fetchedParts;
+  return getBuilderCatalog();
 }
 
 import { clearInventoryCache } from "@/lib/inventory-fetcher";
 
 export async function clearCatalogCache() {
   console.log("[clearCatalogCache] Invalidating catalog cache...");
-  catalogCache = null;
-  catalogCacheTime = 0;
+  clearBuilderCatalogCache();
+  invalidatePublicPartsCatalog();
   clearInventoryCache();
   return { success: true };
 }
@@ -309,13 +244,16 @@ export async function syncUserClaimsAction(idToken: string) {
 
     const isManager = !!data.isManager;
     const isSuperAdmin = !!data.isSuperAdmin;
+    if (isManager || isSuperAdmin || data.isAdmin === true) {
+      return { error: 'Staff accounts must sign in through System Access.' };
+    }
     
     try {
       await adminAuth.setCustomUserClaims(userId, {
-        isManager,
-        isSuperAdmin,
+        isManager: false,
+        isSuperAdmin: false,
       });
-      console.log(`[syncUserClaimsAction] Custom claims set successfully for ${userId}: isManager=${isManager}, isSuperAdmin=${isSuperAdmin}`);
+      console.log(`[syncUserClaimsAction] Customer claims set successfully for ${userId}.`);
     } catch (claimErr) {
       console.warn(`[syncUserClaimsAction] setCustomUserClaims warning (Firestore profile active):`, claimErr);
     }
@@ -662,9 +600,10 @@ export async function testAiModelConnectionAction(
       };
     }
 
+    const resolvedEndpoint = await resolveVertexTunedEndpoint(targetModel, token);
     let projectId = '781722135778';
     let location = 'us-central1';
-    const match = targetModel.match(/projects\/([^\/]+)\/locations\/([^\/]+)/);
+    const match = resolvedEndpoint.match(/projects\/([^\/]+)\/locations\/([^\/]+)/);
     if (match) {
       projectId = match[1];
       location = match[2];
@@ -688,7 +627,7 @@ export async function testAiModelConnectionAction(
       fetch: vertexFetch,
     });
 
-    let cleanModelName = targetModel;
+    let cleanModelName = resolvedEndpoint;
     const endpointsIdx = cleanModelName.indexOf('/endpoints/');
     const modelsIdx = cleanModelName.indexOf('/models/');
     if (endpointsIdx !== -1) {
@@ -709,6 +648,7 @@ export async function testAiModelConnectionAction(
     return {
       success: true,
       model: targetModel,
+      resolvedEndpoint,
       provider: 'finetuned',
       response: result.text.trim(),
       latencyMs: Date.now() - startTime
@@ -745,20 +685,35 @@ export async function updateSiteSettingsAction(settings: {
 }) {
   try {
     const db = getAdminFirestore();
+    const activeProject = settings.fineTunedProjects?.find((project) => project.id === settings.activeFineTunedProjectId);
+    if (settings.fineTunedProjects && !activeProject) {
+      throw new Error('Select a registered fine-tuned project before applying AI settings.');
+    }
+    let resolvedEndpoint = settings.fineTunedModelId;
+    let resolvedProjects = settings.fineTunedProjects;
+    if (activeProject) {
+      const needsLookup = activeProject.endpoint.includes('/models/');
+      const token = needsLookup ? await getVertexAccessToken() : '';
+      if (needsLookup && !token) throw new Error('Vertex AI credentials are required to verify the selected tuned model.');
+      resolvedEndpoint = await resolveVertexTunedEndpoint(activeProject.endpoint, token || '');
+      resolvedProjects = settings.fineTunedProjects?.map((project) =>
+        project.id === activeProject.id ? { ...project, endpoint: resolvedEndpoint! } : project
+      );
+    }
     const updatePayload: Record<string, any> = {
       aiModelProvider: settings.aiModelProvider,
       lastUpdated: new Date().toISOString(),
       updatedBy: settings.updatedBy || 'Super Admin'
     };
 
-    if (settings.fineTunedModelId !== undefined) {
-      updatePayload.fineTunedModelId = settings.fineTunedModelId;
+    if (resolvedEndpoint !== undefined) {
+      updatePayload.fineTunedModelId = resolvedEndpoint;
     }
     if (settings.defaultGeminiModel !== undefined) {
       updatePayload.defaultGeminiModel = settings.defaultGeminiModel;
     }
-    if (settings.fineTunedProjects !== undefined) {
-      updatePayload.fineTunedProjects = settings.fineTunedProjects;
+    if (resolvedProjects !== undefined) {
+      updatePayload.fineTunedProjects = resolvedProjects;
     }
     if (settings.activeFineTunedProjectId !== undefined) {
       updatePayload.activeFineTunedProjectId = settings.activeFineTunedProjectId;
@@ -768,7 +723,7 @@ export async function updateSiteSettingsAction(settings: {
     }
 
     await db.collection('siteSettings').doc('main').set(updatePayload, { merge: true });
-    return { success: true };
+    return { success: true, resolvedEndpoint, resolvedProjects };
   } catch (err: any) {
     console.error("Failed to update siteSettings via admin action:", err);
     return { success: false, error: err.message };

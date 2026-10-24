@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Part, ComponentData, Build, FavoriteBuild } from '@/lib/types';
 import { checkCompatibility } from "@/lib/compatibility";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +15,17 @@ const componentIcons: Record<string, any> = {
   Monitor: Monitor, Keyboard: Keyboard, Mouse: Mouse, Headset: Headphones
 };
 
+const isIncludedStockCooler = (component: ComponentData | null | undefined) =>
+    component?.id === 'included-stock-cooler'
+    || component?.id === 'uGiAh2JerLwnDe5VW431'
+    || (component?.price === 0 && (
+        component.imageHint === 'included cooler'
+        || component.description?.includes('Bundled cooler')
+        || component.model?.toLowerCase().includes('stock cooler')
+        || component.model?.toLowerCase().includes('laminar')
+        || component.model?.toLowerCase().includes('wraith')
+    ));
+
 /**
  * Hook to manage the PC build logic, including part toggling, removal, and compatibility.
  */
@@ -25,23 +36,28 @@ export function useBuilderLogic(allParts: Part[]) {
         Monitor: null, Keyboard: null, Mouse: null, Headset: null,
     });
     const [isLoaded, setIsLoaded] = useState(false);
+    const hasRestoredBuildRef = useRef(false);
+    const hasProcessedPendingBuildRef = useRef(false);
 
     // Persistence
     useEffect(() => {
+        // React Strict Mode replays mount effects in development. Restoring only
+        // once prevents that replay from replacing a freshly imported pre-built
+        // with the older persisted draft after the transfer payload is consumed.
+        if (hasRestoredBuildRef.current) return;
+        hasRestoredBuildRef.current = true;
+
         const saved = localStorage.getItem('pc_builder_state');
         if (saved) {
             try {
                 const parsedState = JSON.parse(saved);
+                if (!parsedState.CPU && isIncludedStockCooler(parsedState.Cooler)) {
+                    parsedState.Cooler = null;
+                }
                 setBuild(prev => ({ ...prev, ...parsedState }));
             } catch (e) {
                 console.error("Failed to parse saved build", e);
             }
-        }
-        // Check for a favorite to load
-        const favData = localStorage.getItem('pc_builder_load_favorite');
-        if (favData) {
-            localStorage.removeItem('pc_builder_load_favorite');
-            // We'll handle loading after allParts are available via the event listener below
         }
         setIsLoaded(true);
     }, []);
@@ -83,14 +99,7 @@ export function useBuilderLogic(allParts: Part[]) {
         } else {
             next[category] = null;
 
-            if (category === 'Case') {
-                const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
-                dependentParts.forEach(key => {
-                    if (key === 'RAM' || key === 'Storage') next[key] = [];
-                    else next[key] = null;
-                });
-                toastMsg = { title: 'Build Reset', description: 'Removing the case removes all internal components.' };
-            } else if (category === 'Motherboard') {
+            if (category === 'Motherboard') {
                 const dependentParts = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
                 dependentParts.forEach(key => {
                     if (key === 'RAM' || key === 'Storage') next[key] = [];
@@ -100,7 +109,7 @@ export function useBuilderLogic(allParts: Part[]) {
             }
 
             const currentCooler = next['Cooler'] as ComponentData | null;
-            if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
+            if (category === 'CPU' && isIncludedStockCooler(currentCooler)) {
                 next['Cooler'] = null;
                 toastMsg = { title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' };
             }
@@ -162,14 +171,7 @@ export function useBuilderLogic(allParts: Part[]) {
 
         if (isCurrentlySelected) {
             nextBuild[category] = null;
-            if (category === 'Case') {
-                const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
-                dependentParts.forEach(key => {
-                    if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
-                    else nextBuild[key] = null;
-                });
-                toastsToShow.push({ title: 'Build Reset', description: 'Case removed.' });
-            } else if (category === 'Motherboard') {
+            if (category === 'Motherboard') {
                 const dependentParts = ['CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
                 dependentParts.forEach(key => {
                     if (key === 'RAM' || key === 'Storage') nextBuild[key] = [];
@@ -179,7 +181,7 @@ export function useBuilderLogic(allParts: Part[]) {
             }
 
             const currentCooler = nextBuild['Cooler'] as ComponentData | null;
-            if (category === 'CPU' && currentCooler?.id === 'included-stock-cooler') {
+            if (category === 'CPU' && isIncludedStockCooler(currentCooler)) {
                 nextBuild['Cooler'] = null;
                 toastsToShow.push({ title: 'Cooler Removed', description: 'Stock cooler removed.' });
             }
@@ -232,12 +234,16 @@ export function useBuilderLogic(allParts: Part[]) {
             }
 
             if (category === 'CPU') {
-                if (part.packageType === 'BOX') {
+                const isBoxed = part.packageType === 'BOX' ||
+                    (part as any).specifications?.['Package Type']?.toString().toUpperCase() === 'BOX';
+                if (isBoxed) {
                     const isIntel = part.brand.toLowerCase().includes('intel');
                     const isAmd = part.brand.toLowerCase().includes('amd');
                     const coolerModel = isIntel ? "Intel Laminar RM1 CPU Cooler" : isAmd ? "AMD Wraith MAX CPU Cooler with RGB LED" : "Stock Cooler";
                     nextBuild['Cooler'] = {
-                        id: isAmd ? 'uGiAh2JerLwnDe5VW431' : 'included-stock-cooler',
+                        // Bundled coolers use a reserved identity so CPU removal and
+                        // boxed-to-tray CPU replacement can clean them up reliably.
+                        id: 'included-stock-cooler',
                         model: coolerModel,
                         price: 0,
                         description: `Bundled cooler.`,
@@ -247,7 +253,7 @@ export function useBuilderLogic(allParts: Part[]) {
                         wattage: 0,
                         specifications: { "Type": "Air (Stock)" }
                     };
-                } else if (part.packageType === 'TRAY' && (nextBuild['Cooler'] as ComponentData)?.id === 'included-stock-cooler') {
+                } else if (isIncludedStockCooler(nextBuild['Cooler'] as ComponentData | null)) {
                     nextBuild['Cooler'] = null;
                 }
             }
@@ -306,7 +312,7 @@ export function useBuilderLogic(allParts: Part[]) {
         const outOfStock: string[] = [];
 
         for (const favPart of favorite.parts) {
-            const livePart = allParts.find(p => p.id === favPart.partId);
+            const livePart = allParts.find(p => p.id === favPart.partId || (favPart.name && p.name.toLowerCase() === favPart.name.toLowerCase()));
             if (!livePart) {
                 skipped.push(favPart.name);
                 continue;
@@ -344,6 +350,29 @@ export function useBuilderLogic(allParts: Part[]) {
 
         setBuild(newBuild);
 
+        if (favorite.loadContext?.type === 'prebuilt') {
+            const unavailableParts = Array.from(new Set([
+                ...favorite.loadContext.unavailableParts,
+                ...skipped,
+                ...outOfStock,
+            ]));
+            const loadedCount = favorite.parts.length - skipped.length - outOfStock.length;
+
+            if (unavailableParts.length > 0) {
+                toast({
+                    variant: 'warning',
+                    title: `Pre-built loaded with ${unavailableParts.length} missing part${unavailableParts.length === 1 ? '' : 's'}`,
+                    description: `${loadedCount} available component${loadedCount === 1 ? '' : 's'} loaded. Add ${unavailableParts.join(', ')} to complete ${favorite.loadContext.systemName}.`,
+                });
+            } else {
+                toast({
+                    title: 'Pre-built loaded into PC Builder',
+                    description: `${loadedCount} components from ${favorite.loadContext.systemName} are ready to customize.`,
+                });
+            }
+            return;
+        }
+
         if (skipped.length > 0) {
             toast({
                 variant: 'destructive',
@@ -368,12 +397,14 @@ export function useBuilderLogic(allParts: Part[]) {
         window.addEventListener('load-favorite-build', handleLoadFavorite);
 
         // Also check if there's a pending favorite in localStorage (from profile page redirect)
-        if (allParts.length > 0) {
+        if (allParts.length > 0 && !hasProcessedPendingBuildRef.current) {
             const pending = localStorage.getItem('pc_builder_load_favorite');
             if (pending) {
-                localStorage.removeItem('pc_builder_load_favorite');
                 try {
-                    loadFavoriteBuild(JSON.parse(pending));
+                    const pendingBuild = JSON.parse(pending) as FavoriteBuild;
+                    hasProcessedPendingBuildRef.current = true;
+                    loadFavoriteBuild(pendingBuild);
+                    localStorage.removeItem('pc_builder_load_favorite');
                 } catch (e) { /* ignore parse errors */ }
             }
         }

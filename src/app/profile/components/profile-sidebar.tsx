@@ -19,9 +19,9 @@ import {
   History,
   Settings,
   Activity,
+  MessageCircle,
   LogOut,
-  ChevronRight,
-  Cpu,
+  Truck,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/firebase";
@@ -29,6 +29,7 @@ import { signOut } from "firebase/auth";
 import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/lib/types";
 import { useSignOutTransition } from "@/context/sign-out-transition";
+import { useSiteSettings } from "@/context/site-settings-context";
 
 interface ProfileSidebarProps {
   profile: UserProfile | null;
@@ -53,6 +54,7 @@ export function ProfileSidebar({
 }: ProfileSidebarProps) {
   const router = useRouter();
   const auth = useAuth();
+  const { isEcommerceMode } = useSiteSettings();
   const [signOutModalOpen, setSignOutModalOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const { startSignOut, cancelSignOut } = useSignOutTransition();
@@ -111,13 +113,13 @@ export function ProfileSidebar({
     },
   ];
 
-  // For regular customers only: Store Reservations, Saved Favourites, Activity Logs
+  // For regular customers only: Store Reservations (or Orders & Shipments in E-Commerce Mode), Saved Favourites, Activity Logs
   if (isRegularUser) {
     accountItems.push(
       {
         id: "reservations",
-        label: "Reservations",
-        icon: Package,
+        label: isEcommerceMode ? "Orders & Shipments" : "Reservations",
+        icon: isEcommerceMode ? Truck : Package,
         color: "blue",
         badge: reservationsCount > 0 ? reservationsCount : null,
         badgeColor: "blue",
@@ -129,6 +131,13 @@ export function ProfileSidebar({
         color: "pink",
         badge: favoritesCount > 0 ? favoritesCount : null,
         badgeColor: "pink",
+      },
+      {
+        id: "contact-inbox",
+        label: "Contact Inbox",
+        icon: MessageCircle,
+        color: "cyan",
+        badge: null,
       },
       {
         id: "activity",
@@ -143,14 +152,23 @@ export function ProfileSidebar({
 
   // 2. Administration Items (Super Admin Tools - System Safeguards retained in Profile)
   const adminItems: NavItem[] = [];
+  if (isManager || isSuperAdmin) {
+    adminItems.push({
+      id: "contact-inbox",
+      label: "Contact Inbox",
+      icon: MessageCircle,
+      color: "cyan",
+      badge: null,
+    });
+  }
   if (isSuperAdmin) {
     adminItems.push({
       id: "safeguards",
       label: "System Safeguards",
       icon: Activity,
       color: "amber",
-      badge: "3 Controls",
-      badgeColor: "yellow",
+      badge: "4 Controls",
+      badgeColor: isEcommerceMode ? "cyan" : "yellow",
     });
   }
 

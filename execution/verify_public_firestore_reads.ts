@@ -16,11 +16,10 @@ async function main() {
     });
     const db = getFirestore(app);
     try {
-        const [category, inventory, prebuilts, about] = await Promise.all([
+        const [category, inventory, prebuilts] = await Promise.all([
             getDoc(doc(db, 'inventory', 'cpu')),
             getDocs(query(collection(db, 'inventory', 'cpu', 'items'), limit(1))),
             getDocs(query(collection(db, 'prebuiltSystems'), limit(1))),
-            getDoc(doc(db, 'siteContent', 'about')),
         ]);
         if (!category.exists() || inventory.empty || prebuilts.empty) {
             throw new Error('A public catalog path returned no expected data.');
@@ -30,7 +29,6 @@ async function main() {
             inventoryCategoryReadable: category.exists(),
             inventoryItemReadable: !inventory.empty,
             prebuiltReadable: !prebuilts.empty,
-            aboutContentReadable: about.exists(),
         }, null, 2));
     } finally {
         await terminate(db);

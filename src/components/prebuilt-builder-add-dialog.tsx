@@ -24,11 +24,13 @@ import type { Part, PrebuiltSystem } from "@/lib/types";
 import { usePrebuiltForm, type PrebuiltBuilderAddFormSchema } from "./prebuilt-builder/use-prebuilt-form";
 export type { PrebuiltBuilderAddFormSchema };
 import { IdentityFields } from "./prebuilt-builder/identity-fields";
+import type { CreatedProduct } from '@/lib/product-identity';
+import { ProductIdentification } from './product-identification';
 import { ComponentFields } from "./prebuilt-builder/component-fields";
 
 interface PrebuiltBuilderAddDialogProps {
     children: React.ReactNode;
-    onSave: (data: PrebuiltBuilderAddFormSchema) => void;
+    onSave: (data: PrebuiltBuilderAddFormSchema, operationId?: string) => Promise<CreatedProduct | void>;
     parts: Part[];
     initialData?: PrebuiltSystem;
     title?: string;
@@ -46,7 +48,7 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
     const [showTelemetry, setShowTelemetry] = useState(false);
     const startTimeRef = useRef<number>(0);
 
-    const { form, isAiPending, aiDuration, tokensUsed, handleAiAssist, onSubmit } = usePrebuiltForm({
+    const { form, isAiPending, isSaving, aiDuration, tokensUsed, handleAiAssist, onSubmit } = usePrebuiltForm({
         parts,
         initialData,
         onSave,
@@ -81,7 +83,7 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
     }, [isAiPending]);
 
     const handleOpenChange = (isOpen: boolean) => {
-        if (!isOpen && isAiPending) return;
+        if (!isOpen && (isAiPending || isSaving)) return;
         setOpen(isOpen);
         if (!isOpen) {
             setShowTelemetry(false);
@@ -91,7 +93,7 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent className="sm:max-w-5xl p-0 gap-0 overflow-hidden border-primary/20 bg-background/95 backdrop-blur-xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] rounded-3xl [&>button.absolute]:hidden">
+            <DialogContent onEscapeKeyDown={event => { if (isSaving) event.preventDefault(); }} onPointerDownOutside={event => { if (isSaving) event.preventDefault(); }} className="sm:max-w-5xl p-0 gap-0 overflow-hidden border-primary/20 bg-background/95 backdrop-blur-xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] rounded-3xl [&>button.absolute]:hidden">
 
                 {/* ── Header ── */}
                 <DialogHeader className="px-8 pt-8 pb-6 border-b border-border/40 bg-muted/20 flex-row items-center gap-4 space-y-0">
@@ -162,6 +164,7 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                             type="button"
                             onClick={handleAiAssist}
                             isLoading={isAiPending}
+                            disabled={isSaving}
                             icon={<Sparkles className="h-4 w-4" />}
                             className="h-11 px-6 shadow-lg transition-all duration-300 text-xs font-black uppercase tracking-widest"
                         >
@@ -197,6 +200,7 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                         <ScrollArea className="h-[68vh]">
                             <div className="px-10 py-8 space-y-10">
                                 <IdentityFields form={form} />
+                                <ProductIdentification category="PC" product={initialData}/>
                                 <ComponentFields 
                                     form={form} 
                                     inventory={inventory} 
@@ -210,16 +214,17 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                             <FormStats form={form} />
                             <div className="flex gap-3">
                                 <DialogClose asChild>
-                                    <Button type="button" variant="ghost" size="lg" className="rounded-xl px-6 font-bold uppercase tracking-wider text-xs hover:bg-destructive/10 hover:text-destructive">
+                                    <Button disabled={isSaving} type="button" variant="ghost" size="lg" className="rounded-xl px-6 font-bold uppercase tracking-wider text-xs hover:bg-destructive/10 hover:text-destructive">
                                         Cancel
                                     </Button>
                                 </DialogClose>
                                 <Button
                                     type="submit"
+                                    disabled={isSaving || isAiPending}
                                     size="lg"
                                     className="rounded-xl px-10 font-bold uppercase tracking-[0.15em] text-xs h-12 shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all duration-200"
                                 >
-                                    {initialData ? "Update Selection" : "Complete Build"}
+                                    {isSaving ? 'Saving, please wait' : initialData ? 'Update Selection' : 'Complete Build'}
                                 </Button>
                             </div>
                         </DialogFooter>

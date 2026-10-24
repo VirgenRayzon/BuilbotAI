@@ -20,6 +20,8 @@ interface BuildContentProps {
   psuWattage: number;
   totalPrice: number;
   activeFilter?: string | null;
+  missingCategories?: string[];
+  showMissingValidation?: boolean;
 }
 
 const componentIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -50,6 +52,8 @@ export function BuildContent({
   totalWattage,
   psuWattage,
   totalPrice,
+  missingCategories = [],
+  showMissingValidation = false,
 }: BuildContentProps) {
   const [showAccessories, setShowAccessories] = useState(false);
   const accessoriesId = useId();
@@ -108,6 +112,8 @@ export function BuildContent({
       <div className="space-y-3 py-1 flex-1">
         {mainCategories.map((name) => {
           const mobo = build['Motherboard'] as ComponentData | null;
+          const isMissing = missingCategories.includes(name);
+          const hasValidationError = showMissingValidation && isMissing;
           
           if (name === 'RAM') {
             const ramData = build['RAM'];
@@ -133,7 +139,14 @@ export function BuildContent({
               <div key={name} className="space-y-2">
                 <button 
                   onClick={() => toggleSection('RAM')}
-                  className="w-full flex items-center justify-between p-2 rounded-xl bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-all group"
+                  className={cn(
+                    "w-full flex items-center justify-between p-2 rounded-xl border transition-all group",
+                    activeFilter === name
+                      ? "bg-transparent border-primary/30"
+                      : hasValidationError
+                        ? "bg-red-50 border-red-300 dark:bg-red-950/25 dark:border-red-500/40"
+                        : "bg-transparent border-primary/10 hover:bg-primary/10"
+                  )}
                 >
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -165,6 +178,8 @@ export function BuildContent({
                           onRemove={(cat, _) => onRemovePart(cat, slot.originalIndex)}
                           onSelect={onCategorySelect}
                           isActiveFilter={activeFilter === name}
+                          hasValidationError={hasValidationError}
+                          isNested
                         />
                       ))}
                     </motion.div>
@@ -191,7 +206,14 @@ export function BuildContent({
               <div key={name} className="space-y-2">
                 <button 
                   onClick={() => toggleSection('Storage')}
-                  className="w-full flex items-center justify-between p-2 rounded-xl bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-all group"
+                  className={cn(
+                    "w-full flex items-center justify-between p-2 rounded-xl border transition-all group",
+                    activeFilter === name
+                      ? "bg-transparent border-primary/30"
+                      : hasValidationError
+                        ? "bg-red-50 border-red-300 dark:bg-red-950/25 dark:border-red-500/40"
+                        : "bg-transparent border-primary/10 hover:bg-primary/10"
+                  )}
                 >
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -225,6 +247,8 @@ export function BuildContent({
                             onRemove={(cat, _) => onRemovePart(cat, findOriginalIndex(nvmeDrives[i]))}
                             onSelect={onCategorySelect}
                             isActiveFilter={activeFilter === name}
+                            hasValidationError={hasValidationError}
+                            isNested
                           />
                         ))}
                       </div>
@@ -241,6 +265,8 @@ export function BuildContent({
                             onRemove={(cat, _) => onRemovePart(cat, findOriginalIndex(sataDrives[i]))}
                             onSelect={onCategorySelect}
                             isActiveFilter={activeFilter === name}
+                            hasValidationError={hasValidationError}
+                            isNested
                           />
                         ))}
                       </div>
@@ -260,6 +286,7 @@ export function BuildContent({
               onRemove={onRemovePart}
               onSelect={onCategorySelect}
               isActiveFilter={activeFilter === name}
+              hasValidationError={hasValidationError}
             />
           );
         })}

@@ -10,7 +10,6 @@ import {
     Shield, 
     Sliders, 
     Bot, 
-    FileText,
     Clock,
     Plus,
     RefreshCcw,
@@ -29,6 +28,8 @@ import {
 } from '@mantine/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from "@/lib/utils";
+import { QRHealthDialog } from '@/components/qr-health-dialog';
+import { QRScannerDialog } from '@/components/qr-scanner-dialog';
 
 export interface AdminTabHeaderProps {
     currentTab: string;
@@ -104,7 +105,7 @@ export function AdminTabHeader({
             tag: "Decommissioned Assets",
             titlePrefix: "Inventory & Systems ",
             titleHighlight: "Archive",
-            description: "Review decommissioned components and archived prebuilt systems, or restore them to active stock.",
+            description: "Review archived components, prebuilt systems, and reservations.",
         },
         audit: {
             tag: "Security Ledger",
@@ -123,12 +124,6 @@ export function AdminTabHeader({
             titlePrefix: "AI Engine & ",
             titleHighlight: "Directives",
             description: "Configure foundation models, provider routing, and agent persona system instructions.",
-        },
-        content: {
-            tag: "Brand & Story",
-            titlePrefix: "Site Content & ",
-            titleHighlight: "Branding",
-            description: "Update customer-facing company information, mission statement, and story.",
         },
     };
 
@@ -167,6 +162,12 @@ export function AdminTabHeader({
 
                     {/* Dynamic Action Slots */}
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-1 sm:pt-0">
+                        {(currentTab === 'stock' || currentTab === 'prebuilts') && (
+                            <>
+                                <QRScannerDialog />
+                                <QRHealthDialog />
+                            </>
+                        )}
                         {currentTab === 'sales' && (
                             <Group gap="xs">
                                 <Button
@@ -210,7 +211,7 @@ export function AdminTabHeader({
                         )}
 
                         {currentTab === 'audit' && auditLogsCount > 0 && (
-                            <Badge size="sm" color="indigo" variant="light" className="font-bold">
+                            <Badge size="sm" color="cyan" variant="light" className="font-bold">
                                 {auditLogsCount} Records
                             </Badge>
                         )}

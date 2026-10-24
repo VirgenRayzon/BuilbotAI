@@ -3,12 +3,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
+import { safeStaffProductReturn } from '@/lib/product-identity';
 import Link from 'next/link';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth, useFirestore, executeStaffGoogleAuthInitiate, GoogleIcon } from '@/firebase';
-import { signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import {
   Paper,
@@ -35,6 +36,7 @@ import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/context/user-profile';
 import { authenticateSystemAccessAction } from '@/app/actions';
 import { RequestKeyModal } from './components/request-key-modal';
+import { Logo } from '@/components/logo';
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -71,6 +73,7 @@ function SystemAccessContent() {
   const { authUser, profile, loading: authLoading } = useUserProfile();
 
   const reason = searchParams?.get('reason');
+  const returnTo = safeStaffProductReturn(searchParams?.get('returnTo') ?? null);
   let reasonNotice: { title: string; message: string } | null = null;
   if (reason === 'idle_timeout') {
     reasonNotice = {
@@ -98,12 +101,12 @@ function SystemAccessContent() {
 
       // Only redirect to /admin if the staff user has an active, verified admin session marker in this tab
       if (isStaff && activeAdminMarker === authUser.uid) {
-        router.push('/admin');
+        router.push(returnTo);
       } else if (!isStaff) {
         router.push('/builder');
       }
     }
-  }, [authUser, profile, authLoading, router, loading, googleLoading]);
+  }, [authUser, profile, authLoading, router, loading, googleLoading, returnTo]);
 
   const {
     control,
@@ -134,8 +137,7 @@ function SystemAccessContent() {
     }
 
     try {
-      // Use local persistence so new tabs opened from dashboard stay authenticated
-      await setPersistence(auth, browserLocalPersistence);
+      await setPersistence(auth, browserSessionPersistence);
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
@@ -164,7 +166,7 @@ function SystemAccessContent() {
         description: 'Welcome to the administrator dashboard.',
       });
 
-      router.push('/admin');
+      router.push(returnTo);
     } catch (err: any) {
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('buildbot_admin_session_active');
@@ -222,7 +224,7 @@ function SystemAccessContent() {
         description: 'Administrator session authenticated with Google.',
       });
 
-      router.push('/admin');
+      router.push(returnTo);
     } catch (err: any) {
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('buildbot_admin_session_active');
@@ -348,7 +350,7 @@ function SystemAccessContent() {
       <div className="w-full max-w-[480px] z-10 flex flex-col gap-2.5">
         <div className="flex items-center justify-between px-1">
           <Link
-            href="/"
+            href="/signin"
             className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-red-500 dark:text-slate-400 dark:hover:text-red-400 transition-all duration-200 group"
           >
             <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
@@ -366,11 +368,11 @@ function SystemAccessContent() {
           className="w-full bg-white/85 dark:bg-[#111722] border-red-500/30 dark:border-red-500/30 shadow-sm relative transition-all"
         >
           <Stack gap="md">
-            {/* Header with Red Accent */}
+            {/* Header with Red Netcodex Emblem */}
             <div className="text-center flex flex-col items-center gap-1.5">
-              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 shadow-sm">
-                <ShieldAlert size={22} />
-              </div>
+              <Link href="/" className="mb-0.5">
+                <Logo showText={false} size="lg" variant="red" />
+              </Link>
               <Title
                 order={2}
                 className="text-xl sm:text-2xl font-bold font-headline tracking-tight text-slate-900 dark:text-slate-100"
@@ -453,7 +455,7 @@ function SystemAccessContent() {
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit(onSubmit)}>
+            <form onSubmit={handleSubmit(onSubmit)} autoComplete="on">
               <Stack gap="md">
                 <Controller
                   name="email"
@@ -484,6 +486,7 @@ function SystemAccessContent() {
                     <PasswordInput
                       label="Password"
                       placeholder="••••••••"
+                        autoComplete="current-password"
                       radius="md"
                       size="md"
                       leftSection={<Lock size={16} className="text-slate-400" />}
@@ -522,6 +525,10 @@ function SystemAccessContent() {
                         )}
                       </Group>
                       <PasswordInput
+                        // This is a separate authorization factor, not the account password.
+                        // Naming it as a one-time code prevents password managers from replacing
+                        // the user's saved account password with this role key.
+                        autoComplete="one-time-code"
                         placeholder={
                           activeTab === 'manager'
                             ? 'Enter manager security key'
@@ -557,7 +564,7 @@ function SystemAccessContent() {
 
             {/* Footer Links */}
             <div className="flex flex-col items-center gap-1.5 text-center text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-white/10">
-              <div className="whitespace-nowrap">
+              <div>
                 New manager with an access key?{' '}
                 <Anchor
                   component={Link}
@@ -650,6 +657,7 @@ function SystemAccessContent() {
               {activeTab === 'manager' ? 'Manager Secret Key' : 'Super Admin Master Key'}
             </Text>
             <PasswordInput
+              autoComplete="one-time-code"
               placeholder={
                 activeTab === 'manager'
                   ? 'Enter manager security key'

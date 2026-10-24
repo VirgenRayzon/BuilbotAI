@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   Paper,
   Title,
@@ -40,8 +40,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useCollection, useFirestore } from "@/firebase";
-import { collection } from "firebase/firestore";
+import { useFavoriteInventory } from "../hooks/use-favorite-inventory";
 import Link from "next/link";
 
 interface FavoritesListProps {
@@ -57,38 +56,7 @@ export function FavoritesList({ favorites, loading, onDelete, onRename }: Favori
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
 
-  // Fetch live inventory to validate stock
-  const firestore = useFirestore();
-  const inventoryCategories = [
-    "CPU",
-    "GPU",
-    "Motherboard",
-    "RAM",
-    "Storage",
-    "PSU",
-    "Case",
-    "Cooler",
-    "Monitor",
-    "Keyboard",
-    "Mouse",
-    "Headset",
-  ];
-
-  const collectionRefs = useMemo(() => {
-    if (!firestore) return [];
-    return inventoryCategories.map((cat) => collection(firestore, cat));
-  }, [firestore]);
-
-  const inventoryResults = collectionRefs.map((ref) => useCollection<any>(ref));
-  const allParts = useMemo(() => {
-    return inventoryResults.flatMap((result, idx) => {
-      const data = result.data || [];
-      return data.map((part: any) => ({
-        ...part,
-        category: inventoryCategories[idx],
-      }));
-    });
-  }, [inventoryResults]);
+  const allParts = useFavoriteInventory();
 
   const getPartStatus = (partId: string) => {
     const livePart = allParts.find((p) => p.id === partId);

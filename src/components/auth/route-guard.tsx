@@ -30,7 +30,12 @@ export function RouteGuard({
     const lastRedirect = useRef<string | null>(null);
     const isResolved = status === 'ready' || status === 'unauthenticated';
     const role = getEffectiveRole(profile);
-    const isAuthorized = isResolved && (!requiredPermission || AuthPermissions[requiredPermission](role));
+    const needsVerifiedStaffSession = requiredPermission === 'canAccessAdmin' || requiredPermission === 'isSuperAdmin';
+    const hasVerifiedStaffSession = typeof window !== 'undefined' &&
+        sessionStorage.getItem('buildbot_admin_session_active') === authUser?.uid;
+    const isAuthorized = isResolved &&
+        (!requiredPermission || AuthPermissions[requiredPermission](role)) &&
+        (!needsVerifiedStaffSession || hasVerifiedStaffSession);
     const isDenied = isResolved && !isAuthorized;
 
     const isStaff = role === 'manager' || role === 'superadmin';

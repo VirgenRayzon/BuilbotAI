@@ -13,7 +13,8 @@ export interface CompatibilityIssue {
 export const normalize = (s?: string | number | null) => s?.toString().trim().toLowerCase() || '';
 
 const resolveSocket = (part?: Pick<Part | ComponentData, 'socket' | 'specifications'> | null) =>
-  normalize(part?.specifications?.['Socket'] || part?.specifications?.['socket'] || part?.socket);
+  normalize(part?.specifications?.['Socket'] || part?.specifications?.['socket'] || part?.socket)
+    .replace(/[\s-]/g, '');
 
 const resolveRamType = (part?: Pick<Part | ComponentData, 'ramType' | 'specifications'> | null) =>
   normalize(part?.specifications?.['Memory Type'] || part?.specifications?.['RAM Type'] || part?.specifications?.['Memory'] || part?.specifications?.['Generation'] || part?.specifications?.['Type'] || part?.ramType);

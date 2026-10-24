@@ -12,6 +12,8 @@ import type { AddPrebuiltFormSchema } from "@/components/add-prebuilt-dialog";
 import type { Part, PrebuiltSystem, UserProfile, SystemNotification } from "@/lib/types";
 import { fetchImageBase64 } from "@/app/image-actions";
 import { inventoryCategoryLabel, inventoryCategoryPath, inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
+import { saveCatalogProduct } from '@/lib/save-catalog-product';
+import { updateCatalogPart } from '@/app/product-actions';
 
 // Uploads an image to Firebase Storage.
 // Local file uploads (data:image) go directly from the client (which has auth context).
@@ -146,7 +148,7 @@ function generateSearchKeywords(name: string, brand: string, category: string, m
 }
 
 // Parts
-export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
+export async function addPart(firestore: Firestore, part: AddPartFormSchema, operationId = crypto.randomUUID()) {
     const specificationsMap = part.specifications.reduce((acc: Record<string, string>, spec: { key: string; value: string }) => {
         acc[spec.key] = spec.value;
         return acc;
@@ -205,13 +207,7 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema) {
         isArchived: false
     };
 
-    const batch = writeBatch(firestore);
-    batch.set(doc(firestore, inventoryCategoryPath(part.category)), {
-        label: inventoryCategoryLabel(part.category),
-        isActive: true,
-    }, { merge: true });
-    batch.set(doc(collection(firestore, inventoryItemsPath(part.category))), cleanData(partData));
-    await batch.commit();
+    return saveCatalogProduct('part', cleanData(partData), part, operationId);
 }
 
 
@@ -224,7 +220,6 @@ export async function updatePart(
     const targetCategory = data.category || category;
     const isCategoryChanging = targetCategory !== category;
     const oldDocRef = doc(firestore, inventoryItemPath(category, partId));
-    const targetDocRef = isCategoryChanging ? doc(firestore, inventoryItemPath(targetCategory, partId)) : oldDocRef;
 
     // If specifications are being updated but not wattage, try to re-resolve wattage
     if (data.specifications && data.wattage === undefined) {
@@ -289,30 +284,9 @@ export async function updatePart(
         );
     }
 
-    if (isCategoryChanging) {
-        // When category changes, the item must be moved from inventory/<oldCat>/items/<id>
-        // to inventory/<newCat>/items/<id> in Firestore.
-        cleanedData.category = targetCategory;
-        const mergedData = cleanData({
-            ...currentData,
-            ...cleanedData,
-            updatedAt: new Date(),
-        });
-
-        const batch = writeBatch(firestore);
-        // Ensure destination category doc exists
-        batch.set(doc(firestore, inventoryCategoryPath(targetCategory)), {
-            label: inventoryCategoryLabel(targetCategory),
-            isActive: true,
-        }, { merge: true });
-        // Create in new location with the same ID
-        batch.set(targetDocRef, mergedData);
-        // Delete from previous category collection
-        batch.delete(oldDocRef);
-        await batch.commit();
-    } else {
-        await updateDoc(oldDocRef, cleanedData);
-    }
+    const actor = getAuth().currentUser;
+    if (!actor) throw new Error('Sign in to manage inventory.');
+    await updateCatalogPart({ idToken: await actor.getIdToken(), id: partId, category, payload: cleanedData });
 }
 
 export async function deletePart(firestore: Firestore, partId: string, category: Part['category']) {
@@ -342,7 +316,7 @@ export async function bulkDeleteParts(firestore: Firestore, items: { id: string,
 }
 
 // Prebuilt Systems
-export async function addPrebuiltSystem(firestore: Firestore, system: AddPrebuiltFormSchema) {
+export async function addPrebuiltSystem(firestore: Firestore, system: AddPrebuiltFormSchema, operationId = crypto.randomUUID()) {
     const { name, tier, description, price, imageUrl, images, cpu, gpu, motherboard, ram, storage, psu, case: caseComponent, cooler } = system;
 
     const rawImages = images?.length ? images : (imageUrl ? [imageUrl] : []);
@@ -372,7 +346,7 @@ export async function addPrebuiltSystem(firestore: Firestore, system: AddPrebuil
         createdAt: new Date()
     };
 
-    await addDoc(collection(firestore, 'prebuiltSystems'), cleanData(systemData));
+    return saveCatalogProduct('prebuilt', cleanData(systemData), system, operationId);
 }
 
 export async function deletePrebuiltSystem(firestore: Firestore, systemId: string) {

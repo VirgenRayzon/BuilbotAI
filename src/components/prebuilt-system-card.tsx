@@ -15,14 +15,16 @@ import {
   Paper,
 } from "@mantine/core";
 import { formatCurrency, getOptimizedStorageUrl, cn } from "@/lib/utils";
-import type { PrebuiltSystem, Part } from "@/lib/types";
+import type { PrebuiltSystem, Part, FavoriteBuild } from "@/lib/types";
 import {
   ShieldCheck,
   ChevronDown,
   ChevronUp,
-  AlertCircle,
   Loader2,
   CheckCircle2,
+  SlidersHorizontal,
+  ExternalLink,
+  ShoppingCart,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getMissingParts } from "@/lib/prebuilt-utils";
@@ -44,19 +46,29 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useSiteSettings } from "@/context/site-settings-context";
+import { useEcommerce, getEcommerceFallbackImage } from "@/context/ecommerce-context";
 
 interface PrebuiltSystemCardProps {
   system: PrebuiltSystem;
+  priority?: boolean;
   expanded?: boolean;
   onToggle?: () => void;
+  showReserveButton?: boolean;
+  showLaunchButton?: boolean;
+  isClickable?: boolean;
 }
 
 export function PrebuiltSystemCard({
   system,
+  priority = false,
   expanded = false,
   onToggle,
+  showReserveButton = true,
+  showLaunchButton = false,
+  isClickable = true,
 }: PrebuiltSystemCardProps) {
-  const { shouldCorruptImages } = useSiteSettings();
+  const { shouldCorruptImages, isEcommerceMode } = useSiteSettings();
+  const { addToCart } = useEcommerce();
   const [isExpandedLocal, setIsExpandedLocal] = useState(false);
   const isExpanded = expanded || isExpandedLocal;
   const { toast } = useToast();
@@ -163,10 +175,44 @@ export function PrebuiltSystemCard({
     isComplete &&
     Object.keys(partsStock).length > 0 &&
     Object.values(partsStock).every((stock) => stock > 0);
+  const needsCustomization = !isComplete || (!loadingStock && !isInStock);
 
   const openCheckoutDialog = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (isEcommerceMode) {
+      if (!isComplete || !isInStock) return;
+      const componentsList = Object.entries(resolvedParts)
+        .filter(([, part]) => Boolean(part))
+        .map(([cat, part]) => ({
+          category: cat.toUpperCase(),
+          name: part.name,
+          price: part.price || 0,
+          imageUrl:
+            part.imageUrl ||
+            part.images?.[0] ||
+            getEcommerceFallbackImage(cat, "part"),
+        }));
+      addToCart(
+        {
+          id: `prebuilt-${system.id}`,
+          kind: "prebuilt",
+          name: system.name,
+          price: system.price,
+          tier: system.tier,
+          imageUrl:
+            system.imageUrl ||
+            system.images?.[0] ||
+            getEcommerceFallbackImage(undefined, "prebuilt"),
+          components: componentsList,
+          includeAssembly: true,
+        },
+        true
+      );
+      return;
+    }
+
     if (!isComplete || !authUser || !profile || isReserving || !isInStock) {
       if (!authUser) {
         toast({
@@ -243,19 +289,73 @@ export function PrebuiltSystemCard({
     }
   };
 
-  return (
-    <Link href={`/pre-builts/${system.id}`} className="block h-full">
+  const handleCustomize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const categoryMap: Record<string, string> = {
+      cpu: "CPU",
+      gpu: "GPU",
+      motherboard: "Motherboard",
+      ram: "RAM",
+      storage: "Storage",
+      psu: "PSU",
+      case: "Case",
+      cooler: "Cooler",
+    };
+
+    const parts = Object.entries(system.components).flatMap(([category, value]) => {
+      const ids = Array.isArray(value) ? value : [value];
+      return ids.filter(Boolean).map((partId) => {
+        const resolvedPart = resolvedParts[category];
+        return {
+          category: categoryMap[category] || category,
+          partId: resolvedPart?.id || String(partId),
+          name: resolvedPart?.name || String(partId),
+          price: resolvedPart?.price || 0,
+        };
+      });
+    });
+
+    const unavailableParts = Array.from(new Set([
+      ...missingParts,
+      ...Object.entries(partsStock)
+        .filter(([, stock]) => stock <= 0)
+        .map(([category]) => resolvedParts[category]?.name || categoryMap[category] || category),
+    ]));
+
+    const prebuiltBuildPayload: FavoriteBuild = {
+      id: system.id,
+      name: `${system.name} (Customized)`,
+      parts,
+      totalPrice: system.price,
+      source: "builder",
+      createdAt: new Date().toISOString(),
+      loadContext: {
+        type: "prebuilt",
+        systemName: system.name,
+        unavailableParts,
+      },
+    };
+
+    localStorage.setItem("pc_builder_load_favorite", JSON.stringify(prebuiltBuildPayload));
+    router.push("/builder");
+  };
+
+  const mainBody = (
+    <>
       <Card
-        withBorder
-        radius="lg"
-        padding={0}
-        className={cn(
-          "flex flex-col justify-between h-full relative group cursor-pointer overflow-hidden transition-all duration-300",
-          "bg-white/85 dark:bg-[#111722] hover:shadow-md hover:-translate-y-1",
-          "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
-          (!isComplete || (!loadingStock && !isInStock)) && "border-red-500/60 dark:border-red-500/60 shadow-sm shadow-red-500/10 hover:border-red-500/80 dark:hover:border-red-500/80 opacity-85"
-        )}
-      >
+      withBorder
+      radius="lg"
+      padding={0}
+      className={cn(
+        "flex flex-col justify-between h-full relative group overflow-hidden transition-all duration-300 shadow-lg",
+        isClickable ? "cursor-pointer hover:shadow-lg hover:-translate-y-1 hover:border-cyan-500/40 dark:hover:border-cyan-500/40" : "cursor-default",
+        "bg-white/85 dark:bg-[#111722]",
+        "border-slate-200/80 dark:border-white/10",
+        needsCustomization && "border-yellow-500/60 dark:border-yellow-400/60 bg-yellow-50/50 dark:!bg-black/30 shadow-lg shadow-yellow-500/10 dark:shadow-black/30 hover:border-yellow-500/80 dark:hover:border-yellow-400/80"
+      )}
+    >
         {/* Top Content Area */}
         <Stack gap={0}>
           {/* Tier & Stock Status Badges */}
@@ -281,7 +381,7 @@ export function PrebuiltSystemCard({
                 Checking stock...
               </Badge>
             ) : !isComplete ? (
-              <Badge size="xs" variant="light" color="orange" radius="sm">
+              <Badge size="xs" variant="light" color="yellow" radius="sm">
                 Incomplete
               </Badge>
             ) : isInStock ? (
@@ -289,7 +389,7 @@ export function PrebuiltSystemCard({
                 In Stock
               </Badge>
             ) : (
-              <Badge size="xs" variant="light" color="red" radius="sm">
+              <Badge size="xs" variant="light" color="yellow" radius="sm">
                 Missing Parts
               </Badge>
             )}
@@ -306,7 +406,7 @@ export function PrebuiltSystemCard({
               src={getOptimizedStorageUrl(system.imageUrl, shouldCorruptImages) || "/placeholder-system.png"}
               alt={system.name}
               fill
-              unoptimized
+              priority={priority}
               sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
               className="object-contain p-2"
             />
@@ -373,49 +473,63 @@ export function PrebuiltSystemCard({
           </Group>
 
           {/* Inset Rounded Action Button */}
-          {!isComplete ? (
+          {showReserveButton && (
+            needsCustomization ? (
+              <Button
+                fullWidth
+                radius="md"
+                size="sm"
+                variant="light"
+                color="yellow"
+                onClick={handleCustomize}
+                leftSection={<SlidersHorizontal className="h-4 w-4" />}
+                className="font-medium transition-all duration-200 hover:bg-yellow-400 hover:text-slate-950"
+              >
+                Customize Pre-built
+              </Button>
+            ) : (
+              <Button
+                fullWidth
+                radius="md"
+                size="sm"
+                variant="light"
+                color="cyan"
+                onClick={openCheckoutDialog}
+                disabled={loadingStock || isReserving}
+                leftSection={
+                  isReserving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : isEcommerceMode ? (
+                    <ShoppingCart className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" />
+                  ) : (
+                    <ShieldCheck className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" />
+                  )
+                }
+                className="font-medium hover:bg-cyan-500 hover:text-white transition-all duration-200"
+              >
+                {isReserving
+                  ? "Processing..."
+                  : isEcommerceMode
+                    ? "Add System to Cart"
+                    : "Reserve Rig"}
+              </Button>
+            )
+          )}
+
+          {showLaunchButton && (
             <Button
-              fullWidth
-              radius="md"
+              component={Link}
+              href={`/pre-builts/${system.productId || system.id}`}
+              variant="outline"
+              color="gray"
               size="sm"
-              variant="light"
-              color="orange"
-              disabled
-              leftSection={<AlertCircle className="h-4 w-4" />}
-            >
-              Incomplete System
-            </Button>
-          ) : !loadingStock && !isInStock ? (
-            <Button
-              fullWidth
               radius="md"
-              size="sm"
-              variant="light"
-              color="red"
-              disabled
-              leftSection={<AlertCircle className="h-4 w-4" />}
-            >
-              Out of Stock
-            </Button>
-          ) : (
-            <Button
               fullWidth
-              radius="md"
-              size="sm"
-              variant="light"
-              color="cyan"
-              onClick={openCheckoutDialog}
-              disabled={loadingStock || isReserving}
-              leftSection={
-                isReserving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ShieldCheck className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" />
-                )
-              }
-              className="font-medium hover:bg-cyan-500 hover:text-white transition-all duration-200"
+              rightSection={<ExternalLink size={14} />}
+              className="font-headline font-bold text-xs uppercase tracking-wider h-8 border-slate-200 dark:border-white/10 hover:border-cyan-500/40 text-slate-700 dark:text-slate-200"
+              onClick={(e) => e.stopPropagation()}
             >
-              {isReserving ? "Processing..." : "Reserve Rig"}
+              Launch Page
             </Button>
           )}
         </Stack>
@@ -489,6 +603,16 @@ export function PrebuiltSystemCard({
           </div>
         </DialogContent>
       </Dialog>
+    </>
+  );
+
+  if (!isClickable) {
+    return <div className="h-full">{mainBody}</div>;
+  }
+
+  return (
+    <Link href={`/pre-builts/${system.productId || system.id}`} className="block h-full">
+      {mainBody}
     </Link>
   );
 }

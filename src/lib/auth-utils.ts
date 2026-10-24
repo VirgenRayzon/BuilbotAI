@@ -44,5 +44,4 @@ export const RouteRequirements: Record<string, keyof typeof AuthPermissions> = {
     '/profile': 'isRegisteredUser',
     '/builder': 'isClientOnly',
     '/ai-build-advisor': 'isClientOnly',
-    '/pre-builts': 'isClientOnly',
 };

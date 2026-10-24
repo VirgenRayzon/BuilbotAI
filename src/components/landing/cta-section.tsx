@@ -32,7 +32,8 @@ export function CTASection({ isDark }: CTASectionProps) {
                 : "bg-white/95 border-slate-200/90 shadow-slate-200/70"
             )}
           >
-            <div className="max-w-3xl mx-auto px-4 py-8 sm:py-10 flex flex-col items-center">
+            <div className="border border-slate-200/70 dark:border-white/10 rounded-xl p-3 bg-white/40 dark:bg-black/20">
+              <div className="max-w-3xl mx-auto px-4 py-8 sm:py-10 flex flex-col items-center">
               <h2 className="text-3xl sm:text-5xl md:text-6xl font-black font-headline mb-5 uppercase tracking-tighter leading-tight flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-slate-900 dark:text-slate-100 text-center">
                 <span>Ready to Build Your</span>
                 <CanvasText
@@ -84,6 +85,7 @@ export function CTASection({ isDark }: CTASectionProps) {
                   </div>
                 </div>
               </div>
+            </div>
             </div>
           </Paper>
         </motion.div>

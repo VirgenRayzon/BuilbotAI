@@ -6,11 +6,11 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, query, orderBy, where } from 'firebase/firestore';
 import type { AuditLog } from '@/lib/types';
 
-export function useAuditLogs() {
+export function useAuditLogs(enabled = true) {
     const firestore = useFirestore();
 
     const auditLogsQuery = useMemo(() => {
-        if (!firestore) return null;
+        if (!firestore || !enabled) return null;
         const ninetyDaysAgo = new Date();
         ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
         return query(
@@ -18,7 +18,7 @@ export function useAuditLogs() {
             where('createdAt', '>=', ninetyDaysAgo),
             orderBy('createdAt', 'desc')
         );
-    }, [firestore]);
+    }, [firestore, enabled]);
 
     const { data: rawAuditLogs, loading: auditLogsLoading } = useCollection<AuditLog>(auditLogsQuery);
 

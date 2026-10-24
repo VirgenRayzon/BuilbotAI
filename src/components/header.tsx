@@ -2,21 +2,21 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
 import {
   Loader2,
   Shield,
-  ShieldCheck,
   LogOut,
   ChevronDown,
   Package,
   Heart,
   History,
   Settings,
-  Cpu,
-  Database,
+  MailQuestion,
+  MessageCircle,
   Sliders,
   User as UserIcon,
 } from "lucide-react";
@@ -24,8 +24,6 @@ import { useUserProfile } from "@/context/user-profile";
 import { useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { ThemeToggle } from "./theme-toggle";
-import { UserNotifications } from "./user-notifications";
-import { NotificationCenter } from "./notification-center";
 import {
   Avatar,
   Badge,
@@ -46,6 +44,12 @@ import { useDisclosure } from "@mantine/hooks";
 import classes from "./header.module.css";
 import { HeaderMegaMenu } from "./header-mega-menu";
 import { useSignOutTransition } from "@/context/sign-out-transition";
+import { HeaderCartButton } from "./ecommerce/header-cart-button";
+
+// These widgets only render after role verification; public navigation does not
+// need their notification, date formatting, and order-detail code.
+const UserNotifications = dynamic(() => import('./user-notifications').then(module => module.UserNotifications));
+const NotificationCenter = dynamic(() => import('./notification-center').then(module => module.NotificationCenter));
 
 interface NavTab {
   href: string;
@@ -85,13 +89,17 @@ export function Header() {
       startSignOut();
       const isStaff = Boolean(profile?.isSuperAdmin || profile?.isManager);
       const destination = isStaff ? "/system-access" : "/signin";
+      sessionStorage.removeItem("buildbot_admin_session_active");
       localStorage.removeItem("pc_chat_history_v2");
       localStorage.removeItem("pc_builder_state");
+      localStorage.removeItem("pc_ai_build_recommendation");
+      localStorage.removeItem("pc_critique_cache");
+      localStorage.removeItem("buildbot_advisor_create_form_v1");
       localStorage.removeItem("admin_pc_builder_state");
       try {
         await new Promise((resolve) => window.setTimeout(resolve, 250));
         await signOut(auth);
-        router.replace(destination);
+        window.location.replace(destination);
       } catch (error) {
         console.error("Sign out failed:", error);
         cancelSignOut();
@@ -103,7 +111,8 @@ export function Header() {
   const mainTabs: NavTab[] = [
     { href: "/builder", label: "Builder" },
     { href: "/ai-build-advisor", label: "Build Advisor" },
-    { href: "/pre-builts", label: "Pre-builts" },
+    { href: "/pre-builts", label: "Prebuilts" },
+    { href: "/parts", label: "Catalog" },
   ];
 
   const adminTabs: NavTab[] = [
@@ -127,11 +136,27 @@ export function Header() {
   // Standard customers see Builder, Build Advisor, and Pre-builts.
   const tabs: NavTab[] = isStaff ? adminTabs : mainTabs;
 
+  const activeTabHref = (() => {
+    const exact = tabs.find((t) => t.href === pathname);
+    if (exact) return exact.href;
+    const prefixes = tabs
+      .filter((t) => t.href !== "/" && pathname.startsWith(t.href + "/"))
+      .sort((a, b) => b.href.length - a.href.length);
+    return prefixes[0]?.href;
+  })();
+
   // Render HeaderMegaMenu on onboarding/landing page, auth pages, or for unauthenticated visitors on public pages
+  const isPublicCatalogOrInfoPage =
+    pathname === "/parts" ||
+    pathname.startsWith("/parts/") ||
+    pathname === "/pre-builts" ||
+    pathname.startsWith("/pre-builts/") ||
+    ["/about", "/faq", "/team", "/contact"].includes(pathname);
+
   if (
     pathname === "/" ||
     ["/signin", "/signup", "/system-access", "/system-access/signup", "/forgot-password"].includes(pathname) ||
-    (!authUser && ["/about", "/faq", "/team", "/contact"].includes(pathname))
+    (!authUser && isPublicCatalogOrInfoPage)
   ) {
     return <HeaderMegaMenu />;
   }
@@ -153,8 +178,14 @@ export function Header() {
   const roleBadgeColor = profile?.isSuperAdmin
     ? "cyan"
     : profile?.isManager
-      ? "amber"
+      ? "yellow"
       : "blue";
+
+  const roleBadgeClass = profile?.isSuperAdmin
+    ? "border border-cyan-300 !bg-cyan-100 !text-cyan-800 dark:border-cyan-400/40 dark:!bg-cyan-400/15 dark:!text-cyan-300"
+    : profile?.isManager
+      ? "border border-amber-300 !bg-amber-100 !text-amber-800 dark:border-amber-400/40 dark:!bg-amber-400/15 dark:!text-amber-300"
+      : "border border-blue-300 !bg-blue-100 !text-blue-800 dark:border-blue-400/40 dark:!bg-blue-400/15 dark:!text-blue-300";
 
   return (
     <>
@@ -164,6 +195,7 @@ export function Header() {
           <div className="flex-none">
             <Link
               href={logoHref}
+              prefetch={false}
               className="flex items-center no-underline focus:outline-none"
             >
               <Logo />
@@ -179,11 +211,14 @@ export function Header() {
                 {/* Desktop Tabs aligned with user */}
                 <nav className="hidden sm:flex items-center gap-1" aria-label="Main Navigation">
                   {tabs.map((tab) => {
-                    const isActive = pathname === tab.href;
+                    const isActive = tab.href === activeTabHref;
                     return (
                       <Link
                         key={tab.href}
                         href={tab.href}
+                        prefetch={false}
+                        onMouseEnter={() => router.prefetch(tab.href)}
+                        onFocus={() => router.prefetch(tab.href)}
                         className={classes.tabLink}
                         data-active={isActive || undefined}
                       >
@@ -193,7 +228,12 @@ export function Header() {
                             size="xs"
                             variant="light"
                             color={tab.role === "Super Admin" ? "cyan" : "yellow"}
-                            className="text-[9px] uppercase tracking-tighter ml-1"
+                            className={cn(
+                              "text-[9px] uppercase tracking-tighter ml-1 border",
+                              tab.role === "Super Admin"
+                                ? "border-cyan-300 !bg-cyan-100 !text-cyan-800 dark:border-cyan-400/40 dark:!bg-cyan-400/15 dark:!text-cyan-300"
+                                : "border-amber-300 !bg-amber-100 !text-amber-800 dark:border-amber-400/40 dark:!bg-amber-400/15 dark:!text-amber-300"
+                            )}
                           >
                             {tab.role}
                           </Badge>
@@ -212,8 +252,9 @@ export function Header() {
                   className="hidden sm:block border-slate-200 dark:border-white/10"
                 />
 
-                {/* Notification Center */}
-                <div className="flex items-center gap-1">
+                {/* Notification Center & E-Commerce Cart */}
+                <div className="flex items-center gap-1.5">
+                  <HeaderCartButton />
                   {!profile?.isManager && <UserNotifications />}
                   {profile?.isManager && <NotificationCenter />}
                   <ThemeToggle />
@@ -283,7 +324,7 @@ export function Header() {
                           size="xs"
                           variant="light"
                           color={roleBadgeColor}
-                          className="font-bold tracking-wider uppercase text-[9px]"
+                          className={cn("font-bold tracking-wider uppercase text-[9px]", roleBadgeClass)}
                         >
                           {roleLabel}
                         </Badge>
@@ -306,6 +347,13 @@ export function Header() {
                     {/* Non-staff Customer Workspaces */}
                     {!isStaff && (
                       <>
+                        <Menu.Item
+                          leftSection={<MailQuestion size={16} className="text-cyan-500" />}
+                          onClick={() => router.push("/profile?tab=contact-inbox")}
+                          className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
+                        >
+                          Contact Inbox
+                        </Menu.Item>
                         <Menu.Item
                           leftSection={<Package size={16} className="text-cyan-500" />}
                           onClick={() => router.push("/profile?tab=reservations")}
@@ -332,6 +380,16 @@ export function Header() {
                         className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
                       >
                         Management Portal
+                      </Menu.Item>
+                    )}
+
+                    {isStaff && (
+                      <Menu.Item
+                        leftSection={<MessageCircle size={16} className="text-cyan-500" />}
+                        onClick={() => router.push("/profile?tab=contact-inbox")}
+                        className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
+                      >
+                        Contact Inbox
                       </Menu.Item>
                     )}
 
@@ -399,6 +457,7 @@ export function Header() {
             ) : (
               /* Public / Logged-out State */
               <div className="flex items-center gap-2">
+                <HeaderCartButton />
                 {pathname === "/signin" || pathname === "/signup" ? (
                   <Button
                     component={Link}
@@ -469,7 +528,7 @@ export function Header() {
                     <Text fw={700} size="sm" className="text-slate-900 dark:text-slate-100 leading-tight">
                       {userName}
                     </Text>
-                    <Badge size="xs" variant="light" color={roleBadgeColor} className="mt-2">
+                    <Badge size="xs" variant="light" color={roleBadgeColor} className={cn("mt-2", roleBadgeClass)}>
                       {roleLabel}
                     </Badge>
                   </div>
@@ -483,11 +542,14 @@ export function Header() {
 
             <Stack gap={4}>
               {tabs.map((tab) => {
-                const isActive = pathname === tab.href;
+                const isActive = tab.href === activeTabHref;
                 return (
                   <Link
                     key={tab.href}
                     href={tab.href}
+                    prefetch={false}
+                    onMouseEnter={() => router.prefetch(tab.href)}
+                    onFocus={() => router.prefetch(tab.href)}
                     className={classes.drawerLink}
                     data-active={isActive || undefined}
                     onClick={closeDrawer}
@@ -522,6 +584,16 @@ export function Header() {
                   {!isStaff && (
                     <>
                       <Link
+                        href="/profile?tab=contact-inbox"
+                        className={classes.drawerLink}
+                        onClick={closeDrawer}
+                      >
+                        <span className="flex items-center gap-2">
+                          <MailQuestion size={16} className="text-cyan-500" />
+                          Contact Inbox
+                        </span>
+                      </Link>
+                      <Link
                         href="/profile?tab=reservations"
                         className={classes.drawerLink}
                         onClick={closeDrawer}
@@ -554,6 +626,19 @@ export function Header() {
                       <span className="flex items-center gap-2">
                         <Sliders size={16} className="text-cyan-500" />
                         Management Portal
+                      </span>
+                    </Link>
+                  )}
+
+                  {isStaff && (
+                    <Link
+                      href="/profile?tab=contact-inbox"
+                      className={classes.drawerLink}
+                      onClick={closeDrawer}
+                    >
+                      <span className="flex items-center gap-2">
+                        <MessageCircle size={16} className="text-cyan-500" />
+                        Contact Inbox
                       </span>
                     </Link>
                   )}

@@ -1,9 +1,8 @@
 
 import type { Metadata } from "next";
+import { Inter, Space_Grotesk } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
 import "./globals.css";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { UserProfileProvider } from "@/context/user-profile";
@@ -13,10 +12,20 @@ import { LoadingProvider } from "@/context/loading-context";
 import { SessionTimeout } from "@/components/auth/session-timeout";
 import { SiteSettingsProvider } from "@/context/site-settings-context";
 import { MantineAppProvider } from "@/components/providers/mantine-app-provider";
+import { AdvisorJobsProvider } from "@/context/advisor-jobs-context";
+
+const inter = Inter({
+  subsets: ['latin'], weight: ['400', '500', '600', '700'],
+  display: 'swap', variable: '--font-body',
+});
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'], weight: ['400', '500', '600', '700'],
+  display: 'swap', variable: '--font-headline',
+});
 
 export const metadata: Metadata = {
-  title: "Buildbot AI",
-  description: "Your AI-powered PC building guide.",
+  title: "Netcodex | Nationwide PC & Tech Store",
+  description: "Netcodex is a nationwide online computer and technology store in the Philippines. Authentic PC parts, custom gaming rigs, workstations, and intelligent compatibility guided by Buildbot AI.",
 };
 
 export default function RootLayout({
@@ -26,33 +35,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className={cn("font-body antialiased", "flex flex-col min-h-screen")}>
-        <ThemeProvider defaultTheme="dark" storageKey="buildbot-ui-theme">
+      <body className={cn(inter.variable, spaceGrotesk.variable, "font-body antialiased", "flex flex-col min-h-screen")}>
+        <ThemeProvider defaultTheme="light" storageKey="buildbot-ui-theme-v2">
           <FirebaseClientProvider>
             <UserProfileProvider>
               <LoadingProvider>
                 <SiteSettingsProvider>
                   <MantineAppProvider>
-                    <AppLayout>
-                      {children}
-                    </AppLayout>
-                    <SessionTimeout />
+                    <AdvisorJobsProvider>
+                      <AppLayout>
+                        {children}
+                      </AppLayout>
+                      <SessionTimeout />
+                    </AdvisorJobsProvider>
                   </MantineAppProvider>
                 </SiteSettingsProvider>
               </LoadingProvider>

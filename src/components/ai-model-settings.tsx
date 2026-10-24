@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useFirestore } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import {
     Loader2,
@@ -20,16 +19,18 @@ import {
     Trash2,
     CheckCircle2,
     Layers,
-    ExternalLink,
     Zap,
     Brain,
-    Gauge,
     MessageSquare,
+    ChevronDown,
+    ChevronUp,
+    X,
+    SlidersHorizontal,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useUserProfile } from '@/context/user-profile';
 import { useSiteSettings, type FineTunedProject } from '@/context/site-settings-context';
-import { type AiFeatureKey, type FeatureModelRouting, DEFAULT_FEATURE_ROUTING } from '@/lib/ai-model-resolver';
+import { type AiFeatureKey, type FeatureModelRouting } from '@/lib/ai-model-resolver';
 import { createAuditLog } from '@/firebase/audit';
 import {
     testAiModelConnectionAction,
@@ -52,14 +53,24 @@ function InfoPopover({ message, label = 'More information' }: { message: string;
     return (
         <Tooltip>
             <TooltipTrigger asChild>
-                <button
-                    type="button"
+                <span
+                    role="button"
+                    tabIndex={0}
                     aria-label={label}
-                    onClick={(event) => event.stopPropagation()}
-                    className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-slate-300 text-[11px] font-bold leading-none text-slate-500 transition-colors hover:border-cyan-500 hover:bg-cyan-500/10 hover:text-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 dark:border-white/15 dark:text-slate-400 dark:hover:border-cyan-400 dark:hover:text-cyan-300"
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        event.preventDefault();
+                    }}
+                    onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.stopPropagation();
+                            event.preventDefault();
+                        }
+                    }}
+                    className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-slate-300 text-[10px] font-bold leading-none text-slate-500 transition-colors hover:border-cyan-500 hover:bg-cyan-500/10 hover:text-cyan-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 dark:border-white/15 dark:text-slate-400 dark:hover:border-cyan-400 dark:hover:text-cyan-300 cursor-pointer"
                 >
                     !
-                </button>
+                </span>
             </TooltipTrigger>
             <TooltipContent className="max-w-xs border-slate-200 bg-white text-xs leading-relaxed text-slate-700 shadow-lg dark:border-white/10 dark:bg-[#141a23] dark:text-slate-200">
                 {message}
@@ -73,7 +84,7 @@ export const AVAILABLE_GEMINI_MODELS = [
     {
         id: 'gemini-3.8-flash',
         name: 'Gemini 3.8 Flash',
-        tag: 'Latest Generation',
+        tag: 'Latest Gen',
         tagColor: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
         badgeVariant: 'default' as const,
         description: 'The latest model recommended for updated features and improvements via the Interactions API.',
@@ -84,7 +95,7 @@ export const AVAILABLE_GEMINI_MODELS = [
     {
         id: 'gemini-2.5-flash',
         name: 'Gemini 2.5 Flash',
-        tag: 'Recommended Default',
+        tag: 'Default',
         tagColor: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30',
         badgeVariant: 'default' as const,
         description: 'Marked as the recommended default, serving as the live fallback engine for chat and AI tools.',
@@ -95,7 +106,7 @@ export const AVAILABLE_GEMINI_MODELS = [
     {
         id: 'gemini-2.5-pro',
         name: 'Gemini 2.5 Pro',
-        tag: 'Deep Reasoning',
+        tag: 'Reasoning',
         tagColor: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30',
         badgeVariant: 'secondary' as const,
         description: 'Fully operational for complex architectural reasoning and intricate compatibility validation.',
@@ -106,7 +117,7 @@ export const AVAILABLE_GEMINI_MODELS = [
     {
         id: 'gemini-1.5-flash',
         name: 'Gemini 1.5 Flash',
-        tag: 'High Throughput',
+        tag: 'Throughput',
         tagColor: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/30',
         badgeVariant: 'outline' as const,
         description: 'Fully operational general-purpose model providing fast throughput across routine tasks.',
@@ -137,29 +148,29 @@ const AI_FEATURES_CONFIG: Array<{
     tag: string;
     speedNotes?: string;
 }> = [
-        {
-            key: 'chatbot',
-            name: 'Buildbot Chat Assistance',
-            description: 'Interactive hardware consultant & floating chat assistant for real-time parts advice and compatibility questions.',
-            icon: MessageSquare,
-            tag: 'Chat Widget & API',
-        },
-        {
-            key: 'buildAdvisor',
-            name: 'Build Advisor Recommendation',
-            description: 'Generates full 8-component builds with budget allocation, performance tiering, and Philippine retailer market research.',
-            icon: Sparkles,
-            tag: 'Recommendation Engine',
-            speedNotes: 'Default Gemini API runs live web pricing research in ~35s without hitting timeouts.',
-        },
-        {
-            key: 'prebuiltAdvisor',
-            name: 'Prebuilt Builder Advisor',
-            description: 'Evaluates prebuilt PC configurations, performs component balance checks, and suggests hardware upgrades.',
-            icon: Cpu,
-            tag: 'Prebuilt Systems',
-        },
-    ];
+    {
+        key: 'chatbot',
+        name: 'Buildbot Chat Assistance',
+        description: 'Interactive hardware consultant & floating chat assistant for real-time parts advice and compatibility questions.',
+        icon: MessageSquare,
+        tag: 'Chat Widget & API',
+    },
+    {
+        key: 'buildAdvisor',
+        name: 'Build Advisor Recommendation',
+        description: 'Generates full 8-component builds with budget allocation, performance tiering, and Philippine retailer market research.',
+        icon: Sparkles,
+        tag: 'Recommendation Engine',
+        speedNotes: 'Default Gemini API runs live web pricing research in ~35s without hitting timeouts.',
+    },
+    {
+        key: 'prebuiltAdvisor',
+        name: 'Prebuilt Builder Advisor',
+        description: 'Evaluates prebuilt PC configurations, performs component balance checks, and suggests hardware upgrades.',
+        icon: Cpu,
+        tag: 'Prebuilt Systems',
+    },
+];
 
 export function AiModelSettings() {
     const firestore = useFirestore();
@@ -274,6 +285,20 @@ export function AiModelSettings() {
             ? 'gemini'
             : 'hybrid';
 
+    // Bulk preset actions
+    const handleRouteAll = (mode: 'default' | 'finetuned') => {
+        setFeatureRouting({
+            chatbot: mode,
+            buildAdvisor: mode,
+            prebuiltAdvisor: mode,
+        });
+        setIsAiDirty(true);
+        toast({
+            title: mode === 'default' ? 'All Workloads Routed to Gemini' : 'All Workloads Routed to Fine-Tuned',
+            description: `Remember to click "Apply AI Settings" to save changes.`,
+        });
+    };
+
     // Handle adding a new named project
     const handleAddProject = () => {
         const trimmedName = newProjectName.trim();
@@ -369,10 +394,11 @@ export function AiModelSettings() {
                     variant: 'destructive',
                 });
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'An unexpected error occurred';
             toast({
                 title: 'Test Failed',
-                description: err.message || 'An unexpected error occurred',
+                description: message,
                 variant: 'destructive',
             });
         } finally {
@@ -386,8 +412,7 @@ export function AiModelSettings() {
         try {
             const effectiveGlobalProvider: 'default' | 'finetuned' = allVertex ? 'finetuned' : 'default';
 
-            // 1. Server-side persistence via Admin SDK
-            await updateSiteSettingsAction({
+            const saveResult = await updateSiteSettingsAction({
                 aiModelProvider: effectiveGlobalProvider,
                 defaultGeminiModel: selectedGeminiModel,
                 fineTunedModelId: currentTunedEndpoint,
@@ -396,33 +421,16 @@ export function AiModelSettings() {
                 featureModelRouting: featureRouting,
                 updatedBy: profile?.email || 'Super Admin',
             });
-
-            // 2. Client Firestore write for local reactivity
-            if (firestore) {
-                const siteSettingsRef = doc(firestore, 'siteSettings', 'main');
-                await setDoc(
-                    siteSettingsRef,
-                    {
-                        aiModelProvider: effectiveGlobalProvider,
-                        defaultGeminiModel: selectedGeminiModel,
-                        fineTunedModelId: currentTunedEndpoint,
-                        fineTunedProjects: projects,
-                        activeFineTunedProjectId: activeProjectId,
-                        featureModelRouting: featureRouting,
-                        lastUpdated: new Date().toISOString(),
-                        updatedBy: profile?.email || 'Super Admin',
-                    },
-                    { merge: true }
-                ).catch(() => { });
+            if (!saveResult.success) {
+                throw new Error(saveResult.error || 'Failed to save AI settings.');
             }
+            if (saveResult.resolvedProjects) setProjects(saveResult.resolvedProjects);
 
-            // 3. Invalidate server-side model cache
             await invalidateAiModelCacheAction().catch(() => { });
 
-            // 4. Create audit log
             if (firestore) {
                 const summaryRouting = `Chatbot: ${featureRouting.chatbot}, Advisor: ${featureRouting.buildAdvisor}, Prebuilts: ${featureRouting.prebuiltAdvisor}`;
-                const activeModelDesc = `Gemini: ${selectedGeminiModel} | Fine-Tuned: "${currentActiveProject?.name}" (${currentTunedEndpoint}) | Routing: [${summaryRouting}]`;
+                const activeModelDesc = `Gemini: ${selectedGeminiModel} | Fine-Tuned: "${currentActiveProject?.name}" (${saveResult.resolvedEndpoint}) | Routing: [${summaryRouting}]`;
 
                 await createAuditLog(firestore, {
                     actionName: 'updated',
@@ -441,11 +449,12 @@ export function AiModelSettings() {
                 title: 'AI Settings Saved',
                 description: `Settings live! Default Gemini: ${selectedGeminiModel}, Active Fine-Tuned: "${currentActiveProject?.name}".`,
             });
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Failed to update AI model settings:', err);
+            const message = err instanceof Error ? err.message : 'Failed to update configuration';
             toast({
                 title: 'Error saving AI settings',
-                description: err?.message || 'Failed to update configuration',
+                description: message,
                 variant: 'destructive',
             });
         } finally {
@@ -456,338 +465,311 @@ export function AiModelSettings() {
     return (
         <TooltipProvider delayDuration={150}>
             <Card className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-sm">
+                {/* COMPACT CARD HEADER */}
                 <CardHeader className="p-3 border-b border-slate-100 dark:border-white/5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div>
-                            <CardTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
-                                <Bot className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div className="flex items-center gap-2">
+                            <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+                                <Bot className="h-4 w-4" />
+                            </div>
+                            <CardTitle className="text-base font-bold font-headline text-slate-900 dark:text-white flex items-center gap-1.5">
                                 AI Model Routing & Inference Engine
                                 <InfoPopover message="Configure official Gemini foundation models, manage fine-tuned Vertex AI project endpoints, and assign models to individual features." />
                             </CardTitle>
                         </div>
-                        <Badge
-                            variant="outline"
-                            className={
-                                currentRoutingMode === 'vertex'
-                                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+
+                        <div className="flex items-center gap-2">
+                            {isAiDirty && (
+                                <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30">
+                                    Unsaved Changes
+                                </Badge>
+                            )}
+                            <Badge
+                                variant="outline"
+                                className={
+                                    currentRoutingMode === 'vertex'
+                                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 text-xs'
+                                        : currentRoutingMode === 'gemini'
+                                            ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30 text-xs'
+                                            : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 text-xs'
+                                }
+                            >
+                                {currentRoutingMode === 'vertex'
+                                    ? 'Vertex AI Active'
                                     : currentRoutingMode === 'gemini'
-                                        ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30'
-                                        : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30'
-                            }
-                        >
-                            {currentRoutingMode === 'vertex'
-                                ? 'Vertex AI Active'
-                                : currentRoutingMode === 'gemini'
-                                    ? 'Default Gemini Active'
-                                    : 'Hybrid Routing Active'}
-                        </Badge>
+                                        ? 'Default Gemini Active'
+                                        : 'Hybrid Routing Active'}
+                            </Badge>
+                        </div>
                     </div>
                 </CardHeader>
 
                 <CardContent className="p-3 space-y-3">
-                    {/* ENGINE MANAGEMENT CARDS */}
+                    {/* SECTION 1: ENGINE STRIP & MODEL CATALOG */}
                     <div className="space-y-2.5">
                         <div className="flex items-center justify-between">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                                 <Layers className="h-3.5 w-3.5" />
-                                Model Engines & Catalogs
+                                Model Engines & Active Catalogs
                             </Label>
                             <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                                Select an engine below to view and configure its models
+                                Switch engine to manage variants
                             </span>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {/* ENGINE 1: DEFAULT GEMINI API */}
+                        {/* HIGH-DENSITY ENGINE SELECTOR TABS */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {/* GEMINI ENGINE BUTTON */}
                             <div
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        setActiveEngineTab('gemini');
+                                    }
+                                }}
                                 onClick={() => setActiveEngineTab('gemini')}
-                                className={`flex flex-col justify-between p-3 rounded-xl border cursor-pointer transition-all ${activeEngineTab === 'gemini'
-                                    ? 'border-cyan-500 bg-cyan-500/5 dark:bg-cyan-500/10 shadow-sm ring-2 ring-cyan-500/20'
+                                className={`p-2.5 rounded-xl border text-left transition-all flex items-center justify-between gap-3 cursor-pointer ${activeEngineTab === 'gemini'
+                                    ? 'border-cyan-500 bg-cyan-500/5 dark:bg-cyan-500/10 shadow-sm ring-1 ring-cyan-500/30'
                                     : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-black/20 hover:border-cyan-500/40 hover:bg-slate-100/60 dark:hover:bg-white/[0.03]'
                                     }`}
                             >
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="flex items-start gap-3">
-                                        <div
-                                            className={`p-2 rounded-lg mt-0.5 shrink-0 transition-colors ${activeEngineTab === 'gemini'
-                                                ? 'bg-cyan-500 text-white shadow-sm'
-                                                : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400'
-                                                }`}
-                                        >
-                                            <Sparkles className="h-4 w-4" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-semibold text-sm text-slate-900 dark:text-white">
-                                                    Default Gemini API
-                                                </span>
-                                                <InfoPopover label="About Default Gemini API" message="Official Google Gemini foundation models via the Generative Language API. Choose which Gemini model variant powers default workloads." />
-                                            </div>
-                                        </div>
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div
+                                        className={`p-1.5 rounded-lg shrink-0 ${activeEngineTab === 'gemini'
+                                            ? 'bg-cyan-500 text-white shadow-sm'
+                                            : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400'
+                                            }`}
+                                    >
+                                        <Sparkles className="h-3.5 w-3.5" />
                                     </div>
-
-                                    <Badge
-                                        variant={activeEngineTab === 'gemini' ? 'default' : 'outline'}
-                                        className={
-                                            activeEngineTab === 'gemini'
-                                                ? 'bg-cyan-600 hover:bg-cyan-600 text-white text-[10px] uppercase tracking-wider shrink-0'
-                                                : 'text-[10px] uppercase tracking-wider text-slate-500 border-slate-300 dark:border-white/10 shrink-0'
-                                        }
-                                    >
-                                        {activeEngineTab === 'gemini' ? 'Configuring' : 'Configure'}
-                                    </Badge>
-                                </div>
-
-                                <div className="mt-3 pt-2 border-t border-slate-200/60 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500">
-                                    <span>
-                                        Active Model:{' '}
-                                        <span className="text-cyan-600 dark:text-cyan-400 font-mono font-semibold">
-                                            {selectedGeminiModel}
-                                        </span>
-                                    </span>
-                                    <Badge variant="secondary" className="text-[9px] uppercase tracking-wider">
-                                        {AVAILABLE_GEMINI_MODELS.length} Models Available
-                                    </Badge>
-                                </div>
-                            </div>
-
-                            {/* ENGINE 2: FINE-TUNED VERTEX MODEL */}
-                            <div
-                                onClick={() => setActiveEngineTab('finetuned')}
-                                className={`flex flex-col justify-between p-3 rounded-xl border cursor-pointer transition-all ${activeEngineTab === 'finetuned'
-                                    ? 'border-amber-500 bg-amber-500/5 dark:bg-amber-500/10 shadow-sm ring-2 ring-amber-500/20'
-                                    : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-black/20 hover:border-amber-500/40 hover:bg-slate-100/60 dark:hover:bg-white/[0.03]'
-                                    }`}
-                            >
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="flex items-start gap-3">
-                                        <div
-                                            className={`p-2 rounded-lg mt-0.5 shrink-0 transition-colors ${activeEngineTab === 'finetuned'
-                                                ? 'bg-amber-500 text-white shadow-sm'
-                                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                                                }`}
-                                        >
-                                            <Cpu className="h-4 w-4" />
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="font-bold text-xs text-slate-900 dark:text-white">
+                                                Default Gemini API
+                                            </span>
+                                            <InfoPopover label="About Gemini API" message="Official Google Gemini models via Generative Language API. Used for general intelligence and fallback." />
                                         </div>
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-semibold text-sm text-slate-900 dark:text-white">
-                                                    Fine-Tuned Vertex Model
-                                                </span>
-                                                <InfoPopover label="About Fine-Tuned Vertex Model" message="Custom fine-tuned models trained on PC building datasets and hardware catalogs. Manage named projects and endpoints below." />
-                                            </div>
-                                        </div>
+                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                                            Active:{' '}
+                                            <span className="text-cyan-600 dark:text-cyan-400 font-mono font-semibold">
+                                                {selectedGeminiModel}
+                                            </span>
+                                        </p>
                                     </div>
-
-                                    <Badge
-                                        variant={activeEngineTab === 'finetuned' ? 'default' : 'outline'}
-                                        className={
-                                            activeEngineTab === 'finetuned'
-                                                ? 'bg-amber-600 hover:bg-amber-600 text-white text-[10px] uppercase tracking-wider shrink-0'
-                                                : 'text-[10px] uppercase tracking-wider text-slate-500 border-slate-300 dark:border-white/10 shrink-0'
-                                        }
-                                    >
-                                        {activeEngineTab === 'finetuned' ? 'Configuring' : 'Configure'}
-                                    </Badge>
                                 </div>
-
-                                <div className="mt-3 pt-2 border-t border-slate-200/60 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500">
-                                    <span className="truncate mr-2">
-                                        Active Project:{' '}
-                                        <span className="text-amber-600 dark:text-amber-400 font-mono font-semibold truncate">
-                                            {currentActiveProject?.name || 'No Project'}
-                                        </span>
-                                    </span>
-                                    <Badge
-                                        variant="outline"
-                                        className="text-[9px] uppercase tracking-wider text-amber-500 border-amber-500/30 shrink-0"
-                                    >
-                                        {projects.length} Registered
-                                    </Badge>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* CONDITIONAL SECTION: DEFAULT GEMINI MODELS CATALOG */}
-                    {activeEngineTab === 'gemini' && (
-                        <div className="p-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.02] dark:bg-cyan-500/[0.04] space-y-3">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                <div>
-                                    <h3 className="text-sm font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
-                                        <Sparkles className="h-4 w-4 text-cyan-500" />
-                                        Select Default Gemini Model Variant
-                                        <InfoPopover label="About Gemini model selection" message="Choose which Gemini model powers chat conversations, compatibility checking, and recommendation engines when routed to Gemini." />
-                                    </h3>
-                                </div>
-                                <Badge variant="outline" className="text-xs font-mono text-cyan-600 dark:text-cyan-400 border-cyan-500/30 shrink-0">
-                                    Selected: {selectedGeminiModel}
+                                <Badge
+                                    variant={activeEngineTab === 'gemini' ? 'default' : 'outline'}
+                                    className={
+                                        activeEngineTab === 'gemini'
+                                            ? 'bg-cyan-600 text-white text-[9px] uppercase tracking-wider shrink-0'
+                                            : 'text-[9px] uppercase tracking-wider text-slate-500 border-slate-300 dark:border-white/10 shrink-0'
+                                    }
+                                >
+                                    {activeEngineTab === 'gemini' ? 'Configuring' : `${AVAILABLE_GEMINI_MODELS.length} Models`}
                                 </Badge>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {AVAILABLE_GEMINI_MODELS.map((model) => {
-                                    const isSelected = selectedGeminiModel === model.id;
-                                    const Icon = model.icon;
+                            {/* VERTEX AI ENGINE BUTTON */}
+                            <div
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        setActiveEngineTab('finetuned');
+                                    }
+                                }}
+                                onClick={() => setActiveEngineTab('finetuned')}
+                                className={`p-2.5 rounded-xl border text-left transition-all flex items-center justify-between gap-3 cursor-pointer ${activeEngineTab === 'finetuned'
+                                    ? 'border-amber-500 bg-amber-500/5 dark:bg-amber-500/10 shadow-sm ring-1 ring-amber-500/30'
+                                    : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-black/20 hover:border-amber-500/40 hover:bg-slate-100/60 dark:hover:bg-white/[0.03]'
+                                    }`}
+                            >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div
+                                        className={`p-1.5 rounded-lg shrink-0 ${activeEngineTab === 'finetuned'
+                                            ? 'bg-amber-500 text-white shadow-sm'
+                                            : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                                            }`}
+                                    >
+                                        <Cpu className="h-3.5 w-3.5" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="font-bold text-xs text-slate-900 dark:text-white">
+                                                Fine-Tuned Vertex Model
+                                            </span>
+                                            <InfoPopover label="About Vertex AI" message="Custom fine-tuned PC hardware models on Google Cloud Vertex AI endpoints." />
+                                        </div>
+                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                                            Active:{' '}
+                                            <span className="text-amber-600 dark:text-amber-400 font-mono font-semibold truncate">
+                                                {currentActiveProject?.name || 'No Project'}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <Badge
+                                    variant={activeEngineTab === 'finetuned' ? 'default' : 'outline'}
+                                    className={
+                                        activeEngineTab === 'finetuned'
+                                            ? 'bg-amber-600 text-white text-[9px] uppercase tracking-wider shrink-0'
+                                            : 'text-[9px] uppercase tracking-wider text-amber-500 border-amber-500/30 shrink-0'
+                                    }
+                                >
+                                    {activeEngineTab === 'finetuned' ? 'Configuring' : `${projects.length} Registered`}
+                                </Badge>
+                            </div>
+                        </div>
 
-                                    return (
-                                        <div
-                                            key={model.id}
-                                            onClick={() => {
-                                                setSelectedGeminiModel(model.id);
-                                                setIsAiDirty(true);
-                                            }}
-                                            className={`p-3 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${isSelected
-                                                ? 'border-cyan-500 bg-white dark:bg-[#131c2d] ring-2 ring-cyan-500/20 shadow-md'
-                                                : 'border-slate-200 dark:border-white/10 bg-white/70 dark:bg-slate-900/50 hover:border-slate-300 dark:hover:border-white/20'
-                                                }`}
-                                        >
-                                            <div className="space-y-1.5">
-                                                <div className="flex items-center justify-between gap-1.5">
-                                                    <div className="flex items-center gap-2">
-                                                        <div
-                                                            className={`p-1.5 rounded-lg ${isSelected
-                                                                ? 'bg-cyan-500 text-white'
-                                                                : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400'
-                                                                }`}
-                                                        >
-                                                            <Icon size={14} />
-                                                        </div>
-                                                        <span className="font-bold text-xs text-slate-900 dark:text-white">
-                                                            {model.name}
+                        {/* COMPACT GEMINI MODEL CARDS VIEW */}
+                        {activeEngineTab === 'gemini' && (
+                            <div className="p-2.5 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.02] dark:bg-cyan-500/[0.03] space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                        <Sparkles className="h-3 w-3 text-cyan-500" />
+                                        Select Active Foundation Model:
+                                    </span>
+                                    <span className="font-mono text-[10px] text-cyan-600 dark:text-cyan-400">
+                                        Active: <strong>{selectedGeminiModel}</strong>
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                                    {AVAILABLE_GEMINI_MODELS.map((model) => {
+                                        const isSelected = selectedGeminiModel === model.id;
+                                        const Icon = model.icon;
+
+                                        return (
+                                            <div
+                                                key={model.id}
+                                                role="button"
+                                                tabIndex={0}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' || e.key === ' ') {
+                                                        setSelectedGeminiModel(model.id);
+                                                        setIsAiDirty(true);
+                                                    }
+                                                }}
+                                                onClick={() => {
+                                                    setSelectedGeminiModel(model.id);
+                                                    setIsAiDirty(true);
+                                                }}
+                                                className={`p-2 rounded-lg border text-left transition-all flex flex-col justify-between gap-1.5 cursor-pointer relative ${isSelected
+                                                    ? 'border-cyan-500 bg-white dark:bg-[#131c2d] ring-1 ring-cyan-500 shadow-sm'
+                                                    : 'border-slate-200 dark:border-white/10 bg-white/70 dark:bg-slate-900/40 hover:border-cyan-500/30'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center justify-between w-full gap-1">
+                                                    <div className="flex items-center gap-1.5 min-w-0">
+                                                        <Icon className={`h-3 w-3 shrink-0 ${isSelected ? 'text-cyan-500' : 'text-slate-400'}`} />
+                                                        <span className="font-bold text-[11px] text-slate-900 dark:text-white truncate">
+                                                            {model.name.replace('Gemini ', '')}
                                                         </span>
-                                                        <InfoPopover label={`About ${model.name}`} message={model.description} />
                                                     </div>
-                                                    {isSelected && (
-                                                        <CheckCircle2 className="h-4 w-4 text-cyan-500 shrink-0" />
+                                                    {isSelected ? (
+                                                        <CheckCircle2 className="h-3.5 w-3.5 text-cyan-500 shrink-0" />
+                                                    ) : (
+                                                        <InfoPopover label={model.name} message={model.description} />
                                                     )}
                                                 </div>
 
-                                                <div className="flex items-center gap-1.5">
-                                                    <span
-                                                        className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${model.tagColor}`}
-                                                    >
+                                                <div className="flex items-center justify-between w-full pt-1 border-t border-slate-100 dark:border-white/5 text-[9px]">
+                                                    <span className={`px-1.5 py-0.2 rounded border font-semibold ${model.tagColor}`}>
                                                         {model.tag}
                                                     </span>
-                                                    <span className="text-[10px] text-slate-400 font-mono">
-                                                        {model.speed}
+                                                    <span className="text-slate-400 font-mono">
+                                                        {model.contextWindow}
                                                     </span>
                                                 </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* CONDITIONAL SECTION: NAMED FINE-TUNED PROJECTS (VERTEX AI) */}
-                    {activeEngineTab === 'finetuned' && (
-                        <div className="p-3 rounded-2xl border border-amber-500/30 bg-amber-50/30 dark:bg-amber-950/15 space-y-3">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                <div>
-                                    <h3 className="text-sm font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
-                                        <Cpu className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                                        Named Fine-Tuned Projects (Vertex AI)
-                                        <InfoPopover label="About fine-tuned projects" message="Register fine-tuned projects and choose which project model the platform routes to." />
-                                    </h3>
+                                        );
+                                    })}
                                 </div>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setIsAddingProject(!isAddingProject)}
-                                    className="text-xs gap-1.5 border-amber-400/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10"
-                                >
-                                    <Plus size={14} />
-                                    {isAddingProject ? 'Cancel' : 'Add Project'}
-                                </Button>
                             </div>
+                        )}
 
-                            {/* ADD PROJECT FORM */}
-                            {isAddingProject && (
-                                <div className="p-3 rounded-xl border border-amber-400/40 bg-white dark:bg-[#161d2b] shadow-sm space-y-3">
-                                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-                                        <Plus className="h-3.5 w-3.5" />
-                                        Register New Fine-Tuned Project
-                                    </h4>
+                        {/* COMPACT VERTEX PROJECTS VIEW */}
+                        {activeEngineTab === 'finetuned' && (
+                            <div className="p-2.5 rounded-xl border border-amber-500/30 bg-amber-50/20 dark:bg-amber-950/10 space-y-2.5">
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                        <Cpu className="h-3.5 w-3.5 text-amber-500" />
+                                        Registered Fine-Tuned Projects ({projects.length})
+                                    </span>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setIsAddingProject(!isAddingProject)}
+                                        className="h-7 text-xs gap-1 border-amber-400/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10"
+                                    >
+                                        {isAddingProject ? <ChevronUp size={13} /> : <Plus size={13} />}
+                                        {isAddingProject ? 'Close' : 'Register Project'}
+                                    </Button>
+                                </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="proj-name" className="text-xs font-semibold text-slate-900 dark:text-white">
-                                                Project Name
-                                            </Label>
-                                            <Input
-                                                id="proj-name"
-                                                value={newProjectName}
-                                                onChange={(e) => setNewProjectName(e.target.value)}
-                                                placeholder="e.g. Buildbot Hardware Expert v2"
-                                                className="text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-white/10"
-                                            />
+                                {/* COLLAPSIBLE ADD PROJECT PANEL */}
+                                {isAddingProject && (
+                                    <div className="p-2.5 rounded-lg border border-amber-400/30 bg-white dark:bg-[#161d2b] shadow-sm space-y-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <div className="space-y-1">
+                                                <Label htmlFor="proj-name" className="text-[11px] font-semibold text-slate-800 dark:text-slate-200">
+                                                    Project Name
+                                                </Label>
+                                                <Input
+                                                    id="proj-name"
+                                                    value={newProjectName}
+                                                    onChange={(e) => setNewProjectName(e.target.value)}
+                                                    placeholder="e.g. Buildbot Hardware Expert v2"
+                                                    className="h-8 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-white/10"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <Label htmlFor="proj-endpoint" className="text-[11px] font-semibold text-slate-800 dark:text-slate-200">
+                                                    Vertex AI Endpoint / Resource Link
+                                                </Label>
+                                                <Input
+                                                    id="proj-endpoint"
+                                                    value={newProjectEndpoint}
+                                                    onChange={(e) => setNewProjectEndpoint(e.target.value)}
+                                                    placeholder="projects/.../locations/.../endpoints/..."
+                                                    className="h-8 font-mono text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-white/10"
+                                                />
+                                            </div>
                                         </div>
 
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="proj-endpoint" className="text-xs font-semibold text-slate-900 dark:text-white">
-                                                Project Link / Endpoint
-                                            </Label>
-                                            <Input
-                                                id="proj-endpoint"
-                                                value={newProjectEndpoint}
-                                                onChange={(e) => setNewProjectEndpoint(e.target.value)}
-                                                placeholder="projects/781722135778/locations/us-central1/endpoints/..."
-                                                className="font-mono text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-white/10"
-                                            />
+                                        <div className="flex justify-end gap-1.5 pt-1">
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => setIsAddingProject(false)}
+                                                className="h-7 text-xs"
+                                            >
+                                                Cancel
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                onClick={handleAddProject}
+                                                className="h-7 text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white gap-1"
+                                            >
+                                                <Plus size={13} />
+                                                Save & Select
+                                            </Button>
                                         </div>
                                     </div>
+                                )}
 
-                                    <div className="flex justify-end gap-2 pt-1">
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => setIsAddingProject(false)}
-                                            className="text-xs"
-                                        >
-                                            Cancel
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            onClick={handleAddProject}
-                                            className="text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white gap-1.5"
-                                        >
-                                            <Plus size={14} />
-                                            Save & Select Project
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* LIST OF REGISTERED NAMED PROJECTS */}
-                            <div className="space-y-2.5">
-                                <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                    Select Active Project Model ({projects.length})
-                                </Label>
-
+                                {/* COMPACT PROJECTS LIST */}
                                 {projects.length === 0 ? (
-                                    <div className="p-8 text-center rounded-xl border border-dashed border-amber-300 dark:border-amber-500/30 bg-white/50 dark:bg-black/20 space-y-3">
-                                        <div className="h-10 w-10 mx-auto rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                                            <Cpu size={20} />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-sm font-bold text-slate-900 dark:text-white">No Fine-Tuned Projects Registered</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                                                Add a project name and its Vertex AI resource link or endpoint to route platform intelligence to your custom model.
-                                            </p>
-                                        </div>
-                                        <Button
-                                            size="sm"
-                                            onClick={() => setIsAddingProject(true)}
-                                            className="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold gap-1.5"
-                                        >
-                                            <Plus size={14} />
-                                            Register Project
-                                        </Button>
+                                    <div className="p-4 text-center rounded-lg border border-dashed border-amber-300 dark:border-amber-500/30 bg-white/50 dark:bg-black/20 space-y-1.5">
+                                        <p className="text-xs font-bold text-slate-900 dark:text-white">No Fine-Tuned Projects Registered</p>
+                                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                            Click &quot;Register Project&quot; above to connect your custom Vertex AI endpoint.
+                                        </p>
                                     </div>
                                 ) : (
-                                    <div className="space-y-2">
+                                    <div className="space-y-1.5">
                                         {projects.map((proj) => {
                                             const isSelected = activeProjectId === proj.id;
 
@@ -798,206 +780,156 @@ export function AiModelSettings() {
                                                         setActiveProjectId(proj.id);
                                                         setIsAiDirty(true);
                                                     }}
-                                                    className={`p-3 rounded-xl border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isSelected
-                                                        ? 'border-amber-500 bg-white dark:bg-[#161d2b] ring-2 ring-amber-500/20 shadow-md'
-                                                        : 'border-slate-200 dark:border-white/10 bg-white/70 dark:bg-slate-900/50 hover:border-slate-300 dark:hover:border-white/20'
+                                                    className={`p-2 rounded-lg border cursor-pointer transition-all flex items-center justify-between gap-2.5 ${isSelected
+                                                        ? 'border-amber-500 bg-white dark:bg-[#161d2b] ring-1 ring-amber-500/30 shadow-sm'
+                                                        : 'border-slate-200 dark:border-white/10 bg-white/70 dark:bg-slate-900/40 hover:border-amber-500/30'
                                                         }`}
                                                 >
-                                                    <div className="flex items-start gap-3 min-w-0">
+                                                    <div className="flex items-center gap-2.5 min-w-0">
                                                         <div
-                                                            className={`mt-0.5 p-1.5 rounded-lg shrink-0 ${isSelected
-                                                                ? 'bg-amber-500 text-white'
-                                                                : 'bg-slate-100 dark:bg-white/5 text-slate-500'
+                                                            className={`h-4 w-4 rounded-full border flex items-center justify-center shrink-0 ${isSelected
+                                                                ? 'border-amber-500 bg-amber-500 text-white'
+                                                                : 'border-slate-300 dark:border-white/20'
                                                                 }`}
                                                         >
-                                                            <Cpu size={16} />
+                                                            {isSelected && <Check size={10} strokeWidth={3} />}
                                                         </div>
 
-                                                        <div className="min-w-0 space-y-1">
-                                                            <div className="flex items-center gap-2 flex-wrap">
-                                                                <span className="font-bold text-sm text-slate-900 dark:text-white">
+                                                        <div className="min-w-0">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className="font-bold text-xs text-slate-900 dark:text-white truncate">
                                                                     {proj.name}
                                                                 </span>
-                                                                {isSelected ? (
-                                                                    <Badge className="bg-amber-500 hover:bg-amber-500 text-white text-[9px] uppercase tracking-wider">
-                                                                        Active Model
-                                                                    </Badge>
-                                                                ) : (
-                                                                    <Badge
-                                                                        variant="outline"
-                                                                        className="text-[9px] text-slate-500 border-slate-300 dark:border-white/10"
-                                                                    >
-                                                                        Available
+                                                                {isSelected && (
+                                                                    <Badge className="bg-amber-500 text-white text-[8px] uppercase tracking-wider h-4 px-1.5">
+                                                                        Active
                                                                     </Badge>
                                                                 )}
                                                             </div>
-
-                                                            <p className="font-mono text-[11px] text-slate-600 dark:text-slate-400 break-all leading-tight">
+                                                            <p className="font-mono text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-sm sm:max-w-md">
                                                                 {proj.endpoint}
                                                             </p>
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="ghost"
-                                                            color="red"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setProjectToDelete(proj);
-                                                            }}
-                                                            className="h-8 px-2.5 text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 gap-1.5 rounded-lg border border-transparent hover:border-rose-500/20 font-semibold"
-                                                            title="Delete project"
-                                                        >
-                                                            <Trash2 size={14} />
-                                                            <span className="inline font-bold">Delete</span>
-                                                        </Button>
-                                                        <div
-                                                            className={`h-5 w-5 rounded-full border flex items-center justify-center ${isSelected
-                                                                ? 'border-amber-500 bg-amber-500 text-white'
-                                                                : 'border-slate-300 dark:border-white/20'
-                                                                }`}
-                                                        >
-                                                            {isSelected && <Check size={12} strokeWidth={3} />}
-                                                        </div>
-                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setProjectToDelete(proj);
+                                                        }}
+                                                        className="h-7 w-7 p-0 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg shrink-0"
+                                                        title="Delete project"
+                                                    >
+                                                        <Trash2 size={13} />
+                                                    </Button>
                                                 </div>
                                             );
                                         })}
                                     </div>
                                 )}
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
 
-                    {/* FEATURE MODEL ROUTING SECTION */}
-                    <div className="p-3 rounded-2xl border border-indigo-500/20 bg-indigo-500/[0.02] dark:bg-indigo-500/[0.04] space-y-3">
+                    {/* SECTION 2: WORKLOAD ROUTING MATRIX (HIGH DENSITY ROWS) */}
+                    <div className="p-2.5 rounded-xl border border-indigo-500/20 bg-indigo-500/[0.02] dark:bg-indigo-500/[0.03] space-y-2.5">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div>
-                                <h3 className="text-sm font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
-                                    <Brain className="h-4 w-4 text-indigo-500" />
-                                    Feature Model Assignment & Workload Routing
-                                    <InfoPopover label="About workload routing" message="Configure which model powers each AI feature: Default Gemini API or your fine-tuned Vertex AI model." />
-                                </h3>
+                            <div className="flex items-center gap-1.5">
+                                <Brain className="h-4 w-4 text-indigo-500" />
+                                <span className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                                    Workload Routing Matrix
+                                </span>
+                                <InfoPopover label="Workload Routing" message="Assign each platform feature to either Default Gemini API or Fine-Tuned Vertex AI." />
                             </div>
-                            <Badge variant="outline" className="text-xs font-mono text-indigo-600 dark:text-indigo-400 border-indigo-500/30 self-start sm:self-auto">
-                                3 Workloads Configurable
-                            </Badge>
+
+                            {/* QUICK PRESET TOOLBAR */}
+                            <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleRouteAll('default')}
+                                    className="h-6 px-2 text-[10px] border-cyan-500/30 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10"
+                                >
+                                    <Sparkles size={11} className="mr-1" />
+                                    Route All to Gemini
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleRouteAll('finetuned')}
+                                    className="h-6 px-2 text-[10px] border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                                >
+                                    <Cpu size={11} className="mr-1" />
+                                    Route All to Vertex
+                                </Button>
+                            </div>
                         </div>
 
-                        <div className="space-y-3">
+                        {/* COMPACT MATRIX ROWS */}
+                        <div className="space-y-1.5">
                             {AI_FEATURES_CONFIG.map((feat) => {
                                 const currentRoute = featureRouting[feat.key] || 'default';
                                 const Icon = feat.icon;
                                 const isDefault = currentRoute === 'default';
-                                const isFinetuned = currentRoute === 'finetuned';
 
                                 return (
                                     <div
                                         key={feat.key}
-                                        className="p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#131c2d] shadow-sm space-y-2.5"
+                                        className="p-2 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#131c2d] flex flex-col sm:flex-row sm:items-center justify-between gap-2"
                                     >
-                                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                                            <div className="flex items-start gap-2.5">
-                                                <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 mt-0.5 shrink-0">
-                                                    <Icon className="h-4 w-4" />
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                                                            {feat.name}
-                                                        </h4>
-                                                        <InfoPopover label={`About ${feat.name}`} message={feat.description} />
-                                                        <Badge variant="secondary" className="text-[10px]">
-                                                            {feat.tag}
-                                                        </Badge>
-                                                    </div>
-                                                    {feat.speedNotes && (
-                                                        <p className="text-[11px] text-cyan-600 dark:text-cyan-400 font-medium mt-1">
-                                                            💡 {feat.speedNotes}
-                                                        </p>
-                                                    )}
-                                                </div>
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <div className="p-1.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0">
+                                                <Icon className="h-3.5 w-3.5" />
                                             </div>
-
-                                            <Badge
-                                                variant="outline"
-                                                className={
-                                                    isFinetuned
-                                                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 shrink-0'
-                                                        : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30 shrink-0'
-                                                }
-                                            >
-                                                {isFinetuned ? 'Fine-Tuned Active' : 'Default Gemini Active'}
-                                            </Badge>
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <span className="font-bold text-xs text-slate-900 dark:text-white">
+                                                        {feat.name}
+                                                    </span>
+                                                    <InfoPopover label={feat.name} message={feat.description} />
+                                                    <Badge variant="secondary" className="text-[9px] h-4 px-1.5">
+                                                        {feat.tag}
+                                                    </Badge>
+                                                </div>
+                                                {feat.speedNotes && (
+                                                    <p className="text-[10px] text-cyan-600 dark:text-cyan-400 truncate">
+                                                        💡 {feat.speedNotes}
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
 
-                                        {/* 2 CHOICES */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                                            {/* CHOICE 1: DEFAULT GEMINI API */}
+                                        {/* INLINE SEGMENTED TOGGLE */}
+                                        <div className="inline-flex rounded-lg border border-slate-200 dark:border-white/10 p-0.5 bg-slate-100 dark:bg-black/30 shrink-0 self-end sm:self-center">
                                             <button
                                                 type="button"
                                                 onClick={() => {
                                                     setFeatureRouting((prev) => ({ ...prev, [feat.key]: 'default' }));
                                                     setIsAiDirty(true);
                                                 }}
-                                                className={`p-3 rounded-lg border text-left transition-all flex items-start justify-between cursor-pointer ${isDefault
-                                                    ? 'border-cyan-500 bg-cyan-500/10 dark:bg-cyan-500/20 ring-1 ring-cyan-500 shadow-sm'
-                                                    : 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 bg-slate-50/50 dark:bg-black/20'
+                                                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1 ${isDefault
+                                                    ? 'bg-cyan-600 text-white shadow-sm'
+                                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                                                     }`}
                                             >
-                                                <div className="space-y-1">
-                                                    <div className="flex items-center gap-1.5 font-semibold text-xs text-slate-900 dark:text-white">
-                                                        <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
-                                                        Default Gemini API
-                                                    </div>
-                                                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                                                        {selectedGeminiModel}
-                                                    </p>
-                                                </div>
-                                                <div
-                                                    className={`h-4 w-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${isDefault
-                                                        ? 'border-cyan-500 bg-cyan-500 text-white'
-                                                        : 'border-slate-300 dark:border-white/20'
-                                                        }`}
-                                                >
-                                                    {isDefault && <Check size={10} strokeWidth={3} />}
-                                                </div>
+                                                <Sparkles size={11} />
+                                                <span>Gemini API</span>
                                             </button>
-
-                                            {/* CHOICE 2: FINETUNED */}
                                             <button
                                                 type="button"
                                                 onClick={() => {
                                                     setFeatureRouting((prev) => ({ ...prev, [feat.key]: 'finetuned' }));
                                                     setIsAiDirty(true);
                                                 }}
-                                                className={`p-3 rounded-lg border text-left transition-all flex items-start justify-between cursor-pointer ${isFinetuned
-                                                    ? 'border-amber-500 bg-amber-500/10 dark:bg-amber-500/20 ring-1 ring-amber-500 shadow-sm'
-                                                    : 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 bg-slate-50/50 dark:bg-black/20'
+                                                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1 ${!isDefault
+                                                    ? 'bg-amber-600 text-white shadow-sm'
+                                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                                                     }`}
                                             >
-                                                <div className="space-y-1">
-                                                    <div className="flex items-center gap-1.5 font-semibold text-xs text-slate-900 dark:text-white">
-                                                        <Cpu className="h-3.5 w-3.5 text-amber-500" />
-                                                        Fine-Tuned Model
-                                                    </div>
-                                                    <p
-                                                        className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate max-w-[200px]"
-                                                        title={currentActiveProject?.name}
-                                                    >
-                                                        {currentActiveProject?.name || 'Active Endpoint'}
-                                                    </p>
-                                                </div>
-                                                <div
-                                                    className={`h-4 w-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${isFinetuned
-                                                        ? 'border-amber-500 bg-amber-500 text-white'
-                                                        : 'border-slate-300 dark:border-white/20'
-                                                        }`}
-                                                >
-                                                    {isFinetuned && <Check size={10} strokeWidth={3} />}
-                                                </div>
+                                                <Cpu size={11} />
+                                                <span>Fine-Tuned</span>
                                             </button>
                                         </div>
                                     </div>
@@ -1006,14 +938,14 @@ export function AiModelSettings() {
                         </div>
                     </div>
 
-                    {/* TEST & SAVE CONTROLS */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+                    {/* SECTION 3: FOOTER ACTIONS & DIAGNOSTICS */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-1">
                         <Button
                             type="button"
                             variant="outline"
                             onClick={handleTestConnection}
                             disabled={testingConnection || savingAiSettings}
-                            className="text-xs gap-2 border-slate-300 dark:border-white/10"
+                            className="h-8 text-xs gap-1.5 border-slate-300 dark:border-white/10"
                         >
                             {testingConnection ? (
                                 <>
@@ -1028,64 +960,76 @@ export function AiModelSettings() {
                             ) : (
                                 <>
                                     <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
-                                    Test Gemini API Connection
+                                    Test Gemini Connection
                                 </>
                             )}
                         </Button>
 
-                        <Button
-                            onClick={handleSaveAiModelSettings}
-                            disabled={savingAiSettings}
-                            className="font-semibold bg-cyan-600 hover:bg-cyan-500 text-white text-xs uppercase tracking-wider"
-                        >
-                            {savingAiSettings ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Applying Model Settings...
-                                </>
-                            ) : (
-                                'Apply AI Settings'
-                            )}
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                            <Button
+                                onClick={handleSaveAiModelSettings}
+                                disabled={savingAiSettings}
+                                className="h-8 px-4 font-semibold bg-cyan-600 hover:bg-cyan-500 text-white text-xs uppercase tracking-wider"
+                            >
+                                {savingAiSettings ? (
+                                    <>
+                                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                                        Applying...
+                                    </>
+                                ) : (
+                                    'Apply AI Settings'
+                                )}
+                            </Button>
+                        </div>
                     </div>
 
-                    {/* CONNECTION TEST RESULT DISPLAY */}
+                    {/* CONNECTION TEST RESULT BANNER */}
                     {testResult && (
                         <div
-                            className={`p-4 rounded-xl border text-xs space-y-2 ${testResult.success
+                            className={`p-2.5 rounded-xl border text-xs space-y-1.5 relative ${testResult.success
                                 ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300'
                                 : testResult.isPermissionError
                                     ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-500/30 text-amber-800 dark:text-amber-300'
                                     : 'bg-rose-50 dark:bg-rose-950/20 border-rose-300 dark:border-rose-500/30 text-rose-800 dark:text-rose-300'
                                 }`}
                         >
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between gap-2">
                                 <span className="font-semibold flex items-center gap-1.5">
                                     {testResult.success ? (
-                                        <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                        <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                                     ) : (
-                                        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                        <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                                     )}
                                     {testResult.success
                                         ? `Connection Verified (${testResult.model})`
-                                        : 'Permission Configuration Needed'}
+                                        : 'Configuration Action Required'}
                                 </span>
-                                <Badge variant="outline" className="font-mono text-[10px]">
-                                    {testResult.latencyMs}ms
-                                </Badge>
+
+                                <div className="flex items-center gap-1.5">
+                                    <Badge variant="outline" className="font-mono text-[9px] h-4 px-1.5">
+                                        {testResult.latencyMs}ms
+                                    </Badge>
+                                    <button
+                                        type="button"
+                                        onClick={() => setTestResult(null)}
+                                        className="h-4 w-4 inline-flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                </div>
                             </div>
 
                             {testResult.success ? (
-                                <p className="text-slate-600 dark:text-slate-300 font-mono text-[11px]">
-                                    Response: "{testResult.response}"
+                                <p className="text-slate-600 dark:text-slate-300 font-mono text-[11px] truncate">
+                                    Response: &quot;{testResult.response}&quot;
                                 </p>
                             ) : (
-                                <div className="space-y-2 text-slate-700 dark:text-slate-300">
+                                <div className="space-y-1.5 text-slate-700 dark:text-slate-300 text-[11px]">
                                     <p className="text-amber-800 dark:text-amber-200">
                                         {testResult.remediation?.instructions || testResult.error}
                                     </p>
                                     {testResult.remediation && (
-                                        <div className="p-2.5 rounded bg-white/70 dark:bg-black/40 border border-slate-200 dark:border-white/10 font-mono text-[11px] space-y-1">
+                                        <div className="p-2 rounded bg-white/70 dark:bg-black/40 border border-slate-200 dark:border-white/10 font-mono text-[10px] space-y-0.5">
                                             <div>
                                                 <span className="text-slate-500">Service Account:</span>{' '}
                                                 <code className="text-slate-900 dark:text-white">
@@ -1106,10 +1050,10 @@ export function AiModelSettings() {
                                             </div>
                                         </div>
                                     )}
-                                    <div className="flex items-center gap-2 pt-1 text-[11px] text-cyan-700 dark:text-cyan-400">
-                                        <Shield className="h-3.5 w-3.5" />
+                                    <div className="flex items-center gap-1.5 pt-0.5 text-[10px] text-cyan-700 dark:text-cyan-400">
+                                        <Shield className="h-3 w-3 shrink-0" />
                                         <span>
-                                            Automatic fallback is active: user chats and AI tools will continue using Gemini 2.5 Flash without disruption.
+                                            Automatic fallback active: platform uses Gemini 2.5 Flash without disruption.
                                         </span>
                                     </div>
                                 </div>
@@ -1122,12 +1066,12 @@ export function AiModelSettings() {
                 <AlertDialog open={!!projectToDelete} onOpenChange={(open) => !open && setProjectToDelete(null)}>
                     <AlertDialogContent className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl">
                         <AlertDialogHeader>
-                            <AlertDialogTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
-                                <Trash2 className="h-5 w-5 text-rose-500" />
+                            <AlertDialogTitle className="text-base font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
+                                <Trash2 className="h-4 w-4 text-rose-500" />
                                 Delete Fine-Tuned Project?
                             </AlertDialogTitle>
                             <AlertDialogDescription className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                                Are you sure you want to delete <strong className="text-slate-900 dark:text-white">"{projectToDelete?.name}"</strong>? This will remove its endpoint resource link from your registered fine-tuned configurations.
+                                Are you sure you want to delete <strong className="text-slate-900 dark:text-white">&quot;{projectToDelete?.name}&quot;</strong>? This will remove its endpoint resource link from your registered fine-tuned configurations.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter className="gap-2 pt-2">

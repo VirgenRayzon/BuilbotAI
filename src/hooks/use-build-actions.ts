@@ -13,6 +13,7 @@ import { processCheckout } from "@/app/checkout-actions";
 import { type ProgressPhase } from "@/components/ai-progress-modal";
 import { ComponentData, OrderItem, Part } from "@/lib/types";
 import { type PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
+import { useProductSaveOperation } from '@/hooks/use-product-save-operation';
 
 interface UseBuildActionsOptions {
   build: Record<string, ComponentData | ComponentData[] | null>;
@@ -20,7 +21,7 @@ interface UseBuildActionsOptions {
   isAiKillSwitch: boolean;
   onClearBuild: () => void;
   onAnalyze?: (forceRefresh?: boolean) => void;
-  onAddPrebuilt?: (data: any) => void | Promise<void>;
+  onAddPrebuilt?: (data: import('@/components/prebuilt-builder-add-dialog').PrebuiltBuilderAddFormSchema, operationId?: string) => void | Promise<import('@/lib/product-identity').CreatedProduct | void>;
   totalPrice: number;
   onAnalysisUpdate?: (analysis: any) => void;
 }
@@ -43,6 +44,7 @@ export function useBuildActions({
   const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const router = useRouter();
+  const { getOperation, resetOperation } = useProductSaveOperation();
 
   // Cleanup abort controller on unmount
   useEffect(() => {
@@ -178,7 +180,8 @@ export function useBuildActions({
           checkAbort();
           setAiPhase('saving');
 
-          await onAddPrebuilt(finalData);
+          await onAddPrebuilt(finalData, getOperation(finalData));
+          resetOperation();
           checkAbort();
           setAiPhase('done');
           setTokensUsed(Math.round(JSON.stringify(result).length / 4));

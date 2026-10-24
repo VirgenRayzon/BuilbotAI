@@ -18,6 +18,7 @@ interface ChatMessageListProps {
     elapsedTime: number;
     timerActive: boolean;
     isDark: boolean;
+    isExpanded?: boolean;
     telemetryState: Record<string, TelemetryInfo>;
     addedPartIds: Record<string, boolean>;
     hasBuildParts: boolean;
@@ -32,6 +33,7 @@ export function ChatMessageList({
     status,
     isLoading,
     isDark,
+    isExpanded = false,
     telemetryState,
     addedPartIds,
     hasBuildParts,
@@ -109,6 +111,7 @@ export function ChatMessageList({
                                                     toolName={toolName}
                                                     isComplete={isComplete}
                                                     isDark={isDark}
+                                                    output={isComplete ? part.part.output : undefined}
                                                 />
                                             </div>
                                         );
@@ -133,8 +136,10 @@ export function ChatMessageList({
                             {recommendationTurn?.recommendationGroups.map(group => (
                                 <ChatRecommendationsCarousel
                                     key={group.category}
+                                    category={group.category}
                                     partsList={group.parts}
                                     isDark={isDark}
+                                    isExpanded={isExpanded}
                                     addedPartIds={addedPartIds}
                                     hasBuildParts={hasBuildParts}
                                     build={build}

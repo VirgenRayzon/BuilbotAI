@@ -1,15 +1,15 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import {
     Package, Monitor,
     Archive, Trash2, BarChart3, ShoppingBag,
-    Shield, Sliders, Bot, FileText, Cpu, FileCode
+    Shield, Sliders, Bot, Cpu, FileCode
 } from 'lucide-react';
-import { Tabs, Badge, Title, Text, SegmentedControl, ThemeIcon, Modal, Group, Stack, Button } from '@mantine/core';
+import { Tabs, Badge, Text, ThemeIcon, Modal, Group, Stack, Button } from '@mantine/core';
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/theme-provider";
-import { useLoading } from "@/context/loading-context";
 
 // Custom Hooks
 import { useAdminCore } from './hooks/use-admin-core';
@@ -23,17 +23,19 @@ import { useSiteSettings } from '@/context/site-settings-context';
 
 // Sub-components
 import { StockTab } from './components/stock-tab';
-import { PrebuiltTab } from './components/prebuilt-tab';
-import { ReservationsTab } from './components/reservations-tab';
-import { SalesTab } from './components/sales-tab';
-import { ArchiveTab } from './components/archive-tab';
+import { AdminProductFocus } from '@/components/admin-product-focus';
+import { safeStaffProductReturn } from '@/lib/product-identity';
 import { AdminTabHeader } from './components/admin-tab-header';
 import { useSalesActions } from './hooks/use-sales-actions';
-import { SuperAdminSettings } from '@/components/super-admin-settings';
-import { AuditLogsSection } from '@/app/profile/components/audit-logs-section';
-import { AiModelSettings } from '@/components/ai-model-settings';
-import { AiSystemPromptsSettings } from '@/components/ai-system-prompts-settings';
-import { AboutManagement } from '@/components/about-management';
+const PanelLoading = () => <div role="status" className="min-h-40 flex items-center justify-center text-slate-600 dark:text-slate-400">Loading section...</div>;
+const PrebuiltTab = dynamic(() => import('./components/prebuilt-tab').then(module => module.PrebuiltTab), { loading: PanelLoading });
+const ReservationsTab = dynamic(() => import('./components/reservations-tab').then(module => module.ReservationsTab), { loading: PanelLoading });
+const SalesTab = dynamic(() => import('./components/sales-tab').then(module => module.SalesTab), { loading: PanelLoading });
+const ArchiveTab = dynamic(() => import('./components/archive-tab').then(module => module.ArchiveTab), { loading: PanelLoading });
+const SuperAdminSettings = dynamic(() => import('@/components/super-admin-settings').then(module => module.SuperAdminSettings), { loading: PanelLoading });
+const AuditLogsSection = dynamic(() => import('@/app/profile/components/audit-logs-section').then(module => module.AuditLogsSection), { loading: PanelLoading });
+const AiModelSettings = dynamic(() => import('@/components/ai-model-settings').then(module => module.AiModelSettings), { loading: PanelLoading });
+const AiSystemPromptsSettings = dynamic(() => import('@/components/ai-system-prompts-settings').then(module => module.AiSystemPromptsSettings), { loading: PanelLoading });
 
 /**
  * Admin Dashboard - Orchestrator Component
@@ -41,7 +43,8 @@ import { AboutManagement } from '@/components/about-management';
 export default function AdminPage() {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
-    const { profile, handleTabAccess, currentTab } = useAdminCore();
+    const { profile, handleTabAccess, currentTab, searchParams } = useAdminCore();
+    const itemReturn = safeStaffProductReturn(`/admin?tab=${searchParams.get('tab') || 'stock'}&product=${searchParams.get('product') || ''}`);
 
     // Horizontal tabs scroll reference
     const tabsScrollRef = useRef<HTMLDivElement>(null);
@@ -50,7 +53,7 @@ export default function AdminPage() {
     const [aiSubTab, setAiSubTab] = useState<'intelligence' | 'prompts'>('intelligence');
 
     // Relocated data hooks
-    const { auditLogs, auditLogsLoading } = useAuditLogs();
+    const { auditLogs, auditLogsLoading } = useAuditLogs(currentTab === 'audit');
     const { featureModelRouting, aiModelProvider } = useSiteSettings();
     const routingValues = featureModelRouting ? Object.values(featureModelRouting) : [aiModelProvider];
     const allVertex = routingValues.every((v) => v === 'finetuned');
@@ -79,7 +82,7 @@ export default function AdminPage() {
         componentCategories: initialCategories
     } = useInventory(profile);
 
-    const { orders, ordersLoading, handleDeleteOrder, handleUpdateOrder, stats } = useOrders(profile);
+    const { orders, ordersLoading, handleReservationAction, handleUpdateOrder, stats } = useOrders(profile);
 
     const salesActions = useSalesActions({
         orders: orders || [],
@@ -104,14 +107,8 @@ export default function AdminPage() {
         { name: "Workstation", selected: true }
     ]);
 
-    const handlePartCategoryChange = (name: string, selected: boolean) => {
-        setPartCategories(prev => prev.map(c =>
-            c.name === name ? { ...c, selected } : c
-        ));
-    };
-
     return (
-        <RouteGuard requiredPermission="canAccessAdmin" fallbackPath="/system-access">
+        <RouteGuard requiredPermission="canAccessAdmin" fallbackPath={itemReturn === '/admin' ? '/system-access' : `/system-access?returnTo=${encodeURIComponent(itemReturn)}`}>
             <div className={cn(
                 "min-h-screen transition-colors duration-500 overflow-x-hidden",
                 isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
@@ -122,7 +119,7 @@ export default function AdminPage() {
                     isDark ? "invert" : ""
                 )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-                <div className="w-full px-3 sm:px-6 md:px-8 lg:px-10 py-4 sm:py-6 md:py-8 relative z-10">
+                <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 py-4 sm:py-6 md:py-8 relative z-10">
                     <AdminTabHeader
                         currentTab={currentTab}
                         isSuperAdmin={profile?.isSuperAdmin}
@@ -142,6 +139,7 @@ export default function AdminPage() {
                         onConfirmResetSales={salesActions.handleResetSales}
                     />
 
+                    <AdminProductFocus parts={parts || []} systems={prebuiltSystems || []} loading={partsLoading || prebuiltsLoading} updatePart={handleUpdatePart} updateSystem={handleUpdatePrebuilt} />
                     <Tabs
                         value={currentTab}
                         onChange={(val) => val && handleTabAccess(val)}
@@ -149,6 +147,7 @@ export default function AdminPage() {
                         radius="md"
                         color="cyan"
                         className="w-full"
+                        keepMounted={false}
                     >
                         {/* Horizontal Tab Strip Container with Fluid Touch Scrolling */}
                         <div className="w-full mb-6 border-b border-slate-200 dark:border-white/10 pb-3">
@@ -228,16 +227,6 @@ export default function AdminPage() {
                                             AI
                                         </Tabs.Tab>
                                     )}
-
-                                    {profile?.isSuperAdmin && (
-                                        <Tabs.Tab
-                                            value="content"
-                                            leftSection={<FileText className="h-4 w-4" />}
-                                            className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
-                                        >
-                                            Site Content
-                                        </Tabs.Tab>
-                                    )}
                                 </Tabs.List>
                             </div>
                         </div>
@@ -248,7 +237,6 @@ export default function AdminPage() {
                                 partsLoading={partsLoading}
                                 profile={profile}
                                 partCategories={partCategories}
-                                onCategoryChange={handlePartCategoryChange}
                                 onSetCategories={setPartCategories}
                                 onAddPart={handleAddPart}
                                 onUpdatePart={handleUpdatePart}
@@ -290,9 +278,10 @@ export default function AdminPage() {
 
                         <Tabs.Panel value="reservations" className="mt-6">
                             <ReservationsTab
-                                orders={orders || []}
+                                orders={(orders || []).filter(order => !order.isArchived)}
                                 ordersLoading={ordersLoading}
-                                onDeleteOrder={handleDeleteOrder}
+                                isSuperAdmin={profile?.isSuperAdmin === true}
+                                onReservationAction={handleReservationAction}
                                 onUpdateOrder={handleUpdateOrder}
                             />
                         </Tabs.Panel>
@@ -313,6 +302,10 @@ export default function AdminPage() {
                                 partsLoading={partsLoading}
                                 prebuiltSystems={prebuiltSystems || []}
                                 prebuiltsLoading={prebuiltsLoading}
+                                orders={(orders || []).filter(order => Boolean(order.isArchived))}
+                                ordersLoading={ordersLoading}
+                                onReservationAction={handleReservationAction}
+                                onUpdateOrder={handleUpdateOrder}
                                 profile={profile}
                                 onDeletePart={handleDeletePart}
                                 onArchivePart={handleArchivePart}
@@ -387,14 +380,6 @@ export default function AdminPage() {
                                     ) : (
                                         <AiSystemPromptsSettings />
                                     )}
-                                </div>
-                            </Tabs.Panel>
-                        )}
-
-                        {profile?.isSuperAdmin && (
-                            <Tabs.Panel value="content" className="mt-6">
-                                <div className="space-y-6">
-                                    <AboutManagement />
                                 </div>
                             </Tabs.Panel>
                         )}

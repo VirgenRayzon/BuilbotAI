@@ -11,9 +11,10 @@ import { ChatMessageList } from "./chat/chat-message-list";
 import { ChatPresetChips } from "./chat/chat-preset-chips";
 import { ChatInputBar } from "./chat/chat-input-bar";
 
-export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
+export function BuilderFloatingChat({ build, onAddPart, initiallyOpen = false }: BuilderFloatingChatProps & { initiallyOpen?: boolean }) {
     const { theme } = useTheme();
     const isDark = theme === "dark";
+    const [isExpanded, setIsExpanded] = React.useState(false);
 
     const {
         isOpen,
@@ -37,7 +38,18 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
         handleClearChat,
         handleAddPart,
         stop,
-    } = useFloatingChat(build);
+    } = useFloatingChat(build, initiallyOpen);
+
+    React.useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                toggleOpen();
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen, toggleOpen]);
 
     return (
         <div className={cn(
@@ -52,15 +64,33 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.92, y: 20 }}
                         transition={{ duration: 0.22, ease: "easeOut" }}
-                        className="w-[calc(100vw-2rem)] sm:w-[420px] md:w-[440px]"
+                        className={cn(
+                            "w-[calc(100vw-2rem)] transition-[width] duration-300 ease-out",
+                            isExpanded
+                                ? "sm:w-[50vw] sm:min-w-[480px] sm:max-w-[840px]"
+                                : "sm:w-[420px] md:w-[440px]"
+                        )}
                     >
-                        <Paper withBorder radius="lg" shadow="xl" className="h-[65vh] sm:h-[540px] max-h-[calc(100dvh-7.5rem)] min-h-[360px] overflow-hidden" style={{ display: 'flex', flexDirection: 'column', backgroundColor: isDark ? '#111722' : '#ffffff' }}>
+                        <Paper
+                            withBorder
+                            radius="lg"
+                            shadow="xl"
+                            className={cn(
+                                "overflow-hidden transition-[height] duration-300 ease-out flex flex-col",
+                                isExpanded
+                                    ? "h-[80vh] max-h-[calc(100dvh-6rem)] min-h-[500px]"
+                                    : "h-[65vh] sm:h-[540px] max-h-[calc(100dvh-7.5rem)] min-h-[360px]"
+                            )}
+                            style={{ display: 'flex', flexDirection: 'column', backgroundColor: isDark ? '#111722' : '#FDFBF7' }}
+                        >
 
                             {/* Header */}
                             <ChatHeader
                                 isDark={isDark}
                                 isAiKillSwitch={isAiKillSwitch}
                                 buildPartCount={buildPartCount}
+                                isExpanded={isExpanded}
+                                onToggleExpand={() => setIsExpanded(prev => !prev)}
                                 onClear={handleClearChat}
                                 onClose={toggleOpen}
                             />
@@ -74,11 +104,12 @@ export function BuilderFloatingChat({ build }: BuilderFloatingChatProps) {
                                     elapsedTime={elapsedTime}
                                     timerActive={timerActive}
                                     isDark={isDark}
+                                    isExpanded={isExpanded}
                                     telemetryState={telemetryState}
                                     addedPartIds={addedPartIds}
                                     hasBuildParts={hasBuildParts}
                                     build={build || null}
-                                    onAddPart={handleAddPart}
+                                    onAddPart={onAddPart ?? handleAddPart}
                                     onRetryMessage={handleRetryMessage}
                                     retryDisabled={isLoading || isAiKillSwitch}
                                 />

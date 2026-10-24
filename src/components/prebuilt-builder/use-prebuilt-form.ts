@@ -9,6 +9,8 @@ import { useFirestore, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { getAiPrebuiltSuggestions } from "@/app/actions";
 import type { Part, PrebuiltSystem } from "@/lib/types";
+import type { CreatedProduct } from '@/lib/product-identity';
+import { useProductSaveOperation } from '@/hooks/use-product-save-operation';
 
 export const prebuiltFormSchema = z.object({
     name: z.string().min(1, "System name is required."),
@@ -31,12 +33,14 @@ export type PrebuiltBuilderAddFormSchema = z.infer<typeof prebuiltFormSchema>;
 interface UsePrebuiltFormParams {
     parts: Part[];
     initialData?: PrebuiltSystem;
-    onSave: (data: PrebuiltBuilderAddFormSchema) => void;
+    onSave: (data: PrebuiltBuilderAddFormSchema, operationId?: string) => Promise<CreatedProduct | void>;
     onClose: () => void;
 }
 
 export function usePrebuiltForm({ parts, initialData, onSave, onClose }: UsePrebuiltFormParams) {
     const [isAiPending, setIsAiPending] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const { getOperation, resetOperation } = useProductSaveOperation();
     const [tokensUsed, setTokensUsed] = useState<number | null>(null);
     const aiAbortRef = useRef(false);
     const [aiDuration, setAiDuration] = useState<number | null>(null);
@@ -193,20 +197,25 @@ export function usePrebuiltForm({ parts, initialData, onSave, onClose }: UsePreb
         })();
     };
 
-    const onSubmit = (values: PrebuiltBuilderAddFormSchema) => {
-        onSave(values);
-        toast({ title: initialData ? "Prebuilt Updated!" : "Prebuilt System Added!", description: `${values.name} has been processed.` });
-        if (!initialData) form.reset();
-        onClose();
-
-        setTimeout(() => {
-            window.location.reload();
-        }, 1000);
+    const onSubmit = async (values: PrebuiltBuilderAddFormSchema) => {
+        if (isSaving) return;
+        setIsSaving(true);
+        try {
+            const saved = await onSave(values, getOperation(values));
+            toast({ title: initialData ? 'Prebuilt Updated!' : 'Prebuilt System Added!', description: saved ? `${saved.productId} · ${saved.sku}` : `${values.name} saved.` });
+            if (!initialData) form.reset();
+            resetOperation();
+            onClose();
+            if (saved) window.location.assign(saved.adminUrl);
+        } catch (error) {
+            toast({ title: 'Save failed', variant: 'destructive', description: error instanceof Error ? error.message : 'Please retry.' });
+        } finally { setIsSaving(false); }
     };
 
     return {
         form,
         isAiPending,
+        isSaving,
         aiDuration,
         tokensUsed,
         handleAiAssist,

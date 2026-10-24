@@ -8,15 +8,19 @@ import { useUserProfile } from "@/context/user-profile";
 import { useToast } from "@/hooks/use-toast";
 import { reservePrebuiltSystem } from "@/app/prebuilt-reservation-actions";
 import { getAiPrebuiltPerformance } from "@/app/actions";
-import { getMissingParts, checkSystemStock } from "@/lib/prebuilt-utils";
+import { getMissingParts, getPrebuiltPartStatuses, type ResolvedPrebuiltPart } from "@/lib/prebuilt-utils";
 import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
 import type { PrebuiltSystem, Part, FavoriteBuild, FavoriteBuildPart } from "@/lib/types";
+import { useProductSaveOperation } from '@/hooks/use-product-save-operation';
 
 export function usePrebuiltDetails(systemId: string) {
+    const { getOperation } = useProductSaveOperation();
     const [system, setSystem] = useState<PrebuiltSystem | null>(null);
     const [loadingSystem, setLoadingSystem] = useState(true);
 
     const [components, setComponents] = useState<Record<string, Part | null>>({});
+    const [resolvedParts, setResolvedParts] = useState<ResolvedPrebuiltPart[]>([]);
+    const [resolvedSystemId, setResolvedSystemId] = useState<string | null>(null);
     const [loadingParts, setLoadingParts] = useState(false);
 
     const [localAnalysis, setLocalAnalysis] = useState<any>(null);
@@ -39,10 +43,68 @@ export function usePrebuiltDetails(systemId: string) {
     const analysis = system?.aiReport || localAnalysis;
     const missingParts = system ? getMissingParts(system) : [];
     const isComplete = system ? missingParts.length === 0 : false;
-    const isInStock = checkSystemStock(components);
+    const componentStatuses = system ? getPrebuiltPartStatuses(system, resolvedParts) : [];
+    const unavailableParts = componentStatuses.filter(part => part.issue !== null);
+    const isInStock = resolvedSystemId === system?.id && unavailableParts.length === 0;
 
-    const backLink = isStaff ? "/admin?tab=prebuilts" : "/pre-builts";
-    const backText = isStaff ? "Back to Prebuilts Management" : "Back to Pre-built Rigs";
+    const [backNavigation, setBackNavigation] = useState<{ link: string; text: string }>(() => {
+        const fromParam = searchParams.get("from");
+        if (fromParam === "admin") {
+            return { link: "/admin?tab=prebuilts", text: "Back to Prebuilts Management" };
+        }
+        if (fromParam === "home" || fromParam === "landing") {
+            return { link: "/", text: "Back to Landing Page" };
+        }
+        if (fromParam === "parts") {
+            return { link: "/parts", text: "Back to Parts" };
+        }
+        return { link: "/pre-builts", text: "Back to Pre-builts" };
+    });
+
+    useEffect(() => {
+        const fromParam = searchParams.get("from");
+        if (fromParam === "admin") {
+            setBackNavigation({ link: "/admin?tab=prebuilts", text: "Back to Prebuilts Management" });
+            return;
+        }
+        if (fromParam === "home" || fromParam === "landing") {
+            setBackNavigation({ link: "/", text: "Back to Landing Page" });
+            return;
+        }
+        if (fromParam === "parts") {
+            setBackNavigation({ link: "/parts", text: "Back to Parts" });
+            return;
+        }
+
+        if (typeof document !== "undefined" && document.referrer) {
+            try {
+                const referrerUrl = new URL(document.referrer);
+                if (referrerUrl.origin === window.location.origin) {
+                    if (referrerUrl.pathname === "/admin" || referrerUrl.pathname.startsWith("/admin/")) {
+                        setBackNavigation({ link: "/admin?tab=prebuilts", text: "Back to Prebuilts Management" });
+                        return;
+                    }
+                    if (referrerUrl.pathname === "/parts" || referrerUrl.pathname.startsWith("/parts/")) {
+                        setBackNavigation({ link: "/parts", text: "Back to Parts" });
+                        return;
+                    }
+                    if (referrerUrl.pathname === "/" || referrerUrl.pathname === "") {
+                        setBackNavigation({ link: "/", text: "Back to Landing Page" });
+                        return;
+                    }
+                    if (referrerUrl.pathname === "/pre-builts" || referrerUrl.pathname.startsWith("/pre-builts")) {
+                        setBackNavigation({ link: "/pre-builts", text: "Back to Pre-builts" });
+                        return;
+                    }
+                }
+            } catch {}
+        }
+
+        setBackNavigation({ link: "/pre-builts", text: "Back to Pre-builts" });
+    }, [searchParams]);
+
+    const backLink = backNavigation.link;
+    const backText = backNavigation.text;
 
     // 1. Fetch System
     useEffect(() => {
@@ -61,7 +123,7 @@ export function usePrebuiltDetails(systemId: string) {
                             description: "This system is no longer available.",
                             variant: "destructive",
                         });
-                        router.push("/pre-builts");
+                        router.push("/");
                         return;
                     }
                     setSystem({ ...data, id: snap.id });
@@ -84,7 +146,7 @@ export function usePrebuiltDetails(systemId: string) {
 
     // 2. Fetch Components
     useEffect(() => {
-        if (!system || !firestore || Object.keys(components).length > 0) return;
+        if (!system || !firestore || resolvedSystemId === system.id) return;
 
         const fetchComponents = async () => {
             setLoadingParts(true);
@@ -102,22 +164,25 @@ export function usePrebuiltDetails(systemId: string) {
                     cooler: "Cooler",
                 };
 
-                const promises = Object.entries(system.components || {}).map(async ([category, id]) => {
-                    const collectionName = collectionMap[category] || category;
-                    const partId = Array.isArray(id) ? id[0] : id;
+                const selections = Object.entries(system.components || {}).flatMap(([category, value]) => {
+                    const ids = Array.isArray(value) ? value : [value];
+                    return ids.filter((id): id is string => Boolean(id)).map((partId, index) => ({
+                        key: `${category}-${index}`,
+                        category,
+                        partId,
+                    }));
+                });
 
-                    if (!partId) {
-                        partsRecord[category] = null;
-                        return;
-                    }
+                const resolved = await Promise.all(selections.map(async ({ key, category, partId }): Promise<ResolvedPrebuiltPart> => {
+                    const collectionName = collectionMap[category] || category;
+                    const entry = (part: Part | null): ResolvedPrebuiltPart => ({ key, category, partId, part });
 
                     try {
                         // 1. Try canonical path: inventory/{category}/items/{partId}
                         const canonicalRef = doc(firestore, inventoryItemPath(collectionName, partId as string));
                         const canonicalSnap = await getDoc(canonicalRef);
                         if (canonicalSnap.exists()) {
-                            partsRecord[category] = { id: canonicalSnap.id, ...canonicalSnap.data() } as Part;
-                            return;
+                            return entry({ id: canonicalSnap.id, ...canonicalSnap.data() } as Part);
                         }
 
                         // 2. Try canonical query by name in inventory/{category}/items
@@ -128,16 +193,14 @@ export function usePrebuiltDetails(systemId: string) {
                         const canonicalQuerySnap = await getDocs(canonicalQuery);
                         if (!canonicalQuerySnap.empty) {
                             const docSnap = canonicalQuerySnap.docs[0];
-                            partsRecord[category] = { id: docSnap.id, ...docSnap.data() } as Part;
-                            return;
+                            return entry({ id: docSnap.id, ...docSnap.data() } as Part);
                         }
 
                         // 3. Fallback to legacy root collection: {collectionName}/{partId}
                         const partRef = doc(firestore, collectionName, partId as string);
                         const snap = await getDoc(partRef);
                         if (snap.exists()) {
-                            partsRecord[category] = { id: snap.id, ...snap.data() } as Part;
-                            return;
+                            return entry({ id: snap.id, ...snap.data() } as Part);
                         }
 
                         // 4. Fallback query by name in legacy collection
@@ -145,19 +208,22 @@ export function usePrebuiltDetails(systemId: string) {
                         const querySnap = await getDocs(q);
                         if (!querySnap.empty) {
                             const docSnap = querySnap.docs[0];
-                            partsRecord[category] = { id: docSnap.id, ...docSnap.data() } as Part;
-                            return;
+                            return entry({ id: docSnap.id, ...docSnap.data() } as Part);
                         }
 
-                        partsRecord[category] = null;
+                        return entry(null);
                     } catch (err) {
                         console.warn(`Could not resolve part for category ${category}:`, err);
-                        partsRecord[category] = null;
+                        return entry(null);
                     }
-                });
+                }));
 
-                await Promise.all(promises);
+                for (const { category, part } of resolved) {
+                    if (!(category in partsRecord)) partsRecord[category] = part;
+                }
                 setComponents(partsRecord);
+                setResolvedParts(resolved);
+                setResolvedSystemId(system.id);
             } catch (error) {
                 console.error("Error fetching parts:", error);
                 toast({
@@ -171,7 +237,7 @@ export function usePrebuiltDetails(systemId: string) {
         };
 
         fetchComponents();
-    }, [firestore, system, components, toast]);
+    }, [firestore, system, resolvedSystemId, toast]);
 
     // 3. Reserve Prebuilt Action
     const handleReserve = async () => {
@@ -198,7 +264,9 @@ export function usePrebuiltDetails(systemId: string) {
                 profile.email,
                 profile.name || profile.email.split("@")[0],
                 sanitizedSystem,
-                componentsMap
+                componentsMap,
+                await authUser.getIdToken(),
+                getOperation({ systemId })
             );
 
             if (result.success) {
@@ -242,16 +310,13 @@ export function usePrebuiltDetails(systemId: string) {
             cooler: "Cooler",
         };
 
-        Object.entries(components).forEach(([key, part]) => {
-            if (part) {
-                const category = categoryMap[key.toLowerCase()] || part.category || key.toUpperCase();
-                parts.push({
-                    category,
-                    partId: part.id,
-                    name: part.name,
-                    price: part.price,
-                });
-            }
+        resolvedParts.forEach(({ category: key, partId, part }) => {
+            parts.push({
+                category: categoryMap[key.toLowerCase()] || key,
+                partId: part?.id || partId,
+                name: part?.name || partId,
+                price: part?.price || 0,
+            });
         });
 
         const prebuiltBuildPayload: FavoriteBuild = {
@@ -261,16 +326,20 @@ export function usePrebuiltDetails(systemId: string) {
             totalPrice: system.price,
             source: "builder",
             createdAt: new Date().toISOString(),
+            loadContext: {
+                type: "prebuilt",
+                systemName: system.name,
+                unavailableParts: Array.from(new Set(unavailableParts.map(part => part.name))),
+            },
         };
 
-        localStorage.setItem("pc_builder_load_favorite", JSON.stringify(prebuiltBuildPayload));
-
-        toast({
-            title: "Loaded into PC Builder",
-            description: `Transferred ${system.name} components into your custom build session.`,
-        });
-
-        router.push("/builder");
+        if (isManagerOrAdmin) {
+            localStorage.setItem("admin_pc_builder_load_prebuilt", JSON.stringify(prebuiltBuildPayload));
+            router.push("/admin/prebuilt-builder");
+        } else {
+            localStorage.setItem("pc_builder_load_favorite", JSON.stringify(prebuiltBuildPayload));
+            router.push("/builder");
+        }
     };
 
     // 5. Run AI Analysis
@@ -314,6 +383,8 @@ export function usePrebuiltDetails(systemId: string) {
         system,
         loadingSystem,
         components,
+        componentStatuses,
+        unavailableParts,
         loadingParts,
         analysis,
         loadingAnalysis,

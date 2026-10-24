@@ -1,0 +1,19 @@
+flowchart TD
+  UStart([Customer sign-in or sign-up]) --> UHome{Choose feature}
+  UHome -- Public pages --> UPublic[Home, About, Team, FAQ, Contact; theme and navigation]
+  UHome -- Builder --> UBuilder[Browse and filter parts; inspect details; select compatible build]
+  UBuilder --> UBuildChoice{Build action}
+  UBuildChoice -- Save --> UFavorite[Name and save favorite]
+  UBuildChoice -- Reserve --> UReserve[Confirm reservation; stock-backed order]
+  UBuildChoice -- PDF --> UPdf[Download authenticated build PDF]
+  UBuildChoice -- Analyze --> UCritique[AI critique of selected build]
+  UBuilder --> UChat[Floating AI chatbot]
+  UHome -- Build Advisor --> UAdvisor[Enter use and budget; generate AI recommendations or critique build]
+  UHome -- Prebuilt systems --> UPrebuilt[Search, filter, inspect details and images]
+  UPrebuilt --> UPrebuiltChoice{Customize or reserve?}
+  UPrebuiltChoice -- Customize --> UBuilder
+  UPrebuiltChoice -- Reserve --> UReserve
+  UHome -- Profile --> UProfile[Edit profile/settings; favorites, reservations and activity]
+  UHome -- Notifications --> UNotice[Filter, mark or delete; inspect linked order]
+  UProfile --> UCancel[Cancellation choice: keep order or contact staff]
+  UHome -- Sign out --> UExit([Confirm and sign out])

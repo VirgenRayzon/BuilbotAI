@@ -12,6 +12,8 @@ import { PartDetailsDialog } from "./part-details-dialog";
 
 interface PartCardProps {
     part: Part;
+    priority?: boolean;
+    imageSizes?: string;
     onToggleBuild: (part: Part) => void;
     isSelected: boolean;
     compatibility?: { compatible: boolean; message: string };
@@ -20,6 +22,8 @@ interface PartCardProps {
 
 export function PartCard({
     part,
+    priority = false,
+    imageSizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
     onToggleBuild,
     isSelected,
     compatibility,
@@ -51,8 +55,8 @@ export function PartCard({
                 radius="lg"
                 padding={0}
                 className={cn(
-                    "flex flex-col justify-between h-full relative group cursor-pointer overflow-hidden transition-all duration-300",
-                    "bg-white/85 dark:bg-[#111722] hover:shadow-md hover:-translate-y-1",
+                    "flex flex-col justify-between h-full relative group cursor-pointer overflow-hidden transition-all duration-300 shadow-lg",
+                    "bg-white/85 dark:bg-[#111722] hover:shadow-lg hover:-translate-y-1",
                     "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
                     isOutOfStock && "opacity-60 grayscale",
                     isIncompatible && "border-red-500/40 dark:border-red-500/40"
@@ -114,15 +118,15 @@ export function PartCard({
                 <Box
                     className={cn(
                         "aspect-[4/3] relative w-full overflow-hidden",
-                        "bg-white border-y border-slate-200/70 dark:border-white/10"
+                        "bg-pure-white border-y border-slate-200/70 dark:border-white/10"
                     )}
                 >
                     <OptimizedImage
                         src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || "/placeholder-part.png"}
                         alt={part.name}
                         fill
-                        unoptimized
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        priority={priority}
+                        sizes={imageSizes}
                         className="object-contain p-2 transition-transform duration-500 group-hover:scale-105"
                     />
                 </Box>

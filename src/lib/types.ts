@@ -11,6 +11,7 @@ export type WorkloadType = 'Esports' | 'AAA' | 'Balanced';
 
 export type ComponentData = {
   id: string;
+  isExternal?: boolean;
   model: string;
   description: string;
   price: number;
@@ -45,14 +46,24 @@ export type Build = {
   estimatedWattage?: string;
 };
 
+export type AdvisorWebResearchInfo = {
+  searchedAt: string;
+  sources: { title: string; url: string }[];
+  searchSuggestionHtml?: string;
+};
+
 export type AiRecommendation = AiBuildAdvisorRecommendationsOutput;
 
 export type Part = {
+  productId?: string;
+  sku?: string;
+  qrToken?: string;
   id: string;
   name: string;
   category: 'CPU' | 'GPU' | 'Motherboard' | 'RAM' | 'Storage' | 'PSU' | 'Case' | 'Cooler' | 'Monitor' | 'Keyboard' | 'Mouse' | 'Headset';
   brand: string;
   price: number;
+  popularity?: number;
   usdSrp?: number;
   stock: number;
   imageUrl: string;
@@ -75,6 +86,9 @@ export type Part = {
 };
 
 export type PrebuiltSystem = {
+  productId?: string;
+  sku?: string;
+  qrToken?: string;
   id: string;
   name: string;
   tier: 'Entry' | 'Mid-Range' | 'High-End' | 'Workstation';
@@ -129,6 +143,13 @@ export type Order = {
   items: OrderItem[];
   totalPrice: number;
   status: 'pending' | 'building' | 'finished building' | 'cancelled';
+  isArchived?: boolean;
+  archivedAt?: unknown;
+  archivedBy?: string;
+  type?: 'prebuilt' | 'custom';
+  prebuiltId?: string;
+  prebuiltName?: string;
+  prebuiltTier?: PrebuiltSystem['tier'];
   createdAt: any; // Firestore Timestamp
 };
 
@@ -145,12 +166,14 @@ export type Notification = {
   title: string;
   message: string;
   orderId: string;
+  targetId?: string;
+  type?: 'support_reply' | 'support_status';
   read: boolean;
   createdAt: any; // Firestore Timestamp
 };
 export type SystemNotification = {
   id: string;
-  type: 'reservation_received' | 'item_archived' | 'status_changed' | 'user_cancelled' | 'stock_added';
+  type: 'reservation_received' | 'item_archived' | 'status_changed' | 'user_cancelled' | 'stock_added' | 'contact_inquiry' | 'contact_reply_received';
   actorId: string;
   actorName: string;
   title: string;
@@ -199,4 +222,9 @@ export type FavoriteBuild = {
   totalPrice: number;
   source: 'builder' | 'advisor';
   createdAt: any; // Firestore Timestamp
+  loadContext?: {
+    type: 'prebuilt';
+    systemName: string;
+    unavailableParts: string[];
+  };
 };

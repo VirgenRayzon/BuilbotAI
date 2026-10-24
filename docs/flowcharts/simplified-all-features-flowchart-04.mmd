@@ -1,0 +1,19 @@
+flowchart TD
+  AStart([Reachable AI action]) --> AEntry{Entry point}
+  AEntry -- User or staff builder --> AChat[Chatbot: messages and build context; streamed answer and optional tools]
+  AEntry -- User Build Advisor --> ARecommend[Recommendations: goal/budget; validated eight-part build]
+  AEntry -- User Build Advisor --> ACritique[Critique: selected build; analysis and suggestions]
+  AEntry -- Manager part editor --> AExtract[Part autofill: vector grounding or web research; editable fields]
+  AEntry -- Manager prebuilt editor/builder --> AAssist[Prebuilt assist: generated identity, description and tier]
+  AEntry -- Staff prebuilt detail --> APerformance[Performance report: research, strengths and saved report]
+  AEntry -- Super Admin AI tab --> ASettings[Model routing, connection test and system prompts]
+  AChat --> AResult{Result available?}
+  ARecommend --> AResult
+  ACritique --> AResult
+  AExtract --> AResult
+  AAssist --> AResult
+  APerformance --> AResult
+  ASettings --> AResult
+  AResult -- Yes --> AShow[/Render, apply or save feature result/]
+  AResult -- No --> AFail[/Feature-specific error, retry or fallback/]
+  ADormant([Smart Budget source exists]) --> AUnreachable[/No page import found; not a reachable user feature/]

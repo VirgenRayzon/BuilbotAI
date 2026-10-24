@@ -1,0 +1,17 @@
+flowchart TD
+  Start([Profile, notification, or content action]) --> Kind{Overlay}
+  Kind -- Favorite delete --> Favorite{Cancel or delete?}
+  Favorite -- Delete --> Delete[Delete favorite document] --> Return([Close or return])
+  Favorite -- Cancel --> Return
+  Kind -- Cancellation request --> Cancel{Keep reservation or contact staff?}
+  Cancel -- Keep --> Return
+  Cancel -- Contact --> Contact([Close and navigate to contact])
+  Kind -- Notification list --> Notice[Filter, mark read, delete where offered]
+  Notice --> Open{Open entry?}
+  Open -- Customer order --> Order[Fetch order detail; close or open reservations] --> Return
+  Open -- Staff event --> Staff[Detail modal; close or open audit] --> Return
+  Kind -- About or product image --> Gallery[Preview; previous, next or close] --> Return
+  Kind -- Audit filter or explanation --> Info[Popover content or filter selection] --> Return
+  Kind -- Super Admin safeguard --> Browser{Native confirm accepted?}
+  Browser -- No --> Return
+  Browser -- Yes --> Write[Update site setting and show toast] --> Return

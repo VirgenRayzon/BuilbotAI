@@ -1,25 +1,25 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Archive, Filter, PackageCheck, Trash2, Layers, Boxes } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { PackageCheck, Trash2, Layers, Boxes, CalendarClock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Separator } from '@/components/ui/separator';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-} from '@/components/ui/dropdown-menu';
 import { InventoryTable } from '@/components/inventory-table';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
-import { Paper, Tabs, Badge } from '@mantine/core';
-import type { Part, PrebuiltSystem } from '@/lib/types';
+import { InventoryToolbar } from '@/components/inventory-toolbar';
+import { Paper, Tabs } from '@mantine/core';
+import type { Order, Part, PrebuiltSystem } from '@/lib/types';
+import { ReservationsTab } from './reservations-tab';
 
 interface ArchiveTabProps {
   parts: Part[];
   partsLoading?: boolean;
   prebuiltSystems: PrebuiltSystem[];
   prebuiltsLoading?: boolean;
+  orders: Order[];
+  ordersLoading: boolean;
+  onReservationAction: (id: string, action: 'archive' | 'restore' | 'delete') => Promise<boolean>;
+  onUpdateOrder: (id: string, status: Order['status']) => Promise<void>;
   profile: any;
   onDeletePart: (id: string, category: Part['category']) => Promise<void>;
   onArchivePart: (id: string, category: Part['category'], isArchived?: boolean) => Promise<void>;
@@ -46,6 +46,10 @@ export function ArchiveTab({
   partsLoading,
   prebuiltSystems,
   prebuiltsLoading,
+  orders,
+  ordersLoading,
+  onReservationAction,
+  onUpdateOrder,
   profile,
   onDeletePart,
   onArchivePart,
@@ -64,7 +68,14 @@ export function ArchiveTab({
   toggleAllPrebuiltsSelection,
   setConfirmAction,
 }: ArchiveTabProps) {
-  const [archiveSubTab, setArchiveSubTab] = useState<'parts' | 'prebuilts'>('parts');
+  const [archiveSubTab, setArchiveSubTab] = useState<'parts' | 'prebuilts' | 'reservations'>('parts');
+  const [partSearchQuery, setPartSearchQuery] = useState('');
+  const [partBrands, setPartBrands] = useState<string[]>([]);
+  const [partSortBy, setPartSortBy] = useState('Name');
+  const [partSortDirection, setPartSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [prebuiltSearchQuery, setPrebuiltSearchQuery] = useState('');
+  const [prebuiltSortBy, setPrebuiltSortBy] = useState('Name');
+  const [prebuiltSortDirection, setPrebuiltSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const [archivePartCategories, setArchivePartCategories] = useState<{ name: string; selected: boolean }[]>([
     { name: "CPU", selected: true },
@@ -96,11 +107,42 @@ export function ArchiveTab({
   };
 
   const selectedCategories = archivePartCategories.filter((c) => c.selected).map((c) => c.name);
-  const archivedParts = parts?.filter((p) => p.isArchived && selectedCategories.includes(p.category)) || [];
+  const allArchivedParts = useMemo(() => parts?.filter((part) => part.isArchived) || [], [parts]);
+  const availableArchiveBrands = useMemo(
+    () => Array.from(new Set(allArchivedParts.map((part) => part.brand).filter(Boolean))).sort(),
+    [allArchivedParts]
+  );
+  const archivedParts = useMemo(() => {
+    const query = partSearchQuery.trim().toLowerCase();
+    return allArchivedParts
+      .filter((part) => selectedCategories.includes(part.category))
+      .filter((part) => partBrands.length === 0 || partBrands.includes(part.brand))
+      .filter((part) => !query || part.name.toLowerCase().includes(query) || part.brand.toLowerCase().includes(query))
+      .sort((a, b) => {
+        let comparison = 0;
+        if (partSortBy === 'Price') comparison = a.price - b.price;
+        else if (partSortBy === 'Brand') comparison = a.brand.localeCompare(b.brand);
+        else if (partSortBy === 'Stock') comparison = a.stock - b.stock;
+        else comparison = a.name.localeCompare(b.name);
+        return partSortDirection === 'asc' ? comparison : -comparison;
+      });
+  }, [allArchivedParts, partBrands, partSearchQuery, partSortBy, partSortDirection, selectedCategories]);
   const totalArchivedPartsCount = parts?.filter((p) => p.isArchived).length || 0;
 
   const selectedTiers = archivePrebuiltTiers.filter((t) => t.selected).map((t) => t.name);
-  const archivedPrebuilts = prebuiltSystems?.filter((s) => s.isArchived && selectedTiers.includes(s.tier)) || [];
+  const archivedPrebuilts = useMemo(() => {
+    const query = prebuiltSearchQuery.trim().toLowerCase();
+    return (prebuiltSystems || [])
+      .filter((system) => system.isArchived && selectedTiers.includes(system.tier))
+      .filter((system) => !query || system.name.toLowerCase().includes(query) || system.description?.toLowerCase().includes(query))
+      .sort((a, b) => {
+        let comparison = 0;
+        if (prebuiltSortBy === 'Price') comparison = a.price - b.price;
+        else if (prebuiltSortBy === 'Tier') comparison = a.tier.localeCompare(b.tier);
+        else comparison = a.name.localeCompare(b.name);
+        return prebuiltSortDirection === 'asc' ? comparison : -comparison;
+      });
+  }, [prebuiltSearchQuery, prebuiltSortBy, prebuiltSortDirection, prebuiltSystems, selectedTiers]);
   const totalArchivedPrebuiltsCount = prebuiltSystems?.filter((s) => s.isArchived).length || 0;
 
   return (
@@ -109,7 +151,7 @@ export function ArchiveTab({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <Tabs
             value={archiveSubTab}
-            onChange={(val) => val && setArchiveSubTab(val as 'parts' | 'prebuilts')}
+            onChange={(val) => val && setArchiveSubTab(val as 'parts' | 'prebuilts' | 'reservations')}
             variant="pills"
             radius="md"
             color="cyan"
@@ -129,92 +171,67 @@ export function ArchiveTab({
               >
                 Prebuilts Archive ({totalArchivedPrebuiltsCount})
               </Tabs.Tab>
+              <Tabs.Tab
+                value="reservations"
+                leftSection={<CalendarClock className="h-4 w-4" />}
+                className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+              >
+                Reservations Archive ({orders.length})
+              </Tabs.Tab>
             </Tabs.List>
           </Tabs>
       </div>
 
+      {archiveSubTab === 'reservations' && (
+        <ReservationsTab
+          archived
+          orders={orders}
+          ordersLoading={ordersLoading}
+          isSuperAdmin={profile?.isSuperAdmin === true}
+          onReservationAction={onReservationAction}
+          onUpdateOrder={onUpdateOrder}
+        />
+      )}
+
       {/* --- Tab 1: Archived Parts --- */}
       {archiveSubTab === 'parts' && (
         <div className="space-y-4 animate-in fade-in duration-200">
-          {/* Enclosed Categories & Bulk Filter Bar */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-headline font-bold flex items-center gap-2">
-                <Archive className="h-5 w-5 text-primary" />
-                Archived Parts
-              </h2>
-              <Badge variant="light" color="cyan" size="sm" radius="sm">
-                {archivedParts.length}
-              </Badge>
-            </div>
+          <InventoryToolbar
+            categories={archivePartCategories}
+            onCategoryChange={(categoryName) => {
+              setArchivePartCategories((current) => current.map((category) => ({
+                ...category,
+                selected: categoryName === 'All' || category.name === categoryName,
+              })));
+            }}
+            itemCount={archivedParts.length}
+            searchQuery={partSearchQuery}
+            onSearchQueryChange={setPartSearchQuery}
+            availableBrands={availableArchiveBrands}
+            selectedBrands={partBrands}
+            onBrandChange={setPartBrands}
+            sortBy={partSortBy}
+            onSortByChange={setPartSortBy}
+            sortDirection={partSortDirection}
+            onSortDirectionChange={setPartSortDirection}
+            supportedSorts={['Name', 'Price', 'Brand', 'Stock']}
+          />
 
-            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
-              {selectedPartIds.length > 0 && (
-                <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 animate-in fade-in slide-in-from-right-2">
-                  <span className="text-xs font-bold text-primary">{selectedPartIds.length} Selected</span>
-                  <Separator orientation="vertical" className="h-4 bg-primary/20" />
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-xs hover:bg-primary/20 text-emerald-400"
-                    onClick={() => setConfirmAction({ isOpen: true, type: 'restore', target: 'parts' })}
-                  >
-                    <PackageCheck className="mr-1.5 h-3 w-3" /> Restore
-                  </Button>
-                  {profile?.isSuperAdmin && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs text-destructive hover:bg-destructive/20"
-                      onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'parts' })}
-                    >
-                      <Trash2 className="mr-1.5 h-3 w-3" /> Delete
-                    </Button>
-                  )}
-                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPartIds([])}>
-                    Cancel
-                  </Button>
-                </div>
+          {selectedPartIds.length > 0 && (
+            <div className="flex w-fit items-center gap-2 rounded-lg border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 animate-in fade-in slide-in-from-right-2">
+              <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">{selectedPartIds.length} Selected</span>
+              <Separator orientation="vertical" className="h-4 bg-cyan-500/20" />
+              <Button size="sm" variant="ghost" className="h-7 text-xs text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400" onClick={() => setConfirmAction({ isOpen: true, type: 'restore', target: 'parts' })}>
+                <PackageCheck className="mr-1.5 h-3 w-3" /> Restore
+              </Button>
+              {profile?.isSuperAdmin && (
+                <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:bg-destructive/10" onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'parts' })}>
+                  <Trash2 className="mr-1.5 h-3 w-3" /> Delete
+                </Button>
               )}
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="h-10 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30 text-xs">
-                    <Filter className="h-3.5 w-3.5" />
-                    Categories
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
-                  <DropdownMenuCheckboxItem
-                    checked={archivePartCategories.every((c) => c.selected)}
-                    onCheckedChange={() => {
-                      const anyUnselected = archivePartCategories.some((cat) => !cat.selected);
-                      setArchivePartCategories((prev) => prev.map((c) => ({ ...c, selected: anyUnselected })));
-                    }}
-                  >
-                    All Categories
-                  </DropdownMenuCheckboxItem>
-                  <Separator className="my-1 opacity-50" />
-                  {archivePartCategories.map((category) => (
-                    <DropdownMenuCheckboxItem
-                      key={category.name}
-                      checked={category.selected && !archivePartCategories.every((c) => c.selected)}
-                      onCheckedChange={() => {
-                        setArchivePartCategories((prev) =>
-                          prev.map((c) => ({
-                            ...c,
-                            selected: c.name === category.name,
-                          }))
-                        );
-                      }}
-                    >
-                      {category.name}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPartIds([])}>Cancel</Button>
             </div>
-          </div>
+          )}
 
           <Paper
             withBorder
@@ -242,85 +259,39 @@ export function ArchiveTab({
       {/* --- Tab 2: Archived Prebuilts --- */}
       {archiveSubTab === 'prebuilts' && (
         <div className="space-y-4 animate-in fade-in duration-200">
-          {/* Enclosed Tiers & Bulk Filter Bar */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-headline font-bold flex items-center gap-2">
-                <Archive className="h-5 w-5 text-primary" />
-                Archived Prebuilts
-              </h2>
-              <Badge variant="light" color="cyan" size="sm" radius="sm">
-                {archivedPrebuilts.length}
-              </Badge>
-            </div>
+          <InventoryToolbar
+            categories={archivePrebuiltTiers}
+            onCategoryChange={(tierName) => {
+              setArchivePrebuiltTiers((current) => current.map((tier) => ({
+                ...tier,
+                selected: tierName === 'All' || tier.name === tierName,
+              })));
+            }}
+            itemCount={archivedPrebuilts.length}
+            searchQuery={prebuiltSearchQuery}
+            onSearchQueryChange={setPrebuiltSearchQuery}
+            sortBy={prebuiltSortBy}
+            onSortByChange={setPrebuiltSortBy}
+            sortDirection={prebuiltSortDirection}
+            onSortDirectionChange={setPrebuiltSortDirection}
+            supportedSorts={['Name', 'Price', 'Tier']}
+          />
 
-            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
-              {selectedPrebuiltIds.length > 0 && (
-                <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 animate-in fade-in slide-in-from-right-2">
-                  <span className="text-xs font-bold text-primary">{selectedPrebuiltIds.length} Selected</span>
-                  <Separator orientation="vertical" className="h-4 bg-primary/20" />
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-xs hover:bg-primary/20 text-emerald-400"
-                    onClick={() => setConfirmAction({ isOpen: true, type: 'restore', target: 'prebuilts' })}
-                  >
-                    <PackageCheck className="mr-1.5 h-3 w-3" /> Restore
-                  </Button>
-                  {profile?.isSuperAdmin && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs text-destructive hover:bg-destructive/20"
-                      onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'prebuilts' })}
-                    >
-                      <Trash2 className="mr-1.5 h-3 w-3" /> Delete
-                    </Button>
-                  )}
-                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPrebuiltIds([])}>
-                    Cancel
-                  </Button>
-                </div>
+          {selectedPrebuiltIds.length > 0 && (
+            <div className="flex w-fit items-center gap-2 rounded-lg border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 animate-in fade-in slide-in-from-right-2">
+              <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">{selectedPrebuiltIds.length} Selected</span>
+              <Separator orientation="vertical" className="h-4 bg-cyan-500/20" />
+              <Button size="sm" variant="ghost" className="h-7 text-xs text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400" onClick={() => setConfirmAction({ isOpen: true, type: 'restore', target: 'prebuilts' })}>
+                <PackageCheck className="mr-1.5 h-3 w-3" /> Restore
+              </Button>
+              {profile?.isSuperAdmin && (
+                <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:bg-destructive/10" onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'prebuilts' })}>
+                  <Trash2 className="mr-1.5 h-3 w-3" /> Delete
+                </Button>
               )}
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="h-10 gap-2 border-white/10 bg-background/50 hover:bg-primary/5 hover:border-primary/30 text-xs">
-                    <Filter className="h-3.5 w-3.5" />
-                    Tiers
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10">
-                  <DropdownMenuCheckboxItem
-                    checked={archivePrebuiltTiers.every((t) => t.selected)}
-                    onCheckedChange={() => {
-                      const anyUnselected = archivePrebuiltTiers.some((t) => !t.selected);
-                      setArchivePrebuiltTiers((prev) => prev.map((t) => ({ ...t, selected: anyUnselected })));
-                    }}
-                  >
-                    All Tiers
-                  </DropdownMenuCheckboxItem>
-                  <Separator className="my-1 opacity-50" />
-                  {archivePrebuiltTiers.map((tier) => (
-                    <DropdownMenuCheckboxItem
-                      key={tier.name}
-                      checked={tier.selected && !archivePrebuiltTiers.every((t) => t.selected)}
-                      onCheckedChange={() => {
-                        setArchivePrebuiltTiers((prev) =>
-                          prev.map((t) => ({
-                            ...t,
-                            selected: t.name === tier.name,
-                          }))
-                        );
-                      }}
-                    >
-                      {tier.name}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedPrebuiltIds([])}>Cancel</Button>
             </div>
-          </div>
+          )}
 
           <Paper
             withBorder

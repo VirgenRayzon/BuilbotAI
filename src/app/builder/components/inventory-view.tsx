@@ -4,6 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Database, Plus, Trash2 } from "lucide-react";
 import {
+  Card,
   Paper,
   Table,
   Button,
@@ -13,12 +14,13 @@ import {
   Stack,
   Box,
 } from "@mantine/core";
-import Image from "next/image";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { formatCurrency, cn, getOptimizedStorageUrl } from "@/lib/utils";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
 import { PartCard } from "@/components/part-card";
 import { PaginationControls } from "@/components/pagination-controls";
 import type { Part } from "@/lib/types";
+import { useInventoryImageCount } from '@/hooks/use-inventory-image-count';
 
 interface InventoryViewProps {
   loading: boolean;
@@ -48,6 +50,7 @@ interface InventoryViewProps {
   onHideIncompatibleChange?: (val: boolean) => void;
   className?: string;
   gridCols?: number;
+  imageSizes?: string;
 }
 
 export function InventoryView({
@@ -78,7 +81,9 @@ export function InventoryView({
   onHideIncompatibleChange,
   className,
   gridCols,
+  imageSizes,
 }: InventoryViewProps) {
+  const priorityImageCount = useInventoryImageCount('builder', gridCols === 5);
   const gridColsClass =
     gridCols === 5
       ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
@@ -117,14 +122,57 @@ export function InventoryView({
         </div>
 
         {/* Content Body */}
-        {loading ? null : paginatedParts.length > 0 ? (
+        {loading ? (
+          <div className={cn("grid gap-3 md:gap-4", gridColsClass)}>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Card
+                key={`builder-skeleton-${i}`}
+                withBorder
+                radius="lg"
+                padding={0}
+                className="flex flex-col justify-between h-full relative overflow-hidden bg-white/85 dark:bg-[#111722] border-slate-200/80 dark:border-white/10 animate-pulse select-none"
+              >
+                {/* --- Top Metadata & Title --- */}
+                <Stack gap={6} className="px-3 pt-3 pb-2">
+                  <Group justify="space-between" align="center" wrap="nowrap">
+                    <div className="h-5 w-16 bg-slate-200 dark:bg-white/10 rounded-sm" />
+                    <div className="h-5 w-20 bg-slate-200/60 dark:bg-white/5 rounded-sm" />
+                  </Group>
+                  <div className="min-h-[2.5rem] flex flex-col justify-center gap-1.5">
+                    <div className="h-4 bg-slate-200 dark:bg-white/10 rounded w-4/5" />
+                    <div className="h-4 bg-slate-200 dark:bg-white/10 rounded w-1/2" />
+                  </div>
+                </Stack>
+
+                {/* --- Clean Image Showcase Surface --- */}
+                <Box className="aspect-[4/3] relative w-full overflow-hidden bg-pure-white dark:bg-[#111722] border-y border-slate-200/70 dark:border-white/10 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-lg bg-slate-200/60 dark:bg-white/5" />
+                </Box>
+
+                {/* --- Price & Inset Action Area --- */}
+                <Stack gap="xs" className="px-3 pt-3 pb-3">
+                  <Group justify="space-between" align="baseline">
+                    <Stack gap={4}>
+                      <div className="h-2.5 w-10 bg-slate-200/80 dark:bg-white/10 rounded" />
+                      <div className="h-5 w-24 bg-slate-200 dark:bg-white/10 rounded" />
+                    </Stack>
+                    <div className="h-3 w-16 bg-slate-200/60 dark:bg-white/5 rounded" />
+                  </Group>
+                  <div className="h-9 w-full rounded-md bg-slate-200 dark:bg-white/10" />
+                </Stack>
+              </Card>
+            ))}
+          </div>
+        ) : paginatedParts.length > 0 ? (
           view === "grid" ? (
             <>
               <div className={cn("grid gap-3 md:gap-4", gridColsClass)}>
-                {paginatedParts.map((part) => (
+                {paginatedParts.map((part, index) => (
                   <PartCard
                     key={part.id}
                     part={part}
+                    priority={index < priorityImageCount}
+                    imageSizes={imageSizes}
                     effectiveStock={part.effectiveStock}
                     onToggleBuild={onTogglePart}
                     isSelected={isSelected(part)}
@@ -183,7 +231,7 @@ export function InventoryView({
                           <Table.Td>
                             <Group gap="sm" wrap="nowrap">
                               <Box className="relative w-11 h-11 rounded-lg overflow-hidden shrink-0 border border-slate-200/70 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.03]">
-                                <Image
+                                <OptimizedImage
                                   src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"}
                                   alt={part.name}
                                   fill

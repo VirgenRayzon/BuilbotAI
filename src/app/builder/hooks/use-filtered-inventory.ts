@@ -85,11 +85,17 @@ export function useFilteredInventory(allParts: Part[], build: any, getCountInBui
             return true;
         })
         .sort((a, b) => {
-            let compare = 0;
+            // 1. Stock priority: in-stock items come first; out-of-stock items appear at the end of the catalog
+            const aInStock = (a.stock || 0) > 0;
+            const bInStock = (b.stock || 0) > 0;
+            if (aInStock !== bInStock) return aInStock ? -1 : 1;
+
+            // 2. Compatibility priority: compatible items come before incompatible items
             const compA = checkCompatibility(a, build).compatible;
             const compB = checkCompatibility(b, build).compatible;
             if (compA !== compB) return compA ? -1 : 1;
 
+            let compare = 0;
             if (sortBy === 'Name') compare = (a.name || '').localeCompare(b.name || '');
             else if (sortBy === 'Price') compare = (a.price || 0) - (b.price || 0);
             else if (sortBy === 'Date Added') {
