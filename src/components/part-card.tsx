@@ -9,6 +9,7 @@ import type { Part } from "@/lib/types";
 import { Plus, Check, AlertTriangle } from "lucide-react";
 import { useSiteSettings } from "@/context/site-settings-context";
 import { PartDetailsDialog } from "./part-details-dialog";
+import { CatalogQRButton } from "./catalog-qr-button";
 
 interface PartCardProps {
     part: Part;
@@ -41,27 +42,28 @@ export function PartCard({
     };
 
     return (
-        <PartDetailsDialog
-            part={part}
-            isAdded={isSelected}
-            onToggle={() => {
-                if (isOutOfStock) return;
-                onToggleBuild(part);
-            }}
-            isDisabled={isIncompatible}
+        <Card
+            withBorder
+            radius="lg"
+            padding={0}
+            className={cn(
+                "flex flex-col justify-between h-full relative group cursor-pointer overflow-hidden transition-all duration-300 shadow-lg",
+                "bg-white/85 dark:bg-[#111722] hover:shadow-lg hover:-translate-y-1",
+                "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
+                isOutOfStock && "opacity-60 grayscale",
+                isIncompatible && "border-red-500/40 dark:border-red-500/40"
+            )}
         >
-            <Card
-                withBorder
-                radius="lg"
-                padding={0}
-                className={cn(
-                    "flex flex-col justify-between h-full relative group cursor-pointer overflow-hidden transition-all duration-300 shadow-lg",
-                    "bg-white/85 dark:bg-[#111722] hover:shadow-lg hover:-translate-y-1",
-                    "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
-                    isOutOfStock && "opacity-60 grayscale",
-                    isIncompatible && "border-red-500/40 dark:border-red-500/40"
-                )}
+            <PartDetailsDialog
+                part={part}
+                isAdded={isSelected}
+                onToggle={() => {
+                    if (isOutOfStock) return;
+                    onToggleBuild(part);
+                }}
+                isDisabled={isIncompatible}
             >
+                <div className="flex h-full flex-col justify-between">
                 {/* --- Incompatibility Overlay --- */}
                 {compatibility && !compatibility.compatible && (
                     <div className="absolute inset-0 z-30 bg-background/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center rounded-[var(--mantine-radius-lg)] border border-red-500/30 animate-in fade-in duration-200">
@@ -133,7 +135,12 @@ export function PartCard({
 
                 {/* --- Price & Inset Action Area --- */}
                 <Stack gap="xs" className="px-3 pt-3 pb-3">
-                    <Group justify="space-between" align="baseline">
+                    <Group
+                        justify="space-between"
+                        align="flex-end"
+                        wrap="nowrap"
+                        className={part.qrToken && part.sku ? "pr-9" : undefined}
+                    >
                         <Stack gap={0}>
                             <Text size="xs" c="dimmed" tt="uppercase" fw={600} className="tracking-wider text-[10px]">
                                 Price
@@ -142,11 +149,13 @@ export function PartCard({
                                 {formatCurrency(part.price)}
                             </Text>
                         </Stack>
-                        {part.usdSrp && (
-                            <Text size="xs" c="dimmed" fw={500} className="text-[11px]">
-                                Est. {formatToPHP(part.usdSrp)}
-                            </Text>
-                        )}
+                        <Group gap={4} align="center" wrap="nowrap">
+                            {part.usdSrp && (
+                                <Text size="xs" c="dimmed" fw={500} className="text-[11px]">
+                                    Est. {formatToPHP(part.usdSrp)}
+                                </Text>
+                            )}
+                        </Group>
                     </Group>
 
                     {/* --- Inset Rounded Mantine Button --- */}
@@ -177,7 +186,19 @@ export function PartCard({
                         </Button>
                     )}
                 </Stack>
-            </Card>
-        </PartDetailsDialog>
+                </div>
+            </PartDetailsDialog>
+
+            {part.qrToken && part.sku && (
+                <div className="absolute bottom-[58px] right-3 z-40">
+                    <CatalogQRButton
+                        token={part.qrToken}
+                        sku={part.sku}
+                        productName={part.name}
+                        size={28}
+                    />
+                </div>
+            )}
+        </Card>
     );
 }

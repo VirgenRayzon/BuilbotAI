@@ -44,7 +44,8 @@ export default function AdminPage() {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
     const { profile, handleTabAccess, currentTab, searchParams } = useAdminCore();
-    const itemReturn = safeStaffProductReturn(`/admin?tab=${searchParams.get('tab') || 'stock'}&product=${searchParams.get('product') || ''}`);
+    const requestedAction = searchParams.get('action') === 'stock' ? '&action=stock' : '';
+    const itemReturn = safeStaffProductReturn(`/admin?tab=${searchParams.get('tab') || 'stock'}&product=${searchParams.get('product') || ''}${requestedAction}`);
 
     // Horizontal tabs scroll reference
     const tabsScrollRef = useRef<HTMLDivElement>(null);
@@ -139,7 +140,7 @@ export default function AdminPage() {
                         onConfirmResetSales={salesActions.handleResetSales}
                     />
 
-                    <AdminProductFocus parts={parts || []} systems={prebuiltSystems || []} loading={partsLoading || prebuiltsLoading} updatePart={handleUpdatePart} updateSystem={handleUpdatePrebuilt} />
+                    <AdminProductFocus parts={parts || []} systems={prebuiltSystems || []} loading={partsLoading || prebuiltsLoading} updatePart={handleUpdatePart} updateSystem={handleUpdatePrebuilt} addPartStock={handleAddPartStock} />
                     <Tabs
                         value={currentTab}
                         onChange={(val) => val && handleTabAccess(val)}

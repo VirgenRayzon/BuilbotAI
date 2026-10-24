@@ -12,17 +12,20 @@ import { AddPrebuiltDialog } from './add-prebuilt-dialog';
 import { ProductIdentification } from './product-identification';
 import { ProductQR } from './product-qr';
 import { productUrl } from '@/lib/product-identity';
+import { AddStockDialog } from './add-stock-dialog';
 
 const AddPartEditor = lazy(() => import('./add-part-editor').then(module => ({ default: module.AddPartEditor })));
 
-export function AdminProductFocus({ parts, systems, loading, updatePart, updateSystem }: {
+export function AdminProductFocus({ parts, systems, loading, updatePart, updateSystem, addPartStock }: {
   parts: Part[]; systems: PrebuiltSystem[]; loading: boolean;
   updatePart: (id: string, category: Part['category'], data: AddPartFormSchema) => Promise<void>;
   updateSystem: (id: string, data: AddPrebuiltFormSchema) => Promise<void>;
+  addPartStock: (id: string, category: Part['category'], amount: number) => Promise<void>;
 }) {
   const router = useRouter();
   const params = useSearchParams();
   const productId = params.get('product');
+  const stockAction = params.get('action') === 'stock';
 
   const [editingPart, setEditingPart] = useState<Part | null>(null);
   const [editingSystem, setEditingSystem] = useState<PrebuiltSystem | null>(null);
@@ -51,7 +54,7 @@ export function AdminProductFocus({ parts, systems, loading, updatePart, updateS
   return (
     <>
       <Modal
-        opened={Boolean(productId) && !editingPart && !editingSystem}
+        opened={Boolean(productId) && !stockAction && !editingPart && !editingSystem}
         onClose={handleClose}
         title={
           <div>
@@ -66,11 +69,11 @@ export function AdminProductFocus({ parts, systems, loading, updatePart, updateS
         classNames={{
           content: 'bg-white/95 dark:bg-[#141a23]/95 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100',
           header: 'bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200 dark:border-white/10 p-3',
-          body: '!p-4',
+          body: '!p-3',
         }}
       >
         {product && (
-          <Stack gap="md" align="center" className="w-full">
+          <Stack gap="sm" align="center" className="w-full">
             {product.isArchived && (
               <Badge color="yellow" variant="light">
                 Archived Product
@@ -152,11 +155,22 @@ export function AdminProductFocus({ parts, systems, loading, updatePart, updateS
 
             {/* Product identification spanning full width below the QR code */}
             <div className="w-full">
-              <ProductIdentification category={part?.category || 'PC'} product={product} showLink={false} />
+              <ProductIdentification category={part?.category || 'PC'} product={product} showLink={false} compact />
             </div>
           </Stack>
         )}
       </Modal>
+
+      {part && stockAction && (
+        <AddStockDialog
+          part={part}
+          onAddStock={addPartStock}
+          open
+          onOpenChange={(open) => {
+            if (!open) handleClose();
+          }}
+        />
+      )}
 
       {editingPart && (
         <Suspense fallback={null}>

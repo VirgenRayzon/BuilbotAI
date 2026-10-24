@@ -6,6 +6,7 @@ import {
   ActionIcon,
   Alert,
   Button,
+  FileButton,
   Group,
   Modal,
   Paper,
@@ -14,16 +15,17 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
-import { Camera, CheckCircle2, FlipHorizontal, Keyboard, Scan, Search } from 'lucide-react';
+import { Camera, CheckCircle2, FlipHorizontal, ImageUp, Keyboard, Scan, Search, Upload } from 'lucide-react';
 import { useUserProfile } from '@/context/user-profile';
 import { useQRScanner } from '@/hooks/use-qr-scanner';
-import { parseScannedContent, type DecodedQRResult } from '@/lib/qr-decoder';
+import { decodeQRImage, parseScannedContent, type DecodedQRResult } from '@/lib/qr-decoder';
+import { productStockAdminUrl } from '@/lib/product-identity';
 
 export function QRScannerDialog() {
   const router = useRouter();
   const { authUser } = useUserProfile();
   const [opened, setOpened] = useState(false);
-  const [activeTab, setActiveTab] = useState<'camera' | 'manual'>('camera');
+  const [activeTab, setActiveTab] = useState<'camera' | 'upload' | 'manual'>('camera');
   const [manualInput, setManualInput] = useState('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -54,7 +56,7 @@ export function QRScannerDialog() {
       if (result.productId) {
         setStatusMessage(`Found product ${result.productId}`);
         setOpened(false);
-        router.push(`/admin?tab=stock&product=${result.productId}`);
+        router.push(productStockAdminUrl(result.productId));
         return;
       }
 
@@ -127,6 +129,26 @@ export function QRScannerDialog() {
     void handleDetectedResult(parsed);
   };
 
+  const handleQRUpload = async (file: File | null) => {
+    if (!file) return;
+    setErrorMessage(null);
+    setStatusMessage(`Reading ${file.name}…`);
+    setResolving(true);
+    try {
+      if (!file.type.startsWith('image/')) throw new Error('Choose a PNG, JPEG, or WebP image containing a QR code.');
+      if (file.size > 10 * 1024 * 1024) throw new Error('QR image must be 10 MB or smaller.');
+      const content = await decodeQRImage(file);
+      const parsed = content ? parseScannedContent(content) : null;
+      if (!parsed) throw new Error('No supported BuildbotAI QR code was found in that image.');
+      setResolving(false);
+      await handleDetectedResult(parsed);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Could not read the uploaded QR image.');
+      setStatusMessage(null);
+      setResolving(false);
+    }
+  };
+
   const handleClose = () => {
     stopCamera();
     setOpened(false);
@@ -169,7 +191,7 @@ export function QRScannerDialog() {
           <SegmentedControl
             value={activeTab}
             onChange={(val) => {
-              setActiveTab(val as 'camera' | 'manual');
+              setActiveTab(val as 'camera' | 'upload' | 'manual');
               setErrorMessage(null);
             }}
             data={[
@@ -178,7 +200,16 @@ export function QRScannerDialog() {
                 label: (
                   <Group gap={6} justify="center">
                     <Camera size={14} />
-                    <span>Camera Scan</span>
+                    <span>Camera</span>
+                  </Group>
+                ),
+              },
+              {
+                value: 'upload',
+                label: (
+                  <Group gap={6} justify="center">
+                    <ImageUp size={14} />
+                    <span>Upload QR</span>
                   </Group>
                 ),
               },
@@ -187,7 +218,7 @@ export function QRScannerDialog() {
                 label: (
                   <Group gap={6} justify="center">
                     <Keyboard size={14} />
-                    <span>Manual Lookup</span>
+                    <span>Manual</span>
                   </Group>
                 ),
               },
@@ -263,6 +294,27 @@ export function QRScannerDialog() {
                 </Alert>
               )}
             </Stack>
+          )}
+
+          {activeTab === 'upload' && (
+            <Paper withBorder radius="md" p={12} className="border-dashed border-slate-300 bg-slate-50/70 dark:border-white/15 dark:bg-white/[0.03]">
+              <Stack gap="sm" align="center" ta="center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+                  <ImageUp size={22} />
+                </div>
+                <div>
+                  <Text size="sm" fw={700}>Upload a QR image</Text>
+                  <Text size="xs" c="dimmed">PNG, JPEG, or WebP up to 10 MB. The image stays on this device.</Text>
+                </div>
+                <FileButton onChange={(file) => void handleQRUpload(file)} accept="image/png,image/jpeg,image/webp">
+                  {(props) => (
+                    <Button {...props} color="cyan" radius="md" leftSection={<Upload size={16} />} loading={resolving} mih={44}>
+                      Choose QR image
+                    </Button>
+                  )}
+                </FileButton>
+              </Stack>
+            </Paper>
           )}
 
           {activeTab === 'manual' && (

@@ -62,6 +62,7 @@ test('approved SKU codes and PRD sequence formatting', () => {
   assert.equal(safeProductReturn('/admin'), '/builder');
   assert.equal(safeProductReturn('/parts/PRD-000123'), '/parts/PRD-000123');
   assert.equal(safeStaffProductReturn('/admin?tab=stock&product=PRD-000123'), '/admin?tab=stock&product=PRD-000123');
+  assert.equal(safeStaffProductReturn('/admin?tab=stock&product=PRD-000123&action=stock'), '/admin?tab=stock&product=PRD-000123&action=stock');
   assert.equal(safeStaffProductReturn('//evil.test/admin'), '/admin');
 });
 

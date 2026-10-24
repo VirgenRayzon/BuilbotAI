@@ -71,10 +71,27 @@ export function PrebuiltHeaderCard({
             {/* Prebuilt Name */}
             <Title
                 order={1}
-                className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50 mb-3"
+                className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50 mb-1"
             >
                 {system.name}
             </Title>
+
+            {(system.productId || system.sku) && (
+                <Group gap="sm" mb="md" className="text-slate-500 dark:text-slate-400">
+                    {system.productId && (
+                        <Text size="xs">
+                            <Text component="span" inherit fw={700}>Product ID</Text>{' '}
+                            <Text component="span" inherit ff="monospace">{system.productId}</Text>
+                        </Text>
+                    )}
+                    {system.sku && (
+                        <Text size="xs">
+                            <Text component="span" inherit fw={700}>SKU</Text>{' '}
+                            <Text component="span" inherit ff="monospace">{system.sku}</Text>
+                        </Text>
+                    )}
+                </Group>
+            )}
 
             {/* Description with proper spacing before the separator line */}
             {system.description && (

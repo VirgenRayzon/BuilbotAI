@@ -12,6 +12,7 @@ import { useUser, useFirestore } from "@/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { BuildRecommendationNotes } from "./build-recommendation-notes";
+import { AiDisclaimer } from "./ai-disclaimer";
 
 interface BuildSummaryProps {
     build: Build | null;
@@ -367,6 +368,7 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                         <Text size="sm" className="text-slate-600 dark:text-slate-400 leading-relaxed">
                                             Enter your budget and requirements on the left to start generating your PC build.
                                         </Text>
+                                        <AiDisclaimer centered className="pt-1" />
                                     </div>
                                 </div>
                             </Paper>
@@ -379,6 +381,8 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-5"
                         >
+                            <AiDisclaimer />
+
                             {/* Top Panel Grid: Price Total & Save Control */}
                             <div className="grid md:grid-cols-2 gap-3">
                                 <div className="h-fit self-start bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-white/10 p-3 rounded-xl backdrop-blur-xl flex items-center gap-3 shadow-sm">

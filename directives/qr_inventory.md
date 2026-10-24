@@ -44,6 +44,7 @@
 - Stop tracks when a camera request resolves after the dialog closes or the user switches tabs/cameras. Ignore scan frames from an earlier camera session.
 - Browser camera access requires HTTPS or localhost. Show actionable permission, missing-device and busy-device errors, with a retry action and manual lookup available.
 - Browser regression coverage should count camera starts while the dialog stays open and verify one new start after switching away and back.
+- QR image uploads decode locally in the browser and must use the same validated result handler and authenticated resolver as camera scans. Accept only supported image formats, enforce a bounded file size, and never persist or transmit the uploaded image.
 
 ## Production data and rollout
 

@@ -24,12 +24,14 @@ interface AddStockDialogProps {
     part: Part;
     onAddStock?: (partId: string, category: Part['category'], amount: number) => Promise<void> | void;
     children?: React.ReactNode;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }
 
-export function AddStockDialog({ part, onAddStock, children }: AddStockDialogProps) {
-    const [open, setOpen] = useState(false);
+export function AddStockDialog({ part, onAddStock, children, open: controlledOpen, onOpenChange }: AddStockDialogProps) {
+    const [internalOpen, setInternalOpen] = useState(false);
     const [mode, setMode] = useState<'add' | 'reduce'>('add');
-    const [quantity, setQuantity] = useState<number>(10);
+    const [quantity, setQuantity] = useState<number>(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const currentStock = part.stock ?? 0;
@@ -40,6 +42,12 @@ export function AddStockDialog({ part, onAddStock, children }: AddStockDialogPro
     const newStock = Math.max(0, currentStock + effectiveDelta);
     const isReducing = mode === 'reduce' && validQuantity > 0;
 
+    const open = controlledOpen ?? internalOpen;
+    const setOpen = (nextOpen: boolean) => {
+        if (controlledOpen === undefined) setInternalOpen(nextOpen);
+        onOpenChange?.(nextOpen);
+    };
+
     const handleConfirm = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -49,7 +57,7 @@ export function AddStockDialog({ part, onAddStock, children }: AddStockDialogPro
             setIsSubmitting(true);
             await onAddStock(part.id, part.category, effectiveDelta);
             setOpen(false);
-            setQuantity(10);
+            setQuantity(1);
             setMode('add');
         } catch (error) {
             console.error("Failed to update stock:", error);
@@ -62,7 +70,7 @@ export function AddStockDialog({ part, onAddStock, children }: AddStockDialogPro
         if (!isSubmitting) {
             setOpen(isOpen);
             if (isOpen) {
-                setQuantity(10);
+                setQuantity(1);
                 setMode('add');
             }
         }
@@ -76,7 +84,7 @@ export function AddStockDialog({ part, onAddStock, children }: AddStockDialogPro
                 <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
                     {children}
                 </DialogTrigger>
-            ) : (
+            ) : controlledOpen === undefined ? (
                 <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
                     <Button
                         variant="outline"
@@ -86,7 +94,7 @@ export function AddStockDialog({ part, onAddStock, children }: AddStockDialogPro
                         <span>Edit Stock</span>
                     </Button>
                 </DialogTrigger>
-            )}
+            ) : null}
 
             <DialogContent 
                 className="sm:max-w-[440px] bg-background/95 backdrop-blur-2xl border-white/10 shadow-2xl !p-3"

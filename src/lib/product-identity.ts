@@ -29,6 +29,10 @@ export function productUrl(kind: ProductKind, productId: string): string {
 export function productAdminUrl(kind: ProductKind, productId: string, archived = false): string {
   return `/admin?tab=${archived ? 'archive' : kind === 'part' ? 'stock' : 'prebuilts'}&product=${encodeURIComponent(productId)}`;
 }
+export function productStockAdminUrl(productId: string): string {
+  if (!PRODUCT_ID_PATTERN.test(productId)) throw new Error('Invalid product ID.');
+  return `${productAdminUrl('part', productId)}&action=stock`;
+}
 export function qrUrl(token: string, origin = DEFAULT_QR_ORIGIN): string {
   if (!QR_TOKEN_PATTERN.test(token)) throw new Error('Invalid QR token.');
   const parsed = new URL(origin);
@@ -43,5 +47,5 @@ export function safeProductReturn(value: string | null): string {
 }
 
 export function safeStaffProductReturn(value: string | null): string {
-  return value && (/^\/admin\?tab=(stock|prebuilts|archive)&product=PRD-\d{6,}$/.test(value) || /^\/q\/[a-f0-9]{32}$/.test(value)) ? value : '/admin';
+  return value && (/^\/admin\?tab=(?:stock&product=PRD-\d{6,}(?:&action=stock)?|prebuilts&product=PRD-\d{6,}|archive&product=PRD-\d{6,})$/.test(value) || /^\/q\/[a-f0-9]{32}$/.test(value)) ? value : '/admin';
 }

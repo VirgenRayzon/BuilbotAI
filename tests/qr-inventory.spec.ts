@@ -78,8 +78,12 @@ test('guest catalog, public accessories and prebuilt pages, QR and sign-in retur
 test('staff QR opens exact item and downloaded PNG contains approved hosted URL', async ({ page }) => {
   await signIn(page, true);
   await page.goto(`${baseURL}/q/${part.qrToken}`);
-  await expect(page).toHaveURL(new RegExp(`/admin\\?tab=stock&product=${part.productId}`));
-  await expect(page.getByRole('heading', { name: 'QR Browser Mouse' })).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`/admin\\?tab=stock&product=${part.productId}&action=stock`));
+  await expect(page.getByRole('dialog', { name: 'Edit Stock' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Edit Stock' }).getByText('QR Browser Mouse', { exact: true })).toBeVisible();
+  await page.screenshot({ path: '.tmp/qr-admin-focus.png', fullPage: true });
+  await page.getByRole('dialog', { name: 'Edit Stock' }).getByRole('button', { name: 'Cancel' }).click();
+  await page.goto(`${baseURL}/admin?tab=stock&product=${part.productId}`);
   const download = page.waitForEvent('download');
   await page.getByRole('link', { name: 'Download QR' }).click();
   const file = await download;
@@ -88,7 +92,6 @@ test('staff QR opens exact item and downloaded PNG contains approved hosted URL'
   expect(path).toBeTruthy();
   const image = PNG.sync.read(await readFile(path!));
   expect(jsQR(new Uint8ClampedArray(image.data), image.width, image.height)?.data).toBe(`https://buildbotai--studio-3150054754-c7d0b.us-central1.hosted.app/q/${part.qrToken}`);
-  await page.screenshot({ path: '.tmp/qr-admin-focus.png', fullPage: true });
   await page.goto(`${baseURL}/q/${prebuilt.qrToken}`);
   await expect(page).toHaveURL(new RegExp(`/admin\\?tab=prebuilts&product=${prebuilt.productId}`));
   await expect(page.getByRole('heading', { name: 'QR Browser PC' })).toBeVisible();
@@ -220,7 +223,7 @@ test('expired staff session returns to the same QR after System Access', async (
   await page.locator('form input[type=password]').first().fill('123456');
   await page.locator('form input[type=password]').nth(1).fill('00216764');
   await page.locator('form').getByRole('button', { name: 'Authenticate Session', exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`/admin\\?tab=stock&product=${part.productId}`), { timeout: 60000 });
+  await expect(page).toHaveURL(new RegExp(`/admin\\?tab=stock&product=${part.productId}&action=stock`), { timeout: 60000 });
 });
 
 test('switching products cannot download the old QR when rendering fails', async ({ page }) => {

@@ -100,7 +100,7 @@ async function readPublicPartsCatalog(): Promise<PublicCatalogPart[]> {
   const snapshots = await Promise.all(INVENTORY_CATEGORY_SLUGS.map(category =>
     db.collection(inventoryItemsPath(category)).select(
       'isArchived', 'productId', 'sku', 'name', 'category', 'brand', 'price',
-      'stock', 'createdAt', 'imageUrl', 'images', 'specifications'
+      'qrToken', 'stock', 'createdAt', 'imageUrl', 'images', 'specifications'
     ).get()
   ));
 
@@ -114,7 +114,7 @@ async function readPublicPartsCatalog(): Promise<PublicCatalogPart[]> {
         if (typeof value === 'string' || typeof value === 'number') specifications[key] = value;
       }
       return {
-        productId: data.productId!, sku: data.sku || '', name: data.name,
+        productId: data.productId!, sku: data.sku || '', qrToken: data.qrToken || '', name: data.name,
         category: data.category, brand: data.brand || '', price: data.price,
         inStock: data.stock > 0, createdAt: timestampMillis(data.createdAt),
         imageUrl: data.imageUrl || data.images?.[0] || '', specifications,

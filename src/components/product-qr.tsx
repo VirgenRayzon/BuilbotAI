@@ -25,6 +25,7 @@ export function ProductQR({
   if (!token || !sku) return <Text size="sm" c="dimmed">QR pending migration.</Text>;
 
   const isEnabled = status?.enabled ?? true;
+  const qrSize = showLifecycle ? 260 : 180;
 
   return (
     <Stack gap="xs" align="center" className="w-full">
@@ -38,16 +39,16 @@ export function ProductQR({
         <div className="relative p-2.5 rounded-xl bg-white shadow-md border border-slate-200 dark:border-white/10 flex items-center justify-center">
           <img
             src={image}
-            width={180}
-            height={180}
+            width={qrSize}
+            height={qrSize}
             alt={`QR for ${sku}`}
-            className={`rounded-lg ${!isEnabled ? 'opacity-40 grayscale' : ''}`}
+            className={`h-auto w-[min(260px,70vw)] rounded-lg ${!showLifecycle ? 'max-w-[180px]' : ''} ${!isEnabled ? 'opacity-40 grayscale' : ''}`}
           />
         </div>
       )}
 
       {!image && !error && (
-        <div className="w-[180px] h-[180px] rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center">
+        <div className={`${showLifecycle ? 'h-[260px] w-[min(260px,70vw)]' : 'h-[180px] w-[180px]'} rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center`}>
           <Text size="sm" c="dimmed" role="status">Preparing QR…</Text>
         </div>
       )}

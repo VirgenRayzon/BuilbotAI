@@ -13,9 +13,11 @@ import {
   Group,
   Text,
   Button,
+  Slider,
 } from "@mantine/core";
 import { Search, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AiDisclaimer } from "@/components/ai-disclaimer";
 import { parsePesoBudget } from '@/lib/parse-peso-budget';
 import { BUILD_ADVISOR_GOALS, getBuildAdvisorGoal, type BuildAdvisorIntendedUse } from '@/lib/build-advisor-goals';
 
@@ -33,6 +35,13 @@ const formSchema = z.object({
 });
 
 const BUILD_ADVISOR_FORM_STORAGE_KEY = 'buildbot_advisor_create_form_v1';
+const MIN_BUDGET = 10_000;
+const MAX_BUDGET = 200_000;
+const BUDGET_STEP = 1_000;
+
+function formatBudget(value: number) {
+  return value.toLocaleString('en-PH');
+}
 
 export type FormSchema = z.infer<typeof formSchema>;
 
@@ -157,24 +166,49 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
       <Controller
         name="budget"
         control={form.control}
-        render={({ field, fieldState }) => (
-          <TextInput
-            label="Budget"
-            placeholder="e.g., ~₱50,000, 75k PHP budget"
-            leftSection={<span className="text-xs font-bold text-slate-400">₱</span>}
-            value={field.value}
-            onChange={field.onChange}
-            error={fieldState.error?.message}
-            radius="md"
-            size="sm"
-            classNames={{
-              label:
-                "text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5",
-              input:
-                "bg-slate-50 dark:bg-slate-900/60 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium focus:border-cyan-500 transition-colors",
-            }}
-          />
-        )}
+        render={({ field, fieldState }) => {
+          const parsedBudget = parsePesoBudget(field.value);
+          const sliderValue = Math.min(MAX_BUDGET, Math.max(MIN_BUDGET, parsedBudget ?? MIN_BUDGET));
+
+          return (
+            <div>
+              <TextInput
+                label="Budget"
+                placeholder="e.g., ~₱50,000, 75k PHP budget"
+                leftSection={<span className="text-xs font-bold text-slate-400">₱</span>}
+                value={field.value}
+                onChange={field.onChange}
+                error={fieldState.error?.message}
+                radius="md"
+                size="sm"
+                classNames={{
+                  label:
+                    "text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5",
+                  input:
+                    "bg-slate-50 dark:bg-slate-900/60 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium focus:border-cyan-500 transition-colors",
+                }}
+              />
+              <div className="px-8 pt-3">
+                <Slider
+                  aria-label="Budget in Philippine pesos"
+                  min={MIN_BUDGET}
+                  max={MAX_BUDGET}
+                  step={BUDGET_STEP}
+                  value={sliderValue}
+                  onChange={(value) => field.onChange(formatBudget(value))}
+                  label={(value) => `₱${formatBudget(value)}`}
+                  color="cyan"
+                  size="sm"
+                  thumbSize={18}
+                />
+                <Group justify="space-between" mt={5} gap="xs">
+                  <Text size="10px" c="dimmed" fw={600}>₱10,000</Text>
+                  <Text size="10px" c="dimmed" fw={600}>₱200,000</Text>
+                </Group>
+              </div>
+            </div>
+          );
+        }}
       />
 
       <Controller
@@ -277,6 +311,8 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
           </Paper>
         )}
       />
+
+      <AiDisclaimer />
 
       <div>
         <Button

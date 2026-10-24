@@ -13,6 +13,7 @@ import ReactMarkdown from 'react-markdown';
 import { useFirestore, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
+import { AiDisclaimer } from "@/components/ai-disclaimer";
 import { useQuickBuildChecks } from '@/hooks/use-quick-build-checks';
 import { QuickReviewChecks } from '@/components/build/quick-review-checks';
 
@@ -278,6 +279,7 @@ export function AIBuildCritique({
                                 <Text size="sm" className="text-slate-600 dark:text-slate-400 leading-relaxed">
                                     Click the &quot;Analyze Build&quot; button to review your PC component selection.
                                 </Text>
+                                <AiDisclaimer centered className="pt-1" />
                             </div>
                             {!isControlled && (
                                 <SparkleButton
@@ -382,6 +384,8 @@ export function AIBuildCritique({
 
                 {analysis && !loading && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+                        <AiDisclaimer />
 
                         {/* Strengths and Opportunities */}
                         <div className="space-y-4">

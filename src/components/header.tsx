@@ -198,7 +198,10 @@ export function Header() {
               prefetch={false}
               className="flex items-center no-underline focus:outline-none"
             >
-              <Logo />
+              <span className="sm:hidden">
+                <Logo showText={false} size="md" className="[&>div]:rounded-xl [&>div]:border-slate-800 [&>div]:bg-slate-900 [&>div]:shadow-none dark:[&>div]:border-white/10 dark:[&>div]:bg-[#071322]" />
+              </span>
+              <span className="hidden sm:block"><Logo /></span>
             </Link>
           </div>
 

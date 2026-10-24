@@ -170,6 +170,7 @@ export function NotificationCenter() {
   };
 
   const handleNotificationClick = (notification: SystemNotification) => {
+    setPopoverOpened(false);
     setSelectedNotification(notification);
     if (!notification.readBy?.includes(profile?.id || "")) {
       handleMarkAsRead(notification.id);

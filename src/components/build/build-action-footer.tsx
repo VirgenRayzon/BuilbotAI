@@ -111,7 +111,7 @@ export function BuildActionFooter({
   return (
     <div className="p-3 space-y-2.5">
       {showMissingValidation && !complete && (
-        <Text role="alert" size="xs" className="px-1 text-red-600 dark:text-red-400 leading-relaxed">
+        <Text role="alert" size="xs" className="px-1 !text-red-600 dark:!text-red-400 leading-relaxed">
           Select the missing parts to continue: {missingCategories.join(", ")}.
         </Text>
       )}

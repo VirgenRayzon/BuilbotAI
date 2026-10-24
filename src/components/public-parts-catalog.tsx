@@ -13,6 +13,7 @@ import { cn, formatCurrency } from '@/lib/utils';
 import { usePublicPartsCompatibility } from '@/hooks/use-public-parts-compatibility';
 import { useSiteSettings } from '@/context/site-settings-context';
 import { useEcommerce } from '@/context/ecommerce-context';
+import { CatalogQRButton } from '@/components/catalog-qr-button';
 
 const ITEMS_PER_PAGE = 8;
 type CatalogView = 'grid' | 'list';
@@ -205,10 +206,13 @@ function ProductCard({
         </Box>
       </Link>
       <Stack gap="xs" className="px-3 pb-3 pt-3">
-        <Stack gap={0}>
-          <Text size="xs" c="dimmed" tt="uppercase" fw={600} className="text-[10px] tracking-wider">Price</Text>
-          <Text size="lg" fw={700} className="font-mono leading-none text-slate-900 dark:text-slate-100">{formatCurrency(product.price)}</Text>
-        </Stack>
+        <Group justify="space-between" align="end" wrap="nowrap">
+          <Stack gap={0}>
+            <Text size="xs" c="dimmed" tt="uppercase" fw={600} className="text-[10px] tracking-wider">Price</Text>
+            <Text size="lg" fw={700} className="font-mono leading-none text-slate-900 dark:text-slate-100">{formatCurrency(product.price)}</Text>
+          </Stack>
+          <CatalogQRButton token={product.qrToken} sku={product.sku} productName={product.name} />
+        </Group>
         <Group gap="xs" wrap="nowrap">
           <Button
             component={Link}
@@ -270,7 +274,10 @@ function ProductListItem({
           <Text size="xs" c="dimmed" ff="monospace">{product.sku}</Text>
         </div>
         <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end">
-          <Text fw={700} className="font-mono text-slate-900 dark:text-slate-100">{formatCurrency(product.price)}</Text>
+          <Group gap="xs" wrap="nowrap">
+            <Text fw={700} className="font-mono text-slate-900 dark:text-slate-100">{formatCurrency(product.price)}</Text>
+            <CatalogQRButton token={product.qrToken} sku={product.sku} productName={product.name} />
+          </Group>
           <Group gap="xs">
             <Button component={Link} href={`/parts/${product.productId}`} radius="md" size="sm" variant="light" color="cyan" rightSection={<ArrowRight size={15} />}>View product</Button>
             {isEcommerceMode && product.inStock && (

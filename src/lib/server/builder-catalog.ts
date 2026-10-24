@@ -23,7 +23,10 @@ function serializeDate(value: unknown): string | undefined {
 export async function getBuilderCatalog(): Promise<Part[]> {
   const now = Date.now();
   const hasGalleryShape = catalogCache?.every(part => Array.isArray(part.images));
-  if (catalogCache && hasGalleryShape && now - catalogCacheTime < CATALOG_CACHE_TTL) return catalogCache;
+  const hasIdentityShape = catalogCache?.every(part =>
+    Object.hasOwn(part, 'productId') && Object.hasOwn(part, 'sku') && Object.hasOwn(part, 'qrToken')
+  );
+  if (catalogCache && hasGalleryShape && hasIdentityShape && now - catalogCacheTime < CATALOG_CACHE_TTL) return catalogCache;
 
   const db = getAdminFirestore();
   const snapshots = await Promise.all(INVENTORY_CATEGORY_SLUGS.map(slug =>
@@ -34,6 +37,9 @@ export async function getBuilderCatalog(): Promise<Part[]> {
     const data = document.data();
     fetchedParts.push({
       id: document.id,
+      productId: typeof data.productId === 'string' ? data.productId : undefined,
+      sku: typeof data.sku === 'string' ? data.sku : undefined,
+      qrToken: typeof data.qrToken === 'string' ? data.qrToken : undefined,
       name: data.name || '',
       category: data.category as Part['category'],
       brand: data.brand || '',

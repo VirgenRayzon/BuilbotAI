@@ -95,3 +95,41 @@ export async function decodeFrame(
 
   return code?.data || null;
 }
+
+export async function decodeQRImage(file: File): Promise<string | null> {
+  let source: ImageBitmap | HTMLImageElement;
+  let release: (() => void) | undefined;
+
+  if (typeof createImageBitmap === 'function') {
+    source = await createImageBitmap(file);
+    release = () => source instanceof ImageBitmap && source.close();
+  } else {
+    const objectUrl = URL.createObjectURL(file);
+    source = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('The selected image could not be opened.'));
+      image.src = objectUrl;
+    });
+    release = () => URL.revokeObjectURL(objectUrl);
+  }
+
+  try {
+    const width = source.width;
+    const height = source.height;
+    if (!width || !height) return null;
+    const scale = Math.min(1, 1600 / Math.max(width, height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (!context) return null;
+    context.drawImage(source, 0, 0, canvas.width, canvas.height);
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    return jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: 'attemptBoth',
+    })?.data || null;
+  } finally {
+    release?.();
+  }
+}
