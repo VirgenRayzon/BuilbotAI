@@ -1,38 +1,24 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     Paper,
-    TextInput,
     Button,
     ActionIcon,
-    Menu,
-    Checkbox,
-    ScrollArea,
-    Badge,
-    SegmentedControl,
     Tooltip,
 } from "@mantine/core";
 import {
-    Search,
-    Filter,
     CheckSquare,
     PackageCheck,
     Archive,
     Trash2,
-    LayoutGrid,
-    Table as TableIcon,
     Plus,
-    ArrowUpDown,
-    ArrowUpAZ,
-    ArrowDownAZ,
-    Check,
 } from 'lucide-react';
 import { AddPrebuiltDialog } from '@/components/add-prebuilt-dialog';
 import { InventoryPrebuiltCard } from '@/components/inventory-prebuilt-card';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
+import { InventoryToolbar } from '@/components/inventory-toolbar';
 import { PaginationControls } from "@/components/pagination-controls";
-import { cn } from "@/lib/utils";
 import type { Part, PrebuiltSystem } from '@/lib/types';
 import { AddPrebuiltFormSchema } from '@/components/add-prebuilt-dialog';
 
@@ -56,6 +42,10 @@ interface PrebuiltTabProps {
     togglePrebuiltSelection: (id: string) => void;
     toggleAllPrebuiltsSelection: (systems: PrebuiltSystem[]) => void;
     setConfirmAction: (val: any) => void;
+
+    // Optional controlled search from AdminTopbar
+    searchQuery?: string;
+    onSearchQueryChange?: (val: string) => void;
 }
 
 export function PrebuiltTab({
@@ -75,7 +65,9 @@ export function PrebuiltTab({
     setSelectedPrebuiltIds,
     togglePrebuiltSelection,
     toggleAllPrebuiltsSelection,
-    setConfirmAction
+    setConfirmAction,
+    searchQuery: controlledSearchQuery,
+    onSearchQueryChange: controlledOnSearchQueryChange,
 }: PrebuiltTabProps) {
     const [prebuiltSortBy, setPrebuiltSortBy] = useState('Date Added');
     const [prebuiltSortDirection, setPrebuiltSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -84,7 +76,14 @@ export function PrebuiltTab({
     const [prebuiltItemsPerPage, setPrebuiltItemsPerPage] = useState(8);
     const [expandedPrebuiltIds, setExpandedPrebuiltIds] = useState<string[]>([]);
 
-    const [productSearch, setProductSearch] = useState('');
+    const [internalProductSearch, setInternalProductSearch] = useState('');
+    const productSearch = controlledSearchQuery !== undefined ? controlledSearchQuery : internalProductSearch;
+    const setProductSearch = controlledOnSearchQueryChange || setInternalProductSearch;
+
+    useEffect(() => {
+        setPrebuiltCurrentPage(1);
+    }, [productSearch]);
+
     const filteredAndSortedPrebuilts = useMemo(() => {
         const selectedCategories = prebuiltCategories.filter(c => c.selected).map(c => c.name);
         return (prebuiltSystems?.filter(system => selectedCategories.includes(system.tier) && !system.isArchived && `${system.name} ${system.sku || ''} ${system.productId || ''}`.toLowerCase().includes(productSearch.toLowerCase())) ?? [])
@@ -116,234 +115,137 @@ export function PrebuiltTab({
 
     return (
         <div className="space-y-6">
-            <Paper
-                withBorder
-                radius="lg"
-                p="xs"
-                className="bg-white/85 dark:bg-[#111722] border-slate-200/80 dark:border-white/10 shadow-xs"
-            >
-                <div className="flex items-center justify-between gap-2 sm:gap-3 flex-nowrap overflow-x-auto no-scrollbar py-0.5">
-                    {/* Left Controls: Search, tiers, sort and direction */}
-                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                        <TextInput
-                            placeholder="Search systems by name or SKU..."
-                            aria-label="Search prebuilts"
-                            value={productSearch}
-                            onChange={(event) => {
-                                setProductSearch(event.currentTarget.value);
-                                setPrebuiltCurrentPage(1);
-                            }}
-                            leftSection={<Search size={14} className="text-slate-400" />}
-                            size="xs"
+            <InventoryToolbar
+                variant="admin-header"
+                categories={prebuiltCategories}
+                onCategoryChange={(tierName, selected) => {
+                    if (tierName === 'All') {
+                        onSetCategories(prebuiltCategories.map(c => ({ ...c, selected: true })));
+                    } else {
+                        onSetCategories(prebuiltCategories.map(c => ({
+                            ...c,
+                            selected: c.name === tierName ? selected : c.selected
+                        })));
+                    }
+                    setPrebuiltCurrentPage(1);
+                }}
+                onClearCategories={() => {
+                    onSetCategories(prebuiltCategories.map(c => ({ ...c, selected: false })));
+                    setPrebuiltCurrentPage(1);
+                }}
+                itemCount={filteredAndSortedPrebuilts.length}
+                itemLabel="systems"
+                categoryLabel="Tiers"
+                searchQuery={productSearch}
+                onSearchQueryChange={(query) => {
+                    setProductSearch(query);
+                    setPrebuiltCurrentPage(1);
+                }}
+                searchPlaceholder="Search systems by name, SKU, or specs..."
+                sortBy={prebuiltSortBy}
+                onSortByChange={(val) => {
+                    setPrebuiltSortBy(val);
+                    setPrebuiltCurrentPage(1);
+                }}
+                sortDirection={prebuiltSortDirection}
+                onSortDirectionChange={(val) => {
+                    setPrebuiltSortDirection(val);
+                    setPrebuiltCurrentPage(1);
+                }}
+                supportedSorts={['Date Added', 'Name', 'Price', 'Tier']}
+                defaultSort="Date Added:desc"
+                view={activeView}
+                onViewChange={setActiveView}
+                showViewToggle={true}
+                supportedViews={['grid', 'table']}
+                leadingActions={
+                    <Tooltip label={isPrebuiltSelectionMode ? "Exit Selection Mode" : "Bulk Select Mode"} withArrow position="top">
+                        <ActionIcon
+                            variant={isPrebuiltSelectionMode ? "filled" : "default"}
+                            color={isPrebuiltSelectionMode ? "cyan" : "gray"}
+                            size={36}
                             radius="md"
-                            className="w-36 shrink-0 sm:w-48 lg:w-56"
-                        />
-
-                        <Menu shadow="md" width={220} radius="md" closeOnItemClick={false}>
-                            <Menu.Target>
-                                <Button
-                                    variant={!prebuiltCategories.every(c => c.selected) ? "light" : "default"}
-                                    color={!prebuiltCategories.every(c => c.selected) ? "cyan" : undefined}
-                                    size="xs"
-                                    radius="md"
-                                    leftSection={<Filter size={13} className={!prebuiltCategories.every(c => c.selected) ? "text-cyan-500" : "text-slate-400"} />}
-                                >
-                                    Tiers
-                                    {!prebuiltCategories.every(c => c.selected) && (
-                                        <Badge size="xs" variant="filled" color="cyan" circle ml={5}>
-                                            {prebuiltCategories.filter(c => c.selected).length}
-                                        </Badge>
-                                    )}
-                                </Button>
-                            </Menu.Target>
-                            <Menu.Dropdown>
-                                <Menu.Label>Filter by Tier</Menu.Label>
-                                <div className="px-2 py-1.5">
-                                    <Checkbox
-                                        label="All Tiers"
-                                        size="xs"
-                                        checked={prebuiltCategories.every(c => c.selected)}
-                                        onChange={() => {
-                                            onSetCategories(prebuiltCategories.map(c => ({ ...c, selected: true })));
-                                            setPrebuiltCurrentPage(1);
-                                        }}
-                                    />
-                                </div>
-                                <Menu.Divider />
-                                <ScrollArea.Autosize mah={240}>
-                                    <div className="space-y-1 px-2 py-1">
-                                        {prebuiltCategories.map((category) => (
-                                            <Checkbox
-                                                key={category.name}
-                                                label={category.name}
-                                                size="xs"
-                                                checked={category.selected && !prebuiltCategories.every(c => c.selected)}
-                                                onChange={() => {
-                                                    onSetCategories(prebuiltCategories.map(c => ({
-                                                        ...c,
-                                                        selected: c.name === category.name
-                                                    })));
-                                                    setPrebuiltCurrentPage(1);
-                                                }}
-                                            />
-                                        ))}
-                                    </div>
-                                </ScrollArea.Autosize>
-                            </Menu.Dropdown>
-                        </Menu>
-
-                        <Menu shadow="md" width={180} radius="md">
-                            <Menu.Target>
-                                <Button
-                                    variant="default"
-                                    size="xs"
-                                    radius="md"
-                                    leftSection={<ArrowUpDown size={13} className="text-slate-400" />}
-                                >
-                                    <span className="mr-1 hidden font-normal text-slate-400 sm:inline">Sort:</span>
-                                    {prebuiltSortBy}
-                                </Button>
-                            </Menu.Target>
-                            <Menu.Dropdown>
-                                <Menu.Label>Sort By</Menu.Label>
-                                {['Date Added', 'Name', 'Price', 'Tier'].map((option) => (
-                                    <Menu.Item
-                                        key={option}
-                                        onClick={() => {
-                                            setPrebuiltSortBy(option);
-                                            setPrebuiltCurrentPage(1);
-                                        }}
-                                        rightSection={prebuiltSortBy === option ? <Check size={14} className="text-cyan-500" /> : null}
-                                    >
-                                        {option}
-                                    </Menu.Item>
-                                ))}
-                            </Menu.Dropdown>
-                        </Menu>
-
-                        <Tooltip
-                            label={prebuiltSortDirection === 'asc' ? 'Ascending order' : 'Descending order'}
-                            withArrow
-                            position="top"
-                        >
-                            <ActionIcon
-                                variant="default"
-                                size="input-xs"
-                                radius="md"
-                                onClick={() => {
-                                    setPrebuiltSortDirection((current) => current === 'asc' ? 'desc' : 'asc');
-                                    setPrebuiltCurrentPage(1);
-                                }}
-                                aria-label={`Sort Direction: ${prebuiltSortDirection.toUpperCase()}`}
-                            >
-                                {prebuiltSortDirection === 'asc'
-                                    ? <ArrowUpAZ size={15} className="text-cyan-500" />
-                                    : <ArrowDownAZ size={15} className="text-cyan-500" />}
-                            </ActionIcon>
-                        </Tooltip>
-                    </div>
-
-                    {/* Right Controls: Bulk Selection, Grid/Table Toggle & Add System */}
-                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                        <Button
-                            variant={isPrebuiltSelectionMode ? "light" : "default"}
-                            color={isPrebuiltSelectionMode ? "cyan" : undefined}
-                            size="xs"
-                            radius="md"
-                            leftSection={<CheckSquare size={13} />}
                             onClick={() => {
                                 setIsPrebuiltSelectionMode(!isPrebuiltSelectionMode);
                                 if (isPrebuiltSelectionMode) setSelectedPrebuiltIds([]);
                             }}
+                            aria-label="Toggle Bulk Selection Mode"
+                            className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#141a23]"
                         >
-                            <span className="hidden sm:inline">{isPrebuiltSelectionMode ? "Finish Selection" : "Select"}</span>
-                            <span className="sm:hidden">{isPrebuiltSelectionMode ? "Done" : "Select"}</span>
+                            <CheckSquare size={16} />
+                        </ActionIcon>
+                    </Tooltip>
+                }
+                actions={
+                    <AddPrebuiltDialog
+                        parts={parts || []}
+                        onSave={onAddPrebuilt}
+                    >
+                        <Button
+                            size="sm"
+                            h={36}
+                            radius="md"
+                            color="cyan"
+                            variant="filled"
+                            leftSection={<Plus size={16} />}
+                            className="font-semibold shadow-xs"
+                        >
+                            Add System
                         </Button>
+                    </AddPrebuiltDialog>
+                }
+                onResetAll={() => {
+                    onSetCategories(prebuiltCategories.map(c => ({ ...c, selected: true })));
+                    setProductSearch('');
+                    setPrebuiltSortBy('Date Added');
+                    setPrebuiltSortDirection('desc');
+                    setPrebuiltCurrentPage(1);
+                }}
+            />
 
-                        {isPrebuiltSelectionMode && (
+            {/* Bulk Selection Actions Bar when selection mode is active */}
+            {isPrebuiltSelectionMode && (
+                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-2 animate-in fade-in">
+                    <Button
+                        variant="default"
+                        size="xs"
+                        radius="md"
+                        leftSection={<PackageCheck size={13} />}
+                        onClick={() => toggleAllPrebuiltsSelection(currentPrebuilts)}
+                    >
+                        {currentPrebuilts.length > 0 && currentPrebuilts.every(s => selectedPrebuiltIds.includes(s.id)) ? "Deselect All" : "Select All"}
+                    </Button>
+
+                    {selectedPrebuiltIds.length > 0 && (
+                        <div className="flex items-center gap-1.5 bg-cyan-500/20 px-2 py-1 rounded-md">
+                            <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">{selectedPrebuiltIds.length} Selected</span>
                             <Button
-                                variant="default"
                                 size="xs"
-                                radius="md"
-                                leftSection={<PackageCheck size={13} />}
-                                onClick={() => toggleAllPrebuiltsSelection(currentPrebuilts)}
+                                variant="subtle"
+                                color="gray"
+                                onClick={() => setConfirmAction({ isOpen: true, type: 'archive', target: 'prebuilts' })}
+                                leftSection={<Archive size={12} />}
                             >
-                                {currentPrebuilts.length > 0 && currentPrebuilts.every(s => selectedPrebuiltIds.includes(s.id)) ? "Deselect All" : "Select All"}
+                                Archive
                             </Button>
-                        )}
-
-                        {selectedPrebuiltIds.length > 0 && (
-                            <div className="flex items-center gap-1.5 bg-cyan-500/10 px-2 py-1 rounded-md border border-cyan-500/20">
-                                <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">{selectedPrebuiltIds.length} Selected</span>
+                            {profile?.isSuperAdmin && (
                                 <Button
                                     size="xs"
                                     variant="subtle"
-                                    color="gray"
-                                    onClick={() => setConfirmAction({ isOpen: true, type: 'archive', target: 'prebuilts' })}
-                                    leftSection={<Archive size={12} />}
+                                    color="red"
+                                    onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'prebuilts' })}
+                                    leftSection={<Trash2 size={12} />}
                                 >
-                                    Archive
+                                    Delete
                                 </Button>
-                                {profile?.isSuperAdmin && (
-                                    <Button
-                                        size="xs"
-                                        variant="subtle"
-                                        color="red"
-                                        onClick={() => setConfirmAction({ isOpen: true, type: 'delete', target: 'prebuilts' })}
-                                        leftSection={<Trash2 size={12} />}
-                                    >
-                                        Delete
-                                    </Button>
-                                )}
-                                <Button size="xs" variant="subtle" color="gray" onClick={() => setSelectedPrebuiltIds([])}>
-                                    Cancel
-                                </Button>
-                            </div>
-                        )}
-
-                        <SegmentedControl
-                            value={activeView}
-                            onChange={(val) => setActiveView(val as 'grid' | 'table')}
-                            size="xs"
-                            radius="md"
-                            data={[
-                                {
-                                    value: "grid",
-                                    label: (
-                                        <div className="flex items-center justify-center p-0.5" title="Grid View">
-                                            <LayoutGrid size={14} />
-                                        </div>
-                                    ),
-                                },
-                                {
-                                    value: "table",
-                                    label: (
-                                        <div className="flex items-center justify-center p-0.5" title="Table View">
-                                            <TableIcon size={14} />
-                                        </div>
-                                    ),
-                                },
-                            ]}
-                        />
-
-                        <AddPrebuiltDialog
-                            parts={parts || []}
-                            onSave={onAddPrebuilt}
-                        >
-                            <Button
-                                size="xs"
-                                radius="md"
-                                color="cyan"
-                                variant="filled"
-                                leftSection={<Plus size={14} />}
-                                className="font-semibold shadow-xs"
-                            >
-                                Add System
+                            )}
+                            <Button size="xs" variant="subtle" color="gray" onClick={() => setSelectedPrebuiltIds([])}>
+                                Cancel
                             </Button>
-                        </AddPrebuiltDialog>
-                    </div>
+                        </div>
+                    )}
                 </div>
-            </Paper>
+            )}
 
             {activeView === 'grid' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

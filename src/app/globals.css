@@ -33,6 +33,14 @@
     --chart-3: 280 65% 60%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 193 82% 31%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 193 82% 31%;
   }
 
   .dark {
@@ -56,6 +64,14 @@
     --border: 210 13% 25%;
     --input: 210 13% 25%;
     --ring: 205 53% 52%;
+    --sidebar-background: 218 27% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 189 85% 43%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 24% 16%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 217 22% 16%;
+    --sidebar-ring: 189 85% 43%;
   }
 }
 
@@ -180,82 +196,5 @@
 
   .animate-breathe {
     animation: breathe 2.4s ease-in-out infinite;
-  }
-
-  @keyframes shinesweep {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
-  }
-
-  .animate-shinesweep {
-    animation: shinesweep 1.5s ease-in-out infinite;
-  }
-}
-
-/* Remove up and down arrows from number inputs globally */
-@layer base {
-
-  input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-
-  input[type="number"] {
-    -moz-appearance: textfield;
-  }
-}
-
-/* Prevent Mantine ScrollArea in modals from forcing min-content width and pushing content out */
-.mantine-Modal-content .mantine-ScrollArea-content {
-  min-width: 0 !important;
-  max-width: 100% !important;
-}
-
-/* Maintain vibrant colors for Mantine badges & light-variant components in dark mode */
-:root[data-mantine-color-scheme='dark'],
-:root.dark,
-.dark {
-  --mantine-color-cyan-light-color: var(--mantine-color-cyan-4) !important;
-  --mantine-color-teal-light-color: var(--mantine-color-teal-4) !important;
-  --mantine-color-yellow-light-color: var(--mantine-color-yellow-4) !important;
-  --mantine-color-blue-light-color: var(--mantine-color-blue-4) !important;
-  --mantine-color-green-light-color: var(--mantine-color-green-4) !important;
-  --mantine-color-red-light-color: var(--mantine-color-red-4) !important;
-  --mantine-color-orange-light-color: var(--mantine-color-orange-4) !important;
-  --mantine-color-grape-light-color: var(--mantine-color-grape-4) !important;
-  --mantine-color-violet-light-color: var(--mantine-color-violet-4) !important;
-  --mantine-color-pink-light-color: var(--mantine-color-pink-4) !important;
-  --mantine-color-lime-light-color: var(--mantine-color-lime-4) !important;
-  --mantine-color-indigo-light-color: var(--mantine-color-indigo-4) !important;
-  --mantine-color-gray-light-color: var(--mantine-color-gray-3) !important;
-}
-
-[data-mantine-color-scheme='dark'] .mantine-Badge-root[data-variant='light'],
-.dark .mantine-Badge-root[data-variant='light'] {
-  background-color: color-mix(in srgb, currentColor 14%, transparent) !important;
-  border: 1px solid color-mix(in srgb, currentColor 28%, transparent) !important;
-}
-
-/* Next.js Dev Indicator Relocation */
-#__next-dev-indicator,
-[data-nextjs-toast],
-[data-nextjs-indicator] {
-  right: auto !important;
-  left: 24px !important;
-  bottom: 160px !important;
-  z-index: 9999 !important;
-}
-
-@media (min-width: 640px) {
-  #__next-dev-indicator,
-  [data-nextjs-toast],
-  [data-nextjs-indicator] {
-    left: 24px !important;
-    bottom: 184px !important;
   }
 }

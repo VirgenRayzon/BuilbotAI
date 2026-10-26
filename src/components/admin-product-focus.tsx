@@ -1,34 +1,23 @@
 'use client';
 
-import { useState, lazy, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ActionIcon, Badge, Modal, Stack, Text, Title, Tooltip } from '@mantine/core';
-import { BarChart3, Edit3, ExternalLink } from 'lucide-react';
+import { BarChart3, ExternalLink } from 'lucide-react';
 import type { Part, PrebuiltSystem } from '@/lib/types';
-import type { AddPartFormSchema } from '@/hooks/use-part-form';
-import type { AddPrebuiltFormSchema } from './add-prebuilt-dialog';
-import { AddPrebuiltDialog } from './add-prebuilt-dialog';
 import { ProductIdentification } from './product-identification';
 import { ProductQR } from './product-qr';
 import { productUrl } from '@/lib/product-identity';
 import { AddStockDialog } from './add-stock-dialog';
 
-const AddPartEditor = lazy(() => import('./add-part-editor').then(module => ({ default: module.AddPartEditor })));
-
-export function AdminProductFocus({ parts, systems, loading, updatePart, updateSystem, addPartStock }: {
+export function AdminProductFocus({ parts, systems, loading, addPartStock }: {
   parts: Part[]; systems: PrebuiltSystem[]; loading: boolean;
-  updatePart: (id: string, category: Part['category'], data: AddPartFormSchema) => Promise<void>;
-  updateSystem: (id: string, data: AddPrebuiltFormSchema) => Promise<void>;
   addPartStock: (id: string, category: Part['category'], amount: number) => Promise<void>;
 }) {
   const router = useRouter();
   const params = useSearchParams();
   const productId = params.get('product');
   const stockAction = params.get('action') === 'stock';
-
-  const [editingPart, setEditingPart] = useState<Part | null>(null);
-  const [editingSystem, setEditingSystem] = useState<PrebuiltSystem | null>(null);
 
   const part = parts.find(p => p.productId === productId);
   const system = systems.find(p => p.productId === productId);
@@ -39,22 +28,10 @@ export function AdminProductFocus({ parts, systems, loading, updatePart, updateS
     router.push(`/admin?tab=${tab}`);
   };
 
-  const handleEditPart = () => {
-    if (!part) return;
-    setEditingPart(part);
-    handleClose();
-  };
-
-  const handleEditSystem = () => {
-    if (!system) return;
-    setEditingSystem(system);
-    handleClose();
-  };
-
   return (
     <>
       <Modal
-        opened={Boolean(productId) && !stockAction && !editingPart && !editingSystem}
+        opened={Boolean(productId) && !stockAction}
         onClose={handleClose}
         title={
           <div>
@@ -65,7 +42,11 @@ export function AdminProductFocus({ parts, systems, loading, updatePart, updateS
         centered
         radius="lg"
         size="md"
-        overlayProps={{ backgroundOpacity: 0.65, blur: 5 }}
+        zIndex={200000}
+        trapFocus
+        lockScroll
+        closeOnClickOutside={false}
+        overlayProps={{ backgroundOpacity: 0.65, blur: 5, className: 'pointer-events-auto' }}
         classNames={{
           content: 'bg-white/95 dark:bg-[#141a23]/95 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100',
           header: 'bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200 dark:border-white/10 p-3',
@@ -87,36 +68,6 @@ export function AdminProductFocus({ parts, systems, loading, updatePart, updateS
               showLifecycle
               extraActions={
                 <>
-                  {part && (
-                    <Tooltip label="Edit part details" withArrow position="bottom">
-                      <ActionIcon
-                        size={42}
-                        radius="md"
-                        variant="default"
-                        className="border-cyan-500/40 bg-cyan-950/20 text-cyan-400 hover:bg-cyan-500/20 hover:border-cyan-400 transition-colors shadow-sm"
-                        aria-label="Edit part"
-                        onClick={handleEditPart}
-                      >
-                        <Edit3 size={18} />
-                      </ActionIcon>
-                    </Tooltip>
-                  )}
-
-                  {system && (
-                    <Tooltip label="Edit system details" withArrow position="bottom">
-                      <ActionIcon
-                        size={42}
-                        radius="md"
-                        variant="default"
-                        className="border-cyan-500/40 bg-cyan-950/20 text-cyan-400 hover:bg-cyan-500/20 hover:border-cyan-400 transition-colors shadow-sm"
-                        aria-label="Edit system"
-                        onClick={handleEditSystem}
-                      >
-                        <Edit3 size={18} />
-                      </ActionIcon>
-                    </Tooltip>
-                  )}
-
                   {!product.isArchived && productId && (
                     <Tooltip label="View public product page" withArrow position="bottom">
                       <ActionIcon
@@ -172,36 +123,6 @@ export function AdminProductFocus({ parts, systems, loading, updatePart, updateS
         />
       )}
 
-      {editingPart && (
-        <Suspense fallback={null}>
-          <AddPartEditor
-            open={Boolean(editingPart)}
-            onOpenChange={(isOpen) => {
-              if (!isOpen) setEditingPart(null);
-            }}
-            initialData={editingPart}
-            onSave={async (data) => {
-              await updatePart(editingPart.id, editingPart.category, data);
-              setEditingPart(null);
-            }}
-          />
-        </Suspense>
-      )}
-
-      {editingSystem && (
-        <AddPrebuiltDialog
-          open={Boolean(editingSystem)}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) setEditingSystem(null);
-          }}
-          initialData={editingSystem}
-          parts={parts}
-          onSave={async (data) => {
-            await updateSystem(editingSystem.id, data);
-            setEditingSystem(null);
-          }}
-        />
-      )}
     </>
   );
 }

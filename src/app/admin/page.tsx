@@ -1,13 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import {
-    Package, Monitor,
-    Archive, Trash2, BarChart3, ShoppingBag,
-    Shield, Sliders, Bot, Cpu, FileCode
+    Archive, Trash2
 } from 'lucide-react';
-import { Tabs, Badge, Text, ThemeIcon, Modal, Group, Stack, Button } from '@mantine/core';
+import { Text, ThemeIcon, Modal, Group, Stack, Button } from '@mantine/core';
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/theme-provider";
 
@@ -21,12 +19,17 @@ import { RouteGuard } from '@/components/auth/route-guard';
 import { useAuditLogs } from '@/app/profile/hooks/use-audit-logs';
 import { useSiteSettings } from '@/context/site-settings-context';
 
+// Sidebar & Layout Components
+import { AdminSidebar, SidebarInset, SidebarProvider } from './components/admin-sidebar';
+import { AdminTopbar } from './components/admin-topbar';
+
 // Sub-components
 import { StockTab } from './components/stock-tab';
 import { AdminProductFocus } from '@/components/admin-product-focus';
 import { safeStaffProductReturn } from '@/lib/product-identity';
-import { AdminTabHeader } from './components/admin-tab-header';
+import { AdminTabHeader, AdminTabHeaderProvider } from './components/admin-tab-header';
 import { useSalesActions } from './hooks/use-sales-actions';
+
 const PanelLoading = () => <div role="status" className="min-h-40 flex items-center justify-center text-slate-600 dark:text-slate-400">Loading section...</div>;
 const PrebuiltTab = dynamic(() => import('./components/prebuilt-tab').then(module => module.PrebuiltTab), { loading: PanelLoading });
 const ReservationsTab = dynamic(() => import('./components/reservations-tab').then(module => module.ReservationsTab), { loading: PanelLoading });
@@ -43,15 +46,27 @@ const AiSystemPromptsSettings = dynamic(() => import('@/components/ai-system-pro
 export default function AdminPage() {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
-    const { profile, handleTabAccess, currentTab, searchParams } = useAdminCore();
+    const { authUser, profile, handleTabAccess, currentTab, searchParams } = useAdminCore();
     const requestedAction = searchParams.get('action') === 'stock' ? '&action=stock' : '';
     const itemReturn = safeStaffProductReturn(`/admin?tab=${searchParams.get('tab') || 'stock'}&product=${searchParams.get('product') || ''}${requestedAction}`);
 
-    // Horizontal tabs scroll reference
-    const tabsScrollRef = useRef<HTMLDivElement>(null);
-
-    // AI sub-view state (SegmentedControl switcher)
+    // AI & Sales sub-view state synced with URL `?sub=` or legacy `?tab=prompts`
     const [aiSubTab, setAiSubTab] = useState<'intelligence' | 'prompts'>('intelligence');
+    const [salesSubTab, setSalesSubTab] = useState<'overview' | 'popularity'>('overview');
+
+    useEffect(() => {
+        const rawTab = searchParams.get('tab');
+        const subParam = searchParams.get('sub');
+        if (rawTab === 'prompts' || subParam === 'prompts') {
+            setAiSubTab('prompts');
+        } else if (subParam === 'intelligence') {
+            setAiSubTab('intelligence');
+        } else if (subParam === 'popularity') {
+            setSalesSubTab('popularity');
+        } else if (subParam === 'overview') {
+            setSalesSubTab('overview');
+        }
+    }, [searchParams]);
 
     // Relocated data hooks
     const { auditLogs, auditLogsLoading } = useAuditLogs(currentTab === 'audit');
@@ -61,20 +76,6 @@ export default function AdminPage() {
     const allGemini = routingValues.every((v) => v === 'default');
     const intelligenceBadge = allVertex ? 'Vertex' : allGemini ? 'Gemini' : 'Hybrid';
     const intelligenceBadgeColor = allVertex ? 'indigo' : allGemini ? 'cyan' : 'violet';
-
-    // Horizontal wheel scroll handler for tabs
-    useEffect(() => {
-        const el = tabsScrollRef.current;
-        if (!el) return;
-        const onWheel = (e: WheelEvent) => {
-            if (e.deltaY !== 0 && el.scrollWidth > el.clientWidth) {
-                e.preventDefault();
-                el.scrollLeft += e.deltaY;
-            }
-        };
-        el.addEventListener('wheel', onWheel, { passive: false });
-        return () => el.removeEventListener('wheel', onWheel);
-    }, []);
 
     const {
         parts, partsLoading, prebuiltSystems, prebuiltsLoading,
@@ -90,7 +91,6 @@ export default function AdminPage() {
         parts: parts || [],
         prebuiltSystems: prebuiltSystems || []
     });
-
 
     const {
         selectedPartIds, setSelectedPartIds, selectedPrebuiltIds, setSelectedPrebuiltIds,
@@ -108,347 +108,320 @@ export default function AdminPage() {
         { name: "Workstation", selected: true }
     ]);
 
+    const activePartsCount = useMemo(
+        () => (parts || []).filter((part) => !part.isArchived).length,
+        [parts]
+    );
+    const activePrebuiltsCount = useMemo(
+        () => (prebuiltSystems || []).filter((system) => !system.isArchived).length,
+        [prebuiltSystems]
+    );
+
+    // Tab-level search state connected to AdminTopbar
+    const [tabSearchQueries, setTabSearchQueries] = useState<Record<string, string>>({
+        stock: '',
+        prebuilts: '',
+        reservations: '',
+        archive: '',
+        audit: '',
+    });
+
+    const searchPlaceholders: Record<string, string> = {
+        stock: 'Search parts by name, brand, or SKU...',
+        prebuilts: 'Search systems by name, SKU, or specs...',
+        reservations: 'Search by email, rig, or ID...',
+        archive: 'Search archived assets...',
+        audit: 'Search audit logs...',
+    };
+
+    const hasSearch = currentTab in searchPlaceholders;
+    const currentSearchQuery = tabSearchQueries[currentTab] ?? '';
+    const handleSearchQueryChange = (val: string) => {
+        setTabSearchQueries(prev => ({ ...prev, [currentTab]: val }));
+    };
+
     return (
         <RouteGuard requiredPermission="canAccessAdmin" fallbackPath={itemReturn === '/admin' ? '/system-access' : `/system-access?returnTo=${encodeURIComponent(itemReturn)}`}>
-            <div className={cn(
-                "min-h-screen transition-colors duration-500 overflow-x-hidden",
-                isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
-            )}>
-                {/* Circuit Pattern Background */}
-                <div className={cn(
-                    "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
-                    isDark ? "invert" : ""
-                )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+            <SidebarProvider defaultOpen={true}>
+                <AdminSidebar
+                    currentTab={currentTab}
+                    onSelectTab={handleTabAccess}
+                    aiSubTab={aiSubTab}
+                    onSelectAiSubTab={setAiSubTab}
+                    salesSubTab={salesSubTab}
+                    onSelectSalesSubTab={setSalesSubTab}
+                    profile={profile}
+                    authUser={authUser}
+                    partsCount={activePartsCount}
+                    prebuiltsCount={activePrebuiltsCount}
+                    pendingOrdersCount={stats.pendingOrdersCount}
+                    auditLogsCount={auditLogs.length}
+                    intelligenceBadge={intelligenceBadge}
+                    intelligenceBadgeColor={intelligenceBadgeColor}
+                />
 
-                <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 py-4 sm:py-6 md:py-8 relative z-10">
-                    <AdminTabHeader
-                        currentTab={currentTab}
-                        isSuperAdmin={profile?.isSuperAdmin}
-                        pendingOrdersCount={stats.pendingOrdersCount}
-                        auditLogsCount={auditLogs.length}
-                        intelligenceBadge={intelligenceBadge}
-                        intelligenceBadgeColor={intelligenceBadgeColor}
-                        onOpenIngestDummy={() => salesActions.setShowIngestDummyConfirm(true)}
-                        onOpenResetSales={() => salesActions.setShowResetSalesConfirm(true)}
-                        isIngestingDummyData={salesActions.isIngestingDummyData}
-                        isResettingSales={salesActions.isResettingSales}
-                        showIngestDummyConfirm={salesActions.showIngestDummyConfirm}
-                        onCloseIngestDummyConfirm={() => salesActions.setShowIngestDummyConfirm(false)}
-                        onConfirmIngestDummy={salesActions.handleIngestDummyData}
-                        showResetSalesConfirm={salesActions.showResetSalesConfirm}
-                        onCloseResetSalesConfirm={() => salesActions.setShowResetSalesConfirm(false)}
-                        onConfirmResetSales={salesActions.handleResetSales}
+                <SidebarInset
+                    className={cn(
+                        "min-h-svh transition-colors duration-300 overflow-x-hidden",
+                        isDark ? "bg-[#0c0f14] text-slate-50" : "bg-slate-50 text-slate-900"
+                    )}
+                >
+                    {/* Circuit Pattern Background */}
+                    <div
+                        className={cn(
+                            "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
+                            isDark ? "invert" : ""
+                        )}
+                        style={{
+                            backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)',
+                            backgroundSize: '24px 24px',
+                        }}
                     />
 
-                    <AdminProductFocus parts={parts || []} systems={prebuiltSystems || []} loading={partsLoading || prebuiltsLoading} updatePart={handleUpdatePart} updateSystem={handleUpdatePrebuilt} addPartStock={handleAddPartStock} />
-                    <Tabs
-                        value={currentTab}
-                        onChange={(val) => val && handleTabAccess(val)}
-                        variant="pills"
-                        radius="md"
-                        color="cyan"
-                        className="w-full"
-                        keepMounted={false}
-                    >
-                        {/* Horizontal Tab Strip Container with Fluid Touch Scrolling */}
-                        <div className="w-full mb-6 border-b border-slate-200 dark:border-white/10 pb-3">
-                            <div
-                                ref={tabsScrollRef}
-                                className="w-full overflow-x-auto pb-1 no-scrollbar sm:scrollbar-thin sm:scrollbar-thumb-slate-300 sm:dark:scrollbar-thumb-slate-700/80 hover:scrollbar-thumb-cyan-500/60 dark:hover:scrollbar-thumb-cyan-500/60 scrollbar-track-transparent transition-colors"
-                            >
-                                <Tabs.List className="bg-slate-100 dark:bg-[#141a23] p-1.5 rounded-xl border border-slate-200 dark:border-white/10 inline-flex flex-nowrap gap-1.5 min-w-max">
-                                    <Tabs.Tab
-                                        value="stock"
-                                        leftSection={<Package className="h-4 w-4" />}
-                                        className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
-                                    >
-                                        Manage Stock
-                                    </Tabs.Tab>
-                                    <Tabs.Tab
-                                        value="prebuilts"
-                                        leftSection={<Monitor className="h-4 w-4" />}
-                                        className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
-                                    >
-                                        Manage Prebuilts
-                                    </Tabs.Tab>
-                                    <Tabs.Tab
-                                        value="reservations"
-                                        leftSection={<ShoppingBag className="h-4 w-4" />}
-                                        className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
-                                    >
-                                        Reservations
-                                    </Tabs.Tab>
-                                    {profile?.isSuperAdmin && (
-                                        <Tabs.Tab
-                                            value="sales"
-                                            leftSection={<BarChart3 className="h-4 w-4" />}
-                                            className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
-                                        >
-                                            Sales & Analytics
-                                        </Tabs.Tab>
-                                    )}
-                                    <Tabs.Tab
-                                        value="archive"
-                                        leftSection={<Archive className="h-4 w-4" />}
-                                        className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
-                                    >
-                                        Archive
-                                    </Tabs.Tab>
+                    <AdminTopbar
+                        currentTab={currentTab}
+                        aiSubTab={aiSubTab}
+                        salesSubTab={salesSubTab}
+                        profile={profile}
+                        authUser={authUser}
+                        showSearch={hasSearch}
+                        searchQuery={currentSearchQuery}
+                        onSearchQueryChange={handleSearchQueryChange}
+                        searchPlaceholder={searchPlaceholders[currentTab]}
+                    />
 
-                                    {/* Relocated Tabs */}
-                                    <Tabs.Tab
-                                        value="audit"
-                                        leftSection={<Shield className="h-4 w-4" />}
-                                        className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
-                                    >
-                                        Audit Logs
-                                    </Tabs.Tab>
-
-                                    {profile?.isSuperAdmin && (
-                                        <Tabs.Tab
-                                            value="management"
-                                            leftSection={<Sliders className="h-4 w-4" />}
-                                            className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
-                                        >
-                                            Management Portal
-                                        </Tabs.Tab>
-                                    )}
-
-                                    {profile?.isSuperAdmin && (
-                                        <Tabs.Tab
-                                            value="ai"
-                                            leftSection={<Bot className="h-4 w-4" />}
-                                            rightSection={
-                                                <Badge size="xs" color={intelligenceBadgeColor} variant="light" className="font-bold ml-1">
-                                                    {intelligenceBadge}
-                                                </Badge>
-                                            }
-                                            className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-3.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm"
-                                        >
-                                            AI
-                                        </Tabs.Tab>
-                                    )}
-                                </Tabs.List>
-                            </div>
-                        </div>
-
-                        <Tabs.Panel value="stock">
-                            <StockTab
-                                parts={parts}
-                                partsLoading={partsLoading}
-                                profile={profile}
-                                partCategories={partCategories}
-                                onSetCategories={setPartCategories}
-                                onAddPart={handleAddPart}
-                                onUpdatePart={handleUpdatePart}
-                                onDeletePart={handleDeletePart}
-                                onArchivePart={handleArchivePart}
-                                onUpdatePartStock={handleUpdatePartStock}
-                                onAddPartStock={handleAddPartStock}
-                                isPartSelectionMode={isPartSelectionMode}
-                                setIsPartSelectionMode={setIsPartSelectionMode}
-                                selectedPartIds={selectedPartIds}
-                                setSelectedPartIds={setSelectedPartIds}
-                                togglePartSelection={togglePartSelection}
-                                toggleAllPartsSelection={toggleAllPartsSelection}
-                                setConfirmAction={setConfirmAction}
+                    <AdminTabHeaderProvider>
+                        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 py-4 sm:py-6 md:py-8 relative z-10 flex-1">
+                            <AdminTabHeader
+                                currentTab={currentTab}
+                                isSuperAdmin={profile?.isSuperAdmin}
+                                pendingOrdersCount={stats.pendingOrdersCount}
+                                auditLogsCount={auditLogs.length}
+                                intelligenceBadge={intelligenceBadge}
+                                intelligenceBadgeColor={intelligenceBadgeColor}
+                                onOpenIngestDummy={() => salesActions.setShowIngestDummyConfirm(true)}
+                                onOpenResetSales={() => salesActions.setShowResetSalesConfirm(true)}
+                                onExportSales={salesActions.handleExportSales}
+                                isIngestingDummyData={salesActions.isIngestingDummyData}
+                                isResettingSales={salesActions.isResettingSales}
+                                isExportingSales={salesActions.isExportingSales}
+                                showIngestDummyConfirm={salesActions.showIngestDummyConfirm}
+                                onCloseIngestDummyConfirm={() => salesActions.setShowIngestDummyConfirm(false)}
+                                onConfirmIngestDummy={salesActions.handleIngestDummyData}
+                                showResetSalesConfirm={salesActions.showResetSalesConfirm}
+                                onCloseResetSalesConfirm={() => salesActions.setShowResetSalesConfirm(false)}
+                                onConfirmResetSales={salesActions.handleResetSales}
                             />
-                        </Tabs.Panel>
 
-                        <Tabs.Panel value="prebuilts" className="mt-6">
-                            <PrebuiltTab
-                                prebuiltSystems={prebuiltSystems || []}
-                                prebuiltsLoading={prebuiltsLoading}
-                                parts={parts}
-                                profile={profile}
-                                prebuiltCategories={prebuiltCategories}
-                                onSetCategories={setPrebuiltCategories}
-                                onAddPrebuilt={handleAddPrebuilt}
-                                onUpdatePrebuilt={handleUpdatePrebuilt}
-                                onDeletePrebuilt={handleDeletePrebuilt}
-                                onArchivePrebuilt={handleArchivePrebuilt}
-                                isPrebuiltSelectionMode={isPrebuiltSelectionMode}
-                                setIsPrebuiltSelectionMode={setIsPrebuiltSelectionMode}
-                                selectedPrebuiltIds={selectedPrebuiltIds}
-                                setSelectedPrebuiltIds={setSelectedPrebuiltIds}
-                                togglePrebuiltSelection={togglePrebuiltSelection}
-                                toggleAllPrebuiltsSelection={toggleAllPrebuiltsSelection}
-                                setConfirmAction={setConfirmAction}
+                            <AdminProductFocus
+                                parts={parts || []}
+                                systems={prebuiltSystems || []}
+                                loading={partsLoading || prebuiltsLoading}
+                                addPartStock={handleAddPartStock}
                             />
-                        </Tabs.Panel>
 
-                        <Tabs.Panel value="reservations" className="mt-6">
-                            <ReservationsTab
-                                orders={(orders || []).filter(order => !order.isArchived)}
-                                ordersLoading={ordersLoading}
-                                isSuperAdmin={profile?.isSuperAdmin === true}
-                                onReservationAction={handleReservationAction}
-                                onUpdateOrder={handleUpdateOrder}
-                            />
-                        </Tabs.Panel>
-
-                        {profile?.isSuperAdmin && (
-                            <Tabs.Panel value="sales" className="mt-6">
-                                <SalesTab
-                                    orders={orders || []}
+                            {currentTab === "stock" && (
+                                <StockTab
                                     parts={parts}
-                                    prebuiltSystems={prebuiltSystems || []}
+                                    partsLoading={partsLoading}
+                                    profile={profile}
+                                    partCategories={partCategories}
+                                    onSetCategories={setPartCategories}
+                                    onAddPart={handleAddPart}
+                                    onUpdatePart={handleUpdatePart}
+                                    onDeletePart={handleDeletePart}
+                                    onArchivePart={handleArchivePart}
+                                    onUpdatePartStock={handleUpdatePartStock}
+                                    onAddPartStock={handleAddPartStock}
+                                    isPartSelectionMode={isPartSelectionMode}
+                                    setIsPartSelectionMode={setIsPartSelectionMode}
+                                    selectedPartIds={selectedPartIds}
+                                    setSelectedPartIds={setSelectedPartIds}
+                                    togglePartSelection={togglePartSelection}
+                                    toggleAllPartsSelection={toggleAllPartsSelection}
+                                    setConfirmAction={setConfirmAction}
+                                    searchQuery={tabSearchQueries.stock}
+                                    onSearchQueryChange={(val) => setTabSearchQueries(prev => ({ ...prev, stock: val }))}
                                 />
-                            </Tabs.Panel>
-                        )}
+                            )}
 
-                        <Tabs.Panel value="archive" className="mt-6">
-                            <ArchiveTab
-                                parts={parts}
-                                partsLoading={partsLoading}
-                                prebuiltSystems={prebuiltSystems || []}
-                                prebuiltsLoading={prebuiltsLoading}
-                                orders={(orders || []).filter(order => Boolean(order.isArchived))}
-                                ordersLoading={ordersLoading}
-                                onReservationAction={handleReservationAction}
-                                onUpdateOrder={handleUpdateOrder}
-                                profile={profile}
-                                onDeletePart={handleDeletePart}
-                                onArchivePart={handleArchivePart}
-                                onUpdatePartStock={handleUpdatePartStock}
-                                onUpdatePart={handleUpdatePart}
-                                onDeletePrebuilt={handleDeletePrebuilt}
-                                onArchivePrebuilt={handleArchivePrebuilt}
-                                onUpdatePrebuilt={handleUpdatePrebuilt}
-                                selectedPartIds={selectedPartIds}
-                                setSelectedPartIds={setSelectedPartIds}
-                                togglePartSelection={togglePartSelection}
-                                toggleAllPartsSelection={toggleAllPartsSelection}
-                                selectedPrebuiltIds={selectedPrebuiltIds}
-                                setSelectedPrebuiltIds={setSelectedPrebuiltIds}
-                                togglePrebuiltSelection={togglePrebuiltSelection}
-                                toggleAllPrebuiltsSelection={toggleAllPrebuiltsSelection}
-                                setConfirmAction={setConfirmAction}
-                            />
-                        </Tabs.Panel>
+                            {currentTab === "prebuilts" && (
+                                <div className="mt-4">
+                                    <PrebuiltTab
+                                        prebuiltSystems={prebuiltSystems || []}
+                                        prebuiltsLoading={prebuiltsLoading}
+                                        parts={parts}
+                                        profile={profile}
+                                        prebuiltCategories={prebuiltCategories}
+                                        onSetCategories={setPrebuiltCategories}
+                                        onAddPrebuilt={handleAddPrebuilt}
+                                        onUpdatePrebuilt={handleUpdatePrebuilt}
+                                        onDeletePrebuilt={handleDeletePrebuilt}
+                                        onArchivePrebuilt={handleArchivePrebuilt}
+                                        isPrebuiltSelectionMode={isPrebuiltSelectionMode}
+                                        setIsPrebuiltSelectionMode={setIsPrebuiltSelectionMode}
+                                        selectedPrebuiltIds={selectedPrebuiltIds}
+                                        setSelectedPrebuiltIds={setSelectedPrebuiltIds}
+                                        togglePrebuiltSelection={togglePrebuiltSelection}
+                                        toggleAllPrebuiltsSelection={toggleAllPrebuiltsSelection}
+                                        setConfirmAction={setConfirmAction}
+                                        searchQuery={tabSearchQueries.prebuilts}
+                                        onSearchQueryChange={(val) => setTabSearchQueries(prev => ({ ...prev, prebuilts: val }))}
+                                    />
+                                </div>
+                            )}
 
-                        {/* Relocated Tab Panels */}
-                        <Tabs.Panel value="audit" className="mt-6">
-                            <div className="space-y-6">
-                                <AuditLogsSection
-                                    logs={auditLogs}
-                                    loading={auditLogsLoading}
-                                />
-                            </div>
-                        </Tabs.Panel>
+                            {currentTab === "reservations" && (
+                                <div className="mt-4">
+                                    <ReservationsTab
+                                        orders={(orders || []).filter(order => !order.isArchived)}
+                                        ordersLoading={ordersLoading}
+                                        isSuperAdmin={profile?.isSuperAdmin === true}
+                                        onReservationAction={handleReservationAction}
+                                        onUpdateOrder={handleUpdateOrder}
+                                        searchQuery={tabSearchQueries.reservations}
+                                        onSearchQueryChange={(val) => setTabSearchQueries(prev => ({ ...prev, reservations: val }))}
+                                    />
+                                </div>
+                            )}
 
-                        {profile?.isSuperAdmin && (
-                            <Tabs.Panel value="management" className="mt-6">
-                                <div className="space-y-6">
+                            {currentTab === "sales" && profile?.isSuperAdmin && (
+                                <div className="mt-4">
+                                    <SalesTab
+                                        orders={orders || []}
+                                        parts={parts}
+                                        prebuiltSystems={prebuiltSystems || []}
+                                        activeSubTab={salesSubTab}
+                                    />
+                                </div>
+                            )}
+
+                            {currentTab === "archive" && (
+                                <div className="mt-4">
+                                    <ArchiveTab
+                                        parts={parts}
+                                        partsLoading={partsLoading}
+                                        prebuiltSystems={prebuiltSystems || []}
+                                        prebuiltsLoading={prebuiltsLoading}
+                                        orders={(orders || []).filter(order => Boolean(order.isArchived))}
+                                        ordersLoading={ordersLoading}
+                                        onReservationAction={handleReservationAction}
+                                        onUpdateOrder={handleUpdateOrder}
+                                        profile={profile}
+                                        onDeletePart={handleDeletePart}
+                                        onArchivePart={handleArchivePart}
+                                        onUpdatePartStock={handleUpdatePartStock}
+                                        onUpdatePart={handleUpdatePart}
+                                        onDeletePrebuilt={handleDeletePrebuilt}
+                                        onArchivePrebuilt={handleArchivePrebuilt}
+                                        onUpdatePrebuilt={handleUpdatePrebuilt}
+                                        selectedPartIds={selectedPartIds}
+                                        setSelectedPartIds={setSelectedPartIds}
+                                        togglePartSelection={togglePartSelection}
+                                        toggleAllPartsSelection={toggleAllPartsSelection}
+                                        selectedPrebuiltIds={selectedPrebuiltIds}
+                                        setSelectedPrebuiltIds={setSelectedPrebuiltIds}
+                                        togglePrebuiltSelection={togglePrebuiltSelection}
+                                        toggleAllPrebuiltsSelection={toggleAllPrebuiltsSelection}
+                                        setConfirmAction={setConfirmAction}
+                                        searchQuery={tabSearchQueries.archive}
+                                        onSearchQueryChange={(val) => setTabSearchQueries(prev => ({ ...prev, archive: val }))}
+                                    />
+                                </div>
+                            )}
+
+                            {currentTab === "audit" && (
+                                <div className="mt-4 flex flex-col gap-6">
+                                    <AuditLogsSection
+                                        logs={auditLogs}
+                                        loading={auditLogsLoading}
+                                        searchQuery={tabSearchQueries.audit}
+                                        onSearchQueryChange={(val) => setTabSearchQueries(prev => ({ ...prev, audit: val }))}
+                                    />
+                                </div>
+                            )}
+
+                            {currentTab === "management" && profile?.isSuperAdmin && (
+                                <div className="mt-4 flex flex-col gap-6">
                                     <SuperAdminSettings />
                                 </div>
-                            </Tabs.Panel>
-                        )}
+                            )}
 
-                        {profile?.isSuperAdmin && (
-                            <Tabs.Panel value="ai" className="mt-6">
-                                <div className="space-y-6">
-
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                        <Tabs
-                                            value={aiSubTab}
-                                            onChange={(val) => val && setAiSubTab(val as 'intelligence' | 'prompts')}
-                                            variant="pills"
-                                            radius="md"
-                                            color="cyan"
-                                        >
-                                            <Tabs.List className="inline-flex flex-wrap gap-1">
-                                                <Tabs.Tab
-                                                    value="intelligence"
-                                                    leftSection={<Cpu className="h-4 w-4" />}
-                                                    className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
-                                                >
-                                                    Model Intelligence
-                                                </Tabs.Tab>
-                                                <Tabs.Tab
-                                                    value="prompts"
-                                                    leftSection={<FileCode className="h-4 w-4" />}
-                                                    className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
-                                                >
-                                                    System Prompts
-                                                </Tabs.Tab>
-                                            </Tabs.List>
-                                        </Tabs>
-                                    </div>
-
+                            {currentTab === "ai" && profile?.isSuperAdmin && (
+                                <div className="mt-4 flex flex-col gap-6">
                                     {aiSubTab === 'intelligence' ? (
                                         <AiModelSettings />
                                     ) : (
                                         <AiSystemPromptsSettings />
                                     )}
                                 </div>
-                            </Tabs.Panel>
-                        )}
-                    </Tabs>
+                            )}
 
-                    {/* Global Bulk Action Confirmation Modal */}
-                    <Modal
-                        opened={confirmAction.isOpen}
-                        onClose={() => setConfirmAction(prev => ({ ...prev, isOpen: false }))}
-                        title={
-                            <Group gap="xs">
-                                <ThemeIcon
-                                    size="md"
-                                    color={confirmAction.type === 'delete' ? 'red' : confirmAction.type === 'archive' ? 'orange' : 'cyan'}
-                                    variant="light"
-                                    radius="md"
-                                >
-                                    {confirmAction.type === 'delete' ? <Trash2 size={16} /> : <Archive size={16} />}
-                                </ThemeIcon>
-                                <Text fw={700} className="font-headline text-base text-slate-900 dark:text-white uppercase tracking-tight">
-                                    Confirm {confirmAction.type.charAt(0).toUpperCase() + confirmAction.type.slice(1)} Action
-                                </Text>
-                            </Group>
-                        }
-                        centered
-                        radius="lg"
-                        size="sm"
-                        overlayProps={{ backgroundOpacity: 0.65, blur: 5 }}
-                        classNames={{
-                            content: "bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl overflow-hidden",
-                            header: "bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200/80 dark:border-white/10 p-3",
-                            body: "!p-3",
-                            close: "text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors",
-                        }}
-                    >
-                        <Stack gap="md" className="pt-1">
-                            <Text size="sm" className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                                {confirmAction.type === 'delete'
-                                    ? "This action is PERMANENT and cannot be undone. All selected items will be removed forever."
-                                    : confirmAction.type === 'archive'
-                                        ? "Are you sure you want to move the selected items to the archive?"
-                                        : "Are you sure you want to restore the selected items to the main inventory?"}
-                            </Text>
+                            {/* Global Bulk Action Confirmation Modal */}
+                            <Modal
+                                opened={confirmAction.isOpen}
+                                onClose={() => setConfirmAction(prev => ({ ...prev, isOpen: false }))}
+                                title={
+                                    <Group gap="xs">
+                                        <ThemeIcon
+                                            size="md"
+                                            color={confirmAction.type === 'delete' ? 'red' : confirmAction.type === 'archive' ? 'orange' : 'cyan'}
+                                            variant="light"
+                                            radius="md"
+                                        >
+                                            {confirmAction.type === 'delete' ? <Trash2 size={16} /> : <Archive size={16} />}
+                                        </ThemeIcon>
+                                        <Text fw={700} className="font-headline text-base text-slate-900 dark:text-white uppercase tracking-tight">
+                                            Confirm {confirmAction.type.charAt(0).toUpperCase() + confirmAction.type.slice(1)} Action
+                                        </Text>
+                                    </Group>
+                                }
+                                centered
+                                radius="lg"
+                                size="sm"
+                                overlayProps={{ backgroundOpacity: 0.65, blur: 5 }}
+                                classNames={{
+                                    content: "bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl overflow-hidden",
+                                    header: "bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200/80 dark:border-white/10 p-3",
+                                    body: "!p-3",
+                                    close: "text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors",
+                                }}
+                            >
+                                <Stack gap="md" className="pt-1">
+                                    <Text size="sm" className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                                        {confirmAction.type === 'delete'
+                                            ? "This action is PERMANENT and cannot be undone. All selected items will be removed forever."
+                                            : confirmAction.type === 'archive'
+                                                ? "Are you sure you want to move the selected items to the archive?"
+                                                : "Are you sure you want to restore the selected items to the main inventory?"}
+                                    </Text>
 
-                            <Group justify="flex-end" gap="xs" pt="xs">
-                                <Button
-                                    variant="default"
-                                    size="sm"
-                                    radius="md"
-                                    onClick={() => setConfirmAction(prev => ({ ...prev, isOpen: false }))}
-                                    className="border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5"
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    radius="md"
-                                    color={confirmAction.type === 'delete' ? 'red' : confirmAction.type === 'archive' ? 'orange' : 'cyan'}
-                                    className="font-bold text-xs uppercase tracking-wider"
-                                    onClick={executeBulkAction}
-                                >
-                                    Confirm {confirmAction.type.charAt(0).toUpperCase() + confirmAction.type.slice(1)}
-                                </Button>
-                            </Group>
-                        </Stack>
-                    </Modal>
-                </div>
-            </div>
+                                    <Group justify="flex-end" gap="xs" pt="xs">
+                                        <Button
+                                            variant="default"
+                                            size="sm"
+                                            radius="md"
+                                            onClick={() => setConfirmAction(prev => ({ ...prev, isOpen: false }))}
+                                            className="border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5"
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            radius="md"
+                                            color={confirmAction.type === 'delete' ? 'red' : confirmAction.type === 'archive' ? 'orange' : 'cyan'}
+                                            className="font-bold text-xs uppercase tracking-wider"
+                                            onClick={executeBulkAction}
+                                        >
+                                            Confirm {confirmAction.type.charAt(0).toUpperCase() + confirmAction.type.slice(1)}
+                                        </Button>
+                                    </Group>
+                                </Stack>
+                            </Modal>
+                        </div>
+                    </AdminTabHeaderProvider>
+                </SidebarInset>
+            </SidebarProvider>
         </RouteGuard>
     );
 }

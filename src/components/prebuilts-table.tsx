@@ -49,6 +49,7 @@ import { useSiteSettings } from "@/context/site-settings-context";
 
 interface PrebuiltsTableProps {
   systems: PrebuiltSystem[];
+  isAdminPreview?: boolean;
   onDelete?: (systemId: string) => void;
   onArchive?: (systemId: string, isArchived: boolean) => void;
   onUpdate?: (systemId: string, data: AddPrebuiltFormSchema) => Promise<void>;
@@ -65,6 +66,7 @@ interface PrebuiltsTableProps {
 
 export function PrebuiltsTable({
   systems,
+  isAdminPreview = false,
   onDelete,
   onArchive,
   onUpdate,
@@ -128,6 +130,7 @@ export function PrebuiltsTable({
             onToggleSelection={onToggleSelection}
             isSuperAdmin={isSuperAdmin}
             isArchiveView={isArchiveView}
+            isAdminPreview={isAdminPreview}
           />
         ))}
       </Table.Tbody>
@@ -148,6 +151,7 @@ function PrebuiltTableRow({
   onToggleSelection,
   isSuperAdmin,
   isArchiveView,
+  isAdminPreview,
 }: {
   system: PrebuiltSystem;
   onDelete?: (id: string) => void;
@@ -161,6 +165,7 @@ function PrebuiltTableRow({
   onToggleSelection: (id: string) => void;
   isSuperAdmin: boolean;
   isArchiveView: boolean;
+  isAdminPreview: boolean;
 }) {
   const { shouldCorruptImages } = useSiteSettings();
   const { toast } = useToast();
@@ -436,7 +441,7 @@ function PrebuiltTableRow({
             {!showActions && (
               <Button
                 component={Link}
-                href={`/pre-builts/${system.productId || system.id}`}
+                href={`/pre-builts/${system.productId || system.id}${isAdminPreview ? "?preview=admin" : ""}`}
                 size="xs"
                 radius="md"
                 variant="light"

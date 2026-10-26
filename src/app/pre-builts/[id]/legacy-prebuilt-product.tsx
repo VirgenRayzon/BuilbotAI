@@ -164,6 +164,7 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
                                 isInStock={isInStock}
                                 loadingParts={loadingParts}
                                 hasComponents={hasComponents}
+                                isAdminPreview={backLink.includes("preview=admin")}
                                 onCustomize={handleCustomizePrebuilt}
                             />
 
@@ -221,6 +222,7 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
                         subtitle="Expertly architected PC builds, validated by Buildbot AI for zero-bottleneck performance."
                         excludeId={system.id}
                         className="py-12 sm:py-16"
+                        isAdminPreview={backLink.includes("preview=admin")}
                     />
                 </div>
             </div>

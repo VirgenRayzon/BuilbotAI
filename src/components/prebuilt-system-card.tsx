@@ -50,6 +50,7 @@ import { useEcommerce, getEcommerceFallbackImage } from "@/context/ecommerce-con
 
 interface PrebuiltSystemCardProps {
   system: PrebuiltSystem;
+  isAdminPreview?: boolean;
   priority?: boolean;
   expanded?: boolean;
   onToggle?: () => void;
@@ -60,6 +61,7 @@ interface PrebuiltSystemCardProps {
 
 export function PrebuiltSystemCard({
   system,
+  isAdminPreview = false,
   priority = false,
   expanded = false,
   onToggle,
@@ -67,6 +69,7 @@ export function PrebuiltSystemCard({
   showLaunchButton = false,
   isClickable = true,
 }: PrebuiltSystemCardProps) {
+  const detailHref = `/pre-builts/${system.productId || system.id}${isAdminPreview ? "?preview=admin" : ""}`;
   const { shouldCorruptImages, isEcommerceMode } = useSiteSettings();
   const { addToCart } = useEcommerce();
   const [isExpandedLocal, setIsExpandedLocal] = useState(false);
@@ -482,6 +485,8 @@ export function PrebuiltSystemCard({
                 variant="light"
                 color="yellow"
                 onClick={handleCustomize}
+                disabled={isAdminPreview}
+                title={isAdminPreview ? "Unavailable in admin preview" : undefined}
                 leftSection={<SlidersHorizontal className="h-4 w-4" />}
                 className="font-medium transition-all duration-200 hover:bg-yellow-400 hover:text-slate-950"
               >
@@ -495,7 +500,8 @@ export function PrebuiltSystemCard({
                 variant="light"
                 color="cyan"
                 onClick={openCheckoutDialog}
-                disabled={loadingStock || isReserving}
+                disabled={isAdminPreview || loadingStock || isReserving}
+                title={isAdminPreview ? "Unavailable in admin preview" : undefined}
                 leftSection={
                   isReserving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -519,7 +525,7 @@ export function PrebuiltSystemCard({
           {showLaunchButton && (
             <Button
               component={Link}
-              href={`/pre-builts/${system.productId || system.id}`}
+              href={detailHref}
               variant="outline"
               color="gray"
               size="sm"
@@ -611,7 +617,7 @@ export function PrebuiltSystemCard({
   }
 
   return (
-    <Link href={`/pre-builts/${system.productId || system.id}`} className="block h-full">
+    <Link href={detailHref} className="block h-full">
       {mainBody}
     </Link>
   );

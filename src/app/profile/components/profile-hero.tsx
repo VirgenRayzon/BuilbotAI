@@ -226,7 +226,7 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
                 </div>
               ) : null}
 
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
+              {isRegularUser && <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
                 <Button
                   size="sm"
                   variant="subtle"
@@ -237,7 +237,7 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
                 >
                   Sign Out
                 </Button>
-              </div>
+              </div>}
             </div>
           </div>
         </Paper>

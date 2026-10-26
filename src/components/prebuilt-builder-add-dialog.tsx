@@ -200,7 +200,7 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                         <ScrollArea className="h-[68vh]">
                             <div className="px-10 py-8 space-y-10">
                                 <IdentityFields form={form} />
-                                <ProductIdentification category="PC" product={initialData}/>
+                                <ProductIdentification category="PC" product={initialData} compact />
                                 <ComponentFields 
                                     form={form} 
                                     inventory={inventory} 

@@ -24,7 +24,6 @@ import {
     Box,
     Grid,
     Layers,
-    FileSpreadsheet,
 } from 'lucide-react';
 import {
     Paper,
@@ -32,23 +31,20 @@ import {
     Text,
     Stack,
     Badge,
-    Button,
     ThemeIcon,
-    Tabs,
     SegmentedControl,
 } from '@mantine/core';
 import { motion } from 'framer-motion';
 import { Order, Part, PrebuiltSystem } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { useTheme } from '@/context/theme-provider';
-import { useToast } from '@/hooks/use-toast';
-import { exportSalesAnalyticsToExcel } from '@/lib/export-excel';
 import { getPopularityCategories } from '@/lib/popularity';
 
 interface SalesAnalyticsProps {
     orders: Order[];
     parts: Part[];
     prebuilts: PrebuiltSystem[];
+    activeSubTab?: 'overview' | 'popularity';
 }
 
 const COLORS = {
@@ -64,22 +60,15 @@ const COLORS = {
 
 const subscribeToHydration = () => () => {};
 
-export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps) {
+export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overview' }: SalesAnalyticsProps) {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
-    const { toast } = useToast();
 
     // SSR safety for Recharts
     const mounted = useSyncExternalStore(subscribeToHydration, () => true, () => false);
 
-    // Main Sub-Tab: 'overview' vs 'popularity'
-    const [activeTab, setActiveTab] = useState<'overview' | 'popularity'>('overview');
-
     // Revenue Range
     const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year'>('week');
-
-    // Exporting State
-    const [isExporting, setIsExporting] = useState(false);
 
     // Process Revenue Data based on time range
     const revenueData = useMemo(() => {
@@ -219,33 +208,6 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
     // Popularity Matrix Data grouped by Category and sorted by Popularity
     const popularityCategories = useMemo(() => getPopularityCategories(parts || []), [parts]);
 
-    // Handle Export to Excel
-    const handleExport = () => {
-        setIsExporting(true);
-        try {
-            exportSalesAnalyticsToExcel({
-                orders,
-                parts,
-                prebuilts,
-                revenueData,
-                timeRange
-            });
-            toast({
-                title: "Excel Export Complete",
-                description: "Your comprehensive multi-sheet Sales & Analytics workbook has been downloaded.",
-            });
-        } catch (error) {
-            console.error("Export error:", error);
-            toast({
-                title: "Export Failed",
-                description: "Failed to generate Excel file. Please try again.",
-                variant: "destructive"
-            });
-        } finally {
-            setIsExporting(false);
-        }
-    };
-
     // Category icon helper
     const getCategoryIcon = (cat: string) => {
         const lower = cat.toLowerCase();
@@ -266,51 +228,8 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
 
     return (
         <div className="space-y-6">
-            {/* Top Navigation & Excel Export Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    {/* Mantine Sub-Tabs */}
-                    <Tabs
-                        value={activeTab}
-                        onChange={(val) => val && setActiveTab(val as 'overview' | 'popularity')}
-                        variant="pills"
-                        radius="md"
-                        color="cyan"
-                    >
-                        <Tabs.List className="inline-flex flex-wrap gap-1">
-                            <Tabs.Tab
-                                value="overview"
-                                leftSection={<TrendingUp className="h-4 w-4" />}
-                                className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
-                            >
-                                Performance & Revenue
-                            </Tabs.Tab>
-                            <Tabs.Tab
-                                value="popularity"
-                                leftSection={<Activity className="h-4 w-4" />}
-                                className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
-                            >
-                                Popularity Matrix
-                            </Tabs.Tab>
-                        </Tabs.List>
-                    </Tabs>
-
-                    {/* Excel Export Button */}
-                    <Button
-                        onClick={handleExport}
-                        loading={isExporting}
-                        color="cyan"
-                        variant="filled"
-                        radius="md"
-                        size="sm"
-                        leftSection={<FileSpreadsheet className="h-4 w-4" />}
-                        className="font-headline font-bold text-xs uppercase tracking-wider shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0"
-                    >
-                        Export to Excel
-                    </Button>
-            </div>
-
             {/* TAB 1: Performance & Revenue Overview */}
-            {activeTab === 'overview' && (
+            {activeSubTab === 'overview' && (
                 <div className="space-y-6">
                     {/* 4 Metric Bento Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -715,7 +634,7 @@ export function SalesAnalytics({ orders, parts, prebuilts }: SalesAnalyticsProps
             )}
 
             {/* TAB 2: Dedicated Component Popularity Matrix */}
-            {activeTab === 'popularity' && (
+            {activeSubTab === 'popularity' && (
                 <div className="space-y-6">
                     {/* Popularity Matrix Category Grid */}
                     {popularityCategories.length > 0 ? (

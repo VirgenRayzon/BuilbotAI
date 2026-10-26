@@ -1,24 +1,17 @@
 "use client";
 
-import React from 'react';
+import React, { createContext, useContext, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { 
-    Package, 
-    Monitor, 
-    Archive, 
-    BarChart3, 
-    ShoppingBag,
-    Shield, 
-    Sliders, 
-    Bot, 
     Clock,
     Plus,
     RefreshCcw,
     Sparkles,
-    AlertTriangle
+    AlertTriangle,
+    FileSpreadsheet
 } from 'lucide-react';
 import { 
     ThemeIcon, 
-    Title, 
     Text, 
     Badge, 
     Button, 
@@ -26,10 +19,73 @@ import {
     Modal, 
     Stack 
 } from '@mantine/core';
-import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from "@/lib/utils";
 import { QRHealthDialog } from '@/components/qr-health-dialog';
 import { QRScannerDialog } from '@/components/qr-scanner-dialog';
+
+interface AdminTabHeaderContextValue {
+    countSlot: HTMLElement | null;
+    actionsSlot: HTMLElement | null;
+    chipsSlot: HTMLElement | null;
+    setCountSlot: (el: HTMLElement | null) => void;
+    setActionsSlot: (el: HTMLElement | null) => void;
+    setChipsSlot: (el: HTMLElement | null) => void;
+}
+
+const AdminTabHeaderContext = createContext<AdminTabHeaderContextValue | null>(null);
+
+export function AdminTabHeaderProvider({ children }: { children: React.ReactNode }) {
+    const [countSlot, setCountSlot] = useState<HTMLElement | null>(null);
+    const [actionsSlot, setActionsSlot] = useState<HTMLElement | null>(null);
+    const [chipsSlot, setChipsSlot] = useState<HTMLElement | null>(null);
+
+    return (
+        <AdminTabHeaderContext.Provider
+            value={{
+                countSlot,
+                actionsSlot,
+                chipsSlot,
+                setCountSlot,
+                setActionsSlot,
+                setChipsSlot,
+            }}
+        >
+            {children}
+        </AdminTabHeaderContext.Provider>
+    );
+}
+
+export function AdminHeaderSlot({
+    countBadge,
+    actions,
+    chips,
+}: {
+    countBadge?: React.ReactNode;
+    actions?: React.ReactNode;
+    chips?: React.ReactNode;
+}) {
+    const ctx = useContext(AdminTabHeaderContext);
+
+    if (ctx && ctx.actionsSlot) {
+        return (
+            <>
+                {countBadge && ctx.countSlot ? createPortal(countBadge, ctx.countSlot) : null}
+                {actions && ctx.actionsSlot ? createPortal(actions, ctx.actionsSlot) : null}
+            </>
+        );
+    }
+
+    // Fallback when rendered standalone outside AdminTabHeaderProvider
+    return (
+        <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">{countBadge}</div>
+                <div className="flex flex-wrap items-center gap-2">{actions}</div>
+            </div>
+            {chips}
+        </div>
+    );
+}
 
 export interface AdminTabHeaderProps {
     currentTab: string;
@@ -41,8 +97,10 @@ export interface AdminTabHeaderProps {
     // Sales actions & modals
     onOpenIngestDummy?: () => void;
     onOpenResetSales?: () => void;
+    onExportSales?: () => void;
     isIngestingDummyData?: boolean;
     isResettingSales?: boolean;
+    isExportingSales?: boolean;
     showIngestDummyConfirm?: boolean;
     onCloseIngestDummyConfirm?: () => void;
     onConfirmIngestDummy?: () => void;
@@ -51,24 +109,17 @@ export interface AdminTabHeaderProps {
     onConfirmResetSales?: () => void;
 }
 
-interface TabMetadata {
-    tag: string;
-    titlePrefix: string;
-    titleHighlight: string;
-    description: string;
-}
-
 export function AdminTabHeader({
     currentTab,
-    isSuperAdmin = false,
     pendingOrdersCount = 0,
-    auditLogsCount = 0,
     intelligenceBadge = 'Ready',
     intelligenceBadgeColor = 'teal',
     onOpenIngestDummy,
     onOpenResetSales,
+    onExportSales,
     isIngestingDummyData = false,
     isResettingSales = false,
+    isExportingSales = false,
     showIngestDummyConfirm = false,
     onCloseIngestDummyConfirm,
     onConfirmIngestDummy,
@@ -76,160 +127,96 @@ export function AdminTabHeader({
     onCloseResetSalesConfirm,
     onConfirmResetSales,
 }: AdminTabHeaderProps) {
-    const tabMetaMap: Record<string, TabMetadata> = {
-        stock: {
-            tag: "Inventory Control",
-            titlePrefix: "Manage Stock & ",
-            titleHighlight: "Inventory",
-            description: "Monitor component availability, update pricing, and restock hardware components.",
-        },
-        prebuilts: {
-            tag: "Curated Systems",
-            titlePrefix: "Manage Prebuilt ",
-            titleHighlight: "Systems",
-            description: "Configure curated PC builds, set tier classifications, and manage showcase listings.",
-        },
-        reservations: {
-            tag: "Order Pipeline",
-            titlePrefix: "Reservations ",
-            titleHighlight: "Management",
-            description: "Live customer reservations, assembly tracking, and pipeline breakdown.",
-        },
-        sales: {
-            tag: "Revenue & Analytics",
-            titlePrefix: "Sales & Analytics ",
-            titleHighlight: "Dashboard",
-            description: "Track reservations performance, revenue distributions, and component demand.",
-        },
-        archive: {
-            tag: "Decommissioned Assets",
-            titlePrefix: "Inventory & Systems ",
-            titleHighlight: "Archive",
-            description: "Review archived components, prebuilt systems, and reservations.",
-        },
-        audit: {
-            tag: "Security Ledger",
-            titlePrefix: isSuperAdmin ? "Admin Audit " : "Staff Audit ",
-            titleHighlight: "Logs",
-            description: "Review staff activity, inventory changes, and account events.",
-        },
-        management: {
-            tag: "Staff & Access",
-            titlePrefix: "Management ",
-            titleHighlight: "Portal",
-            description: "Manage staff credentials, manager keys, and password reset requests.",
-        },
-        ai: {
-            tag: "Intelligence Engine",
-            titlePrefix: "AI Engine & ",
-            titleHighlight: "Directives",
-            description: "Configure foundation models, provider routing, and agent persona system instructions.",
-        },
-    };
-
-    const currentMeta = tabMetaMap[currentTab] || {
-        tag: "Admin Portal",
-        titlePrefix: "Admin ",
-        titleHighlight: "Dashboard",
-        description: "Master control for system configurations, inventory, and operations.",
-    };
+    const ctx = useContext(AdminTabHeaderContext);
 
     return (
-        <div className="relative mb-4">
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={currentTab}
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 4 }}
-                    transition={{ duration: 0.2 }}
-                    className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 pb-2"
-                >
-                    <div className="flex flex-col gap-0.5">
-                        <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-cyan-600 dark:text-cyan-400 font-headline">
-                            {currentMeta.tag}
-                        </span>
-                        <h1 className="text-xl sm:text-2xl md:text-3xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-slate-100">
-                            {currentMeta.titlePrefix}
-                            <span className="text-cyan-600 dark:text-cyan-400 italic">
-                                {currentMeta.titleHighlight}
-                            </span>
-                        </h1>
-                        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                            {currentMeta.description}
-                        </p>
-                    </div>
+        <div className="relative mb-4 space-y-2.5">
+            <div className="relative z-10 flex flex-wrap items-center justify-between gap-2">
+                <div ref={ctx?.setCountSlot} className="contents" />
+                {/* Unified 36px Action Bar */}
+                <div className="ml-auto flex flex-wrap items-center gap-2 shrink-0">
+                    {(currentTab === 'stock' || currentTab === 'prebuilts') && (
+                        <>
+                            <QRScannerDialog />
+                            <QRHealthDialog />
+                        </>
+                    )}
 
-                    {/* Dynamic Action Slots */}
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-1 sm:pt-0">
-                        {(currentTab === 'stock' || currentTab === 'prebuilts') && (
-                            <>
-                                <QRScannerDialog />
-                                <QRHealthDialog />
-                            </>
-                        )}
-                        {currentTab === 'sales' && (
-                            <Group gap="xs">
-                                <Button
-                                    variant="light"
-                                    color="cyan"
-                                    radius="md"
-                                    size="sm"
-                                    leftSection={<Plus className={cn("h-4 w-4", isIngestingDummyData && "animate-pulse")} />}
-                                    onClick={onOpenIngestDummy}
-                                    loading={isIngestingDummyData}
-                                    className="font-headline font-bold text-xs uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[38px] sm:min-h-0"
-                                >
-                                    Ingest Dummy Data
-                                </Button>
+                    {currentTab === 'reservations' && pendingOrdersCount > 0 && (
+                        <Badge
+                            size="lg"
+                            color="yellow"
+                            variant="filled"
+                            radius="md"
+                            leftSection={<Clock className="h-3.5 w-3.5" />}
+                            className="h-9 font-headline font-bold uppercase tracking-wider text-slate-950 bg-yellow-400 px-3"
+                        >
+                            {pendingOrdersCount} Pending Review
+                        </Badge>
+                    )}
 
-                                <Button
-                                    variant="subtle"
-                                    color="red"
-                                    radius="md"
-                                    size="sm"
-                                    leftSection={<RefreshCcw className={cn("h-4 w-4", isResettingSales && "animate-spin")} />}
-                                    onClick={onOpenResetSales}
-                                    loading={isResettingSales}
-                                    className="font-headline font-bold text-xs uppercase tracking-wider text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[38px] sm:min-h-0"
-                                >
-                                    Reset Analytics
-                                </Button>
-                            </Group>
-                        )}
+                    {/* Dynamic Tab Controls Slot (Bulk Select, Filters & sort, View Toggle, Primary CTA) */}
+                    <div ref={ctx?.setActionsSlot} className="contents" />
 
-                        {currentTab === 'reservations' && pendingOrdersCount > 0 && (
-                            <Badge
-                                size="md"
-                                color="yellow"
+                    {currentTab === 'sales' && (
+                        <Group gap="xs">
+                            <Button
+                                onClick={onExportSales}
+                                loading={isExportingSales}
+                                color="cyan"
                                 variant="filled"
-                                leftSection={<Clock className="h-3.5 w-3.5" />}
-                                className="font-headline font-bold uppercase tracking-wider text-slate-950 bg-yellow-400 animate-pulse px-3 py-1"
+                                radius="md"
+                                size="sm"
+                                h={36}
+                                leftSection={<FileSpreadsheet className="h-4 w-4" />}
+                                className="font-headline font-bold text-xs uppercase tracking-wider shadow-sm transition-all"
                             >
-                                {pendingOrdersCount} Pending Review
-                            </Badge>
-                        )}
+                                Export to Excel
+                            </Button>
 
-                        {currentTab === 'audit' && auditLogsCount > 0 && (
-                            <Badge size="sm" color="cyan" variant="light" className="font-bold">
-                                {auditLogsCount} Records
-                            </Badge>
-                        )}
+                            <Button
+                                variant="light"
+                                color="cyan"
+                                radius="md"
+                                size="sm"
+                                h={36}
+                                leftSection={<Plus className={cn("h-4 w-4", isIngestingDummyData && "animate-pulse")} />}
+                                onClick={onOpenIngestDummy}
+                                loading={isIngestingDummyData}
+                                className="font-headline font-bold text-xs uppercase tracking-wider transition-all"
+                            >
+                                Ingest Dummy Data
+                            </Button>
 
-                        {currentTab === 'management' && (
-                            <Badge size="sm" color="cyan" variant="light" className="font-bold">
-                                Admin Portal
-                            </Badge>
-                        )}
+                            <Button
+                                variant="subtle"
+                                color="red"
+                                radius="md"
+                                size="sm"
+                                h={36}
+                                leftSection={<RefreshCcw className={cn("h-4 w-4", isResettingSales && "animate-spin")} />}
+                                onClick={onOpenResetSales}
+                                loading={isResettingSales}
+                                className="font-headline font-bold text-xs uppercase tracking-wider text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-all"
+                            >
+                                Reset Analytics
+                            </Button>
+                        </Group>
+                    )}
 
-                        {currentTab === 'ai' && (
-                            <Badge size="sm" color={intelligenceBadgeColor} variant="light" className="font-bold">
-                                {intelligenceBadge}
-                            </Badge>
-                        )}
-                    </div>
-                </motion.div>
-            </AnimatePresence>
+                    {currentTab === 'management' && (
+                        <Badge size="md" color="cyan" variant="light" radius="md" className="font-bold">
+                            Admin Portal
+                        </Badge>
+                    )}
+
+                    {currentTab === 'ai' && (
+                        <Badge size="md" color={intelligenceBadgeColor} variant="light" radius="md" className="font-bold">
+                            {intelligenceBadge}
+                        </Badge>
+                    )}
+                </div>
+            </div>
 
             {/* Ingest Dummy Data Modal */}
             {onCloseIngestDummyConfirm && onConfirmIngestDummy && (

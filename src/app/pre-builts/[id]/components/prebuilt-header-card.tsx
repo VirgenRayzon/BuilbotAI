@@ -13,6 +13,7 @@ interface PrebuiltHeaderCardProps {
     isInStock: boolean;
     loadingParts: boolean;
     hasComponents: boolean;
+    isAdminPreview?: boolean;
     onCustomize: () => void;
 }
 
@@ -23,6 +24,7 @@ export function PrebuiltHeaderCard({
     isInStock,
     loadingParts,
     hasComponents,
+    isAdminPreview = false,
     onCustomize,
 }: PrebuiltHeaderCardProps) {
     return (
@@ -120,7 +122,8 @@ export function PrebuiltHeaderCard({
                     size="md"
                     radius="md"
                     leftSection={<SlidersHorizontal className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />}
-                    disabled={loadingParts || !hasComponents}
+                    disabled={isAdminPreview || loadingParts || !hasComponents}
+                    title={isAdminPreview ? "Unavailable in admin preview" : undefined}
                     onClick={onCustomize}
                     className="h-11 px-5 text-xs font-semibold uppercase tracking-wider border-slate-200 transition-colors hover:border-cyan-500/50 dark:border-white/15 shrink-0"
                 >

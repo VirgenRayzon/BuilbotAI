@@ -1,20 +1,38 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Paper,
+    Title,
+    Text,
+    Badge,
+    Button,
+    Group,
+    Stack,
+    ThemeIcon,
+    PasswordInput,
+} from '@mantine/core';
 import { CompactInfo } from '@/components/ui/compact-info';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useFirestore } from '@/firebase';
-import { collection, query, where, getDocs, doc, setDoc, deleteDoc, onSnapshot, updateDoc, serverTimestamp, limit, arrayUnion } from 'firebase/firestore';
+import { useFirestore, useAuth } from '@/firebase';
+import {
+    collection,
+    query,
+    where,
+    getDocs,
+    doc,
+    setDoc,
+    deleteDoc,
+    onSnapshot,
+    updateDoc,
+    serverTimestamp,
+    limit,
+    arrayUnion,
+} from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Check, X, RefreshCw, Mail, Key, Shield } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { useUserProfile } from '@/context/user-profile';
 import { createAuditLog } from '@/firebase/audit';
 import { listManagerAccountsAction } from '@/app/actions';
-import { useAuth } from '@/firebase';
 
 export function SuperAdminSettings() {
     const [managerKey, setManagerKey] = useState('');
@@ -237,168 +255,253 @@ export function SuperAdminSettings() {
     }
 
     return (
-        <div className="space-y-6 w-full">
-            <Card className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-sm">
-                <CardHeader className="p-3 pb-3">
-                    <CardTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
-                        <Key className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
-                        Default Manager Access Key
-                        <CompactInfo
-                            label="About the default manager access key"
-                            message="Manage the access key required for new manager signups."
-                        />
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 pt-0 space-y-3">
-                    <div className="space-y-2">
-                        <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Manager Key</Label>
-                        <div className="flex gap-2">
-                            <Input
+        <Stack gap="lg" className="w-full">
+            <Paper
+                withBorder
+                radius="lg"
+                p={{ base: 'md', sm: 'lg' }}
+                className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-sm"
+            >
+                <Stack gap="md">
+                    <Group gap="xs">
+                        <ThemeIcon size="md" radius="md" color="cyan" variant="light">
+                            <Key className="size-4" />
+                        </ThemeIcon>
+                        <Title order={4} className="text-base sm:text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
+                            <span>Default Manager Access Key</span>
+                            <CompactInfo
+                                label="About the default manager access key"
+                                message="Manage the access key required for new manager signups."
+                            />
+                        </Title>
+                    </Group>
+
+                    <div className="flex flex-col gap-2">
+                        <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                            Manager Key
+                        </Text>
+                        <div className="flex flex-col sm:flex-row gap-2.5">
+                            <PasswordInput
                                 value={managerKey}
                                 onChange={(e) => setManagerKey(e.target.value)}
                                 placeholder="Enter Manager Key"
-                                type="password"
-                                className="bg-slate-50 dark:bg-slate-900/50 border-slate-300 dark:border-white/10"
+                                radius="md"
+                                size="sm"
+                                className="flex-1"
+                                classNames={{
+                                    input: "bg-slate-50 dark:bg-slate-900/60 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-mono",
+                                }}
                             />
                             <Button
+                                color="cyan"
+                                radius="md"
+                                size="sm"
+                                loading={saving}
                                 onClick={handleSaveManagerKey}
                                 disabled={saving || managerKey === originalManagerDocId}
-                                className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs uppercase tracking-wider"
+                                className="font-headline font-bold text-xs uppercase tracking-wider shrink-0"
                             >
                                 Save
                             </Button>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
+                </Stack>
+            </Paper>
 
-            <Card className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-sm">
-                <CardHeader className="p-3 pb-3">
-                    <CardTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
-                        <Shield className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
-                        Manager Accounts
-                        <CompactInfo
-                            label="About manager accounts"
-                            message="Manage individual manager access keys and view key history."
-                        />
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 pt-0">
+            <Paper
+                withBorder
+                radius="lg"
+                p={{ base: 'md', sm: 'lg' }}
+                className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-sm"
+            >
+                <Stack gap="md">
+                    <Group justify="space-between" align="center">
+                        <Group gap="xs">
+                            <ThemeIcon size="md" radius="md" color="cyan" variant="light">
+                                <Shield className="size-4" />
+                            </ThemeIcon>
+                            <Title order={4} className="text-base sm:text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
+                                <span>Manager Accounts</span>
+                                <CompactInfo
+                                    label="About manager accounts"
+                                    message="Manage individual manager access keys and view key history."
+                                />
+                            </Title>
+                        </Group>
+                        <Badge size="sm" variant="light" color="cyan" className="font-mono font-bold">
+                            {managers.length} {managers.length === 1 ? 'Account' : 'Accounts'}
+                        </Badge>
+                    </Group>
+
                     {managers.length === 0 ? (
-                        <div className="text-center py-8 border-2 border-dashed rounded-lg border-slate-200 dark:border-white/10">
-                            <p className="text-slate-500 text-sm">No manager accounts found.</p>
+                        <div className="text-center py-8 border-2 border-dashed rounded-xl border-slate-200 dark:border-white/10">
+                            <Text size="sm" c="dimmed">No manager accounts found.</Text>
                         </div>
                     ) : (
-                        <div className="space-y-4">
+                        <div className="flex flex-col gap-3">
                             {managers.map((manager) => (
-                                <div key={manager.id} className="flex flex-col space-y-3 p-3 border border-slate-200 dark:border-white/10 rounded-xl bg-slate-50/50 dark:bg-black/20">
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-0.5">
-                                            <p className="font-bold text-sm text-slate-900 dark:text-white">{manager.email}</p>
-                                            <p className="text-xs text-slate-500 font-mono">ID: {manager.id}</p>
+                                <Paper
+                                    key={manager.id}
+                                    withBorder
+                                    radius="md"
+                                    p="md"
+                                    className="border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-[#141a23]/80"
+                                >
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <div className="flex flex-col gap-0.5">
+                                                <Text fw={700} size="sm" className="text-slate-900 dark:text-white">
+                                                    {manager.email}
+                                                </Text>
+                                                <Text size="xs" c="dimmed" className="font-mono">
+                                                    ID: {manager.id}
+                                                </Text>
+                                            </div>
+                                            <Button
+                                                size="xs"
+                                                variant="default"
+                                                radius="md"
+                                                onClick={() => handleResetManagerKey(manager)}
+                                                disabled={!!actionLoading}
+                                                leftSection={
+                                                    actionLoading === manager.id ? (
+                                                        <Loader2 className="size-3.5 animate-spin" />
+                                                    ) : (
+                                                        <RefreshCw className="size-3.5 text-cyan-500" />
+                                                    )
+                                                }
+                                                className="font-headline font-bold uppercase tracking-wider text-[11px] border-slate-300 dark:border-white/10 bg-white dark:bg-[#111722]"
+                                            >
+                                                Reset Key
+                                            </Button>
                                         </div>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => handleResetManagerKey(manager)}
-                                            disabled={!!actionLoading}
-                                            className="text-xs border-slate-300 dark:border-white/10"
-                                        >
-                                            {actionLoading === manager.id ? <Loader2 className="h-3 w-3 animate-spin mr-2" /> : <RefreshCw className="h-3 w-3 mr-2 text-cyan-500" />}
-                                            Reset Key
-                                        </Button>
-                                    </div>
-                                    <div className="flex flex-wrap gap-4 items-center pt-2 border-t border-slate-200/60 dark:border-white/5 text-xs">
-                                        <div className="space-y-1">
-                                            <span className="text-slate-500 font-semibold">Active Key:</span>
+                                        <div className="flex flex-wrap gap-4 items-center pt-2 border-t border-slate-200/60 dark:border-white/10 text-xs">
                                             <div className="flex items-center gap-2">
-                                                <code className="bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 px-1.5 py-0.5 rounded font-mono font-bold">
+                                                <span className="text-slate-500 font-semibold">Active Key:</span>
+                                                <code className="bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 px-2 py-0.5 rounded-md font-mono font-bold border border-cyan-500/20">
                                                     {manager.activeManagerKey || 'Legacy/None'}
                                                 </code>
                                             </div>
-                                        </div>
-                                        {manager.deprecatedKeys && manager.deprecatedKeys.length > 0 && (
-                                            <div className="space-y-1">
-                                                <span className="text-slate-500 font-semibold">Deprecated:</span>
-                                                <div className="flex flex-wrap gap-1">
-                                                    {manager.deprecatedKeys.map((k: string, i: number) => (
-                                                        <code key={i} className="bg-slate-200 dark:bg-white/10 px-1 py-0.5 rounded font-mono text-slate-500 text-[10px]">
-                                                            {k}
-                                                        </code>
-                                                    ))}
+                                            {manager.deprecatedKeys && manager.deprecatedKeys.length > 0 && (
+                                                <div className="flex flex-wrap items-center gap-1.5">
+                                                    <span className="text-slate-500 font-semibold">Deprecated:</span>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {manager.deprecatedKeys.map((k: string, i: number) => (
+                                                            <code key={i} className="bg-slate-200 dark:bg-white/10 px-1.5 py-0.5 rounded font-mono text-slate-500 dark:text-slate-400 text-[10px]">
+                                                                {k}
+                                                            </code>
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )}
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
+                                </Paper>
                             ))}
                         </div>
                     )}
-                </CardContent>
-            </Card>
+                </Stack>
+            </Paper>
 
-            <Card className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-sm">
-                <CardHeader className="p-3 pb-3">
-                    <CardTitle className="text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
-                        <RefreshCw className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
-                        Key Reset Requests
-                        <CompactInfo
-                            label="About key reset requests"
-                            message="Pending requests from managers who forgot their access key."
-                        />
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 pt-0">
+            <Paper
+                withBorder
+                radius="lg"
+                p={{ base: 'md', sm: 'lg' }}
+                className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-sm"
+            >
+                <Stack gap="md">
+                    <Group justify="space-between" align="center">
+                        <Group gap="xs">
+                            <ThemeIcon size="md" radius="md" color="cyan" variant="light">
+                                <RefreshCw className="size-4" />
+                            </ThemeIcon>
+                            <Title order={4} className="text-base sm:text-lg font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
+                                <span>Key Reset Requests</span>
+                                <CompactInfo
+                                    label="About key reset requests"
+                                    message="Pending requests from managers who forgot their access key."
+                                />
+                            </Title>
+                        </Group>
+                        {requests.length > 0 && (
+                            <Badge size="sm" variant="filled" color="yellow" className="font-mono font-bold text-slate-950">
+                                {requests.length} Pending
+                            </Badge>
+                        )}
+                    </Group>
+
                     {requests.length === 0 ? (
-                        <div className="text-center py-8 border-2 border-dashed rounded-lg border-slate-200 dark:border-white/10">
-                            <p className="text-slate-500 text-sm">No pending requests found.</p>
+                        <div className="text-center py-8 border-2 border-dashed rounded-xl border-slate-200 dark:border-white/10">
+                            <Text size="sm" c="dimmed">No pending requests found.</Text>
                         </div>
                     ) : (
-                        <div className="space-y-4">
+                        <div className="flex flex-col gap-3">
                             {requests.map((req) => {
                                 const requester = managers.find(m => m.email === req.email);
                                 return (
-                                    <div key={req.id} className="flex items-center justify-between p-3 border border-slate-200 dark:border-white/10 rounded-xl bg-slate-50/50 dark:bg-black/20">
-                                        <div className="space-y-1">
+                                    <Paper
+                                        key={req.id}
+                                        withBorder
+                                        radius="md"
+                                        p="md"
+                                        className="flex flex-wrap items-center justify-between gap-3 border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-[#141a23]/80"
+                                    >
+                                        <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2">
-                                                <Mail className="h-4 w-4 text-slate-500" />
+                                                <Mail className="size-4 text-slate-500" />
                                                 <span className="font-bold text-sm text-slate-900 dark:text-white">{req.email}</span>
-                                                <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
+                                                <Badge size="xs" variant="light" color={requester ? "cyan" : "yellow"} className="text-[10px] uppercase tracking-wider font-bold">
                                                     {requester ? 'Registered' : 'New Account'}
                                                 </Badge>
                                             </div>
-                                            <p className="text-xs text-slate-500">
+                                            <Text size="xs" c="dimmed">
                                                 Requested: {req.requestedAt?.toDate().toLocaleString() || 'Just now'}
-                                            </p>
+                                            </Text>
                                         </div>
-                                        <div className="flex gap-2">
+                                        <Group gap="xs">
                                             <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+                                                size="xs"
+                                                variant="subtle"
+                                                color="red"
+                                                radius="md"
                                                 onClick={() => handleRejectRequest(req.id)}
                                                 disabled={!!actionLoading}
+                                                leftSection={
+                                                    actionLoading === req.id ? (
+                                                        <Loader2 className="size-3.5 animate-spin" />
+                                                    ) : (
+                                                        <X className="size-3.5" />
+                                                    )
+                                                }
+                                                className="font-headline font-bold uppercase tracking-wider text-[11px]"
                                             >
-                                                {actionLoading === req.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-                                                <span className="ml-2 hidden sm:inline">Reject</span>
+                                                Reject
                                             </Button>
                                             <Button
-                                                size="sm"
-                                                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
+                                                size="xs"
+                                                color="teal"
+                                                radius="md"
                                                 onClick={() => handleApproveRequest(req)}
                                                 disabled={!!actionLoading}
+                                                leftSection={
+                                                    actionLoading === req.id ? (
+                                                        <Loader2 className="size-3.5 animate-spin" />
+                                                    ) : (
+                                                        <Check className="size-3.5" />
+                                                    )
+                                                }
+                                                className="font-headline font-bold uppercase tracking-wider text-[11px]"
                                             >
-                                                {actionLoading === req.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                                                <span className="ml-2 hidden sm:inline">Approve</span>
+                                                Approve
                                             </Button>
-                                        </div>
-                                    </div>
+                                        </Group>
+                                    </Paper>
                                 );
                             })}
                         </div>
                     )}
-                </CardContent>
-            </Card>
-        </div>
+                </Stack>
+            </Paper>
+        </Stack>
     );
 }

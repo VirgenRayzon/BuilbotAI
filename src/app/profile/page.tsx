@@ -23,6 +23,7 @@ import {
   Cpu,
   History,
   Truck,
+  ArrowLeft,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RouteGuard } from "@/components/auth/route-guard";
@@ -170,6 +171,21 @@ export default function ProfilePage() {
         />
 
         <div className="relative z-10 pt-6 md:pt-8 max-w-[1600px] mx-auto">
+          {(isSuperAdmin || isManager) && (
+            <div className="flex justify-end px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 mb-3">
+              <Button
+                variant="subtle"
+                color="gray"
+                size="xs"
+                leftSection={<ArrowLeft className="h-3.5 w-3.5" />}
+                onClick={() => router.push("/admin")}
+                className="min-h-11 whitespace-nowrap font-semibold text-xs tracking-wider uppercase text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400"
+              >
+                Back to Dashboard
+              </Button>
+            </div>
+          )}
+
           {/* Full-Width Prominent User Identity Banner below Header */}
           <ProfileHero
             profile={profile}

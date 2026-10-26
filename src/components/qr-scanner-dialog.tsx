@@ -14,6 +14,7 @@ import {
   Stack,
   Text,
   TextInput,
+  Tooltip,
 } from '@mantine/core';
 import { Camera, CheckCircle2, FlipHorizontal, ImageUp, Keyboard, Scan, Search, Upload } from 'lucide-react';
 import { useUserProfile } from '@/context/user-profile';
@@ -159,19 +160,20 @@ export function QRScannerDialog() {
 
   return (
     <>
-      <Button
-        variant="default"
-        radius="md"
-        size="xs"
-        mih={44}
-        leftSection={<Scan size={16} />}
-        onClick={() => {
-          setOpened(true);
-          setActiveTab('camera');
-        }}
-      >
-        Scan item
-      </Button>
+      <Tooltip label="Scan QR" withArrow position="top">
+        <ActionIcon
+          variant="default"
+          radius="md"
+          size={36}
+          aria-label="Scan item"
+          onClick={() => {
+            setOpened(true);
+            setActiveTab('camera');
+          }}
+        >
+          <Scan size={16} />
+        </ActionIcon>
+      </Tooltip>
 
       <Modal
         opened={opened}

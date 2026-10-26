@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { YourBuild } from "@/components/your-build";
 import {
     Cpu,
@@ -18,7 +18,6 @@ import {
     Keyboard,
     Mouse,
     Headphones,
-    LayoutDashboard
 } from "lucide-react";
 import type { ComponentData, Part, Resolution, WorkloadType } from "@/lib/types";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
@@ -27,14 +26,12 @@ import { useInventoryParts } from "@/firebase/firestore/use-inventory-parts";
 import { useFirestore } from "@/firebase";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { formatCurrency, cn, getOptimizedStorageUrl } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { PaginationControls } from "@/components/pagination-controls";
 import { useUserProfile } from "@/context/user-profile";
-import { useLoading } from "@/context/loading-context";
 import { useTheme } from "@/context/theme-provider";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
 import { motion } from "framer-motion";
@@ -44,11 +41,10 @@ import type { PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder
 import { checkCompatibility } from "@/lib/compatibility";
 import { logAdminAction } from "@/app/actions";
 
-
 import { RouteGuard } from "@/components/auth/route-guard";
 import { usePrebuiltBuilderImport } from "@/app/admin/hooks/use-prebuilt-builder-import";
-
-type PartWithoutCategory = Omit<Part, 'category'>;
+import { AdminSidebar, SidebarInset, SidebarProvider } from "@/app/admin/components/admin-sidebar";
+import { AdminTopbar } from "@/app/admin/components/admin-topbar";
 
 const componentCategories = [
     { name: "Case", icon: RectangleVertical },
@@ -104,14 +100,6 @@ export default function PrebuiltBuilderPage() {
     const [isLoaded, setIsLoaded] = useState(false);
 
     usePrebuiltBuilderImport(allParts, isLoaded, setBuild);
-
-    const handleApplySuggestion = (category: string, partId: string) => {
-        const event = new CustomEvent('add-suggestion', {
-            detail: { id: partId, category }
-        });
-        window.dispatchEvent(event);
-    };
-
 
     // Persistence
     useEffect(() => {
@@ -277,8 +265,6 @@ export default function PrebuiltBuilderPage() {
 
         // Determine if we are removing an existing single-slot part
         const isCurrentlySelected = category !== 'Storage' && category !== 'RAM' && (build[category] as ComponentData)?.model === part.name;
-
-        // Sequence Validation (Removed)
 
         const { compatible, message } = checkCompatibility(part, build);
 
@@ -543,97 +529,174 @@ export default function PrebuiltBuilderPage() {
 
     const isBuilderLoading = partsLoading || authLoading;
 
-
     return (
         <RouteGuard requiredPermission="canAccessAdmin" fallbackPath="/system-access">
-            <div className={cn(
-                "min-h-screen transition-colors duration-500 overflow-x-hidden",
-                isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
-            )}>
-                {/* Circuit Pattern Background */}
-                <div className={cn(
-                    "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
-                    isDark ? "invert" : ""
-                )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+            <SidebarProvider defaultOpen={true}>
+                <AdminSidebar
+                    profile={profile}
+                    authUser={authUser}
+                    partsCount={allParts.length}
+                />
 
-                <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 py-4 sm:py-6 md:py-8 pb-24 lg:pb-12 relative z-10">
-                    <div className="relative mb-6">
-                        <motion.div
-                            initial={{ opacity: 0, y: -4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="relative z-10 flex flex-col gap-0.5"
-                        >
-                            <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-cyan-600 dark:text-cyan-400 font-headline">
-                                Admin Creator
-                            </span>
-                            <h1 className="text-xl sm:text-2xl md:text-3xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-slate-100">
-                                Prebuilt <span className="text-cyan-600 dark:text-cyan-400 italic">Builder</span>
-                            </h1>
-                            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                                Configure new pre-built systems for the catalog using current inventory.
-                            </p>
-                        </motion.div>
-                    </div>
+                <SidebarInset
+                    className={cn(
+                        "min-h-svh transition-colors duration-300 overflow-x-hidden",
+                        isDark ? "bg-[#0c0f14] text-slate-50" : "bg-slate-50 text-slate-900"
+                    )}
+                >
+                    {/* Circuit Pattern Background */}
+                    <div
+                        className={cn(
+                            "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
+                            isDark ? "invert" : ""
+                        )}
+                        style={{
+                            backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)',
+                            backgroundSize: '24px 24px',
+                        }}
+                    />
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">
+                    <AdminTopbar
+                        currentTab="prebuilt-builder"
+                        sectionLabel="Prebuilt Builder"
+                        profile={profile}
+                        authUser={authUser}
+                        showSearch
+                        searchQuery={searchQuery}
+                        onSearchQueryChange={(value) => { setSearchQuery(value); setCurrentPage(1); }}
+                        searchPlaceholder="Search parts by name, brand, or SKU..."
+                    />
 
-                        {/* Your Build — Desktop Left Column & Mobile FAB Drawer */}
-                        <div className="contents lg:block lg:col-span-3 self-start">
-                            <YourBuild
-                                build={build}
-                                onRemovePart={handleRemovePart}
-                                onClearBuild={handleClearBuild}
-                                resolution={resolution}
-                                onResolutionChange={setResolution}
-                                workload={workload}
-                                onWorkloadChange={setWorkload}
-                                isManagerMode={true}
-                                onAddPrebuilt={handleAddPrebuilt}
-                                onCategorySelect={(cat) => handleCategoryChange(cat, true)}
-                                categories={categories}
-                                analysis={analysis}
-                                onAnalysisUpdate={setAnalysis}
-                            />
-                        </div>
-
-                        {/* Inventory — Right Column */}
-                        <div className="flex flex-col gap-6 lg:col-span-9 min-w-0">
+                    <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 py-4 sm:py-6 md:py-8 pb-24 lg:pb-12 relative z-10 flex-1">
+                        <div className="flex flex-col gap-6 xl:gap-8">
+                            {/* Full-width catalog controls */}
                             <InventoryToolbar
-                                categories={categories}
-                                onCategoryChange={handleCategoryChange}
-                                itemCount={sortedAndFilteredParts.length}
-                                sortBy={sortBy}
-                                onSortByChange={(val) => { setSortBy(val); setCurrentPage(1); }}
-                                sortDirection={sortDirection}
-                                onSortDirectionChange={(val) => { setSortDirection(val); setCurrentPage(1); }}
-                                supportedSorts={['Date Added', 'Name', 'Price']}
-                                view={view}
-                                onViewChange={setView}
-                                showViewToggle={true}
-                                searchQuery={searchQuery}
-                                onSearchQueryChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
-                                availableBrands={availableBrands}
-                                selectedBrands={selectedBrands}
-                                onBrandChange={setSelectedBrands}
-                                hideIncompatible={hideIncompatible}
-                                onHideIncompatibleChange={setHideIncompatible}
+                                    categories={categories}
+                                    onCategoryChange={handleCategoryChange}
+                                    onClearCategories={() => {
+                                        setCategories(prev => prev.map(cat => ({ ...cat, selected: false })));
+                                        setCurrentPage(1);
+                                    }}
+                                    categoryLabel="Categories"
+                                    itemLabel="parts"
+                                    searchPlaceholder="Search parts by name, brand, or SKU..."
+                                    defaultSort="Date Added:desc"
+                                    itemCount={sortedAndFilteredParts.length}
+                                    sortBy={sortBy}
+                                    onSortByChange={(val) => { setSortBy(val); setCurrentPage(1); }}
+                                    sortDirection={sortDirection}
+                                    onSortDirectionChange={(val) => { setSortDirection(val); setCurrentPage(1); }}
+                                    supportedSorts={['Date Added', 'Name', 'Price']}
+                                    view={view}
+                                    onViewChange={setView}
+                                    showViewToggle={true}
+                                    searchQuery={searchQuery}
+                                    onSearchQueryChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
+                                    availableBrands={availableBrands}
+                                    selectedBrands={selectedBrands}
+                                    onBrandChange={setSelectedBrands}
+                                    hideIncompatible={hideIncompatible}
+                                    onHideIncompatibleChange={setHideIncompatible}
+                                variant="admin-header"
                             />
 
-                            {isBuilderLoading ? null : sortedAndFilteredParts.length > 0 ? (
-                                view === 'grid' ? (
-                                    <>
-                                        <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
-                                            {paginatedParts.map(part => (
-                                                <PartCard
-                                                    key={part.id}
-                                                    part={part}
-                                                    effectiveStock={(part as any).effectiveStock}
-                                                    onToggleBuild={handlePartToggle}
-                                                    isSelected={isSelected(part)}
-                                                    compatibility={(part as any).compatibility}
-                                                />
-                                            ))}
+                            <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 xl:gap-8">
+                                {/* Your Build and part results share the same starting line */}
+                                <div className="contents lg:block lg:col-span-3 lg:self-start">
+                                    <YourBuild
+                                        build={build}
+                                        onRemovePart={handleRemovePart}
+                                        onClearBuild={handleClearBuild}
+                                        resolution={resolution}
+                                        onResolutionChange={setResolution}
+                                        workload={workload}
+                                        onWorkloadChange={setWorkload}
+                                        isManagerMode={true}
+                                        onAddPrebuilt={handleAddPrebuilt}
+                                        onCategorySelect={(cat) => handleCategoryChange(cat, true)}
+                                        categories={categories}
+                                        analysis={analysis}
+                                        onAnalysisUpdate={setAnalysis}
+                                    />
+                                </div>
+
+                                <div className="flex min-w-0 flex-col gap-6 lg:col-span-9">
+                                {isBuilderLoading ? null : sortedAndFilteredParts.length > 0 ? (
+                                    view === 'grid' ? (
+                                        <>
+                                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-4">
+                                                {paginatedParts.map(part => (
+                                                    <PartCard
+                                                        key={part.id}
+                                                        part={part}
+                                                        effectiveStock={(part as any).effectiveStock}
+                                                        onToggleBuild={handlePartToggle}
+                                                        isSelected={isSelected(part)}
+                                                        compatibility={(part as any).compatibility}
+                                                    />
+                                                ))}
+                                            </div>
+                                            <PaginationControls
+                                                currentPage={currentPage}
+                                                totalPages={totalPages}
+                                                itemsPerPage={itemsPerPage}
+                                                onPageChange={setCurrentPage}
+                                                onItemsPerPageChange={setItemsPerPage}
+                                            />
+                                        </>
+                                    ) : (
+                                        <Card className="mt-6 overflow-hidden">
+                                            <div className="overflow-x-auto no-scrollbar">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Item</TableHead>
+                                                            <TableHead>Stock</TableHead>
+                                                            <TableHead className="text-right">Price</TableHead>
+                                                            <TableHead className="w-[50px]"></TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                    {paginatedParts.map(part => {
+                                                        const selected = isSelected(part);
+                                                        const currentStock = part.stock - getCountInBuild(part.name);
+                                                        return (
+                                                            <TableRow key={part.id} className={cn(
+                                                                (part as any).effectiveStock === 0 && !selected && "opacity-50 grayscale",
+                                                                (part as any).compatibility && !(part as any).compatibility.compatible && "bg-destructive/[0.03] hover:bg-destructive/[0.06] border-l-2 border-l-destructive shadow-[inset_4px_0_0_-2px_rgba(239,68,68,0.5)]"
+                                                            )}>
+                                                                <TableCell className="font-medium">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <OptimizedImage src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
+                                                                        <div>
+                                                                            <p className="font-semibold">{part.name}</p>
+                                                                            <p className="text-xs text-muted-foreground">{part.brand}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <Badge variant={currentStock > 5 ? "secondary" : currentStock > 0 ? "destructive" : "outline"}>
+                                                                        {currentStock > 0 ? `${currentStock} in stock` : "Out of stock"}
+                                                                    </Badge>
+                                                                </TableCell>
+                                                                <TableCell className="text-right">{formatCurrency(part.price)}</TableCell>
+                                                                <TableCell>
+                                                                    {(!((part as any).compatibility && !(part as any).compatibility.compatible) || selected) && (
+                                                                        <Button
+                                                                            size="icon"
+                                                                            onClick={() => handlePartToggle(part)}
+                                                                            disabled={currentStock === 0 && !selected}
+                                                                            variant={selected ? 'destructive' : 'default'}
+                                                                        >
+                                                                            {selected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                                                                        </Button>
+                                                                    )}
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        );
+                                                    })}
+                                                </TableBody>
+                                            </Table>
                                         </div>
                                         <PaginationControls
                                             currentPage={currentPage}
@@ -642,94 +705,34 @@ export default function PrebuiltBuilderPage() {
                                             onPageChange={setCurrentPage}
                                             onItemsPerPageChange={setItemsPerPage}
                                         />
-                                    </>
+                                    </Card>
+                                    )
                                 ) : (
-                                    <Card className="mt-6 overflow-hidden">
-                                        <div className="overflow-x-auto no-scrollbar">
-                                            <Table>
-                                                <TableHeader>
-                                                    <TableRow>
-                                                        <TableHead>Item</TableHead>
-                                                        <TableHead>Stock</TableHead>
-                                                        <TableHead className="text-right">Price</TableHead>
-                                                        <TableHead className="w-[50px]"></TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                {paginatedParts.map(part => {
-                                                    const selected = isSelected(part);
-                                                    const currentStock = part.stock - getCountInBuild(part.name);
-                                                    return (
-                                                        <TableRow key={part.id} className={cn(
-                                                            (part as any).effectiveStock === 0 && !selected && "opacity-50 grayscale",
-                                                            (part as any).compatibility && !(part as any).compatibility.compatible && "bg-destructive/[0.03] hover:bg-destructive/[0.06] border-l-2 border-l-destructive shadow-[inset_4px_0_0_-2px_rgba(239,68,68,0.5)]"
-                                                        )}>
-                                                            <TableCell className="font-medium">
-                                                                <div className="flex items-center gap-3">
-                                                                    <OptimizedImage src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
-                                                                    <div>
-                                                                        <p className="font-semibold">{part.name}</p>
-                                                                        <p className="text-xs text-muted-foreground">{part.brand}</p>
-                                                                    </div>
-                                                                </div>
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <Badge variant={currentStock > 5 ? "secondary" : currentStock > 0 ? "destructive" : "outline"}>
-                                                                    {currentStock > 0 ? `${currentStock} in stock` : "Out of stock"}
-                                                                </Badge>
-                                                            </TableCell>
-                                                            <TableCell className="text-right">{formatCurrency(part.price)}</TableCell>
-                                                            <TableCell>
-                                                                {(!((part as any).compatibility && !(part as any).compatibility.compatible) || selected) && (
-                                                                    <Button
-                                                                        size="icon"
-                                                                        onClick={() => handlePartToggle(part)}
-                                                                        disabled={currentStock === 0 && !selected}
-                                                                        variant={selected ? 'destructive' : 'default'}
-                                                                    >
-                                                                        {selected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                                                                    </Button>
-                                                                )}
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    );
-                                                })}
-                                            </TableBody>
-                                        </Table>
-                                    </div>
-                                    <PaginationControls
-                                        currentPage={currentPage}
-                                        totalPages={totalPages}
-                                        itemsPerPage={itemsPerPage}
-                                        onPageChange={setCurrentPage}
-                                        onItemsPerPageChange={setItemsPerPage}
-                                    />
-                                </Card>
-                                )
-                            ) : (
-                                <Card className="mt-6 min-h-[400px] flex items-center justify-center">
-                                    <CardContent className="text-center text-muted-foreground p-6">
-                                        <p>No components found for the selected categories.</p>
-                                    </CardContent>
-                                </Card>
-                            )}
+                                    <Card className="mt-6 min-h-[400px] flex items-center justify-center">
+                                        <CardContent className="text-center text-muted-foreground p-6">
+                                            <p>No components found for the selected categories.</p>
+                                        </CardContent>
+                                    </Card>
+                                )}
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
-                    <BuilderFloatingChat
-                        build={build}
-                        onAddPart={(partName, partId) => {
-                            const part = allParts.find(item => item.id === partId);
-                            if (part) handlePartToggle(part);
-                            else toast({
-                                variant: 'destructive',
-                                title: 'Part Not Found',
-                                description: `${partName} is no longer in the current inventory.`,
-                            });
-                        }}
-                    />
-                </main>
-            </div>
+                        <BuilderFloatingChat
+                            build={build}
+                            onAddPart={(partName, partId) => {
+                                const part = allParts.find(item => item.id === partId);
+                                if (part) handlePartToggle(part);
+                                else toast({
+                                    variant: 'destructive',
+                                    title: 'Part Not Found',
+                                    description: `${partName} is no longer in the current inventory.`,
+                                });
+                            }}
+                        />
+                    </div>
+                </SidebarInset>
+            </SidebarProvider>
         </RouteGuard>
     );
 }

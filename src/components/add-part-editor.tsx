@@ -257,7 +257,6 @@ export function AddPartEditor({
                 <PartIdentitySection 
                   form={form} 
                   onCategoryChange={handleCategoryChange} 
-                  product={initialData}
                   justAutofilled={justAutofilled}
                 />
                 <PartSpecificationsSection 

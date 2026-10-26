@@ -8,12 +8,14 @@ interface SalesTabProps {
     orders: Order[];
     parts: Part[];
     prebuiltSystems: PrebuiltSystem[];
+    activeSubTab?: 'overview' | 'popularity';
 }
 
 export function SalesTab({
     orders,
     parts,
-    prebuiltSystems
+    prebuiltSystems,
+    activeSubTab = 'overview',
 }: SalesTabProps) {
     return (
         <div className="space-y-6">
@@ -22,6 +24,7 @@ export function SalesTab({
                     orders={orders || []}
                     parts={parts || []}
                     prebuilts={prebuiltSystems || []}
+                    activeSubTab={activeSubTab}
                 />
             </div>
         </div>

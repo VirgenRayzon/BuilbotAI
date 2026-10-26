@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useMemo, useState } from 'react';
-import { PackageCheck, Trash2, Layers, Boxes, CalendarClock } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { PackageCheck, Trash2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Separator } from '@/components/ui/separator';
 import { InventoryTable } from '@/components/inventory-table';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
 import { InventoryToolbar } from '@/components/inventory-toolbar';
-import { Paper, Tabs } from '@mantine/core';
+import { Paper } from '@mantine/core';
 import type { Order, Part, PrebuiltSystem } from '@/lib/types';
 import { ReservationsTab } from './reservations-tab';
 
@@ -39,6 +40,8 @@ interface ArchiveTabProps {
   togglePrebuiltSelection: (id: string) => void;
   toggleAllPrebuiltsSelection: (systems: PrebuiltSystem[]) => void;
   setConfirmAction: (val: any) => void;
+  searchQuery?: string;
+  onSearchQueryChange?: (value: string) => void;
 }
 
 export function ArchiveTab({
@@ -67,15 +70,23 @@ export function ArchiveTab({
   togglePrebuiltSelection,
   toggleAllPrebuiltsSelection,
   setConfirmAction,
+  searchQuery = '',
+  onSearchQueryChange,
 }: ArchiveTabProps) {
+  const searchParams = useSearchParams();
   const [archiveSubTab, setArchiveSubTab] = useState<'parts' | 'prebuilts' | 'reservations'>('parts');
-  const [partSearchQuery, setPartSearchQuery] = useState('');
   const [partBrands, setPartBrands] = useState<string[]>([]);
   const [partSortBy, setPartSortBy] = useState('Name');
   const [partSortDirection, setPartSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [prebuiltSearchQuery, setPrebuiltSearchQuery] = useState('');
   const [prebuiltSortBy, setPrebuiltSortBy] = useState('Name');
   const [prebuiltSortDirection, setPrebuiltSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  useEffect(() => {
+    const requestedSubTab = searchParams.get('sub');
+    if (requestedSubTab === 'parts' || requestedSubTab === 'prebuilts' || requestedSubTab === 'reservations') {
+      setArchiveSubTab(requestedSubTab);
+    }
+  }, [searchParams]);
 
   const [archivePartCategories, setArchivePartCategories] = useState<{ name: string; selected: boolean }[]>([
     { name: "CPU", selected: true },
@@ -113,11 +124,11 @@ export function ArchiveTab({
     [allArchivedParts]
   );
   const archivedParts = useMemo(() => {
-    const query = partSearchQuery.trim().toLowerCase();
+    const query = searchQuery.trim().toLowerCase();
     return allArchivedParts
       .filter((part) => selectedCategories.includes(part.category))
       .filter((part) => partBrands.length === 0 || partBrands.includes(part.brand))
-      .filter((part) => !query || part.name.toLowerCase().includes(query) || part.brand.toLowerCase().includes(query))
+      .filter((part) => !query || part.name.toLowerCase().includes(query) || part.brand.toLowerCase().includes(query) || part.sku?.toLowerCase().includes(query))
       .sort((a, b) => {
         let comparison = 0;
         if (partSortBy === 'Price') comparison = a.price - b.price;
@@ -126,15 +137,13 @@ export function ArchiveTab({
         else comparison = a.name.localeCompare(b.name);
         return partSortDirection === 'asc' ? comparison : -comparison;
       });
-  }, [allArchivedParts, partBrands, partSearchQuery, partSortBy, partSortDirection, selectedCategories]);
-  const totalArchivedPartsCount = parts?.filter((p) => p.isArchived).length || 0;
-
+  }, [allArchivedParts, partBrands, partSortBy, partSortDirection, searchQuery, selectedCategories]);
   const selectedTiers = archivePrebuiltTiers.filter((t) => t.selected).map((t) => t.name);
   const archivedPrebuilts = useMemo(() => {
-    const query = prebuiltSearchQuery.trim().toLowerCase();
+    const query = searchQuery.trim().toLowerCase();
     return (prebuiltSystems || [])
       .filter((system) => system.isArchived && selectedTiers.includes(system.tier))
-      .filter((system) => !query || system.name.toLowerCase().includes(query) || system.description?.toLowerCase().includes(query))
+      .filter((system) => !query || system.name.toLowerCase().includes(query) || system.description?.toLowerCase().includes(query) || system.sku?.toLowerCase().includes(query))
       .sort((a, b) => {
         let comparison = 0;
         if (prebuiltSortBy === 'Price') comparison = a.price - b.price;
@@ -142,45 +151,10 @@ export function ArchiveTab({
         else comparison = a.name.localeCompare(b.name);
         return prebuiltSortDirection === 'asc' ? comparison : -comparison;
       });
-  }, [prebuiltSearchQuery, prebuiltSortBy, prebuiltSortDirection, prebuiltSystems, selectedTiers]);
-  const totalArchivedPrebuiltsCount = prebuiltSystems?.filter((s) => s.isArchived).length || 0;
+  }, [prebuiltSortBy, prebuiltSortDirection, prebuiltSystems, searchQuery, selectedTiers]);
 
   return (
-    <div className="mt-6 space-y-6">
-      {/* Sub-tabs Selection Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <Tabs
-            value={archiveSubTab}
-            onChange={(val) => val && setArchiveSubTab(val as 'parts' | 'prebuilts' | 'reservations')}
-            variant="pills"
-            radius="md"
-            color="cyan"
-          >
-            <Tabs.List className="inline-flex flex-wrap gap-1">
-              <Tabs.Tab
-                value="parts"
-                leftSection={<Layers className="h-4 w-4" />}
-                className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
-              >
-                Parts Archive ({totalArchivedPartsCount})
-              </Tabs.Tab>
-              <Tabs.Tab
-                value="prebuilts"
-                leftSection={<Boxes className="h-4 w-4" />}
-                className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
-              >
-                Prebuilts Archive ({totalArchivedPrebuiltsCount})
-              </Tabs.Tab>
-              <Tabs.Tab
-                value="reservations"
-                leftSection={<CalendarClock className="h-4 w-4" />}
-                className="font-headline font-bold text-xs uppercase tracking-wider min-h-[44px] py-2 px-4 rounded-lg data-[active=true]:bg-white dark:data-[active=true]:bg-[#1e2634] data-[active=true]:text-cyan-600 dark:data-[active=true]:text-cyan-400 data-[active=true]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
-              >
-                Reservations Archive ({orders.length})
-              </Tabs.Tab>
-            </Tabs.List>
-          </Tabs>
-      </div>
+    <div className="space-y-4">
 
       {archiveSubTab === 'reservations' && (
         <ReservationsTab
@@ -190,6 +164,8 @@ export function ArchiveTab({
           isSuperAdmin={profile?.isSuperAdmin === true}
           onReservationAction={onReservationAction}
           onUpdateOrder={onUpdateOrder}
+          searchQuery={searchQuery}
+          onSearchQueryChange={onSearchQueryChange}
         />
       )}
 
@@ -198,15 +174,19 @@ export function ArchiveTab({
         <div className="space-y-4 animate-in fade-in duration-200">
           <InventoryToolbar
             categories={archivePartCategories}
-            onCategoryChange={(categoryName) => {
+            onCategoryChange={(categoryName, selected) => {
               setArchivePartCategories((current) => current.map((category) => ({
                 ...category,
-                selected: categoryName === 'All' || category.name === categoryName,
+                selected: categoryName === 'All' ? true : category.name === categoryName ? selected : category.selected,
+              })));
+            }}
+            onClearCategories={() => {
+              setArchivePartCategories((current) => current.map((category) => ({
+                ...category,
+                selected: false,
               })));
             }}
             itemCount={archivedParts.length}
-            searchQuery={partSearchQuery}
-            onSearchQueryChange={setPartSearchQuery}
             availableBrands={availableArchiveBrands}
             selectedBrands={partBrands}
             onBrandChange={setPartBrands}
@@ -215,6 +195,16 @@ export function ArchiveTab({
             sortDirection={partSortDirection}
             onSortDirectionChange={setPartSortDirection}
             supportedSorts={['Name', 'Price', 'Brand', 'Stock']}
+            defaultSort="Name:asc"
+            categoryLabel="Categories"
+            itemLabel="parts"
+            onResetAll={() => {
+              setArchivePartCategories((current) => current.map((c) => ({ ...c, selected: true })));
+              setPartBrands([]);
+              setPartSortBy('Name');
+              setPartSortDirection('asc');
+            }}
+            variant="admin-header"
           />
 
           {selectedPartIds.length > 0 && (
@@ -261,20 +251,33 @@ export function ArchiveTab({
         <div className="space-y-4 animate-in fade-in duration-200">
           <InventoryToolbar
             categories={archivePrebuiltTiers}
-            onCategoryChange={(tierName) => {
+            onCategoryChange={(tierName, selected) => {
               setArchivePrebuiltTiers((current) => current.map((tier) => ({
                 ...tier,
-                selected: tierName === 'All' || tier.name === tierName,
+                selected: tierName === 'All' ? true : tier.name === tierName ? selected : tier.selected,
+              })));
+            }}
+            onClearCategories={() => {
+              setArchivePrebuiltTiers((current) => current.map((tier) => ({
+                ...tier,
+                selected: false,
               })));
             }}
             itemCount={archivedPrebuilts.length}
-            searchQuery={prebuiltSearchQuery}
-            onSearchQueryChange={setPrebuiltSearchQuery}
             sortBy={prebuiltSortBy}
             onSortByChange={setPrebuiltSortBy}
             sortDirection={prebuiltSortDirection}
             onSortDirectionChange={setPrebuiltSortDirection}
             supportedSorts={['Name', 'Price', 'Tier']}
+            defaultSort="Name:asc"
+            categoryLabel="Tiers"
+            itemLabel="systems"
+            onResetAll={() => {
+              setArchivePrebuiltTiers((current) => current.map((t) => ({ ...t, selected: true })));
+              setPrebuiltSortBy('Name');
+              setPrebuiltSortDirection('asc');
+            }}
+            variant="admin-header"
           />
 
           {selectedPrebuiltIds.length > 0 && (
@@ -301,10 +304,11 @@ export function ArchiveTab({
             {prebuiltsLoading ? null : (
               <PrebuiltsTable
                 systems={archivedPrebuilts}
-                parts={parts || []}
                 onDelete={onDeletePrebuilt}
                 onArchive={onArchivePrebuilt}
+                parts={parts || []}
                 onUpdate={onUpdatePrebuilt}
+                showActions={true}
                 expandedIds={expandedPrebuiltIds}
                 onToggleExpand={togglePrebuiltExpand}
                 selectedIds={selectedPrebuiltIds}

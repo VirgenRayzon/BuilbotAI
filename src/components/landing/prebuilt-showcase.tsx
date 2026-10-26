@@ -25,6 +25,7 @@ export interface PrebuiltShowcaseProps {
     subtitle?: string;
     excludeId?: string;
     className?: string;
+    isAdminPreview?: boolean;
 }
 
 export function PrebuiltShowcase({
@@ -33,6 +34,7 @@ export function PrebuiltShowcase({
     subtitle = "Expertly architected PC builds, validated by Buildbot AI for zero-bottleneck performance.",
     excludeId,
     className,
+    isAdminPreview = false,
 }: PrebuiltShowcaseProps = {}) {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
@@ -91,6 +93,7 @@ export function PrebuiltShowcase({
                                                 showReserveButton={false}
                                                 showLaunchButton={true}
                                                 isClickable={false}
+                                                isAdminPreview={isAdminPreview}
                                             />
                                         </motion.div>
                                     </CarouselItem>

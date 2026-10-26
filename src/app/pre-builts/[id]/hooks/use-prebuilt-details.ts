@@ -48,6 +48,9 @@ export function usePrebuiltDetails(systemId: string) {
     const isInStock = resolvedSystemId === system?.id && unavailableParts.length === 0;
 
     const [backNavigation, setBackNavigation] = useState<{ link: string; text: string }>(() => {
+        if (searchParams.get("preview") === "admin") {
+            return { link: "/pre-builts?preview=admin", text: "Back to Pre-builts" };
+        }
         const fromParam = searchParams.get("from");
         if (fromParam === "admin") {
             return { link: "/admin?tab=prebuilts", text: "Back to Prebuilts Management" };
@@ -62,6 +65,10 @@ export function usePrebuiltDetails(systemId: string) {
     });
 
     useEffect(() => {
+        if (searchParams.get("preview") === "admin") {
+            setBackNavigation({ link: "/pre-builts?preview=admin", text: "Back to Pre-builts" });
+            return;
+        }
         const fromParam = searchParams.get("from");
         if (fromParam === "admin") {
             setBackNavigation({ link: "/admin?tab=prebuilts", text: "Back to Prebuilts Management" });

@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { useTheme } from "@/context/theme-provider";
-import { Card, Stack, Group, Box, Paper, Text } from "@mantine/core";
+import { Button, Card, Stack, Group, Box, Paper, Text } from "@mantine/core";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
 import { PrebuiltSystemCard } from "@/components/prebuilt-system-card";
 import type { PrebuiltSystem } from "@/lib/types";
@@ -11,9 +12,9 @@ import { useCollection } from "@/firebase/firestore/use-collection";
 import { useFirestore } from "@/firebase";
 import { collection, query } from "firebase/firestore";
 import { PrebuiltsTable } from "@/components/prebuilts-table";
-import { SearchX, MonitorOff } from "lucide-react";
+import { ArrowLeft, SearchX, MonitorOff } from "lucide-react";
 import { useUserProfile } from "@/context/user-profile";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { RouteGuard } from "@/components/auth/route-guard";
 import { getMissingParts } from "@/lib/prebuilt-utils";
@@ -31,6 +32,8 @@ export default function PreBuiltsPage() {
   const firestore = useFirestore();
   const { authUser, profile, loading: authLoading } = useUserProfile();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isAdminPreview = searchParams.get("preview") === "admin";
 
   const prebuiltSystemsQuery = useMemo(() => {
     if (!firestore) return null;
@@ -44,6 +47,7 @@ export default function PreBuiltsPage() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [showAllDetails, setShowAllDetails] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const toggleExpand = (id: string) => {
     setExpandedIds((prev) =>
@@ -51,33 +55,42 @@ export default function PreBuiltsPage() {
     );
   };
 
-  const [searchQuery, setSearchQuery] = useState("");
-
   const handleCategoryChange = (categoryName: string, selected: boolean) => {
     setCategories((prev) => {
       if (categoryName === "All") {
-        const anyUnselected = prev.some((cat) => !cat.selected);
-        return prev.map((cat) => ({ ...cat, selected: anyUnselected }));
+        return prev.map((cat) => ({ ...cat, selected: true }));
       }
-      return prev.map((cat: any) => ({
-        ...cat,
-        selected: cat.name === categoryName ? true : false,
-      }));
+      return prev.map((cat) => (
+        cat.name === categoryName ? { ...cat, selected } : cat
+      ));
     });
+  };
+
+  const handleClearCategories = () => {
+    setCategories((prev) => prev.map((cat) => ({ ...cat, selected: false })));
+  };
+
+  const handleResetAll = () => {
+    setCategories(prebuiltCategories);
+    setSortBy("Date Added");
+    setSortDirection("desc");
+    setShowAllDetails(false);
+    setSearchQuery("");
   };
 
   const filteredAndSortedSystems = useMemo(() => {
     if (!prebuiltSystems) return [];
     const selectedCategories = categories.filter((c) => c.selected).map((c) => c.name);
-    const searchLower = searchQuery.toLowerCase();
+    const searchLower = searchQuery.toLowerCase().trim();
 
     return prebuiltSystems
       .filter((system) => {
         const isNotArchived = !system.isArchived;
         const matchesCategory = selectedCategories.includes(system.tier);
-        const matchesSearch =
+        const matchesSearch = !searchLower ||
           system.name.toLowerCase().includes(searchLower) ||
-          (system.description?.toLowerCase() || "").includes(searchLower);
+          (system.description?.toLowerCase() || "").includes(searchLower) ||
+          (system.sku?.toLowerCase() || "").includes(searchLower);
         return isNotArchived && matchesCategory && matchesSearch;
       })
       .sort((a, b) => {
@@ -134,7 +147,14 @@ export default function PreBuiltsPage() {
         />
 
         <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 py-4 md:py-6 pt-4 md:pt-6 relative z-10">
-          <div className="relative mb-4">
+          {isAdminPreview && (
+            <div className="mb-2">
+              <Button component={Link} href="/admin" variant="subtle" color="gray" size="xs" leftSection={<ArrowLeft className="h-3.5 w-3.5" />} className="text-xs font-semibold uppercase tracking-wider text-slate-600 hover:text-cyan-600 dark:text-slate-400 dark:hover:text-cyan-400">
+                Back to Dashboard
+              </Button>
+            </div>
+          )}
+          <div className="relative mb-4 flex items-start gap-3">
             <motion.div
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
@@ -163,19 +183,25 @@ export default function PreBuiltsPage() {
                 <InventoryToolbar
                   categories={categories}
                   onCategoryChange={handleCategoryChange}
+                  onClearCategories={handleClearCategories}
+                  categoryLabel="Tiers"
+                  itemLabel="systems"
                   itemCount={filteredAndSortedSystems.length}
                   sortBy={sortBy}
                   onSortByChange={setSortBy}
                   sortDirection={sortDirection}
                   onSortDirectionChange={setSortDirection}
                   supportedSorts={["Date Added", "Name", "Price", "Tier"]}
+                  defaultSort="Date Added:desc"
                   view={view}
                   onViewChange={setView}
                   showViewToggle={true}
                   searchQuery={searchQuery}
                   onSearchQueryChange={setSearchQuery}
+                  searchPlaceholder="Search systems by name, SKU, or specs..."
                   showDetails={showAllDetails}
                   onShowDetailsChange={setShowAllDetails}
+                  onResetAll={handleResetAll}
                 />
               </div>
 
@@ -231,6 +257,7 @@ export default function PreBuiltsPage() {
                       <PrebuiltSystemCard
                         key={system.id}
                         system={system}
+                        isAdminPreview={isAdminPreview}
                         priority={index < 4}
                         expanded={showAllDetails}
                         onToggle={() => setShowAllDetails(!showAllDetails)}
@@ -245,6 +272,7 @@ export default function PreBuiltsPage() {
                   >
                     <PrebuiltsTable
                       systems={filteredAndSortedSystems}
+                      isAdminPreview={isAdminPreview}
                       showActions={false}
                       expandedIds={expandedIds}
                       onToggleExpand={toggleExpand}

@@ -38,7 +38,6 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { ProductIdentification } from './product-identification';
 import { useProductSaveOperation } from '@/hooks/use-product-save-operation';
 import type { CreatedProduct } from '@/lib/product-identity';
 import { ToastAction } from './ui/toast';
@@ -944,7 +943,6 @@ export function AddPrebuiltDialog({
                                                 </FormItem>
                                             )} />
 
-                                            <div className="col-span-2"><ProductIdentification category="PC" product={initialData} /></div>
                                             <FormField control={form.control} name="price" render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">

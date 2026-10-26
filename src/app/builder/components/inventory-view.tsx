@@ -102,17 +102,21 @@ export function InventoryView({
           <InventoryToolbar
             categories={categories}
             onCategoryChange={onCategoryChange}
+            categoryLabel="Categories"
+            itemLabel="parts"
             itemCount={itemCount}
             sortBy={sortBy}
             onSortByChange={onSortByChange}
             sortDirection={sortDirection}
             onSortDirectionChange={onSortDirectionChange}
             supportedSorts={["Date Added", "Name", "Price"]}
+            defaultSort="Date Added:desc"
             view={view}
             onViewChange={onViewChange}
             showViewToggle={true}
             searchQuery={searchQuery}
             onSearchQueryChange={onSearchQueryChange}
+            searchPlaceholder="Search parts by name, brand, or SKU..."
             availableBrands={availableBrands}
             selectedBrands={selectedBrands}
             onBrandChange={onBrandChange}
@@ -149,14 +153,14 @@ export function InventoryView({
                   <div className="w-12 h-12 rounded-lg bg-slate-200/60 dark:bg-white/5" />
                 </Box>
 
-                {/* --- Price & Inset Action Area --- */}
+                {/* --- Bottom Controls Surface --- */}
                 <Stack gap="xs" className="px-3 pt-3 pb-3">
-                  <Group justify="space-between" align="baseline">
+                  <Group justify="space-between" align="center">
                     <Stack gap={4}>
-                      <div className="h-2.5 w-10 bg-slate-200/80 dark:bg-white/10 rounded" />
+                      <div className="h-2.5 w-14 bg-slate-200/80 dark:bg-white/10 rounded" />
                       <div className="h-5 w-24 bg-slate-200 dark:bg-white/10 rounded" />
                     </Stack>
-                    <div className="h-3 w-16 bg-slate-200/60 dark:bg-white/5 rounded" />
+                    <div className="h-7 w-7 rounded-md bg-slate-200/60 dark:bg-white/5" />
                   </Group>
                   <div className="h-9 w-full rounded-md bg-slate-200 dark:bg-white/10" />
                 </Stack>
@@ -165,177 +169,147 @@ export function InventoryView({
           </div>
         ) : paginatedParts.length > 0 ? (
           view === "grid" ? (
-            <>
-              <div className={cn("grid gap-3 md:gap-4", gridColsClass)}>
-                {paginatedParts.map((part, index) => (
-                  <PartCard
-                    key={part.id}
-                    part={part}
-                    priority={index < priorityImageCount}
-                    imageSizes={imageSizes}
-                    effectiveStock={part.effectiveStock}
-                    onToggleBuild={onTogglePart}
-                    isSelected={isSelected(part)}
-                    compatibility={part.compatibility}
-                  />
-                ))}
-              </div>
-              <div className="mt-5">
-                <PaginationControls
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  itemsPerPage={itemsPerPage}
-                  onPageChange={onPageChange}
-                  onItemsPerPageChange={onItemsPerPageChange}
+            <div className={cn("grid gap-3 md:gap-4", gridColsClass)}>
+              {paginatedParts.map((part, index) => (
+                <PartCard
+                  key={part.id}
+                  part={part}
+                  onToggleBuild={onTogglePart}
+                  isSelected={isSelected(part)}
+                  priority={index < priorityImageCount}
+                  imageSizes={imageSizes}
                 />
-              </div>
-            </>
-          ) : (
-            <div className="space-y-4">
-              <Paper
-                withBorder
-                radius="lg"
-                className="overflow-hidden bg-white/70 dark:bg-[#141a23]/90 border-slate-200/80 dark:border-white/10"
-              >
-                <Table highlightOnHover verticalSpacing="sm" horizontalSpacing="md">
-                  <Table.Thead className="bg-slate-50 dark:bg-white/[0.03] border-b border-slate-200/80 dark:border-white/10">
-                    <Table.Tr>
-                      <Table.Th className="text-[11px] font-semibold tracking-wider uppercase text-slate-500">
-                        Part Name
-                      </Table.Th>
-                      <Table.Th className="text-[11px] font-semibold tracking-wider uppercase text-slate-500">
-                        Availability
-                      </Table.Th>
-                      <Table.Th className="text-right text-[11px] font-semibold tracking-wider uppercase text-slate-500">
-                        Price
-                      </Table.Th>
-                      <Table.Th className="w-[100px] text-right"></Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {paginatedParts.map((part) => {
-                      const isPartSelected = isSelected(part);
-                      const isOutOfStock = part.effectiveStock === 0 && !isPartSelected;
-                      const isIncompatible = part.compatibility && !part.compatibility.compatible;
-
-                      return (
-                        <Table.Tr
-                          key={part.id}
-                          className={cn(
-                            "transition-colors",
-                            isOutOfStock && "opacity-50 grayscale",
-                            isIncompatible && "bg-red-500/[0.03] dark:bg-red-500/[0.05]"
-                          )}
-                        >
-                          {/* Part identity */}
-                          <Table.Td>
-                            <Group gap="sm" wrap="nowrap">
-                              <Box className="relative w-11 h-11 rounded-lg overflow-hidden shrink-0 border border-slate-200/70 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.03]">
-                                <OptimizedImage
-                                  src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"}
-                                  alt={part.name}
-                                  fill
-                                  className="object-contain p-1"
-                                />
-                              </Box>
-                              <Stack gap={2} className="min-w-0">
-                                <Text size="sm" fw={600} className="line-clamp-1 leading-snug">
-                                  {part.name}
-                                </Text>
-                                <Group gap={6}>
-                                  <Badge size="xs" variant="light" color="gray" radius="sm">
-                                    {part.brand || "Component"}
-                                  </Badge>
-                                  <Text size="xs" c="dimmed">
-                                    {part.category}
-                                  </Text>
-                                </Group>
-                              </Stack>
-                            </Group>
-                          </Table.Td>
-
-                          {/* Stock badge */}
-                          <Table.Td>
-                            <Badge
-                              variant="dot"
-                              size="sm"
-                              color={
-                                part.effectiveStock > 5
-                                  ? "teal"
-                                  : part.effectiveStock > 0
-                                  ? "orange"
-                                  : "red"
-                              }
-                            >
-                              {part.effectiveStock > 0
-                                ? `${part.effectiveStock} in stock`
-                                : "Out of stock"}
-                            </Badge>
-                          </Table.Td>
-
-                          {/* Price */}
-                          <Table.Td className="text-right">
-                            <Text size="sm" fw={700} className="font-mono">
-                              {formatCurrency(part.price)}
-                            </Text>
-                          </Table.Td>
-
-                          {/* Action button */}
-                          <Table.Td>
-                            <div className="flex justify-end">
-                              {(!isIncompatible || isPartSelected) && (
-                                <Button
-                                  size="xs"
-                                  radius="md"
-                                  onClick={() => onTogglePart(part)}
-                                  disabled={isOutOfStock}
-                                  variant={isPartSelected ? "filled" : "light"}
-                                  color={isPartSelected ? "teal" : "cyan"}
-                                  leftSection={
-                                    isPartSelected ? (
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    ) : (
-                                      <Plus className="h-3.5 w-3.5" />
-                                    )
-                                  }
-                                >
-                                  {isPartSelected ? "Remove" : "Add"}
-                                </Button>
-                              )}
-                            </div>
-                          </Table.Td>
-                        </Table.Tr>
-                      );
-                    })}
-                  </Table.Tbody>
-                </Table>
-              </Paper>
-              <PaginationControls
-                currentPage={currentPage}
-                totalPages={totalPages}
-                itemsPerPage={itemsPerPage}
-                onPageChange={onPageChange}
-                onItemsPerPageChange={onItemsPerPageChange}
-              />
+              ))}
             </div>
+          ) : (
+            <Paper
+              withBorder
+              radius="lg"
+              className="overflow-hidden bg-white/70 dark:bg-[#141a23]/90 border-slate-200/80 dark:border-white/10"
+            >
+              <Table verticalSpacing="sm" horizontalSpacing="md" highlightOnHover>
+                <Table.Thead className="bg-slate-50/50 dark:bg-white/[0.02]">
+                  <Table.Tr>
+                    <Table.Th className="w-16">Item</Table.Th>
+                    <Table.Th>Component</Table.Th>
+                    <Table.Th>Category</Table.Th>
+                    <Table.Th>Brand</Table.Th>
+                    <Table.Th className="text-right">Price</Table.Th>
+                    <Table.Th className="w-24 text-center">Status</Table.Th>
+                    <Table.Th className="w-32 text-right">Action</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {paginatedParts.map((part) => {
+                    const selected = isSelected(part);
+                    const isOutOfStock = part.stock === 0;
+
+                    return (
+                      <Table.Tr
+                        key={part.id}
+                        className={cn(
+                          "transition-colors",
+                          selected && "bg-cyan-50/40 dark:bg-cyan-950/20"
+                        )}
+                      >
+                        <Table.Td>
+                          <div className="w-10 h-10 rounded-md border border-slate-200 dark:border-white/10 overflow-hidden relative bg-pure-white shrink-0">
+                            <OptimizedImage
+                              src={getOptimizedStorageUrl(part.imageUrl, true) || "/placeholder-part.png"}
+                              alt={part.name}
+                              fill
+                              sizes="40px"
+                              className="object-contain p-0.5"
+                            />
+                          </div>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm" fw={600} className="line-clamp-1">
+                            {part.name}
+                          </Text>
+                          {part.sku && (
+                            <Text size="xs" c="dimmed">
+                              SKU: {part.sku}
+                            </Text>
+                          )}
+                        </Table.Td>
+                        <Table.Td>
+                          <Badge size="xs" variant="light" color="cyan">
+                            {part.category}
+                          </Badge>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm" c="dimmed">
+                            {part.brand || "—"}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td className="text-right">
+                          <Text size="sm" fw={700} className="font-mono">
+                            {formatCurrency(part.price)}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td className="text-center">
+                          {isOutOfStock ? (
+                            <Badge size="xs" color="red" variant="light">
+                              Out of Stock
+                            </Badge>
+                          ) : (
+                            <Badge size="xs" color="teal" variant="light">
+                              In Stock
+                            </Badge>
+                          )}
+                        </Table.Td>
+                        <Table.Td className="text-right">
+                          <Button
+                            size="xs"
+                            variant={selected ? "light" : "default"}
+                            color={selected ? "red" : "cyan"}
+                            leftSection={selected ? <Trash2 size={12} /> : <Plus size={12} />}
+                            onClick={() => onTogglePart(part)}
+                            disabled={isOutOfStock && !selected}
+                          >
+                            {selected ? "Remove" : "Add"}
+                          </Button>
+                        </Table.Td>
+                      </Table.Tr>
+                    );
+                  })}
+                </Table.Tbody>
+              </Table>
+            </Paper>
           )
         ) : (
           <Paper
             withBorder
             radius="lg"
             p="xl"
-            className="min-h-[360px] flex flex-col items-center justify-center text-center bg-white/40 dark:bg-[#141a23]/60 border-slate-200/70 dark:border-white/10"
+            className="min-h-[300px] flex flex-col items-center justify-center text-center bg-white/40 dark:bg-[#141a23]/60 border-slate-200/70 dark:border-white/10"
           >
-            <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3 text-slate-400">
-              <Database className="w-6 h-6 opacity-60" />
+            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3 text-slate-400">
+              <Database size={24} className="opacity-60" />
             </div>
-            <Text fw={600} size="md" mb={4}>
-              No components found
+            <Text fw={600} size="sm" mb={4}>
+              No parts found
             </Text>
             <Text c="dimmed" size="xs" maw={300}>
-              Try adjusting your search terms or filters to explore alternative components.
+              {searchQuery
+                ? `No components match "${searchQuery}". Try a different keyword or category.`
+                : "No components match the selected category filters."}
             </Text>
           </Paper>
+        )}
+
+        {/* Bottom Pagination Control */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex justify-center">
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              itemsPerPage={itemsPerPage}
+              onPageChange={onPageChange}
+              onItemsPerPageChange={onItemsPerPageChange}
+              />
+          </div>
         )}
       </>
     </motion.div>

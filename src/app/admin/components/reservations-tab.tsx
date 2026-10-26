@@ -14,13 +14,11 @@ import {
     XCircle,
     Calendar,
     Search,
-    ArrowUpDown,
     PieChart as PieIcon,
     DollarSign,
     RefreshCw,
     AlertCircle,
     Layers,
-    SlidersHorizontal,
     Filter
 } from 'lucide-react';
 import {
@@ -36,6 +34,10 @@ import {
     Tooltip,
     Select,
     TextInput,
+    Divider,
+    Drawer,
+    Popover,
+    Radio,
     SegmentedControl,
     Chip,
     ScrollArea,
@@ -44,6 +46,7 @@ import {
     Modal,
     Box
 } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import {
     PieChart,
     Pie,
@@ -56,6 +59,7 @@ import { formatCurrency, cn } from "@/lib/utils";
 import { useTheme } from "@/context/theme-provider";
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Order } from '@/lib/types';
+import { AdminHeaderSlot } from './admin-tab-header';
 
 interface ReservationsTabProps {
     orders: Order[];
@@ -64,6 +68,8 @@ interface ReservationsTabProps {
     isSuperAdmin: boolean;
     onReservationAction: (id: string, action: 'archive' | 'restore' | 'delete') => Promise<boolean>;
     onUpdateOrder: (id: string, status: Order['status']) => Promise<void>;
+    searchQuery?: string;
+    onSearchQueryChange?: (value: string) => void;
 }
 
 // Visual configuration for the 4 reservation statuses
@@ -129,7 +135,9 @@ export function ReservationsTab({
     archived = false,
     isSuperAdmin,
     onReservationAction,
-    onUpdateOrder
+    onUpdateOrder,
+    searchQuery: controlledSearchQuery,
+    onSearchQueryChange,
 }: ReservationsTabProps) {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
@@ -142,11 +150,21 @@ export function ReservationsTab({
 
     // Filter, Search, and Pagination States
     const [statusFilter, setStatusFilter] = useState<string>('all');
-    const [searchQuery, setSearchQuery] = useState('');
+    const [localSearchQuery, setLocalSearchQuery] = useState('');
+    const searchQuery = controlledSearchQuery ?? localSearchQuery;
+    const setSearchQuery = onSearchQueryChange ?? setLocalSearchQuery;
     const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'price-high' | 'price-low'>('newest');
     const [orderCurrentPage, setOrderCurrentPage] = useState(1);
     const [orderItemsPerPage, setOrderItemsPerPage] = useState(8);
     const [showAllSpecs, setShowAllSpecs] = useState(false);
+    const [desktopFiltersOpened, setDesktopFiltersOpened] = useState(false);
+    const [mobileFiltersOpened, setMobileFiltersOpened] = useState(false);
+    const isMobile = useMediaQuery('(max-width: 639px)');
+
+    useEffect(() => {
+        setDesktopFiltersOpened(false);
+        setMobileFiltersOpened(false);
+    }, [isMobile]);
 
     const [pendingAction, setPendingAction] = useState<{ order: Order; action: 'archive' | 'restore' | 'delete' } | null>(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -295,6 +313,70 @@ export function ReservationsTab({
     const toggleShowAllSpecs = () => {
         setShowAllSpecs(prev => !prev);
     };
+
+    const reservationFilterCount = Number(statusFilter !== 'all') + Number(sortBy !== 'newest');
+    const resetReservationFilters = () => {
+        setStatusFilter('all');
+        setSortBy('newest');
+    };
+
+    const reservationFilterButton = (mobile: boolean) => (
+        <Button
+            size="sm"
+            h={36}
+            variant={reservationFilterCount ? 'light' : 'default'}
+            color={reservationFilterCount ? 'cyan' : undefined}
+            radius="md"
+            leftSection={<Filter size={15} />}
+            rightSection={reservationFilterCount ? <Badge color="cyan" circle size="xs">{reservationFilterCount}</Badge> : undefined}
+            className="whitespace-nowrap"
+            onClick={mobile ? () => setMobileFiltersOpened(true) : undefined}
+            aria-expanded={mobile ? mobileFiltersOpened : desktopFiltersOpened}
+            aria-label={`Filters and sort${reservationFilterCount ? `, ${reservationFilterCount} active` : ''}`}
+        >
+            Filters & sort
+        </Button>
+    );
+
+    const reservationFilterContent = (close: () => void, maxHeight: string) => (
+        <div className="flex flex-col" style={{ maxHeight }}>
+            <Stack gap="sm" className="min-h-0 overflow-y-auto p-3">
+                <div>
+                    <Text fw={700} size="sm" mb="xs">Status</Text>
+                    <Radio.Group value={statusFilter} onChange={setStatusFilter}>
+                        <Stack gap={0}>
+                            <Radio value="all" label={`All (${metrics.totalOrders})`} color="cyan" classNames={{ root: 'flex min-h-11 items-center sm:min-h-7' }} />
+                            <Radio value="pending" label={`Pending (${metrics.pending})`} color="cyan" classNames={{ root: 'flex min-h-11 items-center sm:min-h-7' }} />
+                            <Radio value="building" label={`Building (${metrics.building})`} color="cyan" classNames={{ root: 'flex min-h-11 items-center sm:min-h-7' }} />
+                            <Radio value="finished building" label={`Finished (${metrics.finished})`} color="cyan" classNames={{ root: 'flex min-h-11 items-center sm:min-h-7' }} />
+                            <Radio value="cancelled" label={`Cancelled (${metrics.cancelled})`} color="cyan" classNames={{ root: 'flex min-h-11 items-center sm:min-h-7' }} />
+                        </Stack>
+                    </Radio.Group>
+                </div>
+
+                <Divider />
+
+                <div>
+                    <Text fw={700} size="sm" mb="xs">Sort by</Text>
+                    <Radio.Group value={sortBy} onChange={(value) => setSortBy(value as typeof sortBy)}>
+                        <Stack gap={0}>
+                            <Radio value="newest" label="Newest first" color="cyan" classNames={{ root: 'flex min-h-11 items-center sm:min-h-7' }} />
+                            <Radio value="oldest" label="Oldest first" color="cyan" classNames={{ root: 'flex min-h-11 items-center sm:min-h-7' }} />
+                            <Radio value="price-high" label="Price: high to low" color="cyan" classNames={{ root: 'flex min-h-11 items-center sm:min-h-7' }} />
+                            <Radio value="price-low" label="Price: low to high" color="cyan" classNames={{ root: 'flex min-h-11 items-center sm:min-h-7' }} />
+                        </Stack>
+                    </Radio.Group>
+                </div>
+            </Stack>
+
+            <Group grow className="border-t border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-[#111722]">
+                <Button variant="default" radius="md" className="h-11" onClick={resetReservationFilters}>Reset all</Button>
+                <Button color="cyan" radius="md" className="h-11" onClick={close}>
+                    Show {filteredOrders.length} reservations
+                </Button>
+            </Group>
+        </div>
+    );
 
     const handleConfirmAction = async () => {
         if (!pendingAction) return;
@@ -735,73 +817,37 @@ export function ReservationsTab({
             </motion.div>}
 
             {/* SECTION 2: Search Bar & Dropdown Filter Controls */}
-            <Paper
-                withBorder
-                radius="lg"
-                p="xs"
-                className="bg-white/85 dark:bg-[#111722] border-slate-200/80 dark:border-white/10 shadow-xs"
-            >
-                <div className="flex items-center justify-between gap-2 sm:gap-3 flex-nowrap overflow-x-auto no-scrollbar py-0.5">
-                    {/* Left: Search Input */}
-                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                        <TextInput
-                            placeholder="Search by email, rig, or ID..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.currentTarget.value)}
-                            leftSection={<Search size={14} className="text-slate-400" />}
-                            rightSection={
-                                searchQuery ? (
-                                    <ActionIcon size="xs" variant="subtle" color="gray" onClick={() => setSearchQuery('')}>
-                                        <XCircle className="h-3.5 w-3.5" />
-                                    </ActionIcon>
-                                ) : null
-                            }
-                            radius="md"
-                            size="xs"
-                            className="w-44 sm:w-56 lg:w-64 shrink-0"
-                        />
-                    </div>
-
-                    {/* Right: Filter, Sort, and Controls */}
-                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                        {/* Status Filter Dropdown */}
-                        <Select
-                            value={statusFilter}
-                            onChange={(val) => setStatusFilter((val as string) || 'all')}
-                            leftSection={<Filter size={13} className="text-cyan-500 dark:text-cyan-400" />}
-                            data={[
-                                { label: `All (${metrics.totalOrders})`, value: 'all' },
-                                { label: `Pending (${metrics.pending})`, value: 'pending' },
-                                { label: `Building (${metrics.building})`, value: 'building' },
-                                { label: `Finished (${metrics.finished})`, value: 'finished building' },
-                                { label: `Cancelled (${metrics.cancelled})`, value: 'cancelled' },
-                            ]}
-                            size="xs"
-                            radius="md"
-                            className="w-32 sm:w-40 shrink-0"
-                        />
-
-                        {/* Sort Selector */}
-                        <Select
-                            value={sortBy}
-                            onChange={(val) => setSortBy((val as any) || 'newest')}
-                            leftSection={<ArrowUpDown size={13} className="text-slate-400" />}
-                            data={[
-                                { label: 'Newest First', value: 'newest' },
-                                { label: 'Oldest First', value: 'oldest' },
-                                { label: 'Price: High to Low', value: 'price-high' },
-                                { label: 'Price: Low to High', value: 'price-low' },
-                            ]}
-                            size="xs"
-                            radius="md"
-                            className="w-32 sm:w-36 shrink-0"
-                        />
+            <AdminHeaderSlot
+                countBadge={<Badge size="md" variant="light" color="cyan" radius="md" className="font-mono font-bold lowercase tracking-normal">{filteredOrders.length} reservations</Badge>}
+                actions={
+                    <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                        <div className="hidden sm:block">
+                            <Popover
+                                opened={desktopFiltersOpened}
+                                onChange={setDesktopFiltersOpened}
+                                width={360}
+                                position="bottom-end"
+                                shadow="lg"
+                                withinPortal
+                            >
+                                <Popover.Target>
+                                    <div onClick={() => setDesktopFiltersOpened((opened) => !opened)}>
+                                        {reservationFilterButton(false)}
+                                    </div>
+                                </Popover.Target>
+                                <Popover.Dropdown p={0} className="border-slate-200 bg-white shadow-lg dark:border-white/10 dark:bg-[#111722]">
+                                    {reservationFilterContent(() => setDesktopFiltersOpened(false), 'min(78vh, 760px)')}
+                                </Popover.Dropdown>
+                            </Popover>
+                        </div>
+                        <div className="sm:hidden">{reservationFilterButton(true)}</div>
 
                         {/* Global Show/Hide Specs Toggle Button */}
                         <Button
                             variant={showAllSpecs ? "light" : "default"}
                             color={showAllSpecs ? "cyan" : "gray"}
                             size="xs"
+                            h={36}
                             radius="md"
                             onClick={toggleShowAllSpecs}
                             leftSection={<Layers size={13} />}
@@ -811,26 +857,26 @@ export function ReservationsTab({
                             <span className="sm:hidden">Specs</span>
                         </Button>
 
-                        {/* Reset Filters button if any filter is active */}
-                        {(statusFilter !== 'all' || searchQuery.trim() !== '') && (
-                            <Button
-                                size="xs"
-                                variant="subtle"
-                                color="gray"
-                                radius="md"
-                                onClick={() => {
-                                    setStatusFilter('all');
-                                    setSearchQuery('');
-                                }}
-                                leftSection={<RefreshCw size={13} />}
-                                className="shrink-0"
-                            >
-                                Reset
-                            </Button>
-                        )}
                     </div>
-                </div>
-            </Paper>
+                }
+            />
+
+            <Drawer
+                opened={mobileFiltersOpened}
+                onClose={() => setMobileFiltersOpened(false)}
+                title="Filters & sort"
+                position="bottom"
+                size="85dvh"
+                radius="lg"
+                hiddenFrom="sm"
+                classNames={{
+                    content: 'bg-white text-slate-900 dark:bg-[#111722] dark:text-slate-100',
+                    header: 'border-b border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-[#111722]',
+                    body: '!p-0',
+                }}
+            >
+                {reservationFilterContent(() => setMobileFiltersOpened(false), 'calc(85dvh - 64px)')}
+            </Drawer>
 
             {/* SECTION 3: Cards Grid */}
             {ordersLoading ? (

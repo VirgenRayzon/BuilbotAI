@@ -21,6 +21,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { loading, status, authUser, profile } = useUserProfile();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const [isAdminPreview, setIsAdminPreview] = useState(false);
   const [signOutStartedAt, setSignOutStartedAt] = useState<number | null>(null);
 
   const { isMaintenanceMode } = useSiteSettings();
@@ -31,6 +32,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    const isPreviewCatalog = pathname === '/parts' || pathname.startsWith('/parts/') || pathname === '/pre-builts' || pathname.startsWith('/pre-builts/');
+    setIsAdminPreview(isPreviewCatalog && new URLSearchParams(window.location.search).get('preview') === 'admin');
+  }, [pathname]);
 
   const isLandingRedirect = pathname === "/" && !!authUser;
   const isAuthPage = ['/signin', '/signup', '/system-access'].includes(pathname);
@@ -58,7 +64,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isLandingPage = pathname === '/';
   const shouldShowFooter = isLandingPage || showFooterRoutes.some(route => pathname === route);
 
-  const isHeaderHidden = false;
+  const isHeaderHidden = pathname.startsWith('/admin') || (pathname === '/profile' && isAdmin) || isAdminPreview;
 
   // Loader overlay condition:
   // 1. Initial auth profile is loading (the customer sign-in form owns its transition)
@@ -105,11 +111,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </AnimatePresence>
           <SignOutLoader visible={signOutStartedAt !== null} />
 
-          {signOutStartedAt === null && <Header />}
+          {signOutStartedAt === null && !isHeaderHidden && <Header />}
           {signOutStartedAt === null && <CartDrawer />}
           <main className={cn(
-            "flex-1 min-h-[calc(100vh-4rem)]",
-            !isHeaderHidden && "pt-16",
+            "flex-1",
+            isHeaderHidden ? "min-h-screen" : "min-h-[calc(100vh-4rem)] pt-16",
             isMaintenanceMode && !isAdmin && !isAdminRoute && "grayscale-[0.5] contrast-125"
           )}>
             {signOutStartedAt === null && children}
