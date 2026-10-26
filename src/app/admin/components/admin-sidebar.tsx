@@ -557,69 +557,88 @@ export function AdminSidebar({
     }));
   };
 
+  const brandLink = (
+    <Tooltip
+      label="Netcodex Admin"
+      position="right"
+      withArrow
+      disabled={!isCollapsed}
+    >
+      <UnstyledButton
+        unstyled
+        component={Link}
+        href="/admin"
+        data-sidebar="menu-button"
+        data-size="default"
+        data-active="false"
+        className="peer/menu-button flex h-8 w-full items-center justify-center gap-2 overflow-hidden rounded-md !p-0 text-left text-sm outline-none ring-sidebar-ring transition-[width,height,padding] hover:bg-transparent focus-visible:ring-2 active:bg-transparent group-data-[collapsible=icon]:!size-8"
+      >
+        {/* Collapsed / Shrink Icon Emblem */}
+        <div className="hidden group-data-[collapsible=icon]:flex aspect-square size-8 items-center justify-center rounded-lg bg-slate-900 dark:bg-[#071322] border border-slate-700 dark:border-cyan-400/40 p-1 shrink-0">
+          <Image
+            src={netcodexEmblem}
+            alt="Netcodex Emblem"
+            width={24}
+            height={24}
+            unoptimized
+            priority
+            className="size-full object-contain"
+          />
+        </div>
+
+        {/* Expanded Full Netcodex Logo (same h-8 height & same background/border as shrink) */}
+        <div className="flex h-8 w-full items-center justify-center rounded-lg bg-slate-900 dark:bg-[#071322] border border-slate-700 dark:border-cyan-400/40 px-3 overflow-hidden group-data-[collapsible=icon]:hidden">
+          <Image
+            src={netcodexLogoWhite}
+            alt="Netcodex Computer Center"
+            width={128}
+            height={22}
+            unoptimized
+            priority
+            className="h-5 w-auto object-contain"
+          />
+        </div>
+      </UnstyledButton>
+    </Tooltip>
+  );
+
   const sidebarBody = (
     <Box
       data-sidebar="sidebar"
-      className="flex h-full w-full flex-col bg-sidebar text-sidebar-foreground"
+      className={cn(
+        "relative flex w-full flex-col bg-sidebar text-sidebar-foreground",
+        isMobile ? "min-h-0 !flex-1" : "h-full"
+      )}
     >
       {/* Fixed-Height Brand Header with identical surface in Expanded & Collapsed states */}
-      <Box data-sidebar="header" className="flex h-12 flex-col justify-center gap-2 p-2">
+      {!isMobile && (
         <Box
-          component="ul"
-          data-sidebar="menu"
-          className="m-0 flex w-full min-w-0 list-none flex-col gap-1 p-0"
+          data-sidebar="header"
+          className="flex h-12 flex-col justify-center gap-2 p-2"
         >
-          <Box component="li" data-sidebar="menu-item" className="group/menu-item relative">
-            <Tooltip
-              label="Netcodex Admin"
-              position="right"
-              withArrow
-              disabled={!isCollapsed}
+          <Box
+            component="ul"
+            data-sidebar="menu"
+            className="m-0 flex w-full min-w-0 list-none flex-col gap-1 p-0"
+          >
+            <Box
+              component="li"
+              data-sidebar="menu-item"
+              className="group/menu-item relative"
             >
-              <UnstyledButton
-                unstyled
-                component={Link}
-                href="/admin"
-                data-sidebar="menu-button"
-                data-size="default"
-                data-active="false"
-                className="peer/menu-button flex h-8 w-full items-center justify-center gap-2 overflow-hidden rounded-md !p-0 text-left text-sm outline-none ring-sidebar-ring transition-[width,height,padding] hover:bg-transparent focus-visible:ring-2 active:bg-transparent group-data-[collapsible=icon]:!size-8"
-              >
-                {/* Collapsed / Shrink Icon Emblem */}
-                <div className="hidden group-data-[collapsible=icon]:flex aspect-square size-8 items-center justify-center rounded-lg bg-slate-900 dark:bg-[#071322] border border-slate-700 dark:border-cyan-400/40 p-1 shrink-0">
-                  <Image
-                    src={netcodexEmblem}
-                    alt="Netcodex Emblem"
-                    width={24}
-                    height={24}
-                    unoptimized
-                    priority
-                    className="size-full object-contain"
-                  />
-                </div>
-
-                {/* Expanded Full Netcodex Logo (same h-8 height & same background/border as shrink) */}
-                <div className="flex h-8 w-full items-center justify-center rounded-lg bg-slate-900 dark:bg-[#071322] border border-slate-700 dark:border-cyan-400/40 px-3 overflow-hidden group-data-[collapsible=icon]:hidden">
-                  <Image
-                    src={netcodexLogoWhite}
-                    alt="Netcodex Computer Center"
-                    width={128}
-                    height={22}
-                    unoptimized
-                    priority
-                    className="h-5 w-auto object-contain"
-                  />
-                </div>
-              </UnstyledButton>
-            </Tooltip>
+              {brandLink}
+            </Box>
           </Box>
         </Box>
-      </Box>
+      )}
 
       {/* Platform Navigation */}
       <Box
         data-sidebar="content"
-        className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden"
+        className={cn(
+          "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
+          isMobile && "pb-16"
+        )}
       >
         <Box data-sidebar="group" className="relative flex w-full min-w-0 flex-col p-2">
           <Text
@@ -774,7 +793,13 @@ export function AdminSidebar({
       </Box>
 
       {/* NavUser Footer */}
-      <Box data-sidebar="footer" className="flex flex-col gap-2 p-2">
+      <Box
+        data-sidebar="footer"
+        className={cn(
+          "mt-auto flex shrink-0 flex-col gap-2 bg-sidebar p-2",
+          isMobile && "absolute inset-x-0 bottom-0 z-10"
+        )}
+      >
         <Box
           component="ul"
           data-sidebar="menu"
@@ -893,10 +918,14 @@ export function AdminSidebar({
           size={SIDEBAR_WIDTH_MOBILE}
           padding={0}
           withCloseButton={false}
-          title={<VisuallyHidden>Sidebar</VisuallyHidden>}
+          title={brandLink}
           classNames={{
-            content: "bg-sidebar text-sidebar-foreground p-0",
-            body: "h-full p-0 flex flex-col",
+            content:
+              "!flex !h-full !flex-col bg-sidebar text-sidebar-foreground p-0",
+            header: "!h-12 !min-h-12 bg-sidebar !px-3 !py-2",
+            title: "w-full",
+            body:
+              "min-h-0 !flex !flex-1 !flex-col overflow-hidden p-0",
           }}
         >
           {sidebarBody}
