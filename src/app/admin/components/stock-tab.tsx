@@ -255,14 +255,14 @@ export function StockTab({
                     <AddPartDialog onSave={onAddPart}>
                         <Button
                             size="sm"
-                            h={36}
                             radius="md"
                             color="cyan"
                             variant="filled"
-                            leftSection={<Plus size={16} />}
-                            className="font-semibold shadow-xs"
+                            aria-label="Add Part"
+                            className="!size-11 !p-0 font-semibold shadow-xs sm:!h-9 sm:!w-auto sm:!px-3"
                         >
-                            Add Part
+                            <Plus size={16} />
+                            <span className="hidden sm:inline">Add Part</span>
                         </Button>
                     </AddPartDialog>
                 }

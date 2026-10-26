@@ -8,16 +8,21 @@ import {
     RefreshCcw,
     Sparkles,
     AlertTriangle,
-    FileSpreadsheet
+    FileSpreadsheet,
+    QrCode,
+    Scan
 } from 'lucide-react';
 import { 
+    ActionIcon,
     ThemeIcon, 
     Text, 
     Badge, 
     Button, 
     Group, 
     Modal, 
-    Stack 
+    Stack,
+    Menu,
+    Tooltip
 } from '@mantine/core';
 import { cn } from "@/lib/utils";
 import { QRHealthDialog } from '@/components/qr-health-dialog';
@@ -136,10 +141,36 @@ export function AdminTabHeader({
                 {/* Unified 36px Action Bar */}
                 <div className="ml-auto flex flex-wrap items-center gap-2 shrink-0">
                     {(currentTab === 'stock' || currentTab === 'prebuilts') && (
-                        <>
-                            <QRScannerDialog />
-                            <QRHealthDialog />
-                        </>
+                        <Menu position="bottom-end" shadow="md" width={180} withinPortal>
+                            <Menu.Target>
+                                <Tooltip label="QR tools" withArrow position="top">
+                                    <ActionIcon
+                                        variant="default"
+                                        radius="md"
+                                        size={36}
+                                        aria-label="QR tools"
+                                    >
+                                        <QrCode size={16} />
+                                    </ActionIcon>
+                                </Tooltip>
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                                <QRScannerDialog
+                                    trigger={(open) => (
+                                        <Menu.Item leftSection={<Scan size={16} />} onClick={open}>
+                                            Scan QR
+                                        </Menu.Item>
+                                    )}
+                                />
+                                <QRHealthDialog
+                                    trigger={(open) => (
+                                        <Menu.Item leftSection={<QrCode size={16} />} onClick={open}>
+                                            QR health
+                                        </Menu.Item>
+                                    )}
+                                />
+                            </Menu.Dropdown>
+                        </Menu>
                     )}
 
                     {currentTab === 'reservations' && pendingOrdersCount > 0 && (

@@ -22,7 +22,11 @@ import { useQRScanner } from '@/hooks/use-qr-scanner';
 import { decodeQRImage, parseScannedContent, type DecodedQRResult } from '@/lib/qr-decoder';
 import { productStockAdminUrl } from '@/lib/product-identity';
 
-export function QRScannerDialog() {
+interface QRScannerDialogProps {
+  trigger?: (open: () => void) => React.ReactNode;
+}
+
+export function QRScannerDialog({ trigger }: QRScannerDialogProps = {}) {
   const router = useRouter();
   const { authUser } = useUserProfile();
   const [opened, setOpened] = useState(false);
@@ -158,22 +162,26 @@ export function QRScannerDialog() {
     setManualInput('');
   };
 
+  const handleOpen = () => {
+    setOpened(true);
+    setActiveTab('camera');
+  };
+
   return (
     <>
-      <Tooltip label="Scan QR" withArrow position="top">
-        <ActionIcon
-          variant="default"
-          radius="md"
-          size={36}
-          aria-label="Scan item"
-          onClick={() => {
-            setOpened(true);
-            setActiveTab('camera');
-          }}
-        >
-          <Scan size={16} />
-        </ActionIcon>
-      </Tooltip>
+      {trigger ? trigger(handleOpen) : (
+        <Tooltip label="Scan QR" withArrow position="top">
+          <ActionIcon
+            variant="default"
+            radius="md"
+            size={36}
+            aria-label="Scan item"
+            onClick={handleOpen}
+          >
+            <Scan size={16} />
+          </ActionIcon>
+        </Tooltip>
+      )}
 
       <Modal
         opened={opened}
