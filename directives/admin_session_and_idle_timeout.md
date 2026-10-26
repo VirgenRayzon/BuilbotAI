@@ -45,6 +45,8 @@ Use the same-route `reason=staff_account` notice when rejecting staff credential
 
 The public `syncUserClaimsAction` must reject staff profiles and must not issue staff claims without the System Access key check.
 
+System Access credential verification uses the stable `POST /api/system-access/authenticate` route, not a generated Next.js Server Action reference. This prevents an idle-timeout page that survived a development recompile or deployment from submitting an obsolete action ID. The route accepts the Firebase ID token only through the `Authorization: Bearer` header and validates the role/key request body with Zod.
+
 ### 3. Idle Inactivity Engine (`useIdleTimeout`)
 Instead of fragile in-memory `setTimeout` constructs that get throttled or suspended in background tabs, the idle engine uses a timestamp-driven heartbeat:
 - **Activity Tracking**: Listens to `mousemove`, `mousedown`, `keydown`, `scroll`, and `touchstart` (throttled to 2.5s).

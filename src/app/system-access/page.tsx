@@ -34,7 +34,6 @@ import { UnifiedBackground } from '@/components/landing/unified-background';
 import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/context/user-profile';
-import { authenticateSystemAccessAction } from '@/app/actions';
 import { RequestKeyModal } from './components/request-key-modal';
 import { Logo } from '@/components/logo';
 
@@ -46,6 +45,32 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 type RoleTab = 'manager' | 'superadmin';
+
+type SystemAccessResult = { success?: true; error?: string };
+
+async function authenticateSystemAccess(
+  idToken: string,
+  roleKey: string,
+  requestedRole: RoleTab
+): Promise<SystemAccessResult> {
+  const response = await fetch('/api/system-access/authenticate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({ roleKey, requestedRole }),
+  });
+  const result = (await response.json().catch(() => null)) as SystemAccessResult | null;
+
+  if (!response.ok) {
+    return {
+      error: result?.error ?? 'Unable to verify system access. Please try again.',
+    };
+  }
+
+  return result ?? { error: 'The server returned an invalid authentication response.' };
+}
 
 function SystemAccessContent() {
   const [error, setError] = useState<string | null>(null);
@@ -142,7 +167,7 @@ function SystemAccessContent() {
       const user = userCredential.user;
 
       const idToken = await user.getIdToken();
-      const result = await authenticateSystemAccessAction(idToken, values.roleKey, activeTab);
+      const result = await authenticateSystemAccess(idToken, values.roleKey, activeTab);
 
       if (result.error) {
         if (typeof window !== 'undefined') {
@@ -199,7 +224,7 @@ function SystemAccessContent() {
 
     try {
       const idToken = await user.getIdToken();
-      const result = await authenticateSystemAccessAction(idToken, key.trim(), activeTab);
+      const result = await authenticateSystemAccess(idToken, key.trim(), activeTab);
 
       if (result.error) {
         if (typeof window !== 'undefined') {
