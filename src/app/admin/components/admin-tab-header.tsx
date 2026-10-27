@@ -133,6 +133,8 @@ export function AdminTabHeader({
     onConfirmResetSales,
 }: AdminTabHeaderProps) {
     const ctx = useContext(AdminTabHeaderContext);
+    const [qrScannerOpened, setQrScannerOpened] = useState(false);
+    const [qrHealthOpened, setQrHealthOpened] = useState(false);
 
     return (
         <div className="relative mb-4 space-y-2.5">
@@ -155,23 +157,26 @@ export function AdminTabHeader({
                                 </Tooltip>
                             </Menu.Target>
                             <Menu.Dropdown>
-                                <QRScannerDialog
-                                    trigger={(open) => (
-                                        <Menu.Item leftSection={<Scan size={16} />} onClick={open}>
-                                            Scan QR
-                                        </Menu.Item>
-                                    )}
-                                />
-                                <QRHealthDialog
-                                    trigger={(open) => (
-                                        <Menu.Item leftSection={<QrCode size={16} />} onClick={open}>
-                                            QR health
-                                        </Menu.Item>
-                                    )}
-                                />
+                                <Menu.Item leftSection={<Scan size={16} />} onClick={() => setQrScannerOpened(true)}>
+                                    Scan QR
+                                </Menu.Item>
+                                <Menu.Item leftSection={<QrCode size={16} />} onClick={() => setQrHealthOpened(true)}>
+                                    QR health
+                                </Menu.Item>
                             </Menu.Dropdown>
                         </Menu>
                     )}
+
+                    <QRScannerDialog
+                        opened={qrScannerOpened}
+                        onClose={() => setQrScannerOpened(false)}
+                        trigger={() => null}
+                    />
+                    <QRHealthDialog
+                        opened={qrHealthOpened}
+                        onClose={() => setQrHealthOpened(false)}
+                        trigger={() => null}
+                    />
 
                     {currentTab === 'reservations' && pendingOrdersCount > 0 && (
                         <Badge

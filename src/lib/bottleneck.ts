@@ -4,6 +4,7 @@
  * to detect mismatches (bottlenecks) and provide actionable guidance.
  */
 import { ComponentData, Resolution } from "./types";
+import { isIncludedIntegratedGpu } from './integrated-graphics';
 
 export type ComponentTier = 1 | 2 | 3 | 4; // 1: Entry, 2: Mid, 3: High, 4: Enthusiast
 
@@ -37,6 +38,14 @@ export const calculateBottleneck = (
             status: 'Incomplete',
             message: 'Add both a CPU and GPU to see the system balance analysis.',
             color: '#9ca3af', // Gray
+        };
+    }
+
+    if (isIncludedIntegratedGpu(gpu)) {
+        return {
+            status: 'Slight Mismatch',
+            message: `This build uses the CPU's integrated graphics and shared system memory. Gaming performance at ${resolution} will be more limited than with a dedicated graphics card.`,
+            color: '#f59e0b',
         };
     }
 

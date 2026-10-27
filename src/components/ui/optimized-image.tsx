@@ -74,7 +74,7 @@ export function OptimizedImage({
 
             {/* Error Placeholder Overlay */}
             {error && (
-                <div className="absolute inset-0 flex items-center justify-center bg-muted/30 z-30">
+                <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-muted/30">
                     <div className="text-muted-foreground flex flex-col items-center gap-2">
                         <ImageIcon className="w-8 h-8 opacity-20" />
                         <span className="text-[10px] uppercase font-bold tracking-widest opacity-40">Load Failed</span>

@@ -12,9 +12,38 @@ export interface CompatibilityIssue {
 
 export const normalize = (s?: string | number | null) => s?.toString().trim().toLowerCase() || '';
 
-const resolveSocket = (part?: Pick<Part | ComponentData, 'socket' | 'specifications'> | null) =>
-  normalize(part?.specifications?.['Socket'] || part?.specifications?.['socket'] || part?.socket)
+type SocketSource = {
+  name?: string;
+  model?: string;
+  socket?: string;
+  specifications?: Record<string, string | number>;
+};
+
+/** Resolve catalog socket data first, then use conservative model/chipset fallbacks for legacy records. */
+export const resolveSocket = (part?: SocketSource | null) => {
+  const explicit = normalize(part?.specifications?.['Socket'] || part?.specifications?.['socket'] || part?.socket)
     .replace(/[\s-]/g, '');
+  if (explicit) return explicit;
+
+  const label = `${part?.name || ''} ${part?.model || ''}`.toUpperCase();
+  if (/\b(?:X870|B850|B650|X670|A620)[A-Z]*\b/.test(label)) return 'am5';
+  if (/\b(?:X570|B550|A520|X470|B450|A320)[A-Z]*\b/.test(label)) return 'am4';
+  if (/\b(?:Z890|B860|H810)[A-Z]*\b/.test(label)) return 'lga1851';
+  if (/\b(?:Z790|B760|H770|Z690|B660|H670|H610)[A-Z]*\b/.test(label)) return 'lga1700';
+
+  const ryzenModel = label.match(/\bRYZEN\s+[3579]\s+(\d{4})/i)?.[1];
+  if (ryzenModel) return /^[789]/.test(ryzenModel) ? 'am5' : 'am4';
+  if (/\bCORE\s+ULTRA\s+[3579]\s+2\d{2}/i.test(label)) return 'lga1851';
+  const intelGeneration = label.match(/\bCORE\s+I[3579][\s-]?(\d{4,5})/i)?.[1];
+  if (intelGeneration) {
+    const generation = intelGeneration.length === 5
+      ? Number(intelGeneration.slice(0, 2))
+      : Number(intelGeneration.slice(0, 1));
+    if (generation >= 12 && generation <= 14) return 'lga1700';
+    if (generation >= 10 && generation <= 11) return 'lga1200';
+  }
+  return '';
+};
 
 const resolveRamType = (part?: Pick<Part | ComponentData, 'ramType' | 'specifications'> | null) =>
   normalize(part?.specifications?.['Memory Type'] || part?.specifications?.['RAM Type'] || part?.specifications?.['Memory'] || part?.specifications?.['Generation'] || part?.specifications?.['Type'] || part?.ramType);

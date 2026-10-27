@@ -264,8 +264,24 @@ export function MultiImageUpload({
                     </div>
                   )}
 
+                  {/* Always reachable, including when the preview failed or on touch screens. */}
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleRemoveImage(index);
+                    }}
+                    aria-label={`Remove product photo ${index + 1}`}
+                    title="Remove Photo"
+                    className="absolute right-1.5 top-1.5 z-40 h-7 w-7 rounded-full border border-white/40 bg-slate-900/70 text-white shadow-sm hover:bg-rose-600"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+
                   {/* Overlay Controls */}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-1">
+                  <div className="absolute inset-0 z-40 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-1 pointer-events-none">
                     {!isCover && (
                       <Button
                         type="button"
@@ -276,25 +292,12 @@ export function MultiImageUpload({
                           handleSetCover(imgUrl);
                         }}
                         title="Set as Cover Photo"
-                        className="h-7 w-7 rounded-full bg-white/20 hover:bg-emerald-600 text-white transition-colors"
+                        className="pointer-events-auto h-7 w-7 rounded-full bg-white/20 hover:bg-emerald-600 text-white transition-colors"
                       >
                         <Star className="h-3.5 w-3.5" />
                       </Button>
                     )}
 
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveImage(index);
-                      }}
-                      title="Remove Photo"
-                      className="h-7 w-7 rounded-full bg-white/20 hover:bg-rose-600 text-white transition-colors"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
                   </div>
                 </div>
               );

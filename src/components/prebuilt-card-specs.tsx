@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Text, Group, Stack } from "@mantine/core";
 import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
+import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '@/lib/integrated-graphics';
 
 interface PrebuiltCardSpecsProps {
     components: {
@@ -68,6 +69,11 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
 
                     const lookupSingle = async (val: string) => {
                         try {
+                            if (collectionName === 'GPU' && val === INCLUDED_INTEGRATED_GPU_ID && components.cpu) {
+                                const cpuSnap = await getDoc(doc(firestore, inventoryItemPath('CPU', components.cpu)));
+                                const cpu = cpuSnap.exists() ? { id: cpuSnap.id, ...cpuSnap.data() } as Part : null;
+                                return cpu ? createIntegratedGpuPart(cpu)?.name || 'Unknown' : 'Unknown';
+                            }
                             const canonicalRef = doc(firestore, inventoryItemPath(collectionName, val));
                             const snap = await getDoc(canonicalRef);
                             if (snap.exists()) {

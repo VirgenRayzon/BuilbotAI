@@ -11,8 +11,10 @@ import { retrieveLocalKnowledge } from "@/lib/knowledge-retriever";
 import { getInventoryFromFirestore } from "@/lib/inventory-fetcher";
 import { getAdminFirestore } from "@/firebase/server-init";
 import { getGenkitModelName, safeGenkitGenerate } from '@/lib/ai-model-resolver';
+import { INCLUDED_INTEGRATED_GPU_ID } from '@/lib/integrated-graphics';
 
 const ComponentDataSchema = z.object({
+    id: z.string().optional(),
     model: z.string(),
     price: z.number(),
     brand: z.string().optional(),
@@ -29,6 +31,7 @@ const ComponentDataSchema = z.object({
         depth: z.number(),
     }).optional(),
     specifications: z.record(z.string(), z.any()).optional(),
+    isIntegratedGraphics: z.boolean().optional(),
 });
 
 const AiBuildCritiqueInputSchema = z.object({
@@ -75,7 +78,7 @@ const CRITIQUE_CACHE_COLLECTION = 'ai_critique_cache_v1';
 function generateCritiqueCacheKey(input: AiBuildCritiqueInput, modelSettings: unknown): string {
     const parts = Object.entries(input.build || {}).sort(([a], [b]) => a.localeCompare(b));
     return createHash('sha256').update(JSON.stringify({
-        version: 2,
+        version: 3,
         parts,
         intendedUse: (input.intendedUse || '').trim().toLowerCase(),
         performanceLevel: (input.performanceLevel || '').trim().toLowerCase(),
@@ -188,6 +191,9 @@ CRITICAL: Use these deterministic baseline numbers as reference anchors for your
                 const brandModel = `${p.brand || ''} ${p.model}`.trim();
                 const priceStr = typeof p.price === 'number' ? `₱${p.price.toLocaleString()}` : (p.price ? `₱${p.price}` : '');
                 let text = `${brandModel} (${priceStr})`;
+                if (category === 'GPU' && (p.id === INCLUDED_INTEGRATED_GPU_ID || p.isIntegratedGraphics)) {
+                    text += ' — included CPU graphics, shared system memory, no dedicated graphics card';
+                }
                 if (p.description && p.description.trim()) {
                     const maxChars = ['CPU', 'GPU', 'Motherboard'].includes(category) ? 900 : 280;
                     const highlights = p.description.trim().slice(0, maxChars);
@@ -263,6 +269,7 @@ ${analysisContext}
 INSTRUCTIONS:
 1. Pros and Cons: Provide a detailed list. Directly reference specific hardware features (e.g. VRM power stages, USB/networking ports, PCIe 5.0 lanes, cache) from the provided Product Highlights.
 2. Bottleneck Analysis: Explain the bottleneck balance between CPU and GPU.
+   If the GPU is integrated with the CPU, identify it as included graphics with shared system memory. Do not describe it as a dedicated card or separate purchase, and keep game estimates conservative with settings appropriate for integrated graphics.
 3. FPS Estimates: Provide realistic estimates for 6 different games using the deterministic baseline FPS anchors above.
    DIVERSITY RULE: DO NOT always pick the same games. Select games relevant to the user's Intended Use (e.g., if 'E-sports', pick Valorant, CS2, Apex; if 'AAA', pick Cyberpunk 2077, Black Myth: Wukong, Alan Wake 2; if 'General', pick a balanced mix).
 4. Suggestions: Recommend alternatives that provide better value or perfect the build.

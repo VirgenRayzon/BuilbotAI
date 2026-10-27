@@ -14,6 +14,7 @@ import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVerti
 import { getComponentPlaceholderImage } from "@/lib/placeholder-images";
 import { parsePesoBudget } from '@/lib/parse-peso-budget';
 import { checkFullBuildCompatibility } from '@/lib/compatibility';
+import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuComponent } from '@/lib/integrated-graphics';
 
 const componentIcons: Record<string, any> = {
   cpu: Cpu, gpu: Server, motherboard: CircuitBoard, ram: MemoryStick, 
@@ -153,6 +154,7 @@ function getSmartDescription(type: string, modelName: string): string {
             : fallbackImage;
 
         const externalSpecs: Record<string, string | number> = {};
+        if (type === 'cpu' && component.integratedGraphics) externalSpecs['Integrated Graphics'] = component.integratedGraphics;
         if (type === 'motherboard') {
             if (component.formFactor) externalSpecs['Form Factor'] = component.formFactor;
             if (component.nvmeSlots !== undefined) externalSpecs['NVMe Slots'] = component.nvmeSlots;
@@ -216,10 +218,13 @@ function getSmartDescription(type: string, modelName: string): string {
         onFinish: (result) => {
             if (result.object) {
                 const finalObj = result.object;
+                const recommendedCpu = processComponent(finalObj.cpu, 'cpu');
                 const completedBuild: Build = {
                     summary: finalObj.summary || "",
-                    cpu: processComponent(finalObj.cpu, "cpu"),
-                    gpu: processComponent(finalObj.gpu, "gpu"),
+                    cpu: recommendedCpu,
+                    gpu: finalObj.gpu.partId === INCLUDED_INTEGRATED_GPU_ID && recommendedCpu
+                        ? createIntegratedGpuComponent(recommendedCpu)
+                        : processComponent(finalObj.gpu, "gpu"),
                     motherboard: processComponent(finalObj.motherboard, "motherboard"),
                     ram: processComponent(finalObj.ram, "ram"),
                     storage: processComponent(finalObj.storage, "storage"),
@@ -234,7 +239,7 @@ function getSmartDescription(type: string, modelName: string): string {
                 const components = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'] as const;
                 const missingStoreIds = !request?.allowAiSearch && components.some(category => !finalObj[category]?.partId);
                 const unknownStoreIds = allParts.length > 0 && components.some(category =>
-                    !!finalObj[category]?.partId && !allParts.some(part => part.id === finalObj[category]?.partId && !part.isArchived &&
+                    !!finalObj[category]?.partId && finalObj[category]?.partId !== INCLUDED_INTEGRATED_GPU_ID && !allParts.some(part => part.id === finalObj[category]?.partId && !part.isArchived &&
                         (typeof part.stock !== 'number' || part.stock > 0)));
                 const actualTotal = components.reduce((sum, category) => sum + (completedBuild[category]?.price || 0), 0);
                 const compatibility = !unknownStoreIds
@@ -354,10 +359,13 @@ function getSmartDescription(type: string, modelName: string): string {
     // Live reactive build
     const build = useMemo<Build | null>(() => {
         if (isLoading && object) {
+            const cpu = processComponent(object.cpu, 'cpu');
             return {
                 summary: object.summary || "Synthesizing build recommendations...",
-                cpu: processComponent(object.cpu, "cpu"),
-                gpu: processComponent(object.gpu, "gpu"),
+                cpu,
+                gpu: object.gpu?.partId === INCLUDED_INTEGRATED_GPU_ID && cpu
+                    ? createIntegratedGpuComponent(cpu)
+                    : processComponent(object.gpu, "gpu"),
                 motherboard: processComponent(object.motherboard, "motherboard"),
                 ram: processComponent(object.ram, "ram"),
                 storage: processComponent(object.storage, "storage"),
@@ -371,8 +379,12 @@ function getSmartDescription(type: string, modelName: string): string {
         const categories = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'] as const;
         const refreshed = { ...savedBuild };
         for (const category of categories) {
+            if (category === 'gpu' && savedBuild.gpu?.id === INCLUDED_INTEGRATED_GPU_ID) continue;
             const part = savedBuild[category];
             if (part) refreshed[category] = processComponent({ ...part, partId: part.id, estimatedPrice: part.price }, category);
+        }
+        if (savedBuild.gpu?.id === INCLUDED_INTEGRATED_GPU_ID && refreshed.cpu) {
+            refreshed.gpu = createIntegratedGpuComponent(refreshed.cpu);
         }
         return refreshed;
     }, [isLoading, object, savedBuild, processComponent, allParts.length]);

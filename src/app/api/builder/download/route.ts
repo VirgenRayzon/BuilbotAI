@@ -6,6 +6,8 @@ import { getAdminAuth, getAdminFirestore, getAdminStorage } from '@/firebase/ser
 import { inventoryItemPath } from '@/lib/inventory-paths';
 import { BUILD_PDF_CATEGORIES, BUILD_PDF_REQUIRED } from '@/lib/build-pdf-categories';
 import { createBuildPdf, type BuildPdfPart } from '@/lib/build-pdf';
+import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '@/lib/integrated-graphics';
+import type { Part } from '@/lib/types';
 
 export const runtime = 'nodejs';
 
@@ -17,8 +19,9 @@ const requestSchema = z.object({
 });
 
 async function getCoverImage(url: string): Promise<Uint8Array> {
-  if (url === '/placeholders/components/cooler.jpg') {
-    return readFile(path.join(process.cwd(), 'public', 'placeholders', 'components', 'cooler.jpg'));
+  if (url === '/placeholders/components/cooler.jpg' || url === '/placeholders/components/gpu-integrated.jpg') {
+    const filename = url.endsWith('cooler.jpg') ? 'cooler.jpg' : 'gpu-integrated.jpg';
+    return readFile(path.join(process.cwd(), 'public', 'placeholders', 'components', filename));
   }
 
   const parsed = new URL(url);
@@ -79,6 +82,15 @@ export async function POST(request: NextRequest) {
     const cpuSnapshot = cpuSelection ? await getAdminFirestore().doc(inventoryItemPath('CPU', cpuSelection.id)).get() : null;
     const cpuData = cpuSnapshot?.data();
     const parts = await Promise.all(selected.map(async ({ category, id }): Promise<BuildPdfPart> => {
+      if (category === 'GPU' && id === INCLUDED_INTEGRATED_GPU_ID && cpuSnapshot?.exists && cpuData) {
+        const included = createIntegratedGpuPart({ ...cpuData, id: cpuSnapshot.id } as Part);
+        if (!included || cpuData.isArchived) throw new Error('The selected CPU does not provide integrated graphics.');
+        return {
+          category, name: included.name, price: 0, description: included.description || '',
+          specifications: included.specifications,
+          imageBytes: await getCoverImage(included.imageUrl), wattage: 0,
+        };
+      }
       if (category === 'Cooler' && id === 'included-stock-cooler' && cpuData?.packageType === 'BOX') {
         const brand = String(cpuData.brand || '').toLowerCase();
         return {

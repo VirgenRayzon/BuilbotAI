@@ -40,6 +40,7 @@
 
 ## Camera scanner lifecycle
 
+- Mount scanner and health dialogs outside transient menu dropdown content. The menu item may open a controlled dialog, but closing the menu must not unmount the newly opened modal.
 - Keep camera-start effects independent of inline scan callbacks. Store the latest scan handler in a ref so status renders do not close and reopen the stream.
 - Stop tracks when a camera request resolves after the dialog closes or the user switches tabs/cameras. Ignore scan frames from an earlier camera session.
 - Browser camera access requires HTTPS or localhost. Show actionable permission, missing-device and busy-device errors, with a retry action and manual lookup available.

@@ -26,6 +26,7 @@ import { PrebuiltCardSpecs } from './prebuilt-card-specs';
 import type { Part, PrebuiltSystem } from '@/lib/types';
 import { formatCurrency, getOptimizedStorageUrl, cn } from '@/lib/utils';
 import { getMissingParts } from '@/lib/prebuilt-utils';
+import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '@/lib/integrated-graphics';
 import { useSiteSettings } from '@/context/site-settings-context';
 import {
   Trash2,
@@ -94,6 +95,11 @@ export function InventoryPrebuiltCard({
       const resolvedIds = Array.isArray(partId) ? partId.filter(Boolean) : partId ? [partId] : [];
       if (resolvedIds.length === 0) return 'part-missing';
       for (const resolvedId of resolvedIds) {
+        if (key === 'gpu' && resolvedId === INCLUDED_INTEGRATED_GPU_ID) {
+          const cpu = parts.find(part => part.id === componentsRecord.cpu);
+          if (!cpu || !createIntegratedGpuPart(cpu)) return 'part-missing';
+          continue;
+        }
         const foundPart = parts.find((part) => part.id === resolvedId);
         if (!foundPart) return 'part-missing';
         if (foundPart.stock <= 0) return 'out-of-stock';

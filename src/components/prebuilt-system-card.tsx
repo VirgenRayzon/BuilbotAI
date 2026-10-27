@@ -29,6 +29,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { getMissingParts } from "@/lib/prebuilt-utils";
 import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
+import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '@/lib/integrated-graphics';
 import { PrebuiltCardSpecs } from "./prebuilt-card-specs";
 import { OptimizedImage } from "./ui/optimized-image";
 import { useFirestore } from "@/firebase";
@@ -115,6 +116,16 @@ export function PrebuiltSystemCard({
           if (!partId) return;
 
           try {
+            if (category === 'gpu' && partId === INCLUDED_INTEGRATED_GPU_ID && system.components.cpu) {
+              const cpuSnap = await getDoc(doc(firestore, inventoryItemPath('CPU', system.components.cpu)));
+              const cpu = cpuSnap.exists() ? { id: cpuSnap.id, ...cpuSnap.data() } as Part : null;
+              const included = cpu && !cpu.isArchived ? createIntegratedGpuPart(cpu) : null;
+              if (included) {
+                stockMap[category] = included.stock;
+                partsMap[category] = included;
+              }
+              return;
+            }
             // 1. Try canonical path: inventory/{category}/items/{partId}
             const canonicalRef = doc(firestore, inventoryItemPath(collectionName, partId as string));
             const canonicalSnap = await getDoc(canonicalRef);

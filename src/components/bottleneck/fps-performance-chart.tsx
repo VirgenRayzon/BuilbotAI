@@ -70,6 +70,11 @@ export function FpsPerformanceChart({
           </span>
         </Group>
       )}
+      {fpsData.isIntegratedGraphics && (
+        <Text size="xs" className="mb-2 text-amber-700 dark:text-amber-300">
+          Integrated graphics estimate · shared system memory · actual FPS varies by game, RAM, and settings.
+        </Text>
+      )}
 
       {/* Metrics Row */}
       <Paper
@@ -145,8 +150,8 @@ export function FpsPerformanceChart({
               axisLine={false}
               tickLine={false}
               tick={{ fill: tickColor, fontSize: 10, fontWeight: 600 }}
-              domain={[0, 360]}
-              ticks={[0, 120, 240, 360]}
+              domain={fpsData.isIntegratedGraphics ? [0, 80] : [0, 360]}
+              ticks={fpsData.isIntegratedGraphics ? [0, 20, 40, 60, 80] : [0, 120, 240, 360]}
             />
             <Tooltip
               content={({ active, payload }) => {

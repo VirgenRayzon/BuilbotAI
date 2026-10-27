@@ -22,7 +22,7 @@ const CACHE_COLLECTION = 'ai_recommendation_cache_v3';
 
 const generateCacheKey = (input: AiBuildAdvisorRecommendationsInput, prompt: string, modelSettings: unknown) =>
   createHash('sha256').update(JSON.stringify({
-    version: 12,
+    version: 13,
     intendedUse: input.intendedUse.trim().toLowerCase(),
     budget: input.budget.trim().toLowerCase(),
     performanceLevel: input.performanceLevel.trim().toLowerCase(),
@@ -170,12 +170,14 @@ ${input.allowAiSearch
   : `3. INVENTORY AVAILABILITY (STRICT STORE INVENTORY ONLY - STRICT REJECTION RULE):
    - You MUST ONLY recommend components that are explicitly listed in the STORE_INVENTORY_MENU above.
    - DO NOT recommend any parts outside the menu. DO NOT hallucinate inventory items. Ensure model names match exactly.
-   - Every component MUST have a non-empty partId copied from its [ID: ...] entry. Copy its exact listed price.
+   - Every physical component MUST have a non-empty partId copied from its [ID: ...] entry. Copy its exact listed price.
+   - For a CPU whose menu entry says Integrated graphics is available, you may use GPU partId "included-integrated-gpu", GPU estimatedPrice 0, and a model describing that CPU's included graphics. This is the only GPU without a catalog ID. Never use it with a CPU whose menu says No.
    - If the available inventory cannot make a complete compatible build within budget, do not invent stock or select incompatible parts. The server will reject the build and show the user an error.`
 }
 4. COMPATIBILITY: Ensure all recommended components are 100% compatible.
    Match CPU and motherboard sockets, motherboard and RAM generation, motherboard storage slots, motherboard and case form factor, and cooler radiator size with the case. The inventory menu includes these specifications when available.
    For each part chosen from STORE_INVENTORY_MENU, copy its exact ID to partId and its exact listed price to estimatedPrice.
+   An integrated-only build is appropriate for office, development, media, or light gaming goals when the CPU provides graphics. Set GPU partId to "included-integrated-gpu" and GPU estimatedPrice to 0. Explain that it uses shared system RAM and is not a dedicated card. Do not choose it for demanding gaming or GPU compute goals.
    For each external-market part (empty partId), provide its actual compatibility fields in the schema: CPU socket; motherboard socket, RAM type, form factor, NVMe/SATA slots; RAM type; storage type; case motherboard support and maximum radiator size; cooler radiator size (0 for air cooling). If these facts are unknown, choose a store part with known compatibility instead. The server checks the complete build using these fields.
    Before finalizing, add all eight estimatedPrice values and stay within the selected budget limit.
 5. BUDGET ADHERENCE: 

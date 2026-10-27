@@ -61,7 +61,7 @@ const prompt = ai.definePrompt({
   },
   prompt: `You write concise product descriptions for complete prebuilt PCs.
 
-Synthesize the saved descriptions of ALL selected components into one cohesive, customer-facing description of 2-3 sentences. Mention meaningful combined benefits, performance positioning, cooling, power delivery, storage, and aesthetics only when supported by the supplied text. Do not list the parts, do not search the web, do not invent specifications, and do not return analysis.
+Synthesize the saved descriptions of ALL selected components into one cohesive, customer-facing description of 2-3 sentences. Mention meaningful combined benefits, performance positioning, cooling, power delivery, storage, and aesthetics only when supported by the supplied text. Included integrated graphics cost ₱0, share system memory, and are not a dedicated graphics card; describe them accurately when present. Do not list the parts, do not search the web, do not invent specifications, and do not return analysis.
 
 {{#if productHighlights}}
 SELECTED COMPONENT PRODUCT DESCRIPTIONS:

@@ -24,12 +24,23 @@ import { productStockAdminUrl } from '@/lib/product-identity';
 
 interface QRScannerDialogProps {
   trigger?: (open: () => void) => React.ReactNode;
+  opened?: boolean;
+  onClose?: () => void;
 }
 
-export function QRScannerDialog({ trigger }: QRScannerDialogProps = {}) {
+export function QRScannerDialog({ trigger, opened: controlledOpened, onClose }: QRScannerDialogProps = {}) {
   const router = useRouter();
   const { authUser } = useUserProfile();
-  const [opened, setOpened] = useState(false);
+  const [internalOpened, setInternalOpened] = useState(false);
+  const opened = controlledOpened ?? internalOpened;
+  const setOpened = (nextOpened: boolean) => {
+    if (controlledOpened === undefined) {
+      setInternalOpened(nextOpened);
+    }
+    if (!nextOpened) {
+      onClose?.();
+    }
+  };
   const [activeTab, setActiveTab] = useState<'camera' | 'upload' | 'manual'>('camera');
   const [manualInput, setManualInput] = useState('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);

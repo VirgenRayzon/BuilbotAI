@@ -4,6 +4,7 @@ import {
     CircuitBoard, Cpu, Database, MemoryStick, Power, RectangleVertical, Server, Wind,
 } from "lucide-react";
 import type { ComponentData, FavoriteBuild, Part } from "@/lib/types";
+import { INCLUDED_INTEGRATED_GPU_ID, syncIntegratedGraphics } from '@/lib/integrated-graphics';
 import { useToast } from "@/hooks/use-toast";
 
 type BuilderState = Record<string, ComponentData | ComponentData[] | null>;
@@ -56,6 +57,7 @@ export function usePrebuiltBuilderImport(
         let loadedCount = 0;
 
         for (const selected of favorite.parts) {
+            if (selected?.category === 'GPU' && selected.partId === INCLUDED_INTEGRATED_GPU_ID) continue;
             if (!selected || typeof selected.partId !== "string" || typeof selected.category !== "string") continue;
             if (!(selected.category in componentIcons)) continue;
 
@@ -103,7 +105,9 @@ export function usePrebuiltBuilderImport(
         }
 
         localStorage.removeItem("admin_pc_builder_load_prebuilt");
-        setBuild(next);
+        const restoredBuild = syncIntegratedGraphics(next);
+        if (restoredBuild.GPU && (restoredBuild.GPU as ComponentData).id === INCLUDED_INTEGRATED_GPU_ID) loadedCount++;
+        setBuild(restoredBuild);
         const missingParts = Array.from(new Set([
             ...(favorite.loadContext?.unavailableParts || []),
             ...unavailable,

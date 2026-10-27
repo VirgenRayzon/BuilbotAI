@@ -6,6 +6,7 @@ import * as admin from 'firebase-admin';
 import { Order, OrderItem } from "@/lib/types";
 import { inventoryItemPath } from "@/lib/inventory-paths";
 import { invalidatePublicPartsCatalog } from '@/lib/server/public-products';
+import { INCLUDED_INTEGRATED_GPU_ID, integratedGraphicsName } from '@/lib/integrated-graphics';
 
 /**
  * Prunes notifications for a given user, maintaining a maximum limit (default: 30)
@@ -33,10 +34,22 @@ export async function processCheckout(userId: string, userEmail: string, items: 
 
     try {
         await firestore.runTransaction(async (transaction) => {
+            const includedGpu = items.find(item => item.id === INCLUDED_INTEGRATED_GPU_ID);
+            if (includedGpu) {
+                const cpuItems = items.filter(item => item.category === 'CPU');
+                const gpuItems = items.filter(item => item.category === 'GPU');
+                if (includedGpu.category !== 'GPU' || includedGpu.price !== 0 || cpuItems.length !== 1 || gpuItems.length !== 1) {
+                    throw new Error('Integrated graphics requires its CPU and a ₱0 GPU slot.');
+                }
+                const cpuSnap = await transaction.get(firestore.doc(inventoryItemPath('CPU', cpuItems[0].id)));
+                if (!cpuSnap.exists || !integratedGraphicsName({ id: cpuSnap.id, ...cpuSnap.data() })) {
+                    throw new Error('The selected CPU does not provide integrated graphics.');
+                }
+            }
             // 1. Read all item data first
             const itemDataList: { ref: admin.firestore.DocumentReference, snap: admin.firestore.DocumentSnapshot, item: OrderItem }[] = [];
             for (const item of items) {
-                if (item.id === "included-stock-cooler") continue;
+                if (item.id === "included-stock-cooler" || item.id === INCLUDED_INTEGRATED_GPU_ID) continue;
                 
                 const itemRef = firestore.doc(inventoryItemPath(item.category, item.id));
                 const itemSnap = await transaction.get(itemRef);
@@ -177,7 +190,7 @@ export async function updateReservationStatus(
             // Logic for Stock Reversion: If moving to 'cancelled' status from any non-cancelled status
             if (newStatus === 'cancelled' && currentStatus !== 'cancelled') {
                 for (const item of orderData.items) {
-                    if (item.id === "included-stock-cooler") continue;
+                    if (item.id === "included-stock-cooler" || item.id === INCLUDED_INTEGRATED_GPU_ID) continue;
                     const itemRef = firestore.doc(inventoryItemPath(item.category, item.id));
                     transaction.update(itemRef, {
                         stock: admin.firestore.FieldValue.increment(1)

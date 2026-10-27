@@ -3,6 +3,7 @@
 import { ai } from "@/ai/genkit";
 import { z } from "genkit";
 import { getGenkitModelName, safeGenkitGenerate } from '@/lib/ai-model-resolver';
+import { integratedGraphicsName } from '@/lib/integrated-graphics';
 
 const ComponentSchema = z.object({
     id: z.string(),
@@ -11,6 +12,7 @@ const ComponentSchema = z.object({
     price: z.number(),
     brand: z.string(),
     stock: z.number(),
+    integratedGraphics: z.string().optional(),
 });
 
 const AiSmartBudgetInputSchema = z.object({
@@ -38,7 +40,8 @@ const aiSmartBudget = ai.defineFlow(
             .filter(item => item.stock > 0) // Only include items in stock
             .reduce((acc: any, item) => {
                 if (!acc[item.category]) acc[item.category] = [];
-                acc[item.category].push({ id: item.id, name: item.name, price: item.price });
+                acc[item.category].push({ id: item.id, name: item.name, price: item.price,
+                    ...(item.category === 'CPU' ? { integratedGraphics: integratedGraphicsName({ ...item, specifications: item.integratedGraphics ? { 'Integrated Graphics': item.integratedGraphics } : {} }) || 'No' } : {}) });
                 return acc;
             }, {});
 
@@ -53,6 +56,7 @@ ${JSON.stringify(compactInventory, null, 2)}
 
 Rules:
 1. You MUST select exactly one item for these categories: CPU, GPU, Motherboard, RAM, PSU, Case, Cooler. 
+   For a suitable office or light-use build, the GPU ID may instead be "included-integrated-gpu" when the selected CPU lists integratedGraphics other than No. Its price is 0 and it shares system RAM. Do not use this option for demanding gaming or GPU compute.
 2. You MUST select at least one item for the Storage category.
 3. The total price of all selected items MUST be less than or equal to the Budget ($${input.budget}). 
 4. Ensure the parts are somewhat balanced (e.g., don't pair a $1000 GPU with a $50 CPU).

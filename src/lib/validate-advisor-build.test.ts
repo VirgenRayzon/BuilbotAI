@@ -3,6 +3,7 @@ import test from 'node:test';
 import type { AiBuildAdvisorRecommendationsOutput } from '@/ai/schemas/build-advisor-schemas';
 import type { StructuredPart } from '@/lib/inventory-fetcher';
 import { validateAdvisorBuild } from '@/lib/validate-advisor-build';
+import { INCLUDED_INTEGRATED_GPU_ID } from '@/lib/integrated-graphics';
 
 const parts = [
   { id: 'cpu-am5', category: 'cpu', socket: 'AM5', price: 12000 },
@@ -70,4 +71,13 @@ test('treats spacing variants of the same socket as compatible', () => {
     ? { ...part, socket: 'LGA 1700' }
     : part.id === 'board-am5' ? { ...part, socket: 'LGA1700' } : part);
   assert.deepEqual(validateAdvisorBuild(output, intelParts, 60000, false), []);
+});
+
+test('accepts included graphics only with a capable CPU and zero GPU price', () => {
+  const graphicsCpuParts = parts.map(part => part.id === 'cpu-am5'
+    ? { ...part, specifications: { 'Integrated Graphics': 'Radeon Graphics' } } : part);
+  const included = { ...output, gpu: { partId: INCLUDED_INTEGRATED_GPU_ID, model: 'Radeon Graphics', description: '', estimatedPrice: 0 } };
+  assert.deepEqual(validateAdvisorBuild(included, graphicsCpuParts, 60000, false), []);
+  assert.match(validateAdvisorBuild(included, parts, 60000, false).join(' '), /requires a CPU with integrated graphics/);
+  assert.match(validateAdvisorBuild({ ...included, gpu: { ...included.gpu, estimatedPrice: 1 } }, graphicsCpuParts, 60000, false).join(' '), /₱0 price/);
 });

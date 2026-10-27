@@ -5,6 +5,7 @@ import { z } from "genkit";
 import { getGenkitModelName, safeGenkitGenerate } from '@/lib/ai-model-resolver';
 
 const ComponentDataSchema = z.object({
+    id: z.string().optional(),
     model: z.string(),
     price: z.number(),
     brand: z.string().optional(),
@@ -65,6 +66,8 @@ export async function aiPrebuiltPerformanceAction(input: AiPrebuiltPerformanceIn
         })
         .join('\n');
 
+    const usesIntegratedGraphics = Object.values(input).some(value =>
+        value && !Array.isArray(value) && value.id === 'included-integrated-gpu');
     const prompt = `
 You are an enthusiastic and expert PC building marketer and mentor. Analyze the prebuilt PC provided and give an inspiring list of its absolute best strengths.
 Since this is for a prebuilt sales page, the tone should be highly supportive, exciting, and authoritative about its capabilities.
@@ -73,6 +76,7 @@ STRENGTHS (EXPRESSED WITH EXPERTISE):
 - Highlight the synergy, raw power, and specific use cases this build excels at.
 - Be specific about what makes these particular components great together.
 - DO NOT list any cons, bottlenecks, or limitations. Only focus on the absolute pros.
+${usesIntegratedGraphics ? '- This build uses CPU integrated graphics with shared system RAM. Do not claim dedicated GPU, discrete VRAM, or high-end gaming performance. Focus on supported everyday strengths.' : ''}
 
 Current Build:
 ${buildContext}

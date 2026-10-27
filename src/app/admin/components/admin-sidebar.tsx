@@ -376,67 +376,67 @@ export function AdminSidebar({
       onClick: () => void;
     }[];
   }[] = [
-    {
-      title: "Inventory",
-      icon: SquareTerminal,
-      isActive:
-        (!isPrebuiltBuilderRoute &&
-          (currentTab === "stock" ||
-            currentTab === "prebuilts")) ||
-        isPrebuiltBuilderRoute,
-      defaultTab: "stock",
-      items: [
-        {
-          title: "Manage Stock",
-          isActive: !isPrebuiltBuilderRoute && currentTab === "stock",
-          badge: partsCount > 0 ? partsCount : undefined,
-          onClick: () => handleNavigateTab("stock"),
-        },
-        {
-          title: "Manage Prebuilts",
-          isActive: !isPrebuiltBuilderRoute && currentTab === "prebuilts",
-          badge: prebuiltsCount > 0 ? prebuiltsCount : undefined,
-          onClick: () => handleNavigateTab("prebuilts"),
-        },
-        {
-          title: "Prebuilt Builder",
-          isActive: isPrebuiltBuilderRoute,
-          onClick: () => router.push("/admin/prebuilt-builder"),
-        },
-      ],
-    },
-    {
-      title: "Archive",
-      icon: Archive,
-      isActive: !isPrebuiltBuilderRoute && currentTab === "archive",
-      defaultTab: "archive",
-      items: [
-        {
-          title: "Parts Archive",
-          isActive: !isPrebuiltBuilderRoute && currentTab === "archive" && archiveSubTab === "parts",
-          onClick: () => router.push("/admin?tab=archive&sub=parts"),
-        },
-        {
-          title: "Prebuilts Archive",
-          isActive: !isPrebuiltBuilderRoute && currentTab === "archive" && archiveSubTab === "prebuilts",
-          onClick: () => router.push("/admin?tab=archive&sub=prebuilts"),
-        },
-        {
-          title: "Reservations Archive",
-          isActive: !isPrebuiltBuilderRoute && currentTab === "archive" && archiveSubTab === "reservations",
-          onClick: () => router.push("/admin?tab=archive&sub=reservations"),
-        },
-      ],
-    },
-    {
-      title: "Reservations",
-      icon: ShoppingBag,
-      isActive: !isPrebuiltBuilderRoute && currentTab === "reservations",
-      defaultTab: "reservations",
-      badge: pendingOrdersCount > 0 ? pendingOrdersCount : undefined,
-    },
-    ...(isSuperAdmin
-      ? [
+      {
+        title: "Inventory",
+        icon: SquareTerminal,
+        isActive:
+          (!isPrebuiltBuilderRoute &&
+            (currentTab === "stock" ||
+              currentTab === "prebuilts")) ||
+          isPrebuiltBuilderRoute,
+        defaultTab: "stock",
+        items: [
+          {
+            title: "Manage Stock",
+            isActive: !isPrebuiltBuilderRoute && currentTab === "stock",
+            badge: partsCount > 0 ? partsCount : undefined,
+            onClick: () => handleNavigateTab("stock"),
+          },
+          {
+            title: "Manage Prebuilts",
+            isActive: !isPrebuiltBuilderRoute && currentTab === "prebuilts",
+            badge: prebuiltsCount > 0 ? prebuiltsCount : undefined,
+            onClick: () => handleNavigateTab("prebuilts"),
+          },
+          {
+            title: "Prebuilt Builder",
+            isActive: isPrebuiltBuilderRoute,
+            onClick: () => router.push("/admin/prebuilt-builder"),
+          },
+        ],
+      },
+      {
+        title: "Archive",
+        icon: Archive,
+        isActive: !isPrebuiltBuilderRoute && currentTab === "archive",
+        defaultTab: "archive",
+        items: [
+          {
+            title: "Parts",
+            isActive: !isPrebuiltBuilderRoute && currentTab === "archive" && archiveSubTab === "parts",
+            onClick: () => router.push("/admin?tab=archive&sub=parts"),
+          },
+          {
+            title: "Prebuilts",
+            isActive: !isPrebuiltBuilderRoute && currentTab === "archive" && archiveSubTab === "prebuilts",
+            onClick: () => router.push("/admin?tab=archive&sub=prebuilts"),
+          },
+          {
+            title: "Reservations",
+            isActive: !isPrebuiltBuilderRoute && currentTab === "archive" && archiveSubTab === "reservations",
+            onClick: () => router.push("/admin?tab=archive&sub=reservations"),
+          },
+        ],
+      },
+      {
+        title: "Reservations",
+        icon: ShoppingBag,
+        isActive: !isPrebuiltBuilderRoute && currentTab === "reservations",
+        defaultTab: "reservations",
+        badge: pendingOrdersCount > 0 ? pendingOrdersCount : undefined,
+      },
+      ...(isSuperAdmin
+        ? [
           {
             title: "Sales & Analytics",
             icon: PieChart,
@@ -487,17 +487,17 @@ export function AdminSidebar({
             ],
           },
         ]
-      : []),
-    {
-      title: "Management",
-      icon: Shield,
-      isActive:
-        !isPrebuiltBuilderRoute &&
-        (currentTab === "management" || currentTab === "audit"),
-      defaultTab: isSuperAdmin ? "management" : "audit",
-      items: [
-        ...(isSuperAdmin
-          ? [
+        : []),
+      {
+        title: "Management",
+        icon: Shield,
+        isActive:
+          !isPrebuiltBuilderRoute &&
+          (currentTab === "management" || currentTab === "audit"),
+        defaultTab: isSuperAdmin ? "management" : "audit",
+        items: [
+          ...(isSuperAdmin
+            ? [
               {
                 title: "Management Portal",
                 isActive:
@@ -505,35 +505,35 @@ export function AdminSidebar({
                 onClick: () => handleNavigateTab("management"),
               },
             ]
-          : []),
-        {
-          title: "Audit Logs",
-          isActive: !isPrebuiltBuilderRoute && currentTab === "audit",
-          badge: auditLogsCount > 0 ? auditLogsCount : undefined,
-          onClick: () => handleNavigateTab("audit"),
-        },
-      ],
-    },
-    {
-      title: "Storefront",
-      icon: Store,
-      badge: "Preview",
-      isActive: false,
-      defaultTab: "stock",
-      items: [
-        {
-          title: "Catalog Storefront",
-          isActive: false,
-          onClick: () => router.push("/parts?preview=admin"),
-        },
-        {
-          title: "Prebuilt Storefront",
-          isActive: false,
-          onClick: () => router.push("/pre-builts?preview=admin"),
-        },
-      ],
-    },
-  ];
+            : []),
+          {
+            title: "Audit Logs",
+            isActive: !isPrebuiltBuilderRoute && currentTab === "audit",
+            badge: auditLogsCount > 0 ? auditLogsCount : undefined,
+            onClick: () => handleNavigateTab("audit"),
+          },
+        ],
+      },
+      {
+        title: "Storefront",
+        icon: Store,
+        badge: "Preview",
+        isActive: false,
+        defaultTab: "stock",
+        items: [
+          {
+            title: "Catalog",
+            isActive: false,
+            onClick: () => router.push("/parts?preview=admin"),
+          },
+          {
+            title: "Prebuilts",
+            isActive: false,
+            onClick: () => router.push("/pre-builts?preview=admin"),
+          },
+        ],
+      },
+    ];
 
   // Track open/closed state for collapsible parent sections
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(

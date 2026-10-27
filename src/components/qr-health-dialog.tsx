@@ -7,10 +7,21 @@ import { useQRHealth } from '@/hooks/use-qr-health';
 
 interface QRHealthDialogProps {
   trigger?: (open: () => void) => React.ReactNode;
+  opened?: boolean;
+  onClose?: () => void;
 }
 
-export function QRHealthDialog({ trigger }: QRHealthDialogProps = {}) {
-  const [opened, setOpened] = useState(false);
+export function QRHealthDialog({ trigger, opened: controlledOpened, onClose }: QRHealthDialogProps = {}) {
+  const [internalOpened, setInternalOpened] = useState(false);
+  const opened = controlledOpened ?? internalOpened;
+  const setOpened = (nextOpened: boolean) => {
+    if (controlledOpened === undefined) {
+      setInternalOpened(nextOpened);
+    }
+    if (!nextOpened) {
+      onClose?.();
+    }
+  };
   const [page, setPage] = useState(1);
   const { report, error, busy, run } = useQRHealth();
   return <>

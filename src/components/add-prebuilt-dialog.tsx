@@ -77,6 +77,7 @@ import { AiActionButton } from "./ui/ai-action-button";
 import { ThemeIcon, Text, Paper, ActionIcon, Badge } from "@mantine/core";
 import type { ComponentData, Part, PrebuiltSystem } from "@/lib/types";
 import { checkCompatibility, checkFullBuildCompatibility, type CompatibilityResult } from "@/lib/compatibility";
+import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '@/lib/integrated-graphics';
 
 const formSchema = z.object({
     name: z.string().min(1, "System name is required."),
@@ -404,6 +405,18 @@ export function AddPrebuiltDialog({
     });
 
     const componentValues = form.watch();
+    const selectedCpu = parts.find(part => part.category === 'CPU' && part.id === componentValues.cpu);
+    const includedGpu = selectedCpu ? createIntegratedGpuPart(selectedCpu) : null;
+    const gpuOptions = includedGpu ? [includedGpu, ...(inventory.GPU || [])] : inventory.GPU || [];
+
+    useEffect(() => {
+        if (!open) return;
+        if (includedGpu && (!componentValues.gpu || componentValues.gpu === INCLUDED_INTEGRATED_GPU_ID)) {
+            if (componentValues.gpu !== INCLUDED_INTEGRATED_GPU_ID) form.setValue('gpu', INCLUDED_INTEGRATED_GPU_ID);
+        } else if (!includedGpu && componentValues.gpu === INCLUDED_INTEGRATED_GPU_ID) {
+            form.setValue('gpu', '');
+        }
+    }, [open, includedGpu?.name, componentValues.gpu, form]);
     const missingAiAssistComponents = getMissingAiAssistComponents(componentValues);
     const isComponentSelectionComplete = missingAiAssistComponents.length === 0;
     const selectedPartsPrice = useMemo(() => {
@@ -434,7 +447,12 @@ export function AddPrebuiltDialog({
     const buildFromValues = (values: AddPrebuiltFormSchema) => {
         const findSelected = (category: string, id?: string) => {
             if (!id) return null;
-            const part = inventory[category]?.find((candidate) => candidate.id === id);
+            const owner = category === 'GPU' && id === INCLUDED_INTEGRATED_GPU_ID
+                ? parts.find(candidate => candidate.category === 'CPU' && candidate.id === values.cpu)
+                : undefined;
+            const part = category === 'GPU' && id === INCLUDED_INTEGRATED_GPU_ID
+                ? owner ? createIntegratedGpuPart(owner) : null
+                : inventory[category]?.find((candidate) => candidate.id === id);
             return part ? toComponentData(part) : null;
         };
 
@@ -525,7 +543,7 @@ export function AddPrebuiltDialog({
         const getPartName = (id?: string) => {
             if (!id || id.trim() === "") return undefined;
             const targetId = id.trim();
-            const part = parts.find(p => p.id === targetId || p.id === id);
+            const part = targetId === INCLUDED_INTEGRATED_GPU_ID ? includedGpu : parts.find(p => p.id === targetId);
             return part?.name || undefined;
         };
 
@@ -545,7 +563,7 @@ export function AddPrebuiltDialog({
             return total + (parts.find((part) => part.id === id)?.price || 0);
         }, 0);
         const productHighlights = selectedPartIds
-            .map((id) => parts.find((part) => part.id === id))
+            .map((id) => id === INCLUDED_INTEGRATED_GPU_ID ? includedGpu : parts.find((part) => part.id === id))
             .filter((part): part is Part => Boolean(part))
             .map((part) => {
                 const maxChars = ["CPU", "GPU", "Motherboard"].includes(part.category) ? 900 : 280;
@@ -634,6 +652,10 @@ export function AddPrebuiltDialog({
     const onSubmit = async (values: AddPrebuiltFormSchema) => {
         if (isSaving) return;
         try {
+            if (values.gpu === INCLUDED_INTEGRATED_GPU_ID && !includedGpu) {
+                toast({ variant: 'destructive', title: 'Integrated graphics unavailable', description: 'Select a CPU with integrated graphics or choose a graphics card.' });
+                return;
+            }
             const compatibilityIssues = checkFullBuildCompatibility(buildFromValues(values));
             const blockingIssue = compatibilityIssues.find((issue) => issue.severity === "critical");
 
@@ -1163,13 +1185,19 @@ export function AddPrebuiltDialog({
                                                     </div>
                                                     <PartSelector
                                                         category="GPU"
-                                                        items={inventory["GPU"] || []}
+                                                        items={gpuOptions}
                                                         value={field.value || ""}
                                                         onChange={field.onChange}
                                                         getCompatibility={(part) => getCompatibilityForPart(part, field.value || "")}
                                                         isOpen={openSlot === "gpu"}
                                                         onOpenChange={(o) => setOpenSlot(o ? "gpu" : null)}
                                                     />
+                                                    {field.value === INCLUDED_INTEGRATED_GPU_ID && (
+                                                        <button type="button" className="text-xs text-cyan-700 dark:text-cyan-300 underline"
+                                                            onClick={() => { form.setValue('cpu', ''); form.setValue('gpu', ''); }}>
+                                                            Remove included graphics and CPU
+                                                        </button>
+                                                    )}
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />

@@ -116,8 +116,10 @@ test('scanner starts once per camera tab activation', async ({ page }) => {
   });
 
   await signIn(page, true);
-  await page.getByRole('button', { name: 'Scan item' }).click();
+  await page.getByRole('button', { name: 'QR tools' }).click();
+  await page.getByRole('menuitem', { name: 'Scan QR' }).click();
   const dialog = page.getByRole('dialog', { name: 'Scan or Lookup Item' });
+  await expect(dialog).toBeVisible();
   await expect(dialog.locator('video')).toHaveJSProperty('readyState', 4);
   await page.waitForTimeout(1000);
   expect(await page.evaluate(() => Reflect.get(window, '__qrCameraStarts') as number)).toBe(1);
@@ -254,7 +256,8 @@ test('health report is on demand, retains prior results after failure, and fits 
   let requests = 0;
   page.on('request', request => { if (request.url().includes('/api/admin/qr-health')) requests++; });
   await signIn(page, true);
-  await page.getByRole('button', { name: 'QR health', exact: true }).click();
+  await page.getByRole('button', { name: 'QR tools' }).click();
+  await page.getByRole('menuitem', { name: 'QR health', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'QR health', exact: true });
   expect(requests).toBe(0);
   await dialog.getByRole('button', { name: 'Run report' }).click();

@@ -55,9 +55,10 @@ export const AiBuildAdvisorRecommendationsOutputSchema = z.object({
     description: z.string().describe('A brief explanation for the CPU recommendation.'),
     estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),
     socket: z.string().optional().describe('CPU socket, required when this is an external-market CPU.'),
+    integratedGraphics: z.string().optional().describe('For an external CPU, state its integrated graphics model or No. Do not guess when unknown.'),
   }),
   gpu: z.object({
-    partId: z.string().describe('Exact store inventory ID, or an empty string only for an external-market part.'),
+    partId: z.string().describe('Exact store inventory ID, included-integrated-gpu for graphics included with the selected CPU, or an empty string for an external-market card.'),
     model: z.string().describe('The recommended GPU model name.'),
     description: z.string().describe('A brief explanation for the GPU recommendation.'),
     estimatedPrice: z.number().describe('The estimated price in PHP for this component.'),

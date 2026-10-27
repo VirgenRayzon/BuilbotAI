@@ -5,8 +5,10 @@
  */
 import { ComponentData, Resolution, WorkloadType } from "./types";
 import { getTier, ComponentTier } from "./bottleneck";
+import { isIncludedIntegratedGpu } from './integrated-graphics';
 
 export interface FpsEstimate {
+    isIntegratedGraphics?: boolean;
     averageFps: number;
     lowsFps: number;
     peakFps: number;
@@ -25,6 +27,7 @@ export const estimateFPS = (
 
     const cpuTier = getTier(cpu);
     const gpuTier = getTier(gpu);
+    const integrated = isIncludedIntegratedGpu(gpu);
 
     // 1. Base GPU Performance
     let baseFps = 60;
@@ -43,9 +46,19 @@ export const estimateFPS = (
             break;
     }
 
+    if (integrated) {
+        // Conservative, workload-level estimate; integrated GPUs share system RAM.
+        // Keep this separate from discrete-GPU tier baselines.
+        const gpuName = gpu.model || (gpu as ComponentData & { name?: string }).name || '';
+        const strongerApu = /(?:780M|760M|740M|\b\d{4}G\b)/i.test(gpuName);
+        baseFps = strongerApu
+            ? resolution === '1080p' ? 45 : resolution === '1440p' ? 28 : 15
+            : resolution === '1080p' ? 28 : resolution === '1440p' ? 18 : 10;
+    }
+
     // Apply workload multipliers
-    if (workload === 'AAA') baseFps *= 0.7;
-    if (workload === 'Esports') baseFps *= 1.5;
+    if (workload === 'AAA') baseFps *= integrated ? 0.55 : 0.7;
+    if (workload === 'Esports') baseFps *= integrated ? 1.25 : 1.5;
 
     // 2. CPU Bottleneck Penalty
     const delta = cpuTier - gpuTier;
@@ -116,5 +129,5 @@ export const estimateFPS = (
     chartData[chartData.length - 1].lows = lowsFps;
     chartData[chartData.length - 1].peak = peakFps;
 
-    return { averageFps, lowsFps, peakFps, chartData };
+    return { averageFps, lowsFps, peakFps, chartData, isIntegratedGraphics: integrated };
 };

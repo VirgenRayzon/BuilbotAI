@@ -6,6 +6,7 @@ import { invalidatePublicPartsCatalog, productReference, resolveSystemParts } fr
 import { getMissingParts } from '@/lib/prebuilt-utils';
 import { inventoryItemPath, inventoryCategoryLabel } from '@/lib/inventory-paths';
 import type { FavoriteBuild, OrderItem, Part, PrebuiltSystem } from '@/lib/types';
+import { INCLUDED_INTEGRATED_GPU_ID } from '@/lib/integrated-graphics';
 
 const requestSchema = z.object({ productId: z.string().regex(/^PRD-\d{6,}$/), idToken: z.string().min(1), operationId: z.string().uuid(), expectedPrice: z.number().finite().nonnegative().optional() });
 
@@ -36,6 +37,12 @@ export async function reservePublicProduct(input: unknown) {
     const items: OrderItem[] = [];
     for (const item of selections) {
       if (item.partId === 'included-stock-cooler') { items.push({ id: item.partId, category: 'Cooler', name: 'Included stock cooler', price: 0 }); continue; }
+      if (item.partId === INCLUDED_INTEGRATED_GPU_ID) {
+        const gpu = resolved.find(part => part.category === 'gpu' && part.partId === INCLUDED_INTEGRATED_GPU_ID)?.part;
+        if (item.category !== 'gpu' || !gpu) throw new Error('The selected CPU does not provide integrated graphics.');
+        items.push({ id: item.partId, category: 'GPU', name: gpu.name, price: 0 });
+        continue;
+      }
       const path = inventoryItemPath(item.category, item.partId);
       const previousItem = grouped.get(path);
       grouped.set(path, { category: inventoryCategoryLabel(item.category), id: item.partId, quantity: (previousItem?.quantity || 0) + 1 });

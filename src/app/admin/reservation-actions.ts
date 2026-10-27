@@ -6,6 +6,7 @@ import { getAdminAuth, getAdminFirestore } from '@/firebase/server-init';
 import { inventoryItemPath } from '@/lib/inventory-paths';
 import type { Order } from '@/lib/types';
 import { invalidatePublicPartsCatalog } from '@/lib/server/public-products';
+import { INCLUDED_INTEGRATED_GPU_ID } from '@/lib/integrated-graphics';
 
 const requestSchema = z.object({
     orderId: z.string().min(1).max(128).regex(/^[a-zA-Z0-9_-]+$/),
@@ -48,7 +49,7 @@ export async function manageReservation(input: z.infer<typeof requestSchema>) {
             // Cancellation returns reserved components once. Finished builds keep their stock and status.
             if (shouldCancel) {
                 for (const item of order.items || []) {
-                    if (item.id === 'included-stock-cooler') continue;
+                    if (item.id === 'included-stock-cooler' || item.id === INCLUDED_INTEGRATED_GPU_ID) continue;
                     transaction.update(firestore.doc(inventoryItemPath(item.category, item.id)), {
                         stock: admin.firestore.FieldValue.increment(1),
                     });

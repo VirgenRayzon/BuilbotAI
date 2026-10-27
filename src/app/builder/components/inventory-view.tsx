@@ -176,6 +176,8 @@ export function InventoryView({
                   part={part}
                   onToggleBuild={onTogglePart}
                   isSelected={isSelected(part)}
+                  compatibility={part.compatibility}
+                  effectiveStock={part.effectiveStock}
                   priority={index < priorityImageCount}
                   imageSizes={imageSizes}
                 />

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Part, ComponentData, Build, FavoriteBuild } from '@/lib/types';
 import { checkCompatibility } from "@/lib/compatibility";
+import { INCLUDED_INTEGRATED_GPU_ID, isIncludedIntegratedGpu, syncIntegratedGraphics } from '@/lib/integrated-graphics';
 import { useToast } from "@/hooks/use-toast";
 import { 
     Cpu, Server, CircuitBoard, MemoryStick, Database, Power, 
@@ -54,7 +55,7 @@ export function useBuilderLogic(allParts: Part[]) {
                 if (!parsedState.CPU && isIncludedStockCooler(parsedState.Cooler)) {
                     parsedState.Cooler = null;
                 }
-                setBuild(prev => ({ ...prev, ...parsedState }));
+                setBuild(prev => syncIntegratedGraphics({ ...prev, ...parsedState }));
             } catch (e) {
                 console.error("Failed to parse saved build", e);
             }
@@ -115,7 +116,11 @@ export function useBuilderLogic(allParts: Part[]) {
             }
         }
 
-        setBuild(next);
+        if (category === 'GPU' && isIncludedIntegratedGpu(build.GPU as ComponentData | null)) {
+            next.CPU = null;
+            if (isIncludedStockCooler(next.Cooler as ComponentData | null)) next.Cooler = null;
+        }
+        setBuild(syncIntegratedGraphics(next));
         if (toastMsg) toast(toastMsg);
     };
 
@@ -164,7 +169,7 @@ export function useBuilderLogic(allParts: Part[]) {
 
             const currentItems = Array.isArray(nextBuild[category]) ? (nextBuild[category] as ComponentData[]) : [];
             nextBuild[category] = [...currentItems, componentData];
-            setBuild(nextBuild);
+            setBuild(syncIntegratedGraphics(nextBuild));
             toast({ title: 'Part Added', description: `${part.name} added.` });
             return;
         }
@@ -260,7 +265,7 @@ export function useBuilderLogic(allParts: Part[]) {
             toastsToShow.push({ title: 'Part Added', description: `${part.name} added.` });
         }
 
-        setBuild(nextBuild);
+        setBuild(syncIntegratedGraphics(nextBuild));
         toastsToShow.forEach(t => toast(t));
     }, [build, toast, getCountInBuild]);
 
@@ -312,6 +317,7 @@ export function useBuilderLogic(allParts: Part[]) {
         const outOfStock: string[] = [];
 
         for (const favPart of favorite.parts) {
+            if (favPart.category === 'GPU' && favPart.partId === INCLUDED_INTEGRATED_GPU_ID) continue;
             const livePart = allParts.find(p => p.id === favPart.partId || (favPart.name && p.name.toLowerCase() === favPart.name.toLowerCase()));
             if (!livePart) {
                 skipped.push(favPart.name);
@@ -348,7 +354,7 @@ export function useBuilderLogic(allParts: Part[]) {
             }
         }
 
-        setBuild(newBuild);
+        setBuild(syncIntegratedGraphics(newBuild));
 
         if (favorite.loadContext?.type === 'prebuilt') {
             const unavailableParts = Array.from(new Set([

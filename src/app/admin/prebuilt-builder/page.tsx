@@ -39,6 +39,7 @@ import { motion } from "framer-motion";
 import { addPrebuiltSystem } from "@/firebase/database";
 import type { PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
 import { checkCompatibility } from "@/lib/compatibility";
+import { isIncludedIntegratedGpu, syncIntegratedGraphics } from '@/lib/integrated-graphics';
 import { logAdminAction } from "@/app/actions";
 
 import { RouteGuard } from "@/components/auth/route-guard";
@@ -111,7 +112,7 @@ export default function PrebuiltBuilderPage() {
                 if (!parsedState.CPU && isIncludedStockCooler(parsedState.Cooler)) {
                     parsedState.Cooler = null;
                 }
-                setBuild(prev => ({ ...prev, ...parsedState }));
+                setBuild(prev => syncIntegratedGraphics({ ...prev, ...parsedState }));
             } catch (e) {
                 console.error("Failed to parse saved builder state", e);
             }
@@ -165,7 +166,7 @@ export default function PrebuiltBuilderPage() {
                 }
             }
 
-            return changed ? updatedBuild : prevBuild;
+            return syncIntegratedGraphics(changed ? updatedBuild : prevBuild);
         });
     }, [allParts, isLoaded]);
 
@@ -216,7 +217,11 @@ export default function PrebuiltBuilderPage() {
                 toastToFire = { title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' };
             }
         }
-        setBuild(next);
+        if (category === 'GPU' && isIncludedIntegratedGpu(build.GPU as ComponentData | null)) {
+            next.CPU = null;
+            if (isIncludedStockCooler(next.Cooler as ComponentData | null)) next.Cooler = null;
+        }
+        setBuild(syncIntegratedGraphics(next));
         if (toastToFire) toast(toastToFire);
     };
 
@@ -302,10 +307,10 @@ export default function PrebuiltBuilderPage() {
             };
 
             const currentItems = Array.isArray(build[category]) ? (build[category] as ComponentData[]) : (build[category] ? [build[category] as ComponentData] : []);
-            setBuild({
+            setBuild(syncIntegratedGraphics({
                 ...build,
                 [category]: [...currentItems, componentData]
-            });
+            }));
             toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
             return;
         }
@@ -338,7 +343,7 @@ export default function PrebuiltBuilderPage() {
                 toastsToShow.push({ title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' });
             }
 
-            setBuild(next);
+            setBuild(syncIntegratedGraphics(next));
             toastsToShow.push({ title: 'Part Removed', description: `${part.name} has been removed from your build.` });
             toastsToShow.forEach(t => toast(t));
         } else {
@@ -423,7 +428,7 @@ export default function PrebuiltBuilderPage() {
                     }
                 }
             }
-            setBuild(next);
+            setBuild(syncIntegratedGraphics(next));
             toastsToShow.forEach(t => toast(t));
         }
     };

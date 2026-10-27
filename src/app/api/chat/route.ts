@@ -6,6 +6,7 @@ import { filterChatRecommendations } from "@/lib/chat-recommendations";
 import { ChatStreamFailure, forwardTunedChatStream } from "@/lib/chat-stream-fallback";
 import { checkFullBuildCompatibility } from "@/lib/compatibility";
 import { calculateBottleneck } from "@/lib/bottleneck";
+import { INCLUDED_INTEGRATED_GPU_ID } from '@/lib/integrated-graphics';
 import { getLanguageModelForChat, markTunedModelDegraded } from "@/lib/ai-model-resolver";
 import { z } from 'zod';
 
@@ -61,6 +62,7 @@ export async function POST(req: Request) {
                 if (part.socket && !specs.some(spec => spec.startsWith('Socket:'))) specs.unshift(`Socket: ${part.socket}`);
                 if (part.ramType && !specs.some(spec => spec.startsWith('Memory Type:'))) specs.push(`Memory Type: ${part.ramType}`);
                 if (part.performanceTier) specs.push(`Performance tier: ${part.performanceTier}/4`);
+                if (part.id === INCLUDED_INTEGRATED_GPU_ID) specs.push('Integrated graphics included with CPU; shared system memory; no dedicated card');
                 const price = typeof part.price === 'number' ? part.price : 0;
                 totalPrice += price;
                 return `${part.name || part.model || 'Part'} (₱${price.toLocaleString('en-PH')}${specs.length ? `; ${specs.join('; ')}` : ''})`;
@@ -200,6 +202,9 @@ USER PROFILE:
                                     status: bottleneckAnalysis.status,
                                     message: bottleneckAnalysis.message
                                 },
+                                graphics: currentBuild.GPU?.id === INCLUDED_INTEGRATED_GPU_ID
+                                    ? 'Integrated graphics included with the CPU; no discrete GPU is installed.'
+                                    : 'Dedicated graphics card or no GPU selected.',
                                 power: {
                                     estimatedWattage: `${estimatedWattage}W`,
                                     psuCapacity: psuCapacity > 0 ? `${psuCapacity}W` : 'Not selected',

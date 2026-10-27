@@ -12,6 +12,8 @@ export type WorkloadType = 'Esports' | 'AAA' | 'Balanced';
 export type ComponentData = {
   id: string;
   isExternal?: boolean;
+  isIntegratedGraphics?: boolean;
+  sourceCpuId?: string;
   model: string;
   description: string;
   price: number;
