@@ -21,6 +21,7 @@ import { PartCard } from "@/components/part-card";
 import { PaginationControls } from "@/components/pagination-controls";
 import type { Part } from "@/lib/types";
 import { useInventoryImageCount } from '@/hooks/use-inventory-image-count';
+import { useSiteSettings } from '@/context/site-settings-context';
 
 interface InventoryViewProps {
   loading: boolean;
@@ -84,6 +85,7 @@ export function InventoryView({
   imageSizes,
 }: InventoryViewProps) {
   const priorityImageCount = useInventoryImageCount('builder', gridCols === 5);
+  const { shouldCorruptImages } = useSiteSettings();
   const gridColsClass =
     gridCols === 5
       ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
@@ -217,7 +219,7 @@ export function InventoryView({
                         <Table.Td>
                           <div className="w-10 h-10 rounded-md border border-slate-200 dark:border-white/10 overflow-hidden relative bg-pure-white shrink-0">
                             <OptimizedImage
-                              src={getOptimizedStorageUrl(part.imageUrl, true) || "/placeholder-part.png"}
+                              src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || "/placeholder-part.png"}
                               alt={part.name}
                               fill
                               sizes="40px"
