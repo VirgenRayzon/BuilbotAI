@@ -15,12 +15,14 @@ import { MantineAppProvider } from "@/components/providers/mantine-app-provider"
 import { AdvisorJobsProvider } from "@/context/advisor-jobs-context";
 
 const inter = Inter({
-  subsets: ['latin'], weight: ['400', '500', '600', '700'],
-  display: 'swap', variable: '--font-body',
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-body',
 });
 const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'], weight: ['400', '500', '600', '700'],
-  display: 'swap', variable: '--font-headline',
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-headline',
 });
 
 export const metadata: Metadata = {
