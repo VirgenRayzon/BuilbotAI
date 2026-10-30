@@ -356,24 +356,27 @@ export function useBuilderLogic(allParts: Part[]) {
 
         setBuild(syncIntegratedGraphics(newBuild));
 
-        if (favorite.loadContext?.type === 'prebuilt') {
+        if (favorite.loadContext) {
             const unavailableParts = Array.from(new Set([
                 ...favorite.loadContext.unavailableParts,
                 ...skipped,
                 ...outOfStock,
             ]));
             const loadedCount = favorite.parts.length - skipped.length - outOfStock.length;
+            const isAdvisorBuild = favorite.loadContext.type === 'advisor';
 
             if (unavailableParts.length > 0) {
                 toast({
                     variant: 'warning',
-                    title: `Pre-built loaded with ${unavailableParts.length} missing part${unavailableParts.length === 1 ? '' : 's'}`,
-                    description: `${loadedCount} available component${loadedCount === 1 ? '' : 's'} loaded. Add ${unavailableParts.join(', ')} to complete ${favorite.loadContext.systemName}.`,
+                    title: `${isAdvisorBuild ? 'Build Advisor recommendation' : 'Pre-built'} loaded with ${unavailableParts.length} missing part${unavailableParts.length === 1 ? '' : 's'}`,
+                    description: `${loadedCount} available component${loadedCount === 1 ? '' : 's'} loaded. Add ${unavailableParts.join(', ')} to complete ${isAdvisorBuild ? 'your recommended build' : favorite.loadContext.systemName}.`,
                 });
             } else {
                 toast({
-                    title: 'Pre-built loaded into PC Builder',
-                    description: `${loadedCount} components from ${favorite.loadContext.systemName} are ready to customize.`,
+                    title: isAdvisorBuild ? 'Build Advisor recommendation loaded' : 'Pre-built loaded into PC Builder',
+                    description: isAdvisorBuild
+                        ? `${loadedCount} recommended components are ready to customize.`
+                        : `${loadedCount} components from ${favorite.loadContext.systemName} are ready to customize.`,
                 });
             }
             return;

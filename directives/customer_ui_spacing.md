@@ -36,6 +36,7 @@ Keep customer-facing cards and panels compact and consistent with the product ca
 28. The public Parts toolbar keeps search and view controls visible and places category, brand, compatibility, and sort options in one **Filters & sort** panel. Use a desktop popover and mobile drawer with a visible action footer. Keep one desktop popover toggle handler on its target wrapper; adding another to the inner button can make the panel immediately close. Hide the entire desktop popover trigger at mobile widths so only one filter button appears.
 29. Public Parts list cards stack their price/QR row above full-width actions on phones. Keep every inner flex container at `min-w-0`, use 44px QR and action targets, and switch back to the compact horizontal composition at `sm` so long names, prices, and optional cart actions cannot create horizontal overflow.
 30. Public Parts filter density follows the input method. Keep mobile filter, sort, and removable-filter controls at least 44px tall, but compress desktop checkbox/radio rows and removable chips to roughly 28px. Stock visibility belongs beside compatibility in the unified panel and participates in reset, result counts, and active-filter feedback.
+31. Build Advisor handoffs use the same single-toast feedback as pre-built handoffs. After the Builder resolves the recommendation against current inventory, show one amber warning naming every missing, archived, or out-of-stock component; complete recommendations use one success toast.
 
 ## Verification
 

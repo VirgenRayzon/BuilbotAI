@@ -13,6 +13,7 @@ import {
     RectangleVertical,
     Wind,
     Plus,
+    Loader2,
     X,
     Monitor,
     Keyboard,
@@ -648,7 +649,7 @@ export default function PrebuiltBuilderPage() {
                                 {isBuilderLoading ? null : prioritizedParts.length > 0 ? (
                                     view === 'grid' ? (
                                         <>
-                                            <div className={cn("grid grid-cols-1 gap-x-3 sm:grid-cols-2 md:grid-cols-3 md:gap-x-4 lg:grid-cols-4 xl:grid-cols-4",
+                                            <div className={cn("grid grid-cols-2 gap-x-3 md:grid-cols-3 md:gap-x-4 lg:grid-cols-4 xl:grid-cols-4",
                                                 recommendations.suggestions.length ? "gap-y-8 pt-10" : "gap-y-3 md:gap-y-4")}>
                                                 {paginatedParts.map(part => (
                                                     <PartCard
@@ -661,7 +662,7 @@ export default function PrebuiltBuilderPage() {
                                                         recommendation={recommendations.suggestions.find(item => item.id === part.id && item.category === part.category)
                                                             ? (() => {
                                                                 const item = recommendations.suggestions.find(suggestion => suggestion.id === part.id && suggestion.category === part.category)!;
-                                                                return { action: item.action, role: item.role, reason: item.reason, verified: recommendations.verified,
+                                                                return { action: item.action, role: item.role, reason: item.reason,
                                                                     applying: recommendations.applyingId === item.id, onApply: () => void recommendations.apply(item) };
                                                             })() : undefined}
                                                     />
@@ -723,10 +724,13 @@ export default function PrebuiltBuilderPage() {
                                                                         <Button
                                                                             size="icon"
                                                                             onClick={() => recommendation && !selected ? void recommendations.apply(recommendation) : handlePartToggle(part)}
-                                                                            disabled={(currentStock === 0 && !selected) || (!!recommendation && !selected && !recommendations.verified)}
+                                                                            disabled={(currentStock === 0 && !selected) || recommendations.applyingId === part.id}
+                                                                            aria-label={recommendations.applyingId === part.id ? 'Checking part' : selected ? 'Remove from build' : 'Add to build'}
                                                                             variant={selected ? 'destructive' : 'default'}
                                                                         >
-                                                                            {selected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                                                                            {recommendations.applyingId === part.id
+                                                                                ? <Loader2 className="h-4 w-4 animate-spin" />
+                                                                                : selected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                                                                         </Button>
                                                                     )}
                                                                 </TableCell>

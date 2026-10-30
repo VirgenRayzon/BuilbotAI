@@ -24,7 +24,6 @@ interface PartCardProps {
         action: 'add' | 'replace';
         role: RecommendationRole;
         reason: string;
-        verified: boolean;
         applying: boolean;
         onApply: () => void;
     };
@@ -51,7 +50,7 @@ export function PartCard({
         e.stopPropagation();
         if (isOutOfStock) return;
         if (recommendation && !isSelected) {
-            if (recommendation.verified && !recommendation.applying) recommendation.onApply();
+            if (!recommendation.applying) recommendation.onApply();
             return;
         }
         onToggleBuild(part);
@@ -105,12 +104,12 @@ export function PartCard({
                 onToggle={() => {
                     if (isOutOfStock) return;
                     if (recommendation && !isSelected) {
-                        if (recommendation.verified && !recommendation.applying) recommendation.onApply();
+                        if (!recommendation.applying) recommendation.onApply();
                         return;
                     }
                     onToggleBuild(part);
                 }}
-                isDisabled={Boolean(isIncompatible || (recommendation && !isSelected && !recommendation.verified))}
+                isDisabled={Boolean(isIncompatible)}
             >
                 <div className="flex h-full flex-col justify-between">
                 {/* --- Incompatibility Overlay --- */}
@@ -211,7 +210,7 @@ export function PartCard({
                     {(!compatibility || compatibility.compatible || isSelected) && (
                         <Button
                             onClick={handleToggle}
-                            disabled={isOutOfStock || (!!recommendation && !recommendation.verified && !isSelected)}
+                            disabled={isOutOfStock}
                             loading={recommendation?.applying}
                             fullWidth
                             radius="md"

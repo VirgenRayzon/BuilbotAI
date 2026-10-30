@@ -1,4 +1,4 @@
-import { streamText, tool, convertToModelMessages, stepCountIs, createUIMessageStream, createUIMessageStreamResponse } from 'ai';
+import { streamText, tool, convertToModelMessages, stepCountIs, createUIMessageStream, createUIMessageStreamResponse, type UIMessage } from 'ai';
 import { retrieveLocalKnowledge } from "@/lib/knowledge-retriever";
 import { getChatPartSpecifications } from "@/lib/chat-part-specifications";
 import { getStructuredInventory } from "@/lib/inventory-fetcher";
@@ -8,6 +8,7 @@ import { checkFullBuildCompatibility } from "@/lib/compatibility";
 import { calculateBottleneck } from "@/lib/bottleneck";
 import { INCLUDED_INTEGRATED_GPU_ID } from '@/lib/integrated-graphics';
 import { getLanguageModelForChat, markTunedModelDegraded } from "@/lib/ai-model-resolver";
+import { getChatModelHistory, getChatRecommendationContext } from '@/lib/chat-conversation';
 import { z } from 'zod';
 
 export const maxDuration = 120;
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
 
         // Dynamically resolve active system instruction from Firestore with baseline fallback
         const { getActiveSystemPrompt } = await import("@/lib/system-prompts");
-        const systemInstruction = `${await getActiveSystemPrompt('chatbot')}\n\nFor part recommendations, once the category, budget, and use case or target resolution are known across the conversation, call searchInventory and show the available compatible options now. Do not keep asking optional questions before searching. For one user question, use tools before writing an explanation, search each category at most once, and give one concise final answer after the tool results. Do not repeat an introductory explanation or narrate the same recommendation in multiple steps; the UI renders the product cards. For a named component review or detailed specifications, call queryPartSpecifications with the full product name and category when known. That tool checks the local vector store and uses Google Search when there is no exact product match. Use only facts about the requested model. Never introduce or change a numeric specification that is absent from the tool result. If the result source is web, cite its supplied links in your answer. If the result source is none, say that the exact specifications could not be verified; never replace them with a similar model's specifications.`;
+        let systemInstruction = `${await getActiveSystemPrompt('chatbot')}\n\nFor part recommendations, ask only for the intended use and budget in one short question if they are missing. A stated target resolution also counts as intended use. Once the category, budget, and intended use or target resolution are known across the conversation, call searchInventory and show the available compatible options now. Never ask for refresh rate, game titles, or whether an already clarified budget is for the part before searching. For one user question, use tools before writing an explanation, search each category at most once, and give one concise final answer after the tool results. Do not repeat an introductory explanation or narrate the same recommendation in multiple steps; the UI renders the product cards. For a named component review or detailed specifications, call queryPartSpecifications with the full product name and category when known. That tool checks the local vector store and uses Google Search when there is no exact product match. Use only facts about the requested model. Never introduce or change a numeric specification that is absent from the tool result. If the result source is web, cite its supplied links in your answer. If the result source is none, say that the exact specifications could not be verified; never replace them with a similar model's specifications.`;
 
 
         const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
@@ -37,8 +38,11 @@ export async function POST(req: Request) {
         const resolved = await getLanguageModelForChat({ feature: 'chatbot' });
         console.log(`[Chat API] Using model: ${resolved.modelId} (feature: chatbot, isFineTuned: ${resolved.isFineTuned}, isFallback: ${resolved.isFallback})`);
 
-        // Slice to get last 10 messages for context
-        const recentMessages = messages.slice(-10);
+        const chatMessages = messages as UIMessage[];
+        const recommendationContext = getChatRecommendationContext(chatMessages);
+        if (recommendationContext) {
+            systemInstruction += `\n\n[ALREADY ANSWERED — SEARCH NOW]\nThe user requested ${recommendationContext.category.toUpperCase()} options, has a ₱${recommendationContext.budget.toLocaleString('en-PH')} budget for this part, and stated ${recommendationContext.intendedUse} as the intended use or target resolution. Call searchInventory for ${recommendationContext.category} with maxPrice ${recommendationContext.budget} before answering. Do not ask any more discovery questions.`;
+        }
 
         // Build context prompt if user has an active rig
         let buildContextPrompt = "";
@@ -99,7 +103,8 @@ export async function POST(req: Request) {
             }
         }
 
-        // Inject userProfile and currentBuild context immediately prior to final user prompt
+        // Keep profile and build facts in the system instruction. Inserting a
+        // synthetic user turn can break Gemini's required tool-turn ordering.
         if (userProfile || buildContextPrompt) {
             const displayName = userProfile?.displayName || "Customer";
             const experienceLevel = userProfile?.experienceLevel || "Intermediate";
@@ -111,14 +116,10 @@ USER PROFILE:
 - Hardware Experience Level: ${experienceLevel}
 - Specific Preferences/Wishes: ${preferences}${buildContextPrompt}`;
 
-            recentMessages.splice(recentMessages.length - 1, 0, {
-                id: `context-${Date.now()}`,
-                role: 'user',
-                parts: [{ type: 'text', text: profilePrompt }]
-            } as any);
+            systemInstruction += `\n\n${profilePrompt}`;
         }
 
-        const modelMessages = await convertToModelMessages(recentMessages);
+        const modelMessages = await convertToModelMessages(getChatModelHistory(chatMessages));
         const inventorySearchCache = new Map<string, Promise<ReturnType<typeof filterChatRecommendations> | { error: string }>>();
         const executeStream = (
             modelToUse: any,
@@ -221,20 +222,22 @@ USER PROFILE:
                             maxPrice: z.number().optional().describe("Optional maximum budget limit in Philippine Pesos (₱) to filter items within budget.")
                         }),
                         execute: async ({ category, searchTerm, maxPrice }) => {
-                            const cleanTerm = (searchTerm === "undefined" || searchTerm === "") ? undefined : searchTerm;
-                            const cacheKey = JSON.stringify([category, cleanTerm, maxPrice]);
+                            const requestedCategory = recommendationContext?.category ?? category;
+                            const requestedBudget = recommendationContext?.budget ?? maxPrice;
+                            const cleanTerm = recommendationContext || searchTerm === "undefined" || searchTerm === "" ? undefined : searchTerm;
+                            const cacheKey = JSON.stringify([requestedCategory, cleanTerm, requestedBudget]);
                             let result = inventorySearchCache.get(cacheKey);
                             if (!result) {
-                                console.log(`[Tool: searchInventory] Searching for ${category} with term: ${cleanTerm ? `"${cleanTerm}"` : "none"}${maxPrice ? `, maxPrice: ₱${maxPrice}` : ""}`);
+                                console.log(`[Tool: searchInventory] Searching for ${requestedCategory} with term: ${cleanTerm ? `"${cleanTerm}"` : "none"}${requestedBudget ? `, maxPrice: ₱${requestedBudget}` : ""}`);
                                 result = (async () => {
-                                    const inventory = await getStructuredInventory(category, cleanTerm);
+                                    const inventory = await getStructuredInventory(requestedCategory, cleanTerm);
                                     if (!inventory || inventory.length === 0) {
-                                        return { error: `No parts found in category ${category} matching term '${cleanTerm}'. Try searching again with an EMPTY searchTerm to see all available parts.` };
+                                        return { error: `No parts found in category ${requestedCategory} matching term '${cleanTerm}'. Try searching again with an EMPTY searchTerm to see all available parts.` };
                                     }
 
-                                    const matchingParts = filterChatRecommendations(inventory, category, currentBuild, maxPrice);
+                                    const matchingParts = filterChatRecommendations(inventory, requestedCategory, currentBuild, requestedBudget);
                                     if (matchingParts.length === 0) {
-                                        return { error: `No in-stock parts in this search pass the current build's compatibility checks${maxPrice ? ` within ₱${maxPrice}` : ''}. Try another category or ask which selected part limits the options.` };
+                                        return { error: `No in-stock parts in this search pass the current build's compatibility checks${requestedBudget ? ` within ₱${requestedBudget}` : ''}. Try another category or ask which selected part limits the options.` };
                                     }
                                     return matchingParts;
                                 })();
@@ -267,6 +270,11 @@ USER PROFILE:
                     })
                 },
                 stopWhen: stepCountIs(5), // Allow for tool calling loops automatically
+                prepareStep: recommendationContext
+                    ? ({ stepNumber }) => ({ toolChoice: stepNumber === 0
+                        ? { type: 'tool' as const, toolName: 'searchInventory' as const }
+                        : 'none' as const })
+                    : undefined,
                 abortSignal: controller.signal,
                 timeout: isFineTuned
                     ? { totalMs: 30000, chunkMs: 15000 }

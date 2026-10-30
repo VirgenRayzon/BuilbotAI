@@ -153,7 +153,7 @@ export function PublicPartsCatalog({ products, isAdminPreview = false }: { produ
 
           {visibleProducts.length > 0 ? (
             view === 'grid' ? (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3 xl:grid-cols-4">
                 {visibleProducts.map((product, index) => (
                   <ProductCard
                     key={product.productId}

@@ -9,9 +9,9 @@ import type { ComponentData } from "@/lib/types";
 import type { TelemetryInfo } from "../types";
 
 const SLEEK_GREETINGS = [
-    "Hi there! I am Buildbot AI, your PC building assistant. How can I help you choose parts or optimize your build today?",
-    "Hello! Ready to check compatibility, analyze bottlenecks, or suggest upgrades for your PC build. What are you looking to build?",
-    "Welcome! I'm Buildbot AI. Need advice on choosing components or balancing your setup? Ask me anything!"
+    (name: string) => `Hi ${name}! I am Buildbot AI, your PC building assistant. How can I help you choose parts or optimize your build today?`,
+    (name: string) => `Hello ${name}! I'm Buildbot AI. Ready to check compatibility, analyze bottlenecks, or suggest upgrades for your PC build. What are you looking to build?`,
+    (name: string) => `Welcome, ${name}! I'm Buildbot AI. Need advice on choosing components or balancing your setup? Ask me anything!`
 ];
 
 export function useFloatingChat(build?: Record<string, ComponentData | ComponentData[] | null>, initiallyOpen = false) {
@@ -200,7 +200,7 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
                     ? process.env.NODE_ENV === 'development'
                         ? "The app server isn't responding on port 9002. Start npm run dev and try again."
                         : "Check your connection and try again."
-                    : err.message || "The AI service is temporarily unavailable. Please try again.",
+                    : "The AI service is temporarily unavailable. Please try again.",
             });
         }
     });
@@ -252,8 +252,12 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
 
     // Render local welcome greeting when chat is first opened and empty
     useEffect(() => {
-        if (isOpen && messages.length === 0 && !isLoading && !isAiKillSwitch) {
-            const randomGreeting = SLEEK_GREETINGS[Math.floor(Math.random() * SLEEK_GREETINGS.length)];
+        if (isOpen && authUser && !profileLoading && messages.length === 0 && !isLoading && !isAiKillSwitch) {
+            const name = profile?.firstName?.trim()
+                || profile?.name?.trim().split(/\s+/)[0]
+                || authUser.displayName?.trim().split(/\s+/)[0]
+                || 'there';
+            const randomGreeting = SLEEK_GREETINGS[Math.floor(Math.random() * SLEEK_GREETINGS.length)](name);
             const welcomeMsg: UIMessage = {
                 id: `welcome-${Date.now()}`,
                 role: 'assistant',
@@ -266,7 +270,7 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
                 console.error(e);
             }
         }
-    }, [isOpen, messages.length, isLoading, setMessages, isAiKillSwitch]);
+    }, [isOpen, authUser, profileLoading, profile?.firstName, profile?.name, messages.length, isLoading, setMessages, isAiKillSwitch]);
 
     // Clear chat on logout
     useEffect(() => {

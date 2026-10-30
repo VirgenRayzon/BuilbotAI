@@ -191,7 +191,7 @@ export function InventoryView({
                   recommendation={recommendations?.suggestions.find(item => item.id === part.id && item.category === part.category)
                     ? (() => {
                       const item = recommendations.suggestions.find(suggestion => suggestion.id === part.id && suggestion.category === part.category)!;
-                      return { action: item.action, role: item.role, reason: item.reason, verified: recommendations.verified,
+                      return { action: item.action, role: item.role, reason: item.reason,
                         applying: recommendations.applyingId === item.id, onApply: () => void recommendations.apply(item) };
                     })() : undefined}
                 />
@@ -290,7 +290,8 @@ export function InventoryView({
                             color={selected ? "red" : "cyan"}
                             leftSection={selected ? <Trash2 size={12} /> : <Plus size={12} />}
                             onClick={() => recommendation && !selected ? void recommendations?.apply(recommendation) : onTogglePart(part)}
-                            disabled={(isOutOfStock && !selected) || (!!recommendation && !selected && !recommendations?.verified)}
+                            disabled={isOutOfStock && !selected}
+                            loading={recommendations?.applyingId === part.id}
                           >
                             {selected ? "Remove" : recommendation?.action === 'replace' ? 'Replace' : "Add"}
                           </Button>

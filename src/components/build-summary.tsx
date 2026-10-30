@@ -149,8 +149,16 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
             return component ? { category: key === 'gpu' ? 'GPU' : key === 'cpu' ? 'CPU' : key === 'psu' ? 'PSU' : key === 'case' ? 'Case' : name,
                 partId: component.id, name: component.model, price: component.price || 0 } : null;
         }).filter((part): part is NonNullable<typeof part> => part !== null);
+        const unavailableParts = COMPONENT_SLOTS
+            .filter(({ key }) => !build[key])
+            .map(({ name }) => name);
         localStorage.setItem('pc_builder_load_favorite', JSON.stringify({
             name: 'Build Advisor recommendation', parts, totalPrice: totalPrice || 0,
+            loadContext: {
+                type: 'advisor',
+                systemName: 'Build Advisor recommendation',
+                unavailableParts,
+            },
         }));
         router.push(reserve ? '/builder?reserve=1' : '/builder');
     };

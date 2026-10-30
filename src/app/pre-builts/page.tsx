@@ -206,7 +206,7 @@ export default function PreBuiltsPage() {
               </div>
 
               {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
                   {Array.from({ length: 8 }).map((_, i) => (
                     <Card
                       key={`prebuilt-skeleton-${i}`}
@@ -252,7 +252,7 @@ export default function PreBuiltsPage() {
                 </div>
               ) : filteredAndSortedSystems.length > 0 ? (
                 view === "grid" ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
                     {filteredAndSortedSystems.map((system, index) => (
                       <PrebuiltSystemCard
                         key={system.id}

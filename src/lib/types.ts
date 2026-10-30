@@ -225,7 +225,7 @@ export type FavoriteBuild = {
   source: 'builder' | 'advisor';
   createdAt: any; // Firestore Timestamp
   loadContext?: {
-    type: 'prebuilt';
+    type: 'prebuilt' | 'advisor';
     systemName: string;
     unavailableParts: string[];
   };

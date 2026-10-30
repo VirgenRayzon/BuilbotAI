@@ -68,6 +68,7 @@ Agents must execute relevant programmatic checks and fix failures before complet
 
 ## Operational Constraints & Test Credentials
 - **Development Port:** Strictly **Port `9002`** (`http://localhost:9002/`). When testing or launching URLs, NEVER default to port 3000.
+- **Persistent Dev Server:** Treat the dev server on port `9002` as user-owned and persistent. Reuse it when already running. If an agent starts it for verification, leave it running after task completion unless the user explicitly asks to stop it. Never terminate an existing dev server as cleanup.
 - **Test Accounts & Credentials:**
   - **Customer / User:** `user@test.com` | `123456`
   - **Manager:** `manager@test.com` | `123456` | Key: `00216764`
