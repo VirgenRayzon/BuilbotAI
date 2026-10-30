@@ -6,7 +6,8 @@ import { Card, Text, Badge, Button, Group, Box, Stack } from "@mantine/core";
 import { OptimizedImage } from "./ui/optimized-image";
 import { formatCurrency, formatToPHP, getOptimizedStorageUrl, cn } from "@/lib/utils";
 import type { Part } from "@/lib/types";
-import { Plus, Check, AlertTriangle } from "lucide-react";
+import type { RecommendationRole } from "@/lib/live-build-recommendations";
+import { Plus, Check, AlertTriangle, Sparkles } from "lucide-react";
 import { useSiteSettings } from "@/context/site-settings-context";
 import { PartDetailsDialog } from "./part-details-dialog";
 import { CatalogQRButton } from "./catalog-qr-button";
@@ -19,6 +20,14 @@ interface PartCardProps {
     isSelected: boolean;
     compatibility?: { compatible: boolean; message: string };
     effectiveStock?: number;
+    recommendation?: {
+        action: 'add' | 'replace';
+        role: RecommendationRole;
+        reason: string;
+        verified: boolean;
+        applying: boolean;
+        onApply: () => void;
+    };
 }
 
 export function PartCard({
@@ -29,19 +38,52 @@ export function PartCard({
     isSelected,
     compatibility,
     effectiveStock,
+    recommendation,
 }: PartCardProps) {
     const { shouldCorruptImages } = useSiteSettings();
     const currentStock = effectiveStock !== undefined ? effectiveStock : part.stock;
     const isOutOfStock = currentStock === 0 && !isSelected;
     const isIncompatible = compatibility && !compatibility.compatible && !isSelected;
+    const isBestMatch = recommendation?.role === 'bestMatch';
+    const recommendationLabel = isBestMatch ? 'Best match' : 'Best value';
 
     const handleToggle = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (isOutOfStock) return;
+        if (recommendation && !isSelected) {
+            if (recommendation.verified && !recommendation.applying) recommendation.onApply();
+            return;
+        }
         onToggleBuild(part);
     };
 
     return (
+        <div className="relative h-full min-w-0">
+        {recommendation && !isSelected && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-full z-20 mb-2 flex justify-center px-1" role="note" aria-label={`${recommendationLabel}. ${recommendation.reason}`}>
+                <div className={cn(
+                    "relative rounded-lg border px-2.5 py-1.5 shadow-sm",
+                    isBestMatch
+                        ? "border-blue-400 bg-blue-50 dark:border-blue-400 dark:bg-[#102341]"
+                        : "border-yellow-400 bg-amber-50 dark:border-yellow-400 dark:bg-[#3a310c]",
+                )}>
+                    <Group gap={5} wrap="nowrap">
+                        <Sparkles size={13} className={cn("shrink-0", isBestMatch
+                            ? "text-blue-700 dark:text-blue-300" : "text-amber-700 dark:text-yellow-300")} aria-hidden="true" />
+                        <Text size="xs" fw={700} className={cn("text-center leading-tight", isBestMatch
+                            ? "text-blue-950 dark:text-blue-100" : "text-amber-950 dark:text-yellow-100")}>
+                            {recommendationLabel}
+                        </Text>
+                    </Group>
+                    <span aria-hidden="true" className={cn(
+                        "absolute -bottom-[6px] left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-b border-r",
+                        isBestMatch
+                            ? "border-blue-400 bg-blue-50 dark:border-blue-400 dark:bg-[#102341]"
+                            : "border-yellow-400 bg-amber-50 dark:border-yellow-400 dark:bg-[#3a310c]",
+                    )} />
+                </div>
+            </div>
+        )}
         <Card
             withBorder
             radius="lg"
@@ -51,7 +93,10 @@ export function PartCard({
                 "bg-white/85 dark:bg-[#111722] hover:shadow-lg hover:-translate-y-1",
                 "border-slate-200/80 dark:border-white/10 hover:border-cyan-500/40 dark:hover:border-cyan-500/40",
                 isOutOfStock && "opacity-60 grayscale",
-                isIncompatible && "border-red-500/40 dark:border-red-500/40"
+                isIncompatible && "border-red-500/40 dark:border-red-500/40",
+                recommendation && !isSelected && (isBestMatch
+                    ? "buildbot-recommendation-card--match !border-2"
+                    : "buildbot-recommendation-card--value !border-2")
             )}
         >
             <PartDetailsDialog
@@ -59,9 +104,13 @@ export function PartCard({
                 isAdded={isSelected}
                 onToggle={() => {
                     if (isOutOfStock) return;
+                    if (recommendation && !isSelected) {
+                        if (recommendation.verified && !recommendation.applying) recommendation.onApply();
+                        return;
+                    }
                     onToggleBuild(part);
                 }}
-                isDisabled={isIncompatible}
+                isDisabled={Boolean(isIncompatible || (recommendation && !isSelected && !recommendation.verified))}
             >
                 <div className="flex h-full flex-col justify-between">
                 {/* --- Incompatibility Overlay --- */}
@@ -162,7 +211,8 @@ export function PartCard({
                     {(!compatibility || compatibility.compatible || isSelected) && (
                         <Button
                             onClick={handleToggle}
-                            disabled={isOutOfStock}
+                            disabled={isOutOfStock || (!!recommendation && !recommendation.verified && !isSelected)}
+                            loading={recommendation?.applying}
                             fullWidth
                             radius="md"
                             size="sm"
@@ -182,7 +232,7 @@ export function PartCard({
                                     : "hover:bg-cyan-500 hover:text-white"
                             )}
                         >
-                            {isSelected ? "Added to Build" : "Add to Build"}
+                            {isSelected ? "Added to Build" : recommendation?.action === 'replace' ? 'Replace in Build' : "Add to Build"}
                         </Button>
                     )}
                 </Stack>
@@ -200,5 +250,6 @@ export function PartCard({
                 </div>
             )}
         </Card>
+        </div>
     );
 }

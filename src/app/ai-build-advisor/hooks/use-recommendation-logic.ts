@@ -65,7 +65,7 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, allParts: Part[]
             if (cached) {
                 const entry = JSON.parse(cached);
                 const maxAgeMs = entry.input?.allowAiSearch ? 60 * 60 * 1000 : 5 * 60 * 1000;
-                if (entry.version === 2 && !entry.input?.allowWebSearch && entry.build && entry.timestamp && Date.now() - entry.timestamp < maxAgeMs) {
+                if (entry.version === 3 && !entry.input?.allowWebSearch && entry.build && entry.timestamp && Date.now() - entry.timestamp < maxAgeMs) {
                     setSavedBuild(entry.build);
                 } else {
                     localStorage.removeItem('pc_ai_build_recommendation');
@@ -258,7 +258,7 @@ function getSmartDescription(type: string, modelName: string): string {
                     progressToastRef.current?.dismiss();
                     progressToastRef.current = null;
                     const message = missingStoreIds || unknownStoreIds
-                        ? 'The AI could not verify every suggested part against store inventory. Please try again.'
+                        ? 'Could not verify every suggested part against current store inventory. Please try again.'
                         : compatibility.length > 0
                             ? `The suggested parts have a compatibility issue: ${compatibility[0].message}`
                         : `This build exceeds your budget of ₱${budget?.toLocaleString()}. Please try again or enable Flexible Budget.`;
@@ -270,7 +270,7 @@ function getSmartDescription(type: string, modelName: string): string {
                 if (!request?.allowWebSearch) {
                     try {
                         localStorage.setItem('pc_ai_build_recommendation', JSON.stringify({
-                            version: 2,
+                            version: 3,
                             build: completedBuild,
                             input: request,
                             timestamp: Date.now(),
@@ -337,7 +337,7 @@ function getSmartDescription(type: string, modelName: string): string {
     }, [stop, toast]);
 
     const handleGetRecommendations = useCallback((data: AiBuildAdvisorRecommendationsInput) => {
-        if (isAiKillSwitch) {
+        if (isAiKillSwitch && data.allowAiSearch) {
             toast({ title: "AI Disabled", description: "AI is disabled by Administrator.", variant: "destructive" });
             return;
         }
@@ -401,7 +401,7 @@ function getSmartDescription(type: string, modelName: string): string {
         if (newBuild && !lastRequestRef.current?.allowWebSearch) {
             try {
                 localStorage.setItem('pc_ai_build_recommendation', JSON.stringify({
-                    version: 2,
+                            version: 3,
                     build: newBuild,
                     input: lastRequestRef.current,
                     timestamp: Date.now(),

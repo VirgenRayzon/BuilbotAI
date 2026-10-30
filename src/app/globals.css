@@ -197,4 +197,47 @@
   .animate-breathe {
     animation: breathe 2.4s ease-in-out infinite;
   }
+
+  @keyframes buildbot-yellow-breathe {
+    0%, 100% {
+      border-color: #d4a017;
+      box-shadow: 0 0 0 1px rgba(234, 179, 8, 0.14), 0 8px 20px rgba(15, 23, 42, 0.1);
+    }
+
+    50% {
+      border-color: #fde047;
+      box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.3), 0 8px 20px rgba(15, 23, 42, 0.1);
+    }
+  }
+
+  @keyframes buildbot-blue-breathe {
+    0%, 100% {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.14), 0 8px 20px rgba(15, 23, 42, 0.1);
+    }
+
+    50% {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.28), 0 8px 20px rgba(15, 23, 42, 0.1);
+    }
+  }
+
+  .buildbot-recommendation-card--value {
+    border-width: 2px;
+    border-color: #eab308;
+    animation: buildbot-yellow-breathe 2.8s ease-in-out infinite;
+  }
+
+  .buildbot-recommendation-card--match {
+    border-width: 2px;
+    border-color: #3b82f6;
+    animation: buildbot-blue-breathe 2.8s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .buildbot-recommendation-card--match,
+    .buildbot-recommendation-card--value {
+      animation: none;
+    }
+  }
 }

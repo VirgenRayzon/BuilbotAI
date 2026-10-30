@@ -6,6 +6,8 @@ import { DEFAULT_BUILD_ADVISOR_PROMPT } from '@/lib/constants/default-system-pro
 import { AdvisorTiming } from '@/lib/advisor-timing';
 import { retrieveLocalKnowledge } from '@/lib/knowledge-retriever';
 import { getAdvisorInventoryMenu } from '@/lib/advisor-inventory';
+import { getStructuredInventory } from '@/lib/inventory-fetcher';
+import { recommendFromInventory } from '@/lib/rule-based-advisor';
 import { parsePesoBudget } from '@/lib/parse-peso-budget';
 import { validateAdvisorBuild } from '@/lib/validate-advisor-build';
 import { getAdminFirestore } from '@/firebase/server-init';
@@ -53,6 +55,9 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Enter a valid budget in PHP.' }, { status: 400 });
     }
     const budgetLimit = budget * (input.allowFlexibleBudget ? 1.3 : 1);
+    if (!input.allowAiSearch && input.allowWebSearch) {
+      return Response.json({ error: 'Web Search requires AI Recommendations to be enabled.' }, { status: 400 });
+    }
     const db = getAdminFirestore();
     let settingsData: FirebaseFirestore.DocumentData | undefined;
 
@@ -70,6 +75,19 @@ export async function POST(req: Request) {
       console.warn("[Build Advisor API] Maintenance check warning:", e);
     }
     timing.mark('settings');
+
+    if (!input.allowAiSearch) {
+      const categories = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'];
+      const inventory = (await Promise.all(categories.map(category => getStructuredInventory(category, undefined, 50, true)))).flat();
+      timing.mark('inventory');
+      const output = recommendFromInventory(input, inventory, budgetLimit);
+      if (!output) {
+        timing.finish('error', { reason: 'no_compatible_inventory_build' });
+        return Response.json({ error: 'No compatible in-stock build fits this budget and workload. Try increasing the budget or enabling AI Recommendations.' }, { status: 422 });
+      }
+      timing.finish('rules_based');
+      return new Response(JSON.stringify(output), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    }
 
     // The same settings snapshot supplies the maintenance flag and active prompt.
     const storedPrompt = settingsData?.systemPrompts?.buildAdvisor;

@@ -19,3 +19,6 @@ flowchart TD
   Choice -- Apply --> Event[Dispatch part suggestion to builder] --> Build
   Choice -- Cancel --> Cancel([Stop local pending result])
   Error --> Choice
+  Disabled --> Finish([END])
+  Cancel --> Finish
+  Choice -- Leave tab --> Finish

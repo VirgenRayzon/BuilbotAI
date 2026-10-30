@@ -1,5 +1,9 @@
 # Admin operations
 
+## Simple explanation
+
+This flowchart shows the work areas inside the staff dashboard. Staff can check reservations, change order status, and read audit logs. The Super Admin can also open sales, staff management, and AI settings. Important changes ask for confirmation before they are saved. If a user opens a section they cannot use, the page shows an access warning.
+
 ```mermaid
 flowchart TD
   Start([Admin dashboard]) --> Tab{Selected tab}
@@ -19,11 +23,11 @@ flowchart TD
   Keys --> KeyAction{Save, approve, reject or reset?}
   KeyAction --> KeyWrite[Update authKeys, keyRequests or users] --> Keys
   Tab -- AI, Super Admin --> AI([Model routing and prompt workflows])
-  Tab -- Content, Super Admin --> About[Edit siteContent about and save] --> Tab
   Tab -- Profile safeguards, Super Admin --> Switch{Browser confirm?}
   Switch -- Cancel --> Tab
   Switch -- Confirm --> SiteSettings[Write siteSettings main; toast] --> Tab
   Tab -- Other role attempts privileged tab --> Denied[/Access Restricted toast/] --> Tab
+  Tab -- Leave dashboard --> Finish([END])
 ```
 
-Sources: `src/app/admin/page.tsx`, `src/app/admin/hooks/use-admin-core.ts`, `use-orders.ts`, `use-sales-actions.ts`, `src/app/admin/components/reservations-tab.tsx`, `sales-tab.tsx`, `admin-tab-header.tsx`, `src/components/super-admin-settings.tsx`, `about-management.tsx`, `src/app/profile/hooks/use-emergency-controls.ts`. Firestore rule enforcement and Admin SDK checks differ by operation; see [errors](error-handling-flowcharts.md) and [interaction inventory](interaction-inventory.md).
+Sources: `src/app/admin/page.tsx`, `src/app/admin/hooks/use-admin-core.ts`, `use-orders.ts`, `use-sales-actions.ts`, `src/app/admin/components/reservations-tab.tsx`, `sales-tab.tsx`, `admin-sidebar.tsx`, `admin-topbar.tsx`, `admin-tab-header.tsx`, `src/components/super-admin-settings.tsx`, and `src/app/profile/hooks/use-emergency-controls.ts`. Firestore rule enforcement and Admin SDK checks differ by operation; see [errors](error-handling-flowcharts.md) and [interaction inventory](interaction-inventory.md).

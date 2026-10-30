@@ -151,13 +151,13 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
 /**
  * Fetches structured parts from Firestore collections.
  */
-export async function getStructuredInventory(category: string, searchTerm?: string, limitCount: number = 50): Promise<StructuredPart[]> {
+export async function getStructuredInventory(category: string, searchTerm?: string, limitCount: number = 50, fresh = false): Promise<StructuredPart[]> {
     const normalizedCat = category.toLowerCase();
     const cacheKey = `${normalizedCat}:${searchTerm || ''}:${limitCount}`;
     
     try {
         const cached = structuredCache.get(cacheKey);
-        if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        if (!fresh && cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
             console.log(`[Structured Inventory Cache Hit] Key: ${cacheKey}`);
             return cached.data;
         }

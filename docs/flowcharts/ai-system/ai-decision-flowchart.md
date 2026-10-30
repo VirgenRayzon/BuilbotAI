@@ -1,5 +1,9 @@
 # AI choices and conditional paths
 
+## Simple explanation
+
+This flowchart shows the main choices made before and during an AI request. The app first checks whether the AI feature is allowed and has enough input. It may use saved data, local product data, guide data, or web search when the feature supports it. A failed model may lead to another model or a retry. The final result is shown only after it passes the checks for that feature.
+
 ```mermaid
 flowchart TD
   Start([AI feature action]) --> Role{Feature and role allowed in UI?}
@@ -30,6 +34,12 @@ flowchart TD
   UserChoice -- Save or apply --> Mutation[Favorite, catalog field or prebuilt report write]
   UserChoice -- Regenerate --> Model
   UserChoice -- Dismiss --> End([Return to parent workflow])
+  Denied --> Finish([END])
+  Paused --> Finish
+  Validate --> Finish
+  Error --> Finish
+  Mutation --> Finish
+  End --> Finish
 ```
 
 This is a cross-feature decision map, not a claim that every feature has every branch. Recommendation generation has up to three server validation attempts; critique and extraction use Genkit model fallback; chat has tuned stream fallback. The advisor offers separate AI Search and Web Search toggles (`src/components/chat-form.tsx`). Customer AI and staff AI controls read a site kill switch, while some server flows also check maintenance (`src/context/site-settings-context.tsx`, feature hooks, `src/app/api/ai/build-advisor/recommendations/route.ts`, `src/ai/flows/ai-build-critique.ts`). Client cancellation may abandon the local result; it does not prove the server model request was terminated. Feature diagrams show the exact branches.

@@ -27,3 +27,5 @@ flowchart TD
   Admin --> Idle{Idle warning?}
   Idle -- Stay logged in --> Admin
   Idle -- Logout or timeout --> Exit([Sign out])
+  RequestDone --> Finish([END])
+  Exit --> Finish

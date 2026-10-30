@@ -30,7 +30,8 @@ export const AiBuildAdvisorRecommendationsInputSchema = z.object({
   allowAiSearch: z
     .boolean()
     .optional()
-    .describe('Whether the AI is allowed to recommend parts outside the local store inventory using broader market knowledge.'),
+    .default(true)
+    .describe('When true, AI can recommend store and outside-market parts. When false, use in-stock inventory with deterministic budget and compatibility rules, without a model call.'),
   allowWebSearch: z
     .boolean()
     .optional()

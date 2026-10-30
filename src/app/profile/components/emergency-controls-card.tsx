@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Paper, Title, Text, Group, Stack, Badge, Switch, Alert, ThemeIcon } from "@mantine/core";
-import { ServerCrash, PlugZap, BrainCircuit, ShieldAlert, AlertTriangle, ShoppingBag, Sparkles } from "lucide-react";
+import { ServerCrash, PlugZap, BrainCircuit, ShieldAlert, AlertTriangle, ShoppingBag, Sparkles, WandSparkles } from "lucide-react";
 
 interface EmergencyControlsCardProps {
   emergency: {
@@ -14,6 +14,8 @@ interface EmergencyControlsCardProps {
     handleToggleAiKillSwitch: () => void;
     isEcommerceMode?: boolean;
     handleToggleEcommerceMode?: () => void;
+    isLiveBuilderRecommendationsEnabled: boolean;
+    handleToggleLiveBuilderRecommendations: () => void;
   };
 }
 
@@ -205,7 +207,7 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
                 </ThemeIcon>
                 <div>
                   <Text size="sm" fw={700} className="text-slate-900 dark:text-slate-100">
-                    AI Neural Kill Switch
+                    AI Kill Switch
                   </Text>
                   <Text size="xs" className="text-slate-600 dark:text-slate-400">
                     Halt Genkit advisor & bot inferencing
@@ -218,6 +220,51 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
                 color="red"
                 size="md"
                 aria-label="Toggle AI Kill Switch"
+              />
+            </Group>
+          </Paper>
+
+          {/* E-Commerce Storefront Mode Override */}
+          <Paper
+            p="sm"
+            radius="lg"
+            withBorder
+            className={`transition-colors ${
+              emergency.isLiveBuilderRecommendationsEnabled
+                ? "bg-yellow-50/80 dark:bg-yellow-950/20 border-yellow-300 dark:border-yellow-500/30"
+                : "bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-white/5"
+            }`}
+          >
+            <Group justify="space-between" wrap="nowrap">
+              <Group gap="sm" wrap="nowrap">
+                <ThemeIcon
+                  size="sm"
+                  radius="md"
+                  color={emergency.isLiveBuilderRecommendationsEnabled ? "yellow" : "gray"}
+                  variant={emergency.isLiveBuilderRecommendationsEnabled ? "filled" : "light"}
+                >
+                  <WandSparkles size={14} />
+                </ThemeIcon>
+                <div>
+                  <Group gap={6} align="center">
+                    <Text size="sm" fw={700} className="text-slate-900 dark:text-slate-100">
+                      Live Builder Recommendations
+                    </Text>
+                    <Badge size="xs" variant="light" color="yellow" radius="sm" className="uppercase text-[9px] font-bold">
+                      Preview
+                    </Badge>
+                  </Group>
+                  <Text size="xs" className="text-slate-600 dark:text-slate-400">
+                    Highlight a best match and best value catalog part in both builders
+                  </Text>
+                </div>
+              </Group>
+              <Switch
+                checked={emergency.isLiveBuilderRecommendationsEnabled}
+                onChange={emergency.handleToggleLiveBuilderRecommendations}
+                color="yellow"
+                size="md"
+                aria-label="Toggle Live Builder Recommendations"
               />
             </Group>
           </Paper>
@@ -249,7 +296,7 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
                       E-Commerce Storefront Mode
                     </Text>
                     <Badge size="xs" variant="light" color="cyan" radius="sm" className="uppercase text-[9px] font-bold">
-                      UI Mode
+                      Preview
                     </Badge>
                   </Group>
                   <Text size="xs" className="text-slate-600 dark:text-slate-400">

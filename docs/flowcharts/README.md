@@ -1,6 +1,6 @@
 # BuildbotAI flowcharts
 
-These diagrams describe the checked-in implementation inspected on 18 October 2026. They are static source analysis; Firebase data, deployed rules, provider availability, and production behavior were not exercised. Rectangles are actions, diamonds are decisions, parallelograms are input/output, and rounded nodes are entry or exit states. A link from a master diagram points to its more detailed workflow. The [interaction inventory](interaction-inventory.md) maps routes and overlays to source.
+These diagrams describe the checked-in implementation reviewed again on 27 October 2026. They are based on source code; Firebase data, deployed rules, AI service access, and live production behavior were not tested in this review. Rectangles are actions, diamonds are choices, parallelograms are input or output, and rounded nodes are start or end points. **END** means the path shown in that chart has finished; it does not always mean the person has closed the app. A link from a master diagram points to its more detailed workflow. The [interaction inventory](interaction-inventory.md) maps routes and overlays to source.
 
 Each Mermaid code block also has a standalone `.mmd` file beside its Markdown document. A document with multiple diagrams uses numbered suffixes (`-01`, `-02`, and so on). The Markdown files add source references and caveats; the `.mmd` files contain only the diagram source.
 
@@ -35,4 +35,4 @@ The separate [AI index](ai-system/ai-master-flowchart.md) connects the architect
 
 ## Coverage and limits
 
-The inventory records 17 page routes and three HTTP route handlers. It indexes 50 source-level modal, dialog, drawer, sheet, and popover instances plus ten menus and feedback toasts. Repeated instances of a reusable overlay share one decision diagram when their choices are identical. UI controls with no network effect are grouped by their state transition, such as filters and pagination. Components present in source but not imported by a page are labeled unmounted. Source code, rather than product copy or older plans in `docs/`, governs each claim. See [unverified and unresolved items](interaction-inventory.md#unverified-and-unresolved).
+The page review now covers 24 page routes and 17 HTTP route handlers. The interaction inventory may still list older overlay totals and should be recounted before those totals are used in a report. Repeated uses of the same popup share one decision flow when their choices are the same. Filters and page controls are grouped by the change they make. Source code, rather than older plans in `docs/`, governs each claim. See [unverified and unresolved items](interaction-inventory.md#unverified-and-unresolved).

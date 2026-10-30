@@ -29,3 +29,9 @@ flowchart TD
   ClearModal -- Confirm --> Clear[Remove selected parts and persist empty build] --> Browse
   Review --> Chat[Open floating chat; submit, retry, copy or add suggested part]
   Chat --> Browse
+  Browse -- Leave builder --> Finish([END])
+  Saved --> Finish
+  Reservation --> Finish
+  Advisor --> Finish
+  File --> Finish
+  PdfError --> Finish

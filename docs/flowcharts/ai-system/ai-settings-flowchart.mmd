@@ -23,3 +23,4 @@ flowchart TD
   PromptChoice -- Reset current/all --> Confirm{Confirm modal?}
   Confirm -- Cancel --> Prompt
   Confirm -- Confirm --> Reset[Reset selected stored prompt or all] --> Prompt
+  Mode -- Leave AI tab --> Finish([END])

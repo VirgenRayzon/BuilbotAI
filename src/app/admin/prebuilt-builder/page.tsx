@@ -41,6 +41,9 @@ import type { PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder
 import { checkCompatibility } from "@/lib/compatibility";
 import { isIncludedIntegratedGpu, syncIntegratedGraphics } from '@/lib/integrated-graphics';
 import { logAdminAction } from "@/app/actions";
+import { useLiveBuildRecommendations } from '@/hooks/use-live-build-recommendations';
+import { prioritizeRecommendedParts } from '@/lib/live-build-recommendations';
+import { useSiteSettings } from '@/context/site-settings-context';
 
 import { RouteGuard } from "@/components/auth/route-guard";
 import { usePrebuiltBuilderImport } from "@/app/admin/hooks/use-prebuilt-builder-import";
@@ -96,7 +99,7 @@ export default function PrebuiltBuilderPage() {
         Monitor: null, Keyboard: null, Mouse: null, Headset: null,
     });
     const [resolution, setResolution] = useState<Resolution>('1440p');
-    const [workload, setWorkload] = useState<WorkloadType>('Balanced');
+    const [workload, setWorkload] = useState<WorkloadType>('AAA');
     const [analysis, setAnalysis] = useState<any>(null);
     const [isLoaded, setIsLoaded] = useState(false);
 
@@ -503,11 +506,24 @@ export default function PrebuiltBuilderPage() {
         return Array.from(brands).sort();
     }, [allParts, categories, searchQuery]);
 
-    const totalPages = Math.ceil(sortedAndFilteredParts.length / itemsPerPage);
-    const paginatedParts = useMemo(() => {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        return sortedAndFilteredParts.slice(startIndex, startIndex + itemsPerPage);
-    }, [sortedAndFilteredParts, currentPage, itemsPerPage]);
+    const activeRecommendationCategories = categories.filter(category => category.selected);
+    const recommendationCategory = activeRecommendationCategories.length === 1 ? activeRecommendationCategories[0].name : null;
+    const { isLiveBuilderRecommendationsEnabled } = useSiteSettings();
+    const [autoRecommendationsEnabled, setAutoRecommendationsEnabled] = useState(true);
+    const recommendations = useLiveBuildRecommendations({
+        allParts, build, resolution, workload, preferredCategory: recommendationCategory,
+        user: authUser || null, onAddPart: handlePartToggle,
+        enabled: isLiveBuilderRecommendationsEnabled && autoRecommendationsEnabled,
+    });
+    const prioritizedParts = useMemo(() =>
+        prioritizeRecommendedParts(sortedAndFilteredParts, recommendations.suggestions),
+    [sortedAndFilteredParts, recommendations.suggestions]);
+    const totalPages = Math.ceil(prioritizedParts.length / itemsPerPage);
+    const paginatedParts = useMemo(() => prioritizedParts.slice(
+        (currentPage - 1) * itemsPerPage, currentPage * itemsPerPage,
+    ), [prioritizedParts, currentPage, itemsPerPage]);
+    const recommendationKey = recommendations.suggestions.map(item => `${item.category}:${item.id}`).join('|');
+    useEffect(() => { setCurrentPage(1); }, [recommendationKey]);
 
     const isSelected = (part: Part) => {
         if (part.category === 'Storage' || part.category === 'RAM') {
@@ -586,7 +602,7 @@ export default function PrebuiltBuilderPage() {
                                     itemLabel="parts"
                                     searchPlaceholder="Search parts by name, brand, or SKU..."
                                     defaultSort="Date Added:desc"
-                                    itemCount={sortedAndFilteredParts.length}
+                                    itemCount={prioritizedParts.length}
                                     sortBy={sortBy}
                                     onSortByChange={(val) => { setSortBy(val); setCurrentPage(1); }}
                                     sortDirection={sortDirection}
@@ -610,6 +626,9 @@ export default function PrebuiltBuilderPage() {
                                 <div className="contents lg:block lg:col-span-3 lg:self-start">
                                     <YourBuild
                                         build={build}
+                                        recommendationState={isLiveBuilderRecommendationsEnabled ? recommendations : undefined}
+                                        autoRecommendationsEnabled={autoRecommendationsEnabled}
+                                        onAutoRecommendationsChange={setAutoRecommendationsEnabled}
                                         onRemovePart={handleRemovePart}
                                         onClearBuild={handleClearBuild}
                                         resolution={resolution}
@@ -626,10 +645,11 @@ export default function PrebuiltBuilderPage() {
                                 </div>
 
                                 <div className="flex min-w-0 flex-col gap-6 lg:col-span-9">
-                                {isBuilderLoading ? null : sortedAndFilteredParts.length > 0 ? (
+                                {isBuilderLoading ? null : prioritizedParts.length > 0 ? (
                                     view === 'grid' ? (
                                         <>
-                                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-4">
+                                            <div className={cn("grid grid-cols-1 gap-x-3 sm:grid-cols-2 md:grid-cols-3 md:gap-x-4 lg:grid-cols-4 xl:grid-cols-4",
+                                                recommendations.suggestions.length ? "gap-y-8 pt-10" : "gap-y-3 md:gap-y-4")}>
                                                 {paginatedParts.map(part => (
                                                     <PartCard
                                                         key={part.id}
@@ -638,6 +658,12 @@ export default function PrebuiltBuilderPage() {
                                                         onToggleBuild={handlePartToggle}
                                                         isSelected={isSelected(part)}
                                                         compatibility={(part as any).compatibility}
+                                                        recommendation={recommendations.suggestions.find(item => item.id === part.id && item.category === part.category)
+                                                            ? (() => {
+                                                                const item = recommendations.suggestions.find(suggestion => suggestion.id === part.id && suggestion.category === part.category)!;
+                                                                return { action: item.action, role: item.role, reason: item.reason, verified: recommendations.verified,
+                                                                    applying: recommendations.applyingId === item.id, onApply: () => void recommendations.apply(item) };
+                                                            })() : undefined}
                                                     />
                                                 ))}
                                             </div>
@@ -665,9 +691,12 @@ export default function PrebuiltBuilderPage() {
                                                     {paginatedParts.map(part => {
                                                         const selected = isSelected(part);
                                                         const currentStock = part.stock - getCountInBuild(part.name);
+                                                        const recommendation = recommendations.suggestions.find(item => item.id === part.id && item.category === part.category);
                                                         return (
                                                             <TableRow key={part.id} className={cn(
                                                                 (part as any).effectiveStock === 0 && !selected && "opacity-50 grayscale",
+                                                                recommendation?.role === 'bestMatch' && "bg-blue-50/70 dark:bg-blue-950/20 border-l-2 border-l-blue-500",
+                                                                recommendation?.role === 'bestValue' && "bg-amber-50/70 dark:bg-amber-950/20 border-l-2 border-l-yellow-500",
                                                                 (part as any).compatibility && !(part as any).compatibility.compatible && "bg-destructive/[0.03] hover:bg-destructive/[0.06] border-l-2 border-l-destructive shadow-[inset_4px_0_0_-2px_rgba(239,68,68,0.5)]"
                                                             )}>
                                                                 <TableCell className="font-medium">
@@ -675,6 +704,10 @@ export default function PrebuiltBuilderPage() {
                                                                         <OptimizedImage src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
                                                                         <div>
                                                                             <p className="font-semibold">{part.name}</p>
+                                                                            {recommendation && <p className={cn("text-xs font-semibold", recommendation.role === 'bestMatch'
+                                                                                ? "text-blue-800 dark:text-blue-200" : "text-amber-800 dark:text-yellow-200")}>
+                                                                                {recommendation.role === 'bestMatch' ? 'Best match' : 'Best value'}
+                                                                            </p>}
                                                                             <p className="text-xs text-muted-foreground">{part.brand}</p>
                                                                         </div>
                                                                     </div>
@@ -689,8 +722,8 @@ export default function PrebuiltBuilderPage() {
                                                                     {(!((part as any).compatibility && !(part as any).compatibility.compatible) || selected) && (
                                                                         <Button
                                                                             size="icon"
-                                                                            onClick={() => handlePartToggle(part)}
-                                                                            disabled={currentStock === 0 && !selected}
+                                                                            onClick={() => recommendation && !selected ? void recommendations.apply(recommendation) : handlePartToggle(part)}
+                                                                            disabled={(currentStock === 0 && !selected) || (!!recommendation && !selected && !recommendations.verified)}
                                                                             variant={selected ? 'destructive' : 'default'}
                                                                         >
                                                                             {selected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}

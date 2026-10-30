@@ -24,3 +24,11 @@ flowchart TD
   Trigger -- Header or profile sign out --> Signout{Confirm sign out?}
   Signout -- Cancel or close --> Close
   Signout -- Confirm --> Logout
+  Accepted --> Finish([END])
+  Signup --> Finish
+  TempLogout --> Finish
+  Admin --> Finish
+  Close --> Finish
+  RequestDone --> Finish
+  Reset --> Finish
+  Logout --> Finish

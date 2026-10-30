@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ActionIcon, Badge, Button, Group, Modal, Paper, ScrollArea, Text, TextInput, ThemeIcon, Title, Tooltip } from "@mantine/core";
 import { ShieldCheck, ShoppingCart, Sparkles, Zap } from "lucide-react";
 import type { ComponentData } from "@/lib/types";
 import { formatCurrency, cn } from "@/lib/utils";
 import { useSiteSettings } from "@/context/site-settings-context";
 import { useEcommerce, type EcommerceSubComponent } from "@/context/ecommerce-context";
+import { ReserveBuildButton } from "@/components/build/reserve-build-button";
 
 const reviewCategories = ["Motherboard", "CPU", "GPU", "RAM", "Storage", "PSU", "Cooler", "Case", "Monitor", "Keyboard", "Mouse", "Headset"];
 
@@ -18,6 +19,7 @@ const UNIFIED_MODAL_CLASSNAMES = {
 };
 
 interface BuildActionFooterProps {
+  openReservation?: boolean;
   build: Record<string, ComponentData | ComponentData[] | null>;
   totalPrice: number;
   selectedParts: number;
@@ -35,6 +37,7 @@ interface BuildActionFooterProps {
 
 export function BuildActionFooter({
   build, totalPrice, selectedParts, missingCategories, isManagerMode,
+  openReservation = false,
   isAiPending, isCheckingOut, analysis,
   onAnalyze, onReserve, onAddPrebuilt, onIncompleteAction, showMissingValidation,
 }: BuildActionFooterProps) {
@@ -46,6 +49,10 @@ export function BuildActionFooter({
 
   const complete = missingCategories.length === 0;
   const isReady = complete && !isAiPending;
+
+  useEffect(() => {
+    if (openReservation && complete) setReserveOpen(true);
+  }, [openReservation, complete]);
 
   const startPrebuiltGeneration = () => {
     const name = prebuiltName.trim();
@@ -190,21 +197,11 @@ export function BuildActionFooter({
               </Tooltip>
             </>
           ) : (
-            <Button
-              size="md"
-              radius="md"
-              color="teal"
-              leftSection={<ShieldCheck size={18} />}
-              aria-disabled={!complete}
+            <ReserveBuildButton
+              ariaDisabled={!complete}
               title={!complete ? "Select every highlighted core part before reserving." : undefined}
               onClick={() => complete ? setReserveOpen(true) : onIncompleteAction()}
-              className={cn(
-                "h-[42px] flex-1 font-headline font-bold text-xs uppercase tracking-wider transition-all duration-200",
-                "shadow-md shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.99]"
-              )}
-            >
-              Reserve Build
-            </Button>
+            />
           )}
         </Group>
       )}

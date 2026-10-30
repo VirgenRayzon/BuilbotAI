@@ -13,3 +13,5 @@ flowchart TD
   Save -- No --> Error
   Save -- Yes --> Result[/Render and publish strengths; success toast/]
   Result --> Generate
+  Read --> Finish([END])
+  Generate -- Leave page --> Finish

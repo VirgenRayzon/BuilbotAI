@@ -1,9 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useId } from "react";
 import dynamic from 'next/dynamic';
-import { SegmentedControl, Group, Select, Box } from "@mantine/core";
-import { Monitor, Zap, Gauge, Cpu } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Group, Select, Box, Tooltip } from "@mantine/core";
+import { Monitor, Zap, Gauge, Cpu, WalletCards } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { ComponentData, Resolution, WorkloadType } from "@/lib/types";
 import { SynergyGaugeCard } from "./synergy-gauge-card";
 import { BottleneckStatusCard } from "./bottleneck-status-card";
@@ -23,10 +25,13 @@ interface DualSidebarAnalyzerProps {
   onApplySuggestion?: (category: string, partId: string) => void;
   selectedPartsCount: number;
   totalCategoriesCount: number;
-  activeTab: "parts" | "analytics";
-  onTabChange: (tab: "parts" | "analytics") => void;
+  activeTab: SidebarTab;
+  onTabChange: (tab: SidebarTab) => void;
+  budgetContent?: React.ReactNode;
   children: React.ReactNode;
 }
+
+export type SidebarTab = "parts" | "analytics" | "budget";
 
 export function DualSidebarAnalyzer({
   build,
@@ -40,48 +45,75 @@ export function DualSidebarAnalyzer({
   totalCategoriesCount,
   activeTab,
   onTabChange,
+  budgetContent,
   children,
 }: DualSidebarAnalyzerProps) {
+  const tabGroupId = useId();
+  const tabs = [
+    { value: "parts" as const, label: `Parts (${selectedPartsCount}/${totalCategoriesCount})`, icon: Cpu, color: "text-cyan-500" },
+    { value: "analytics" as const, label: "Analyzer", icon: Gauge, color: "text-emerald-500" },
+    ...(budgetContent ? [{ value: "budget" as const, label: "Recommendation", icon: WalletCards, color: "text-amber-500" }] : []),
+  ];
+
   return (
     <div className="flex flex-col">
-      {/* Dual Tab Segmented Control */}
-      <Box className="p-3 bg-slate-100/70 dark:bg-white/[0.04] border-b border-slate-200 dark:border-white/10">
-        <SegmentedControl
-          value={activeTab}
-          onChange={(val) => onTabChange(val as "parts" | "analytics")}
-          fullWidth
-          size="xs"
-          radius="md"
-          data={[
-            {
-              value: "parts",
-              label: (
-                <div className="flex items-center justify-center gap-1.5 py-0.5">
-                  <Cpu size={13} className="text-cyan-500" />
-                  <span className="font-bold">Parts ({selectedPartsCount}/{totalCategoriesCount})</span>
-                </div>
-              ),
-            },
-            {
-              value: "analytics",
-              label: (
-                <div className="flex items-center justify-center gap-1.5 py-0.5">
-                  <Gauge size={13} className="text-emerald-500" />
-                  <span className="font-bold">Analyzer</span>
-                </div>
-              ),
-            },
-          ]}
-          classNames={{
-            root: "bg-white/80 dark:bg-[#151922] border border-slate-200/80 dark:border-white/10 p-1 shadow-inner",
-            indicator: "bg-cyan-500 text-white dark:bg-cyan-600 shadow-sm",
-          }}
-        />
+      {/* Active tab expands; inactive tabs remain compact icon controls. */}
+      <Box className="p-2 bg-slate-100/70 dark:bg-white/[0.04] border-b border-slate-200 dark:border-white/10">
+        <div role="tablist" aria-label="Your Build views"
+          className="flex w-full gap-0.5 rounded-md border border-slate-200/80 bg-white/80 p-0.5 shadow-inner dark:border-white/10 dark:bg-[#151922]">
+          {tabs.map(({ value, label, icon: Icon, color }) => {
+            const active = activeTab === value;
+            const button = (
+              <motion.button
+                key={value}
+                layout
+                type="button"
+                role="tab"
+                aria-selected={active}
+                aria-label={label}
+                onClick={() => onTabChange(value)}
+                transition={{ layout: { type: "spring", stiffness: 420, damping: 34 } }}
+                className={cn(
+                  "relative flex h-11 min-w-11 items-center justify-center overflow-hidden rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/70",
+                  active
+                    ? "flex-1 gap-1 px-1.5 text-slate-900 dark:text-slate-100"
+                    : "w-11 flex-none px-0 text-slate-500 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:bg-white/[0.06]",
+                )}
+              >
+                {active && (
+                  <motion.span
+                    layoutId={`${tabGroupId}-active-tab`}
+                    className="absolute inset-0 rounded-md border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#202631]"
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                  />
+                )}
+                <Icon size={15} className={cn("relative z-10 shrink-0", color)} aria-hidden="true" />
+                <AnimatePresence initial={false} mode="popLayout">
+                  {active && (
+                    <motion.span
+                      key={`${value}-label`}
+                      initial={{ opacity: 0, x: -4 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 4 }}
+                      transition={{ duration: 0.16 }}
+                      className="relative z-10 truncate text-xs font-bold"
+                    >
+                      {label}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.button>
+            );
+            return active ? button : <Tooltip key={value} label={label} position="bottom" withArrow>{button}</Tooltip>;
+          })}
+        </div>
       </Box>
 
       {/* Content based on Tab */}
       {activeTab === "parts" ? (
         children
+      ) : activeTab === "budget" && budgetContent ? (
+        <div className="p-3">{budgetContent}</div>
       ) : (
         <div className="p-4 space-y-3">
           {/* Resolution & Workload Controls */}
@@ -106,6 +138,9 @@ export function DualSidebarAnalyzer({
                 { value: "Balanced", label: "Balanced" },
                 { value: "Esports", label: "Esports High" },
                 { value: "AAA", label: "AAA Ultra" },
+                { value: "VideoEditing", label: "Video Editing" },
+                { value: "Rendering", label: "3D Rendering" },
+                { value: "Office", label: "Office Use" },
               ]}
               leftSection={<Zap size={14} className="text-amber-500" />}
               allowDeselect={false}

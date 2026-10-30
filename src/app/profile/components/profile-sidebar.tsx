@@ -167,7 +167,7 @@ export function ProfileSidebar({
       label: "System Safeguards",
       icon: Activity,
       color: "amber",
-      badge: "4 Controls",
+      badge: "5 Controls",
       badgeColor: isEcommerceMode ? "cyan" : "yellow",
     });
   }

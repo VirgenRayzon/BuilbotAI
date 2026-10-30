@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Database, Plus, Trash2 } from "lucide-react";
+import { Database, Plus, Trash2, Sparkles } from "lucide-react";
 import {
   Card,
   Paper,
@@ -22,10 +22,14 @@ import { PaginationControls } from "@/components/pagination-controls";
 import type { Part } from "@/lib/types";
 import { useInventoryImageCount } from '@/hooks/use-inventory-image-count';
 import { useSiteSettings } from '@/context/site-settings-context';
+import type { useLiveBuildRecommendations } from '@/hooks/use-live-build-recommendations';
+
+type RecommendationState = ReturnType<typeof useLiveBuildRecommendations>;
 
 interface InventoryViewProps {
   loading: boolean;
   paginatedParts: any[];
+  recommendations?: RecommendationState;
   totalPages: number;
   currentPage: number;
   itemsPerPage: number;
@@ -57,6 +61,7 @@ interface InventoryViewProps {
 export function InventoryView({
   loading,
   paginatedParts,
+  recommendations,
   totalPages,
   currentPage,
   itemsPerPage,
@@ -88,8 +93,8 @@ export function InventoryView({
   const { shouldCorruptImages } = useSiteSettings();
   const gridColsClass =
     gridCols === 5
-      ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-      : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
+      ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+      : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 
   return (
     <motion.div
@@ -126,6 +131,7 @@ export function InventoryView({
             onHideIncompatibleChange={onHideIncompatibleChange}
           />
         </div>
+
 
         {/* Content Body */}
         {loading ? (
@@ -171,7 +177,7 @@ export function InventoryView({
           </div>
         ) : paginatedParts.length > 0 ? (
           view === "grid" ? (
-            <div className={cn("grid gap-3 md:gap-4", gridColsClass)}>
+            <div className={cn("grid gap-x-3 md:gap-x-4", recommendations?.suggestions.length ? "gap-y-8 pt-10" : "gap-y-3 md:gap-y-4", gridColsClass)}>
               {paginatedParts.map((part, index) => (
                 <PartCard
                   key={part.id}
@@ -182,6 +188,12 @@ export function InventoryView({
                   effectiveStock={part.effectiveStock}
                   priority={index < priorityImageCount}
                   imageSizes={imageSizes}
+                  recommendation={recommendations?.suggestions.find(item => item.id === part.id && item.category === part.category)
+                    ? (() => {
+                      const item = recommendations.suggestions.find(suggestion => suggestion.id === part.id && suggestion.category === part.category)!;
+                      return { action: item.action, role: item.role, reason: item.reason, verified: recommendations.verified,
+                        applying: recommendations.applyingId === item.id, onApply: () => void recommendations.apply(item) };
+                    })() : undefined}
                 />
               ))}
             </div>
@@ -207,13 +219,16 @@ export function InventoryView({
                   {paginatedParts.map((part) => {
                     const selected = isSelected(part);
                     const isOutOfStock = part.stock === 0;
+                    const recommendation = recommendations?.suggestions.find(item => item.id === part.id && item.category === part.category);
 
                     return (
                       <Table.Tr
                         key={part.id}
                         className={cn(
                           "transition-colors",
-                          selected && "bg-cyan-50/40 dark:bg-cyan-950/20"
+                          selected && "bg-cyan-50/40 dark:bg-cyan-950/20",
+                          recommendation?.role === 'bestMatch' && "bg-blue-50/70 dark:bg-blue-950/20 border-l-2 border-l-blue-500",
+                          recommendation?.role === 'bestValue' && "bg-amber-50/70 dark:bg-amber-950/20 border-l-2 border-l-yellow-500"
                         )}
                       >
                         <Table.Td>
@@ -231,6 +246,11 @@ export function InventoryView({
                           <Text size="sm" fw={600} className="line-clamp-1">
                             {part.name}
                           </Text>
+                          {recommendation && <Text size="xs" fw={700} className={cn("mt-1", recommendation.role === 'bestMatch'
+                            ? "text-blue-800 dark:text-blue-200" : "text-amber-800 dark:text-yellow-200")}>
+                            <Sparkles size={12} className="mr-1 inline" aria-hidden="true" />
+                            {recommendation.role === 'bestMatch' ? 'Best match' : 'Best value'}
+                          </Text>}
                           {part.sku && (
                             <Text size="xs" c="dimmed">
                               SKU: {part.sku}
@@ -269,10 +289,10 @@ export function InventoryView({
                             variant={selected ? "light" : "default"}
                             color={selected ? "red" : "cyan"}
                             leftSection={selected ? <Trash2 size={12} /> : <Plus size={12} />}
-                            onClick={() => onTogglePart(part)}
-                            disabled={isOutOfStock && !selected}
+                            onClick={() => recommendation && !selected ? void recommendations?.apply(recommendation) : onTogglePart(part)}
+                            disabled={(isOutOfStock && !selected) || (!!recommendation && !selected && !recommendations?.verified)}
                           >
-                            {selected ? "Remove" : "Add"}
+                            {selected ? "Remove" : recommendation?.action === 'replace' ? 'Replace' : "Add"}
                           </Button>
                         </Table.Td>
                       </Table.Tr>

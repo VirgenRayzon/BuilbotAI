@@ -30,3 +30,11 @@ flowchart TD
   Choice -- Regenerate --> Post
   Choice -- Cancel --> Cancel([Stop local pending state])
   Choice -- Leave --> End([Other route])
+  ServiceError --> Finish([END])
+  Unavailable --> Finish
+  WebError --> Finish
+  Invalid --> Finish
+  ClientError --> Finish
+  Favorite --> Finish
+  Cancel --> Finish
+  End --> Finish

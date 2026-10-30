@@ -1,14 +1,16 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AiDisclaimerProps {
   className?: string;
   centered?: boolean;
+  children?: ReactNode;
 }
 
-export function AiDisclaimer({ className, centered = false }: AiDisclaimerProps) {
+export function AiDisclaimer({ className, centered = false, children }: AiDisclaimerProps) {
   return (
     <p
       role="note"
@@ -20,7 +22,7 @@ export function AiDisclaimer({ className, centered = false }: AiDisclaimerProps)
     >
       <AlertTriangle aria-hidden="true" className="mt-0.5 h-3 w-3 shrink-0" />
       <span>
-        AI can make mistakes. Verify compatibility, pricing, availability, and specifications before purchasing.
+        {children ?? 'AI can make mistakes. Verify compatibility, pricing, availability, and specifications before purchasing.'}
       </span>
     </p>
   );

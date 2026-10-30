@@ -29,3 +29,5 @@ flowchart TD
   Model --> Validate{Structured output passes checks?}
   Validate -- No --> Error[/Retry or error according to feature/]
   Validate -- Yes --> Result[/Return text, structured object or streamed UI message/]
+  Error --> Finish([END])
+  Result --> Finish

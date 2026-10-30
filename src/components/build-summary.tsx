@@ -1,11 +1,12 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import type { Build, AdvisorWebResearchInfo } from "@/lib/types";
 import { ComponentCard } from "./component-card";
 import { Button } from "@/components/ui/button";
 import { Paper, Text, Group, ThemeIcon, Box } from "@mantine/core";
-import { Sparkles, AlertTriangle, Zap, Bot, Loader2, Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind, Heart, Search, Bell } from "lucide-react";
+import { Sparkles, AlertTriangle, Zap, Bot, Loader2, Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind, Heart, Search, Bell, ArrowUpRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useUser, useFirestore } from "@/firebase";
@@ -13,6 +14,7 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { BuildRecommendationNotes } from "./build-recommendation-notes";
 import { AiDisclaimer } from "./ai-disclaimer";
+import { ReserveBuildButton } from "./build/reserve-build-button";
 
 interface BuildSummaryProps {
     build: Build | null;
@@ -50,6 +52,7 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
     const user = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
+    const router = useRouter();
 
     // Telemetry history for rolling average
     const [telemetryHistory, setTelemetryHistory] = React.useState<number[]>([]);
@@ -138,6 +141,19 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
 
     const hasAnyStreamedPart = build && COMPONENT_SLOTS.some(s => Boolean((build as any)[s.key]?.model));
     const hasExternalParts = !!build && COMPONENT_SLOTS.some(slot => !!build[slot.key]?.isExternal);
+
+    const openInBuilder = (reserve = false) => {
+        if (!build) return;
+        const parts = COMPONENT_SLOTS.map(({ key, name }) => {
+            const component = build[key];
+            return component ? { category: key === 'gpu' ? 'GPU' : key === 'cpu' ? 'CPU' : key === 'psu' ? 'PSU' : key === 'case' ? 'Case' : name,
+                partId: component.id, name: component.model, price: component.price || 0 } : null;
+        }).filter((part): part is NonNullable<typeof part> => part !== null);
+        localStorage.setItem('pc_builder_load_favorite', JSON.stringify({
+            name: 'Build Advisor recommendation', parts, totalPrice: totalPrice || 0,
+        }));
+        router.push(reserve ? '/builder?reserve=1' : '/builder');
+    };
 
     return (
         <Paper
@@ -381,11 +397,9 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-5"
                         >
-                            <AiDisclaimer />
-
-                            {/* Top Panel Grid: Price Total & Save Control */}
-                            <div className="grid md:grid-cols-2 gap-3">
-                                <div className="h-fit self-start bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-white/10 p-3 rounded-xl backdrop-blur-xl flex items-center gap-3 shadow-sm">
+                            {/* Build total and actions */}
+                            <div className="grid gap-3 md:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.2fr)] md:items-center">
+                                <div className="flex items-center gap-3">
                                     <div className="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20 w-16 h-16 flex items-center justify-center select-none shrink-0">
                                         <span className="text-3xl font-black font-sans text-cyan-600 dark:text-cyan-400 leading-none">₱</span>
                                     </div>
@@ -397,21 +411,12 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                     </div>
                                 </div>
 
-                                <div className="bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-white/10 p-3 rounded-xl backdrop-blur-xl flex flex-col justify-between gap-3 shadow-sm">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20 shrink-0">
-                                            <Sparkles className="h-5 w-5 text-emerald-500" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <h4 className="font-headline font-bold uppercase tracking-wider text-sm text-slate-900 dark:text-white">Build Ready</h4>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">Your component recommendations are ready.</p>
-                                        </div>
-                                    </div>
+                                <div className="grid grid-cols-3 gap-2">
                                     {user && (
                                         <Button
                                             variant="outline"
                                             className={cn(
-                                                "h-10 px-5 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all w-full",
+                                                "h-11 min-w-0 rounded-xl px-2 font-headline text-xs font-bold uppercase tracking-wider transition-all",
                                                 isSaved
                                                     ? "border-rose-500/40 text-rose-500 bg-rose-500/10"
                                                     : "border-rose-500/20 text-rose-500 hover:bg-rose-500/10"
@@ -423,6 +428,13 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                             {isSaving ? "Saving..." : isSaved ? "Saved to Favorites" : "Save to Favorites"}
                                         </Button>
                                     )}
+                                    <Button variant="outline" className="h-11 min-w-0 rounded-xl px-2 font-headline text-xs font-bold uppercase tracking-wider" onClick={() => openInBuilder()}>
+                                        <ArrowUpRight className="h-3.5 w-3.5 shrink-0 sm:mr-1" /> <span className="truncate">Open in Your Build</span>
+                                    </Button>
+                                    <ReserveBuildButton
+                                        className="w-full"
+                                        onClick={() => openInBuilder(true)}
+                                    />
                                 </div>
                             </div>
 
@@ -460,6 +472,8 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                     );
                                 })}
                             </div>
+
+                            <AiDisclaimer centered />
                         </motion.div>
                     )}
                 </AnimatePresence>

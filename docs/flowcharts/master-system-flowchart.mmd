@@ -17,15 +17,17 @@ flowchart TD
   StaffSession -- Yes, Super Admin --> Super[Admin dashboard plus privileged tabs]
   User --> Builder[Builder and build actions]
   User --> Advisor[AI Build Advisor]
+  User --> Store[Parts, cart and sample checkout]
   User --> Prebuilts[Prebuilt catalog and detail]
-  User --> UserProfile[Profile, favorites, reservations]
+  User --> UserProfile[Profile, contact inbox, saved builds and orders]
   Manager --> Inventory[Stock and prebuilt management]
   Manager --> Orders[Reservations, archive, audit]
   Super --> Inventory
   Super --> Orders
-  Super --> Privileged[Sales, management, AI, content, safeguards]
+  Super --> Privileged[Sales, management, AI and safeguards]
   Builder --> Logout{Sign out or idle expiration?}
   Advisor --> Logout
+  Store --> Logout
   Prebuilts --> Logout
   UserProfile --> Logout
   Inventory --> Logout
@@ -33,3 +35,4 @@ flowchart TD
   Privileged --> Logout
   Logout -- No --> Profile
   Logout -- Yes --> SignedOut([Signed out]) --> Public
+  SignedOut --> Finish([END])

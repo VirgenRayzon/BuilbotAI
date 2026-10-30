@@ -20,3 +20,7 @@ flowchart TD
   FormWrite -- No --> FormError[/Error; keep editor/] --> Fill
   FormWrite -- Yes --> Done([Part saved])
   Call --> Cancel([Cancel local generation])
+  Form --> Finish([END])
+  End --> Finish
+  Done --> Finish
+  Cancel --> Finish

@@ -31,6 +31,9 @@ import { formatCurrency, cn } from "@/lib/utils";
 import type { ComponentData, FavoriteBuild, FavoriteBuildPart, Part, Resolution, WorkloadType } from "@/lib/types";
 import type { PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
 import { DualSidebarAnalyzer } from "@/components/bottleneck/dual-sidebar-analyzer";
+import type { SidebarTab } from "@/components/bottleneck/dual-sidebar-analyzer";
+import { LiveRecommendationsPanel } from "@/components/build/live-recommendations-panel";
+import type { useLiveBuildRecommendations } from "@/hooks/use-live-build-recommendations";
 
 const UNIFIED_MODAL_CLASSNAMES = {
   content: "bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl overflow-hidden",
@@ -40,6 +43,7 @@ const UNIFIED_MODAL_CLASSNAMES = {
 };
 
 interface YourBuildProps {
+  openReservation?: boolean;
   build: Record<string, ComponentData | ComponentData[] | null>;
   onClearBuild: () => void;
   onRemovePart: (category: string, index?: number) => void;
@@ -51,7 +55,9 @@ interface YourBuildProps {
   showSystemBalance?: boolean;
   className?: string;
   isManagerMode?: boolean;
-  allParts?: Part[];
+  recommendationState?: ReturnType<typeof useLiveBuildRecommendations>;
+  autoRecommendationsEnabled?: boolean;
+  onAutoRecommendationsChange?: (enabled: boolean) => void;
   onAddPrebuilt?: (data: PrebuiltBuilderAddFormSchema, operationId?: string) => void | Promise<import('@/lib/product-identity').CreatedProduct | void>;
   analysis?: unknown;
   onAnalysisUpdate?: (analysis: any) => void;
@@ -66,11 +72,13 @@ const savedCategories = [...requiredCategories, "Monitor", "Keyboard", "Mouse", 
 
 export function YourBuild({
   build, onClearBuild, onRemovePart, onAnalyze, showSystemBalance = true,
+  openReservation = false,
   className, isManagerMode = false, onAddPrebuilt, analysis, onAnalysisUpdate,
   onCategorySelect, categories, resolution, onResolutionChange, workload, onWorkloadChange,
-  onApplySuggestion, isAiPending: externalIsAiPending,
+  onApplySuggestion, isAiPending: externalIsAiPending, recommendationState,
+  autoRecommendationsEnabled = true, onAutoRecommendationsChange,
 }: YourBuildProps) {
-  const [sidebarTab, setSidebarTab] = useState<"parts" | "analytics">("parts");
+  const [sidebarTab, setSidebarTab] = useState<SidebarTab>("parts");
   const user = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -98,6 +106,10 @@ export function YourBuild({
     if (isBuildComplete) setShowMissingValidation(false);
   }, [isBuildComplete]);
 
+  useEffect(() => {
+    if (!recommendationState && sidebarTab === "budget") setSidebarTab("parts");
+  }, [recommendationState, sidebarTab]);
+
   const selectedParts = Object.values(build).reduce<number>(
     (sum, value) => sum + (Array.isArray(value) ? value.length : value ? 1 : 0), 0
   );
@@ -115,6 +127,11 @@ export function YourBuild({
   }, 0);
   const psu = build.PSU;
   const psuWattage = psu && !Array.isArray(psu) ? psu.wattage || 0 : 0;
+  const budget = recommendationState?.budget;
+  const minimumCompleteTotal = recommendationState?.projection?.minimumCompleteTotal;
+  const budgetShortfall = budget && minimumCompleteTotal != null
+    ? Math.max(0, minimumCompleteTotal - budget)
+    : null;
   const activeFilter = categories?.filter((category) => category.selected);
   const activeCategory = activeFilter?.length === 1 ? activeFilter[0].name : null;
 
@@ -279,9 +296,12 @@ export function YourBuild({
         totalWattage={totalWattage}
         psuWattage={psuWattage}
         totalPrice={totalPrice}
+        budget={budget}
+        budgetShortfall={budgetShortfall}
       />
       <BuildActionFooter
         build={build}
+        openReservation={openReservation}
         totalPrice={totalPrice}
         selectedParts={selectedParts}
         missingCategories={missingCategories}
@@ -341,6 +361,15 @@ export function YourBuild({
             totalCategoriesCount={requiredCategories.length}
             activeTab={sidebarTab}
             onTabChange={setSidebarTab}
+            budgetContent={recommendationState ? (
+              <LiveRecommendationsPanel
+                state={recommendationState}
+                workload={workload}
+                onWorkloadChange={onWorkloadChange}
+                autoRecommendationsEnabled={autoRecommendationsEnabled}
+                onAutoRecommendationsChange={onAutoRecommendationsChange ?? (() => undefined)}
+              />
+            ) : undefined}
           >
             {renderContent()}
           </DualSidebarAnalyzer>
@@ -412,6 +441,15 @@ export function YourBuild({
                 totalCategoriesCount={requiredCategories.length}
                 activeTab={sidebarTab}
                 onTabChange={setSidebarTab}
+                budgetContent={recommendationState ? (
+                  <LiveRecommendationsPanel
+                    state={recommendationState}
+                    workload={workload}
+                    onWorkloadChange={onWorkloadChange}
+                    autoRecommendationsEnabled={autoRecommendationsEnabled}
+                    onAutoRecommendationsChange={onAutoRecommendationsChange ?? (() => undefined)}
+                  />
+                ) : undefined}
               >
                 {renderContent()}
               </DualSidebarAnalyzer>

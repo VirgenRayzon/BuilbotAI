@@ -25,3 +25,10 @@ flowchart TD
   Outcome -- Yes --> Profile([Navigate to profile])
   Outcome -- No --> Error[/Error toast; stay on product/] --> View
   Action -- Staff AI review --> Ai([Generate or re-evaluate report])
+  Deny --> Finish([END])
+  Empty --> Finish
+  Missing --> Finish
+  Builder --> Finish
+  Profile --> Finish
+  Ai --> Finish
+  Browse -- Leave catalog --> Finish

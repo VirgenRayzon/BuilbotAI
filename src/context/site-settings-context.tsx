@@ -44,6 +44,7 @@ interface SiteSettings {
     isMaintenanceMode: boolean;
     isStorageKillSwitch?: boolean;
     isEcommerceMode?: boolean;
+    isLiveBuilderRecommendationsEnabled?: boolean;
     aiModelProvider?: 'default' | 'finetuned';
     fineTunedModelId?: string;
     defaultGeminiModel?: string;
@@ -60,6 +61,7 @@ interface SiteSettingsContextType {
     isMaintenanceMode: boolean;
     isStorageKillSwitch: boolean;
     isEcommerceMode: boolean;
+    isLiveBuilderRecommendationsEnabled: boolean;
     shouldCorruptImages: boolean;
     aiModelProvider: 'default' | 'finetuned';
     fineTunedModelId: string;
@@ -118,6 +120,7 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
     const isEcommerceMode = typeof settings?.isEcommerceMode === "boolean"
         ? settings.isEcommerceMode
         : (localEcommerceOverride ?? false);
+    const isLiveBuilderRecommendationsEnabled = settings?.isLiveBuilderRecommendationsEnabled === true;
     const aiModelProvider = settings?.aiModelProvider || 'default';
     const fineTunedModelId = settings?.fineTunedModelId || 'projects/781722135778/locations/us-central1/endpoints/2302171190132736000';
     const defaultGeminiModel = settings?.defaultGeminiModel || 'gemini-2.5-flash';
@@ -145,6 +148,7 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
         isMaintenanceMode,
         isStorageKillSwitch,
         isEcommerceMode,
+        isLiveBuilderRecommendationsEnabled,
         shouldCorruptImages,
         aiModelProvider,
         fineTunedModelId,
@@ -153,7 +157,7 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
         activeFineTunedProjectId,
         featureModelRouting,
         systemPrompts,
-    }), [settings, isMaintenanceMode, isStorageKillSwitch, isEcommerceMode, shouldCorruptImages, aiModelProvider, fineTunedModelId, defaultGeminiModel, fineTunedProjects, activeFineTunedProjectId, featureModelRouting, systemPrompts]);
+    }), [settings, isMaintenanceMode, isStorageKillSwitch, isEcommerceMode, isLiveBuilderRecommendationsEnabled, shouldCorruptImages, aiModelProvider, fineTunedModelId, defaultGeminiModel, fineTunedProjects, activeFineTunedProjectId, featureModelRouting, systemPrompts]);
 
     return (
         <SiteSettingsContext.Provider value={value}>

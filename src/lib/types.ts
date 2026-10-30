@@ -7,7 +7,7 @@
 import type { AiBuildAdvisorRecommendationsOutput } from "@/ai/schemas/build-advisor-schemas";
 
 export type Resolution = '1080p' | '1440p' | '4K';
-export type WorkloadType = 'Esports' | 'AAA' | 'Balanced';
+export type WorkloadType = 'Esports' | 'AAA' | 'VideoEditing' | 'Rendering' | 'Office' | 'Balanced';
 
 export type ComponentData = {
   id: string;

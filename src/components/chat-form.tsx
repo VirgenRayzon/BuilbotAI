@@ -13,13 +13,13 @@ import {
   Group,
   Text,
   Button,
-  Slider,
 } from "@mantine/core";
 import { Search, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AiDisclaimer } from "@/components/ai-disclaimer";
 import { parsePesoBudget } from '@/lib/parse-peso-budget';
 import { BUILD_ADVISOR_GOALS, getBuildAdvisorGoal, type BuildAdvisorIntendedUse } from '@/lib/build-advisor-goals';
+import { BudgetSlider, MAX_BUDGET, MIN_BUDGET } from '@/components/budget-slider';
 
 const formSchema = z.object({
   intendedUse: z.string().min(1, "Please select an intended use."),
@@ -32,13 +32,12 @@ const formSchema = z.object({
   if (values.intendedUse && values.workloadGoal && !getBuildAdvisorGoal(values.intendedUse, values.workloadGoal)) {
     context.addIssue({ code: z.ZodIssueCode.custom, path: ['workloadGoal'], message: 'Select a priority for the chosen intended use.' });
   }
+  if (!values.allowAiSearch && values.allowWebSearch) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ['allowWebSearch'], message: 'Web Search requires AI Recommendations.' });
+  }
 });
 
 const BUILD_ADVISOR_FORM_STORAGE_KEY = 'buildbot_advisor_create_form_v1';
-const MIN_BUDGET = 10_000;
-const MAX_BUDGET = 200_000;
-const BUDGET_STEP = 1_000;
-
 function formatBudget(value: number) {
   return value.toLocaleString('en-PH');
 }
@@ -188,24 +187,10 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
                     "bg-slate-50 dark:bg-slate-900/60 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium focus:border-cyan-500 transition-colors",
                 }}
               />
-              <div className="px-8 pt-3">
-                <Slider
-                  aria-label="Budget in Philippine pesos"
-                  min={MIN_BUDGET}
-                  max={MAX_BUDGET}
-                  step={BUDGET_STEP}
-                  value={sliderValue}
-                  onChange={(value) => field.onChange(formatBudget(value))}
-                  label={(value) => `₱${formatBudget(value)}`}
-                  color="cyan"
-                  size="sm"
-                  thumbSize={18}
-                />
-                <Group justify="space-between" mt={5} gap="xs">
-                  <Text size="10px" c="dimmed" fw={600}>₱10,000</Text>
-                  <Text size="10px" c="dimmed" fw={600}>₱200,000</Text>
-                </Group>
-              </div>
+              <BudgetSlider
+                value={sliderValue}
+                onChange={value => field.onChange(formatBudget(value))}
+              />
             </div>
           );
         }}
@@ -259,18 +244,24 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
                 <Group gap={6} align="center">
                   <Sparkles className="w-3.5 h-3.5 text-cyan-500 shrink-0" />
                   <Text size="xs" fw={700} className="text-slate-800 dark:text-slate-200">
-                    AI Search
+                    AI Recommendations
                   </Text>
                 </Group>
                 <Text size="xs" c="dimmed" className="text-[10px] sm:text-[11px] leading-tight">
-                  Allows AI to recommend parts based on it's knowledge.
+                  {field.value
+                    ? 'On: AI can suggest parts beyond our inventory.'
+                    : 'Off: in-stock parts are selected using budget and compatibility rules.'}
                 </Text>
               </Stack>
               <Switch
                 color="cyan"
                 size="sm"
                 checked={field.value}
-                onChange={(event) => field.onChange(event.currentTarget.checked)}
+                aria-label="AI Recommendations"
+                onChange={(event) => {
+                  field.onChange(event.currentTarget.checked);
+                  if (!event.currentTarget.checked) form.setValue('allowWebSearch', false);
+                }}
               />
             </Group>
           </Paper>
@@ -305,6 +296,7 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
                 size="sm"
                 className="min-h-11 flex items-center"
                 checked={field.value}
+                disabled={!form.watch('allowAiSearch')}
                 onChange={(event) => field.onChange(event.currentTarget.checked)}
               />
             </Group>

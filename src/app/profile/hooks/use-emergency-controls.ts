@@ -14,7 +14,10 @@ export function useEmergencyControls() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const { profile } = useUserProfile();
-    const { isEcommerceMode: contextEcommerceMode } = useSiteSettings();
+    const {
+        isEcommerceMode: contextEcommerceMode,
+        isLiveBuilderRecommendationsEnabled,
+    } = useSiteSettings();
 
     const settingsDocRef = useMemo(() => firestore ? doc(firestore, 'siteSettings', 'main') : null, [firestore]);
     const { data: settings } = useDoc<any>(settingsDocRef);
@@ -97,10 +100,19 @@ export function useEmergencyControls() {
         true
     );
 
+    const handleToggleLiveBuilderRecommendations = () => updateSetting(
+        'isLiveBuilderRecommendationsEnabled', !isLiveBuilderRecommendationsEnabled,
+        'Live Builder Recommendations',
+        "Compatible catalog recommendations are now highlighted in both builders.",
+        "Live recommendation highlighting is disabled in both builders.",
+        true
+    );
+
     return {
         isMaintenanceMode, handleToggleMaintenance,
         isStorageKillSwitch, handleToggleStorageKillSwitch,
         isAiKillSwitch, handleToggleAiKillSwitch,
-        isEcommerceMode, handleToggleEcommerceMode
+        isEcommerceMode, handleToggleEcommerceMode,
+        isLiveBuilderRecommendationsEnabled, handleToggleLiveBuilderRecommendations
     };
 }

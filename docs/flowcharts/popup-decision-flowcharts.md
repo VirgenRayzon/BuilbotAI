@@ -4,6 +4,10 @@ The [inventory](interaction-inventory.md#overlay-inventory) lists each source in
 
 ## Authentication and session overlays
 
+### Simple explanation
+
+This flowchart covers popups used during sign-in, sign-up, and session checks. A user may need to accept the terms, enter a staff key, or confirm sign-out. The idle warning lets a signed-in person stay signed in or leave now. Closing a popup keeps the current page when no action was confirmed. Errors stay visible so the user knows what must be fixed.
+
 ```mermaid
 flowchart TD
   Start([Authentication page or idle warning]) --> Trigger{Overlay opened}
@@ -31,11 +35,23 @@ flowchart TD
   Trigger -- Header or profile sign out --> Signout{Confirm sign out?}
   Signout -- Cancel or close --> Close
   Signout -- Confirm --> Logout
+  Accepted --> Finish([END])
+  Signup --> Finish
+  TempLogout --> Finish
+  Admin --> Finish
+  Close --> Finish
+  RequestDone --> Finish
+  Reset --> Finish
+  Logout --> Finish
 ```
 
 Sources: `src/components/auth/terms-of-agreement-modal.tsx`, `session-timeout.tsx`, `src/app/system-access/page.tsx`, `signup/page.tsx`, `components/request-key-modal.tsx`, `src/components/header.tsx`, `src/app/profile/components/profile-hero.tsx`, `profile-sidebar.tsx`.
 
 ## Build, catalog and product overlays
+
+### Simple explanation
+
+This flowchart covers popups used while browsing products or making a build. Users can view product details, save a build, clear parts, or confirm a reservation. Mobile users can open the build list in a drawer. Product images may open in a larger view. A confirmed action continues the task, while Cancel closes the popup without making the change.
 
 ```mermaid
 flowchart TD
@@ -64,11 +80,17 @@ flowchart TD
   Name --> NameChoice{Generate or cancel?}
   NameChoice -- Cancel --> Return
   NameChoice -- Generate --> Generate[Start AI prebuilt generation] --> Return
+  Return --> Finish([END])
+  Success --> Finish
 ```
 
 The prebuilt detail page's Reserve action is direct and has no confirmation overlay; the listing and landing card use one (`src/app/pre-builts/[id]/components/prebuilt-action-card.tsx`, `src/components/prebuilt-system-card.tsx`). The builder's manager name and customer reservation modals share `src/components/build/build-action-footer.tsx`.
 
 ## Admin mutation overlays
+
+### Simple explanation
+
+This flowchart covers staff popups that can change saved store data. Staff can add or edit parts and prebuilts, change stock, or work with selected records. Archive, restore, reset, and delete actions show a warning before they run. The popup names the action so staff can check it before pressing Confirm. Closing or cancelling the popup leaves the saved data unchanged.
 
 ```mermaid
 flowchart TD
@@ -99,11 +121,16 @@ flowchart TD
   Kind -- AI project delete or prompt reset --> AiConfirm{Confirm or cancel?}
   AiConfirm -- Cancel --> Return
   AiConfirm -- Confirm --> AiWrite[Delete browser project or reset stored prompt] --> Return
+  Return --> Finish([END])
 ```
 
 Admin confirmation sources: `src/app/admin/page.tsx`, `src/app/admin/components/admin-tab-header.tsx`, `reservations-tab.tsx`, `src/components/inventory-part-card.tsx`, `inventory-table.tsx`, `inventory-prebuilt-card.tsx`, `prebuilts-table.tsx`, `ai-model-settings.tsx`, `ai-system-prompts-settings.tsx`.
 
 ## Profile, notifications and secondary overlays
+
+### Simple explanation
+
+This flowchart covers popups opened from Profile, alerts, and other small tools. Customers can view order details, remove a saved build, or choose what to do with a reservation. Staff can open alert details and move to the related audit page. Image previews and detail boxes can be closed without changing data. Any action that removes saved data asks for confirmation first.
 
 ```mermaid
 flowchart TD
@@ -123,6 +150,8 @@ flowchart TD
   Kind -- Super Admin safeguard --> Browser{Native confirm accepted?}
   Browser -- No --> Return
   Browser -- Yes --> Write[Update site setting and show toast] --> Return
+  Return --> Finish([END])
+  Contact --> Finish
 ```
 
 ### Choice and outcome notes

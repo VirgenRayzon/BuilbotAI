@@ -9,3 +9,5 @@ flowchart TD
   Notice --> Commit{Transaction commits?}
   Commit -- No --> Fail
   Commit -- Yes --> Success[/Success toast; clear custom build or navigate to profile/] --> Done([Reservation visible])
+  End --> Finish([END])
+  Done --> Finish

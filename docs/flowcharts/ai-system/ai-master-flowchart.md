@@ -1,5 +1,9 @@
 # AI system flowchart index
 
+## Simple explanation
+
+This flowchart is the main map for every AI feature in the project. It shows which page starts each AI request. It links the chatbot, Build Advisor, build review, part fill, prebuilt help, and AI settings. Each branch leads to a more detailed flowchart. Use this map first when you want to find where an AI feature begins.
+
 This is the AI-only map. It links the customer [builder](../builder-flowchart.md), [prebuilt](../prebuilts-flowchart.md), and staff [inventory](../admin-inventory-flowchart.md) workflows to their AI processing paths.
 
 ```mermaid
@@ -23,6 +27,9 @@ flowchart TD
   Model --> Result{Successful result?}
   Result -- Yes --> UI[/Render or save result/]
   Result -- No --> Error([Feature-specific error and fallback])
+  UI --> Finish([END])
+  Error --> Finish
+  Dormant --> Finish
 ```
 
 | Detail | Document |

@@ -1,5 +1,6 @@
 flowchart TD
-  Start([Verified manager session]) --> Menu{Choose staff destination}
+  Start([Verified manager session]) --> Shell[Open side menu and top bar]
+  Shell --> Menu{Choose staff destination}
   Menu -- Manage Stock --> Stock[Search, filter, sort; add or edit parts and stock]
   Stock --> StockAction{Action}
   StockAction -- Add or edit --> PartForm[Part editor with optional AI autofill]
@@ -17,10 +18,12 @@ flowchart TD
   Menu -- Archive --> Archive[Browse archived catalog and reservations]
   Archive --> Confirm
   Menu -- Audit Logs --> Audit[Filter staff logs]
-  Menu -- Profile --> Profile[Profile, account and settings]
+  Menu -- Profile --> Profile[Profile, account, settings and Contact Inbox]
+  Menu -- Storefront preview --> Preview[Open public Parts or Pre-builts view]
   Menu -- Notifications --> Notice[Staff notification popover and detail]
   Menu -- Sign out --> Exit([Sign out])
   Confirm -- Cancel --> Menu
   Confirm -- Confirm --> Write{Firestore operation succeeds?}
   Write -- Yes --> Menu
   Write -- No --> Error[/Error toast; stay in module/] --> Menu
+  Exit --> Finish([END])

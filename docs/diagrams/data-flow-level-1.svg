@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1570" height="1360" viewBox="0 0 1570 1360" role="img" aria-label="DFD LEVEL 1: MAIN DATA PATHS">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#263746"/></marker></defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:Arial,Helvetica,sans-serif;fill:#152536}.title{font-size:30px;font-weight:700}.sub{font-size:16px;fill:#42566b}.head{font-size:18px;font-weight:700}.body{font-size:20px;font-weight:700}.small{font-size:15px}.label{font-size:15px;font-weight:600;paint-order:stroke;stroke:#fff;stroke-width:6px;stroke-linejoin:round}.edge{fill:none;stroke:#263746;stroke-width:2.3;marker-end:url(#arr)}.fine{fill:none;stroke:#a6b4c2;stroke-width:1.2}</style>
+<text x="785.0" y="48" text-anchor="middle" class="title"><tspan x="785.0" dy="0">DFD LEVEL 1: MAIN DATA PATHS</tspan></text>
+<text x="785.0" y="75" text-anchor="middle" class="sub"><tspan x="785.0" dy="0">Five numbered tasks inside BuildbotAI</tspan></text>
+<rect x="70" y="160" width="275" height="105" rx="3" fill="#edf3f8" stroke="#264864" stroke-width="2.5"/>
+<text x="207.5" y="219.5" text-anchor="middle" class="body"><tspan x="207.5" dy="0">Customer or staff</tspan></text>
+<rect x="565" y="130" width="385" height="170" rx="20" fill="#f7eb9b" stroke="#263746" stroke-width="2.5"/>
+<line x1="565" y1="173" x2="950" y2="173" stroke="#263746" stroke-width="2"/>
+<text x="757.5" y="159" text-anchor="middle" class="head"><tspan x="757.5" dy="0">1.0</tspan></text>
+<text x="757.5" y="198" text-anchor="middle" class="body"><tspan x="757.5" dy="0">Check account</tspan></text>
+<polyline points="345,190 565,190" class="edge"/>
+<text x="455" y="180" text-anchor="middle" class="label"><tspan x="455" dy="0">Email and password</tspan></text>
+<polyline points="565,242 345,242" class="edge"/>
+<text x="455" y="266" text-anchor="middle" class="label"><tspan x="455" dy="0">Role and page access</tspan></text>
+<rect x="1140" y="112" width="365" height="72" rx="3" fill="#edf3f8" stroke="#264864" stroke-width="2.5"/>
+<text x="1322.5" y="155.0" text-anchor="middle" class="body"><tspan x="1322.5" dy="0">Firebase Authentication</tspan></text>
+<path d="M1505 218 H1140 V296 H1505" fill="none" stroke="#263746" stroke-width="2.5"/>
+<rect x="1140" y="218" width="47" height="78" fill="#dce4e9" stroke="none"/>
+<line x1="1187" y1="218" x2="1187" y2="296" stroke="#263746" stroke-width="1.5"/>
+<text x="1163.5" y="263.0" text-anchor="middle" class="head"><tspan x="1163.5" dy="0">D1</tspan></text>
+<text x="1346.5" y="253.0" text-anchor="middle" class="small"><tspan x="1346.5" dy="0">Account profiles</tspan><tspan x="1346.5" dy="20">users/{uid}</tspan></text>
+<polyline points="950,149 1140,149" class="edge"/>
+<text x="1045" y="137" text-anchor="middle" class="label"><tspan x="1045" dy="0">Email and password</tspan></text>
+<polyline points="1140,173 950,173" class="edge"/>
+<text x="1045" y="198" text-anchor="middle" class="label"><tspan x="1045" dy="0">User ID</tspan></text>
+<polyline points="950,245 1140,245" class="edge"/>
+<text x="1045" y="234" text-anchor="middle" class="label"><tspan x="1045" dy="0">Look up user ID</tspan></text>
+<polyline points="1140,272 950,272" class="edge"/>
+<text x="1045" y="298" text-anchor="middle" class="label"><tspan x="1045" dy="0">Saved name and role</tspan></text>
+<rect x="70" y="385" width="275" height="105" rx="3" fill="#edf3f8" stroke="#264864" stroke-width="2.5"/>
+<text x="207.5" y="444.5" text-anchor="middle" class="body"><tspan x="207.5" dy="0">Customer or staff</tspan></text>
+<rect x="565" y="355" width="385" height="220" rx="20" fill="#f7eb9b" stroke="#263746" stroke-width="2.5"/>
+<line x1="565" y1="398" x2="950" y2="398" stroke="#263746" stroke-width="2"/>
+<text x="757.5" y="384" text-anchor="middle" class="head"><tspan x="757.5" dy="0">2.0</tspan></text>
+<text x="757.5" y="423" text-anchor="middle" class="body"><tspan x="757.5" dy="0">Browse, build,</tspan><tspan x="757.5" dy="25">manage products</tspan></text>
+<polyline points="345,415 565,415" class="edge"/>
+<text x="455" y="405" text-anchor="middle" class="label"><tspan x="455" dy="0">Search, part IDs, edits</tspan></text>
+<polyline points="565,467 345,467" class="edge"/>
+<text x="455" y="491" text-anchor="middle" class="label"><tspan x="455" dy="0">Parts and build summary</tspan></text>
+<path d="M1505 333 H1140 V403 H1505" fill="none" stroke="#263746" stroke-width="2.5"/>
+<rect x="1140" y="333" width="47" height="70" fill="#dce4e9" stroke="none"/>
+<line x1="1187" y1="333" x2="1187" y2="403" stroke="#263746" stroke-width="1.5"/>
+<text x="1163.5" y="374.0" text-anchor="middle" class="head"><tspan x="1163.5" dy="0">D2</tspan></text>
+<text x="1346.5" y="364.0" text-anchor="middle" class="small"><tspan x="1346.5" dy="0">inventory/{category}/items/{partId}</tspan><tspan x="1346.5" dy="20">prebuiltSystems/{systemId}</tspan></text>
+<path d="M1505 425 H1140 V495 H1505" fill="none" stroke="#263746" stroke-width="2.5"/>
+<rect x="1140" y="425" width="47" height="70" fill="#dce4e9" stroke="none"/>
+<line x1="1187" y1="425" x2="1187" y2="495" stroke="#263746" stroke-width="1.5"/>
+<text x="1163.5" y="466.0" text-anchor="middle" class="head"><tspan x="1163.5" dy="0">D5</tspan></text>
+<text x="1346.5" y="456.0" text-anchor="middle" class="small"><tspan x="1346.5" dy="0">Browser draft</tspan><tspan x="1346.5" dy="20">pc_builder_state</tspan></text>
+<path d="M1505 518 H1140 V588 H1505" fill="none" stroke="#263746" stroke-width="2.5"/>
+<rect x="1140" y="518" width="47" height="70" fill="#dce4e9" stroke="none"/>
+<line x1="1187" y1="518" x2="1187" y2="588" stroke="#263746" stroke-width="1.5"/>
+<text x="1163.5" y="559.0" text-anchor="middle" class="head"><tspan x="1163.5" dy="0">D1</tspan></text>
+<text x="1346.5" y="549.0" text-anchor="middle" class="small"><tspan x="1346.5" dy="0">Saved favorites</tspan><tspan x="1346.5" dy="20">users/{uid}/favorites/{id}</tspan></text>
+<polyline points="950,357 1140,357" class="edge"/>
+<text x="1045" y="345" text-anchor="middle" class="label"><tspan x="1045" dy="0">Part ID or product edits</tspan></text>
+<polyline points="1140,382 950,382" class="edge"/>
+<text x="1045" y="408" text-anchor="middle" class="label"><tspan x="1045" dy="0">Name, price, stock</tspan></text>
+<polyline points="950,450 1140,450" class="edge"/>
+<text x="1045" y="438" text-anchor="middle" class="label"><tspan x="1045" dy="0">Selected part IDs</tspan></text>
+<polyline points="1140,476 950,476" class="edge"/>
+<text x="1045" y="504" text-anchor="middle" class="label"><tspan x="1045" dy="0">Saved part IDs</tspan></text>
+<polyline points="950,552 1140,552" class="edge"/>
+<text x="1045" y="540" text-anchor="middle" class="label"><tspan x="1045" dy="0">Favorite build record</tspan></text>
+<rect x="70" y="665" width="275" height="105" rx="3" fill="#edf3f8" stroke="#264864" stroke-width="2.5"/>
+<text x="207.5" y="724.5" text-anchor="middle" class="body"><tspan x="207.5" dy="0">Customer or staff</tspan></text>
+<rect x="565" y="635" width="385" height="170" rx="20" fill="#f7eb9b" stroke="#263746" stroke-width="2.5"/>
+<line x1="565" y1="678" x2="950" y2="678" stroke="#263746" stroke-width="2"/>
+<text x="757.5" y="664" text-anchor="middle" class="head"><tspan x="757.5" dy="0">3.0</tspan></text>
+<text x="757.5" y="703" text-anchor="middle" class="body"><tspan x="757.5" dy="0">Handle reservations</tspan></text>
+<polyline points="345,695 565,695" class="edge"/>
+<text x="455" y="685" text-anchor="middle" class="label"><tspan x="455" dy="0">Product ID or status change</tspan></text>
+<polyline points="565,747 345,747" class="edge"/>
+<text x="455" y="771" text-anchor="middle" class="label"><tspan x="455" dy="0">Order ID and status</tspan></text>
+<path d="M1505 618 H1140 V694 H1505" fill="none" stroke="#263746" stroke-width="2.5"/>
+<rect x="1140" y="618" width="47" height="76" fill="#dce4e9" stroke="none"/>
+<line x1="1187" y1="618" x2="1187" y2="694" stroke="#263746" stroke-width="1.5"/>
+<text x="1163.5" y="662.0" text-anchor="middle" class="head"><tspan x="1163.5" dy="0">D2</tspan></text>
+<text x="1346.5" y="652.0" text-anchor="middle" class="small"><tspan x="1346.5" dy="0">Product stock</tspan><tspan x="1346.5" dy="20">inventory/{category}/items/{id}</tspan></text>
+<path d="M1505 725 H1140 V801 H1505" fill="none" stroke="#263746" stroke-width="2.5"/>
+<rect x="1140" y="725" width="47" height="76" fill="#dce4e9" stroke="none"/>
+<line x1="1187" y1="725" x2="1187" y2="801" stroke="#263746" stroke-width="1.5"/>
+<text x="1163.5" y="769.0" text-anchor="middle" class="head"><tspan x="1163.5" dy="0">D3</tspan></text>
+<text x="1346.5" y="759.0" text-anchor="middle" class="small"><tspan x="1346.5" dy="0">Reservations</tspan><tspan x="1346.5" dy="20">orders/{orderId}</tspan></text>
+<polyline points="950,640 1140,640" class="edge"/>
+<text x="1045" y="629" text-anchor="middle" class="label"><tspan x="1045" dy="0">Product ID or new stock</tspan></text>
+<polyline points="1140,672 950,672" class="edge"/>
+<text x="1045" y="700" text-anchor="middle" class="label"><tspan x="1045" dy="0">Available stock count</tspan></text>
+<polyline points="950,750 1140,750" class="edge"/>
+<text x="1045" y="738" text-anchor="middle" class="label"><tspan x="1045" dy="0">New order or new status</tspan></text>
+<polyline points="1140,779 950,779" class="edge"/>
+<text x="1045" y="808" text-anchor="middle" class="label"><tspan x="1045" dy="0">Saved order details</tspan></text>
+<rect x="70" y="890" width="275" height="105" rx="3" fill="#edf3f8" stroke="#264864" stroke-width="2.5"/>
+<text x="207.5" y="938.5" text-anchor="middle" class="body"><tspan x="207.5" dy="0">Customer, guest,</tspan><tspan x="207.5" dy="22">or staff</tspan></text>
+<rect x="565" y="860" width="385" height="170" rx="20" fill="#f7eb9b" stroke="#263746" stroke-width="2.5"/>
+<line x1="565" y1="903" x2="950" y2="903" stroke="#263746" stroke-width="2"/>
+<text x="757.5" y="889" text-anchor="middle" class="head"><tspan x="757.5" dy="0">4.0</tspan></text>
+<text x="757.5" y="928" text-anchor="middle" class="body"><tspan x="757.5" dy="0">Handle contact</tspan><tspan x="757.5" dy="25">messages</tspan></text>
+<polyline points="345,920 565,920" class="edge"/>
+<text x="455" y="910" text-anchor="middle" class="label"><tspan x="455" dy="0">Message or staff reply</tspan></text>
+<polyline points="565,972 345,972" class="edge"/>
+<text x="455" y="996" text-anchor="middle" class="label"><tspan x="455" dy="0">Inquiry ID or reply</tspan></text>
+<path d="M1505 840 H1140 V918 H1505" fill="none" stroke="#263746" stroke-width="2.5"/>
+<rect x="1140" y="840" width="47" height="78" fill="#dce4e9" stroke="none"/>
+<line x1="1187" y1="840" x2="1187" y2="918" stroke="#263746" stroke-width="1.5"/>
+<text x="1163.5" y="885.0" text-anchor="middle" class="head"><tspan x="1163.5" dy="0">D4</tspan></text>
+<text x="1346.5" y="875.0" text-anchor="middle" class="small"><tspan x="1346.5" dy="0">Contact inquiries</tspan><tspan x="1346.5" dy="20">contactInquiries/{id}</tspan></text>
+<path d="M1505 943 H1140 V1021 H1505" fill="none" stroke="#263746" stroke-width="2.5"/>
+<rect x="1140" y="943" width="47" height="78" fill="#dce4e9" stroke="none"/>
+<line x1="1187" y1="943" x2="1187" y2="1021" stroke="#263746" stroke-width="1.5"/>
+<text x="1163.5" y="988.0" text-anchor="middle" class="head"><tspan x="1163.5" dy="0">D6</tspan></text>
+<text x="1346.5" y="978.0" text-anchor="middle" class="small"><tspan x="1346.5" dy="0">Staff or user alerts</tspan><tspan x="1346.5" dy="20">system_notifications/{id}</tspan></text>
+<polyline points="950,867 1140,867" class="edge"/>
+<text x="1045" y="854" text-anchor="middle" class="label"><tspan x="1045" dy="0">New inquiry or reply</tspan></text>
+<polyline points="1140,895 950,895" class="edge"/>
+<text x="1045" y="923" text-anchor="middle" class="label"><tspan x="1045" dy="0">Messages and status</tspan></text>
+<polyline points="950,970 1140,970" class="edge"/>
+<text x="1045" y="959" text-anchor="middle" class="label"><tspan x="1045" dy="0">New contact alert</tspan></text>
+<rect x="70" y="1115" width="275" height="105" rx="3" fill="#edf3f8" stroke="#264864" stroke-width="2.5"/>
+<text x="207.5" y="1174.5" text-anchor="middle" class="body"><tspan x="207.5" dy="0">Customer or staff</tspan></text>
+<rect x="565" y="1085" width="385" height="170" rx="20" fill="#f7eb9b" stroke="#263746" stroke-width="2.5"/>
+<line x1="565" y1="1128" x2="950" y2="1128" stroke="#263746" stroke-width="2"/>
+<text x="757.5" y="1114" text-anchor="middle" class="head"><tspan x="757.5" dy="0">5.0</tspan></text>
+<text x="757.5" y="1153" text-anchor="middle" class="body"><tspan x="757.5" dy="0">Ask AI</tspan></text>
+<polyline points="345,1145 565,1145" class="edge"/>
+<text x="455" y="1135" text-anchor="middle" class="label"><tspan x="455" dy="0">PC question, part list</tspan></text>
+<polyline points="565,1197 345,1197" class="edge"/>
+<text x="455" y="1221" text-anchor="middle" class="label"><tspan x="455" dy="0">AI answer or PC advice</tspan></text>
+<rect x="1140" y="1078" width="365" height="75" rx="3" fill="#edf3f8" stroke="#264864" stroke-width="2.5"/>
+<text x="1322.5" y="1122.5" text-anchor="middle" class="body"><tspan x="1322.5" dy="0">Google AI services</tspan></text>
+<path d="M1505 1177 H1140 V1255 H1505" fill="none" stroke="#263746" stroke-width="2.5"/>
+<rect x="1140" y="1177" width="47" height="78" fill="#dce4e9" stroke="none"/>
+<line x1="1187" y1="1177" x2="1187" y2="1255" stroke="#263746" stroke-width="1.5"/>
+<text x="1163.5" y="1222.0" text-anchor="middle" class="head"><tspan x="1163.5" dy="0">D7</tspan></text>
+<text x="1346.5" y="1212.0" text-anchor="middle" class="small"><tspan x="1346.5" dy="0">AI settings</tspan><tspan x="1346.5" dy="20">siteSettings/main</tspan></text>
+<polyline points="950,1104 1140,1104" class="edge"/>
+<text x="1045" y="1092" text-anchor="middle" class="label"><tspan x="1045" dy="0">PC question, part list</tspan></text>
+<polyline points="1140,1132 950,1132" class="edge"/>
+<text x="1045" y="1161" text-anchor="middle" class="label"><tspan x="1045" dy="0">AI answer or PC advice</tspan></text>
+<polyline points="950,1204 1140,1204" class="edge"/>
+<text x="1045" y="1192" text-anchor="middle" class="label"><tspan x="1045" dy="0">Read AI settings</tspan></text>
+<polyline points="1140,1232 950,1232" class="edge"/>
+<text x="1045" y="1259" text-anchor="middle" class="label"><tspan x="1045" dy="0">AI model settings</tspan></text>
+<text x="785" y="1315" text-anchor="middle" class="sub"><tspan x="785" dy="0">Repeated store labels point to the same Firestore collections. D5 is browser storage.</tspan></text>
+</svg>

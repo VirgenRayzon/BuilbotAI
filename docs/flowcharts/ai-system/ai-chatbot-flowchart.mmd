@@ -35,3 +35,5 @@ flowchart TD
   Error --> Retry{Retry or close?}
   Retry -- Retry --> Post
   Retry -- Close --> End([Chat closed])
+  Bad --> Finish([END])
+  End --> Finish
