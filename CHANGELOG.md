@@ -2,12 +2,71 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-10-30]
+
+### Features
+- Enhance chat conversation context and builder recommendations ([4f218c3](https://github.com/VirgenRayzon/BuilbotAI/commit/4f218c3))
+- **builder**: Add live recommendations, budget slider, and updated system flowcharts ([3065a5e](https://github.com/VirgenRayzon/BuilbotAI/commit/3065a5e))
+
+### Bug Fixes
+- **fonts**: Simplify variable font configuration for next/font build ([e5483f9](https://github.com/VirgenRayzon/BuilbotAI/commit/e5483f9))
+
+## [2026-10-27]
+
+### Features
+- **builder**: Add integrated graphics support and enhance compatibility validation ([900a253](https://github.com/VirgenRayzon/BuilbotAI/commit/900a253))
+- **system-access**: Add server-side authentication route and update system access flow ([2da7923](https://github.com/VirgenRayzon/BuilbotAI/commit/2da7923))
+
+### Bug Fixes
+- **builder**: Respect site settings for table image optimization and add catalog image directive ([72f395f](https://github.com/VirgenRayzon/BuilbotAI/commit/72f395f))
+
+## [2026-10-26]
+
+### Features
+- **ui**: Refine admin and catalog spacing, toolbars, and layout polish ([aac085a](https://github.com/VirgenRayzon/BuilbotAI/commit/aac085a))
+
+### Bug Fixes
+- **admin**: Refine tab header alignment and qr scanner dialog layout ([4fd0f67](https://github.com/VirgenRayzon/BuilbotAI/commit/4fd0f67))
+- **admin**: Resolve mobile sidebar header layout and update docs ([8c92ef1](https://github.com/VirgenRayzon/BuilbotAI/commit/8c92ef1))
+
+## [2026-10-24]
+
+### Features
+- **qr**: Improve product identity, QR inventory flows, and AI disclaimers ([b8a999a](https://github.com/VirgenRayzon/BuilbotAI/commit/b8a999a))
+- **ecommerce**: Add cart and checkout flow with enhanced UI polish ([94538fc](https://github.com/VirgenRayzon/BuilbotAI/commit/94538fc))
+
+### Refactoring
+- **pre-builts**: Modularize details page components and refine showcase ([7782b91](https://github.com/VirgenRayzon/BuilbotAI/commit/7782b91))
+
+## [2026-10-23]
+
+### Features
+- **auth**: Add auth background component and styling to signin and signup pages ([083242b](https://github.com/VirgenRayzon/BuilbotAI/commit/083242b))
+- Replace shield icon with red-highlighted Netcodex emblem on system-access ([05b9757](https://github.com/VirgenRayzon/BuilbotAI/commit/05b9757))
+- Show full navigation header across parts, products, and prebuilts ([02efb12](https://github.com/VirgenRayzon/BuilbotAI/commit/02efb12))
+- Rebrand storefront to Netcodex, sync official FAQs, and enlarge logo ([1d4fd86](https://github.com/VirgenRayzon/BuilbotAI/commit/1d4fd86))
+
+### Bug Fixes
+- **assets**: Resolve broken logo and branding images on deployed environment ([180ff33](https://github.com/VirgenRayzon/BuilbotAI/commit/180ff33))
+- **prebuilt-builder**: Clean up bundled stock cooler when CPU is removed ([97cb2b7](https://github.com/VirgenRayzon/BuilbotAI/commit/97cb2b7))
+- Prevent dual tab highlighting on /admin/prebuilt-builder ([af7051a](https://github.com/VirgenRayzon/BuilbotAI/commit/af7051a))
+
+### Styling & UI/UX
+- **theme**: Refine UI spacing, theme provider, and component styling ([bda8157](https://github.com/VirgenRayzon/BuilbotAI/commit/bda8157))
+
+## [2026-10-22]
+
+### Features
+- **qr**: Improve qr scanner decoding, error handling, and test coverage ([5544f4f](https://github.com/VirgenRayzon/BuilbotAI/commit/5544f4f))
+
 ## [2026-10-21]
 
 ### Features
+- Overhaul contact inbox messenger exchange, qr inventory table columns, and conversation deletion ([84bf7e7](https://github.com/VirgenRayzon/BuilbotAI/commit/84bf7e7))
 - **qr**: Implement QR inventory tracking, public parts catalog, and customer support portal ([850169d](https://github.com/VirgenRayzon/BuilbotAI/commit/850169d))
 
 ### Bug Fixes
+- Resolve favicon conflict, close product focus modal on edit, and sanitize test mock token ([b168996](https://github.com/VirgenRayzon/BuilbotAI/commit/b168996))
 - **ui**: Update pricing currency formatting and prebuilt card details ([3676b14](https://github.com/VirgenRayzon/BuilbotAI/commit/3676b14))
 
 ## [2026-10-20]

@@ -97,7 +97,7 @@ Component: ${input.partName}
 Provide:
 1. Full official name and brand.
 2. All key specifications (architecture, cores, clock speeds, memory, TDP, dimensions, etc.)
-3. Current street price in USD and estimated PHP price (multiply USD by 56).
+3. Current street price in USD and estimated PHP price (multiply USD by 60).
 4. Category (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, or Cooler).
 5. Performance score relative to modern high-end standards (0-100).
 
@@ -133,7 +133,7 @@ LOGIC RULES:
 3. Verify the exact model and variant. Set exists to false when the exact requested product cannot be verified. Never substitute a similarly named product.
 4. Keep partName clean. Never prepend labels such as "Non-existent Component:" or put warnings in partName. Put the explanation in verificationMessage instead.
 5. Once you have the data, format it strictly into the requested JSON schema.
-6. For prices: Convert USD street price to PHP by multiplying by 56 (e.g., $1000 = ₱56,000) or use local Philippine retailer pricing.
+6. For prices: Convert USD street price to PHP by multiplying by 60 (e.g., $1000 = ₱60,000) or use local Philippine retailer pricing.
 
 SPECIFICATION RULES (Ensure these keys appear in the JSON 'specifications' array):
 - **CPU**: 'Architecture', 'Cores', 'Threads', 'Base Clock (GHz)', 'Boost Clock (GHz)', 'Socket', 'TDP / Peak Power', 'L3 Cache', 'Memory Support', 'Integrated Graphics'.
