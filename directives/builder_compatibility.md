@@ -4,6 +4,8 @@
 
 Keep incompatible catalog parts visible so the customer or manager can understand the conflict. Show the incompatibility overlay with the deterministic reason, remove the Add action, and retain the add-handler validation as a second guard. The optional **Compatible only** filter may hide these cards when the user enables it.
 
+Guests may use `/builder` to select parts and see deterministic compatibility feedback. AI analysis, Buildbot chat, live AI recommendations, saved account builds, and reservation remain customer actions. Guest clicks on those controls go to `/signin?returnTo=%2Fbuilder`; the locally selected build survives that navigation. Staff still return to `/admin` from the customer builder.
+
 CPU and motherboard socket comparison must prefer explicit catalog specifications. For older incomplete records, infer only well-known CPU generations and motherboard chipset families. Handle chipset suffixes such as `B860M` and `B650M`.
 
 ## Verification

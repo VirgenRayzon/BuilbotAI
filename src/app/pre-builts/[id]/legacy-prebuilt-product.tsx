@@ -223,6 +223,7 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
                         excludeId={system.id}
                         className="py-12 sm:py-16"
                         isAdminPreview={backLink.includes("preview=admin")}
+                        layout="carousel"
                     />
                 </div>
             </div>

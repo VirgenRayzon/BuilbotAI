@@ -10,6 +10,8 @@ interface SectionHeaderProps {
     badge?: string;
     centered?: boolean;
     className?: string;
+    id?: string;
+    action?: React.ReactNode;
 }
 
 export function SectionHeader({
@@ -18,6 +20,8 @@ export function SectionHeader({
     badge,
     centered = true,
     className,
+    id,
+    action,
 }: SectionHeaderProps) {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
@@ -43,7 +47,7 @@ export function SectionHeader({
                     <div className="h-px w-8 bg-cyan-500/40" />
                 </div>
             )}
-            <h2 className={cn(
+            <h2 id={id} className={cn(
                 "text-3xl sm:text-5xl md:text-6xl font-black tracking-tight font-headline uppercase leading-tight",
                 isDark ? "text-slate-100" : "text-slate-900"
             )}>
@@ -56,6 +60,11 @@ export function SectionHeader({
                 )}>
                     {subtitle}
                 </p>
+            )}
+            {action && (
+                <div className="mt-2">
+                    {action}
+                </div>
             )}
         </div>
     );

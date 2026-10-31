@@ -25,6 +25,7 @@ interface BuildActionFooterProps {
   selectedParts: number;
   missingCategories: string[];
   isManagerMode: boolean;
+  isGuest: boolean;
   isAiPending: boolean;
   isCheckingOut: boolean;
   analysis?: unknown;
@@ -32,14 +33,15 @@ interface BuildActionFooterProps {
   onReserve: (onSuccess: () => void) => void;
   onAddPrebuilt: (name: string) => void;
   onIncompleteAction: () => void;
+  onSignIn: () => void;
   showMissingValidation: boolean;
 }
 
 export function BuildActionFooter({
-  build, totalPrice, selectedParts, missingCategories, isManagerMode,
+  build, totalPrice, selectedParts, missingCategories, isManagerMode, isGuest,
   openReservation = false,
   isAiPending, isCheckingOut, analysis,
-  onAnalyze, onReserve, onAddPrebuilt, onIncompleteAction, showMissingValidation,
+  onAnalyze, onReserve, onAddPrebuilt, onIncompleteAction, onSignIn, showMissingValidation,
 }: BuildActionFooterProps) {
   const [reserveOpen, setReserveOpen] = useState(false);
   const [nameOpen, setNameOpen] = useState(false);
@@ -51,8 +53,8 @@ export function BuildActionFooter({
   const isReady = complete && !isAiPending;
 
   useEffect(() => {
-    if (openReservation && complete) setReserveOpen(true);
-  }, [openReservation, complete]);
+    if (openReservation && complete && !isGuest) setReserveOpen(true);
+  }, [openReservation, complete, isGuest]);
 
   const startPrebuiltGeneration = () => {
     const name = prebuiltName.trim();
@@ -143,17 +145,17 @@ export function BuildActionFooter({
       ) : (
         <Group gap="xs" wrap="nowrap" align="stretch">
           <ActionIcon
-            size={42}
+            size={44}
             radius="md"
             variant="light"
             color="cyan"
             loading={isAiPending}
             aria-label={analysis ? "Refresh build analysis" : "Analyze build"}
-            aria-disabled={!complete}
-            title={!complete ? "Select every highlighted core part before analyzing." : analysis ? "Refresh build analysis" : "Analyze build"}
-            onClick={() => complete ? onAnalyze() : onIncompleteAction()}
+            aria-disabled={!complete && !isGuest}
+            title={isGuest ? "Sign in to analyze your build." : !complete ? "Select every highlighted core part before analyzing." : analysis ? "Refresh build analysis" : "Analyze build"}
+            onClick={() => isGuest ? onSignIn() : complete ? onAnalyze() : onIncompleteAction()}
             className={cn(
-              "h-[42px] w-[42px] shrink-0 border transition-all duration-300",
+              "h-11 w-11 shrink-0 border transition-all duration-300",
               isReady ? (
                 "border-cyan-500/50 dark:border-cyan-400/40 text-cyan-600 dark:text-cyan-300 bg-cyan-500/10 dark:bg-cyan-500/15 animate-breathe hover:border-cyan-500 hover:scale-[1.06] hover:[animation-play-state:paused] active:scale-[0.96]"
               ) : (
@@ -198,9 +200,9 @@ export function BuildActionFooter({
             </>
           ) : (
             <ReserveBuildButton
-              ariaDisabled={!complete}
-              title={!complete ? "Select every highlighted core part before reserving." : undefined}
-              onClick={() => complete ? setReserveOpen(true) : onIncompleteAction()}
+              ariaDisabled={!complete && !isGuest}
+              title={isGuest ? "Sign in to reserve your build." : !complete ? "Select every highlighted core part before reserving." : undefined}
+              onClick={() => isGuest ? onSignIn() : complete ? setReserveOpen(true) : onIncompleteAction()}
             />
           )}
         </Group>

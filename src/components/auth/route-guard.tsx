@@ -39,7 +39,7 @@ export function RouteGuard({
     const isDenied = isResolved && !isAuthorized;
 
     const isStaff = role === 'manager' || role === 'superadmin';
-    const destination = isStaff && requiredPermission === 'isClientOnly'
+    const destination = isStaff && (requiredPermission === 'isClientOnly' || requiredPermission === 'canUseBuilder')
         ? '/admin'
         : !authUser && fallbackPath === '/'
             ? '/signin'

@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
   },
   /* config options here */
   outputFileTracingRoot: path.join(__dirname),
+  outputFileTracingIncludes: {
+    '/landing-video/*': ['./public/videos/*.mp4'],
+  },
   experimental: {
     optimizePackageImports: ['@mantine/core', '@mantine/hooks'],
   },

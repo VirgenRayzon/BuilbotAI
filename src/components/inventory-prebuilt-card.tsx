@@ -16,7 +16,6 @@ import {
   Group,
   Stack,
   Box,
-  Collapse,
   ActionIcon,
   Paper,
 } from '@mantine/core';
@@ -315,27 +314,17 @@ export function InventoryPrebuiltCard({
             </Text>
           </Stack>
 
-          {/* Collapsible Component Breakdown — Identical to user Prebuilts page */}
-          <Collapse in={isExpanded}>
+          {/* Component Specs (Core Specs always visible, Remaining Specs collapsible) */}
+          <div className="mt-2">
             <Paper
               withBorder
               radius="md"
               p="xs"
-              mt="xs"
               className="bg-slate-50/70 dark:bg-white/[0.02] border-slate-200/60 dark:border-white/5"
             >
-              <Text
-                size="xs"
-                fw={700}
-                c="dimmed"
-                tt="uppercase"
-                className="tracking-wider mb-1.5 text-[10px]"
-              >
-                Component Breakdown
-              </Text>
-              <PrebuiltCardSpecs components={system.components} expanded={true} />
+              <PrebuiltCardSpecs components={system.components} expanded={isExpanded} />
             </Paper>
-          </Collapse>
+          </div>
         </Stack>
 
         {/* --- Bottom Price & Dual Action Area --- */}
@@ -370,7 +359,8 @@ export function InventoryPrebuiltCard({
                 e.stopPropagation();
                 onToggleExpand();
               }}
-              title={isExpanded ? "Hide Specs" : "Show Specs"}
+              title={isExpanded ? "Hide Specs" : "Show Remaining Specs"}
+              aria-label={isExpanded ? "Hide Specs" : "Show Remaining Specs"}
               className="text-slate-500 hover:text-cyan-500"
             >
               {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}

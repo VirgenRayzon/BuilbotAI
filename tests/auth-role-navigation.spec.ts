@@ -112,7 +112,7 @@ for (const role of ['manager', 'superAdmin'] as const) {
     expect(visitedPaths).not.toContain('/admin');
 
     await page.goto(`${baseURL}/builder`);
-    await expect(page).toHaveURL(/\/signin(?:\?|$)/);
+    await expect(page.getByRole('heading', { name: /Select PC Components/i })).toBeVisible();
   });
 
   test(`${role} dashboard never renders customer navigation on refresh`, async ({ page }) => {
@@ -146,14 +146,16 @@ for (const role of ['manager', 'superAdmin'] as const) {
   });
 }
 
-test('unauthenticated visitors are redirected from protected routes', async ({ page }) => {
+test('guests can build, while protected routes still require sign-in', async ({ page }) => {
   await page.goto(`${baseURL}/builder`);
-  await expect(page).toHaveURL(/\/signin(?:\?|$)/);
+  await expect(page.getByRole('heading', { name: /Select PC Components/i })).toBeVisible();
+  await page.getByRole('button', { name: 'Analyze build' }).click();
+  await expect(page).toHaveURL(/\/signin\?returnTo=%2Fbuilder$/);
   await page.goto(`${baseURL}/admin`);
   await expect(page).toHaveURL(/\/system-access(?:\?|$)/);
 });
 
-test('customer sign-out removes protected access', async ({ page }) => {
+test('customer sign-out returns the builder to guest mode', async ({ page }) => {
   test.skip(!credentials.user.email || !credentials.user.password, 'Set E2E_USER_* in .env');
   await signIn(page, 'user');
   await page.getByRole('button', { name: 'User account menu' }).click();
@@ -161,7 +163,7 @@ test('customer sign-out removes protected access', async ({ page }) => {
   await page.getByRole('dialog').getByRole('button', { name: 'Sign Out' }).click();
   await expect(page).toHaveURL(/\/signin(?:\?|$)/);
   await page.goto(`${baseURL}/builder`);
-  await expect(page).toHaveURL(/\/signin(?:\?|$)/);
+  await expect(page.getByRole('heading', { name: /Select PC Components/i })).toBeVisible();
 });
 
 test('delayed staff profile stays on neutral verification UI', async ({ page }) => {

@@ -12,7 +12,7 @@ import classes from "./header.module.css";
 
 const navigation = [
   { label: "Home", href: "/" },
-  { label: "Features", href: "/#features" },
+  { label: "Builder", href: "/builder" },
   { label: "Pre-builts", href: "/#prebuilts" },
   { label: "Catalog", href: "/parts" },
   { label: "About", href: "/about" },

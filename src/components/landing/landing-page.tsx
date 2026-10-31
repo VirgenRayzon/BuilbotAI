@@ -10,10 +10,11 @@ import { UnifiedBackground } from '@/components/landing/unified-background';
 
 // Extracted Sections
 import { HeroSection } from '@/components/landing/hero-section';
-import { FeaturesSection } from '@/components/landing/features-section';
+import { FeaturedProductsSection } from '@/components/landing/featured-products-section';
 import { DeferredPrebuiltShowcase } from '@/components/landing/deferred-prebuilt-showcase';
+import { ShoppingPathsSection } from '@/components/landing/shopping-paths-section';
 import { AccessoriesSection } from '@/components/landing/accessories-section';
-import { CTASection } from '@/components/landing/cta-section';
+import { WhyChooseSection } from '@/components/landing/why-choose-section';
 
 export default function StartPage() {
   const { theme } = useTheme();
@@ -52,14 +53,16 @@ export default function StartPage() {
       <UnifiedBackground />
 
       <HeroSection isDark={isDark} />
-      
-      <FeaturesSection isDark={isDark} />
+
+      <FeaturedProductsSection />
 
       <DeferredPrebuiltShowcase />
 
+      <ShoppingPathsSection />
+
       <AccessoriesSection isDark={isDark} />
 
-      <CTASection isDark={isDark} />
+      <WhyChooseSection />
     </div>
   );
 }

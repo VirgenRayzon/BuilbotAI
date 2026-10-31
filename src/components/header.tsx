@@ -147,6 +147,7 @@ export function Header() {
 
   // Render HeaderMegaMenu on onboarding/landing page, auth pages, or for unauthenticated visitors on public pages
   const isPublicCatalogOrInfoPage =
+    pathname === "/builder" ||
     pathname === "/parts" ||
     pathname.startsWith("/parts/") ||
     pathname === "/pre-builts" ||

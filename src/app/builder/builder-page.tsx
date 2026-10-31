@@ -23,6 +23,8 @@ import { BUILDER_PART_IMAGE_SIZES } from '@/lib/inventory-image-sizes';
 import { useLiveBuildRecommendations } from '@/hooks/use-live-build-recommendations';
 import { prioritizeRecommendedParts } from '@/lib/live-build-recommendations';
 import { useSiteSettings } from '@/context/site-settings-context';
+import Link from 'next/link';
+import { AnimatedMessageIcon } from '@/components/ui/animated-icons';
 
 /**
  * Masterpiece Architect - PC Builder Page
@@ -73,7 +75,7 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
     const recommendations = useLiveBuildRecommendations({
         allParts, build, resolution, workload, preferredCategory,
         user: authUser || null, onAddPart: handlePartToggle,
-        enabled: isLiveBuilderRecommendationsEnabled && autoRecommendationsEnabled,
+        enabled: isLiveBuilderRecommendationsEnabled && autoRecommendationsEnabled && !!authUser,
     });
     const prioritizedParts = useMemo(() =>
         prioritizeRecommendedParts(sortedAndFilteredParts, recommendations.suggestions),
@@ -117,7 +119,7 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
     };
 
     return (
-        <RouteGuard requiredPermission="isClientOnly">
+        <RouteGuard requiredPermission="canUseBuilder">
             <div className={cn(
                 "min-h-screen transition-colors duration-500 overflow-x-hidden",
                 isDark ? "bg-[#0c0f14] text-slate-50" : "bg-slate-50 text-slate-900"
@@ -137,7 +139,7 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
                             <YourBuild
                                 build={build}
                                 openReservation={searchParams.get('reserve') === '1'}
-                                recommendationState={isLiveBuilderRecommendationsEnabled ? recommendations : undefined}
+                                recommendationState={isLiveBuilderRecommendationsEnabled && authUser ? recommendations : undefined}
                                 autoRecommendationsEnabled={autoRecommendationsEnabled}
                                 onAutoRecommendationsChange={setAutoRecommendationsEnabled}
                                 onRemovePart={handleRemovePart}
@@ -187,7 +189,16 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
                     </div>
                 </main>
 
-                <DeferredBuilderChat build={build} />
+                {authUser ? <DeferredBuilderChat build={build} /> : (
+                    <Link
+                        href="/signin?returnTo=%2Fbuilder"
+                        aria-label="Sign in to use Buildbot chat"
+                        title="Sign in to use Buildbot chat"
+                        className="fixed bottom-20 right-4 z-50 flex h-[52px] w-[52px] items-center justify-center rounded-full bg-cyan-600 text-white shadow-lg transition-colors hover:bg-cyan-700 sm:bottom-24 sm:right-6 lg:bottom-6"
+                    >
+                        <AnimatedMessageIcon size={22} />
+                    </Link>
+                )}
             </div>
         </RouteGuard>
     );

@@ -31,6 +31,9 @@ export const AuthPermissions = {
     // Strictly for end-users (PC Builder, AI Advisor)
     // Managers/Admins visiting these will be redirected to /admin
     isClientOnly: (role: UserRole) => role === 'user',
+
+    // Guests may assemble a local build; customer-only actions are gated at use.
+    canUseBuilder: (role: UserRole) => role === 'guest' || role === 'user',
     
     // Public features that admins shouldn't be kicked out of (Pre-builts)
     isInclusive: (role: UserRole) => role !== 'guest'
@@ -42,6 +45,6 @@ export const AuthPermissions = {
 export const RouteRequirements: Record<string, keyof typeof AuthPermissions> = {
     '/admin': 'canAccessAdmin',
     '/profile': 'isRegisteredUser',
-    '/builder': 'isClientOnly',
+    '/builder': 'canUseBuilder',
     '/ai-build-advisor': 'isClientOnly',
 };

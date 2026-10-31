@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ActionIcon,
   Badge,
@@ -80,6 +81,7 @@ export function YourBuild({
 }: YourBuildProps) {
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("parts");
   const user = useUser();
+  const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [favorites, setFavorites] = useState<FavoriteBuild[]>([]);
@@ -219,6 +221,10 @@ export function YourBuild({
         <Menu.Item
           leftSection={<Bookmark size={15} className="text-cyan-500" />}
           onClick={() => {
+            if (!user) {
+              router.push("/signin?returnTo=%2Fbuilder");
+              return;
+            }
             setSaveName(`Build ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}`);
             setSaveOpen(true);
           }}
@@ -306,6 +312,7 @@ export function YourBuild({
         selectedParts={selectedParts}
         missingCategories={missingCategories}
         isManagerMode={isManagerMode}
+        isGuest={!user}
         isAiPending={effectiveIsAiPending}
         isCheckingOut={isCheckingOut}
         analysis={analysis}
@@ -313,6 +320,7 @@ export function YourBuild({
         onReserve={(onSuccess) => { if (isBuildComplete) void handleCheckout(onSuccess); }}
         onAddPrebuilt={(name) => { if (isBuildComplete) handleAddPrebuiltWithAi(name); }}
         onIncompleteAction={() => setShowMissingValidation(true)}
+        onSignIn={() => router.push("/signin?returnTo=%2Fbuilder")}
         showMissingValidation={showMissingValidation}
       />
     </>

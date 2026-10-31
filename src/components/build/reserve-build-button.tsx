@@ -27,7 +27,7 @@ export function ReserveBuildButton({
       title={title}
       onClick={onClick}
       className={cn(
-        "h-[42px] min-w-0 flex-1 font-headline text-xs font-bold uppercase tracking-wider shadow-md shadow-emerald-500/20 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]",
+        "h-11 min-w-0 flex-1 font-headline text-xs font-bold uppercase tracking-wider shadow-md shadow-emerald-500/20 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]",
         className
       )}
     >

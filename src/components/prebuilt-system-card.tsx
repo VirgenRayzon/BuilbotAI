@@ -10,7 +10,6 @@ import {
   Group,
   Stack,
   Box,
-  Collapse,
   ActionIcon,
   Paper,
 } from "@mantine/core";
@@ -58,23 +57,27 @@ interface PrebuiltSystemCardProps {
   showReserveButton?: boolean;
   showLaunchButton?: boolean;
   isClickable?: boolean;
+  showBadges?: boolean;
+  className?: string;
 }
 
 export function PrebuiltSystemCard({
   system,
   isAdminPreview = false,
   priority = false,
-  expanded = false,
+  expanded,
   onToggle,
   showReserveButton = true,
   showLaunchButton = false,
   isClickable = true,
+  showBadges = false,
+  className,
 }: PrebuiltSystemCardProps) {
   const detailHref = `/pre-builts/${system.productId || system.id}${isAdminPreview ? "?preview=admin" : ""}`;
   const { shouldCorruptImages, isEcommerceMode } = useSiteSettings();
   const { addToCart } = useEcommerce();
   const [isExpandedLocal, setIsExpandedLocal] = useState(false);
-  const isExpanded = expanded || isExpandedLocal;
+  const isExpanded = expanded !== undefined ? expanded : isExpandedLocal;
   const { toast } = useToast();
 
   const missingParts = getMissingParts(system);
@@ -356,200 +359,212 @@ export function PrebuiltSystemCard({
     router.push("/builder");
   };
 
+  const hasRemainingSpecs = Boolean(
+    system.components?.motherboard ||
+    system.components?.cooler ||
+    system.components?.psu ||
+    system.components?.case
+  );
+
   const mainBody = (
     <>
       <Card
-      withBorder
-      radius="lg"
-      padding={0}
-      className={cn(
-        "flex flex-col justify-between h-full relative group overflow-hidden transition-all duration-300 shadow-lg",
-        isClickable ? "cursor-pointer hover:shadow-lg hover:-translate-y-1 hover:border-cyan-500/40 dark:hover:border-cyan-500/40" : "cursor-default",
-        "bg-white/85 dark:bg-[#111722]",
-        "border-slate-200/80 dark:border-white/10",
-        needsCustomization && "border-yellow-500/60 dark:border-yellow-400/60 bg-yellow-50/50 dark:!bg-black/30 shadow-lg shadow-yellow-500/10 dark:shadow-black/30 hover:border-yellow-500/80 dark:hover:border-yellow-400/80"
-      )}
-    >
-        {/* Top Content Area */}
-        <Stack gap={0}>
-          {/* Tier & Stock Status Badges */}
-          <Group justify="space-between" align="center" wrap="nowrap" className="px-3 pt-3 pb-2">
-            <Badge
-              size="xs"
-              variant="light"
-              color={
-                system.tier === "High-End" || system.tier === "Workstation"
-                  ? "cyan"
-                  : system.tier === "Mid-Range"
-                  ? "blue"
-                  : "gray"
-              }
-              radius="sm"
-              className="font-medium uppercase tracking-wide"
-            >
-              {system.tier || "System"}
-            </Badge>
+        withBorder
+        radius="lg"
+        padding={0}
+        className={cn(
+          "flex flex-col justify-between min-h-[600px] sm:min-h-[640px] h-full relative group overflow-hidden transition-all duration-300 shadow-lg",
+          "hover:border-cyan-500 dark:hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/20 dark:hover:shadow-cyan-500/30 hover:-translate-y-1.5",
+          isClickable ? "cursor-pointer" : "cursor-default",
+          "bg-white/85 dark:bg-[#111722]",
+          "border-slate-200/80 dark:border-white/10",
+          needsCustomization && "border-yellow-500/60 dark:border-yellow-400/60 bg-yellow-50/50 dark:!bg-black/30 shadow-lg shadow-yellow-500/10 dark:shadow-black/30 hover:border-yellow-500/80 dark:hover:border-yellow-400/80",
+          className
+        )}
+      >
+        {/* Top Area: Badges (if enabled) + 60% Product Image Canvas */}
+        <div className="flex flex-col shrink-0">
+          {showBadges && (
+            <Group justify="space-between" align="center" wrap="nowrap" className="px-3 pt-3 pb-2">
+              <Badge
+                size="xs"
+                variant="light"
+                color={
+                  system.tier === "High-End" || system.tier === "Workstation"
+                    ? "cyan"
+                    : system.tier === "Mid-Range"
+                    ? "blue"
+                    : "gray"
+                }
+                radius="sm"
+                className="font-medium uppercase tracking-wide"
+              >
+                {system.tier || "System"}
+              </Badge>
 
-            {loadingStock ? (
-              <Badge size="xs" variant="light" color="gray" radius="sm">
-                Checking stock...
-              </Badge>
-            ) : !isComplete ? (
-              <Badge size="xs" variant="light" color="yellow" radius="sm">
-                Incomplete
-              </Badge>
-            ) : isInStock ? (
-              <Badge size="xs" variant="light" color="teal" radius="sm">
-                In Stock
-              </Badge>
-            ) : (
-              <Badge size="xs" variant="light" color="yellow" radius="sm">
-                Missing Parts
-              </Badge>
-            )}
-          </Group>
+              {loadingStock ? (
+                <Badge size="xs" variant="light" color="gray" radius="sm">
+                  Checking stock...
+                </Badge>
+              ) : !isComplete ? (
+                <Badge size="xs" variant="light" color="yellow" radius="sm">
+                  Incomplete
+                </Badge>
+              ) : isInStock ? (
+                <Badge size="xs" variant="light" color="teal" radius="sm">
+                  In Stock
+                </Badge>
+              ) : (
+                <Badge size="xs" variant="light" color="yellow" radius="sm">
+                  Missing Parts
+                </Badge>
+              )}
+            </Group>
+          )}
 
-          {/* Clean Rounded Image Canvas */}
-          <Box
-            className={cn(
-              "aspect-[4/3] relative w-full overflow-hidden",
-              "bg-transparent border-y border-slate-200/70 dark:border-white/10"
-            )}
-          >
+          {/* 60% Product Image Canvas (Edge-to-edge, transparent background) */}
+          <Box className="relative w-full h-[360px] sm:h-[380px] overflow-hidden bg-transparent border-b border-slate-200/70 dark:border-white/10">
             <OptimizedImage
               src={getOptimizedStorageUrl(system.imageUrl, shouldCorruptImages) || "/placeholder-system.png"}
               alt={system.name}
               fill
               priority={priority}
               sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
-              className="object-contain p-2"
+              className="object-contain w-full h-full"
             />
           </Box>
+        </div>
 
-          {/* Title & Description */}
-          <Stack gap={4} className="px-3 pt-3">
+        {/* Content Area */}
+        <div className="flex-1 flex flex-col justify-between p-4 sm:p-5">
+          <Stack gap={3}>
+            {/* Title & SKU */}
             <Text
               size="md"
               fw={700}
               lineClamp={2}
-              className="leading-snug transition-colors group-hover:text-cyan-600 dark:group-hover:text-cyan-400 min-h-[2.5rem]"
+              className="leading-snug transition-colors group-hover:text-cyan-600 dark:group-hover:text-cyan-400 font-headline"
               title={system.name}
             >
               {system.name}
             </Text>
-            <Text size="xs" c="dimmed" lineClamp={2} className="min-h-[2rem] leading-relaxed">
-              {system.description}
+            <Text
+              size="xs"
+              c="dimmed"
+              className="font-mono text-[11px] tracking-wider text-slate-500 dark:text-slate-400 truncate"
+              title={system.sku || system.productId || system.id}
+            >
+              {system.sku || system.productId || system.id}
             </Text>
+
+            {/* 4 Core Parts + Dropdown for remaining parts (No bounding box div) */}
+            <div className="pt-2">
+              <PrebuiltCardSpecs components={system.components} expanded={isExpanded} />
+
+              {hasRemainingSpecs && (
+                <button
+                  type="button"
+                  onClick={toggleExpand}
+                  className="flex items-center gap-1 text-[11px] font-medium text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors pt-1.5 focus:outline-none"
+                >
+                  <span>{isExpanded ? "Show fewer parts" : "+ 4 more parts"}</span>
+                  {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                </button>
+              )}
+            </div>
           </Stack>
 
-          {/* Collapsible Component Breakdown */}
-          <div className="px-3">
-            <Collapse in={isExpanded}>
-              <Paper
-                withBorder
-                radius="md"
-                p="xs"
-                mt="xs"
-                className="bg-slate-50/70 dark:bg-white/[0.02] border-slate-200/60 dark:border-white/5"
-              >
-                <Text size="xs" fw={700} c="dimmed" tt="uppercase" className="tracking-wider mb-1.5 text-[10px]">
-                  Component Breakdown
+          {/* Bottom Price & Actions */}
+          <Stack gap="xs" className="pt-4">
+            <Group justify="space-between" align="center">
+              <Stack gap={0}>
+                <Text size="xs" c="dimmed" tt="uppercase" fw={600} className="tracking-wider text-[10px]">
+                  Total Price
                 </Text>
-                <PrebuiltCardSpecs components={system.components} expanded={true} />
-              </Paper>
-            </Collapse>
-          </div>
-        </Stack>
+                <Text size="lg" fw={700} className="text-slate-900 dark:text-slate-100 font-mono leading-none">
+                  {formatCurrency(system.price)}
+                </Text>
+              </Stack>
 
-        {/* Bottom Price & Inset Action Area */}
-        <Stack gap="xs" className="px-3 pt-3 pb-3">
-          {/* Price & Expand Chevron */}
-          <Group justify="space-between" align="center">
-            <Stack gap={0}>
-              <Text size="xs" c="dimmed" tt="uppercase" fw={600} className="tracking-wider text-[10px]">
-                Total Price
-              </Text>
-              <Text size="lg" fw={700} className="text-slate-900 dark:text-slate-100 font-mono leading-none">
-                {formatCurrency(system.price)}
-              </Text>
-            </Stack>
+              {hasRemainingSpecs && (
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  size="sm"
+                  radius="md"
+                  onClick={toggleExpand}
+                  title={isExpanded ? "Hide Specs" : "Show Remaining Specs"}
+                  aria-label={isExpanded ? "Hide Specs" : "Show Remaining Specs"}
+                >
+                  {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </ActionIcon>
+              )}
+            </Group>
 
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              size="sm"
-              radius="md"
-              onClick={toggleExpand}
-              title={isExpanded ? "Hide Specs" : "Show Specs"}
-            >
-              {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </ActionIcon>
-          </Group>
+            {showReserveButton && (
+              needsCustomization ? (
+                <Button
+                  fullWidth
+                  radius="md"
+                  size="sm"
+                  variant="light"
+                  color="yellow"
+                  onClick={handleCustomize}
+                  disabled={isAdminPreview}
+                  title={isAdminPreview ? "Unavailable in admin preview" : undefined}
+                  leftSection={<SlidersHorizontal className="h-4 w-4" />}
+                  className="font-medium transition-all duration-200 hover:bg-yellow-400 hover:text-slate-950"
+                >
+                  Customize Pre-built
+                </Button>
+              ) : (
+                <Button
+                  fullWidth
+                  radius="md"
+                  size="sm"
+                  variant="light"
+                  color="cyan"
+                  onClick={openCheckoutDialog}
+                  disabled={isAdminPreview || loadingStock || isReserving}
+                  title={isAdminPreview ? "Unavailable in admin preview" : undefined}
+                  leftSection={
+                    isReserving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : isEcommerceMode ? (
+                      <ShoppingCart className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" />
+                    ) : (
+                      <ShieldCheck className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" />
+                    )
+                  }
+                  className="font-medium hover:bg-cyan-500 hover:text-white transition-all duration-200"
+                >
+                  {isReserving
+                    ? "Processing..."
+                    : isEcommerceMode
+                      ? "Add System to Cart"
+                      : "Reserve Rig"}
+                </Button>
+              )
+            )}
 
-          {/* Inset Rounded Action Button */}
-          {showReserveButton && (
-            needsCustomization ? (
+            {showLaunchButton && (
               <Button
-                fullWidth
-                radius="md"
+                component={Link}
+                href={detailHref}
+                variant="outline"
+                color="gray"
                 size="sm"
-                variant="light"
-                color="yellow"
-                onClick={handleCustomize}
-                disabled={isAdminPreview}
-                title={isAdminPreview ? "Unavailable in admin preview" : undefined}
-                leftSection={<SlidersHorizontal className="h-4 w-4" />}
-                className="font-medium transition-all duration-200 hover:bg-yellow-400 hover:text-slate-950"
-              >
-                Customize Pre-built
-              </Button>
-            ) : (
-              <Button
-                fullWidth
                 radius="md"
-                size="sm"
-                variant="light"
-                color="cyan"
-                onClick={openCheckoutDialog}
-                disabled={isAdminPreview || loadingStock || isReserving}
-                title={isAdminPreview ? "Unavailable in admin preview" : undefined}
-                leftSection={
-                  isReserving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : isEcommerceMode ? (
-                    <ShoppingCart className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" />
-                  ) : (
-                    <ShieldCheck className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" />
-                  )
-                }
-                className="font-medium hover:bg-cyan-500 hover:text-white transition-all duration-200"
+                fullWidth
+                rightSection={<ExternalLink size={14} />}
+                className="font-headline font-bold text-xs uppercase tracking-wider h-9 border-slate-200 dark:border-white/10 hover:border-cyan-500/40 text-slate-700 dark:text-slate-200"
+                onClick={(e) => e.stopPropagation()}
               >
-                {isReserving
-                  ? "Processing..."
-                  : isEcommerceMode
-                    ? "Add System to Cart"
-                    : "Reserve Rig"}
+                Launch Page
               </Button>
-            )
-          )}
-
-          {showLaunchButton && (
-            <Button
-              component={Link}
-              href={detailHref}
-              variant="outline"
-              color="gray"
-              size="sm"
-              radius="md"
-              fullWidth
-              rightSection={<ExternalLink size={14} />}
-              className="font-headline font-bold text-xs uppercase tracking-wider h-8 border-slate-200 dark:border-white/10 hover:border-cyan-500/40 text-slate-700 dark:text-slate-200"
-              onClick={(e) => e.stopPropagation()}
-            >
-              Launch Page
-            </Button>
-          )}
-        </Stack>
+            )}
+          </Stack>
+        </div>
       </Card>
 
       {/* Confirmation Dialog */}
