@@ -18,18 +18,18 @@ export function useAdminCore() {
     
     // Default to 'stock' or the tab in URL (resolving obsolete content tab to stock)
     const urlTab = searchParams.get('tab');
-    const initialTab = urlTab === 'content' ? 'stock' : (urlTab || 'stock');
+    const initialTab = urlTab === 'content' ? 'stock' : urlTab === 'reservations' ? 'orders' : (urlTab || 'stock');
     const [currentTab, setCurrentTab] = useState(initialTab);
 
     // Sync tab when searchParams change
     useEffect(() => {
         if (urlTab) {
             // Map legacy aliases
-            const resolvedTab = urlTab === 'ai-models' || urlTab === 'prompts' ? 'ai' : urlTab === 'content' ? 'stock' : urlTab;
+            const resolvedTab = urlTab === 'ai-models' || urlTab === 'prompts' ? 'ai' : urlTab === 'content' ? 'stock' : urlTab === 'reservations' ? 'orders' : urlTab;
             setCurrentTab(resolvedTab);
-            if (urlTab === 'content') {
+            if (urlTab === 'content' || urlTab === 'reservations') {
                 const params = new URLSearchParams(searchParams.toString());
-                params.set('tab', 'stock');
+                params.set('tab', resolvedTab);
                 router.replace(`?${params.toString()}`, { scroll: false });
             }
         }

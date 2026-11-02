@@ -21,22 +21,33 @@ import {
   ChevronRight,
   CreditCard,
   XCircle,
-  AlertCircle,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import type { Order } from "@/lib/types";
+import { getOrderFulfillmentStage } from "@/lib/order-workflow";
+import { shouldShowCustomerOrderActivity } from "@/lib/customer-order-workflow";
+import { CustomerOrderActivity } from "@/components/orders/customer-order-activity";
+import { DownloadReceiptButton } from "@/components/orders/download-receipt-button";
 import Link from "next/link";
 
 interface ReservationsListProps {
   reservations: Order[];
   loading: boolean;
   onConfirm: (action: { id: string; order?: Order }) => void;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  emptyIcon?: React.ReactNode;
+  emptyThemeColor?: string;
 }
 
 export function ReservationsList({
   reservations,
   loading,
   onConfirm,
+  emptyTitle,
+  emptyDescription,
+  emptyIcon,
+  emptyThemeColor,
 }: ReservationsListProps) {
   if (loading) {
     return null;
@@ -51,15 +62,15 @@ export function ReservationsList({
         className="bg-white dark:bg-[#111722] border-dashed border-slate-300 dark:border-white/10 text-center py-16"
       >
         <Stack align="center" gap="md" className="max-w-md mx-auto">
-          <ThemeIcon size={64} radius="xl" color="cyan" variant="light">
-            <Package size={32} />
+          <ThemeIcon size={64} radius="xl" color={emptyThemeColor || "cyan"} variant="light">
+            {emptyIcon || <Package size={32} />}
           </ThemeIcon>
           <div className="space-y-1">
             <Title order={3} className="text-xl font-bold font-headline text-slate-900 dark:text-white">
-              No Active Build Reservations
+              {emptyTitle || "No Active Build Reservations"}
             </Title>
             <Text size="sm" className="text-slate-600 dark:text-slate-400">
-              Your reservation list is currently empty. Design and reserve your dream custom rig or configure a pre-built PC today.
+              {emptyDescription || "Your reservation list is currently empty. Design and reserve your dream custom rig or configure a pre-built PC today."}
             </Text>
           </div>
           <Button
@@ -81,7 +92,8 @@ export function ReservationsList({
   return (
     <div className="grid grid-cols-1 gap-5">
       {reservations.map((reservation) => {
-        const status = getStatusInfo(reservation.status || "pending");
+        const status = getStatusInfo(reservation);
+        const showActivity = shouldShowCustomerOrderActivity(reservation);
         return (
           <Paper
             key={reservation.id}
@@ -96,7 +108,7 @@ export function ReservationsList({
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2.5">
                     <Text className="text-lg font-bold font-headline text-slate-900 dark:text-white tracking-tight">
-                      Order #{reservation.id.substring(0, 8).toUpperCase()}
+                      {reservation.orderNumber ? `Order ${reservation.orderNumber}` : `Order #${reservation.id.substring(0, 8).toUpperCase()}`}
                     </Text>
                     <Badge
                       color={status.color}
@@ -131,6 +143,10 @@ export function ReservationsList({
                     </Text>
                   </div>
 
+                  {reservation.paymentStatus === "paid" && (
+                    <DownloadReceiptButton order={reservation} />
+                  )}
+
                   {/* Action Buttons */}
                   <Group gap="xs">
                     {(reservation.status === "pending" || reservation.status === "building") && (
@@ -146,37 +162,49 @@ export function ReservationsList({
                         Cancel Build
                       </Button>
                     )}
-
                   </Group>
                 </div>
               </div>
 
+              {/* Order Activity Stepper & Courier details */}
+              {showActivity && (
+                <CustomerOrderActivity order={reservation} />
+              )}
+
               {/* Items List */}
               <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-black/20 overflow-hidden">
-                <div className="max-h-[180px] overflow-y-auto divide-y divide-slate-200 dark:divide-white/5">
-                  {reservation.items.map((item, idx) => (
-                    <div
-                      key={`${reservation.id}-item-${idx}`}
-                      className="p-3 px-4 flex justify-between items-center text-sm hover:bg-slate-100/60 dark:hover:bg-white/[0.02] transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <ThemeIcon size="sm" radius="md" color="gray" variant="light">
-                          <CreditCard size={14} />
-                        </ThemeIcon>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-cyan-700 dark:text-cyan-400 uppercase tracking-wider">
-                            {(item as any).category || "Component"}
-                          </span>
-                          <span className="font-semibold text-slate-900 dark:text-slate-100 truncate max-w-[200px] sm:max-w-md">
-                            {item.name}
-                          </span>
+                <div className="max-h-[220px] overflow-y-auto divide-y divide-slate-200 dark:divide-white/5">
+                  {reservation.items.map((item, idx) => {
+                    const qty = item.quantity && item.quantity > 0 ? item.quantity : 1;
+                    return (
+                      <div
+                        key={`${reservation.id}-item-${idx}`}
+                        className="p-3 px-4 flex justify-between items-center text-sm hover:bg-slate-100/60 dark:hover:bg-white/[0.02] transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <ThemeIcon size="sm" radius="md" color="gray" variant="light">
+                            <CreditCard size={14} />
+                          </ThemeIcon>
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-cyan-700 dark:text-cyan-400 uppercase tracking-wider">
+                              {(item as any).category || "Component"}
+                            </span>
+                            <span className="font-semibold text-slate-900 dark:text-slate-100 truncate max-w-[200px] sm:max-w-md">
+                              {item.name}
+                              {qty > 1 && (
+                                <span className="ml-1.5 text-xs font-mono text-cyan-600 dark:text-cyan-400">
+                                  ×{qty}
+                                </span>
+                              )}
+                            </span>
+                          </div>
                         </div>
+                        <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200">
+                          {formatCurrency(item.price * qty)}
+                        </span>
                       </div>
-                      <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200">
-                        {formatCurrency(item.price)}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </Stack>
@@ -187,37 +215,46 @@ export function ReservationsList({
   );
 }
 
-function getStatusInfo(status: string) {
-  switch (status) {
-    case "pending":
+function getStatusInfo(order: Order) {
+  if (order.status === "cancelled") {
+    return {
+      icon: <ServerCrash size={12} />,
+      color: "red",
+      label: "Cancelled",
+    };
+  }
+
+  const stage = getOrderFulfillmentStage(order);
+
+  switch (stage) {
+    case "delivered":
       return {
-        icon: <Clock size={12} />,
-        color: "orange",
-        label: "Pending Review",
+        icon: <CheckCircle2 size={12} />,
+        color: "teal",
+        label: "Delivered",
       };
-    case "building":
+    case "out_for_delivery": {
+      const isPickup =
+        order.shippingMethod === "store_pickup" ||
+        (!order.shippingMethod && !order.paymentMethod);
+      return {
+        icon: isPickup ? <CheckCircle2 size={12} /> : <Truck size={12} />,
+        color: isPickup ? "teal" : "blue",
+        label: isPickup ? "Ready for Pickup" : "Out for Delivery",
+      };
+    }
+    case "assembling_testing":
       return {
         icon: <Truck size={12} />,
         color: "blue",
         label: "Assembly Phase",
       };
-    case "finished building":
-      return {
-        icon: <CheckCircle2 size={12} />,
-        color: "teal",
-        label: "Ready for Pickup",
-      };
-    case "cancelled":
-      return {
-        icon: <ServerCrash size={12} />,
-        color: "red",
-        label: "Cancelled",
-      };
+    case "order_placed":
     default:
       return {
-        icon: <Package size={12} />,
-        color: "gray",
-        label: "Processing",
+        icon: <Clock size={12} />,
+        color: "orange",
+        label: "To Ship",
       };
   }
 }

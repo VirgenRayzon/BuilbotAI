@@ -1,5 +1,5 @@
 /**
- * types — Central TypeScript type definitions for the Buildbot AI platform.
+ * types – Central TypeScript type definitions for the Buildbot AI platform.
  * Defines: Part, PrebuiltSystem, ComponentData, Build, Order, UserProfile,
  * Notification, SystemNotification, and related domain types.
  */
@@ -26,7 +26,7 @@ export type ComponentData = {
   socket?: string;
   ramType?: string;
   performanceTier?: number; // 1-4 (Entry=1, Mid=2, High=3, Enthusiast=4)
-  performanceScore?: number; // 0-100 (preferred — used for tier fallback)
+  performanceScore?: number; // 0-100 (preferred – used for tier fallback)
   dimensions?: {
     width: number;
     height: number;
@@ -73,7 +73,7 @@ export type Part = {
   specifications: Record<string, string | number>;
   wattage?: number;
   performanceTier?: number; // 1-4 (Entry=1, Mid=2, High=3, Enthusiast=4)
-  performanceScore?: number; // 0-100 (preferred — used for tier fallback)
+  performanceScore?: number; // 0-100 (preferred – used for tier fallback)
   socket?: string;
   ramType?: string;
   dimensions?: {
@@ -126,6 +126,7 @@ export type UserProfile = {
   city?: string;
   state?: string;
   zip?: string;
+  addressBook?: SavedAddress[];
   isManager: boolean;
   isSuperAdmin?: boolean;
   createdAt?: any;
@@ -136,15 +137,52 @@ export type OrderItem = {
   name: string;
   category: string;
   price: number;
+  productId?: string;
+  quantity?: number;
+  imageUrl?: string;
+  lineTotal?: number;
+  groupName?: string;
+  buildType?: "custom-build" | "prebuilt" | "part" | "additional";
+  prebuiltName?: string;
+  lineId?: string;
+  rigInstanceId?: string;
 };
 
 export type Order = {
   id: string;
+  orderNumber?: string;
   userId: string;
   userEmail: string;
   items: OrderItem[];
+  subtotal?: number;
+  shippingFee?: number;
+  protectionFee?: number;
+  discountAmount?: number;
+  voucherCode?: string;
   totalPrice: number;
   status: 'pending' | 'building' | 'finished building' | 'cancelled';
+  workflowRevision?: number;
+  fulfillmentStage?: OrderFulfillmentStage;
+  paymentMethod?: PaymentMethod;
+  paymentStatus?: PaymentStatus;
+  paymentReference?: string;
+  paidAt?: any;
+  paymentAttempts?: number;
+  paymongoCheckoutSessionId?: string;
+  paymongoCheckoutUrl?: string;
+  paymongoMode?: "live_test_api" | "local_sandbox_fallback";
+  paymongoPaymentId?: string;
+  refundStatus?: 'none' | 'due' | 'pending' | 'partial' | 'refunded';
+  refundedAmount?: number;
+  refunds?: OrderRefund[];
+  pendingRefundOperationId?: string;
+  pendingPaymongoRefundId?: string;
+  stockState?: OrderStockState;
+  stockRestoredAt?: unknown;
+  paymentHistory?: OrderPaymentEvent[];
+  shippingMethod?: ShippingMethod;
+  shippingAddress?: OrderShippingAddress;
+  includeCrateProtection?: boolean;
   isArchived?: boolean;
   archivedAt?: unknown;
   archivedBy?: string;
@@ -152,7 +190,64 @@ export type Order = {
   prebuiltId?: string;
   prebuiltName?: string;
   prebuiltTier?: PrebuiltSystem['tier'];
+  cancellationReason?: string;
+  cancelledAt?: any;
+  autoCancelled?: boolean;
+  assemblyVerificationPassed?: boolean;
+  legacyAssemblyReviewed?: boolean;
+  physicalReturnRequired?: boolean;
+  physicalReturnConfirmedAt?: unknown;
+  physicalReturnConfirmedBy?: string;
+  stockExceptions?: Array<{ path: string; quantity: number }>;
   createdAt: any; // Firestore Timestamp
+  updatedAt?: any;
+};
+
+export type OrderFulfillmentStage =
+  | 'order_placed'
+  | 'assembling_testing'
+  | 'out_for_delivery'
+  | 'delivered';
+
+export type OrderStockState = 'reserved' | 'restored' | 'pending_return' | 'restored_with_exceptions';
+
+export type OrderRefundDestination =
+  | 'original_payment_method'
+  | 'gcash'
+  | 'bank_transfer'
+  | 'cash'
+  | 'store_credit';
+
+export type OrderRefundResultStatus = 'succeeded' | 'pending' | 'failed';
+
+export type OrderRefund = {
+  id: string;
+  amount: number;
+  method: 'manual' | 'paymongo';
+  destination?: OrderRefundDestination;
+  reason: string;
+  reference: string;
+  proofUrl?: string;
+  actorId: string;
+  actorName: string;
+  actorRole?: 'Manager' | 'Super Admin';
+  status?: OrderRefundResultStatus;
+  createdAt: unknown;
+};
+
+export type OrderPaymentEvent = {
+  kind?: 'collection' | 'correction' | 'verification';
+  relatedEventId?: string;
+  id: string;
+  status: PaymentStatus;
+  method: PaymentMethod;
+  reference?: string;
+  amount?: number;
+  actorId?: string;
+  actorName: string;
+  actorRole: 'Customer' | 'Manager' | 'Super Admin' | 'Webhook' | 'System';
+  note?: string;
+  createdAt: unknown;
 };
 
 export type PopularityMetrics = {
@@ -173,9 +268,10 @@ export type Notification = {
   read: boolean;
   createdAt: any; // Firestore Timestamp
 };
+
 export type SystemNotification = {
   id: string;
-  type: 'reservation_received' | 'item_archived' | 'status_changed' | 'user_cancelled' | 'stock_added' | 'contact_inquiry' | 'contact_reply_received';
+  type: 'reservation_received' | 'item_archived' | 'status_changed' | 'user_cancelled' | 'order_auto_cancelled' | 'stock_added' | 'contact_inquiry' | 'contact_reply_received';
   actorId: string;
   actorName: string;
   title: string;
@@ -187,7 +283,18 @@ export type SystemNotification = {
 
 export type AuditLog = {
   id: string;
-  actionName: 'created' | 'updated' | 'deleted' | 'archived' | 'restored' | 'status_changed' | 'auth_update' | 'other';
+  actionName:
+    | 'created'
+    | 'updated'
+    | 'deleted'
+    | 'archived'
+    | 'restored'
+    | 'status_changed'
+    | 'payment_updated'
+    | 'refunded'
+    | 'auth_update'
+    | 'auto_cancelled'
+    | 'other';
   actorId: string;
   actorName: string;
   actorEmail?: string;
@@ -202,7 +309,7 @@ export type UserAuditLog = {
   id: string;
   userId: string;
   userEmail?: string;
-  actionName: 'created' | 'updated' | 'deleted' | 'restored' | 'status_changed' | 'auth_update' | 'other';
+  actionName: 'created' | 'updated' | 'deleted' | 'restored' | 'status_changed' | 'auth_update' | 'auto_cancelled' | 'other';
   scope: 'Order' | 'Favorite' | 'Profile' | 'System';
   resourceName: string;
   resourceId?: string;
@@ -229,4 +336,44 @@ export type FavoriteBuild = {
     systemName: string;
     unavailableParts: string[];
   };
+};
+
+export type SavedAddress = {
+  id: string;
+  label: string; // e.g. "Home", "Office", "Condo"
+  fullName: string;
+  phone: string;
+  email: string;
+  region: string;
+  city: string;
+  barangay: string;
+  streetAddress: string;
+  postalCode: string;
+  notes?: string;
+  isDefault?: boolean;
+  createdAt?: string;
+};
+
+export type PaymentMethod =
+  | 'cod'
+  | 'gcash_simulated'
+  | 'paymongo_simulated'
+  | 'card_simulated';
+
+export type PaymentStatus = 'unpaid' | 'pending' | 'paid' | 'failed' | 'cancelled';
+
+export type SimulatedPaymentOutcome = 'success' | 'failed' | 'cancelled';
+
+export type ShippingMethod = 'standard_courier' | 'sameday_express' | 'store_pickup';
+
+export type OrderShippingAddress = {
+  fullName: string;
+  phone: string;
+  email: string;
+  region: string;
+  city: string;
+  barangay: string;
+  streetAddress: string;
+  postalCode: string;
+  notes?: string;
 };

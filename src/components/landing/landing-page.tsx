@@ -58,9 +58,9 @@ export default function StartPage() {
 
       <DeferredPrebuiltShowcase />
 
-      <ShoppingPathsSection />
+      <AccessoriesSection />
 
-      <AccessoriesSection isDark={isDark} />
+      <ShoppingPathsSection />
 
       <WhyChooseSection />
     </div>

@@ -23,6 +23,7 @@ export function ShoppingPathsSection() {
                 src={prebuiltPcs}
                 alt="Four prebuilt gaming PCs"
                 fill
+                unoptimized
                 sizes="(max-width: 1023px) 100vw, 50vw"
                 className="object-contain object-bottom"
               />
@@ -82,6 +83,7 @@ export function ShoppingPathsSection() {
                 src={customBuilderParts}
                 alt="PC case and components for a custom build"
                 fill
+                unoptimized
                 sizes="(max-width: 1023px) 100vw, 50vw"
                 className="object-contain object-bottom"
               />

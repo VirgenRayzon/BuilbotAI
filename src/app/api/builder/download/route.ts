@@ -7,6 +7,7 @@ import { inventoryItemPath } from '@/lib/inventory-paths';
 import { BUILD_PDF_CATEGORIES, BUILD_PDF_REQUIRED } from '@/lib/build-pdf-categories';
 import { createBuildPdf, type BuildPdfPart } from '@/lib/build-pdf';
 import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '@/lib/integrated-graphics';
+import { includedCpuCoolerName } from '@/lib/included-cpu-cooler';
 import type { Part } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -91,10 +92,12 @@ export async function POST(request: NextRequest) {
           imageBytes: await getCoverImage(included.imageUrl), wattage: 0,
         };
       }
-      if (category === 'Cooler' && id === 'included-stock-cooler' && cpuData?.packageType === 'BOX') {
-        const brand = String(cpuData.brand || '').toLowerCase();
+      const includedCooler = cpuData && cpuSnapshot?.exists
+        ? includedCpuCoolerName({ ...cpuData, id: cpuSnapshot.id, category: 'CPU' } as Part)
+        : null;
+      if (category === 'Cooler' && id === 'included-stock-cooler' && includedCooler) {
         return {
-          category, name: brand.includes('intel') ? 'Intel Laminar RM1 CPU Cooler' : 'AMD Wraith MAX CPU Cooler with RGB LED',
+          category, name: includedCooler,
           price: 0, description: 'Bundled cooler.', specifications: { Type: 'Air (Stock)' },
           imageBytes: await getCoverImage('/placeholders/components/cooler.jpg'),
           wattage: 0,

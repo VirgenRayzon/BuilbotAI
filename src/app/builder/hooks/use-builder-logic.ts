@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Part, ComponentData, Build, FavoriteBuild } from '@/lib/types';
 import { checkCompatibility } from "@/lib/compatibility";
 import { INCLUDED_INTEGRATED_GPU_ID, isIncludedIntegratedGpu, syncIntegratedGraphics } from '@/lib/integrated-graphics';
+import { includedCpuCoolerName } from '@/lib/included-cpu-cooler';
 import { useToast } from "@/hooks/use-toast";
 import { 
     Cpu, Server, CircuitBoard, MemoryStick, Database, Power, 
@@ -68,6 +69,19 @@ export function useBuilderLogic(allParts: Part[]) {
             localStorage.setItem('pc_builder_state', JSON.stringify(build));
         }
     }, [build, isLoaded]);
+
+    useEffect(() => {
+        if (!isLoaded || !allParts.length) return;
+        setBuild(previous => {
+            const cpu = previous.CPU as ComponentData | null;
+            const cooler = previous.Cooler as ComponentData | null;
+            if (!cpu || !isIncludedStockCooler(cooler)) return previous;
+            const catalogCpu = allParts.find(part => part.category === 'CPU' && part.id === cpu.id);
+            return catalogCpu && !includedCpuCoolerName(catalogCpu)
+                ? { ...previous, Cooler: null }
+                : previous;
+        });
+    }, [allParts, isLoaded]);
 
     const getCountInBuild = useCallback((partName: string) => {
         let count = 0;
@@ -239,12 +253,8 @@ export function useBuilderLogic(allParts: Part[]) {
             }
 
             if (category === 'CPU') {
-                const isBoxed = part.packageType === 'BOX' ||
-                    (part as any).specifications?.['Package Type']?.toString().toUpperCase() === 'BOX';
-                if (isBoxed) {
-                    const isIntel = part.brand.toLowerCase().includes('intel');
-                    const isAmd = part.brand.toLowerCase().includes('amd');
-                    const coolerModel = isIntel ? "Intel Laminar RM1 CPU Cooler" : isAmd ? "AMD Wraith MAX CPU Cooler with RGB LED" : "Stock Cooler";
+                const coolerModel = includedCpuCoolerName(part);
+                if (coolerModel) {
                     nextBuild['Cooler'] = {
                         // Bundled coolers use a reserved identity so CPU removal and
                         // boxed-to-tray CPU replacement can clean them up reliably.

@@ -84,7 +84,23 @@ export default function AdminPage() {
         componentCategories: initialCategories
     } = useInventory(profile);
 
-    const { orders, ordersLoading, handleReservationAction, handleUpdateOrder, stats } = useOrders(profile);
+    const {
+        orders,
+        ordersLoading,
+        hasMoreOrders,
+        loadMoreOrders,
+        isSweepingExpired,
+        handleReservationAction,
+        handleUpdateOrder,
+        handleUpdateOrderPaymentStatus,
+        handleUpdateFulfillmentStage,
+        handleConfirmStockReturn,
+        handleRefundOrder,
+        handleReconcileRefund,
+        handleSweepExpiredOrders,
+        handleClearAllOrders,
+        stats,
+    } = useOrders(profile);
 
     const salesActions = useSalesActions({
         orders: orders || [],
@@ -121,7 +137,7 @@ export default function AdminPage() {
     const [tabSearchQueries, setTabSearchQueries] = useState<Record<string, string>>({
         stock: '',
         prebuilts: '',
-        reservations: '',
+        orders: '',
         archive: '',
         audit: '',
     });
@@ -129,7 +145,7 @@ export default function AdminPage() {
     const searchPlaceholders: Record<string, string> = {
         stock: 'Search parts by name, brand, or SKU...',
         prebuilts: 'Search systems by name, SKU, or specs...',
-        reservations: 'Search by email, rig, or ID...',
+        orders: 'Search by email, rig, order ID, or payment ref...',
         archive: 'Search archived assets...',
         audit: 'Search audit logs...',
     };
@@ -155,6 +171,7 @@ export default function AdminPage() {
                     partsCount={activePartsCount}
                     prebuiltsCount={activePrebuiltsCount}
                     pendingOrdersCount={stats.pendingOrdersCount}
+                    orderStageCounts={stats.stageCounts}
                     auditLogsCount={auditLogs.length}
                     intelligenceBadge={intelligenceBadge}
                     intelligenceBadgeColor={intelligenceBadgeColor}
@@ -271,16 +288,27 @@ export default function AdminPage() {
                                 </div>
                             )}
 
-                            {currentTab === "reservations" && (
+                            {currentTab === "orders" && (
                                 <div className="mt-4">
                                     <ReservationsTab
                                         orders={(orders || []).filter(order => !order.isArchived)}
                                         ordersLoading={ordersLoading}
+                                        catalogParts={parts}
+                                        hasMoreOrders={hasMoreOrders}
+                                        onLoadMoreOrders={loadMoreOrders}
                                         isSuperAdmin={profile?.isSuperAdmin === true}
+                                        isSweepingExpired={isSweepingExpired}
                                         onReservationAction={handleReservationAction}
                                         onUpdateOrder={handleUpdateOrder}
-                                        searchQuery={tabSearchQueries.reservations}
-                                        onSearchQueryChange={(val) => setTabSearchQueries(prev => ({ ...prev, reservations: val }))}
+                                        onUpdateOrderPaymentStatus={handleUpdateOrderPaymentStatus}
+                                        onUpdateFulfillmentStage={handleUpdateFulfillmentStage}
+                                        onConfirmStockReturn={handleConfirmStockReturn}
+                                        onRefundOrder={handleRefundOrder}
+                                        onReconcileRefund={handleReconcileRefund}
+                                        onSweepExpiredOrders={handleSweepExpiredOrders}
+                                        onClearAllOrders={handleClearAllOrders}
+                                        searchQuery={tabSearchQueries.orders}
+                                        onSearchQueryChange={(val) => setTabSearchQueries(prev => ({ ...prev, orders: val }))}
                                     />
                                 </div>
                             )}
@@ -305,6 +333,8 @@ export default function AdminPage() {
                                         prebuiltsLoading={prebuiltsLoading}
                                         orders={(orders || []).filter(order => Boolean(order.isArchived))}
                                         ordersLoading={ordersLoading}
+                                        hasMoreOrders={hasMoreOrders}
+                                        onLoadMoreOrders={loadMoreOrders}
                                         onReservationAction={handleReservationAction}
                                         onUpdateOrder={handleUpdateOrder}
                                         profile={profile}

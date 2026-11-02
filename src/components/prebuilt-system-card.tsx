@@ -11,7 +11,6 @@ import {
   Stack,
   Box,
   ActionIcon,
-  Paper,
 } from "@mantine/core";
 import { formatCurrency, getOptimizedStorageUrl, cn } from "@/lib/utils";
 import type { PrebuiltSystem, Part, FavoriteBuild } from "@/lib/types";
@@ -26,7 +25,8 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getMissingParts } from "@/lib/prebuilt-utils";
+import { getIncludedStockCooler, getMissingParts } from "@/lib/prebuilt-utils";
+import { includedCpuCoolerName } from "@/lib/included-cpu-cooler";
 import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
 import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '@/lib/integrated-graphics';
 import { PrebuiltCardSpecs } from "./prebuilt-card-specs";
@@ -119,6 +119,19 @@ export function PrebuiltSystemCard({
           if (!partId) return;
 
           try {
+            if (category === 'cooler') {
+              const included = getIncludedStockCooler(partId);
+              if (included && system.components.cpu) {
+                const cpuSnap = await getDoc(doc(firestore, inventoryItemPath('CPU', system.components.cpu)));
+                const cpu = cpuSnap.exists() ? { id: cpuSnap.id, ...cpuSnap.data(), category: 'CPU' } as Part : null;
+                const coolerName = cpu && !cpu.isArchived ? includedCpuCoolerName(cpu) : null;
+                if (coolerName) {
+                  stockMap[category] = included.stock;
+                  partsMap[category] = { ...included, name: coolerName };
+                }
+                return;
+              }
+            }
             if (category === 'gpu' && partId === INCLUDED_INTEGRATED_GPU_ID && system.components.cpu) {
               const cpuSnap = await getDoc(doc(firestore, inventoryItemPath('CPU', system.components.cpu)));
               const cpu = cpuSnap.exists() ? { id: cpuSnap.id, ...cpuSnap.data() } as Part : null;
@@ -203,6 +216,8 @@ export function PrebuiltSystemCard({
       const componentsList = Object.entries(resolvedParts)
         .filter(([, part]) => Boolean(part))
         .map(([cat, part]) => ({
+          id: part.id,
+          productId: part.productId,
           category: cat.toUpperCase(),
           name: part.name,
           price: part.price || 0,
@@ -214,6 +229,7 @@ export function PrebuiltSystemCard({
       addToCart(
         {
           id: `prebuilt-${system.id}`,
+          productId: system.productId,
           kind: "prebuilt",
           name: system.name,
           price: system.price,
@@ -247,6 +263,7 @@ export function PrebuiltSystemCard({
     if (!authUser || !profile) return;
     setIsReserving(true);
     try {
+      const idToken = await authUser.getIdToken();
       const componentsMap: Record<string, { id: string; name: string; price: number; category: string }> = {};
       Object.entries(resolvedParts).forEach(([category, part]) => {
         if (part) {
@@ -268,7 +285,8 @@ export function PrebuiltSystemCard({
           name: system.name,
           price: system.price,
         },
-        componentsMap
+        componentsMap,
+        idToken
       );
 
       if (result.success) {

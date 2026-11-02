@@ -24,6 +24,20 @@ export type PrebuiltPartStatus = ResolvedPrebuiltPart & {
     issue: 'missing' | 'out-of-stock' | null;
 };
 
+export function getIncludedStockCooler(partId: string): Part | null {
+    if (partId !== 'included-stock-cooler') return null;
+    return {
+        id: partId,
+        name: 'Included stock cooler',
+        category: 'Cooler',
+        brand: 'Included',
+        price: 0,
+        stock: Number.MAX_SAFE_INTEGER,
+        imageUrl: '/placeholders/components/cooler.jpg',
+        specifications: { Type: 'Air (Stock)' },
+    };
+}
+
 /**
  * Returns a list of component categories that are missing in a prebuilt system.
  * Essential components are: cpu, gpu, motherboard, ram, storage, psu, case, cooler.

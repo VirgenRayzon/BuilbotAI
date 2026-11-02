@@ -41,6 +41,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { getMissingParts, checkSystemStock } from "@/lib/prebuilt-utils";
+import { includedCpuCoolerName } from "@/lib/included-cpu-cooler";
+import { inventoryItemPath } from "@/lib/inventory-paths";
 import { PrebuiltCardSpecs } from "./prebuilt-card-specs";
 import { AddPrebuiltDialog, type AddPrebuiltFormSchema } from "./add-prebuilt-dialog";
 import { useFirestore } from "@/firebase";
@@ -199,6 +201,15 @@ function PrebuiltTableRow({
           const partId = Array.isArray(id) ? id[0] : id;
 
           if (!partId) return;
+
+          if (category === 'cooler' && partId === 'included-stock-cooler' && system.components.cpu) {
+            const cpuSnap = await getDoc(doc(firestore, inventoryItemPath('CPU', system.components.cpu)));
+            const cpu = cpuSnap.exists() ? { id: cpuSnap.id, ...cpuSnap.data(), category: 'CPU' } as Part : null;
+            if (cpu && !cpu.isArchived && includedCpuCoolerName(cpu)) {
+              components[category] = { stock: Number.MAX_SAFE_INTEGER };
+            }
+            return;
+          }
 
           const partRef = doc(firestore, collectionName, partId as string);
           const snap = await getDoc(partRef);

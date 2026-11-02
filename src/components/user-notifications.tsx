@@ -440,7 +440,7 @@ export function UserNotifications() {
           <div className="border-t border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
             <Button
               component={Link}
-              href="/profile?tab=reservations"
+              href="/profile?tab=orders"
               variant="subtle"
               color="cyan"
               size="sm"
@@ -450,7 +450,7 @@ export function UserNotifications() {
               onClick={() => setPopoverOpened(false)}
               className="font-semibold text-xs tracking-wide h-12 hover:bg-cyan-500/10"
             >
-              View Your Reservations
+              View Your Orders
             </Button>
           </div>
         </Popover.Dropdown>

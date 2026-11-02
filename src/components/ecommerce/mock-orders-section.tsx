@@ -1,13 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Badge,
   Button,
   Group,
   Paper,
-  SimpleGrid,
   Stack,
   Text,
   ThemeIcon,
@@ -17,10 +16,8 @@ import {
   CheckCircle2,
   CreditCard,
   FastForward,
-  MapPin,
   Package,
   RotateCcw,
-  ShieldCheck,
   Truck,
   Wrench,
 } from "lucide-react";
@@ -34,20 +31,77 @@ import {
 import { useSiteSettings } from "@/context/site-settings-context";
 import { formatCurrency, getOptimizedStorageUrl, cn } from "@/lib/utils";
 import { OptimizedImage } from "@/components/ui/optimized-image";
+import {
+  getFulfillmentStages,
+  orderRequiresAssembly,
+} from "@/lib/order-fulfillment";
+import {
+  isShipmentCompleted,
+  isShipmentInReceiveQueue,
+} from "@/lib/customer-order-workflow";
+import type { Order } from "@/lib/types";
 
-const STAGES: Array<{ id: FulfillmentStage; label: string; icon: any }> = [
-  { id: "order_placed", label: "Order Placed", icon: Package },
-  { id: "payment_verified", label: "Payment Verified", icon: CreditCard },
-  { id: "assembling_testing", label: "Rig Assembly & QC", icon: Wrench },
-  { id: "out_for_delivery", label: "Out for Delivery", icon: Truck },
-  { id: "delivered", label: "Delivered", icon: CheckCircle2 },
-];
 
-export function MockOrdersSection() {
+function sanitizeText(val?: string) {
+  if (!val) return "";
+  return val
+    .replace(/[\u7ab6\uff62\u30fb\u9244]+/g, "  E")
+    .replace(/Center\s*\?\s*Cubao/g, "Center  ECubao")
+    .replace(/Ready in 2\?4 Hours/g, "Ready in 2 E Hours")
+    .replace(/3\?5 Business Days/g, "3 E Business Days")
+    .replace(/\s*\(Simulated[^)]*\)/gi, "")
+    .trim();
+}
+
+const STAGE_DEFINITIONS: Record<
+  FulfillmentStage,
+  { label: string; icon: typeof Package }
+> = {
+  order_placed: { label: "Order Placed", icon: Package },
+  payment_verified: { label: "Payment Verified", icon: CreditCard },
+  assembling_testing: { label: "Rig Assembly & QC", icon: Wrench },
+  out_for_delivery: { label: "Out for Delivery", icon: Truck },
+  delivered: { label: "Delivered", icon: CheckCircle2 },
+};
+
+interface MockOrdersSectionProps {
+  reservations: Order[];
+  onCancelReservation: (reservationId: string) => Promise<void>;
+  receiveQueueOnly?: boolean;
+  completedOnly?: boolean;
+  hideEmptyState?: boolean;
+}
+
+export function MockOrdersSection({
+  reservations,
+  onCancelReservation,
+  receiveQueueOnly = false,
+  completedOnly = false,
+  hideEmptyState = false,
+}: MockOrdersSectionProps) {
   const router = useRouter();
   const { shouldCorruptImages } = useSiteSettings();
   const { orders, advanceOrderStage, resetDemoOrders, setActiveReceiptOrder } =
     useEcommerce();
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const cancelledOrderIds = new Set(
+    reservations
+      .filter((reservation) => reservation.status === "cancelled")
+      .map((reservation) => reservation.id)
+  );
+  const activeReservationIds = new Set(
+    reservations
+      .filter((reservation) => reservation.status !== "cancelled")
+      .map((reservation) => reservation.id)
+  );
+  const visibleOrders = orders.filter(
+    (order) =>
+      (!order.firestoreOrderId ||
+        (!cancelledOrderIds.has(order.firestoreOrderId) &&
+          !activeReservationIds.has(order.firestoreOrderId))) &&
+      (!receiveQueueOnly || isShipmentInReceiveQueue(order)) &&
+      (!completedOnly || isShipmentCompleted(order))
+  );
 
   return (
     <Stack gap="md">
@@ -72,7 +126,7 @@ export function MockOrdersSection() {
                 </Badge>
               </Group>
               <Text size="xs" c="dimmed">
-                Orders placed via the Netcodex Checkout Page appear here with simulated LBC / Grab / Lalamove / Cubao Showroom tracking and PH payment status.
+                Orders placed via the Netcodex Checkout Page appear here with live LBC / Grab / Lalamove / Cubao Showroom tracking and PH payment status.
               </Text>
             </div>
           </Group>
@@ -90,8 +144,47 @@ export function MockOrdersSection() {
         </Group>
       </Paper>
 
-      {orders.map((order: MockEcommerceOrder) => {
-        const currentStageIdx = STAGES.findIndex((s) => s.id === order.fulfillmentStage);
+      {!hideEmptyState && visibleOrders.length === 0 && (
+        <Paper
+          withBorder
+          radius="lg"
+          p="lg"
+          className="bg-white dark:bg-[#121824] border-slate-200 dark:border-white/10 text-center"
+        >
+          <Text fw={700}>
+            {completedOnly ? "No completed orders yet" : "Nothing to receive yet"}
+          </Text>
+          <Text size="xs" c="dimmed" mt={4}>
+            {completedOnly
+              ? "Delivered orders will appear here for your records."
+              : "Shipped orders and items currently out for delivery will appear here."}
+          </Text>
+        </Paper>
+      )}
+
+      {visibleOrders.map((order: MockEcommerceOrder) => {
+        const stages = getFulfillmentStages(order);
+        const requiresAssembly = orderRequiresAssembly(order);
+        const currentStageIdx = stages.indexOf(order.fulfillmentStage);
+        const canCancel =
+          order.fulfillmentStage === "order_placed" &&
+          Boolean(order.firestoreOrderId);
+        const firstItem = order.items[0];
+        const moreCount = Math.max(0, order.items.length - 1);
+        const itemsSubtotal = order.subtotal ?? order.items.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
+        );
+        const shippingFee = order.shippingFee ?? 0;
+        const protectionFee = order.protectionFee ?? 0;
+        const discountAmount = order.discountAmount ?? 0;
+        const vatAmount = order.vatAmount ?? 0;
+        const productImage = firstItem && getOptimizedStorageUrl(
+          isInvalidPlaceholderUrl(firstItem.imageUrl)
+            ? getEcommerceFallbackImage(firstItem.category, firstItem.kind)
+            : firstItem.imageUrl!,
+          shouldCorruptImages
+        );
 
         return (
           <Paper
@@ -101,7 +194,7 @@ export function MockOrdersSection() {
             p="md"
             className="bg-white dark:bg-[#121824] border-slate-200 dark:border-white/10 shadow-sm space-y-4"
           >
-            {/* Top Order Header */}
+            {/* Order code and actions */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-white/10">
               <div>
                 <Group gap="xs">
@@ -115,10 +208,6 @@ export function MockOrdersSection() {
                     {order.trackingNumber}
                   </Badge>
                 </Group>
-                <Text size="xs" c="dimmed" mt={2}>
-                  {order.courierName} • ETA: <strong>{order.estimatedDelivery}</strong> • Paid via{" "}
-                  <strong>{order.paymentLabel}</strong>
-                </Text>
               </div>
 
               <Group gap="xs">
@@ -131,7 +220,7 @@ export function MockOrdersSection() {
                   onClick={() => advanceOrderStage(order.id)}
                   className="text-[11px] font-bold uppercase tracking-wider"
                 >
-                  Simulate Next Tracking Step
+                  Advance Tracking Step
                 </Button>
                 <Button
                   size="xs"
@@ -145,18 +234,95 @@ export function MockOrdersSection() {
                 >
                   View Receipt
                 </Button>
+                <Button
+                  size="xs"
+                  color="red"
+                  variant="subtle"
+                  radius="md"
+                  disabled={!canCancel}
+                  loading={cancellingId === order.id}
+                  onClick={async () => {
+                    if (!order.firestoreOrderId) return;
+                    setCancellingId(order.id);
+                    await onCancelReservation(order.firestoreOrderId);
+                    setCancellingId(null);
+                  }}
+                  className="text-[11px] font-bold uppercase tracking-wider"
+                >
+                  Cancel order
+                </Button>
               </Group>
             </div>
 
-            {/* 5-Stage Visual Shipment Stepper */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-              {STAGES.map((stage, idx) => {
+            <div>
+              <div className="flex items-center gap-3">
+                {firstItem && productImage && (
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden">
+                    <OptimizedImage src={productImage} alt={firstItem.name} fill sizes="80px" className="object-contain p-2" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <Text size="sm" fw={700} className="text-slate-900 dark:text-slate-100">{firstItem?.name || "Order items"}</Text>
+                  <Text size="xs" c="dimmed">{firstItem?.quantity || 1} item{(firstItem?.quantity || 1) === 1 ? "" : "s"}{moreCount > 0 ? ` · +${moreCount} more` : ""}</Text>
+                </div>
+                {firstItem && (
+                  <Text size="sm" fw={700} className="shrink-0 text-right text-slate-900 dark:text-slate-100">
+                    {formatCurrency(firstItem.price * firstItem.quantity)}
+                  </Text>
+                )}
+              </div>
+              <div className="mt-3 space-y-1.5 border-t border-slate-200 pt-2 dark:border-white/10">
+                <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                  <Text size="xs">Items subtotal</Text>
+                  <Text size="xs" className="font-mono font-medium">{formatCurrency(itemsSubtotal)}</Text>
+                </div>
+                <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                  <Text size="xs">Shipping</Text>
+                  <Text size="xs" className="font-mono font-medium">{formatCurrency(shippingFee)}</Text>
+                </div>
+                <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                  <Text size="xs">Crate &amp; foam protection</Text>
+                  <Text size="xs" className="font-mono font-medium">{formatCurrency(protectionFee)}</Text>
+                </div>
+                <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
+                  <Text size="xs">Discount{order.voucherCode ? ` (${order.voucherCode})` : ""}</Text>
+                  <Text size="xs" className="font-mono font-medium">-{formatCurrency(discountAmount)}</Text>
+                </div>
+                <div className="flex items-center justify-between text-slate-400">
+                  <Text size="xs">Included 12% PH VAT</Text>
+                  <Text size="xs" className="font-mono">{formatCurrency(vatAmount)}</Text>
+                </div>
+                <div className="flex items-center justify-between border-t border-slate-200 pt-2 dark:border-white/10">
+                  <Text size="xs" fw={700}>Total amount</Text>
+                  <Text size="sm" fw={800} className="text-emerald-600 dark:text-emerald-400">{formatCurrency(order.total)}</Text>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 p-3 dark:border-white/10">
+              <Text size="xs" fw={700}>Shipping method & ETA</Text>
+              <Text size="xs" c="dimmed">{sanitizeText(order.courierName)} · {sanitizeText(order.estimatedDelivery)} · {order.trackingNumber}</Text>
+            </div>
+
+            {/* Order-aware shipment stepper */}
+            <div
+              className={cn(
+                "grid grid-cols-2 gap-2",
+                stages.length === 5 ? "sm:grid-cols-5" : "sm:grid-cols-4"
+              )}
+            >
+              {stages.map((stageId, idx) => {
+                const stage = STAGE_DEFINITIONS[stageId];
+                const stageLabel =
+                  !requiresAssembly && stageId === "payment_verified"
+                    ? "Shipped"
+                    : stage.label;
                 const Icon = stage.icon;
                 const isCompleted = idx <= currentStageIdx;
                 const isCurrent = idx === currentStageIdx;
                 return (
                   <div
-                    key={stage.id}
+                    key={stageId}
                     className={cn(
                       "p-2.5 rounded-xl border text-center transition-all flex flex-col items-center gap-1",
                       isCurrent
@@ -168,71 +334,18 @@ export function MockOrdersSection() {
                   >
                     <Icon size={16} />
                     <span className="text-[10px] font-headline font-bold uppercase tracking-wider leading-tight">
-                      {stage.label}
+                      {stageLabel}
                     </span>
                   </div>
                 );
               })}
             </div>
 
-            {/* Address & Items Summary */}
-            <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-              <Paper withBorder radius="md" p="sm" className="bg-slate-50/70 dark:bg-white/[0.02] border-slate-200 dark:border-white/10">
-                <Group gap={6} mb={4}>
-                  <MapPin size={13} className="text-cyan-500" />
-                  <Text size="10px" fw={800} tt="uppercase" c="dimmed">
-                    {order.shippingMethod === "store_pickup"
-                      ? "Netcodex Showroom Pickup Location"
-                      : "Shipping Destination"}
-                  </Text>
-                </Group>
-                <Text size="xs" fw={700}>
-                  {order.shippingAddress.fullName} ({order.shippingAddress.phone})
-                </Text>
-                <Text size="xs" c="dimmed">
-                  {order.shippingAddress.streetAddress}, {order.shippingAddress.barangay},{" "}
-                  {order.shippingAddress.city}, {order.shippingAddress.region}{" "}
-                  {order.shippingAddress.postalCode}
-                </Text>
-              </Paper>
-
-              <Paper withBorder radius="md" p="sm" className="bg-slate-50/70 dark:bg-white/[0.02] border-slate-200 dark:border-white/10">
-                <Group justify="space-between" mb={4}>
-                  <Group gap={6}>
-                    <ShieldCheck size={13} className="text-emerald-500" />
-                    <Text size="10px" fw={800} tt="uppercase" c="dimmed">
-                      Order Items & Total
-                    </Text>
-                  </Group>
-                  <Text size="sm" fw={900} ff="monospace" className="text-emerald-600 dark:text-emerald-400">
-                    {formatCurrency(order.total)}
-                  </Text>
-                </Group>
-                <div className="space-y-1.5">
-                  {order.items.map((item) => {
-                    const fallbackImg = getEcommerceFallbackImage(item.category, item.kind);
-                    const rawImg = isInvalidPlaceholderUrl(item.imageUrl) ? fallbackImg : item.imageUrl!;
-                    const resolvedImg =
-                      getOptimizedStorageUrl(rawImg, shouldCorruptImages) || fallbackImg;
-                    return (
-                      <div key={item.id} className="flex items-center justify-between text-xs gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0e131d]">
-                            <OptimizedImage src={resolvedImg} alt={item.name} fill sizes="28px" className="object-contain p-0.5" />
-                          </div>
-                          <span className="truncate font-medium">
-                            {item.quantity}x {item.name}
-                          </span>
-                        </div>
-                        <span className="font-mono text-slate-500 shrink-0 ml-2">
-                          {formatCurrency(item.price * item.quantity)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Paper>
-            </SimpleGrid>
+            {order.fulfillmentStage === "delivered" && (
+              <Group justify="flex-end">
+                <Button size="xs" variant="light" onClick={() => router.push(`/contact?order=${encodeURIComponent(order.orderNumber)}`)}>Request refund</Button>
+              </Group>
+            )}
           </Paper>
         );
       })}

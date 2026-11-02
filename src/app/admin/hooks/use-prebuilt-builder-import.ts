@@ -3,11 +3,15 @@ import type { Dispatch, SetStateAction } from "react";
 import {
     CircuitBoard, Cpu, Database, MemoryStick, Power, RectangleVertical, Server, Wind,
 } from "lucide-react";
-import type { ComponentData, FavoriteBuild, Part } from "@/lib/types";
+import type { ComponentData, FavoriteBuild, Part, PrebuiltSystem } from "@/lib/types";
 import { INCLUDED_INTEGRATED_GPU_ID, syncIntegratedGraphics } from '@/lib/integrated-graphics';
 import { useToast } from "@/hooks/use-toast";
+import { includedCpuCoolerName } from '@/lib/included-cpu-cooler';
+import { useFirestore } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 type BuilderState = Record<string, ComponentData | ComponentData[] | null>;
+export const PREBUILT_EDIT_SESSION_KEY = 'admin_pc_builder_edit_prebuilt_id';
 
 const componentIcons = {
     CPU: Cpu,
@@ -29,14 +33,25 @@ export function usePrebuiltBuilderImport(
     allParts: Part[],
     isLoaded: boolean,
     setBuild: Dispatch<SetStateAction<BuilderState>>,
+    setEditingPrebuilt: Dispatch<SetStateAction<PrebuiltSystem | null>>,
 ) {
     const { toast } = useToast();
+    const firestore = useFirestore();
 
     useEffect(() => {
-        if (!isLoaded || allParts.length === 0) return;
+        if (!isLoaded || allParts.length === 0 || !firestore) return;
 
         const pending = localStorage.getItem("admin_pc_builder_load_prebuilt");
-        if (!pending) return;
+        if (!pending) {
+            const editingId = sessionStorage.getItem(PREBUILT_EDIT_SESSION_KEY);
+            if (editingId) {
+                void getDoc(doc(firestore, 'prebuiltSystems', editingId)).then(snapshot => {
+                    if (snapshot.exists()) setEditingPrebuilt({ ...snapshot.data(), id: snapshot.id } as PrebuiltSystem);
+                    else sessionStorage.removeItem(PREBUILT_EDIT_SESSION_KEY);
+                }).catch(() => sessionStorage.removeItem(PREBUILT_EDIT_SESSION_KEY));
+            }
+            return;
+        }
 
         let favorite: FavoriteBuild;
         try {
@@ -51,7 +66,15 @@ export function usePrebuiltBuilderImport(
             return;
         }
 
-        const next = emptyBuild();
+        localStorage.removeItem("admin_pc_builder_load_prebuilt");
+        void (async () => {
+            try {
+                if (favorite.loadContext?.type !== 'prebuilt') throw new Error('This import is not a prebuilt system.');
+                const systemSnap = await getDoc(doc(firestore, 'prebuiltSystems', favorite.id));
+                if (!systemSnap.exists()) throw new Error('This prebuilt no longer exists.');
+                const system = { ...systemSnap.data(), id: systemSnap.id } as PrebuiltSystem;
+
+                const next = emptyBuild();
         const unavailable: string[] = [];
         const selectedCounts = new Map<string, number>();
         let loadedCount = 0;
@@ -60,6 +83,21 @@ export function usePrebuiltBuilderImport(
             if (selected?.category === 'GPU' && selected.partId === INCLUDED_INTEGRATED_GPU_ID) continue;
             if (!selected || typeof selected.partId !== "string" || typeof selected.category !== "string") continue;
             if (!(selected.category in componentIcons)) continue;
+
+            if (selected.category === 'Cooler' && selected.partId === 'included-stock-cooler') {
+                const cpuSelection = favorite.parts.find(part => part.category === 'CPU');
+                const cpu = allParts.find(part => part.category === 'CPU' && part.id === cpuSelection?.partId);
+                const coolerName = cpu ? includedCpuCoolerName(cpu) : null;
+                if (coolerName) {
+                    next.Cooler = {
+                        id: selected.partId, model: coolerName, price: 0, description: 'Bundled cooler.',
+                        image: '/placeholders/components/cooler.jpg', imageHint: 'included cooler',
+                        icon: Wind, wattage: 0, specifications: { Type: 'Air (Stock)' },
+                    };
+                    loadedCount++;
+                } else unavailable.push('Cooler');
+                continue;
+            }
 
             const livePart = allParts.find(part =>
                 part.category === selected.category &&
@@ -104,14 +142,15 @@ export function usePrebuiltBuilderImport(
             loadedCount++;
         }
 
-        localStorage.removeItem("admin_pc_builder_load_prebuilt");
         const restoredBuild = syncIntegratedGraphics(next);
         if (restoredBuild.GPU && (restoredBuild.GPU as ComponentData).id === INCLUDED_INTEGRATED_GPU_ID) loadedCount++;
         setBuild(restoredBuild);
+        setEditingPrebuilt(system);
+        sessionStorage.setItem(PREBUILT_EDIT_SESSION_KEY, system.id);
         const missingParts = Array.from(new Set([
             ...(favorite.loadContext?.unavailableParts || []),
             ...unavailable,
-        ]));
+        ].map(name => name === 'included-stock-cooler' ? 'Cooler' : name)));
         toast({
             title: missingParts.length > 0 ? "Pre-built loaded with missing parts" : "Pre-built loaded into Prebuilt Builder",
             description: missingParts.length > 0
@@ -119,5 +158,9 @@ export function usePrebuiltBuilderImport(
                 : `${loadedCount} components from ${favorite.loadContext?.systemName || favorite.name} are ready to customize.`,
             variant: missingParts.length > 0 ? "warning" : "default",
         });
-    }, [allParts, isLoaded, setBuild, toast]);
+        } catch (error) {
+            toast({ title: 'Could not edit prebuilt', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
+        }
+        })();
+    }, [allParts, firestore, isLoaded, setBuild, setEditingPrebuilt, toast]);
 }

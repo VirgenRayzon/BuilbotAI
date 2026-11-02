@@ -29,7 +29,7 @@ import { useBuildActions } from "@/hooks/use-build-actions";
 import { useBuildPdfDownload } from "@/hooks/use-build-pdf-download";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, cn } from "@/lib/utils";
-import type { ComponentData, FavoriteBuild, FavoriteBuildPart, Part, Resolution, WorkloadType } from "@/lib/types";
+import type { ComponentData, FavoriteBuild, FavoriteBuildPart, PrebuiltSystem, Resolution, WorkloadType } from "@/lib/types";
 import type { PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
 import { DualSidebarAnalyzer } from "@/components/bottleneck/dual-sidebar-analyzer";
 import type { SidebarTab } from "@/components/bottleneck/dual-sidebar-analyzer";
@@ -60,6 +60,9 @@ interface YourBuildProps {
   autoRecommendationsEnabled?: boolean;
   onAutoRecommendationsChange?: (enabled: boolean) => void;
   onAddPrebuilt?: (data: PrebuiltBuilderAddFormSchema, operationId?: string) => void | Promise<import('@/lib/product-identity').CreatedProduct | void>;
+  editingPrebuilt?: PrebuiltSystem | null;
+  onUpdatePrebuilt?: () => void | Promise<void>;
+  isUpdatingPrebuilt?: boolean;
   analysis?: unknown;
   onAnalysisUpdate?: (analysis: any) => void;
   onCategorySelect?: (category: string) => void;
@@ -78,6 +81,7 @@ export function YourBuild({
   onCategorySelect, categories, resolution, onResolutionChange, workload, onWorkloadChange,
   onApplySuggestion, isAiPending: externalIsAiPending, recommendationState,
   autoRecommendationsEnabled = true, onAutoRecommendationsChange,
+  editingPrebuilt, onUpdatePrebuilt, isUpdatingPrebuilt = false,
 }: YourBuildProps) {
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("parts");
   const user = useUser();
@@ -107,6 +111,10 @@ export function YourBuild({
   useEffect(() => {
     if (isBuildComplete) setShowMissingValidation(false);
   }, [isBuildComplete]);
+
+  useEffect(() => {
+    if (editingPrebuilt && !isBuildComplete) setShowMissingValidation(true);
+  }, [editingPrebuilt, isBuildComplete]);
 
   useEffect(() => {
     if (!recommendationState && sidebarTab === "budget") setSidebarTab("parts");
@@ -317,8 +325,13 @@ export function YourBuild({
         isCheckingOut={isCheckingOut}
         analysis={analysis}
         onAnalyze={() => { if (isBuildComplete) void handleAnalyze(); }}
-        onReserve={(onSuccess) => { if (isBuildComplete) void handleCheckout(onSuccess); }}
+        onReserve={(onSuccess, paymentMethod) => {
+          if (isBuildComplete) void handleCheckout(onSuccess, paymentMethod);
+        }}
         onAddPrebuilt={(name) => { if (isBuildComplete) handleAddPrebuiltWithAi(name); }}
+        editingPrebuiltName={editingPrebuilt?.name}
+        onUpdatePrebuilt={onUpdatePrebuilt}
+        isUpdatingPrebuilt={isUpdatingPrebuilt}
         onIncompleteAction={() => setShowMissingValidation(true)}
         onSignIn={() => router.push("/signin?returnTo=%2Fbuilder")}
         showMissingValidation={showMissingValidation}

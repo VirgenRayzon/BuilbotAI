@@ -86,18 +86,18 @@ const formSchema = z.object({
     price: z.coerce.number().min(0, "Price must be a positive number."),
     imageUrl: z.string().optional().or(z.literal("")),
     images: z.array(z.string()).optional(),
-    cpu: z.string().optional(),
-    gpu: z.string().optional(),
-    motherboard: z.string().optional(),
+    cpu: z.string().min(1, "CPU is required."),
+    gpu: z.string().min(1, "GPU is required."),
+    motherboard: z.string().min(1, "Motherboard is required."),
     ram: z.array(z.string().optional().or(z.literal(""))).refine(items => items.filter(Boolean).length > 0, {
         message: "At least one RAM module is required."
     }),
     storage: z.array(z.string().optional().or(z.literal(""))).refine(items => items.filter(Boolean).length > 0, {
         message: "At least one storage drive is required."
     }),
-    psu: z.string().optional(),
-    case: z.string().optional(),
-    cooler: z.string().optional(),
+    psu: z.string().min(1, "PSU is required."),
+    case: z.string().min(1, "Case is required."),
+    cooler: z.string().min(1, "Cooler is required."),
 });
 
 export type AddPrebuiltFormSchema = z.infer<typeof formSchema>;

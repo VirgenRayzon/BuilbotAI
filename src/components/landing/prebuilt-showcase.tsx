@@ -93,9 +93,9 @@ export function PrebuiltShowcase({
                                 }}
                                 className="w-full"
                             >
-                                <CarouselContent className="-ml-4 md:-ml-8">
+                                <CarouselContent className="-ml-3 md:-ml-4">
                                     {activeSystems.map((system, index) => (
-                                        <CarouselItem key={system.id} className="pl-4 md:pl-8 basis-full md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                                        <CarouselItem key={system.id} className="pl-3 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
                                             <motion.div
                                                 initial={{ opacity: 0, scale: 0.95 }}
                                                 whileInView={{ opacity: 1, scale: 1 }}
@@ -139,7 +139,7 @@ export function PrebuiltShowcase({
                             </Carousel>
                         ) : (
                             <>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-3 xl:grid-cols-4">
                                     {displayedSystems.map((system, index) => (
                                         <motion.div
                                             key={system.id}

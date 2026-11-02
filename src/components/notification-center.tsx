@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
   Check,
+  Clock,
   Archive,
   ShieldCheck,
   History,
@@ -14,7 +15,6 @@ import {
   PackageCheck,
   CheckCheck,
   SlidersHorizontal,
-  ChevronRight,
   ExternalLink,
 } from "lucide-react";
 import {
@@ -66,7 +66,7 @@ function playSoftTick() {
 }
 
 /* ── Categories ── */
-const CATEGORIES = ["All", "Reservations", "Support", "Stock", "Status", "Archived"] as const;
+const CATEGORIES = ["All", "Orders", "Support", "Stock", "Status", "Archived"] as const;
 type CategoryType = (typeof CATEGORIES)[number];
 
 export function NotificationCenter() {
@@ -102,7 +102,8 @@ export function NotificationCenter() {
     switch (n.type) {
       case "reservation_received":
       case "user_cancelled":
-        return "Reservations";
+      case "order_auto_cancelled":
+        return "Orders";
       case "contact_inquiry":
       case "contact_reply_received":
         return "Support";
@@ -120,7 +121,7 @@ export function NotificationCenter() {
   const categoryCounts = useMemo(() => {
     const counts: Record<CategoryType, number> = {
       All: notifications.length,
-      Reservations: 0,
+      Orders: 0,
       Support: 0,
       Stock: 0,
       Status: 0,
@@ -207,6 +208,12 @@ export function NotificationCenter() {
         return (
           <ThemeIcon size="sm" radius="md" color="red" variant="light" className="shrink-0 mt-0.5">
             <X size={14} />
+          </ThemeIcon>
+        );
+      case "order_auto_cancelled":
+        return (
+          <ThemeIcon size="sm" radius="md" color="orange" variant="light" className="shrink-0 mt-0.5">
+            <Clock size={14} />
           </ThemeIcon>
         );
       default:
@@ -545,6 +552,28 @@ export function NotificationCenter() {
                 className="text-xs font-semibold"
               >
                 Open Inquiry
+              </Button>
+            ) : selectedNotification?.type === 'reservation_received' ||
+                selectedNotification?.type === 'user_cancelled' ||
+                selectedNotification?.type === 'order_auto_cancelled' ||
+                (selectedNotification?.type === 'status_changed' && Boolean(selectedNotification?.targetId)) ? (
+              <Button
+                color="cyan"
+                size="xs"
+                radius="md"
+                leftSection={<ExternalLink size={14} />}
+                onClick={() => {
+                  const orderId = selectedNotification?.targetId;
+                  setSelectedNotification(null);
+                  router.push(
+                    orderId
+                      ? `/admin?tab=orders&orderId=${encodeURIComponent(orderId)}`
+                      : "/admin?tab=orders"
+                  );
+                }}
+                className="text-xs font-semibold"
+              >
+                Open Orders
               </Button>
             ) : (
               <Button

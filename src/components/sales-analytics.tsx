@@ -7,10 +7,7 @@ import {
 } from 'recharts';
 import {
     TrendingUp,
-    DollarSign,
     Package,
-    ArrowUpRight,
-    ArrowDownRight,
     Activity,
     PieChart as PieIcon,
     BarChart3,
@@ -39,6 +36,12 @@ import { Order, Part, PrebuiltSystem } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { useTheme } from '@/context/theme-provider';
 import { getPopularityCategories } from '@/lib/popularity';
+import {
+    calculateOrderFinancialSummary,
+    getNetCollectedAmount,
+    getOrderFulfillmentStage,
+} from '@/lib/order-workflow';
+import { SalesFinancialKpis } from './sales-financial-kpis';
 
 interface SalesAnalyticsProps {
     orders: Order[];
@@ -106,8 +109,9 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
         const dataMap = new Map<string, number>();
         dataPoints.forEach(p => dataMap.set(p.name, 0));
 
-        (orders || []).filter(o => o.status !== 'cancelled').forEach(order => {
-            const date = order.createdAt?.toDate?.() || (order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000) : new Date(order.createdAt));
+        (orders || []).filter(o => getNetCollectedAmount(o) > 0).forEach(order => {
+            const paymentDate = order.paidAt || order.createdAt;
+            const date = paymentDate?.toDate?.() || (paymentDate?.seconds ? new Date(paymentDate.seconds * 1000) : new Date(paymentDate));
             let key = "";
             if (timeRange === 'year') {
                 key = date.toLocaleDateString(undefined, { month: 'short' }) + " '" + date.getFullYear().toString().slice(-2);
@@ -116,7 +120,7 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
             }
 
             if (dataMap.has(key)) {
-                dataMap.set(key, (dataMap.get(key) || 0) + (order.totalPrice || 0));
+                dataMap.set(key, (dataMap.get(key) || 0) + getNetCollectedAmount(order));
             }
         });
 
@@ -126,28 +130,31 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
         }));
     }, [orders, timeRange]);
 
-    // Process Status Distribution (Yellow for Pending!)
+    // Process Unified Order Fulfillment Distribution
     const statusData = useMemo(() => {
         const counts = {
-            pending: 0,
-            building: 0,
-            'finished building': 0,
-            cancelled: 0
+            order_placed: 0,
+            assembling_testing: 0,
+            out_for_delivery: 0,
+            delivered: 0,
+            cancelled: 0,
         };
 
         (orders || []).forEach(o => {
-            const st = o.status || 'pending';
-            if (st === 'pending') counts.pending++;
-            else if (st === 'building') counts.building++;
-            else if (st === 'finished building' || String(st) === 'finished') counts['finished building']++;
-            else if (st === 'cancelled') counts.cancelled++;
+            if (o.status === 'cancelled') {
+                counts.cancelled++;
+                return;
+            }
+            const stage = getOrderFulfillmentStage(o);
+            counts[stage]++;
         });
 
         return [
-            { name: 'Pending', value: counts.pending, color: '#eab308' }, // Yellow
-            { name: 'Building', value: counts.building, color: '#3b82f6' }, // Blue
-            { name: 'Finished', value: counts['finished building'], color: '#10b981' }, // Emerald
-            { name: 'Cancelled', value: counts.cancelled, color: '#ef4444' } // Red
+            { name: 'Order Placed', value: counts.order_placed, color: '#eab308' },
+            { name: 'Assembling', value: counts.assembling_testing, color: '#3b82f6' },
+            { name: 'Out for Delivery', value: counts.out_for_delivery, color: '#06b6d4' },
+            { name: 'Delivered', value: counts.delivered, color: '#10b981' },
+            { name: 'Cancelled', value: counts.cancelled, color: '#ef4444' },
         ].filter(d => d.value > 0);
     }, [orders]);
 
@@ -178,12 +185,20 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
         ].filter(d => d.value > 0);
     }, [orders, prebuilts]);
 
-    // Process Category Performance
+    // Process Category Performance (allocated strictly from Net Sales of paid orders)
     const categoryData = useMemo(() => {
         const catMap = new Map<string, number>();
-        (orders || []).filter(o => o.status !== 'cancelled').forEach(order => {
+        (orders || []).filter(o => getNetCollectedAmount(o) > 0).forEach(order => {
+            const itemsTotal = (order.items || []).reduce((sum, item) => {
+                const qty = item.quantity && item.quantity > 0 ? item.quantity : 1;
+                return sum + (item.lineTotal ?? item.price * qty);
+            }, 0);
+            const subtotal = order.subtotal || itemsTotal;
             order.items?.forEach(item => {
-                catMap.set(item.category, (catMap.get(item.category) || 0) + item.price);
+                const qty = item.quantity && item.quantity > 0 ? item.quantity : 1;
+                const lineVal = item.lineTotal ?? item.price * qty;
+                const allocation = subtotal > 0 ? (lineVal / subtotal) * getNetCollectedAmount(order) : 0;
+                catMap.set(item.category, (catMap.get(item.category) || 0) + allocation);
             });
         });
 
@@ -193,16 +208,17 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
             .slice(0, 6);
     }, [orders]);
 
-    // High Level KPI Metrics
+    // High Level Financial & Operational KPI Metrics
     const metrics = useMemo(() => {
-        const validOrders = (orders || []).filter(o => o.status !== 'cancelled');
-        const totalRevenue = validOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
-        const aov = validOrders.length > 0 ? totalRevenue / validOrders.length : 0;
-        const cancellationRate = (orders || []).length > 0
-            ? ((orders || []).filter(o => o.status === 'cancelled').length / (orders || []).length) * 100
+        const financials = calculateOrderFinancialSummary(orders || []);
+        const aov = financials.paidOrderCount > 0
+            ? financials.netSales / financials.paidOrderCount
+            : 0;
+        const cancellationRate = financials.totalOrderCount > 0
+            ? (financials.cancelledOrderCount / financials.totalOrderCount) * 100
             : 0;
 
-        return { totalRevenue, aov, cancellationRate, orderCount: validOrders.length };
+        return { financials, aov, cancellationRate };
     }, [orders]);
 
     // Popularity Matrix Data grouped by Category and sorted by Popularity
@@ -231,45 +247,11 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
             {/* TAB 1: Performance & Revenue Overview */}
             {activeSubTab === 'overview' && (
                 <div className="space-y-6">
-                    {/* 4 Metric Bento Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <MetricCard
-                            title="Gross Revenue"
-                            value={formatCurrency(metrics.totalRevenue)}
-                            icon={<DollarSign className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />}
-                            color="teal"
-                            trend="+12.5%"
-                            trendUp={true}
-                            delay={0}
-                        />
-                        <MetricCard
-                            title="Total Reservations"
-                            value={metrics.orderCount.toString()}
-                            icon={<Package className="w-5 h-5 text-blue-500 dark:text-blue-400" />}
-                            color="blue"
-                            trend="+5 today"
-                            trendUp={true}
-                            delay={0.1}
-                        />
-                        <MetricCard
-                            title="Avg. Order Value"
-                            value={formatCurrency(metrics.aov)}
-                            icon={<Activity className="w-5 h-5 text-purple-500 dark:text-purple-400" />}
-                            color="grape"
-                            trend="-2.4%"
-                            trendUp={false}
-                            delay={0.2}
-                        />
-                        <MetricCard
-                            title="Cancellation Rate"
-                            value={`${metrics.cancellationRate.toFixed(1)}%`}
-                            icon={<ArrowDownRight className="w-5 h-5 text-red-500 dark:text-red-400" />}
-                            color="red"
-                            trend="+0.5%"
-                            trendUp={false}
-                            delay={0.3}
-                        />
-                    </div>
+                    <SalesFinancialKpis
+                        financials={metrics.financials}
+                        aov={metrics.aov}
+                        cancellationRate={metrics.cancellationRate}
+                    />
 
                     {/* Revenue Performance & Order Status Distribution Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -777,71 +759,5 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
                 </div>
             )}
         </div>
-    );
-}
-
-// Bento KPI Metric Card with framer-motion animation & Mantine surface
-function MetricCard({
-    title,
-    value,
-    icon,
-    trend,
-    trendUp,
-    delay,
-    color
-}: {
-    title: string;
-    value: string;
-    icon: React.ReactNode;
-    trend: string;
-    trendUp: boolean;
-    delay: number;
-    color: string;
-}) {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay }}
-            whileHover={{ y: -3, transition: { duration: 0.2 } }}
-        >
-            <Paper
-                withBorder
-                radius="lg"
-                p={12}
-                className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md transition-all group"
-            >
-                <div className="flex items-center justify-between mb-3">
-                    <ThemeIcon
-                        size={40}
-                        radius="md"
-                        color={color}
-                        variant="light"
-                        className="group-hover:scale-110 transition-transform duration-300"
-                    >
-                        {icon}
-                    </ThemeIcon>
-
-                    <div className={cn(
-                        "flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                        trendUp
-                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                            : "bg-red-500/10 text-red-600 dark:text-red-400"
-                    )}>
-                        {trendUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                        {trend}
-                    </div>
-                </div>
-
-                <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em] font-mono">
-                        {title}
-                    </p>
-                    <h3 className="text-2xl font-headline font-bold text-slate-900 dark:text-white tracking-tight">
-                        {value}
-                    </h3>
-                </div>
-            </Paper>
-        </motion.div>
     );
 }

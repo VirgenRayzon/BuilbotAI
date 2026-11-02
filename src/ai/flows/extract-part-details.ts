@@ -47,7 +47,7 @@ const ExtractPartDetailsOutputSchema = z.object({
     depth: z.number()
   }).optional().describe("Dimensions in mm. Vital for Case and GPU."),
   specifications: z.array(SpecificationSchema).describe('List of key-value specs.'),
-  packageType: z.enum(['TRAY', 'BOX']).optional().describe('CPU Package Type. TRAY (OEM/Bulk) or BOX (Retail with heatsink).'),
+  packageType: z.enum(['TRAY', 'BOX']).optional().describe('CPU package type. TRAY means OEM/bulk; BOX means retail packaging and does not imply a cooler is included. Record the actual included thermal solution separately in specifications when verified.'),
   description: z.string().optional().describe('Brief product highlights in Markdown format. MANDATORY: ALWAYS put each point on a "NEW PARAGRAPH". Start the description with a new paragraph and an asterisk (*). Use bold text for headers. Example: * **Feature**: Description.'),
 });
 export type ExtractPartDetailsOutput = z.infer<typeof ExtractPartDetailsOutputSchema>;
@@ -97,6 +97,7 @@ Component: ${input.partName}
 Provide:
 1. Full official name and brand.
 2. All key specifications (architecture, cores, clock speeds, memory, TDP, dimensions, etc.)
+   For CPUs, check the manufacturer's product page for "Thermal Solution (PIB)" or the included cooler. A retail box does not guarantee a heatsink.
 3. Current street price in USD and estimated PHP price (multiply USD by 60).
 4. Category (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, or Cooler).
 5. Performance score relative to modern high-end standards (0-100).
@@ -134,9 +135,10 @@ LOGIC RULES:
 4. Keep partName clean. Never prepend labels such as "Non-existent Component:" or put warnings in partName. Put the explanation in verificationMessage instead.
 5. Once you have the data, format it strictly into the requested JSON schema.
 6. For prices: Convert USD street price to PHP by multiplying by 60 (e.g., $1000 = ₱60,000) or use local Philippine retailer pricing.
+7. For CPUs, do not infer an included cooler from BOX packaging. Include a 'Thermal Solution (PIB)' specification only when the source explicitly confirms its value; use 'Not Included' when the official page says so.
 
 SPECIFICATION RULES (Ensure these keys appear in the JSON 'specifications' array):
-- **CPU**: 'Architecture', 'Cores', 'Threads', 'Base Clock (GHz)', 'Boost Clock (GHz)', 'Socket', 'TDP / Peak Power', 'L3 Cache', 'Memory Support', 'Integrated Graphics'.
+- **CPU**: 'Architecture', 'Cores', 'Threads', 'Base Clock (GHz)', 'Boost Clock (GHz)', 'Socket', 'TDP / Peak Power', 'L3 Cache', 'Memory Support', 'Integrated Graphics', and verified 'Thermal Solution (PIB)' when available.
 - **GPU**: 'Chipset', 'VRAM Capacity', 'Memory Type', 'TGP / Power Draw (W)', 'Length (Depth) (mm)' (Integer), 'Slot Thickness' (Integer), 'Interface', 'CUDA Cores' or 'Stream Processors'.
 - **Motherboard**: 'Chipset', 'Socket', 'Form Factor' (MANDATORY: MUST be exactly one of: eatx, atx, matx, itx), 'RAM Type', 'SATA Slots' (Integer), 'NVMe Slots' (Integer), 'Back-Connect Support', 'Connectivity', 'Memory Slots', 'Memory Type'.
 - **RAM**: 'Generation', 'Capacity', 'Speed', 'CAS Latency', 'Stick Count'.
@@ -163,6 +165,18 @@ Output strictly the JSON object matching the schema.`;
     }
 
     logDebug(`Successfully extracted and formatted details for: ${input.partName}`);
+    if (response.output.category === 'CPU' && response.output.brand.toLowerCase() === 'amd' &&
+        /^(?:AMD\s+)?Ryzen(?:™)?\s+7\s+9850X3D\b/i.test(response.output.partName.trim())) {
+      // AMD's official product specification lists the in-box thermal solution as not included.
+      return {
+        ...response.output,
+        specifications: [
+          ...response.output.specifications.filter(({ key }: { key: string }) =>
+            !/^(?:thermal solution(?: \(pib\))?|included cooler|cooler included|box cooler)$/i.test(key.trim())),
+          { key: 'Thermal Solution (PIB)', value: 'Not Included' },
+        ],
+      };
+    }
     return response.output;
 
   } catch (error: any) {

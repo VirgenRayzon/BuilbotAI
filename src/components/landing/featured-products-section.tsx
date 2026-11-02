@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Button, Paper } from '@mantine/core';
+import { Badge, Box, Button, Card, Group, Paper, Stack, Text } from '@mantine/core';
 import { ArrowRight } from 'lucide-react';
 import { z } from 'zod';
 import { OptimizedImage } from '@/components/ui/optimized-image';
@@ -61,24 +61,59 @@ export function FeaturedProductsSection() {
 
         {status === 'ready' && products.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 gap-4 md:gap-8 min-[440px]:grid-cols-2 lg:grid-cols-4">
-              {products.map(product => (
-                <Paper key={product.productId} withBorder radius="lg" shadow="sm" p={0} className="group h-full overflow-hidden border-slate-200 bg-white/85 transition-colors hover:border-cyan-500/50 dark:border-white/10 dark:bg-[#111722]/90">
-                  <Link href={`/parts/${product.productId}`} aria-label={`View ${product.name}`} className="flex h-full flex-col">
-                    <div className="relative aspect-[4/3] overflow-hidden border-b border-slate-200 bg-white dark:border-white/10">
-                      <OptimizedImage src={product.imageUrl || '/placeholder-part.png'} alt={product.name} fill sizes="(max-width: 439px) 100vw, (max-width: 1023px) 50vw, 25vw" className="object-contain p-3 transition-transform duration-300 group-hover:scale-105" />
-                    </div>
-                    <div className="flex flex-1 flex-col p-4">
-                      <div className="flex items-center justify-between gap-2 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                        <span className="truncate">{product.brand || product.category}</span>
-                        <span className={product.inStock ? 'shrink-0 text-emerald-600 dark:text-emerald-400' : 'shrink-0 text-slate-500 dark:text-slate-400'}>{product.inStock ? 'In stock' : 'Out of stock'}</span>
-                      </div>
-                      <h3 className="mt-3 line-clamp-2 min-h-10 text-sm font-semibold leading-snug text-slate-900 group-hover:text-cyan-700 dark:text-slate-100 dark:group-hover:text-cyan-300">{product.name}</h3>
-                      <p className="mt-auto pt-4 font-mono text-lg font-bold text-slate-900 dark:text-slate-100">{formatCurrency(product.price)}</p>
-                    </div>
-                  </Link>
-                </Paper>
-              ))}
+            <div className="grid grid-cols-1 gap-3 md:gap-4 min-[440px]:grid-cols-2 lg:grid-cols-4">
+              {products.map(product => {
+                const detailHref = `/parts/${product.productId}`;
+
+                return (
+                  <Card
+                    key={product.productId}
+                    withBorder
+                    radius="lg"
+                    padding={0}
+                    className="group flex h-full flex-col justify-between overflow-hidden border-slate-200/80 bg-white/85 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-cyan-500/40 dark:border-white/10 dark:bg-[#111722] dark:hover:border-cyan-500/40"
+                  >
+                    <Stack gap={6} className="px-3 pb-2 pt-3">
+                      <Group justify="space-between" align="center" wrap="nowrap">
+                        <Badge size="xs" variant="light" color="gray" radius="sm" className="max-w-[55%] uppercase tracking-wide">
+                          <span className="block truncate">{product.brand || product.category}</span>
+                        </Badge>
+                        <Badge size="xs" variant="light" color={product.inStock ? 'teal' : 'red'} radius="sm">
+                          {product.inStock ? 'Available' : 'Out of stock'}
+                        </Badge>
+                      </Group>
+                      <Text component="h3" size="sm" fw={600} lineClamp={2} className="min-h-[2.5rem] leading-snug transition-colors group-hover:text-cyan-600 dark:group-hover:text-cyan-400">
+                        {product.name}
+                      </Text>
+                    </Stack>
+
+                    <Link href={detailHref} aria-label={`View ${product.name}`}>
+                      <Box className="relative aspect-[4/3] w-full overflow-hidden border-y border-slate-200/70 bg-pure-white dark:border-white/10">
+                        <OptimizedImage src={product.imageUrl || '/placeholder-part.png'} alt={product.name} fill sizes="(max-width: 439px) 100vw, (max-width: 1023px) 50vw, 25vw" className="object-contain p-2" />
+                      </Box>
+                    </Link>
+
+                    <Stack gap="xs" className="px-3 pb-3 pt-3">
+                      <Stack gap={0}>
+                        <Text size="xs" c="dimmed" tt="uppercase" fw={600} className="text-[10px] tracking-wider">Price</Text>
+                        <Text size="lg" fw={700} className="font-mono leading-none text-slate-900 dark:text-slate-100">{formatCurrency(product.price)}</Text>
+                      </Stack>
+                      <Button
+                        component={Link}
+                        href={detailHref}
+                        fullWidth
+                        radius="md"
+                        size="sm"
+                        variant="light"
+                        color="cyan"
+                        rightSection={<ArrowRight size={15} />}
+                      >
+                        View product
+                      </Button>
+                    </Stack>
+                  </Card>
+                );
+              })}
             </div>
             <div className="mt-12 flex justify-center">
               <Button
@@ -100,7 +135,7 @@ export function FeaturedProductsSection() {
             <Link href="/parts" className="mt-2 inline-flex min-h-11 items-center font-semibold text-cyan-700 dark:text-cyan-300">Browse the catalog <ArrowRight size={16} className="ml-2" /></Link>
           </Paper>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:gap-8 min-[440px]:grid-cols-2 lg:grid-cols-4" aria-label="Loading featured products" aria-busy="true">
+          <div className="grid grid-cols-1 gap-3 md:gap-4 min-[440px]:grid-cols-2 lg:grid-cols-4" aria-label="Loading featured products" aria-busy="true">
             {Array.from({ length: 12 }, (_, index) => <div key={index} className="aspect-[3/4] animate-pulse rounded-lg border border-slate-200 bg-slate-100/80 dark:border-white/10 dark:bg-[#141a23]/90" />)}
           </div>
         )}

@@ -1,13 +1,19 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
-import { ActionIcon, Badge, Button, Group, Modal, Paper, ScrollArea, Text, TextInput, ThemeIcon, Title, Tooltip } from "@mantine/core";
-import { ShieldCheck, ShoppingCart, Sparkles, Zap } from "lucide-react";
-import type { ComponentData } from "@/lib/types";
+import { ActionIcon, Badge, Button, Group, Modal, Paper, ScrollArea, Stack, Text, TextInput, ThemeIcon, Title, Tooltip } from "@mantine/core";
+import { CreditCard, Lock, ShieldCheck, ShoppingCart, Smartphone, Sparkles, Truck, Zap } from "lucide-react";
+import type { ComponentData, PaymentMethod } from "@/lib/types";
 import { formatCurrency, cn } from "@/lib/utils";
 import { useSiteSettings } from "@/context/site-settings-context";
 import { useEcommerce, type EcommerceSubComponent } from "@/context/ecommerce-context";
 import { ReserveBuildButton } from "@/components/build/reserve-build-button";
+import { PAYMENT_METHODS_LIST } from "@/lib/payment-methods";
+import type { CheckoutOrderResult } from "@/app/checkout-actions";
+import {
+  SimulatedGcashModal,
+  type SimulatedGcashModalOrderInfo,
+} from "@/components/ecommerce/simulated-gcash-modal";
 
 const reviewCategories = ["Motherboard", "CPU", "GPU", "RAM", "Storage", "PSU", "Cooler", "Case", "Monitor", "Keyboard", "Mouse", "Headset"];
 
@@ -30,8 +36,11 @@ interface BuildActionFooterProps {
   isCheckingOut: boolean;
   analysis?: unknown;
   onAnalyze: () => void;
-  onReserve: (onSuccess: () => void) => void;
+  onReserve: (onSuccess: (result?: CheckoutOrderResult) => void, paymentMethod?: PaymentMethod) => void;
   onAddPrebuilt: (name: string) => void;
+  editingPrebuiltName?: string;
+  onUpdatePrebuilt?: () => void | Promise<void>;
+  isUpdatingPrebuilt?: boolean;
   onIncompleteAction: () => void;
   onSignIn: () => void;
   showMissingValidation: boolean;
@@ -42,10 +51,14 @@ export function BuildActionFooter({
   openReservation = false,
   isAiPending, isCheckingOut, analysis,
   onAnalyze, onReserve, onAddPrebuilt, onIncompleteAction, onSignIn, showMissingValidation,
+  editingPrebuiltName, onUpdatePrebuilt, isUpdatingPrebuilt = false,
 }: BuildActionFooterProps) {
   const [reserveOpen, setReserveOpen] = useState(false);
   const [nameOpen, setNameOpen] = useState(false);
   const [prebuiltName, setPrebuiltName] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
+  const [pendingGcashOrder, setPendingGcashOrder] =
+    useState<SimulatedGcashModalOrderInfo | null>(null);
   const { isEcommerceMode } = useSiteSettings();
   const { addToCart, buyNow } = useEcommerce();
 
@@ -65,20 +78,27 @@ export function BuildActionFooter({
   };
 
   const buildEcommercePayload = () => {
-    const components: EcommerceSubComponent[] = reviewCategories.flatMap((category) => {
-      const value = build[category];
-      const parts = Array.isArray(value) ? value : value ? [value] : [];
-      return parts.map((part) => ({
-        category,
-        name: part.model,
-        price: part.price || 0,
-        imageUrl: part.image || part.images?.[0] || "/placeholder-part.png",
-      }));
-    });
-
     const cpuPart = build.CPU && !Array.isArray(build.CPU) ? build.CPU : null;
     const gpuPart = build.GPU && !Array.isArray(build.GPU) ? build.GPU : null;
     const casePart = build.Case && !Array.isArray(build.Case) ? build.Case : null;
+
+    const components: EcommerceSubComponent[] = reviewCategories.flatMap((category) => {
+      const value = build[category];
+      const parts = Array.isArray(value) ? value : value ? [value] : [];
+      return parts.map((part) => {
+        let partImg = part.image || part.images?.[0] || (part as any).imageUrl;
+        if (part.isIntegratedGraphics && (!partImg || partImg.startsWith("/placeholder"))) {
+          partImg = cpuPart?.image || cpuPart?.images?.[0] || partImg;
+        }
+        return {
+          id: part.id,
+          category,
+          name: part.model,
+          price: part.price || 0,
+          imageUrl: partImg || "/placeholder-part.png",
+        };
+      });
+    });
 
     const cpuModel = cpuPart?.model || "Custom CPU";
     const gpuModel = gpuPart?.model || "Custom GPU";
@@ -124,6 +144,11 @@ export function BuildActionFooter({
           Select the missing parts to continue: {missingCategories.join(", ")}.
         </Text>
       )}
+      {isManagerMode && editingPrebuiltName && (
+        <Text size="xs" className="px-1 font-semibold text-cyan-700 dark:text-cyan-300">
+          Editing {editingPrebuiltName}
+        </Text>
+      )}
       {isManagerMode ? (
         <>
           <Button
@@ -132,14 +157,16 @@ export function BuildActionFooter({
             radius="md"
             color="cyan"
             leftSection={<Sparkles size={17} />}
-            disabled={isAiPending}
-            aria-disabled={!complete || isAiPending}
-            title={!complete ? "Select every highlighted core part before adding this prebuilt." : undefined}
-            loading={isAiPending}
-            onClick={() => complete ? setNameOpen(true) : onIncompleteAction()}
+            disabled={isAiPending || isUpdatingPrebuilt}
+            aria-disabled={!complete || isAiPending || isUpdatingPrebuilt}
+            title={!complete ? "Select every highlighted core part before saving this prebuilt." : undefined}
+            loading={isAiPending || isUpdatingPrebuilt}
+            onClick={() => complete
+              ? editingPrebuiltName ? void onUpdatePrebuilt?.() : setNameOpen(true)
+              : onIncompleteAction()}
             className="font-headline font-bold text-xs uppercase tracking-wider shadow-sm shadow-cyan-500/20"
           >
-            Add New Prebuilt
+            {editingPrebuiltName ? 'Update Prebuilt' : 'Add New Prebuilt'}
           </Button>
         </>
       ) : (
@@ -273,10 +300,10 @@ export function BuildActionFooter({
             </ThemeIcon>
             <div>
               <Title order={4} className="font-headline text-base font-bold text-slate-900 dark:text-white uppercase tracking-tight">
-                Confirm Reservation
+                Confirm Reservation & Payment
               </Title>
               <Text size="xs" c="dimmed">
-                Review your hardware setup before locking in your reservation.
+                Review your hardware setup and select a payment method.
               </Text>
             </div>
           </Group>
@@ -291,7 +318,7 @@ export function BuildActionFooter({
               <span>Price</span>
             </div>
             <ScrollArea.Autosize
-              mah={260}
+              mah={200}
               scrollbars="y"
               type="auto"
               offsetScrollbars
@@ -317,7 +344,7 @@ export function BuildActionFooter({
                   return parts.map((part, index) => (
                     <div
                       key={`${category}-${index}`}
-                      className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-slate-100/60 dark:hover:bg-white/[0.02] transition-colors w-full min-w-0"
+                      className="flex items-center justify-between gap-3 px-4 py-2 hover:bg-slate-100/60 dark:hover:bg-white/[0.02] transition-colors w-full min-w-0"
                     >
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <Badge size="xs" variant="light" color="cyan" radius="sm" fw={700} className="shrink-0 uppercase text-[9px] font-mono tracking-wider">
@@ -337,15 +364,81 @@ export function BuildActionFooter({
             </ScrollArea.Autosize>
           </Paper>
 
+          {/* Payment Method Selector */}
+          <div className="space-y-2">
+            <Text size="xs" fw={800} tt="uppercase" className="tracking-wider text-slate-500 dark:text-slate-400">
+              Select Payment Method
+            </Text>
+            <Stack gap="xs">
+              {PAYMENT_METHODS_LIST.map((pm) => {
+                const active = paymentMethod === pm.id;
+                const Icon =
+                  pm.id === "cod"
+                    ? Truck
+                    : pm.id === "gcash_simulated"
+                      ? Smartphone
+                      : CreditCard;
+                return (
+                  <Paper
+                    key={pm.id}
+                    withBorder
+                    radius="md"
+                    p="xs"
+                    onClick={() => {
+                      if (pm.enabled) setPaymentMethod(pm.id);
+                    }}
+                    className={cn(
+                      "transition-all",
+                      !pm.enabled
+                        ? "opacity-55 cursor-not-allowed bg-slate-100/50 dark:bg-white/[0.01]"
+                        : active
+                          ? "cursor-pointer bg-cyan-500/10 border-cyan-500"
+                          : "cursor-pointer bg-slate-50/60 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 hover:border-cyan-500/40"
+                    )}
+                  >
+                    <Group justify="space-between" wrap="nowrap">
+                      <Group gap="xs" wrap="nowrap">
+                        <ThemeIcon
+                          size="sm"
+                          radius="md"
+                          color={!pm.enabled ? "gray" : active ? "cyan" : pm.id === "gcash_simulated" ? "blue" : "teal"}
+                          variant={active ? "filled" : "light"}
+                        >
+                          {pm.enabled ? <Icon size={13} /> : <Lock size={12} />}
+                        </ThemeIcon>
+                        <div>
+                          <Text size="xs" fw={700}>
+                            {pm.label}
+                          </Text>
+                          <Text size="10px" c="dimmed" lineClamp={1}>
+                            {pm.description}
+                          </Text>
+                        </div>
+                      </Group>
+                      <Badge
+                        size="xs"
+                        variant="light"
+                        color={!pm.enabled ? "gray" : pm.isSimulated ? "amber" : "teal"}
+                        className="text-[9px] shrink-0"
+                      >
+                        {pm.badgeText}
+                      </Badge>
+                    </Group>
+                  </Paper>
+                );
+              })}
+            </Stack>
+          </div>
+
           {/* Pricing & Reservation Summary */}
           <Paper withBorder radius="md" p="md" className="bg-slate-50/80 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 shadow-xs">
             <Group justify="space-between" align="center">
               <div>
                 <Text size="xs" fw={700} className="font-headline uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Total Reservation Value
+                  Total Order Value
                 </Text>
                 <Text size="xs" c="dimmed">
-                  {selectedParts} parts verified for reservation
+                  {selectedParts} parts verified • {paymentMethod === "gcash_simulated" ? "GCash" : "Cash on Delivery"}
                 </Text>
               </div>
               <Text fw={900} className="font-headline text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
@@ -353,10 +446,6 @@ export function BuildActionFooter({
               </Text>
             </Group>
           </Paper>
-
-          <Text size="xs" c="dimmed" className="leading-relaxed">
-            Reservations hold selected inventory for pickup or store checkout. No immediate online charge is processed until verified at the counter.
-          </Text>
 
           <Group justify="flex-end" gap="sm" mt="md" pt="sm" className="border-t border-slate-100 dark:border-white/5">
             <Button
@@ -369,19 +458,43 @@ export function BuildActionFooter({
               Cancel
             </Button>
             <Button
-              color="teal"
+              color={paymentMethod === "gcash_simulated" ? "blue" : "teal"}
               size="sm"
               radius="md"
               loading={isCheckingOut}
               leftSection={<ShieldCheck size={16} />}
-              onClick={() => onReserve(() => setReserveOpen(false))}
+              onClick={() =>
+                onReserve((result) => {
+                  setReserveOpen(false);
+                  if (paymentMethod === "gcash_simulated" && result?.orderId) {
+                    setPendingGcashOrder({
+                      orderId: result.orderId,
+                      orderNumber: result.orderNumber || result.orderId.slice(0, 8),
+                      totalPrice: result.totalPrice ?? totalPrice,
+                      paymentReference: result.paymentReference,
+                      itemCount: selectedParts,
+                    });
+                  }
+                }, paymentMethod)
+              }
               className="font-headline font-bold text-xs uppercase tracking-wider shadow-md shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.99] transition-all"
             >
-              Confirm Reservation
+              {paymentMethod === "gcash_simulated"
+                ? "Confirm & Open GCash"
+                : "Confirm Reservation"}
             </Button>
           </Group>
         </div>
       </Modal>
+
+      <SimulatedGcashModal
+        opened={Boolean(pendingGcashOrder)}
+        onClose={() => setPendingGcashOrder(null)}
+        order={pendingGcashOrder}
+        onOutcomeResolved={() => {
+          setPendingGcashOrder(null);
+        }}
+      />
     </div>
   );
 }

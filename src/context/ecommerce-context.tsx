@@ -1,7 +1,11 @@
-"use client";
+﻿"use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  getNextFulfillmentStage,
+  type FulfillmentStage,
+} from "@/lib/order-fulfillment";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { useFirestore } from "@/firebase";
 import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
@@ -46,6 +50,8 @@ export function isInvalidPlaceholderUrl(url?: string): boolean {
 }
 
 export interface EcommerceSubComponent {
+  id?: string;
+  productId?: string;
   category: string;
   name: string;
   price: number;
@@ -54,6 +60,7 @@ export interface EcommerceSubComponent {
 
 export interface EcommerceCartItem {
   id: string;
+  productId?: string;
   kind: EcommerceItemKind;
   name: string;
   price: number;
@@ -68,13 +75,17 @@ export interface EcommerceCartItem {
 }
 
 export type ShippingMethodId = "standard_courier" | "sameday_express" | "store_pickup";
-export type PaymentMethodId = "gcash" | "maya" | "qrph" | "card" | "bank_transfer" | "cod";
-export type FulfillmentStage =
-  | "order_placed"
-  | "payment_verified"
-  | "assembling_testing"
-  | "out_for_delivery"
-  | "delivered";
+export type PaymentMethodId =
+  | "cod"
+  | "gcash_simulated"
+  | "paymongo_simulated"
+  | "card_simulated"
+  | "gcash"
+  | "maya"
+  | "qrph"
+  | "card"
+  | "bank_transfer";
+export type { FulfillmentStage } from "@/lib/order-fulfillment";
 
 export interface ShippingAddress {
   fullName: string;
@@ -90,6 +101,7 @@ export interface ShippingAddress {
 
 export interface MockEcommerceOrder {
   id: string;
+  firestoreOrderId?: string;
   orderNumber: string;
   createdAt: string;
   items: EcommerceCartItem[];
@@ -101,7 +113,16 @@ export interface MockEcommerceOrder {
   paymentMethod: PaymentMethodId;
   paymentLabel: string;
   paymentReference: string;
-  paymentStatus: "Paid (Verified)" | "Pending COD" | "Awaiting Bank Transfer";
+  paymentStatus:
+    | "Paid (Verified)"
+    | "Paid (GCash)"
+    | "Paid (PayMongo)"
+    | "Payment Pending"
+    | "Payment Failed"
+    | "Payment Cancelled"
+    | "Unpaid (Pay on Delivery)"
+    | "Pending COD"
+    | "Awaiting Bank Transfer";
   installmentPlan?: string;
   fulfillmentStage: FulfillmentStage;
   includeCrateProtection: boolean;
@@ -131,7 +152,16 @@ interface EcommerceContextType {
   updateQuantity: (id: string, quantity: number) => void;
   toggleAssemblyOption: (id: string) => void;
   clearCart: () => void;
-  placeMockOrder: (payload: Omit<MockEcommerceOrder, "id" | "orderNumber" | "createdAt" | "trackingNumber" | "paymentReference">) => MockEcommerceOrder;
+  placeMockOrder: (
+    payload: Omit<MockEcommerceOrder, "id" | "orderNumber" | "createdAt" | "trackingNumber" | "paymentReference"> & {
+      id?: string;
+      firestoreOrderId?: string;
+      orderNumber?: string;
+      createdAt?: string;
+      trackingNumber?: string;
+      paymentReference?: string;
+    }
+  ) => MockEcommerceOrder;
   advanceOrderStage: (orderId: string) => void;
   resetDemoOrders: () => void;
 }
@@ -179,28 +209,20 @@ const DEFAULT_DEMO_ORDERS: MockEcommerceOrder[] = [
       postalCode: "1109",
       notes: "In-Store Pickup at Netcodex Computer Center (Monday – Sunday, 10:00 AM – 7:00 PM)",
     },
-    paymentMethod: "gcash",
-    paymentLabel: "GCash via QRPh Instant Pay",
-    paymentReference: "GCASH-7749201842",
-    paymentStatus: "Paid (Verified)",
+    paymentMethod: "gcash_simulated",
+    paymentLabel: "GCash",
+    paymentReference: "GCASH-20261101-774920",
+    paymentStatus: "Paid (GCash)",
     fulfillmentStage: "assembling_testing",
     includeCrateProtection: false,
-    voucherCode: "NETCODEX500",
+    voucherCode: "BUILDBOT1000",
     subtotal: 94500,
     shippingFee: 0,
     protectionFee: 0,
-    discountAmount: 500,
-    vatAmount: 10071.43,
-    total: 94000,
+    discountAmount: 1000,
+    vatAmount: 10017.86,
+    total: 93500,
   },
-];
-
-const STAGE_ORDER: FulfillmentStage[] = [
-  "order_placed",
-  "payment_verified",
-  "assembling_testing",
-  "out_for_delivery",
-  "delivered",
 ];
 
 const EcommerceContext = createContext<EcommerceContextType | undefined>(undefined);
@@ -240,7 +262,24 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
       if (savedOrders) {
         const parsedOrders = JSON.parse(savedOrders);
         if (Array.isArray(parsedOrders) && parsedOrders.length > 0) {
-          setOrders(parsedOrders);
+          const sanitizedOrders = parsedOrders.map((o) => ({
+            ...o,
+            courierName: o.courierName
+              ? o.courierName
+                  .replace(/[\u7ab6\uff62\u30fb\u9244]+/g, " — ")
+                  .replace(/Center\s*\?\s*Cubao/g, "Center — Cubao")
+              : o.courierName,
+            estimatedDelivery: o.estimatedDelivery
+              ? o.estimatedDelivery
+                  .replace(/[\u7ab6\uff62\u30fb\u9244]+/g, "–")
+                  .replace(/Ready in 2\?4 Hours/g, "Ready in 2–4 Hours")
+                  .replace(/3\?5 Business Days/g, "3–5 Business Days")
+              : o.estimatedDelivery,
+            paymentLabel: o.paymentLabel
+              ? o.paymentLabel.replace(/\s*\(Simulated[^)]*\)/gi, "")
+              : o.paymentLabel,
+          }));
+          setOrders(sanitizedOrders);
         }
       }
     } catch (error) {
@@ -502,7 +541,14 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
       payload: Omit<
         MockEcommerceOrder,
         "id" | "orderNumber" | "createdAt" | "trackingNumber" | "paymentReference"
-      >
+      > & {
+        id?: string;
+        firestoreOrderId?: string;
+        orderNumber?: string;
+        createdAt?: string;
+        trackingNumber?: string;
+        paymentReference?: string;
+      }
     ): MockEcommerceOrder => {
       const randomSix = Math.floor(100000 + Math.random() * 900000);
       const courierPrefix =
@@ -515,25 +561,25 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
 
       const newOrder: MockEcommerceOrder = {
         ...payload,
-        id: `ec-order-${Date.now()}`,
-        orderNumber: `NCX-EC-${randomSix}`,
-        createdAt: new Date().toISOString(),
-        trackingNumber: `${courierPrefix}-${Math.floor(1000000 + Math.random() * 9000000)}`,
-        paymentReference: `${payPrefix}-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+        id: payload.id || `ec-order-${Date.now()}`,
+        firestoreOrderId: payload.firestoreOrderId,
+        orderNumber: payload.orderNumber || `BB-${randomSix}`,
+        createdAt: payload.createdAt || new Date().toISOString(),
+        trackingNumber:
+          payload.trackingNumber ||
+          `${courierPrefix}-${Math.floor(1000000 + Math.random() * 9000000)}`,
+        paymentReference:
+          payload.paymentReference ||
+          `${payPrefix}-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
       };
 
-      setOrders((prev) => [newOrder, ...prev]);
+      setOrders((prev) => [newOrder, ...prev.filter((o) => o.id !== newOrder.id)]);
       setCart([]);
       setActiveReceiptOrder(newOrder);
 
-      toast({
-        title: `Order ${newOrder.orderNumber} Confirmed!`,
-        description: `Simulated Netcodex checkout complete via ${newOrder.paymentLabel}.`,
-      });
-
       return newOrder;
     },
-    [toast]
+    []
   );
 
   const advanceOrderStage = useCallback(
@@ -541,13 +587,14 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
       setOrders((prev) =>
         prev.map((order) => {
           if (order.id !== orderId) return order;
-          const idx = STAGE_ORDER.indexOf(order.fulfillmentStage);
-          const nextStage = STAGE_ORDER[(idx + 1) % STAGE_ORDER.length];
+          const nextStage = getNextFulfillmentStage(order);
           return {
             ...order,
             fulfillmentStage: nextStage,
             paymentStatus:
-              nextStage === "delivered" ? "Paid (Verified)" : order.paymentStatus,
+              order.paymentMethod === "cod" && nextStage === "payment_verified"
+                ? "Paid (Verified)"
+                : order.paymentStatus,
           };
         })
       );

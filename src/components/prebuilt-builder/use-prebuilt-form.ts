@@ -18,14 +18,14 @@ export const prebuiltFormSchema = z.object({
     description: z.string().optional(),
     price: z.coerce.number().min(0, "Price must be a positive number."),
     imageUrl: z.string().optional().or(z.literal("")),
-    cpu: z.string().optional(),
-    gpu: z.string().optional(),
-    motherboard: z.string().optional(),
-    ram: z.array(z.string()).min(1, "At least one RAM module is required."),
-    storage: z.array(z.string()).min(1, "At least one storage drive is required."),
-    psu: z.string().optional(),
-    case: z.string().optional(),
-    cooler: z.string().optional(),
+    cpu: z.string().min(1, "CPU is required."),
+    gpu: z.string().min(1, "GPU is required."),
+    motherboard: z.string().min(1, "Motherboard is required."),
+    ram: z.array(z.string().min(1)).min(1, "At least one RAM module is required."),
+    storage: z.array(z.string().min(1)).min(1, "At least one storage drive is required."),
+    psu: z.string().min(1, "PSU is required."),
+    case: z.string().min(1, "Case is required."),
+    cooler: z.string().min(1, "Cooler is required."),
 });
 
 export type PrebuiltBuilderAddFormSchema = z.infer<typeof prebuiltFormSchema>;

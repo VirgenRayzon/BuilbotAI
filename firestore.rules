@@ -73,6 +73,16 @@ service cloud.firestore {
         isManager()
       );
       allow delete: if isSuperAdmin();
+
+      match /activity/{eventId} {
+        allow read: if request.auth != null && (get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid || isManager());
+        allow write: if isManager();
+      }
+
+      match /assembly/{rigId} {
+        allow read: if request.auth != null && (get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid || isManager());
+        allow write: if isManager();
+      }
     }
 
     match /notifications/{notifId} {

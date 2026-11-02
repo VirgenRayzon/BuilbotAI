@@ -20,7 +20,7 @@ import {
     Mouse,
     Headphones,
 } from "lucide-react";
-import type { ComponentData, Part, Resolution, WorkloadType } from "@/lib/types";
+import type { ComponentData, Part, PrebuiltSystem, Resolution, WorkloadType } from "@/lib/types";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
 import { PartCard } from "@/components/part-card";
 import { useInventoryParts } from "@/firebase/firestore/use-inventory-parts";
@@ -37,17 +37,20 @@ import { useTheme } from "@/context/theme-provider";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
 import { motion } from "framer-motion";
 
-import { addPrebuiltSystem } from "@/firebase/database";
+import { addPrebuiltSystem, updatePrebuiltSystem } from "@/firebase/database";
 import type { PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
+import type { AddPrebuiltFormSchema } from '@/components/add-prebuilt-dialog';
+import { prebuiltProductSchema } from '@/lib/product-schemas';
 import { checkCompatibility } from "@/lib/compatibility";
 import { isIncludedIntegratedGpu, syncIntegratedGraphics } from '@/lib/integrated-graphics';
-import { logAdminAction } from "@/app/actions";
+import { includedCpuCoolerName } from '@/lib/included-cpu-cooler';
+import { clearCatalogCache, logAdminAction } from "@/app/actions";
 import { useLiveBuildRecommendations } from '@/hooks/use-live-build-recommendations';
 import { prioritizeRecommendedParts } from '@/lib/live-build-recommendations';
 import { useSiteSettings } from '@/context/site-settings-context';
 
 import { RouteGuard } from "@/components/auth/route-guard";
-import { usePrebuiltBuilderImport } from "@/app/admin/hooks/use-prebuilt-builder-import";
+import { PREBUILT_EDIT_SESSION_KEY, usePrebuiltBuilderImport } from "@/app/admin/hooks/use-prebuilt-builder-import";
 import { AdminSidebar, SidebarInset, SidebarProvider } from "@/app/admin/components/admin-sidebar";
 import { AdminTopbar } from "@/app/admin/components/admin-topbar";
 
@@ -99,12 +102,14 @@ export default function PrebuiltBuilderPage() {
         Case: null, Motherboard: null, CPU: null, GPU: null, RAM: [], Storage: [], PSU: null, Cooler: null,
         Monitor: null, Keyboard: null, Mouse: null, Headset: null,
     });
+    const [editingPrebuilt, setEditingPrebuilt] = useState<PrebuiltSystem | null>(null);
+    const [isUpdatingPrebuilt, setIsUpdatingPrebuilt] = useState(false);
     const [resolution, setResolution] = useState<Resolution>('1440p');
     const [workload, setWorkload] = useState<WorkloadType>('AAA');
     const [analysis, setAnalysis] = useState<any>(null);
     const [isLoaded, setIsLoaded] = useState(false);
 
-    usePrebuiltBuilderImport(allParts, isLoaded, setBuild);
+    usePrebuiltBuilderImport(allParts, isLoaded, setBuild, setEditingPrebuilt);
 
     // Persistence
     useEffect(() => {
@@ -136,6 +141,15 @@ export default function PrebuiltBuilderPage() {
             if (!updatedBuild['CPU'] && isIncludedStockCooler(updatedBuild['Cooler'] as ComponentData | null)) {
                 updatedBuild['Cooler'] = null;
                 changed = true;
+            }
+
+            const selectedCpu = updatedBuild['CPU'] as ComponentData | null;
+            if (selectedCpu && isIncludedStockCooler(updatedBuild['Cooler'] as ComponentData | null)) {
+                const catalogCpu = allParts.find(part => part.category === 'CPU' && part.id === selectedCpu.id);
+                if (catalogCpu && !includedCpuCoolerName(catalogCpu)) {
+                    updatedBuild['Cooler'] = null;
+                    changed = true;
+                }
             }
 
             // Check single-slot categories
@@ -181,6 +195,8 @@ export default function PrebuiltBuilderPage() {
     }, [build, isLoaded]);
 
     const handleClearBuild = () => {
+        sessionStorage.removeItem(PREBUILT_EDIT_SESSION_KEY);
+        setEditingPrebuilt(null);
         setBuild({
             Case: null, Motherboard: null, CPU: null, GPU: null, RAM: [], Storage: [], PSU: null, Cooler: null,
             Monitor: null, Keyboard: null, Mouse: null, Headset: null,
@@ -407,13 +423,8 @@ export default function PrebuiltBuilderPage() {
 
             // Handle CPU stock cooler logic
             if (category === 'CPU') {
-                const isBoxed = (part as any).packageType?.toUpperCase() === 'BOX' ||
-                    (part as any).specifications?.['Package Type']?.toString().toUpperCase() === 'BOX';
-                if (isBoxed) {
-                    const isIntel = part.name.toLowerCase().includes('intel');
-                    const isAmd = part.name.toLowerCase().includes('amd');
-                    const coolerModel = isIntel ? "Intel Laminar RM1 CPU Cooler" : isAmd ? "AMD Wraith MAX CPU Cooler with RGB LED" : "Stock Cooler";
-
+                const coolerModel = includedCpuCoolerName(part);
+                if (coolerModel) {
                     next['Cooler'] = {
                         id: 'included-stock-cooler',
                         model: coolerModel,
@@ -549,6 +560,48 @@ export default function PrebuiltBuilderPage() {
         return saved;
     };
 
+    const handleUpdatePrebuilt = async () => {
+        if (!firestore || !editingPrebuilt || isUpdatingPrebuilt) return;
+        const selection = (category: string) => (build[category] as ComponentData | null)?.id || '';
+        const selections = (category: string) => (build[category] as ComponentData[]).map(part => part.id);
+        const data: AddPrebuiltFormSchema = {
+            name: editingPrebuilt.name,
+            tier: editingPrebuilt.tier,
+            description: editingPrebuilt.description || '',
+            price: ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler']
+              .map(category => build[category]).reduce<number>((sum, item) => sum + (Array.isArray(item)
+                ? item.reduce((partSum, part) => partSum + (part.price || 0), 0)
+                : item?.price || 0), 0),
+            imageUrl: editingPrebuilt.imageUrl,
+            images: editingPrebuilt.images,
+            cpu: selection('CPU'), gpu: selection('GPU'), motherboard: selection('Motherboard'),
+            ram: selections('RAM'), storage: selections('Storage'), psu: selection('PSU'),
+            case: selection('Case'), cooler: selection('Cooler'),
+        };
+        try {
+            prebuiltProductSchema.parse({
+                name: data.name, tier: data.tier, description: data.description, price: data.price,
+                imageUrl: data.imageUrl, images: data.images,
+                components: { cpu: data.cpu, gpu: data.gpu, motherboard: data.motherboard,
+                    ram: data.ram, storage: data.storage, psu: data.psu, case: data.case, cooler: data.cooler },
+            });
+            setIsUpdatingPrebuilt(true);
+            await updatePrebuiltSystem(firestore, editingPrebuilt.id, data);
+            await Promise.allSettled([
+                logAdminAction('Prebuilt Builder - Update', `${data.name} updated from builder`, data),
+                clearCatalogCache(),
+            ]);
+            toast({ title: 'Prebuilt updated', description: `${data.name} now uses the selected parts.` });
+            sessionStorage.removeItem(PREBUILT_EDIT_SESSION_KEY);
+            setEditingPrebuilt(null);
+            router.push(`/pre-builts/${editingPrebuilt.id}?from=admin`);
+        } catch (error) {
+            toast({ title: 'Could not update prebuilt', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
+        } finally {
+            setIsUpdatingPrebuilt(false);
+        }
+    };
+
     const isBuilderLoading = partsLoading || authLoading;
 
     return (
@@ -638,6 +691,9 @@ export default function PrebuiltBuilderPage() {
                                         onWorkloadChange={setWorkload}
                                         isManagerMode={true}
                                         onAddPrebuilt={handleAddPrebuilt}
+                                        editingPrebuilt={editingPrebuilt}
+                                        onUpdatePrebuilt={handleUpdatePrebuilt}
+                                        isUpdatingPrebuilt={isUpdatingPrebuilt}
                                         onCategorySelect={(cat) => handleCategoryChange(cat, true)}
                                         categories={categories}
                                         analysis={analysis}

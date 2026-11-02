@@ -1,3 +1,6 @@
+import { getOrderActivity } from '../src/app/admin/order-activity-actions';
+import { reconcileOrderRefundByStaff, refundOrderByStaff } from '../src/app/admin/order-refund-actions';
+import { manageReservation } from '../src/app/admin/reservation-actions';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { before, after, test, mock } from 'node:test';
@@ -15,6 +18,14 @@ import { SKU_CATEGORY_CODES, formatProductId, productUrl, qrUrl, safeProductRetu
 import { assignProductIdentity } from '../src/lib/server/product-identities';
 import { createCatalogProduct, updateCatalogPart } from '../src/app/product-actions';
 import { reservePublicProduct } from '../src/app/public-product-actions';
+import {
+  createCheckoutOrder,
+  resolveSimulatedPayment,
+  switchOrderPaymentToCod,
+  updateOrderPaymentStatusByStaff,
+  updateReservationStatus,
+  updateOrderFulfillmentStageByStaff,
+} from '../src/app/checkout-actions';
 import { getPublicProduct } from '../src/lib/server/public-products';
 import { GET as resolveQR } from '../src/app/api/qr/[token]/route';
 import { inventoryItemPath } from '../src/lib/inventory-paths';
@@ -68,7 +79,7 @@ test('approved SKU codes and PRD sequence formatting', () => {
 
 test('concurrent creates share one sequence and all category formats', async () => {
   const records = await Promise.all(Object.entries(SKU_CATEGORY_CODES).map(([category, code]) => createCatalogProduct(request(`Concurrent ${code}`, category))));
-  const system = await createCatalogProduct({ ...request('Concurrent PC'), kind: 'prebuilt', payload: { name: 'Concurrent PC', price: 800, imageUrl: '', tier: 'Entry', components: { ram: [], storage: [] } } });
+  const system = await createCatalogProduct({ ...request('Concurrent PC'), kind: 'prebuilt', payload: { name: 'Concurrent PC', price: 800, imageUrl: '', tier: 'Entry', components: { cpu: records[0].id, gpu: records[1].id, motherboard: records[2].id, ram: [records[3].id], storage: [records[4].id], psu: records[5].id, case: records[6].id, cooler: records[7].id } } });
   records.push(system);
   assert.equal(new Set(records.map(p => p.productId)).size, 13);
   assert.equal(new Set(records.map(p => p.sku)).size, 13);
@@ -133,7 +144,7 @@ test('QR routes guests/customers to public URL and verified staff to exact inven
     assert.equal((await response.json()).destination, productUrl('part', saved.productId));
     assert.match(response.headers.get('cache-control') || '', /no-store/);
   }
-  assert.equal((await (await call(managerToken)).json()).destination, saved.adminUrl);
+  assert.equal((await (await call(managerToken)).json()).destination, `${saved.adminUrl}&action=stock`);
   assert.equal((await call('forged')).status, 401);
   await db.doc(`inventory/gpu/items/${saved.id}`).update({ isArchived: true });
   assert.equal((await call()).status, 410);
@@ -267,4 +278,329 @@ test('a price change rejects a reservation before stock is deducted', async () =
   const identity = await assignProductIdentity(db, ref, 'part', 'Headset');
   await assert.rejects(reservePublicProduct({ productId: identity.productId, idToken: customerToken, operationId: randomUUID(), expectedPrice: 100 }), /Pricing has changed/);
   assert.equal((await ref.get()).get('stock'), 2);
+});
+
+test('simulated GCash and COD checkout lifecycle, client write protection, and quantity stock restoration', async () => {
+  const ssdRef = db.doc('inventory/storage/items/checkout-ssd');
+  await ssdRef.set({ ...payload('Checkout NVMe SSD', 'Storage'), stock: 5, price: 3500, popularity: 0 });
+  const ssdIdentity = await assignProductIdentity(db, ssdRef, 'part', 'Storage');
+
+  const opId1 = randomUUID();
+  const checkoutInput = {
+    idToken: customerToken,
+    operationId: opId1,
+    cartItems: [
+      {
+        id: 'checkout-ssd',
+        productId: ssdIdentity.productId,
+        kind: 'part' as const,
+        name: 'Checkout NVMe SSD',
+        category: 'Storage',
+        price: 1, // Tampered client price — server must ignore and use authoritative 3500
+        quantity: 2,
+      },
+    ],
+    paymentMethod: 'gcash_simulated' as const,
+    shippingMethod: 'standard_courier' as const,
+    shippingAddress: {
+      fullName: 'Juan Dela Cruz',
+      phone: '09171234567',
+      email: 'customer@qr.test',
+      region: 'Metro Manila (NCR)',
+      city: 'Quezon City',
+      barangay: 'Socorro',
+      streetAddress: '123 Aurora Blvd',
+      postalCode: '1109',
+    },
+    includeCrateProtection: true,
+    voucherCode: 'BUILDBOT1000',
+  };
+
+  const created = await createCheckoutOrder(checkoutInput);
+  assert.equal(created.success, true);
+  assert.ok(created.orderId);
+  assert.equal(created.paymentMethod, 'gcash_simulated');
+  assert.equal(created.paymentStatus, 'pending');
+  assert.match(created.paymentReference || '', /^GCASH-/);
+  // Subtotal 7000 is below the voucher minimum of 20000: 7000 + 250 shipping + 350 protection = 7600
+  assert.equal(created.totalPrice, 7600);
+
+  // Idempotent replay with same operationId does not double deduct stock
+  const replayed = await createCheckoutOrder(checkoutInput);
+  assert.equal(replayed.orderId, created.orderId);
+  assert.equal((await ssdRef.get()).get('stock'), 3);
+  assert.equal((await ssdRef.get()).get('popularity'), 2);
+
+  // Security rules: authenticated customer cannot directly forge paymentStatus: 'paid' from client SDK
+  await signInWithEmailAndPassword(auth, 'customer@qr.test', '12345678');
+  await assert.rejects(
+    updateDoc(doc(clientDb, 'orders', created.orderId!), { paymentStatus: 'paid' }),
+    /permission/i
+  );
+
+  // Simulate failed GCash payment first
+  const failedRes = await resolveSimulatedPayment({
+    orderId: created.orderId!,
+    outcome: 'failed',
+    idToken: customerToken,
+  });
+  assert.equal(failedRes.success, true);
+  assert.equal(failedRes.paymentStatus, 'failed');
+
+  // Retry and simulate successful GCash payment
+  const paidRes = await resolveSimulatedPayment({
+    orderId: created.orderId!,
+    outcome: 'success',
+    idToken: customerToken,
+  });
+  assert.equal(paidRes.success, true);
+  assert.equal(paidRes.paymentStatus, 'paid');
+  assert.ok(paidRes.paidAt);
+
+  // Cannot downgrade an already paid order to failed
+  const downgradeAttempt = await resolveSimulatedPayment({
+    orderId: created.orderId!,
+    outcome: 'failed',
+    idToken: customerToken,
+  });
+  assert.equal(downgradeAttempt.success, false);
+
+  // Create a second order and switch it from failed GCash to COD, then have Manager mark COD as Paid
+  const secondOrder = await createCheckoutOrder({
+    ...checkoutInput,
+    operationId: randomUUID(),
+  });
+  assert.equal(secondOrder.success, true);
+  assert.equal((await ssdRef.get()).get('stock'), 1);
+
+  const switchedCod = await switchOrderPaymentToCod(secondOrder.orderId!, customerToken);
+  assert.equal(switchedCod.success, true);
+  assert.equal(switchedCod.paymentMethod, 'cod');
+  assert.equal(switchedCod.paymentStatus, 'unpaid');
+
+  // Customer cannot call staff payment status update
+  const customerStaffAttempt = await updateOrderPaymentStatusByStaff(
+    secondOrder.orderId!,
+    'paid',
+    customerToken
+  );
+  assert.equal(customerStaffAttempt.success, false);
+
+  // Manager can mark COD order as paid
+  const managerPaid = await updateOrderPaymentStatusByStaff(
+    secondOrder.orderId!,
+    'paid',
+    managerToken, undefined, { operationId: randomUUID(), expectedRevision: (await db.doc(`orders/${secondOrder.orderId}`).get()).get('workflowRevision') }, { received: true, amount: 7600 }
+  );
+  assert.equal(managerPaid.success, true);
+  assert.equal((await db.doc(`orders/${secondOrder.orderId}`).get()).get('paymentStatus'), 'paid');
+
+  // Cancelling the second order (quantity: 2) restores exact stock (+2 -> back to 3)
+  const cancelledRes = await updateReservationStatus(secondOrder.orderId!, 'cancelled', managerToken);
+  assert.equal(cancelledRes.success, true);
+  assert.equal((await ssdRef.get()).get('stock'), 3);
+});
+
+test('order rules require current staff profiles and deny direct staff mutations', async () => {
+  const orderRef = db.doc('orders/phase2-rules');
+  await orderRef.set({ userId: 'customer', status: 'pending', paymentStatus: 'unpaid' });
+  await signInWithEmailAndPassword(auth, 'manager@qr.test', '12345678');
+  const clientRef = doc(clientDb, 'orders/phase2-rules');
+  assert.equal((await getDoc(clientRef)).exists(), true);
+  await assert.rejects(updateDoc(clientRef, { paymentStatus: 'paid' }), /permission/i);
+  await db.doc('users/manager').update({ isManager: false });
+  try {
+    await assert.rejects(getDoc(clientRef), /permission/i);
+  } finally {
+    await db.doc('users/manager').update({ isManager: true });
+  }
+  await signInWithEmailAndPassword(auth, 'customer@qr.test', '12345678');
+  assert.equal((await getDoc(clientRef)).exists(), true);
+  assert.equal((await orderRef.get()).get('paymentStatus'), 'unpaid');
+});
+
+
+test('confirmed stage operations are atomic, retry safe, stale aware and auditable', async () => {
+  const ref = db.doc('orders/phase34-stage');
+  const initial = { id: ref.id, userId: 'customer', userEmail: 'customer@qr.test', items: [],
+    totalPrice: 100, status: 'pending', fulfillmentStage: 'order_placed', paymentMethod: 'cod', paymentStatus: 'unpaid', stockState: 'reserved', createdAt: new Date() };
+  await ref.set(initial);
+  const operation = { operationId: randomUUID(), expectedRevision: 0 };
+  const input = { orderId: ref.id, stage: 'out_for_delivery' as const, idToken: managerToken, operation };
+  const duplicate = await Promise.all([updateOrderFulfillmentStageByStaff(input), updateOrderFulfillmentStageByStaff(input)]);
+  assert.ok(duplicate.every(result => result.success));
+  assert.equal((await ref.get()).get('workflowRevision'), 1);
+  assert.equal((await ref.collection('activity').where('type', '==', 'stage').get()).size, 1);
+  assert.equal((await updateOrderFulfillmentStageByStaff({ ...input, stage: 'delivered' })).success, false);
+  assert.equal((await updateOrderFulfillmentStageByStaff({ ...input, stage: 'delivered', operation: { operationId: randomUUID(), expectedRevision: 1 } })).success, false);
+  assert.equal((await ref.get()).get('workflowRevision'), 1); // unpaid delivery failed without partial history
+  const paymentOperation = { operationId: randomUUID(), expectedRevision: 1 };
+  assert.equal((await updateOrderPaymentStatusByStaff(ref.id, 'paid', managerToken, undefined, paymentOperation, { received: true, amount: 100 })).success, true);
+  assert.equal((await updateOrderPaymentStatusByStaff(ref.id, 'paid', managerToken, undefined, paymentOperation, { received: true, amount: 100 })).success, true);
+  const stale = await updateOrderFulfillmentStageByStaff({ ...input, stage: 'delivered', operation: { operationId: randomUUID(), expectedRevision: 1 } });
+  assert.equal(stale.success, false);
+  assert.match(stale.error || '', /changed/);
+  assert.equal((await updateOrderFulfillmentStageByStaff({ ...input, stage: 'delivered', operation: { operationId: randomUUID(), expectedRevision: 2 } })).success, true);
+  const refund = { orderId: ref.id, amount: 10, destination: 'cash' as const, reason: 'Test partial refund', reference: 'cash-test', operationId: randomUUID(), idToken: managerToken };
+  assert.equal((await refundOrderByStaff(refund)).success, true);
+  assert.equal((await refundOrderByStaff(refund)).success, true);
+  assert.equal((await refundOrderByStaff({ ...refund, amount: 20 })).success, false);
+  assert.equal((await ref.get()).get('refundedAmount'), 10);
+  const revision = (await ref.get()).get('workflowRevision');
+  const archive = { orderId: ref.id, action: 'archive' as const, idToken: managerToken, operation: { operationId: randomUUID(), expectedRevision: revision } };
+  assert.equal((await manageReservation(archive)).success, true);
+  assert.equal((await manageReservation(archive)).success, true);
+  const activity = await ref.collection('activity').get();
+  assert.equal(activity.docs.filter(doc => doc.get('type') === 'payment').length, 1);
+  assert.equal(activity.docs.filter(doc => doc.get('type') === 'refund').length, 1);
+  assert.equal(activity.docs.filter(doc => doc.get('type') === 'archived').length, 1);
+  assert.ok(activity.docs.every(doc => doc.get('actorId') === 'manager'));
+  assert.equal((await getOrderActivity({ orderId: ref.id, idToken: customerToken })).success, false);
+  assert.equal((await getOrderActivity({ orderId: ref.id, idToken: managerToken })).success, true);
+  await signInWithEmailAndPassword(auth, 'manager@qr.test', '12345678');
+  await assert.rejects(setDoc(doc(clientDb, `orders/${ref.id}/activity/forged`), { type: 'stage' }), /permission/i);
+  await assert.rejects(getDoc(doc(clientDb, `orderWorkflowOperations/${ref.id}_${operation.operationId}`)), /permission/i);
+  await signInWithEmailAndPassword(auth, 'customer@qr.test', '12345678');
+  await assert.rejects(getDoc(doc(clientDb, `orders/${ref.id}/activity/${activity.docs[0].id}`)), /permission/i);
+});
+
+test('cancellation retry restores stock once and activity pagination preserves legacy audits', async () => {
+  const stock = db.doc('inventory/cpu/items/phase34-stock');
+  await stock.set({ ...payload('Phase 34 CPU'), stock: 8 });
+  const ref = db.doc('orders/phase34-cancel');
+  await ref.set({ id: ref.id, userId: 'customer', userEmail: 'customer@qr.test',
+    items: [{ id: 'phase34-stock', category: 'CPU', name: 'Phase 34 CPU', price: 50, quantity: 2 }],
+    totalPrice: 100, status: 'pending', fulfillmentStage: 'order_placed', paymentMethod: 'cod', paymentStatus: 'unpaid', stockState: 'reserved', createdAt: new Date() });
+  const operation = { operationId: randomUUID(), expectedRevision: 0 };
+  const results = await Promise.all([1, 2].map(() => updateReservationStatus(ref.id, 'cancelled', managerToken, operation)));
+  assert.ok(results.every(result => result.success));
+  assert.equal((await stock.get()).get('stock'), 10);
+  assert.equal((await ref.collection('activity').where('type', '==', 'inventory').get()).size, 1);
+  for (let i = 0; i < 61; i++) await db.collection('auditLogs').add({ scope: 'Order', resourceId: ref.id,
+    actionName: 'legacy', details: `Legacy ${i}`, actorName: 'Historical staff', createdAt: new Date(1700000000000 + i) });
+  let page = await getOrderActivity({ orderId: ref.id, idToken: managerToken });
+  assert.ok(page.success);
+  const events = new Set(page.events.map(event => event.id));
+  let legacy = page.events.filter(event => event.inferred).length;
+  for (let count = 0; count < 5 && page.success && (!page.auditDone || !page.activityDone); count++) {
+    page = await getOrderActivity({ orderId: ref.id, idToken: managerToken, cursor: page.cursor,
+      auditCursor: page.auditCursor, activityDone: page.activityDone, auditDone: page.auditDone });
+    assert.ok(page.success);
+    for (const event of page.events) { assert.ok(!events.has(event.id)); events.add(event.id); if (event.inferred) legacy++; }
+  }
+  assert.equal(legacy, 61);
+});
+
+
+test('COD collection and correction remain separate from fulfillment and preserve records on retry', async () => {
+  const ref = db.doc('orders/phase5-cod');
+  await ref.set({ id: ref.id, userId: 'customer', userEmail: 'customer@qr.test', items: [], totalPrice: 100,
+    status: 'building', fulfillmentStage: 'assembling_testing', paymentMethod: 'cod', paymentStatus: 'unpaid', stockState: 'reserved', createdAt: new Date() });
+  const operation = { operationId: randomUUID(), expectedRevision: 0 };
+  assert.equal((await updateOrderPaymentStatusByStaff(ref.id, 'paid', managerToken)).success, false);
+  assert.equal((await updateOrderPaymentStatusByStaff(ref.id, 'paid', managerToken, undefined, operation, { received: true, amount: 99 })).success, false);
+  const collect = () => updateOrderPaymentStatusByStaff(ref.id, 'paid', managerToken, undefined, operation, { received: true, amount: 100 });
+  assert.ok((await Promise.all([collect(), collect()])).every(result => result.success));
+  const paid = (await ref.get()).data()!;
+  assert.equal(paid.paymentHistory.length, 1);
+  assert.equal(paid.paymentHistory[0].kind, 'collection');
+  const correction = { operationId: randomUUID(), expectedRevision: 1 };
+  assert.equal((await updateOrderPaymentStatusByStaff(ref.id, 'unpaid', managerToken, 'short', correction)).success, false);
+  assert.equal((await updateOrderPaymentStatusByStaff(ref.id, 'unpaid', managerToken, 'Collection recorded on wrong order', correction)).success, true);
+  const corrected = (await ref.get()).data()!;
+  assert.equal(corrected.paymentHistory[1].kind, 'correction');
+  assert.equal(corrected.paymentHistory[1].relatedEventId, paid.paymentHistory[0].id);
+  assert.deepEqual(corrected.paymentHistory[0], paid.paymentHistory[0]);
+  assert.equal(corrected.paidAt, null);
+  assert.equal((await collect()).success, true); // replay of original collection cannot recollect after correction
+  assert.equal((await ref.get()).get('paymentStatus'), 'unpaid');
+  assert.equal((await updateOrderPaymentStatusByStaff(ref.id, 'paid', managerToken, undefined,
+    { operationId: randomUUID(), expectedRevision: 2 }, { received: true, amount: 100 })).success, true);
+  const final = (await ref.get()).data()!;
+  assert.equal(final.paymentHistory.length, 3);
+  assert.equal(final.paymentHistory[2].relatedEventId, corrected.paymentHistory[1].id);
+  assert.equal(final.fulfillmentStage, 'assembling_testing');
+  assert.equal(final.stockState, 'reserved');
+  await ref.update({ pendingRefundOperationId: 'legacy-pending', refundStatus: 'none' });
+  assert.equal((await updateOrderPaymentStatusByStaff(ref.id, 'unpaid', managerToken, 'Wrong collection record',
+    { operationId: randomUUID(), expectedRevision: 3 })).success, false);
+});
+
+test('unknown provider refunds stay locked; verified matching receipts settle once', async () => {
+  const previousKey = process.env.PAYMONGO_SECRET_KEY;
+  process.env.PAYMONGO_SECRET_KEY = 'sk_test_phase5';
+  const originalFetch = globalThis.fetch;
+  let posts = 0;
+  let providerPayment = 'pay_phase5';
+  let providerAmount = 10000;
+  let providerStatus = 'pending';
+  let notes = '';
+  const providerId = 'ref_phase5';
+  globalThis.fetch = async (input, init) => {
+    const url = String(input);
+    if (!url.startsWith('https://api.paymongo.com/')) return originalFetch(input, init);
+    if (init?.method === 'POST') { posts++; throw new TypeError('Lost provider response'); }
+    return new Response(JSON.stringify({ data: { id: providerId, attributes: { status: providerStatus, amount: providerAmount,
+      payment_id: providerPayment, currency: 'PHP', notes } } }), { status: 200 });
+  };
+  try {
+    const ref = db.doc('orders/phase5-provider');
+    await ref.set({ id: ref.id, userId: 'customer', userEmail: 'customer@qr.test', items: [], totalPrice: 500,
+      status: 'pending', fulfillmentStage: 'order_placed', paymentMethod: 'paymongo_simulated', paymongoMode: 'live_test_api',
+      paymongoPaymentId: 'pay_phase5', paymentStatus: 'paid', stockState: 'reserved', createdAt: new Date() });
+    const operationId = randomUUID();
+    const request = { orderId: ref.id, amount: 100, destination: 'original_payment_method' as const, reason: 'Customer partial refund', operationId, idToken: managerToken };
+    notes = `${operationId}: ${request.reason}`;
+    process.env.PAYMONGO_SECRET_KEY = '';
+    assert.equal((await refundOrderByStaff(request)).success, false);
+    assert.equal((await ref.get()).get('pendingRefundOperationId'), undefined);
+    assert.equal((await db.doc(`orderRefundOperations/${ref.id}_${operationId}`).get()).exists, false);
+    assert.equal(posts, 0);
+    process.env.PAYMONGO_SECRET_KEY = 'sk_test_phase5';
+    const outcome = await refundOrderByStaff(request);
+    assert.equal(outcome.success, false); assert.equal(outcome.pending, true);
+    const uncertain = await reconcileOrderRefundByStaff({ orderId: ref.id, idToken: managerToken });
+    assert.equal(uncertain.requiresReference, true);
+    assert.equal((await ref.get()).get('pendingRefundOperationId'), operationId);
+    assert.equal((await refundOrderByStaff({ ...request, operationId: randomUUID() })).success, false);
+    await refundOrderByStaff(request); // same pending operation must never send a second POST
+    assert.equal(posts, 1);
+    const reference = { providerRefundId: providerId, reason: 'Matched refund in dashboard' };
+    providerPayment = 'pay_wrong';
+    assert.equal((await reconcileOrderRefundByStaff({ orderId: ref.id, idToken: managerToken, reference })).success, false);
+    providerPayment = 'pay_phase5'; providerAmount = 9999;
+    assert.equal((await reconcileOrderRefundByStaff({ orderId: ref.id, idToken: managerToken, reference })).success, false);
+    providerAmount = 10000; notes = 'Different operation';
+    assert.equal((await reconcileOrderRefundByStaff({ orderId: ref.id, idToken: managerToken, reference })).success, false);
+    notes = `${operationId}: ${request.reason}`;
+    assert.equal((await reconcileOrderRefundByStaff({ orderId: ref.id, idToken: managerToken, reference })).pending, true);
+    assert.equal((await ref.get()).get('pendingPaymongoRefundId'), providerId);
+    providerStatus = 'succeeded';
+    const results = await Promise.all([1, 2].map(() => reconcileOrderRefundByStaff({ orderId: ref.id, idToken: managerToken })));
+    assert.ok(results.every(result => result.success));
+    const settled = (await ref.get()).data()!;
+    assert.equal(settled.refundedAmount, 100); assert.equal(settled.refunds.length, 1);
+    assert.equal(settled.pendingRefundOperationId, undefined); assert.equal(settled.paymentStatus, 'paid');
+    assert.equal(settled.fulfillmentStage, 'order_placed'); assert.equal(settled.stockState, 'reserved');
+    assert.equal((await db.doc(`orderRefundReceipts/${providerId}`).get()).get('operationId'), operationId);
+    await signInWithEmailAndPassword(auth, 'customer@qr.test', '12345678');
+    await assert.rejects(getDoc(doc(clientDb, `orderRefundReceipts/${providerId}`)), /permission/i);
+    // A different pending operation cannot claim the same verified provider receipt.
+    const otherId = randomUUID();
+    await ref.update({ pendingRefundOperationId: otherId, refundStatus: 'pending' });
+    await db.doc(`orderRefundOperations/${ref.id}_${otherId}`).set({ orderId: ref.id, operationId: otherId, paymentId: 'pay_phase5', amount: 100,
+      status: 'pending', destination: 'original_payment_method', reason: 'Legacy refund', actorId: 'manager', actorName: 'Manager', actorRole: 'Manager' });
+    assert.equal((await reconcileOrderRefundByStaff({ orderId: ref.id, idToken: managerToken, reference })).success, false);
+    assert.equal((await ref.get()).get('refundedAmount'), 100);
+    // A verified failed provider resource may release its own hold without adding a refund.
+    globalThis.fetch = async (input, init) => String(input).includes('/refunds/') ? new Response(JSON.stringify({ data: { id: 'ref_phase5failed', attributes: {
+      status: 'failed', amount: 10000, payment_id: 'pay_phase5', currency: 'PHP', notes: 'Legacy refund' } } }), { status: 200 }) : originalFetch(input, init);
+    const failed = await reconcileOrderRefundByStaff({ orderId: ref.id, idToken: managerToken,
+      reference: { providerRefundId: 'ref_phase5failed', reason: 'Provider confirmed failed refund' } });
+    assert.equal(failed.status, 'failed'); assert.equal((await ref.get()).get('pendingRefundOperationId'), undefined);
+    assert.equal((await ref.get()).get('refunds').length, 1); assert.equal(posts, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (previousKey === undefined) delete process.env.PAYMONGO_SECRET_KEY; else process.env.PAYMONGO_SECRET_KEY = previousKey;
+  }
 });

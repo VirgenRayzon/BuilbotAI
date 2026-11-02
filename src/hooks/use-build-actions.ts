@@ -9,9 +9,9 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { getAiPrebuiltSuggestions } from "@/app/actions";
-import { processCheckout } from "@/app/checkout-actions";
+import { createCheckoutOrder, type CheckoutOrderResult } from "@/app/checkout-actions";
 import { type ProgressPhase } from "@/components/ai-progress-modal";
-import { ComponentData, OrderItem, Part } from "@/lib/types";
+import { ComponentData, PaymentMethod } from "@/lib/types";
 import { type PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
 import { useProductSaveOperation } from '@/hooks/use-product-save-operation';
 
@@ -34,7 +34,6 @@ export function useBuildActions({
   onAnalyze,
   onAddPrebuilt,
   totalPrice,
-  onAnalysisUpdate,
 }: UseBuildActionsOptions) {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [showLocalAiProgress, setShowLocalAiProgress] = useState(false);
@@ -213,50 +212,96 @@ export function useBuildActions({
     })();
   };
 
-  const handleCheckout = async (onSuccess?: () => void) => {
+  const handleCheckout = async (
+    onSuccess?: (result?: CheckoutOrderResult) => void,
+    paymentMethod: PaymentMethod = "cod"
+  ) => {
     if (!user) {
       toast({
         title: "Authentication Required",
-        description: "Please sign in to reserve your build.",
+        description: "Please sign in to place your order.",
         variant: "destructive"
       });
       return;
     }
 
     setIsCheckingOut(true);
-    const orderItems: OrderItem[] = [];
+    const buildComponents: Array<{
+      id: string;
+      category: string;
+      name: string;
+      price: number;
+      imageUrl?: string;
+    }> = [];
     Object.entries(build).forEach(([category, val]) => {
       if (val) {
         if (Array.isArray(val)) {
-          val.forEach(v => orderItems.push({
-            id: v.id,
-            name: v.model,
-            category,
-            price: v.price
-          }));
+          val.forEach((v) =>
+            buildComponents.push({
+              id: v.id,
+              name: v.model,
+              category,
+              price: v.price,
+              imageUrl: v.image,
+            })
+          );
         } else {
-          orderItems.push({
-            id: (val as any).id,
-            name: (val as any).model,
+          buildComponents.push({
+            id: val.id,
+            name: val.model,
             category,
-            price: (val as any).price
+            price: val.price,
+            imageUrl: val.image,
           });
         }
       }
     });
 
-    const result = await processCheckout(user.uid, user.email || "guest", orderItems);
+    const userEmail = String(user.email || "customer@buildbot.ai");
+    const userDisplayName = String(
+      user.displayName || userEmail.split("@")[0] || "BuildbotAI Customer"
+    );
+    const rigSubtotal = buildComponents.reduce((sum, c) => sum + (Number(c.price) || 0), 0);
+
+    const result = await createCheckoutOrder({
+      idToken: await user.getIdToken(),
+      operationId: crypto.randomUUID(),
+      paymentMethod,
+      shippingMethod: "store_pickup",
+      shippingAddress: {
+        fullName: userDisplayName,
+        phone: "09170000000",
+        email: userEmail,
+        region: "Metro Manila",
+        city: "Quezon City",
+        barangay: "Flagship Hub",
+        streetAddress: "BuildbotAI Flagship Hub Pickup",
+        postalCode: "1100",
+      },
+      cartItems: [
+        {
+          id: `custom-rig-${Date.now()}`,
+          kind: "custom-build",
+          name: "Custom PC Build",
+          price: rigSubtotal,
+          quantity: 1,
+          components: buildComponents,
+        },
+      ],
+    });
 
     if (result.success) {
-      toast({
-        title: "Build Reserved!",
-        description: "Your build reservation has been recorded.",
-      });
+      if (paymentMethod === "cod") {
+        toast({
+          title: "Order Placed (Cash on Delivery)",
+          description: `Order ${result.orderNumber || ""} has been placed with Payment Status: Unpaid (Pay on Delivery).`,
+        });
+      }
       onClearBuild();
-      onSuccess?.();
+      onSuccess?.(result);
     } else {
       toast({
-        title: "Reservation Failed",
+        title: "Order Failed",
         description: result.error,
         variant: "destructive"
       });

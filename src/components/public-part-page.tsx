@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -27,6 +27,7 @@ export function PublicPartPage({ product, isAdminPreview = false }: { product: P
     addToCart(
       {
         id: `part-${product.productId}`,
+        productId: product.productId,
         kind: 'part',
         name: product.name,
         price: product.price,
@@ -44,6 +45,7 @@ export function PublicPartPage({ product, isAdminPreview = false }: { product: P
     if (!product.inStock) return;
     buyNow({
       id: `part-${product.productId}`,
+      productId: product.productId,
       kind: 'part',
       name: product.name,
       price: product.price,
@@ -160,7 +162,7 @@ export function PublicPartPage({ product, isAdminPreview = false }: { product: P
               {actions.error && <Text role="alert" c="red" size="sm">{actions.error}</Text>}
               <Text size="xs" c="dimmed">
                 {isEcommerceMode
-                  ? 'Supports LBC / J&T Nationwide Courier, Same-Day Express, GCash, Maya, QRPh, Card & COD.'
+                  ? 'Supports LBC / J&T Nationwide Courier, Same-Day Express, GCash & Cash on Delivery (COD).'
                   : 'Availability is checked again when you reserve.'}
               </Text>
             </Stack>

@@ -31,7 +31,7 @@ export function WhyChooseSection() {
     <section aria-labelledby="why-netcodex-heading" className="relative overflow-hidden px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
       <div className="relative mx-auto w-full max-w-[1320px]">
         <div className="relative mx-auto mb-12 max-w-3xl text-center sm:mb-14">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 -top-12 mx-auto h-40 opacity-[0.07] dark:opacity-[0.12] sm:h-48">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 -top-12 mx-auto h-40 opacity-[0.18] dark:opacity-[0.12] sm:h-48">
             <Image
               src={netcodexLogo}
               alt=""

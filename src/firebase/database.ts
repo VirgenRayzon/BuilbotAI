@@ -1,18 +1,19 @@
 /**
  * database — Firebase Firestore CRUD operations for all data models.
- * Handles parts, prebuilt systems, users, notifications, orders, and sales metrics.
+ * Handles parts, prebuilt systems, users, and notifications.
  * Includes image upload pipeline (local base64 and remote URL proxy via server actions).
  */
 
-import { addDoc, collection, deleteDoc, doc, Firestore, getDoc, setDoc, updateDoc, writeBatch } from "firebase/firestore";
+import { collection, deleteDoc, doc, Firestore, getDoc, setDoc, updateDoc, writeBatch } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
 import type { AddPartFormSchema } from "@/hooks/use-part-form";
 import type { AddPrebuiltFormSchema } from "@/components/add-prebuilt-dialog";
 import type { Part, PrebuiltSystem, UserProfile, SystemNotification } from "@/lib/types";
 import { fetchImageBase64 } from "@/app/image-actions";
-import { inventoryCategoryLabel, inventoryCategoryPath, inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
+import { inventoryItemPath } from "@/lib/inventory-paths";
 import { saveCatalogProduct } from '@/lib/save-catalog-product';
+import { prebuiltProductSchema } from '@/lib/product-schemas';
 import { updateCatalogPart } from '@/app/product-actions';
 
 // Uploads an image to Firebase Storage.
@@ -380,6 +381,7 @@ export async function updatePrebuiltSystem(firestore: Firestore, systemId: strin
             cooler
         }
     };
+    prebuiltProductSchema.parse(systemData);
     await updateDoc(doc(firestore, 'prebuiltSystems', systemId), cleanData(systemData));
 }
 
@@ -409,6 +411,7 @@ export async function bulkDeletePrebuilts(firestore: Firestore, systemIds: strin
 export async function createUserProfile(firestore: Firestore, userId: string, data: Omit<UserProfile, 'id'>) {
     await setDoc(doc(firestore, 'users', userId), data);
 }
+
 // System Notifications
 export async function createSystemNotification(
     firestore: Firestore, 
@@ -423,126 +426,3 @@ export async function createSystemNotification(
         createdAt: new Date()
     });
 }
-
-// Sales Metrics Reset
-export async function resetSalesMetrics(
-    firestore: Firestore, 
-    orders: { id: string }[], 
-    parts: { id: string, category: Part['category'] }[]
-) {
-    const batch = writeBatch(firestore);
-    
-    // 1. Delete all orders
-    orders.forEach(order => {
-        const orderRef = doc(firestore, 'orders', order.id);
-        batch.delete(orderRef);
-    });
-    
-    // 2. Reset popularity for all parts
-    parts.forEach(part => {
-        const partRef = doc(firestore, inventoryItemPath(part.category, part.id));
-        batch.update(partRef, { popularity: 0 });
-    });
-    
-    await batch.commit();
-}
-
-// Ingest Dummy Sales Data
-export async function ingestDummySalesData(
-    firestore: Firestore,
-    parts: Part[],
-    prebuilts: PrebuiltSystem[]
-) {
-    if (parts.length === 0) return;
-
-    const batch = writeBatch(firestore);
-    const orderCount = 100;
-    const now = new Date();
-    
-    // Popularity tracker for parts
-    const popularityMap = new Map<string, { category: Part['category'], count: number }>();
-
-    for (let i = 0; i < orderCount; i++) {
-        // Random date in last 12 months
-        const date = new Date(now.getTime() - Math.random() * (365 * 24 * 60 * 60 * 1000));
-        const orderRef = doc(collection(firestore, 'orders'));
-        
-        const isPrebuilt = Math.random() > 0.4 && prebuilts.length > 0;
-        let items: any[] = [];
-        let totalPrice = 0;
-        let orderType = 'custom';
-        let prebuiltId = '';
-        let prebuiltName = '';
-        let prebuiltTier = '';
-
-        if (isPrebuilt) {
-            const system = prebuilts[Math.floor(Math.random() * prebuilts.length)];
-            orderType = 'prebuilt';
-            prebuiltId = system.id;
-            prebuiltName = system.name;
-            prebuiltTier = system.tier;
-            
-            // Convert prebuilt components to items
-            const componentIds = Object.values(system.components).flat().filter(id => !!id);
-            componentIds.forEach(id => {
-                const part = parts.find(p => p.id === id);
-                if (part) {
-                    items.push({
-                        id: part.id,
-                        name: part.name,
-                        category: part.category,
-                        price: part.price
-                    });
-                    totalPrice += part.price;
-                    
-                    const partPath = inventoryItemPath(part.category, part.id);
-                    const current = popularityMap.get(partPath) || { category: part.category, count: 0 };
-                    popularityMap.set(partPath, { ...current, count: current.count + 1 });
-                }
-            });
-            // Round up to system price if needed or just use sum
-            totalPrice = system.price; 
-        } else {
-            // Random parts (3-8 parts)
-            const count = Math.floor(Math.random() * 5) + 3;
-            for (let j = 0; j < count; j++) {
-                const part = parts[Math.floor(Math.random() * parts.length)];
-                items.push({
-                    id: part.id,
-                    name: part.name,
-                    category: part.category,
-                    price: part.price
-                });
-                totalPrice += part.price;
-                
-                const partPath = inventoryItemPath(part.category, part.id);
-                const current = popularityMap.get(partPath) || { category: part.category, count: 0 };
-                popularityMap.set(partPath, { ...current, count: current.count + 1 });
-            }
-        }
-
-        const orderData = {
-            userId: 'dummy-user',
-            userEmail: `customer-${Math.floor(Math.random() * 1000)}@example.com`,
-            items,
-            totalPrice,
-            status: Math.random() > 0.1 ? 'finished building' : (Math.random() > 0.5 ? 'pending' : 'cancelled'),
-            createdAt: date,
-            type: orderType,
-            prebuiltId,
-            prebuiltName,
-            prebuiltTier
-        };
-
-        batch.set(orderRef, orderData);
-    }
-
-    // Update part popularity
-    popularityMap.forEach((data, partPath) => {
-        const partRef = doc(firestore, partPath);
-        batch.update(partRef, { popularity: data.count });
-    });
-
-    await batch.commit();
-}
-

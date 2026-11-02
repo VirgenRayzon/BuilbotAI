@@ -19,12 +19,13 @@ export const partProductSchema = z.object({
   searchKeywords: z.array(z.string().max(500)).max(10000).optional(),
   isArchived: z.boolean().optional(),
 });
-const ref = z.string().max(128).regex(/^[\w-]*$/).optional();
+const requiredRef = z.string().min(1).max(128).regex(/^[\w-]+$/);
 export const prebuiltProductSchema = z.object({
   ...shared, tier: z.enum(['Entry', 'Mid-Range', 'High-End', 'Workstation']),
-  components: z.object({ cpu: ref, gpu: ref, motherboard: ref, psu: ref, case: ref, cooler: ref,
-    ram: z.array(z.string().max(128).regex(/^[\w-]+$/)).max(16),
-    storage: z.array(z.string().max(128).regex(/^[\w-]+$/)).max(32),
+  components: z.object({ cpu: requiredRef, gpu: requiredRef, motherboard: requiredRef,
+    psu: requiredRef, case: requiredRef, cooler: requiredRef,
+    ram: z.array(requiredRef).min(1).max(16),
+    storage: z.array(requiredRef).min(1).max(32),
   }),
 });
 export const createProductSchema = z.object({

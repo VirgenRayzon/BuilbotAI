@@ -13,6 +13,7 @@ import { PrebuiltHeaderCard } from "./components/prebuilt-header-card";
 import { PrebuiltAiHighlights } from "./components/prebuilt-ai-highlights";
 import { PrebuiltPartsList } from "./components/prebuilt-parts-list";
 import { PrebuiltShowcase } from "@/components/landing/prebuilt-showcase";
+import { AccessoriesSection } from "@/components/landing/accessories-section";
 import { getEcommerceFallbackImage } from "@/context/ecommerce-context";
 
 export default function LegacyPrebuiltProductPage({ params }: { params: Promise<{ id: string }> }) {
@@ -87,6 +88,8 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
     const ecommerceSubComponents = Object.entries(components)
         .filter(([, part]) => Boolean(part))
         .map(([cat, part]) => ({
+            id: part!.id,
+            productId: part!.productId,
             category: cat.toUpperCase(),
             name: part!.name,
             price: part!.price || 0,
@@ -226,6 +229,7 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
                         layout="carousel"
                     />
                 </div>
+                <AccessoriesSection title="Frequently Bought Together" className="mt-8 border-b-0" />
             </div>
         </div>
     );

@@ -19,8 +19,11 @@ interface ArchiveTabProps {
   prebuiltsLoading?: boolean;
   orders: Order[];
   ordersLoading: boolean;
+  hasMoreOrders?: boolean;
+  onLoadMoreOrders?: () => void;
   onReservationAction: (id: string, action: 'archive' | 'restore' | 'delete') => Promise<boolean>;
-  onUpdateOrder: (id: string, status: Order['status']) => Promise<void>;
+  onUpdateOrder: (id: string, status: Order['status']) => Promise<boolean>;
+  onClearAllOrders?: () => Promise<boolean>;
   profile: any;
   onDeletePart: (id: string, category: Part['category']) => Promise<void>;
   onArchivePart: (id: string, category: Part['category'], isArchived?: boolean) => Promise<void>;
@@ -51,8 +54,11 @@ export function ArchiveTab({
   prebuiltsLoading,
   orders,
   ordersLoading,
+  hasMoreOrders,
+  onLoadMoreOrders,
   onReservationAction,
   onUpdateOrder,
+  onClearAllOrders,
   profile,
   onDeletePart,
   onArchivePart,
@@ -74,7 +80,7 @@ export function ArchiveTab({
   onSearchQueryChange,
 }: ArchiveTabProps) {
   const searchParams = useSearchParams();
-  const [archiveSubTab, setArchiveSubTab] = useState<'parts' | 'prebuilts' | 'reservations'>('parts');
+  const [archiveSubTab, setArchiveSubTab] = useState<'parts' | 'prebuilts' | 'orders'>('parts');
   const [partBrands, setPartBrands] = useState<string[]>([]);
   const [partSortBy, setPartSortBy] = useState('Name');
   const [partSortDirection, setPartSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -83,7 +89,9 @@ export function ArchiveTab({
 
   useEffect(() => {
     const requestedSubTab = searchParams.get('sub');
-    if (requestedSubTab === 'parts' || requestedSubTab === 'prebuilts' || requestedSubTab === 'reservations') {
+    if (requestedSubTab === 'reservations') {
+      setArchiveSubTab('orders');
+    } else if (requestedSubTab === 'parts' || requestedSubTab === 'prebuilts' || requestedSubTab === 'orders') {
       setArchiveSubTab(requestedSubTab);
     }
   }, [searchParams]);
@@ -156,14 +164,18 @@ export function ArchiveTab({
   return (
     <div className="space-y-4">
 
-      {archiveSubTab === 'reservations' && (
+      {archiveSubTab === 'orders' && (
         <ReservationsTab
           archived
           orders={orders}
           ordersLoading={ordersLoading}
+          catalogParts={parts}
+          hasMoreOrders={hasMoreOrders}
+          onLoadMoreOrders={onLoadMoreOrders}
           isSuperAdmin={profile?.isSuperAdmin === true}
           onReservationAction={onReservationAction}
           onUpdateOrder={onUpdateOrder}
+          onClearAllOrders={onClearAllOrders}
           searchQuery={searchQuery}
           onSearchQueryChange={onSearchQueryChange}
         />

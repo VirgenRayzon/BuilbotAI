@@ -7,6 +7,7 @@ import type { PublicProduct } from '../public-product-types';
 import type { PublicCatalogPart } from '../public-product-types';
 import type { Transaction } from 'firebase-admin/firestore';
 import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '../integrated-graphics';
+import { includedCpuCoolerName } from '../included-cpu-cooler';
 import { revalidateTag, unstable_cache } from 'next/cache';
 
 export const PUBLIC_PARTS_CACHE_TAG = 'public-parts-catalog';
@@ -32,7 +33,15 @@ export async function resolveSystemParts(system: PrebuiltSystem, transaction?: T
   const selections = Object.entries(system.components || {}).flatMap(([category, value]) =>
     (Array.isArray(value) ? value : [value]).filter(Boolean).map((partId, index) => ({ key: `${category}-${index}`, category, partId })));
   return Promise.all(selections.map(async entry => {
-    if (entry.partId === 'included-stock-cooler') return { ...entry, part: { id: entry.partId, name: 'Included stock cooler', price: 0, category: 'Cooler', stock: Number.MAX_SAFE_INTEGER } as Part };
+    if (entry.category === 'cooler' && entry.partId === 'included-stock-cooler') {
+      const cpuId = system.components?.cpu;
+      if (!cpuId || cpuId.includes('/')) return { ...entry, part: null };
+      const cpuRef = db.doc(inventoryItemPath('CPU', cpuId));
+      const cpuSnap = transaction ? await transaction.get(cpuRef) : await cpuRef.get();
+      const cpu = cpuSnap.exists ? { ...cpuSnap.data(), id: cpuSnap.id, category: 'CPU' } as Part : null;
+      const coolerName = cpu && !cpu.isArchived ? includedCpuCoolerName(cpu) : null;
+      return { ...entry, part: coolerName ? { id: entry.partId, name: coolerName, price: 0, category: 'Cooler', stock: Number.MAX_SAFE_INTEGER } as Part : null };
+    }
     if (entry.partId === INCLUDED_INTEGRATED_GPU_ID) {
       const cpuId = system.components?.cpu;
       if (entry.category !== 'gpu' || !cpuId || cpuId.includes('/')) return { ...entry, part: null };

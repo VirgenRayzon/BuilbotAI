@@ -8,6 +8,7 @@ import {
   type LiveRecommendationResponse,
 } from '@/lib/live-build-recommendation-schema';
 import { syncIntegratedGraphics } from '@/lib/integrated-graphics';
+import { includedCpuCoolerName } from '@/lib/included-cpu-cooler';
 import type { Part } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -65,7 +66,7 @@ async function liveParts(input: LiveRecommendationRequest) {
   const withGraphics = syncIntegratedGraphics(build);
   const cpu = withGraphics.CPU;
   const cpuCatalog = !Array.isArray(cpu) && cpu ? byPath.get(inventoryItemPath('CPU', cpu.id)) : undefined;
-  if (input.includedCooler && cpuCatalog?.packageType === 'BOX') {
+  if (input.includedCooler && cpuCatalog && includedCpuCoolerName(cpuCatalog)) {
     withGraphics.Cooler = {
       id: 'included-stock-cooler', model: 'Bundled CPU cooler', price: 0, description: 'Bundled cooler.',
       image: '', imageHint: 'included cooler', icon: () => null, wattage: 0,

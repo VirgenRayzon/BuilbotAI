@@ -50,7 +50,7 @@ const TAB_BREADCRUMBS: Record<string, { group: string; page: string }> = {
   prebuilts: { group: "Inventory", page: "Manage Prebuilts" },
   "prebuilt-builder": { group: "Inventory", page: "Prebuilt Builder" },
   archive: { group: "Inventory", page: "Archive" },
-  reservations: { group: "Platform", page: "Reservations" },
+  orders: { group: "Platform", page: "Orders" },
   sales: { group: "Sales & Analytics", page: "Performance & Revenue" },
   ai: { group: "Models & AI", page: "Model Intelligence" },
   audit: { group: "Management", page: "Audit Logs" },

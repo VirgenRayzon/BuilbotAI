@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CircuitBoard, PackageCheck } from "lucide-react";
 import { Button, Paper } from "@mantine/core";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import prismPoster from "@/assets/landing/prism5-poster.webp";
 import kingPoster from "@/assets/landing/king45-poster.webp";
@@ -13,6 +13,8 @@ import builderImage from "@/assets/landing/hero-custom-v2.webp";
 import bottleneckImage from "@/assets/landing/feature-1.webp";
 import critiqueImage from "@/assets/landing/feature-2.webp";
 import generationImage from "@/assets/landing/feature-3.webp";
+
+const SLIDE_DURATION_MS = 9000;
 
 const slides = [
   {
@@ -101,13 +103,7 @@ function ProductVideoLayer({
   }, [active, motionAllowed]);
 
   return (
-    <div
-      aria-hidden={!active}
-      className={cn(
-        "absolute inset-0 transition-opacity duration-200 ease-in-out",
-        active ? "opacity-100" : "pointer-events-none opacity-0"
-      )}
-    >
+    <div className="absolute inset-0">
       <Image
         src={slide.poster}
         alt={active ? slide.imageAlt : ""}
@@ -140,7 +136,6 @@ export function HeroSection({ isDark }: HeroSectionProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [motionAllowed, setMotionAllowed] = useState(false);
   const [readyVideos, setReadyVideos] = useState<ReadonlySet<string>>(() => new Set());
-  const slide = slides[activeIndex];
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -156,7 +151,7 @@ export function HeroSection({ isDark }: HeroSectionProps) {
 
   useEffect(() => {
     if (!motionAllowed) return;
-    const timeout = window.setTimeout(() => setActiveIndex(index => (index + 1) % slides.length), 9000);
+    const timeout = window.setTimeout(() => setActiveIndex(index => (index + 1) % slides.length), SLIDE_DURATION_MS);
     return () => window.clearTimeout(timeout);
   }, [activeIndex, motionAllowed]);
 
@@ -164,35 +159,34 @@ export function HeroSection({ isDark }: HeroSectionProps) {
     <section aria-label="Featured PCs and ways to shop" className="relative overflow-hidden px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
       <div className="mx-auto grid w-full max-w-[1500px] grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.85fr)_minmax(320px,0.9fr)] lg:gap-5">
         <div className="relative isolate flex min-h-[480px] overflow-hidden rounded-2xl bg-slate-950 shadow-xl sm:min-h-[560px] lg:min-h-[630px]">
-          {slides.filter((item): item is ProductSlide => "video" in item).map(item => (
-            <ProductVideoLayer
+          {slides.map((item, index) => (
+            <div
               key={item.name}
-              slide={item}
-              active={slide.name === item.name}
-              motionAllowed={motionAllowed}
-              ready={readyVideos.has(item.name)}
-              onPlaying={() => setReadyVideos(current => {
-                if (current.has(item.name)) return current;
-                const next = new Set(current);
-                next.add(item.name);
-                return next;
-              })}
-            />
-          ))}
-
-          <AnimatePresence initial={false} mode="sync">
-            <motion.div
-              key={slide.name}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: motionAllowed ? 0.2 : 0, ease: "easeInOut" }}
-              className="absolute inset-0"
+              aria-hidden={activeIndex !== index}
+              inert={activeIndex !== index}
+              className={cn(
+                "absolute inset-0 transition-opacity ease-in-out",
+                motionAllowed ? "duration-500" : "duration-0",
+                activeIndex === index ? "z-10 opacity-100" : "pointer-events-none z-0 opacity-0"
+              )}
             >
-              {!("video" in slide) && (
+              {"video" in item ? (
+                <ProductVideoLayer
+                  slide={item as ProductSlide}
+                  active={activeIndex === index}
+                  motionAllowed={motionAllowed}
+                  ready={readyVideos.has(item.name)}
+                  onPlaying={() => setReadyVideos(current => {
+                    if (current.has(item.name)) return current;
+                    const next = new Set(current);
+                    next.add(item.name);
+                    return next;
+                  })}
+                />
+              ) : (
                 <Image
-                  src={slide.poster}
-                  alt={slide.imageAlt}
+                  src={item.poster}
+                  alt={activeIndex === index ? item.imageAlt : ""}
                   fill
                   sizes="(max-width: 1023px) 100vw, 66vw"
                   className="object-cover"
@@ -203,22 +197,22 @@ export function HeroSection({ isDark }: HeroSectionProps) {
 
               <div className="relative z-10 flex h-full w-full flex-col justify-between p-5 text-white sm:p-8 lg:p-10">
                 <div className="w-fit rounded-full border border-white/45 bg-black/20 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] backdrop-blur-sm">
-                  {slide.eyebrow}
+                  {item.eyebrow}
                 </div>
 
                 <div className="max-w-xl pb-20">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">{slide.kicker}</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">{item.kicker}</p>
                   <h1 className="max-w-3xl font-headline text-4xl font-black uppercase leading-[0.95] tracking-tight sm:text-6xl xl:text-7xl">
-                    {slide.name}
+                    {item.name}
                   </h1>
-                  <p className="mt-5 max-w-md text-sm font-medium leading-relaxed text-slate-100 sm:text-base">{slide.description}</p>
-                  <Button component={Link} href={slide.href} size="lg" radius="md" color="cyan" rightSection={<ArrowRight size={18} />} className="mt-6 h-12 min-w-40 font-headline font-bold uppercase tracking-wide shadow-lg">
-                    {slide.action}
+                  <p className="mt-5 max-w-md text-sm font-medium leading-relaxed text-slate-100 sm:text-base">{item.description}</p>
+                  <Button component={Link} href={item.href} size="lg" radius="md" color="cyan" rightSection={<ArrowRight size={18} />} className="mt-6 h-12 min-w-40 font-headline font-bold uppercase tracking-wide shadow-lg">
+                    {item.action}
                   </Button>
                 </div>
               </div>
-            </motion.div>
-          </AnimatePresence>
+            </div>
+          ))}
 
           <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center sm:bottom-5" role="group" aria-label="Choose hero slide">
             {slides.map((item, index) => (
@@ -237,6 +231,17 @@ export function HeroSection({ isDark }: HeroSectionProps) {
               </button>
             ))}
           </div>
+          {motionAllowed && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-1 bg-white/15" aria-hidden="true">
+              <motion.div
+                key={activeIndex}
+                className="h-full origin-left bg-cyan-400"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: SLIDE_DURATION_MS / 1000, ease: "linear" }}
+              />
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:grid-rows-2 lg:gap-5">

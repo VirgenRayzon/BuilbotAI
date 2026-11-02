@@ -22,6 +22,11 @@ import {
   MessageCircle,
   LogOut,
   Truck,
+  CreditCard,
+  Wrench,
+  MapPin,
+  XCircle,
+  CheckCircle2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/firebase";
@@ -36,7 +41,12 @@ interface ProfileSidebarProps {
   authUser: any;
   activeTab: string;
   onTabChange: (tab: string) => void;
-  reservationsCount?: number;
+  toPayCount?: number;
+  toShipCount?: number;
+  toBuildCount?: number;
+  toReceiveCount?: number;
+  completedCount?: number;
+  cancelledCount?: number;
   favoritesCount?: number;
   userLogsCount?: number;
   staffLogsCount?: number;
@@ -47,7 +57,12 @@ export function ProfileSidebar({
   authUser,
   activeTab,
   onTabChange,
-  reservationsCount = 0,
+  toPayCount = 0,
+  toShipCount = 0,
+  toBuildCount = 0,
+  toReceiveCount = 0,
+  completedCount = 0,
+  cancelledCount = 0,
   favoritesCount = 0,
   userLogsCount = 0,
   staffLogsCount = 0,
@@ -95,13 +110,20 @@ export function ProfileSidebar({
     badgeColor?: string;
   };
 
-  // 1. Account Items
+  // 1. Account Items: Profile, Address Book, Settings
   const accountItems: NavItem[] = [
     {
       id: "profile",
       label: "Profile",
       icon: User,
       color: "cyan",
+      badge: null,
+    },
+    {
+      id: "address-book",
+      label: "Address Book",
+      icon: MapPin,
+      color: "teal",
       badge: null,
     },
     {
@@ -113,17 +135,65 @@ export function ProfileSidebar({
     },
   ];
 
-  // For regular customers only: Store Reservations (or Orders & Shipments in E-Commerce Mode), Saved Favourites, Activity Logs
+  // 2. Customer order workflow queues
+  const ordersAndShipmentsItems: NavItem[] = [];
   if (isRegularUser) {
-    accountItems.push(
+    ordersAndShipmentsItems.push(
       {
-        id: "reservations",
-        label: isEcommerceMode ? "Orders & Shipments" : "Reservations",
-        icon: isEcommerceMode ? Truck : Package,
+        id: "to-pay",
+        label: "To Pay",
+        icon: CreditCard,
+        color: "amber",
+        badge: toPayCount > 0 ? toPayCount : null,
+        badgeColor: "amber",
+      },
+      {
+        id: "to-ship",
+        label: "To Ship",
+        icon: Package,
+        color: "cyan",
+        badge: toShipCount > 0 ? toShipCount : null,
+        badgeColor: "cyan",
+      },
+      {
+        id: "to-build",
+        label: "To Build",
+        icon: Wrench,
+        color: "violet",
+        badge: toBuildCount > 0 ? toBuildCount : null,
+        badgeColor: "violet",
+      },
+      {
+        id: "to-receive",
+        label: "To Receive",
+        icon: Truck,
         color: "blue",
-        badge: reservationsCount > 0 ? reservationsCount : null,
+        badge: toReceiveCount > 0 ? toReceiveCount : null,
         badgeColor: "blue",
       },
+      {
+        id: "completed",
+        label: "Completed",
+        icon: CheckCircle2,
+        color: "teal",
+        badge: completedCount > 0 ? completedCount : null,
+        badgeColor: "teal",
+      },
+      {
+        id: "cancelled",
+        label: "Cancelled",
+        icon: XCircle,
+        color: "red",
+        badge: cancelledCount > 0 ? cancelledCount : null,
+        badgeColor: "red",
+      }
+    );
+  }
+
+  // 3. Saved & Inbox Items
+  const activityItems: NavItem[] = [];
+  if (isRegularUser) {
+    activityItems.push(
       {
         id: "favorites",
         label: "Saved Favourites",
@@ -150,7 +220,7 @@ export function ProfileSidebar({
     );
   }
 
-  // 2. Administration Items (Super Admin Tools - System Safeguards retained in Profile)
+  // 4. Administration Items (Super Admin Tools - System Safeguards retained in Profile)
   const adminItems: NavItem[] = [];
   if (isManager || isSuperAdmin) {
     adminItems.push({
@@ -172,10 +242,19 @@ export function ProfileSidebar({
     });
   }
 
-  const allNavItems = [...accountItems, ...adminItems];
+  const allNavItems = [
+    ...accountItems,
+    ...ordersAndShipmentsItems,
+    ...activityItems,
+    ...adminItems,
+  ];
 
   const renderNavButton = (item: NavItem) => {
-    const isActive = activeTab === item.id || (item.id === "profile" && activeTab === "account");
+    const isActive =
+      activeTab === item.id ||
+      (item.id === "profile" && activeTab === "account") ||
+      (item.id === "to-ship" &&
+        (activeTab === "orders" || activeTab === "reservations"));
     const Icon = item.icon;
 
     return (
@@ -229,7 +308,11 @@ export function ProfileSidebar({
         >
           <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar px-1">
             {allNavItems.map((item) => {
-              const isActive = activeTab === item.id || (item.id === "profile" && activeTab === "account");
+              const isActive =
+                activeTab === item.id ||
+                (item.id === "profile" && activeTab === "account") ||
+                (item.id === "to-ship" &&
+                  (activeTab === "orders" || activeTab === "reservations"));
               const Icon = item.icon;
 
               return (
@@ -288,7 +371,39 @@ export function ProfileSidebar({
               </div>
             </div>
 
-            {/* SECTION 2: ADMINISTRATION */}
+            {/* SECTION 2: ORDER WORKFLOW */}
+            {ordersAndShipmentsItems.length > 0 && (
+              <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-white/10">
+                <Text
+                  size="xs"
+                  className="text-[10px] font-bold uppercase tracking-[0.15em] font-mono text-slate-400 dark:text-slate-500 px-3 pb-1"
+                >
+                  Order Workflow
+                </Text>
+
+                <div className="space-y-1">
+                  {ordersAndShipmentsItems.map(renderNavButton)}
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 3: SAVED & INBOX */}
+            {activityItems.length > 0 && (
+              <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-white/10">
+                <Text
+                  size="xs"
+                  className="text-[10px] font-bold uppercase tracking-[0.15em] font-mono text-slate-400 dark:text-slate-500 px-3 pb-1"
+                >
+                  Activity & Saved
+                </Text>
+
+                <div className="space-y-1">
+                  {activityItems.map(renderNavButton)}
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 4: ADMINISTRATION */}
             {adminItems.length > 0 && (
               <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-white/10">
                 <Text
@@ -303,7 +418,6 @@ export function ProfileSidebar({
                 </div>
               </div>
             )}
-
           </div>
 
           {/* FOOTER ACTIONS: SESSION */}
@@ -368,7 +482,7 @@ export function ProfileSidebar({
         }}
       >
         <Text size="xs" className="text-slate-600 dark:text-slate-300 leading-relaxed mt-1">
-          Are you sure you want to sign out of Buildbot AI? You will need your credentials to access your saved PC configurations and store reservations.
+          Are you sure you want to sign out of Buildbot AI? You will need your credentials to access your saved PC configurations and orders.
         </Text>
 
         <Group justify="flex-end" gap="xs" mt="md">

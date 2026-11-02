@@ -235,7 +235,7 @@ export const SidebarTrigger = AdminSidebarTrigger;
 export type AdminTabKey =
   | "stock"
   | "prebuilts"
-  | "reservations"
+  | "orders"
   | "sales"
   | "archive"
   | "audit"
@@ -265,6 +265,13 @@ interface AdminSidebarProps extends React.ComponentProps<"div"> {
   partsCount?: number;
   prebuiltsCount?: number;
   pendingOrdersCount?: number;
+  orderStageCounts?: {
+    orderPlaced: number;
+    assembling: number;
+    outForDelivery: number;
+    delivered: number;
+    cancelled: number;
+  };
   auditLogsCount?: number;
   intelligenceBadge?: string;
   intelligenceBadgeColor?: string;
@@ -282,6 +289,7 @@ export function AdminSidebar({
   partsCount = 0,
   prebuiltsCount = 0,
   pendingOrdersCount = 0,
+  orderStageCounts,
   auditLogsCount = 0,
   intelligenceBadge,
   intelligenceBadgeColor,
@@ -291,7 +299,8 @@ export function AdminSidebar({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const archiveSubTab = searchParams.get("sub") || "parts";
+  const archiveSubTab = searchParams.get("sub") === "reservations" ? "orders" : searchParams.get("sub") || "parts";
+  const currentOrderStage = searchParams.get("stage");
   const auth = useAuth();
   const { toast } = useToast();
   const { isMobile, state, openMobile, setOpenMobile, toggleSidebar } =
@@ -422,18 +431,60 @@ export function AdminSidebar({
             onClick: () => router.push("/admin?tab=archive&sub=prebuilts"),
           },
           {
-            title: "Reservations",
-            isActive: !isPrebuiltBuilderRoute && currentTab === "archive" && archiveSubTab === "reservations",
-            onClick: () => router.push("/admin?tab=archive&sub=reservations"),
+            title: "Orders",
+            isActive: !isPrebuiltBuilderRoute && currentTab === "archive" && archiveSubTab === "orders",
+            onClick: () => router.push("/admin?tab=archive&sub=orders"),
           },
         ],
       },
       {
-        title: "Reservations",
+        title: "Orders",
         icon: ShoppingBag,
-        isActive: !isPrebuiltBuilderRoute && currentTab === "reservations",
-        defaultTab: "reservations",
+        isActive: !isPrebuiltBuilderRoute && currentTab === "orders",
+        defaultTab: "orders",
         badge: pendingOrdersCount > 0 ? pendingOrdersCount : undefined,
+        items: [
+          {
+            title: "Order Placed",
+            isActive: !isPrebuiltBuilderRoute && currentTab === "orders" && (currentOrderStage === "order_placed" || !currentOrderStage),
+            badge: orderStageCounts?.orderPlaced
+              ? orderStageCounts.orderPlaced
+              : undefined,
+            onClick: () => router.push("/admin?tab=orders&stage=order_placed"),
+          },
+          {
+            title: "Assembling",
+            isActive: !isPrebuiltBuilderRoute && currentTab === "orders" && currentOrderStage === "assembling_testing",
+            badge: orderStageCounts?.assembling
+              ? orderStageCounts.assembling
+              : undefined,
+            onClick: () => router.push("/admin?tab=orders&stage=assembling_testing"),
+          },
+          {
+            title: "Out for Delivery",
+            isActive: !isPrebuiltBuilderRoute && currentTab === "orders" && currentOrderStage === "out_for_delivery",
+            badge: orderStageCounts?.outForDelivery
+              ? orderStageCounts.outForDelivery
+              : undefined,
+            onClick: () => router.push("/admin?tab=orders&stage=out_for_delivery"),
+          },
+          {
+            title: "Delivered",
+            isActive: !isPrebuiltBuilderRoute && currentTab === "orders" && currentOrderStage === "delivered",
+            badge: orderStageCounts?.delivered
+              ? orderStageCounts.delivered
+              : undefined,
+            onClick: () => router.push("/admin?tab=orders&stage=delivered"),
+          },
+          {
+            title: "Cancelled",
+            isActive: !isPrebuiltBuilderRoute && currentTab === "orders" && currentOrderStage === "cancelled",
+            badge: orderStageCounts?.cancelled
+              ? orderStageCounts.cancelled
+              : undefined,
+            onClick: () => router.push("/admin?tab=orders&stage=cancelled"),
+          },
+        ],
       },
       ...(isSuperAdmin
         ? [
@@ -539,6 +590,7 @@ export function AdminSidebar({
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(
     () => ({
       Inventory: true,
+      Orders: !isPrebuiltBuilderRoute && currentTab === "orders",
       Archive: !isPrebuiltBuilderRoute && currentTab === "archive",
       "Sales & Analytics":
         !isPrebuiltBuilderRoute && currentTab === "sales",
@@ -737,7 +789,7 @@ export function AdminSidebar({
                                 <Text
                                   unstyled
                                   component="span"
-                                  className="ml-auto text-[11px] tabular-nums text-muted-foreground"
+                                  className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums text-slate-600 dark:bg-white/10 dark:text-slate-300"
                                 >
                                   {subItem.badge}
                                 </Text>

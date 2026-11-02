@@ -141,7 +141,7 @@ export function AdminTabHeader({
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-2">
                 <div ref={ctx?.setCountSlot} className="contents" />
                 {/* Unified 36px Action Bar */}
-                <div className="ml-auto flex flex-wrap items-center gap-2 shrink-0">
+                <div className={cn("ml-auto flex flex-wrap items-center gap-2 shrink-0", currentTab === "orders" && "w-full min-w-0 sm:w-auto")}>
                     {(currentTab === 'stock' || currentTab === 'prebuilts') && (
                         <Menu position="bottom-end" shadow="md" width={180} withinPortal>
                             <Menu.Target>
@@ -178,7 +178,7 @@ export function AdminTabHeader({
                         trigger={() => null}
                     />
 
-                    {currentTab === 'reservations' && pendingOrdersCount > 0 && (
+                    {currentTab === 'orders' && pendingOrdersCount > 0 && (
                         <Badge
                             size="lg"
                             color="yellow"
@@ -210,33 +210,6 @@ export function AdminTabHeader({
                                 Export to Excel
                             </Button>
 
-                            <Button
-                                variant="light"
-                                color="cyan"
-                                radius="md"
-                                size="sm"
-                                h={36}
-                                leftSection={<Plus className={cn("h-4 w-4", isIngestingDummyData && "animate-pulse")} />}
-                                onClick={onOpenIngestDummy}
-                                loading={isIngestingDummyData}
-                                className="font-headline font-bold text-xs uppercase tracking-wider transition-all"
-                            >
-                                Ingest Dummy Data
-                            </Button>
-
-                            <Button
-                                variant="subtle"
-                                color="red"
-                                radius="md"
-                                size="sm"
-                                h={36}
-                                leftSection={<RefreshCcw className={cn("h-4 w-4", isResettingSales && "animate-spin")} />}
-                                onClick={onOpenResetSales}
-                                loading={isResettingSales}
-                                className="font-headline font-bold text-xs uppercase tracking-wider text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-all"
-                            >
-                                Reset Analytics
-                            </Button>
                         </Group>
                     )}
 
@@ -281,7 +254,7 @@ export function AdminTabHeader({
                 >
                     <Stack gap="md" className="pt-2">
                         <Text size="sm" className="text-slate-600 dark:text-slate-300">
-                            This action will generate <strong>100 randomized customer reservations</strong> distributed over the past 12 months, calculating component demand and updating popularity scores.
+                            This action will generate <strong>100 randomized customer orders</strong> distributed over the past 12 months, calculating component demand and updating popularity scores.
                         </Text>
 
                         <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-800 dark:text-cyan-300">
@@ -341,7 +314,7 @@ export function AdminTabHeader({
                 >
                     <Stack gap="md" className="pt-2">
                         <Text size="sm" className="text-slate-600 dark:text-slate-300">
-                            Are you sure you want to <strong>permanently delete all existing reservations</strong> and clear all component popularity scores?
+                            Are you sure you want to <strong>permanently delete all existing orders</strong> and clear all component popularity scores?
                         </Text>
 
                         <Text size="xs" c="red" className="font-semibold flex items-center gap-1.5">

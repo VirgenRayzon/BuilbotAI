@@ -93,6 +93,7 @@ export function PublicPartsCatalog({ products, isAdminPreview = false }: { produ
     addToCart(
       {
         id: `part-${product.productId}`,
+        productId: product.productId,
         kind: 'part',
         name: product.name,
         price: product.price,

@@ -8,10 +8,11 @@ import { useUserProfile } from "@/context/user-profile";
 import { useToast } from "@/hooks/use-toast";
 import { reservePrebuiltSystem } from "@/app/prebuilt-reservation-actions";
 import { getAiPrebuiltPerformance } from "@/app/actions";
-import { getMissingParts, getPrebuiltPartStatuses, type ResolvedPrebuiltPart } from "@/lib/prebuilt-utils";
+import { getIncludedStockCooler, getMissingParts, getPrebuiltPartStatuses, type ResolvedPrebuiltPart } from "@/lib/prebuilt-utils";
 import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
 import type { PrebuiltSystem, Part, FavoriteBuild, FavoriteBuildPart } from "@/lib/types";
 import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '@/lib/integrated-graphics';
+import { includedCpuCoolerName } from '@/lib/included-cpu-cooler';
 import { useProductSaveOperation } from '@/hooks/use-product-save-operation';
 
 export function usePrebuiltDetails(systemId: string) {
@@ -186,6 +187,15 @@ export function usePrebuiltDetails(systemId: string) {
                     const entry = (part: Part | null): ResolvedPrebuiltPart => ({ key, category, partId, part });
 
                     try {
+                        if (category === 'cooler') {
+                            const includedCooler = getIncludedStockCooler(partId);
+                            if (includedCooler && system.components.cpu) {
+                                const cpuSnap = await getDoc(doc(firestore, inventoryItemPath('CPU', system.components.cpu)));
+                                const cpu = cpuSnap.exists() ? { id: cpuSnap.id, ...cpuSnap.data(), category: 'CPU' } as Part : null;
+                                const coolerName = cpu && !cpu.isArchived ? includedCpuCoolerName(cpu) : null;
+                                return entry(coolerName ? { ...includedCooler, name: coolerName } : null);
+                            }
+                        }
                         if (category === 'gpu' && partId === INCLUDED_INTEGRATED_GPU_ID) {
                             const cpuId = system.components.cpu;
                             if (!cpuId) return entry(null);
