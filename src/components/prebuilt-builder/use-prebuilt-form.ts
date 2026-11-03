@@ -35,9 +35,10 @@ interface UsePrebuiltFormParams {
     initialData?: PrebuiltSystem;
     onSave: (data: PrebuiltBuilderAddFormSchema, operationId?: string) => Promise<CreatedProduct | void>;
     onClose: () => void;
+    onCreated?: (name: string, saved?: CreatedProduct) => void;
 }
 
-export function usePrebuiltForm({ parts, initialData, onSave, onClose }: UsePrebuiltFormParams) {
+export function usePrebuiltForm({ parts, initialData, onSave, onClose, onCreated }: UsePrebuiltFormParams) {
     const [isAiPending, setIsAiPending] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const { getOperation, resetOperation } = useProductSaveOperation();
@@ -202,11 +203,12 @@ export function usePrebuiltForm({ parts, initialData, onSave, onClose }: UsePreb
         setIsSaving(true);
         try {
             const saved = await onSave(values, getOperation(values));
-            toast({ title: initialData ? 'Prebuilt Updated!' : 'Prebuilt System Added!', description: saved ? `${saved.productId} · ${saved.sku}` : `${values.name} saved.` });
+            if (initialData) toast({ title: 'Prebuilt Updated!', description: saved ? `${saved.productId} · ${saved.sku}` : `${values.name} saved.` });
             if (!initialData) form.reset();
             resetOperation();
             onClose();
-            if (saved) window.location.assign(saved.adminUrl);
+            if (!initialData) onCreated?.(values.name, saved || undefined);
+            if (initialData && saved) window.location.assign(saved.adminUrl);
         } catch (error) {
             toast({ title: 'Save failed', variant: 'destructive', description: error instanceof Error ? error.message : 'Please retry.' });
         } finally { setIsSaving(false); }

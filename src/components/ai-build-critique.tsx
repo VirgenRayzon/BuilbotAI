@@ -374,12 +374,39 @@ export function AIBuildCritique({
                     </motion.div>
                 )}
 
-                {error && (
-                    <div className="bg-destructive/10 text-destructive p-4 rounded-md">
-                        <p className="font-semibold flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Analysis Failed</p>
-                        <p className="text-sm mt-1">{error}</p>
-                        <SparkleButton onClick={isControlled && onRefresh ? onRefresh : handleAnalyze} className="mt-3">Try Again</SparkleButton>
-                    </div>
+                {error && !loading && (
+                    <motion.div
+                        key="error"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-6 rounded-2xl border-2 border-dashed border-rose-500/30 bg-rose-500/5 dark:bg-rose-950/20 text-center space-y-4"
+                    >
+                        <div className="flex justify-center">
+                            <ThemeIcon size={56} radius="xl" variant="light" color="red" className="bg-rose-500/10 border border-rose-500/20 shadow-inner">
+                                <AlertTriangle className="h-7 w-7 text-rose-500 dark:text-rose-400" />
+                            </ThemeIcon>
+                        </div>
+                        <div className="space-y-2 max-w-lg mx-auto">
+                            <h3 className="font-headline font-bold text-lg text-slate-900 dark:text-slate-100">
+                                Review Generation Failed
+                            </h3>
+                            <div className="text-xs text-rose-700 dark:text-rose-300 font-mono bg-rose-50/80 dark:bg-rose-950/40 p-3 rounded-lg border border-rose-200 dark:border-rose-900/50 break-words text-left leading-relaxed">
+                                {error}
+                            </div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 pt-1">
+                                The AI critique could not complete the review. You can retry the analysis or adjust your component selection.
+                            </p>
+                        </div>
+                        <div className="pt-2 flex justify-center gap-3">
+                            <SparkleButton
+                                onClick={isControlled && onRefresh ? onRefresh : handleAnalyze}
+                                icon={<Sparkles className="h-4 w-4" />}
+                                className="px-6 text-xs font-bold uppercase tracking-wider"
+                            >
+                                Retry Review
+                            </SparkleButton>
+                        </div>
+                    </motion.div>
                 )}
 
                 {analysis && !loading && (

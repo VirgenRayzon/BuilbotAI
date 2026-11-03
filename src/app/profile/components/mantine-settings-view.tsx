@@ -394,12 +394,12 @@ export function MantineSettingsView({
         </Grid.Col>
 
         {/* RIGHT COLUMN: Account Information */}
-        <Grid.Col span={{ base: 12, lg: 5.5 }}>
+        <Grid.Col span={{ base: 12, lg: 5.5 }} className="self-start">
           <Paper
             withBorder
             radius="lg"
             p={12}
-            className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm h-full flex flex-col justify-between"
+            className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm flex flex-col"
           >
             <Stack gap="md">
               <Group justify="space-between" align="center">
@@ -490,32 +490,18 @@ export function MantineSettingsView({
                     Change Password
                   </Button>
                 </div>
-                <div className="flex items-center gap-2">
-                  <TextInput
-                    value="••••••••••••••••"
-                    disabled
-                    readOnly
-                    radius="md"
-                    size="sm"
-                    className="flex-1"
-                    leftSection={<Lock size={15} className="text-slate-400" />}
-                    rightSection={
-                      <Button
-                        variant="subtle"
-                        size="compact-xs"
-                        color="cyan"
-                        onClick={handleOpenPasswordModal}
-                        className="text-xs font-semibold mr-1"
-                      >
-                        Change
-                      </Button>
-                    }
-                    classNames={{
-                      input:
-                        "bg-slate-100 dark:bg-slate-900/80 border-slate-300 dark:border-white/10 text-slate-500 font-mono tracking-widest cursor-not-allowed select-none",
-                    }}
-                  />
-                </div>
+                <TextInput
+                  value="••••••••••••••••"
+                  disabled
+                  readOnly
+                  radius="md"
+                  size="sm"
+                  leftSection={<Lock size={15} className="text-slate-400" />}
+                  classNames={{
+                    input:
+                      "bg-slate-100 dark:bg-slate-900/80 border-slate-300 dark:border-white/10 text-slate-500 font-mono tracking-widest cursor-not-allowed select-none",
+                  }}
+                />
                 <Text size="xs" c="dimmed" mt={4}>
                   Manage your account security and password credentials.
                 </Text>
@@ -562,7 +548,7 @@ export function MantineSettingsView({
               )}
             </Stack>
 
-            <div className="pt-6 mt-4 border-t border-slate-200 dark:border-white/10 flex justify-start">
+            <div className="pt-4 mt-4 border-t border-slate-200 dark:border-white/10 flex justify-start">
               <Button
                 color="blue"
                 radius="md"

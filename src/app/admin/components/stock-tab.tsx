@@ -25,6 +25,8 @@ import type { Part, UserProfile } from '@/lib/types';
 import { AddPartFormSchema } from '@/hooks/use-part-form';
 import { useInventoryImageCount } from '@/hooks/use-inventory-image-count';
 import { ADMIN_PART_IMAGE_SIZES } from '@/lib/inventory-image-sizes';
+import { SearchNoResults } from '@/components/search-no-results';
+import { shouldShowSearchNoResults } from '@/lib/search-empty-state';
 
 type PartSelection = { id: string; category: Part['category'] };
 type PartCategorySelection = { name: Part['category']; selected: boolean };
@@ -172,6 +174,7 @@ export function StockTab({
         const startIndex = (partCurrentPage - 1) * partItemsPerPage;
         return filteredAndSortedParts.slice(startIndex, startIndex + partItemsPerPage);
     }, [filteredAndSortedParts, partCurrentPage, partItemsPerPage]);
+    const hasNoSearchResults = shouldShowSearchNoResults(partSearchQuery, filteredAndSortedParts.length, partsLoading);
 
     return (
         <div className="space-y-6">
@@ -252,7 +255,7 @@ export function StockTab({
                     </Tooltip>
                 }
                 actions={
-                    <AddPartDialog onSave={onAddPart}>
+                    <AddPartDialog onSave={onAddPart} existingPartNames={parts.map(part => part.name)}>
                         <Button
                             size="sm"
                             radius="md"
@@ -321,7 +324,9 @@ export function StockTab({
                 </div>
             )}
 
-            {activeView === 'grid' ? (
+            {hasNoSearchResults ? (
+                <SearchNoResults query={partSearchQuery} itemLabel="components" onClear={() => setPartSearchQuery('')} />
+            ) : activeView === 'grid' ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
                     {partsLoading ? (
                         Array.from({ length: 8 }).map((_, i) => (
@@ -407,13 +412,13 @@ export function StockTab({
                     />
                 </Paper>
             )}
-            <PaginationControls
+            {filteredAndSortedParts.length > 0 && <PaginationControls
                 currentPage={partCurrentPage}
                 totalPages={partTotalPages}
                 itemsPerPage={partItemsPerPage}
                 onPageChange={setPartCurrentPage}
                 onItemsPerPageChange={setPartItemsPerPage}
-            />
+            />}
         </div>
     );
 }

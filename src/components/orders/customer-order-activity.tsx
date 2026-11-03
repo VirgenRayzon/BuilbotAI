@@ -18,7 +18,11 @@ import {
 } from '@/hooks/use-customer-rig-assembly';
 import { resolveOrderItemImageUrl } from '@/lib/order-image-resolver';
 import { OptimizedImage } from '@/components/ui/optimized-image';
-import { availableOrderStages, getOrderFulfillmentStage } from '@/lib/order-workflow';
+import { getOrderFulfillmentStage } from '@/lib/order-workflow';
+import {
+  getVisibleQcNotes,
+  orderHasBuildOrPrebuilt,
+} from '@/lib/customer-order-activity';
 
 interface CustomerOrderActivityProps {
   order: Order;
@@ -42,7 +46,6 @@ export function CustomerOrderActivity({
   const currentRig = rigs[selectedRigIndex] || activeRig;
 
   const currentStage = getOrderFulfillmentStage(order);
-  const orderStages = availableOrderStages(order);
   const isCancelled = order.status === 'cancelled';
   const isStorePickup = order.shippingMethod === 'store_pickup';
 
@@ -92,8 +95,13 @@ export function CustomerOrderActivity({
   const isStage4Completed = currentStage === 'delivered';
   const isStage5Completed = currentStage === 'delivered';
 
+  const hasBuildOrPrebuilt = orderHasBuildOrPrebuilt(order);
+  const deliveryStepNumber = hasBuildOrPrebuilt ? 4 : 3;
+  const deliveredStepNumber = hasBuildOrPrebuilt ? 5 : 4;
+
   const orderSummary = getOrderPlacedSummary(order);
   const stockBadge = getStockBadgeInfo(order);
+  const qcNotes = getVisibleQcNotes(verification?.qc?.notes);
 
   return (
     <div
@@ -139,7 +147,10 @@ export function CustomerOrderActivity({
 
             {/* Step 1: Order placed */}
             <div className="relative space-y-1">
-              <span className="absolute -left-7 top-0.5 flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 bg-slate-100 font-mono text-xs font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+              <span
+                data-testid="completed-order-stage-marker"
+                className="absolute -left-7 top-0.5 flex h-6 w-6 items-center justify-center rounded-full border border-cyan-400 bg-cyan-50 font-mono text-xs font-bold text-cyan-700 dark:border-cyan-500 dark:bg-cyan-950 dark:text-cyan-300"
+              >
                 1
               </span>
               <div className="space-y-0.5">
@@ -157,7 +168,10 @@ export function CustomerOrderActivity({
 
             {/* Step 2: Stock reserved */}
             <div className="relative space-y-1">
-              <span className="absolute -left-7 top-0.5 flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 bg-slate-100 font-mono text-xs font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+              <span
+                data-testid="completed-order-stage-marker"
+                className="absolute -left-7 top-0.5 flex h-6 w-6 items-center justify-center rounded-full border border-cyan-400 bg-cyan-50 font-mono text-xs font-bold text-cyan-700 dark:border-cyan-500 dark:bg-cyan-950 dark:text-cyan-300"
+              >
                 2
               </span>
               <div className="space-y-1.5">
@@ -179,18 +193,20 @@ export function CustomerOrderActivity({
               </div>
             </div>
 
-            {/* Step 3: Moved to Assembling & Testing (with Image 2 4-stages inside) */}
-            <div className="relative space-y-2.5">
-              <span
-                className={cn(
-                  'absolute -left-7 top-0.5 flex h-6 w-6 items-center justify-center rounded-full font-mono text-xs font-bold',
-                  isStage3Active || isStage3Completed
-                    ? 'border border-cyan-400 bg-cyan-50 text-cyan-700 dark:border-cyan-500 dark:bg-cyan-950 dark:text-cyan-300'
-                    : 'border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'
-                )}
-              >
-                3
-              </span>
+            {/* Step 3: Moved to Assembling & Testing (Only shown for custom builds or prebuilt orders) */}
+            {hasBuildOrPrebuilt && (
+              <div className="relative space-y-2.5">
+                <span
+                  data-testid="completed-order-stage-marker"
+                  className={cn(
+                    'absolute -left-7 top-0.5 flex h-6 w-6 items-center justify-center rounded-full font-mono text-xs font-bold',
+                    isStage3Active || isStage3Completed
+                      ? 'border border-cyan-400 bg-cyan-50 text-cyan-700 dark:border-cyan-500 dark:bg-cyan-950 dark:text-cyan-300'
+                      : 'border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'
+                  )}
+                >
+                  3
+                </span>
               <div className="space-y-1">
                 <p className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100">
                   Moved to Assembling & Testing
@@ -210,7 +226,15 @@ export function CustomerOrderActivity({
                 <div className="py-2.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full bg-slate-200 text-slate-700 text-xs font-bold shrink-0 dark:bg-slate-800 dark:text-slate-200">
+                      <span
+                        data-testid="completed-assembly-step-marker"
+                        className={cn(
+                          'flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full border text-xs font-bold shrink-0',
+                          isPickingComplete
+                            ? 'border-teal-400 bg-teal-50 text-teal-700 dark:border-teal-500 dark:bg-teal-950 dark:text-teal-300'
+                            : 'border-slate-300 bg-slate-200 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
+                        )}
+                      >
                         1
                       </span>
                       <span className="font-semibold text-xs sm:text-sm text-slate-800 dark:text-slate-100 truncate">
@@ -329,7 +353,15 @@ export function CustomerOrderActivity({
                 <div className="py-2.5">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full bg-slate-200 text-slate-700 text-xs font-bold shrink-0 dark:bg-slate-800 dark:text-slate-200">
+                      <span
+                        data-testid="completed-assembly-step-marker"
+                        className={cn(
+                          'flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full border text-xs font-bold shrink-0',
+                          isAssemblyComplete
+                            ? 'border-teal-400 bg-teal-50 text-teal-700 dark:border-teal-500 dark:bg-teal-950 dark:text-teal-300'
+                            : 'border-slate-300 bg-slate-200 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
+                        )}
+                      >
                         2
                       </span>
                       <span className="font-semibold text-xs sm:text-sm text-slate-800 dark:text-slate-100 truncate">
@@ -366,7 +398,17 @@ export function CustomerOrderActivity({
                 <div className="py-2.5">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full bg-slate-200 text-slate-700 text-xs font-bold shrink-0 dark:bg-slate-800 dark:text-slate-200">
+                      <span
+                        data-testid="completed-assembly-step-marker"
+                        className={cn(
+                          'flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full border text-xs font-bold shrink-0',
+                          isTestingPassed
+                            ? 'border-teal-400 bg-teal-50 text-teal-700 dark:border-teal-500 dark:bg-teal-950 dark:text-teal-300'
+                            : isTestingFailed
+                              ? 'border-rose-400 bg-rose-50 text-rose-700 dark:border-rose-500 dark:bg-rose-950 dark:text-rose-300'
+                              : 'border-slate-300 bg-slate-200 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
+                        )}
+                      >
                         3
                       </span>
                       <span className="font-semibold text-xs sm:text-sm text-slate-800 dark:text-slate-100 truncate">
@@ -407,7 +449,17 @@ export function CustomerOrderActivity({
                 <div className="py-2.5">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full bg-slate-200 text-slate-700 text-xs font-bold shrink-0 dark:bg-slate-800 dark:text-slate-200">
+                      <span
+                        data-testid="completed-assembly-step-marker"
+                        className={cn(
+                          'flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full border text-xs font-bold shrink-0',
+                          isQcPassed
+                            ? 'border-teal-400 bg-teal-50 text-teal-700 dark:border-teal-500 dark:bg-teal-950 dark:text-teal-300'
+                            : isQcFailed
+                              ? 'border-rose-400 bg-rose-50 text-rose-700 dark:border-rose-500 dark:bg-rose-950 dark:text-rose-300'
+                              : 'border-slate-300 bg-slate-200 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
+                        )}
+                      >
                         4
                       </span>
                       <span className="font-semibold text-xs sm:text-sm text-slate-800 dark:text-slate-100 truncate">
@@ -438,58 +490,96 @@ export function CustomerOrderActivity({
                   </div>
                 </div>
 
-                {/* QC Notes Pill from Image 2 */}
-                <div className="py-2.5 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                  <span className="text-slate-500 italic dark:text-slate-400">
-                    {verification?.qc?.notes
-                      ? `QC notes: ${verification.qc.notes}`
-                      : 'QC notes (e.g. peel removed, accessories boxed, ready for dispatch)...'}
-                  </span>
-                </div>
+                {qcNotes && (
+                  <div className="py-2.5 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                    <span className="text-slate-500 italic dark:text-slate-400">
+                      QC notes: {qcNotes}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
+            )}
 
-            {/* Step 4 (If progressed to Out for Delivery or completed) */}
-            {(isStage4Active || isStage4Completed) && (
+            {/* Delivery step (Step 3 for parts-only, Step 4 for custom/prebuilts) */}
+            {(!isCancelled || isStage4Active || isStage4Completed) && (
               <div className="relative space-y-1">
-                <span className="absolute -left-7 top-0.5 flex h-6 w-6 items-center justify-center rounded-full border border-cyan-400 bg-cyan-50 font-mono text-xs font-bold text-cyan-700 dark:border-cyan-500 dark:bg-cyan-950 dark:text-cyan-300">
-                  4
+                <span
+                  data-testid="completed-order-stage-marker"
+                  className={cn(
+                    'absolute -left-7 top-0.5 flex h-6 w-6 items-center justify-center rounded-full font-mono text-xs font-bold',
+                    isStage4Active || isStage4Completed
+                      ? 'border border-cyan-400 bg-cyan-50 text-cyan-700 dark:border-cyan-500 dark:bg-cyan-950 dark:text-cyan-300'
+                      : 'border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'
+                  )}
+                >
+                  {deliveryStepNumber}
                 </span>
                 <div className="space-y-1">
                   <p className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100">
                     {isStorePickup ? 'Ready for Store Pickup' : 'Out for Delivery'}
                   </p>
                   <div>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-cyan-300 bg-cyan-50 text-xs font-semibold text-cyan-700 dark:border-cyan-500/40 dark:bg-cyan-950/60 dark:text-cyan-400">
-                      {isStorePickup ? 'Ready for Collection' : 'In Transit with Courier'}
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold',
+                        isStage4Active || isStage4Completed
+                          ? 'border border-cyan-300 bg-cyan-50 text-cyan-700 dark:border-cyan-500/40 dark:bg-cyan-950/60 dark:text-cyan-400'
+                          : 'border border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-400'
+                      )}
+                    >
+                      {isStage4Active || isStage4Completed
+                        ? (isStorePickup ? 'Ready for Collection' : 'In Transit with Courier')
+                        : (isStorePickup ? 'Pending Pickup Preparation' : 'Pending Courier Dispatch')}
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400">
-                    {isStorePickup
-                      ? 'Your order is packaged and available for collection at Netcodex Center — Cubao.'
-                      : 'Dispatched with courier. Actual delivery is in transit.'}
+                    {isStage4Active || isStage4Completed
+                      ? (isStorePickup
+                          ? 'Your order is packaged and available for collection at Netcodex Center — Cubao.'
+                          : 'Dispatched with courier. Actual delivery is in transit.')
+                      : (isStorePickup
+                          ? 'Upcoming stage — package will be prepared for collection at Netcodex Center — Cubao.'
+                          : 'Upcoming stage — package queued for courier pickup and dispatch.')}
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Step 5 (If delivered) */}
-            {isStage5Completed && (
+            {/* Delivered step (Step 4 for parts-only, Step 5 for custom/prebuilts) */}
+            {(!isCancelled || isStage5Completed) && (
               <div className="relative space-y-1">
-                <span className="absolute -left-7 top-0.5 flex h-6 w-6 items-center justify-center rounded-full border border-emerald-400 bg-emerald-50 font-mono text-xs font-bold text-emerald-700 dark:border-emerald-500 dark:bg-emerald-950 dark:text-emerald-300">
-                  {orderStages.length >= 4 ? orderStages.length : 4}
+                <span
+                  data-testid="delivered-stage-marker"
+                  className={cn(
+                    'absolute -left-7 top-0.5 flex h-6 w-6 items-center justify-center rounded-full font-mono text-xs font-bold',
+                    isStage5Completed
+                      ? 'border border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-950 dark:text-emerald-300'
+                      : 'border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'
+                  )}
+                >
+                  {deliveredStepNumber}
                 </span>
                 <div className="space-y-1">
                   <p className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100">
                     Delivered
                   </p>
                   <div>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-300 bg-emerald-50 text-xs font-semibold text-emerald-700 dark:border-emerald-500/40 dark:bg-[#06241a] dark:text-emerald-400">
-                      Completed
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold',
+                        isStage5Completed
+                          ? 'border border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-[#06241a] dark:text-emerald-400'
+                          : 'border border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-400'
+                      )}
+                    >
+                      {isStage5Completed ? 'Completed' : 'Pending Delivery'}
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400">
-                    Order fulfilled and delivered successfully.
+                    {isStage5Completed
+                      ? 'Order fulfilled and delivered successfully.'
+                      : 'Upcoming stage — final handover and parcel receipt verification.'}
                   </p>
                 </div>
               </div>
@@ -520,7 +610,9 @@ export function CustomerOrderActivity({
 
           {/* Footer note matching Image 1 */}
           <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-600 dark:border-slate-800/80 dark:text-slate-400 italic">
-            Real-time fulfillment timeline; timestamps and technician assembly milestones update automatically.
+            {hasBuildOrPrebuilt
+              ? 'Real-time fulfillment timeline; timestamps and technician assembly milestones update automatically.'
+              : 'Real-time fulfillment timeline; timestamps update automatically.'}
           </div>
         </div>
     </div>

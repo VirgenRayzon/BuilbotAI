@@ -11,6 +11,8 @@ import { InventoryToolbar } from '@/components/inventory-toolbar';
 import { Paper } from '@mantine/core';
 import type { Order, Part, PrebuiltSystem } from '@/lib/types';
 import { ReservationsTab } from './reservations-tab';
+import { SearchNoResults } from '@/components/search-no-results';
+import { shouldShowSearchNoResults } from '@/lib/search-empty-state';
 
 interface ArchiveTabProps {
   parts: Part[];
@@ -160,6 +162,8 @@ export function ArchiveTab({
         return prebuiltSortDirection === 'asc' ? comparison : -comparison;
       });
   }, [prebuiltSortBy, prebuiltSortDirection, prebuiltSystems, searchQuery, selectedTiers]);
+  const noArchivedPartResults = shouldShowSearchNoResults(searchQuery, archivedParts.length, Boolean(partsLoading));
+  const noArchivedPrebuiltResults = shouldShowSearchNoResults(searchQuery, archivedPrebuilts.length, Boolean(prebuiltsLoading));
 
   return (
     <div className="space-y-4">
@@ -235,7 +239,9 @@ export function ArchiveTab({
             </div>
           )}
 
-          <Paper
+          {noArchivedPartResults ? (
+            <SearchNoResults query={searchQuery} itemLabel="archived components" onClear={() => onSearchQueryChange?.('')} />
+          ) : <Paper
             withBorder
             radius="md"
             className="overflow-hidden border-slate-200 bg-white/80 shadow-sm dark:border-white/10 dark:bg-[#141a23]/80"
@@ -254,7 +260,7 @@ export function ArchiveTab({
                 isArchiveView={true}
               />
             )}
-          </Paper>
+          </Paper>}
         </div>
       )}
 
@@ -308,7 +314,9 @@ export function ArchiveTab({
             </div>
           )}
 
-          <Paper
+          {noArchivedPrebuiltResults ? (
+            <SearchNoResults query={searchQuery} itemLabel="archived systems" onClear={() => onSearchQueryChange?.('')} />
+          ) : <Paper
             withBorder
             radius="md"
             className="overflow-hidden border-slate-200 bg-white/80 shadow-sm dark:border-white/10 dark:bg-[#141a23]/80"
@@ -330,7 +338,7 @@ export function ArchiveTab({
                 isArchiveView={true}
               />
             )}
-          </Paper>
+          </Paper>}
         </div>
       )}
     </div>

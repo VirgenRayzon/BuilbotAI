@@ -27,6 +27,7 @@ import { IdentityFields } from "./prebuilt-builder/identity-fields";
 import type { CreatedProduct } from '@/lib/product-identity';
 import { ProductIdentification } from './product-identification';
 import { ComponentFields } from "./prebuilt-builder/component-fields";
+import { InventorySaveSuccessDialog } from "./inventory-save-success-dialog";
 
 interface PrebuiltBuilderAddDialogProps {
     children: React.ReactNode;
@@ -47,12 +48,18 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
     const [elapsedTime, setElapsedTime] = useState(0);
     const [showTelemetry, setShowTelemetry] = useState(false);
     const startTimeRef = useRef<number>(0);
+    const saveStartRef = useRef<number | null>(null);
+    const [savedSystem, setSavedSystem] = useState<{ name: string; seconds: number; url?: string } | null>(null);
 
     const { form, isAiPending, isSaving, aiDuration, tokensUsed, handleAiAssist, onSubmit } = usePrebuiltForm({
         parts,
         initialData,
         onSave,
-        onClose: () => setOpen(false)
+        onClose: () => setOpen(false),
+        onCreated: (name, saved) => {
+            setSavedSystem({ name, seconds: (performance.now() - (saveStartRef.current ?? performance.now())) / 1000, url: saved?.adminUrl });
+            saveStartRef.current = null;
+        },
     });
 
     const inventory = useMemo(() => {
@@ -90,7 +97,7 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
         }
     };
 
-    return (
+    return <>
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent onEscapeKeyDown={event => { if (isSaving) event.preventDefault(); }} onPointerDownOutside={event => { if (isSaving) event.preventDefault(); }} className="sm:max-w-5xl p-0 gap-0 overflow-hidden border-primary/20 bg-background/95 backdrop-blur-xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] rounded-3xl [&>button.absolute]:hidden">
@@ -220,6 +227,7 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                                 </DialogClose>
                                 <Button
                                     type="submit"
+                                    onClick={() => { saveStartRef.current = performance.now(); }}
                                     disabled={isSaving || isAiPending}
                                     size="lg"
                                     className="rounded-xl px-10 font-bold uppercase tracking-[0.15em] text-xs h-12 shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all duration-200"
@@ -232,7 +240,16 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                 </Form>
             </DialogContent>
         </Dialog>
-    );
+        {savedSystem && (
+            <InventorySaveSuccessDialog
+                itemType="system"
+                name={savedSystem.name}
+                seconds={savedSystem.seconds}
+                url={savedSystem.url}
+                onClose={() => setSavedSystem(null)}
+            />
+        )}
+    </>;
 }
 
 function FormStats({ form }: { form: any }) {

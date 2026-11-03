@@ -5,6 +5,7 @@ import type { ComponentData, FavoriteBuild, Resolution, WorkloadType, Part } fro
 import { useToast } from "@/hooks/use-toast";
 import { checkCompatibility } from "@/lib/compatibility";
 import { INCLUDED_INTEGRATED_GPU_ID, syncIntegratedGraphics } from '@/lib/integrated-graphics';
+import { includedCpuCoolerName, isIncludedStockCoolerPart } from '@/lib/included-cpu-cooler';
 import {
     Cpu, Server, CircuitBoard, MemoryStick, Database, Power,
     RectangleVertical, Wind, Monitor, Keyboard, Mouse, Headphones,
@@ -50,8 +51,27 @@ export function useAdvisorState(allParts: Part[]) {
         const next = emptyBuild();
         const unavailableParts: string[] = [];
 
+        const cpuFav = favorite.parts?.find(p => p.category === 'CPU');
+        const liveCpu = cpuFav ? allParts.find(p => p.id === cpuFav.partId || (cpuFav.name && p.name.toLowerCase() === cpuFav.name.toLowerCase())) : null;
+        const bundledCoolerName = liveCpu ? includedCpuCoolerName(liveCpu) : null;
+
         for (const savedPart of favorite.parts ?? []) {
             if (savedPart.category === 'GPU' && savedPart.partId === INCLUDED_INTEGRATED_GPU_ID) continue;
+
+            if (savedPart.category === 'Cooler' && isIncludedStockCoolerPart(savedPart)) {
+                next.Cooler = {
+                    id: 'included-stock-cooler',
+                    model: savedPart.name || bundledCoolerName || 'Intel Laminar RM1',
+                    price: 0,
+                    description: 'Bundled cooler.',
+                    image: '/placeholders/components/cooler.jpg',
+                    imageHint: 'included cooler',
+                    icon: Wind,
+                    wattage: 0,
+                    specifications: { 'Type': 'Air (Stock)' },
+                };
+                continue;
+            }
 
             const livePart = allParts.find((part) =>
                 part.id === savedPart.partId
@@ -90,6 +110,24 @@ export function useAdvisorState(allParts: Part[]) {
                 (next[savedPart.category] as ComponentData[]).push(component);
             } else {
                 next[savedPart.category] = component;
+            }
+        }
+
+        const loadedCpu = next['CPU'] as ComponentData | null;
+        if (loadedCpu && !next['Cooler']) {
+            const hasAftermarket = favorite.parts?.some(p => p.category === 'Cooler' && !isIncludedStockCoolerPart(p));
+            if (!hasAftermarket && bundledCoolerName) {
+                next.Cooler = {
+                    id: 'included-stock-cooler',
+                    model: bundledCoolerName,
+                    price: 0,
+                    description: 'Bundled cooler.',
+                    image: '/placeholders/components/cooler.jpg',
+                    imageHint: 'included cooler',
+                    icon: Wind,
+                    wattage: 0,
+                    specifications: { 'Type': 'Air (Stock)' },
+                };
             }
         }
 

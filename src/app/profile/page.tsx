@@ -11,6 +11,11 @@ import {
   Text,
   Badge,
   Button,
+  Group,
+  Modal,
+  Stack,
+  ThemeIcon,
+  Alert,
 } from "@mantine/core";
 import {
   User,
@@ -25,8 +30,10 @@ import {
   Truck,
   CreditCard,
   ArrowLeft,
+  ArrowRight,
   MapPin,
   XCircle,
+  AlertCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RouteGuard } from "@/components/auth/route-guard";
@@ -63,15 +70,8 @@ import {
   isReservationCompleted,
   isShipmentCompleted,
   isShipmentInReceiveQueue,
+  requiresStaffCancellation,
 } from "@/lib/customer-order-workflow";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 
 /**
  * Profile Page Orchestrator (Facebook & Mantine UI Architecture)
@@ -135,6 +135,13 @@ export default function ProfilePage() {
   const favoritesHook = useFavorites();
 
   const [cancelModalOrder, setCancelModalOrder] = useState<Order | null>(null);
+
+  const handleOrderCancelAction = useCallback(
+    (order: Order) => {
+      setCancelModalOrder(order);
+    },
+    []
+  );
 
   // Role booleans
   const isSuperAdmin = Boolean(profile?.isSuperAdmin);
@@ -429,7 +436,7 @@ export default function ProfilePage() {
                           loading={reservations.loading}
                           onConfirm={({ id, order }) => {
                             const target = order || reservations.reservations.find((r) => r.id === id);
-                            if (target) setCancelModalOrder(target);
+                            if (target) handleOrderCancelAction(target);
                           }}
                           emptyTitle={
                             activeTab === "to-pay"
@@ -479,7 +486,7 @@ export default function ProfilePage() {
                             loading={reservations.loading}
                             onConfirm={({ id, order }) => {
                               const target = order || reservations.reservations.find((r) => r.id === id);
-                              if (target) setCancelModalOrder(target);
+                              if (target) handleOrderCancelAction(target);
                             }}
                             emptyTitle="Nothing to Receive Yet"
                             emptyDescription="Shipped orders and items currently out for delivery will appear here."
@@ -493,7 +500,7 @@ export default function ProfilePage() {
                             loading={reservations.loading}
                             onConfirm={({ id, order }) => {
                               const target = order || reservations.reservations.find((r) => r.id === id);
-                              if (target) setCancelModalOrder(target);
+                              if (target) handleOrderCancelAction(target);
                             }}
                             emptyTitle="Nothing to Receive Yet"
                             emptyDescription="Shipped orders and items currently out for delivery will appear here."
@@ -538,7 +545,7 @@ export default function ProfilePage() {
                           loading={reservations.loading}
                           onConfirm={({ id, order }) => {
                             const target = order || reservations.reservations.find((r) => r.id === id);
-                            if (target) setCancelModalOrder(target);
+                            if (target) handleOrderCancelAction(target);
                           }}
                           emptyTitle="No Completed Orders"
                           emptyDescription="Delivered orders will appear here for your records."
@@ -577,7 +584,7 @@ export default function ProfilePage() {
                           loading={reservations.loading}
                           onConfirm={({ id, order }) => {
                             const target = order || reservations.reservations.find((r) => r.id === id);
-                            if (target) setCancelModalOrder(target);
+                            if (target) handleOrderCancelAction(target);
                           }}
                           emptyTitle="No Cancelled Orders"
                           emptyDescription="You have no cancelled orders or reservations. All your active purchases can be found under Orders."
@@ -669,51 +676,138 @@ export default function ProfilePage() {
           </main>
         </div>
 
-        {/* Cancellation Confirmation Dialog */}
-        <Dialog
-          open={Boolean(cancelModalOrder)}
-          onOpenChange={(open) => !open && setCancelModalOrder(null)}
+        {/* Cancellation Confirmation / Staff Review Dialog */}
+        <Modal
+          opened={Boolean(cancelModalOrder)}
+          onClose={() => setCancelModalOrder(null)}
+          title={
+            cancelModalOrder && requiresStaffCancellation(cancelModalOrder) ? (
+              <Group gap="xs">
+                <ThemeIcon size="md" color="orange" variant="light" radius="md">
+                  <AlertCircle size={16} />
+                </ThemeIcon>
+                <Text fw={700} className="font-headline text-base uppercase tracking-tight text-slate-900 dark:text-white">
+                  Order Cannot Be Cancelled Directly
+                </Text>
+              </Group>
+            ) : (
+              <Group gap="xs">
+                <ThemeIcon size="md" color="red" variant="light" radius="md">
+                  <XCircle size={16} />
+                </ThemeIcon>
+                <Text fw={700} className="font-headline text-base uppercase tracking-tight text-slate-900 dark:text-white">
+                  Confirm Order Cancellation
+                </Text>
+              </Group>
+            )
+          }
+          centered
+          radius="lg"
+          size={cancelModalOrder && requiresStaffCancellation(cancelModalOrder) ? "md" : "sm"}
+          overlayProps={{ backgroundOpacity: 0.65, blur: 5 }}
+          classNames={{
+            content: "overflow-hidden rounded-xl border border-slate-200/80 bg-white/95 text-slate-900 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-[#141a23]/95 dark:text-slate-100",
+            header: "border-b border-slate-200/80 bg-white/95 p-3 dark:border-white/10 dark:bg-[#141a23]/95",
+            body: "!p-4",
+            close: "text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/10 dark:hover:text-white",
+          }}
         >
-          <DialogContent className="sm:max-w-md bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-headline">
-                <CheckCircle2 size={18} />
-                <span>Confirm Order Cancellation</span>
-              </DialogTitle>
-              <DialogDescription className="text-xs text-slate-600 dark:text-slate-400">
-                Are you sure you want to cancel Order #
-                {cancelModalOrder?.orderNumber || cancelModalOrder?.id.substring(0, 8).toUpperCase()}?
-                Reserved components for this order will be returned to store inventory.
-              </DialogDescription>
-            </DialogHeader>
+          {cancelModalOrder && (
+            (() => {
+              const displayOrderNum =
+                cancelModalOrder.orderNumber ||
+                cancelModalOrder.id.substring(0, 8).toUpperCase();
+              const isStaffRequired = requiresStaffCancellation(cancelModalOrder);
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                variant="default"
-                size="xs"
-                radius="md"
-                onClick={() => setCancelModalOrder(null)}
-                className="min-h-11"
-              >
-                Keep Order
-              </Button>
-              <Button
-                color="red"
-                size="xs"
-                radius="md"
-                className="min-h-11"
-                onClick={async () => {
-                  if (cancelModalOrder) {
-                    await reservations.handleCancelReservation(cancelModalOrder.id);
-                    setCancelModalOrder(null);
-                  }
-                }}
-              >
-                Cancel Order
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+              if (isStaffRequired) {
+                return (
+                  <Stack gap="md" className="pt-1">
+                    <Text size="sm" className="leading-relaxed text-slate-600 dark:text-slate-300">
+                      Orders currently in <strong className="text-slate-900 dark:text-slate-100">To Build</strong> (assembly &amp; testing) or <strong className="text-slate-900 dark:text-slate-100">To Receive</strong> (in transit) cannot be cancelled directly anymore once fulfillment operations have started.
+                    </Text>
+
+                    <Alert
+                      color="orange"
+                      variant="light"
+                      radius="md"
+                      icon={<AlertCircle size={18} />}
+                      title={`Order #${displayOrderNum}`}
+                    >
+                      <Text size="xs" className="leading-relaxed">
+                        To request cancellation for this order, you need to contact our store management or admin team first. Clicking below will redirect you to our Contact Support page with your cancellation request and order reference pre-filled.
+                      </Text>
+                    </Alert>
+
+                    <Group justify="flex-end" gap="xs" pt="xs">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        radius="md"
+                        onClick={() => setCancelModalOrder(null)}
+                        className="min-h-11 border-slate-200 hover:bg-slate-100 dark:border-white/10 dark:hover:bg-white/5"
+                      >
+                        Keep Order
+                      </Button>
+                      <Button
+                        color="cyan"
+                        size="sm"
+                        radius="md"
+                        rightSection={<ArrowRight size={14} />}
+                        className="min-h-11 text-xs font-bold uppercase tracking-wider"
+                        onClick={() => {
+                          setCancelModalOrder(null);
+                          router.push(
+                            `/contact?subject=${encodeURIComponent(
+                              `Cancellation Request for Order #${displayOrderNum}`
+                            )}&order=${encodeURIComponent(displayOrderNum)}`
+                          );
+                        }}
+                      >
+                        Contact Admin / Manager
+                      </Button>
+                    </Group>
+                  </Stack>
+                );
+              }
+
+              return (
+                <Stack gap="md" className="pt-1">
+                  <Text size="sm" className="leading-relaxed text-slate-600 dark:text-slate-300">
+                    Are you sure you want to cancel Order #
+                    <strong className="text-slate-900 dark:text-slate-100">
+                      {displayOrderNum}
+                    </strong>
+                    ? Reserved components for this order will be returned to store inventory.
+                  </Text>
+
+                  <Group justify="flex-end" gap="xs" pt="xs">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      radius="md"
+                      onClick={() => setCancelModalOrder(null)}
+                      className="min-h-11 border-slate-200 hover:bg-slate-100 dark:border-white/10 dark:hover:bg-white/5"
+                    >
+                      Keep Order
+                    </Button>
+                    <Button
+                      color="red"
+                      size="sm"
+                      radius="md"
+                      className="min-h-11 text-xs font-bold uppercase tracking-wider"
+                      onClick={async () => {
+                        await reservations.handleCancelReservation(cancelModalOrder.id);
+                        setCancelModalOrder(null);
+                      }}
+                    >
+                      Cancel Order
+                    </Button>
+                  </Group>
+                </Stack>
+              );
+            })()
+          )}
+        </Modal>
       </div>
     </RouteGuard>
   );

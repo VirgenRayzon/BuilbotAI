@@ -22,18 +22,27 @@ import {
   CreditCard,
   XCircle,
 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
-import type { Order } from "@/lib/types";
+import { formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
+import type { Order, Part } from "@/lib/types";
 import { getOrderFulfillmentStage } from "@/lib/order-workflow";
-import { shouldShowCustomerOrderActivity } from "@/lib/customer-order-workflow";
+import {
+  getPendingReservationLabel,
+  reservationRequiresAssembly,
+  shouldShowCustomerOrderActivity,
+} from "@/lib/customer-order-workflow";
 import { CustomerOrderActivity } from "@/components/orders/customer-order-activity";
 import { DownloadReceiptButton } from "@/components/orders/download-receipt-button";
+import { resolveOrderItemImageUrl } from "@/lib/order-image-resolver";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+import { useFirestore } from "@/firebase";
+import { useInventoryParts } from "@/firebase/firestore/use-inventory-parts";
 import Link from "next/link";
 
 interface ReservationsListProps {
   reservations: Order[];
   loading: boolean;
   onConfirm: (action: { id: string; order?: Order }) => void;
+  catalogParts?: Part[] | null;
   emptyTitle?: string;
   emptyDescription?: string;
   emptyIcon?: React.ReactNode;
@@ -44,11 +53,15 @@ export function ReservationsList({
   reservations,
   loading,
   onConfirm,
+  catalogParts: propCatalogParts,
   emptyTitle,
   emptyDescription,
   emptyIcon,
   emptyThemeColor,
 }: ReservationsListProps) {
+  const firestore = useFirestore();
+  const { data: liveCatalogParts } = useInventoryParts(firestore);
+  const catalogParts = propCatalogParts || liveCatalogParts;
   if (loading) {
     return null;
   }
@@ -149,7 +162,8 @@ export function ReservationsList({
 
                   {/* Action Buttons */}
                   <Group gap="xs">
-                    {(reservation.status === "pending" || reservation.status === "building") && (
+                    {reservation.status !== "cancelled" &&
+                      getOrderFulfillmentStage(reservation) !== "delivered" && (
                       <Button
                         size="xs"
                         color="red"
@@ -159,7 +173,7 @@ export function ReservationsList({
                         onClick={() => onConfirm({ id: reservation.id, order: reservation })}
                         className="font-bold uppercase tracking-wider text-[11px]"
                       >
-                        Cancel Build
+                        {reservationRequiresAssembly(reservation) ? "Cancel Build" : "Cancel Order"}
                       </Button>
                     )}
                   </Group>
@@ -168,7 +182,7 @@ export function ReservationsList({
 
               {/* Order Activity Stepper & Courier details */}
               {showActivity && (
-                <CustomerOrderActivity order={reservation} />
+                <CustomerOrderActivity order={reservation} catalogParts={catalogParts} />
               )}
 
               {/* Items List */}
@@ -176,20 +190,34 @@ export function ReservationsList({
                 <div className="max-h-[220px] overflow-y-auto divide-y divide-slate-200 dark:divide-white/5">
                   {reservation.items.map((item, idx) => {
                     const qty = item.quantity && item.quantity > 0 ? item.quantity : 1;
+                    const rawImg = resolveOrderItemImageUrl(
+                      item,
+                      reservation.items,
+                      catalogParts
+                    );
+                    const resolvedImg = getOptimizedStorageUrl(rawImg) || rawImg;
+
                     return (
                       <div
                         key={`${reservation.id}-item-${idx}`}
-                        className="p-3 px-4 flex justify-between items-center text-sm hover:bg-slate-100/60 dark:hover:bg-white/[0.02] transition-colors"
+                        className="p-2.5 sm:p-3 px-3.5 sm:px-4 flex justify-between items-center text-sm hover:bg-slate-100/60 dark:hover:bg-white/[0.02] transition-colors gap-3"
                       >
-                        <div className="flex items-center gap-3">
-                          <ThemeIcon size="sm" radius="md" color="gray" variant="light">
-                            <CreditCard size={14} />
-                          </ThemeIcon>
-                          <div className="flex flex-col">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {/* Part Image Thumbnail */}
+                          <div className="relative h-10 w-10 sm:h-11 sm:w-11 shrink-0 overflow-hidden rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0e131d]">
+                            <OptimizedImage
+                              src={resolvedImg}
+                              alt={item.name}
+                              fill
+                              sizes="44px"
+                              className="object-contain p-1"
+                            />
+                          </div>
+                          <div className="flex flex-col min-w-0">
                             <span className="text-[10px] font-bold text-cyan-700 dark:text-cyan-400 uppercase tracking-wider">
                               {(item as any).category || "Component"}
                             </span>
-                            <span className="font-semibold text-slate-900 dark:text-slate-100 truncate max-w-[200px] sm:max-w-md">
+                            <span className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate max-w-[200px] sm:max-w-md">
                               {item.name}
                               {qty > 1 && (
                                 <span className="ml-1.5 text-xs font-mono text-cyan-600 dark:text-cyan-400">
@@ -199,7 +227,7 @@ export function ReservationsList({
                             </span>
                           </div>
                         </div>
-                        <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200">
+                        <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200 shrink-0">
                           {formatCurrency(item.price * qty)}
                         </span>
                       </div>
@@ -254,7 +282,7 @@ function getStatusInfo(order: Order) {
       return {
         icon: <Clock size={12} />,
         color: "orange",
-        label: "To Ship",
+        label: getPendingReservationLabel(order),
       };
   }
 }

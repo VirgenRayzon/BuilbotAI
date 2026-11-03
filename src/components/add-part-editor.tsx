@@ -29,6 +29,8 @@ import { normalizeProductDescription } from "@/lib/normalize-product-description
 import { useProductSaveOperation } from '@/hooks/use-product-save-operation';
 import type { CreatedProduct } from '@/lib/product-identity';
 import { ToastAction } from './ui/toast';
+import { InventorySaveSuccessDialog } from './inventory-save-success-dialog';
+import { findDuplicateCatalogName } from '@/lib/catalog-name-validation';
 
 export interface AddPartEditorProps {
   children?: React.ReactNode;
@@ -38,6 +40,7 @@ export interface AddPartEditorProps {
   initiallyOpen?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  existingPartNames?: readonly string[];
 }
 
 export function AddPartEditor({
@@ -48,6 +51,7 @@ export function AddPartEditor({
   initiallyOpen = false,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
+  existingPartNames = [],
 }: AddPartEditorProps) {
   const isControlled = controlledOpen !== undefined;
   const [internalOpen, setInternalOpen] = useState(initiallyOpen);
@@ -65,6 +69,8 @@ export function AddPartEditor({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [justAutofilled, setJustAutofilled] = useState(false);
+  const [savedPart, setSavedPart] = useState<{ name: string; seconds: number; url?: string } | null>(null);
+  const saveStartRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const prevPendingRef = useRef(false);
   const { toast } = useToast();
@@ -87,6 +93,11 @@ export function AddPartEditor({
     handleCancelAiDetails,
     setSpecValue,
   } = usePartForm({ initialData, open, isAiKillSwitch });
+  const watchedPartName = form.watch("partName");
+  const duplicatePartName = useMemo(
+    () => findDuplicateCatalogName(watchedPartName, existingPartNames, initialData?.name),
+    [existingPartNames, initialData?.name, watchedPartName]
+  );
 
   const handleCategoryChange = (newCategory: string) => {
     form.setValue("category", newCategory, { shouldValidate: true });
@@ -97,6 +108,7 @@ export function AddPartEditor({
 
   const onSubmit = async (values: AddPartFormSchema) => {
     if (isSubmitting) return;
+    const saveStartedAt = saveStartRef.current ?? performance.now();
     setIsSubmitting(true);
     try {
       const normalizedValues = {
@@ -105,13 +117,19 @@ export function AddPartEditor({
       };
       form.setValue("description", normalizedValues.description);
       const saved = await onSave(normalizedValues, getOperation(normalizedValues));
-      toast({ 
-        title: initialData ? "Part Updated!" : "Part Added!", 
-        description: `${values.partName} has been ${initialData ? "updated" : "added to"} the inventory.`,
-        action: saved ? <ToastAction altText="View item" onClick={() => window.location.assign(saved.adminUrl)}>View item</ToastAction> : undefined,
-      });
+      const seconds = (performance.now() - saveStartedAt) / 1000;
+      if (initialData) {
+        toast({
+          title: "Part Updated!",
+          description: `${values.partName} has been updated in the inventory.`,
+          action: saved ? <ToastAction altText="View item" onClick={() => window.location.assign(saved.adminUrl)}>View item</ToastAction> : undefined,
+        });
+      } else {
+        setSavedPart({ name: values.partName, seconds, url: saved?.adminUrl });
+      }
       if (!initialData) form.reset();
-      handleOpenChange(false);
+      if (!isControlled) setInternalOpen(false);
+      controlledOnOpenChange?.(false);
       resetOperation();
     } catch (error: any) {
       toast({ 
@@ -120,6 +138,7 @@ export function AddPartEditor({
         description: error.message || "An unexpected error occurred." 
       });
     } finally {
+      saveStartRef.current = null;
       setIsSubmitting(false);
     }
   };
@@ -149,7 +168,7 @@ export function AddPartEditor({
     prevPendingRef.current = isAiPending;
   }, [isAiPending, aiDuration]);
 
-  return (
+  return <>
     <Dialog
       open={open}
       onOpenChange={handleOpenChange}
@@ -258,6 +277,7 @@ export function AddPartEditor({
                   form={form} 
                   onCategoryChange={handleCategoryChange} 
                   justAutofilled={justAutofilled}
+                  duplicatePartName={duplicatePartName}
                 />
                 <PartSpecificationsSection 
                   form={form} 
@@ -288,7 +308,8 @@ export function AddPartEditor({
                   </DialogClose>
                   <Button
                     type="submit"
-                    disabled={isSubmitting || isAiPending || Boolean(aiComponentWarning)}
+                    onClick={() => { saveStartRef.current = performance.now(); }}
+                    disabled={isSubmitting || isAiPending || Boolean(aiComponentWarning) || Boolean(duplicatePartName)}
                     className="h-10 px-8 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold uppercase tracking-wider text-xs shadow-md shadow-cyan-500/20 transition-all duration-200"
                   >
                     {isSubmitting ? (
@@ -307,5 +328,14 @@ export function AddPartEditor({
         </Form>
       </DialogContent>
     </Dialog>
-  );
+    {savedPart && (
+      <InventorySaveSuccessDialog
+        itemType="component"
+        name={savedPart.name}
+        seconds={savedPart.seconds}
+        url={savedPart.url}
+        onClose={() => setSavedPart(null)}
+      />
+    )}
+  </>;
 }

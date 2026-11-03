@@ -38,17 +38,7 @@ import {
   ExternalLink,
   QrCode,
 } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { ConfirmationAlertDialog } from '@/components/ui/confirmation-alert-dialog';
 
 interface InventoryPrebuiltCardProps {
   system: PrebuiltSystem;
@@ -188,9 +178,8 @@ export function InventoryPrebuiltCard({
               )}
 
               {/* Archive / Restore Action */}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <ActionIcon
+              <ConfirmationAlertDialog
+                trigger={<ActionIcon
                     variant="subtle"
                     color="gray"
                     size="sm"
@@ -200,45 +189,19 @@ export function InventoryPrebuiltCard({
                     className="text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors"
                   >
                     {isArchiveView ? <RotateCcw size={15} /> : <Archive size={15} />}
-                  </ActionIcon>
-                </AlertDialogTrigger>
-                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      {isArchiveView ? "Restore System?" : "Archive System?"}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {isArchiveView
-                        ? `This will restore ${system.name} to the active showcase.`
-                        : `This will move ${system.name} to the archive. It will no longer be visible to customers.`}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
-                      Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onArchive(system.id, !isArchiveView);
-                      }}
-                      className={
-                        isArchiveView
-                          ? "bg-cyan-600 hover:bg-cyan-700"
-                          : "bg-orange-500 hover:bg-orange-600"
-                      }
-                    >
-                      {isArchiveView ? "Restore" : "Archive"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                  </ActionIcon>}
+                icon={isArchiveView ? <RotateCcw size={16} /> : <Archive size={16} />}
+                title={isArchiveView ? "Restore System" : "Archive System"}
+                description={isArchiveView ? `This will restore ${system.name} to the active showcase.` : `This will move ${system.name} to the archive. It will no longer be visible to customers.`}
+                actionLabel={isArchiveView ? "Restore" : "Archive"}
+                tone={isArchiveView ? "cyan" : "orange"}
+                onConfirm={() => onArchive(system.id, !isArchiveView)}
+              />
 
               {/* Super Admin Delete Action */}
               {isSuperAdmin && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <ActionIcon
+                <ConfirmationAlertDialog
+                  trigger={<ActionIcon
                       variant="subtle"
                       color="red"
                       size="sm"
@@ -248,31 +211,14 @@ export function InventoryPrebuiltCard({
                       className="text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
                     >
                       <Trash2 size={15} />
-                    </ActionIcon>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete the prebuilt system: {system.name}.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
-                        Cancel
-                      </AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete(system.id);
-                        }}
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                    </ActionIcon>}
+                  icon={<Trash2 size={16} />}
+                  title="Delete System"
+                  description={<>This action cannot be undone. This will permanently delete <strong>{system.name}</strong>.</>}
+                  actionLabel="Delete"
+                  tone="red"
+                  onConfirm={() => onDelete(system.id)}
+                />
               )}
             </Group>
           </Group>

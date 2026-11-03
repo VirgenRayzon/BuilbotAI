@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Paper,
@@ -27,6 +27,8 @@ import {
   Sparkles,
   Phone,
   Mail,
+  AlertCircle,
+  ArrowLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/theme-provider";
@@ -34,6 +36,7 @@ import { useUserProfile } from "@/context/user-profile";
 import { AuthBackground } from "@/components/auth/auth-background";
 
 export default function ContactPage() {
+  const router = useRouter();
   const { theme } = useTheme();
   const { authUser, profile } = useUserProfile();
   const searchParams = useSearchParams();
@@ -48,6 +51,112 @@ export default function ContactPage() {
   const [submissionError, setSubmissionError] = useState("");
   const [inquiryId, setInquiryId] = useState("");
   const [companyWebsite, setCompanyWebsite] = useState("");
+  const [cancellationOrderRef, setCancellationOrderRef] = useState<string | null>(null);
+
+  const [backNavigation, setBackNavigation] = useState<{ link: string; text: string }>(() => {
+    const cancellationSubject = searchParams.get("subject");
+    const orderParam = searchParams.get("order");
+    const hasOrder = Boolean(orderParam || cancellationSubject?.toLowerCase().includes("order"));
+    if (hasOrder) {
+      return { link: "/profile?tab=to-build", text: "Back to Order" };
+    }
+    const fromParam = searchParams.get("from");
+    if (fromParam === "orders" || fromParam === "order" || fromParam === "profile") {
+      return { link: "/profile?tab=to-build", text: "Back to Order" };
+    }
+    if (fromParam === "admin") {
+      return { link: "/admin", text: "Back to Dashboard" };
+    }
+    if (fromParam === "pre-builts") {
+      return { link: "/pre-builts", text: "Back to Pre-builts" };
+    }
+    if (fromParam === "parts") {
+      return { link: "/parts", text: "Back to Parts" };
+    }
+    return { link: "/", text: "Back to Home" };
+  });
+
+  useEffect(() => {
+    const cancellationSubject = searchParams.get("subject");
+    const orderParam = searchParams.get("order");
+    const hasOrder = Boolean(orderParam || cancellationSubject?.toLowerCase().includes("order"));
+    const fromParam = searchParams.get("from");
+
+    if (hasOrder || fromParam === "orders" || fromParam === "order") {
+      let orderLink = "/profile?tab=to-build";
+      if (typeof document !== "undefined" && document.referrer) {
+        try {
+          const referrerUrl = new URL(document.referrer);
+          if (referrerUrl.origin === window.location.origin && referrerUrl.pathname.startsWith("/profile")) {
+            orderLink = referrerUrl.pathname + referrerUrl.search;
+          }
+        } catch {}
+      }
+      setBackNavigation({ link: orderLink, text: "Back to Order" });
+      return;
+    }
+
+    if (fromParam === "profile") {
+      setBackNavigation({ link: "/profile", text: "Back to Profile" });
+      return;
+    }
+    if (fromParam === "admin") {
+      setBackNavigation({ link: "/admin", text: "Back to Dashboard" });
+      return;
+    }
+    if (fromParam === "pre-builts") {
+      setBackNavigation({ link: "/pre-builts", text: "Back to Pre-builts" });
+      return;
+    }
+    if (fromParam === "parts") {
+      setBackNavigation({ link: "/parts", text: "Back to Parts" });
+      return;
+    }
+
+    if (typeof document !== "undefined" && document.referrer) {
+      try {
+        const referrerUrl = new URL(document.referrer);
+        if (referrerUrl.origin === window.location.origin) {
+          const path = referrerUrl.pathname;
+          const fullPath = referrerUrl.pathname + referrerUrl.search;
+          if (path === "/profile" || path.startsWith("/profile/")) {
+            setBackNavigation({ link: fullPath, text: "Back to Orders" });
+            return;
+          }
+          if (path === "/admin" || path.startsWith("/admin/")) {
+            setBackNavigation({ link: fullPath, text: "Back to Dashboard" });
+            return;
+          }
+          if (path === "/parts" || path.startsWith("/parts/")) {
+            setBackNavigation({ link: fullPath, text: "Back to Parts" });
+            return;
+          }
+          if (path === "/pre-builts" || path.startsWith("/pre-builts/")) {
+            setBackNavigation({ link: fullPath, text: "Back to Pre-builts" });
+            return;
+          }
+          if (path === "/" || path === "") {
+            setBackNavigation({ link: "/", text: "Back to Home" });
+            return;
+          }
+        }
+      } catch {}
+    }
+
+    setBackNavigation({ link: "/", text: "Back to Home" });
+  }, [searchParams]);
+
+  const handleBackClick = (e: React.MouseEvent) => {
+    if (
+      typeof window !== "undefined" &&
+      window.history.length > 1 &&
+      document.referrer &&
+      document.referrer.startsWith(window.location.origin)
+    ) {
+      e.preventDefault();
+      router.back();
+    }
+  };
 
   useEffect(() => {
     if (!authUser) return;
@@ -57,10 +166,13 @@ export default function ContactPage() {
 
   useEffect(() => {
     const cancellationSubject = searchParams.get('subject');
-    const orderReference = cancellationSubject?.match(/Cancellation Request for Order #(\w+)/i)?.[1];
+    const orderParam = searchParams.get('order');
+    const matchedOrder = cancellationSubject?.match(/Cancellation Request for Order #([a-zA-Z0-9_-]+)/i)?.[1];
+    const orderReference = orderParam || matchedOrder;
     if (!orderReference) return;
+    setCancellationOrderRef(orderReference);
     setSubject('Order & Reservation Status');
-    setMessage(current => current || `I would like to request cancellation for order #${orderReference}.`);
+    setMessage(current => current || `I would like to request cancellation for order #${orderReference}. Please assist with cancelling this order.`);
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,6 +205,22 @@ export default function ContactPage() {
       <AuthBackground className="fixed" />
 
       <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 relative z-10">
+        {/* Top Navigation */}
+        <div className="mb-6">
+          <MantineButton
+            component={Link}
+            href={backNavigation.link}
+            onClick={handleBackClick}
+            variant="subtle"
+            color="gray"
+            size="xs"
+            leftSection={<ArrowLeft className="w-3.5 h-3.5" />}
+            className="font-semibold text-xs tracking-wider uppercase text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400"
+          >
+            {backNavigation.text}
+          </MantineButton>
+        </div>
+
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           {/* Left Column: Contact Channels & Info */}
           <motion.div
@@ -334,6 +462,19 @@ export default function ContactPage() {
                     <input id="companyWebsite" tabIndex={-1} autoComplete="off" value={companyWebsite} onChange={event => setCompanyWebsite(event.target.value)} />
                   </div>
                   <Stack gap="sm">
+                    {cancellationOrderRef && (
+                      <Alert
+                        color="orange"
+                        variant="light"
+                        radius="md"
+                        icon={<AlertCircle size={18} />}
+                        title={`Cancellation Request for Order #${cancellationOrderRef}`}
+                      >
+                        <Text size="xs" className="leading-relaxed">
+                          Orders currently in &quot;To Build&quot; (assembly &amp; testing) or &quot;To Receive&quot; (in transit) cannot be cancelled automatically. Please submit this inquiry so our management team can review your build status and coordinate the cancellation.
+                        </Text>
+                      </Alert>
+                    )}
                     {submissionError && <Alert color="red" variant="light" title="Message not sent">{submissionError}</Alert>}
                     <div className="grid sm:grid-cols-2 gap-4">
                       <TextInput

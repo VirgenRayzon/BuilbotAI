@@ -48,6 +48,7 @@ import {
 } from "@/lib/server/paymongo";
 import { PRODUCT_ID_PATTERN } from "@/lib/product-identity";
 import { toFirestoreDocument } from "@/lib/firestore-document";
+import { requiresStaffCancellation } from "@/lib/customer-order-workflow";
 import {
   assertOrderStageTransition,
   assertStaffPaymentStatusTransition,
@@ -1927,13 +1928,16 @@ export async function updateReservationStatus(
       if (newStatus === "cancelled" && currentStage === "delivered") {
         throw new Error("Delivered orders require a refund workflow instead of cancellation.");
       }
-      if (
-        !isStaff &&
-        (decoded.uid !== orderData.userId ||
-          newStatus !== "cancelled" ||
-          (currentStage !== "order_placed" && currentStage !== "assembling_testing"))
-      ) {
-        throw new Error("You do not have permission to cancel this order.");
+      if (!isStaff) {
+        if (decoded.uid !== orderData.userId || newStatus !== "cancelled") {
+          throw new Error("You do not have permission to cancel this order.");
+        }
+        if (requiresStaffCancellation(orderData)) {
+          throw new Error("Orders currently in 'To Build' or 'To Receive' cannot be cancelled directly. Please contact staff or management to cancel this order.");
+        }
+        if (currentStage !== "order_placed") {
+          throw new Error("You do not have permission to cancel this order.");
+        }
       }
 
       targetUserId = orderData.userId;

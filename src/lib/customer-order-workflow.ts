@@ -19,6 +19,10 @@ export function reservationRequiresAssembly(
   );
 }
 
+export function getPendingReservationLabel(order: Pick<Order, "items">): "To Build" | "To Ship" {
+  return reservationRequiresAssembly(order) ? "To Build" : "To Ship";
+}
+
 export function reservationNeedsPayment(
   order: Pick<Order, "paymentMethod" | "paymentStatus">
 ): boolean {
@@ -76,6 +80,28 @@ export function isReservationCompleted(
   order: Pick<Order, "status" | "fulfillmentStage">
 ): boolean {
   return order.status !== "cancelled" && getOrderFulfillmentStage(order) === "delivered";
+}
+
+export function isOrderInBuildQueue(
+  order: Pick<Order, "items" | "paymentMethod" | "paymentStatus" | "status" | "fulfillmentStage">
+): boolean {
+  if (order.status === "cancelled") return false;
+  const stage = getOrderFulfillmentStage(order);
+  if (stage === "assembling_testing") return true;
+  if (stage === "out_for_delivery" || stage === "delivered") return false;
+  return getReservationQueue(order) === "to-build";
+}
+
+export function isOrderInReceiveQueue(
+  order: Pick<Order, "status" | "fulfillmentStage">
+): boolean {
+  return isReservationInReceiveQueue(order);
+}
+
+export function requiresStaffCancellation(
+  order: Pick<Order, "items" | "paymentMethod" | "paymentStatus" | "status" | "fulfillmentStage">
+): boolean {
+  return isOrderInBuildQueue(order) || isOrderInReceiveQueue(order);
 }
 
 export function isShipmentInReceiveQueue(

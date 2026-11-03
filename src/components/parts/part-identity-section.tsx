@@ -4,7 +4,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge, Paper, ActionIcon, Group, Tooltip } from "@mantine/core";
-import { Bold, Italic, List, Heading1, Heading2, Code, Type } from "lucide-react";
+import { Bold, Italic, List, Heading1, Heading2, Code, Type, CircleAlert } from "lucide-react";
 import { MultiImageUpload } from "./multi-image-upload";
 import { componentCategories } from "@/lib/constants/category-specs";
 import { UseFormReturn } from "react-hook-form";
@@ -15,9 +15,10 @@ interface PartIdentitySectionProps {
   form: UseFormReturn<AddPartFormSchema>;
   onCategoryChange: (category: string) => void;
   justAutofilled?: boolean;
+  duplicatePartName?: string | null;
 }
 
-export function PartIdentitySection({ form, onCategoryChange, justAutofilled }: PartIdentitySectionProps) {
+export function PartIdentitySection({ form, onCategoryChange, justAutofilled, duplicatePartName }: PartIdentitySectionProps) {
   const selectedCategory = form.watch("category");
   const watchedImages = form.watch("images");
   const watchedImageUrl = form.watch("imageUrl");
@@ -77,14 +78,23 @@ export function PartIdentitySection({ form, onCategoryChange, justAutofilled }: 
                 </FormLabel>
                 <FormControl>
                   <Input 
+                    aria-invalid={Boolean(duplicatePartName)}
+                    aria-describedby={duplicatePartName ? "part-name-duplicate" : undefined}
                     className={cn(
                       "bg-slate-50 dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 transition-all shadow-sm",
+                      duplicatePartName && "border-red-500 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500/70",
                       highlightClass
                     )} 
                     placeholder="e.g., AMD Ryzen 7 7700X" 
                     {...field} 
                   />
                 </FormControl>
+                {duplicatePartName && (
+                  <p id="part-name-duplicate" role="alert" className="flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400">
+                    <CircleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    “{duplicatePartName}” already exists in the inventory.
+                  </p>
+                )}
                 <FormMessage />
               </FormItem>
             )} />

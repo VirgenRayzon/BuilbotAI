@@ -17,6 +17,7 @@ Manage modern e-commerce orders and legacy reservation records under one unified
 3. **Customer Profile Queues (`src/lib/customer-order-workflow.ts`):**
    - **To Pay:** non-COD orders with pending, failed, or cancelled payment.
    - **To Ship / To Build / To Receive / Completed / Cancelled:** mutually exclusive lifecycle queues.
+   - Newly placed order-card badges use the same item classification as the pending queue: prebuilt and custom PCs show **To Build**; standalone parts show **To Ship**. Keep badge and queue labels aligned when changing classification.
 4. **Financial Reporting (`calculateOrderFinancialSummary` & `src/lib/export-excel.ts`):**
    - Always distinguish **Placed Order Value** (active non-cancelled orders), **Collected Payments** (gross paid orders), **Refunds Issued**, and **Net Sales** (collected minus refunds). Never count unpaid orders as collected revenue or net sales.
 

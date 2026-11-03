@@ -1,11 +1,11 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import { ActionIcon, Badge, Button, Group, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { ArrowLeft, ExternalLink, Minus, Plus, ShieldCheck, ShoppingCart, Wrench, Zap } from 'lucide-react';
-import type { PublicProduct } from '@/lib/public-product-types';
+import type { PublicProduct, PublicCatalogPart } from '@/lib/public-product-types';
 import { productAdminUrl } from '@/lib/product-identity';
 import { usePublicProductActions } from '@/hooks/use-public-product-actions';
 import { formatCurrency } from '@/lib/utils';
@@ -13,8 +13,17 @@ import { PrebuiltImageView } from '@/app/pre-builts/[id]/components/prebuilt-ima
 import { PartBuilderCompatibilityModal } from './part-builder-compatibility-modal';
 import { useSiteSettings } from '@/context/site-settings-context';
 import { useEcommerce } from '@/context/ecommerce-context';
+import { PartRelatedProducts } from './part-related-products';
 
-export function PublicPartPage({ product, isAdminPreview = false }: { product: PublicProduct; isAdminPreview?: boolean }) {
+export function PublicPartPage({
+  product,
+  isAdminPreview = false,
+  relatedParts = [],
+}: {
+  product: PublicProduct;
+  isAdminPreview?: boolean;
+  relatedParts?: PublicCatalogPart[];
+}) {
   const actions = usePublicProductActions(product);
   const { isEcommerceMode } = useSiteSettings();
   const { addToCart, buyNow } = useEcommerce();
@@ -187,6 +196,13 @@ export function PublicPartPage({ product, isAdminPreview = false }: { product: P
             </SimpleGrid>
           </Paper>
         )}
+
+        <PartRelatedProducts
+          parts={relatedParts}
+          category={product.category}
+          isAdminPreview={isAdminPreview}
+          className="mt-8 border-b-0"
+        />
       </div>
     </div>
   );

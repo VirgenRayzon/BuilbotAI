@@ -19,17 +19,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useSiteSettings } from '@/context/site-settings-context';
 import { AddStockDialog } from './add-stock-dialog';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ConfirmationAlertDialog } from "@/components/ui/confirmation-alert-dialog";
 import { Separator } from '@/components/ui/separator';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import React from 'react';
@@ -131,42 +121,26 @@ export function InventoryPartCard({
                                         </Link>
                                     </Button>
                                 )}
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors -mt-1" onClick={(event) => event.stopPropagation()} title={isArchiveView ? "Restore" : "Archive"}>
-                                            {isArchiveView ? <RotateCcw className="h-3 w-3 md:h-4 md:w-4" /> : <Archive className="h-3 w-3 md:h-4 md:w-4" />}
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent onClick={(event) => event.stopPropagation()}>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>{isArchiveView ? "Restore Part?" : "Archive Part?"}</AlertDialogTitle>
-                                            <AlertDialogDescription>{isArchiveView ? `This will restore ${part.name} to the active inventory.` : `This will move ${part.name} to the archive. It will no longer be visible to customers.`}</AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel onClick={(event) => event.stopPropagation()}>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={(event) => { event.stopPropagation(); onArchive(part.id, part.category, !isArchiveView); }} className={isArchiveView ? "bg-primary hover:bg-primary/90" : "bg-orange-500 hover:bg-orange-600"}>{isArchiveView ? "Restore" : "Archive"}</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
+                                <ConfirmationAlertDialog
+                                    trigger={<Button variant="ghost" size="icon" className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors -mt-1" onClick={(event) => event.stopPropagation()} title={isArchiveView ? "Restore" : "Archive"}>{isArchiveView ? <RotateCcw className="h-3 w-3 md:h-4 md:w-4" /> : <Archive className="h-3 w-3 md:h-4 md:w-4" />}</Button>}
+                                    icon={isArchiveView ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                                    title={isArchiveView ? "Restore Part" : "Archive Part"}
+                                    description={isArchiveView ? `This will restore ${part.name} to the active inventory.` : `This will move ${part.name} to the archive. It will no longer be visible to customers.`}
+                                    actionLabel={isArchiveView ? "Restore" : "Archive"}
+                                    tone={isArchiveView ? "cyan" : "orange"}
+                                    onConfirm={() => onArchive(part.id, part.category, !isArchiveView)}
+                                />
 
                                 {isSuperAdmin && (
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" onClick={(event) => event.stopPropagation()} className="h-8 w-8 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors -mt-1 -mr-1">
-                                                <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent onClick={(event) => event.stopPropagation()}>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                <AlertDialogDescription>This action cannot be undone. This will permanently delete {part.name}.</AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel onClick={(event) => event.stopPropagation()}>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={(event) => { event.stopPropagation(); onDelete(part.id, part.category); }} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
+                                    <ConfirmationAlertDialog
+                                        trigger={<Button variant="ghost" size="icon" onClick={(event) => event.stopPropagation()} className="h-8 w-8 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors -mt-1 -mr-1"><Trash2 className="h-3 w-3 md:h-4 md:w-4" /></Button>}
+                                        icon={<Trash2 className="h-4 w-4" />}
+                                        title="Delete Part"
+                                        description={<>This action cannot be undone. This will permanently delete <strong>{part.name}</strong>.</>}
+                                        actionLabel="Delete"
+                                        tone="red"
+                                        onConfirm={() => onDelete(part.id, part.category)}
+                                    />
                                 )}
                             </div>
                         </div>

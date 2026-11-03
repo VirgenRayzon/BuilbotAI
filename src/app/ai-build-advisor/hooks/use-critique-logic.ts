@@ -55,6 +55,8 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
     const generationStartTimeRef = useRef<number | null>(null);
     const currentBuildKeyRef = useRef<string | null>(null);
 
+    const latestStreamedObjectRef = useRef<any>(null);
+
     const { object: streamedObject, submit, isLoading: isStreaming, stop, error: streamError } = useObject({
         api: '/api/ai/build-advisor/critique',
         schema: aiBuildCritiqueOutputSchema,
@@ -70,11 +72,13 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
         onFinish: (result) => {
             progressToastRef.current?.dismiss();
             progressToastRef.current = null;
-            if (result.object) {
+            const validObject = result.object || latestStreamedObjectRef.current;
+            if (validObject && (validObject.pros || validObject.bottleneck)) {
                 const startTime = generationStartTimeRef.current || Date.now();
                 const duration = (Date.now() - startTime) / 1000;
                 setCritiqueDuration(duration);
-                setCachedAnalysis(result.object);
+                setCachedAnalysis(validObject);
+                setCritiqueError(null);
 
                 const buildKey = currentBuildKeyRef.current;
                 if (buildKey) {
@@ -82,7 +86,7 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
                         const cache = localStorage.getItem('pc_critique_cache') || '{}';
                         const parsedCache = JSON.parse(cache);
                         parsedCache[buildKey] = {
-                            analysis: result.object,
+                            analysis: validObject,
                             duration,
                             timestamp: Date.now(),
                         };
@@ -92,9 +96,38 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
                     } catch (e) {}
                 }
                 showAdvisorReadyToast('Build review ready', startTime, () => router.push('/ai-build-advisor#critique'));
+            } else {
+                let errorMsg = "The AI model finished without generating a complete build critique.";
+                if (result.error) {
+                    const rawMsg = result.error.message || String(result.error);
+                    try {
+                        const parsed = JSON.parse(rawMsg);
+                        if (Array.isArray(parsed) && parsed[0]?.message) {
+                            const path = parsed[0].path?.join('.') || 'output';
+                            errorMsg = `Validation error in ${path}: ${parsed[0].message}`;
+                        } else {
+                            errorMsg = rawMsg;
+                        }
+                    } catch {
+                        errorMsg = rawMsg;
+                    }
+                }
+                console.error("[useCritiqueLogic] Incomplete or invalid critique output:", result.error || errorMsg);
+                setCritiqueError(errorMsg);
+                toast({
+                    variant: "destructive",
+                    title: "Review Generation Failed",
+                    description: errorMsg,
+                });
             }
         }
     });
+
+    useEffect(() => {
+        if (streamedObject) {
+            latestStreamedObjectRef.current = streamedObject;
+        }
+    }, [streamedObject]);
 
     // Cleanup toast on unmount
     useEffect(() => {

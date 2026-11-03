@@ -105,34 +105,34 @@ const SHIPPING_METHODS: Array<{
   badge: string;
   desc: string;
 }> = [
-  {
-    id: "standard_courier",
-    title: "Standard Nationwide Insured Courier",
-    courier: "LBC Express / J&T Nationwide Cargo",
-    eta: "3–5 Business Days",
-    fee: 250,
-    badge: "Nationwide PH",
-    desc: "Door-to-door insured air/land cargo from our Quezon City warehouse with multi-layer anti-static protection.",
-  },
-  {
-    id: "sameday_express",
-    title: "Same-Day Metro Manila Express",
-    courier: "Grab / Lalamove / Transportify 4-Wheel",
-    eta: "Same Day (Before 8 PM)",
-    fee: 550,
-    badge: "Recommended for Full Rigs",
-    desc: "Dedicated same-day dispatch from Cubao, QC for assembled tempered-glass PC rigs within Metro Manila.",
-  },
-  {
-    id: "store_pickup",
-    title: "In-Store Branch Pickup",
-    courier: "Netcodex Computer Center — Cubao, Quezon City",
-    eta: "Ready in 2–4 Hours",
-    fee: 0,
-    badge: "FREE",
-    desc: "35G Liberty Avenue, corner 9th Ave, Socorro, Cubao, Quezon City, Metro Manila 1109.",
-  },
-];
+    {
+      id: "standard_courier",
+      title: "Standard Nationwide Insured Courier",
+      courier: "LBC Express / J&T Nationwide Cargo",
+      eta: "3–5 Business Days",
+      fee: 250,
+      badge: "Nationwide PH",
+      desc: "Door-to-door insured air/land cargo from our Quezon City warehouse with multi-layer anti-static protection.",
+    },
+    {
+      id: "sameday_express",
+      title: "Same-Day Metro Manila Express",
+      courier: "Grab / Lalamove / Transportify 4-Wheel",
+      eta: "Same Day (Before 8 PM)",
+      fee: 550,
+      badge: "Recommended for Full Rigs",
+      desc: "Dedicated same-day dispatch from Cubao, QC for assembled tempered-glass PC rigs within Metro Manila.",
+    },
+    {
+      id: "store_pickup",
+      title: "In-Store Branch Pickup",
+      courier: "Netcodex Computer Center — Cubao, Quezon City",
+      eta: "Ready in 2–4 Hours",
+      fee: 0,
+      badge: "FREE",
+      desc: "35G Liberty Avenue, corner 9th Ave, Socorro, Cubao, Quezon City, Metro Manila 1109.",
+    },
+  ];
 
 const PH_REGIONS = [
   "Metro Manila (NCR)",
@@ -806,7 +806,7 @@ export default function CheckoutPage() {
               >
                 Back to Shopping
               </Button>
-              <span className="text-slate-300 dark:text-white/20">?</span>
+              <span className="text-slate-300 dark:text-white/20">·</span>
               <button
                 type="button"
                 onClick={() => setIsCartOpen(true)}
@@ -832,20 +832,12 @@ export default function CheckoutPage() {
                   >
                     {activeReceiptOrder
                       ? "Order Confirmation"
-                      : "BuildbotAI Checkout"}
+                      : "Checkout"}
                   </Title>
-                  <Badge
-                    size="sm"
-                    color="cyan"
-                    variant="light"
-                    className="uppercase text-[10px] font-semibold"
-                  >
-                    Academic Sandbox
-                  </Badge>
                 </Group>
                 <Text size="xs" c="dimmed">
                   {activeReceiptOrder
-                    ? `Order #${activeReceiptOrder.orderNumber} ? Saved in Firestore`
+                    ? `Order #${activeReceiptOrder.orderNumber} · Saved in Firestore`
                     : "Server-validated inventory deduction, Cash on Delivery, GCash & PayMongo"}
                 </Text>
               </div>
@@ -857,7 +849,7 @@ export default function CheckoutPage() {
         {activeReceiptOrder ? (
           <div className="w-full space-y-6">
             {activeReceiptOrder.paymentStatus === "Payment Failed" ||
-            activeReceiptOrder.paymentStatus === "Payment Cancelled" ? (
+              activeReceiptOrder.paymentStatus === "Payment Cancelled" ? (
               <Alert
                 color="red"
                 variant="light"
@@ -939,7 +931,7 @@ export default function CheckoutPage() {
                 className="border border-teal-500/20"
               >
                 Your order is confirmed and stock has been reserved. You can view your order anytime in{" "}
-                <strong>Profile ↁEOrders</strong>.
+                <Link href="/profile?tab=orders" className="font-semibold underline underline-offset-2 hover:text-teal-600 dark:hover:text-teal-300 transition-colors">Profile &rarr; Orders</Link>.
               </Alert>
             )}
 
@@ -975,7 +967,7 @@ export default function CheckoutPage() {
                     activeReceiptOrder.paymentStatus.includes("Paid")
                       ? "teal"
                       : activeReceiptOrder.paymentStatus.includes("Failed") ||
-                          activeReceiptOrder.paymentStatus.includes("Cancelled")
+                        activeReceiptOrder.paymentStatus.includes("Cancelled")
                         ? "red"
                         : "yellow"
                   }
@@ -988,6 +980,11 @@ export default function CheckoutPage() {
                 <Text size="xs" c="dimmed" mt={1}>
                   Method: {activeReceiptOrder.paymentLabel}
                 </Text>
+                {activeReceiptOrder.paymentReference && (
+                  <Text size="xs" c="dimmed" mt={1} className="font-mono">
+                    Ref: <span className="font-semibold text-slate-800 dark:text-slate-200">{activeReceiptOrder.paymentReference}</span>
+                  </Text>
+                )}
               </Paper>
 
               <Paper
@@ -1031,7 +1028,7 @@ export default function CheckoutPage() {
                 </p>
                 {activeReceiptOrder.shippingMethod === "store_pickup" && (
                   <p className="text-cyan-600 dark:text-cyan-400 font-medium">
-                    {NETCODEX_STORE_LOCATION.storeName} ?{NETCODEX_STORE_LOCATION.hours}
+                    {NETCODEX_STORE_LOCATION.storeName} · {NETCODEX_STORE_LOCATION.hours}
                   </p>
                 )}
                 <p className="text-slate-600 dark:text-slate-300">
@@ -1077,7 +1074,7 @@ export default function CheckoutPage() {
                         <div className="min-w-0">
                           <p className="font-semibold text-xs truncate">{item.name}</p>
                           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                            Qty: {item.quantity} ÁE{formatCurrency(item.price)}
+                            Qty: {item.quantity} · {formatCurrency(item.price)}
                           </p>
                         </div>
                       </div>
@@ -1286,32 +1283,32 @@ export default function CheckoutPage() {
                     {/* Fragile PC Crate Protection */}
                     {shippingMethod !== "store_pickup" &&
                       hasBuildForCrateProtection && (
-                      <div className="flex items-start gap-3 p-3 rounded-md bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20">
-                        <Checkbox
-                          color="cyan"
-                          checked={includeCrateProtection}
-                          onChange={(e) =>
-                            setIncludeCrateProtection(e.currentTarget.checked)
-                          }
-                          className="mt-0.5"
-                        />
-                        <div
-                          className="space-y-0.5 cursor-pointer select-none"
-                          onClick={() => setIncludeCrateProtection(!includeCrateProtection)}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Text size="xs" fw={700}>
-                              Instapak Expanding GPU Foam + Tempered Glass Wooden Crate
+                        <div className="flex items-start gap-3 p-3 rounded-md bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20">
+                          <Checkbox
+                            color="cyan"
+                            checked={includeCrateProtection}
+                            onChange={(e) =>
+                              setIncludeCrateProtection(e.currentTarget.checked)
+                            }
+                            className="mt-0.5"
+                          />
+                          <div
+                            className="space-y-0.5 cursor-pointer select-none"
+                            onClick={() => setIncludeCrateProtection(!includeCrateProtection)}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Text size="xs" fw={700}>
+                                Instapak Expanding GPU Foam + Tempered Glass Wooden Crate
+                              </Text>
+                              <Badge size="xs" color="amber" variant="light">
+                                +{formatCurrency(CRATE_PROTECTION_FEE)}
+                              </Badge>
+                            </div>
+                            <Text size="xs" c="dimmed">
+                              Multi-layer anti-shock crate standard for nationwide couriers. Prevents PCIe sag and glass fracture.
                             </Text>
-                            <Badge size="xs" color="amber" variant="light">
-                              +{formatCurrency(CRATE_PROTECTION_FEE)}
-                            </Badge>
                           </div>
-                          <Text size="xs" c="dimmed">
-                            Multi-layer anti-shock crate standard for nationwide couriers. Prevents PCIe sag and glass fracture.
-                          </Text>
                         </div>
-                      </div>
                       )}
 
                     {/* Philippine Delivery Address / Showroom Info */}
@@ -2012,7 +2009,7 @@ export default function CheckoutPage() {
                               {item.name}
                             </p>
                             <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                              Qty: {item.quantity} ÁE{formatCurrency(item.price)}
+                              Qty: {item.quantity} · {formatCurrency(item.price)}
                             </p>
                           </div>
                         </div>

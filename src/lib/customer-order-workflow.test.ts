@@ -4,9 +4,13 @@ import type { MockEcommerceOrder } from "@/context/ecommerce-context";
 import type { Order } from "@/lib/types";
 import {
   getReservationQueue,
+  getPendingReservationLabel,
   isReservationInPendingQueue,
   isReservationInReceiveQueue,
   isReservationCompleted,
+  isOrderInBuildQueue,
+  isOrderInReceiveQueue,
+  requiresStaffCancellation,
   isShipmentCompleted,
   isShipmentInReceiveQueue,
   shouldShowCustomerOrderActivity,
@@ -35,6 +39,12 @@ test("routes incomplete online payments to To Pay", () => {
 test("routes paid parts to To Ship and paid builds to To Build", () => {
   assert.equal(getReservationQueue(individualOrder), "to-ship");
   assert.equal(getReservationQueue(buildOrder), "to-build");
+});
+
+test("labels newly placed build orders To Build and parts orders To Ship", () => {
+  assert.equal(getPendingReservationLabel(buildOrder), "To Build");
+  assert.equal(getPendingReservationLabel({ ...buildOrder, items: [{ ...buildOrder.items[0], buildType: "prebuilt" }] }), "To Build");
+  assert.equal(getPendingReservationLabel(individualOrder), "To Ship");
 });
 
 test("routes COD orders by item type instead of To Pay", () => {
@@ -185,6 +195,67 @@ test("routes delivered Firestore reservations into Completed", () => {
   );
   assert.equal(
     isReservationCompleted({ status: "finished building", fulfillmentStage: "out_for_delivery" }),
+    false
+  );
+});
+
+test("requires staff cancellation when order is in To Build or To Receive", () => {
+  // Paid build in order_placed queue -> To Build
+  assert.equal(
+    requiresStaffCancellation({
+      ...buildOrder,
+      status: "pending",
+      fulfillmentStage: "order_placed",
+    }),
+    true
+  );
+
+  // Active build in assembling_testing stage -> To Build
+  assert.equal(
+    requiresStaffCancellation({
+      ...buildOrder,
+      status: "building",
+      fulfillmentStage: "assembling_testing",
+    }),
+    true
+  );
+
+  // Shipped / out for delivery -> To Receive
+  assert.equal(
+    requiresStaffCancellation({
+      ...individualOrder,
+      status: "finished building",
+      fulfillmentStage: "out_for_delivery",
+    }),
+    true
+  );
+
+  // Unpaid order in To Pay -> does NOT require staff cancellation (self-service cancel allowed)
+  assert.equal(
+    requiresStaffCancellation({
+      ...buildOrder,
+      paymentStatus: "pending",
+      status: "pending",
+      fulfillmentStage: "order_placed",
+    }),
+    false
+  );
+
+  // Cancelled or Delivered orders -> do not require cancellation
+  assert.equal(
+    requiresStaffCancellation({
+      ...buildOrder,
+      status: "cancelled",
+      fulfillmentStage: "assembling_testing",
+    }),
+    false
+  );
+  assert.equal(
+    requiresStaffCancellation({
+      ...buildOrder,
+      status: "finished building",
+      fulfillmentStage: "delivered",
+    }),
     false
   );
 });

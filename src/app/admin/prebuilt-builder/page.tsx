@@ -53,6 +53,7 @@ import { RouteGuard } from "@/components/auth/route-guard";
 import { PREBUILT_EDIT_SESSION_KEY, usePrebuiltBuilderImport } from "@/app/admin/hooks/use-prebuilt-builder-import";
 import { AdminSidebar, SidebarInset, SidebarProvider } from "@/app/admin/components/admin-sidebar";
 import { AdminTopbar } from "@/app/admin/components/admin-topbar";
+import { SearchNoResults } from "@/components/search-no-results";
 
 const componentCategories = [
     { name: "Case", icon: RectangleVertical },
@@ -805,6 +806,8 @@ export default function PrebuiltBuilderPage() {
                                         />
                                     </Card>
                                     )
+                                ) : searchQuery.trim() ? (
+                                    <SearchNoResults query={searchQuery} itemLabel="components" onClear={() => { setSearchQuery(''); setCurrentPage(1); }} className="mt-6" />
                                 ) : (
                                     <Card className="mt-6 min-h-[400px] flex items-center justify-center">
                                         <CardContent className="text-center text-muted-foreground p-6">

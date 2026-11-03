@@ -9,6 +9,11 @@ export function shouldSubscribeToAssemblyVerification(
   return getOrderFulfillmentStage(order) !== 'delivered';
 }
 
+export function getVisibleQcNotes(notes?: string | null): string | null {
+  const normalizedNotes = notes?.trim();
+  return normalizedNotes ? normalizedNotes : null;
+}
+
 /**
  * Extracts custom rigs or prebuilt assembly instances from an order.
  */
@@ -53,4 +58,34 @@ export function getOrderPlacedSummary(order: Order): string {
     return 'Customer ordered a prebuilt system.';
   }
   return 'Customer submitted an order for components.';
+}
+
+/**
+ * Determines whether an order contains a custom build or prebuilt system.
+ * Orders containing only standalone components/accessories do not undergo assembly & testing.
+ */
+export function orderHasBuildOrPrebuilt(order: Order): boolean {
+  if (
+    order.type === 'custom' ||
+    order.type === 'prebuilt' ||
+    Boolean(order.prebuiltId) ||
+    Boolean(order.prebuiltName)
+  ) {
+    return true;
+  }
+
+  if (
+    order.items?.some(
+      (item) =>
+        item.buildType === 'custom-build' ||
+        item.buildType === 'prebuilt' ||
+        (item as any).kind === 'custom-build' ||
+        (item as any).kind === 'prebuilt'
+    )
+  ) {
+    return true;
+  }
+
+  const groups = groupOrderItems(order);
+  return groups.some((g) => g.type === 'custom-build' || g.type === 'prebuilt');
 }

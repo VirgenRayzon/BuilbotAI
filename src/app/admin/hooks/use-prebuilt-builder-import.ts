@@ -6,7 +6,7 @@ import {
 import type { ComponentData, FavoriteBuild, Part, PrebuiltSystem } from "@/lib/types";
 import { INCLUDED_INTEGRATED_GPU_ID, syncIntegratedGraphics } from '@/lib/integrated-graphics';
 import { useToast } from "@/hooks/use-toast";
-import { includedCpuCoolerName } from '@/lib/included-cpu-cooler';
+import { includedCpuCoolerName, isIncludedStockCoolerPart } from '@/lib/included-cpu-cooler';
 import { useFirestore } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
@@ -84,13 +84,13 @@ export function usePrebuiltBuilderImport(
             if (!selected || typeof selected.partId !== "string" || typeof selected.category !== "string") continue;
             if (!(selected.category in componentIcons)) continue;
 
-            if (selected.category === 'Cooler' && selected.partId === 'included-stock-cooler') {
+            if (selected.category === 'Cooler' && (selected.partId === 'included-stock-cooler' || isIncludedStockCoolerPart(selected))) {
                 const cpuSelection = favorite.parts.find(part => part.category === 'CPU');
-                const cpu = allParts.find(part => part.category === 'CPU' && part.id === cpuSelection?.partId);
-                const coolerName = cpu ? includedCpuCoolerName(cpu) : null;
+                const cpu = allParts.find(part => part.category === 'CPU' && (part.id === cpuSelection?.partId || (cpuSelection?.name && part.name.toLowerCase() === cpuSelection.name.toLowerCase())));
+                const coolerName = cpu ? includedCpuCoolerName(cpu) : (selected.name || 'Included CPU cooler');
                 if (coolerName) {
                     next.Cooler = {
-                        id: selected.partId, model: coolerName, price: 0, description: 'Bundled cooler.',
+                        id: 'included-stock-cooler', model: coolerName, price: 0, description: 'Bundled cooler.',
                         image: '/placeholders/components/cooler.jpg', imageHint: 'included cooler',
                         icon: Wind, wattage: 0, specifications: { Type: 'Air (Stock)' },
                     };

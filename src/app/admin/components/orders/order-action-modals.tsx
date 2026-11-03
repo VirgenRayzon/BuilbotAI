@@ -60,12 +60,15 @@ export function OrderArchiveDeleteModal({
       }
       centered
       radius="lg"
+      size="sm"
+      overlayProps={{ backgroundOpacity: 0.65, blur: 5 }}
       classNames={{
         content:
-          'bg-white/95 dark:bg-[#141a23]/95 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100',
+          'bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl overflow-hidden',
         header:
-          'bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200 dark:border-white/10 p-3',
+          'bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200/80 dark:border-white/10 p-3',
         body: '!p-3',
+        close: 'text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors',
       }}
     >
       <Stack gap="md">
@@ -181,12 +184,15 @@ export function OrderCancelModal({
       }
       centered
       radius="lg"
+      size="sm"
+      overlayProps={{ backgroundOpacity: 0.65, blur: 5 }}
       classNames={{
         content:
-          'bg-white/95 dark:bg-[#141a23]/95 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100',
+          'bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl overflow-hidden',
         header:
-          'bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200 dark:border-white/10 p-3',
+          'bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200/80 dark:border-white/10 p-3',
         body: '!p-3',
+        close: 'text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors',
       }}
     >
       <Stack gap="md">
@@ -254,12 +260,15 @@ export function OrderPhysicalReturnModal({
       }
       centered
       radius="lg"
+      size="sm"
+      overlayProps={{ backgroundOpacity: 0.65, blur: 5 }}
       classNames={{
         content:
-          'bg-white/95 dark:bg-[#141a23]/95 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100',
+          'bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl overflow-hidden',
         header:
-          'bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200 dark:border-white/10 p-3',
+          'bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200/80 dark:border-white/10 p-3',
         body: '!p-3',
+        close: 'text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors',
       }}
     >
       <Stack gap="md">
@@ -333,12 +342,15 @@ export function ClearAllOrdersModal({
       }
       centered
       radius="lg"
+      size="sm"
+      overlayProps={{ backgroundOpacity: 0.65, blur: 5 }}
       classNames={{
         content:
-          'bg-white/95 dark:bg-[#141a23]/95 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100',
+          'bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl overflow-hidden',
         header:
-          'bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200 dark:border-white/10 p-3',
+          'bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200/80 dark:border-white/10 p-3',
         body: '!p-3',
+        close: 'text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors',
       }}
     >
       <Stack gap="md">

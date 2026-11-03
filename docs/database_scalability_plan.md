@@ -1,196 +1,47 @@
-# Buildbot AI — Database Scalability Plan
+# BuildbotAI Database Scalability Plan
 
-This document outlines a comprehensive database scalability plan for the **Buildbot AI** application (Forge Architect AI). It addresses existing bottlenecks, optimizes query performance, improves write reliability during peak traffic, and controls operational costs within Firebase Firestore and Google Cloud Infrastructure.
+_Updated 3 November 2026 based on the application code and Firebase files in this repository. The live database, deployed indexes, usage, and costs have not been checked._
 
-> **Inventory path decision (2026-10-10):** The target inventory source of truth is `/inventory/{lowercaseCategory}/items/{partId}`. See [the inventory hierarchy migration directive](../directives/inventory_hierarchy_migration.md) for the path contract, affected code, staged migration, and verification. Earlier `/parts` consolidation recommendations below are superseded by this decision.
+## 1. How the database works today
 
-> **Migration progress:** The live database contains 312 copied inventory items under the lowercase hierarchy, and its rules and index are deployed. Verify the App Hosting rollout of the new code and reconcile any writes made to old paths during the transition. See the directive's execution status before planning legacy cleanup.
+BuildbotAI uses Cloud Firestore for products, orders, accounts, notifications, support messages, and AI data. The browser listens for changes in some collections so screens update automatically. Next.js server actions and API routes also read and write Firestore. Firebase Storage holds product images.
 
----
+- PC parts are stored by category at `inventory/{category}/items/{partId}`. Prebuilt PCs are stored separately in `prebuiltSystems`. Older collection paths are still supported during the inventory migration.
+- Orders are stored in `orders`. Each order keeps a copy of the purchased item details, so later product edits do not change the order record. Checkout and stock updates use server transactions to prevent overselling. Operation records make retries safer.
+- Each user has their own saved builds and notifications. Audit logs, staff notifications, contact inquiries, AI caches, and hardware search data have separate collections.
+- Public parts data has a 10-minute Next.js cache that is refreshed after inventory changes. The builder and AI inventory use short-lived server memory caches. Firestore indexes are configured for inventory keyword search, contact history, order audit history, and hardware vector search.
 
-## 1. Architectural Overview & Data Flow
+## 2. Where growth could cause problems
 
-Below is the target database architecture, optimizing read paths (via caching and query filters), authorization checks (using custom claims), and data lifecycles (archival & TTL).
+| Area | What happens now | Why it matters as the store grows |
+| --- | --- | --- |
+| Product loading | Some staff and AI screens listen to all 12 part categories, even when the user needs only one. Prebuilt lists also load without a database page limit. | More products mean more reads, longer loading, and more work in the browser. |
+| Order loading | The staff order screen starts with 100 orders. “Load more” expands the same live query by another 100 rather than fetching a separate page. Some sales actions read every order and product. | Old orders increase read costs and slow down staff screens and reports. |
+| Logs and stored results | The audit screen reads all logs from the past 90 days. There is no page limit or checked-in automatic expiry policy for logs, notifications, AI caches, or retry records. | These collections keep growing, along with their storage and index costs. |
+| Product details | Some prebuilt screens fetch each included part separately and may search by name or an older path. | A page of prebuilts can trigger many extra reads. |
+| Search and indexes | Part search checks the first word in Firestore, then filters additional words after a limited set of results has been downloaded. | Matching products can be missed; new filter and sort combinations may need new indexes. |
+| Popular products | Every sale of the same part updates one stock record. Transactions keep stock correct. | A sudden surge for one product could cause retries and slower checkout. |
 
-```mermaid
-graph TD
-    %% User/Client Interactions
-    Client[Next.js Client App Router] -->|Public Catalog| CDN[Vercel Edge CDN / ISR Caching]
-    Client -->|Protected Queries| Firestore[Google Cloud Firestore]
-    Client -->|Authentication| FirebaseAuth[Firebase Auth]
+## 3. Practical improvements
 
-    %% Read Path
-    CDN -->|Cache Miss / Revalidate| Firestore
-    
-    %% Authorization
-    FirebaseAuth -->|Custom Auth Claims| FirestoreRules[Firestore Security Rules]
-    FirestoreRules -->|Validate Permissions (0 Database Reads)| Firestore
+1. **Show small pages of records.** Fetch about 25–50 orders or logs at a time, with a “Next” or “Load more” action that starts after the last record. Apply the same approach to growing notification, saved-build, contact, and prebuilt lists. Keep live updates for the first page where they are useful.
+2. **Fetch only the products needed.** Load the selected part category on staff and AI screens. Filter active products and common search choices in Firestore. Keep using the existing cache for the public catalog.
+3. **Avoid reading everything for routine reports.** Limit sales queries by date and status. Use Firestore count queries for simple totals. Add stored daily totals only if measurements show that repeated queries are too costly. Generate large exports only when requested or as background work.
+4. **Cut repeated product lookups.** Store the small set of details needed for prebuilt cards with each prebuilt. Keep order item copies as they are. Remove old path and name-based lookups after the inventory migration has been verified.
+5. **Add indexes with the queries that need them.** When adding order status/date filters or product sorting, test the query, add the required index to `firestore.indexes.json`, and wait for that index to be ready before releasing the screen.
+6. **Set a retention policy.** Decide how long to keep each kind of log, notification, AI cache, and retry record. Add automatic expiry only for records that are safe to delete. Preserve orders, payment history, and any audit records the business must retain.
+7. **Measure cache performance.** Keep the existing public catalog cache and refresh it after successful inventory writes. Include a catalog version in AI cache keys when results depend on current products. Consider a shared cache only if measurements show repeated reads across server instances.
 
-    %% Write Path (Order & Stock)
-    Client -->|Deduct Stock / Reserve| CloudFunc[Firebase Cloud Functions]
-    CloudFunc -->|Transactional Update| Firestore
+## 4. Supporting future growth
 
-    %% Data Lifecycle (Audit Logs & Orders)
-    Firestore -->|Audit Logs / System Notifications| TTL[Firestore TTL Engine]
-    TTL -->|Auto-Purge 90 Days| DeletedLogs((Deleted/Purged Logs))
-    
-    %% Backup & Analytics
-    CloudFunc -->|Daily Scheduled Cron| BackupFunc[Scheduled Export Function]
-    BackupFunc -->|Export Legacy Logs| GCS[Google Cloud Storage GCS]
-    BackupFunc -->|Sync Metrics for Analytics| BigQuery[Google Cloud BigQuery]
-```
+The current Firestore structure can continue to serve more users, products, inventory changes, and orders if large lists are paged and queries have the right indexes. Keep stock changes in server transactions. Track database reads and writes, storage costs, cache hits, checkout speed, and transaction retries. If a popular product starts causing frequent checkout retries, then consider a queue or a separate reservation process.
 
----
+Set usage budgets and alerts, schedule database backups, and test that a backup can be restored. Use exported data or BigQuery for long-term sales analysis only when Firestore reports become too slow or expensive. Firestore should remain the source of truth for live orders and inventory.
 
-## 2. Identified Bottlenecks & Optimization Strategies
+## 5. What to do first
 
-### A. Catalog Fetching Query (`useInventoryQuery` / `useInventory`)
-> [!WARNING]
-> **Current Issue:** Current catalog code reads `/parts`, while checkout and prebuilt reservation still reference legacy root category collections. The planned hierarchy requires consistent reads and writes across these flows. Unbounded catalog reads will become costly as inventory grows.
-
-#### Action Plan:
-1. **Inventory Hierarchy:** Move the part source of truth to `/inventory/{lowercaseCategory}/items/{partId}` as specified in the migration directive. Keep the existing human-readable `category` field during the first migration.
-2. **Server-Side Filtering:** Query active parts within the selected category subcollection:
-   ```typescript
-   query(collection(firestore, 'inventory', categorySlug, 'items'), where('isArchived', '==', false))
-   ```
-3. **Edge Caching / Incremental Static Regeneration (ISR):** Since the public PC part catalog changes relatively infrequently (e.g., daily or when admins update stock), serve it from Next.js ISR.
-   - Cache catalog data at the Edge for 5–10 minutes (`revalidate = 300`).
-   - Trigger on-demand revalidation only when an admin makes a significant change to the inventory.
-   - **Impact:** Decreases database read actions by **up to 95%** for public page loads.
-4. **Server-Side Pagination:** On catalog pages, fetch parts in pages of 24 items using `limit(24)` and pointer pagination (`startAfter(lastVisibleDocument)`).
-
----
-
-### B. Audit Log Querying & Retention (`useAuditLogs`)
-> [!WARNING]
-> **Current Issue:** The `useAuditLogs` hook retrieves all audit logs from the `/auditLogs` collection and applies a client-side filter to only keep logs from the last 90 days. Because audit logs accumulate indefinitely with every admin operation, this client-side query will eventually fail under load and result in massive Firestore read charges.
-
-#### Action Plan:
-1. **Server-Side Date Filtering:** Query logs that are within the 90-day window directly in Firestore. This only requires a default single-field index:
-   ```typescript
-   const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-   const q = query(
-       collection(firestore, 'auditLogs'), 
-       where('createdAt', '>=', ninetyDaysAgo),
-       orderBy('createdAt', 'desc')
-   );
-   ```
-2. **Firestore Time-To-Live (TTL) Configuration:**
-   - Add an `expireAt` timestamp field to all `auditLogs` and `system_notifications` documents at the time of creation (calculated as `createdAt + 90 days`).
-   - Configure a native **Firestore TTL Policy** on the `expireAt` field in the Google Cloud Console. Firestore will automatically delete documents older than the timestamp in the background at no additional cost.
-3. **Analytics Archival Pipeline:**
-   - If historical logs must be kept for auditing or business analytics, deploy a scheduled Cloud Function (running daily) that exports logs older than 90 days to a **Google Cloud Storage (GCS)** bucket in JSON format, or streams them directly to **Google Cloud BigQuery** for low-cost, long-term analytics query support.
-
----
-
-### C. Reservation & Order Processing (`useOrders`)
-> [!IMPORTANT]
-> **Current Issue:** The admin orders hook fetches the entire `/orders` collection client-side. Real-time subscriptions to this collection will download historical orders and recalculate statistics in memory. In addition, when inventory is reserved or sold, concurrent stock deductions are prone to race conditions if done via client-side `updateDoc`.
-
-#### Action Plan:
-1. **Admin Order Pagination:** Implement server-side pagination for the orders table. Sort by `createdAt` desc, with page sizes of 20.
-2. **Pre-Aggregated Sales & Stats Metrics:**
-   - Avoid downloading all orders to calculate total counts (e.g. `pendingOrdersCount`).
-   - Maintain a dedicated stats document: `/metadata/sales_stats`.
-   - Update counters atomically using `increment()` inside Firestore transaction batches when orders are created, cancelled, or finished:
-     ```typescript
-     // Example Update
-     batch.update(doc(firestore, 'metadata', 'sales_stats'), {
-         pendingOrdersCount: increment(1)
-     });
-     ```
-3. **Transactional Inventory Deductions:**
-   - All inventory deductions must run inside a **Cloud Function transaction**. This ensures that if two customers place an order for the last unit of a GPU simultaneously, the transaction will retry, only one order succeeds, and stock counts never dip below zero.
-   - For high-concurrency hotspots (e.g., flash sales of high-demand items), decouple stock writes using **Distributed Counters** or a task queue (e.g., Google Cloud Tasks) to serialize writes and protect Firestore from hitting the 1 write/sec per document limit.
-
----
-
-### D. AI Inventory Retrieval & Recommendation Flow (`getInventoryFromFirestore`)
-> [!TIP]
-> **AI Optimization Opportunity:** The AI inventory helper currently queries `/parts` by category and may refine multi-word matches in memory after a capped Firestore query. The hierarchy migration must preserve category retrieval and search behavior while avoiding results that disappear because the initial query limit was reached.
-
-#### Action Plan:
-1. **Shared AI Catalog Paths:** Read the relevant `/inventory/{categorySlug}/items` subcollections through the same validated path helper used by the rest of the app. A broad `items` collection-group query would also include hardware vector records, so do not use it without a reviewed discriminator and matching rules/indexes.
-2. **Context-level Caching:** Cache the formatted store inventory menu context on the Next.js server using Vercel/Next.js caching (e.g., `unstable_cache` or a simple Redis/memory block) with on-demand invalidation. The Genkit flow then fetches the stock list in sub-milliseconds without triggering Firestore reads on each chat generation.
-3. **Firestore Native Key-matching:** Generate a `searchKeywords` lowercase array index for parts (e.g., `['intel', 'core', 'i5', '14600k']`). Update `getInventoryFromFirestore` to query natively using `where('searchKeywords', 'array-contains', query)`, avoiding memory filtering limits and ensuring no search results are missed.
-4. **Denormalized Specs for Performance AI:** Populate complete denormalized component details directly within the `/prebuiltSystems` document to allow the AI Performance Critiquer (`ai-prebuilt-performance.ts`) to estimate and critique configurations with **1 single document read** instead of 8 parallel N+1 lookup reads.
-
----
-
-## 3. Security Rules Optimization (Instant Auth Check)
-
-> [!CAUTION]
-> **Security Rules Cost Hook:** The current security rules verify roles (`isManager()`, `isSuperAdmin()`) by reading a user document on every check: `get(/databases/$(database)/documents/users/$(request.auth.uid))`. Under heavy traffic, this doubles the read overhead, as every document read requires an additional read evaluation.
-
-### The Solution: Custom Auth Claims
-We will move metadata checks into user token claims set via the Firebase Admin SDK (e.g., when a user is promoted or signs up).
-
-```javascript
-// Before (Database reads on every security rule execution):
-function isManager() {
-  return request.auth != null && 
-         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isManager', false) == true;
-}
-
-// After (Zero database reads - claims evaluated in token payload):
-function isManager() {
-  return request.auth != null && request.auth.token.isManager == true;
-}
-function isSuperAdmin() {
-  return request.auth != null && request.auth.token.isSuperAdmin == true;
-}
-```
-
-#### Synchronization Routine (Cloud Function):
-Create a trigger function on user profile update to sync the Firestore fields (`isManager`, `isSuperAdmin`) with the Authentication custom claims:
-```typescript
-export const syncUserClaims = onDocumentUpdated("users/{userId}", async (event) => {
-    const newData = event.data?.after.data();
-    const oldData = event.data?.before.data();
-    
-    if (!newData) return;
-    
-    // Check if claims changed
-    if (newData.isManager !== oldData?.isManager || newData.isSuperAdmin !== oldData?.isSuperAdmin) {
-        await getAuth().setCustomUserClaims(event.params.userId, {
-            isManager: !!newData.isManager,
-            isSuperAdmin: !!newData.isSuperAdmin
-        });
-    }
-});
-```
-
----
-
-## 4. Scalable Data Models Reference (NoSQL Joins)
-
-To maintain maximum query speed while eliminating complex multi-collection fetches, follow these denormalization guidelines:
-
-| Entity | Field | Denormalization Strategy | Purpose |
-| :--- | :--- | :--- | :--- |
-| **Order** | `items` | Store snapshot array: `[{ id, name, category, price }]` | Keeps historical receipt intact even if the part catalog is edited or deleted. Avoids N+1 collection joins. |
-| **PrebuiltSystem** | `components` | Store `[{ partId, name, brand, price, category }]` | Allows showing spec details instantly in prebuilt cards without resolving 8 different part IDs. |
-| **AuditLog** | `actorName` & `actorEmail` | Store string values directly at the time of event | Avoids lookup query back to `/users/{userId}` to identify the actor. |
-
----
-
-## 5. Implementation Roadmap & Milestones
-
-### Phase 1: Query & Caching Polish (1-2 Weeks)
-* [ ] Update `useAuditLogs` to use Firestore server-side queries filtering by `ninetyDaysAgo`.
-* [ ] Implement Next.js ISR (Incremental Static Regeneration) on public catalog pages to cache parts list.
-* [ ] Change `useOrders` in the Admin Dashboard to fetch paginated batches of 20 orders instead of the entire collection.
-* [ ] Integrate Next.js memory cache (`unstable_cache`) for the AI's store inventory context in Genkit flow.
-
-### Phase 2: Role Authorization & Rules Clean-up (2 Weeks)
-* [ ] Write a script/Cloud Function to migrate role management to Custom Claims.
-* [ ] Refactor `firestore.rules` to check roles via `request.auth.token`.
-* [ ] Validate that security rules read operations count is reduced to 0 for static paths.
-
-### Phase 3: Inventory Hierarchy Migration & Archiving (3 Weeks)
-* [ ] Follow `directives/inventory_hierarchy_migration.md` to migrate `/parts` and any remaining legacy category documents into `/inventory/{lowercaseCategory}/items/{partId}`; do not use `execution/consolidate_collections.ts` for this destination.
-* [ ] Add a lowercase `searchKeywords` array field on creation/update of parts for native Firestore keyword queries in `getInventoryFromFirestore`.
-* [ ] Enable Google Cloud Firestore TTL on `/auditLogs` and `/system_notifications` collections.
-* [ ] Set up GCS export / BigQuery pipeline for legacy compliance reports.
+1. **First:** Page the staff order and audit screens; limit routine sales queries by date or status.
+2. **Next:** Load products by category on staff and AI screens, then page prebuilt lists.
+3. **Next:** Agree on retention periods and enable automatic expiry for disposable records.
+4. **Later:** Reduce repeated prebuilt part lookups and retire verified legacy paths.
+5. **Ongoing:** Monitor usage and costs before adding more complex infrastructure.

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Part, ComponentData, Build, FavoriteBuild } from '@/lib/types';
 import { checkCompatibility } from "@/lib/compatibility";
 import { INCLUDED_INTEGRATED_GPU_ID, isIncludedIntegratedGpu, syncIntegratedGraphics } from '@/lib/integrated-graphics';
-import { includedCpuCoolerName } from '@/lib/included-cpu-cooler';
+import { includedCpuCoolerName, isIncludedStockCoolerPart } from '@/lib/included-cpu-cooler';
 import { useToast } from "@/hooks/use-toast";
 import { 
     Cpu, Server, CircuitBoard, MemoryStick, Database, Power, 
@@ -18,15 +18,7 @@ const componentIcons: Record<string, any> = {
 };
 
 const isIncludedStockCooler = (component: ComponentData | null | undefined) =>
-    component?.id === 'included-stock-cooler'
-    || component?.id === 'uGiAh2JerLwnDe5VW431'
-    || (component?.price === 0 && (
-        component.imageHint === 'included cooler'
-        || component.description?.includes('Bundled cooler')
-        || component.model?.toLowerCase().includes('stock cooler')
-        || component.model?.toLowerCase().includes('laminar')
-        || component.model?.toLowerCase().includes('wraith')
-    ));
+    isIncludedStockCoolerPart(component);
 
 /**
  * Hook to manage the PC build logic, including part toggling, removal, and compatibility.
@@ -326,8 +318,29 @@ export function useBuilderLogic(allParts: Part[]) {
         const skipped: string[] = [];
         const outOfStock: string[] = [];
 
+        // Check if CPU exists in favorite to determine if a bundled cooler is supplied
+        const cpuFav = favorite.parts.find(p => p.category === 'CPU');
+        const liveCpu = cpuFav ? allParts.find(p => p.id === cpuFav.partId || (cpuFav.name && p.name.toLowerCase() === cpuFav.name.toLowerCase())) : null;
+        const bundledCoolerName = liveCpu ? includedCpuCoolerName(liveCpu) : null;
+
         for (const favPart of favorite.parts) {
             if (favPart.category === 'GPU' && favPart.partId === INCLUDED_INTEGRATED_GPU_ID) continue;
+
+            if (favPart.category === 'Cooler' && isIncludedStockCoolerPart(favPart)) {
+                newBuild['Cooler'] = {
+                    id: 'included-stock-cooler',
+                    model: favPart.name || bundledCoolerName || 'Intel Laminar RM1',
+                    price: 0,
+                    description: 'Bundled cooler.',
+                    image: '/placeholders/components/cooler.jpg',
+                    imageHint: 'included cooler',
+                    icon: Wind,
+                    wattage: 0,
+                    specifications: { 'Type': 'Air (Stock)' },
+                };
+                continue;
+            }
+
             const livePart = allParts.find(p => p.id === favPart.partId || (favPart.name && p.name.toLowerCase() === favPart.name.toLowerCase()));
             if (!livePart) {
                 skipped.push(favPart.name);
@@ -361,6 +374,25 @@ export function useBuilderLogic(allParts: Part[]) {
                 newBuild[favPart.category] = arr;
             } else {
                 newBuild[favPart.category] = componentData;
+            }
+        }
+
+        // If CPU provides a bundled cooler and no cooler was configured, attach it
+        const loadedCpu = newBuild['CPU'] as ComponentData | null;
+        if (loadedCpu && !newBuild['Cooler']) {
+            const hasAftermarketInFav = favorite.parts.some(p => p.category === 'Cooler' && !isIncludedStockCoolerPart(p));
+            if (!hasAftermarketInFav && bundledCoolerName) {
+                newBuild['Cooler'] = {
+                    id: 'included-stock-cooler',
+                    model: bundledCoolerName,
+                    price: 0,
+                    description: 'Bundled cooler.',
+                    image: '/placeholders/components/cooler.jpg',
+                    imageHint: 'included cooler',
+                    icon: Wind,
+                    wattage: 0,
+                    specifications: { 'Type': 'Air (Stock)' },
+                };
             }
         }
 

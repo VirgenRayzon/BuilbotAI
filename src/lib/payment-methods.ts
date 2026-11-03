@@ -24,7 +24,7 @@ export interface PaymentMethodDefinition {
 export const PAYMENT_METHOD_REGISTRY: Record<PaymentMethod, PaymentMethodDefinition> = {
   cod: {
     id: 'cod',
-    label: 'Cash on Delivery (COD) / Pay on Pickup',
+    label: 'Cash on Delivery',
     shortLabel: 'Cash on Delivery',
     badgeText: 'Pay upon delivery',
     description:

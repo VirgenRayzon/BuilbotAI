@@ -28,7 +28,9 @@ import {
   Play,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import type { FavoriteBuild } from "@/lib/types";
+import type { FavoriteBuild, FavoriteBuildPart } from "@/lib/types";
+import { isIncludedStockCoolerPart } from "@/lib/included-cpu-cooler";
+import { INCLUDED_INTEGRATED_GPU_ID } from "@/lib/integrated-graphics";
 import { useRouter } from "next/navigation";
 import {
   AlertDialog,
@@ -58,16 +60,22 @@ export function FavoritesList({ favorites, loading, onDelete, onRename }: Favori
 
   const allParts = useFavoriteInventory();
 
-  const getPartStatus = (partId: string) => {
-    const livePart = allParts.find((p) => p.id === partId);
+  const getPartStatus = (part: FavoriteBuildPart) => {
+    if (isIncludedStockCoolerPart(part) || part.partId === INCLUDED_INTEGRATED_GPU_ID) {
+      return "available";
+    }
+    const livePart = allParts.find((p) => p.id === part.partId || (part.name && p.name.toLowerCase() === part.name.toLowerCase()));
     if (!livePart) return "missing";
     if (livePart.stock <= 0 || livePart.isArchived) return "out_of_stock";
     return "available";
   };
 
-  const getLivePrice = (partId: string, fallbackPrice: number) => {
-    const livePart = allParts.find((p) => p.id === partId);
-    return livePart?.price ?? fallbackPrice;
+  const getLivePrice = (part: FavoriteBuildPart) => {
+    if (isIncludedStockCoolerPart(part) || part.partId === INCLUDED_INTEGRATED_GPU_ID) {
+      return 0;
+    }
+    const livePart = allParts.find((p) => p.id === part.partId || (part.name && p.name.toLowerCase() === part.name.toLowerCase()));
+    return livePart?.price ?? part.price;
   };
 
   const handleLoadInBuilder = (favorite: FavoriteBuild) => {
@@ -131,11 +139,11 @@ export function FavoritesList({ favorites, loading, onDelete, onRename }: Favori
       <div className="grid grid-cols-1 gap-5">
         {favorites.map((favorite) => {
           const liveTotal = favorite.parts.reduce(
-            (sum, p) => sum + getLivePrice(p.partId, p.price),
+            (sum, p) => sum + getLivePrice(p),
             0
           );
           const hasIssues = favorite.parts.some(
-            (p) => getPartStatus(p.partId) !== "available"
+            (p) => getPartStatus(p) !== "available"
           );
 
           return (
@@ -262,8 +270,8 @@ export function FavoritesList({ favorites, loading, onDelete, onRename }: Favori
                 <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-black/20 overflow-hidden">
                   <div className="max-h-[190px] overflow-y-auto divide-y divide-slate-200 dark:divide-white/5">
                     {favorite.parts.map((part, idx) => {
-                      const status = getPartStatus(part.partId);
-                      const livePrice = getLivePrice(part.partId, part.price);
+                      const status = getPartStatus(part);
+                      const livePrice = getLivePrice(part);
 
                       return (
                         <div

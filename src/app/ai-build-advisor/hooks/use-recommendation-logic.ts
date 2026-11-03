@@ -286,6 +286,28 @@ function getSmartDescription(type: string, modelName: string): string {
             } else {
                 progressToastRef.current?.dismiss();
                 progressToastRef.current = null;
+                let errorMsg = "The AI model finished without generating complete build recommendations.";
+                if (result.error) {
+                    const rawMsg = result.error.message || String(result.error);
+                    try {
+                        const parsed = JSON.parse(rawMsg);
+                        if (Array.isArray(parsed) && parsed[0]?.message) {
+                            const path = parsed[0].path?.join('.') || 'output';
+                            errorMsg = `Validation error in ${path}: ${parsed[0].message}`;
+                        } else {
+                            errorMsg = rawMsg;
+                        }
+                    } catch {
+                        errorMsg = rawMsg;
+                    }
+                }
+                console.error("[useRecommendationLogic] Incomplete recommendation output:", result.error || errorMsg);
+                setErrorMessage(errorMsg);
+                toast({
+                    variant: 'destructive',
+                    title: 'Recommendations Failed',
+                    description: errorMsg,
+                });
             }
         }
     });

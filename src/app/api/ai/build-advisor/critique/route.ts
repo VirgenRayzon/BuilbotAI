@@ -264,7 +264,18 @@ REQUIRED OUTPUT: A valid JSON object matching the requested schema.`;
 
         after(async () => {
             try {
-                const finalOutput = await streamResult.output;
+                let finalOutput: any = null;
+                try {
+                    finalOutput = await streamResult.output;
+                } catch (outputErr: any) {
+                    const validationMsg = outputErr?.message || String(outputErr);
+                    console.error(`[Critique API] Schema validation error on stream output: ${validationMsg}`, outputErr?.cause || "");
+                    try {
+                        const rawText = await streamResult.text;
+                        finalOutput = JSON.parse(rawText);
+                    } catch {}
+                }
+
                 if (finalOutput && critiqueCacheKey.length > 5) {
                     await db.collection(CRITIQUE_CACHE_COLLECTION).doc(critiqueCacheKey).set({
                         input,
@@ -273,8 +284,8 @@ REQUIRED OUTPUT: A valid JSON object matching the requested schema.`;
                     });
                     console.log(`[Critique API] Saved new streaming entry for: ${critiqueCacheKey}`);
                 }
-            } catch (err) {
-                console.warn("[Critique API] Async cache write error:", err);
+            } catch (err: any) {
+                console.error("[Critique API] Async cache write error:", err?.message || err);
             }
         });
 

@@ -45,10 +45,10 @@ import type { Order } from "@/lib/types";
 function sanitizeText(val?: string) {
   if (!val) return "";
   return val
-    .replace(/[\u7ab6\uff62\u30fb\u9244]+/g, "  E")
-    .replace(/Center\s*\?\s*Cubao/g, "Center  ECubao")
-    .replace(/Ready in 2\?4 Hours/g, "Ready in 2 E Hours")
-    .replace(/3\?5 Business Days/g, "3 E Business Days")
+    .replace(/[\u7ab6\uff62\u30fb\u9244]+/g, " — ")
+    .replace(/Center\s*\?\s*Cubao/g, "Center — Cubao")
+    .replace(/Ready in 2\?4 Hours/g, "Ready in 2–4 Hours")
+    .replace(/3\?5 Business Days/g, "3–5 Business Days")
     .replace(/\s*\(Simulated[^)]*\)/gi, "")
     .trim();
 }
@@ -239,10 +239,18 @@ export function MockOrdersSection({
                   color="red"
                   variant="subtle"
                   radius="md"
-                  disabled={!canCancel}
+                  disabled={!canCancel && (!order.firestoreOrderId || !orderRequiresAssembly(order) && order.fulfillmentStage === "order_placed")}
                   loading={cancellingId === order.id}
                   onClick={async () => {
                     if (!order.firestoreOrderId) return;
+                    if (order.fulfillmentStage !== "order_placed" || orderRequiresAssembly(order)) {
+                      router.push(
+                        `/contact?subject=${encodeURIComponent(
+                          `Cancellation Request for Order #${order.orderNumber}`
+                        )}&order=${encodeURIComponent(order.orderNumber)}`
+                      );
+                      return;
+                    }
                     setCancellingId(order.id);
                     await onCancelReservation(order.firestoreOrderId);
                     setCancellingId(null);

@@ -363,7 +363,7 @@ export function Header() {
                           onClick={() => router.push("/profile?tab=reservations")}
                           className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
                         >
-                          Reservations
+                          Orders
                         </Menu.Item>
 
                         <Menu.Item

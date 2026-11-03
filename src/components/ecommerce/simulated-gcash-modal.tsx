@@ -131,7 +131,7 @@ export function SimulatedGcashModal({
           void handleSimulateOutcome("failed");
         }
       }}
-      size="md"
+      size={480}
       radius="md"
       centered
       closeOnClickOutside={!submittingOutcome}
@@ -139,29 +139,29 @@ export function SimulatedGcashModal({
       zIndex={100005}
       overlayProps={{ backgroundOpacity: 0.6, blur: 4 }}
       title={
-        <Group gap="sm">
-          <ThemeIcon size="lg" radius="md" color="blue" variant="filled">
-            <Smartphone size={18} />
+        <Group gap="xs" wrap="nowrap">
+          <ThemeIcon size="md" radius="md" color="blue" variant="filled">
+            <Smartphone size={16} />
           </ThemeIcon>
-          <div>
-            <Group gap={6}>
+          <div className="min-w-0">
+            <Group gap={6} wrap="nowrap">
               <Title
                 order={4}
-                className="font-headline text-base font-bold"
+                className="font-headline text-sm sm:text-base font-bold truncate"
               >
                 GCash Express Checkout
               </Title>
               <Badge
                 size="xs"
-                color="amber"
-                variant="filled"
-                className="uppercase text-[9px] font-bold"
+                color="blue"
+                variant="light"
+                className="uppercase text-[9px] font-bold shrink-0"
               >
                 Test Gateway
               </Badge>
             </Group>
-            <Text size="xs" c="dimmed">
-              Fast & Secure Mobile Wallet Checkout
+            <Text size="11px" c="dimmed">
+              Fast &amp; Secure Mobile Wallet Checkout
             </Text>
           </div>
         </Group>
@@ -171,7 +171,16 @@ export function SimulatedGcashModal({
           "bg-white dark:bg-[#111722] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl overflow-hidden",
         header:
           "bg-blue-600/5 dark:bg-blue-950/20 border-b border-slate-200 dark:border-white/10 px-5 py-3.5",
-        body: "p-5",
+        body: "!p-5 !pt-5 space-y-4",
+        close: "text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors",
+      }}
+      styles={{
+        body: {
+          paddingTop: "20px",
+          paddingBottom: "20px",
+          paddingLeft: "20px",
+          paddingRight: "20px",
+        },
       }}
     >
       <Stack gap="md">
@@ -179,9 +188,8 @@ export function SimulatedGcashModal({
           color="blue"
           variant="light"
           radius="md"
-          icon={<FlaskConical size={18} />}
-          title="GCash Payment Gateway"
-          className="border border-blue-500/20 text-xs"
+          icon={<FlaskConical size={16} />}
+          className="border border-blue-500/20 py-2.5 px-3 text-xs"
         >
           <Text size="xs" className="leading-relaxed">
             Complete your GCash payment confirmation. Choose an outcome to proceed with your order.

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { includedCpuCoolerName } from './included-cpu-cooler';
+import { includedCpuCoolerName, isIncludedStockCoolerPart } from './included-cpu-cooler';
 import { prebuiltProductSchema } from './product-schemas';
 import type { Part } from './types';
 
@@ -30,3 +30,13 @@ test('prebuilt save validation rejects missing cooler and accepts a configured o
         ...payload, components: { ...payload.components, cooler: 'included-stock-cooler' },
     }).success, true);
 });
+
+test('isIncludedStockCoolerPart detects stock coolers by id, price, and model names', () => {
+    assert.equal(isIncludedStockCoolerPart({ category: 'Cooler', partId: 'included-stock-cooler', name: 'Intel Laminar RM1' }), true);
+    assert.equal(isIncludedStockCoolerPart({ category: 'Cooler', partId: 'uGiAh2JerLwnDe5VW431', name: 'Intel Laminar RM1' }), true);
+    assert.equal(isIncludedStockCoolerPart({ category: 'Cooler', partId: 'custom-id', name: 'Intel Laminar RM1' }), true);
+    assert.equal(isIncludedStockCoolerPart({ category: 'Cooler', partId: 'custom-id', name: 'AMD Wraith Stealth' }), true);
+    assert.equal(isIncludedStockCoolerPart({ category: 'Cooler', partId: 'cooler-1', name: 'Deepcool AK400', price: 1500 }), false);
+    assert.equal(isIncludedStockCoolerPart(null), false);
+});
+

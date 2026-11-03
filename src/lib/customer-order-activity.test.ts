@@ -4,6 +4,8 @@ import type { Order, OrderItem } from '@/lib/types';
 import {
   getAssemblyRigsFromOrder,
   getOrderPlacedSummary,
+  getVisibleQcNotes,
+  orderHasBuildOrPrebuilt,
   shouldSubscribeToAssemblyVerification,
 } from '@/lib/customer-order-activity';
 import {
@@ -117,6 +119,16 @@ test('customer-order-activity: terminal delivered orders do not open realtime as
   );
 });
 
+test('customer-order-activity: QC notes are visible only when staff saved meaningful text', () => {
+  assert.equal(getVisibleQcNotes(undefined), null);
+  assert.equal(getVisibleQcNotes(''), null);
+  assert.equal(getVisibleQcNotes('   '), null);
+  assert.equal(
+    getVisibleQcNotes('  Peel removed, accessories boxed  '),
+    'Peel removed, accessories boxed'
+  );
+});
+
 test('customer-order-activity: verifies 4-stage assembly workflow structure matching Image 2', () => {
   const orderId = 'ord_1';
   const rigId = 'rig_custom_1';
@@ -183,4 +195,100 @@ test('customer-order-activity: verifies 4-stage assembly workflow structure matc
   assert.equal(record.qc.passed, true);
   assert.equal(record.qc.notes, 'Peel removed, accessories boxed, ready for dispatch');
   assert.equal(record.status, 'passed');
+});
+
+test('customer-order-activity: orderHasBuildOrPrebuilt correctly identifies individual item orders vs custom/prebuilt builds', () => {
+  // 1. Single component order (e.g., individual Intel Core i3-10100)
+  const singleComponentOrder: Order = {
+    id: 'ord_cpu_only',
+    userId: 'user_1',
+    userEmail: 'user@example.com',
+    items: [
+      {
+        id: 'part_cpu_1',
+        productId: 'part_cpu_1',
+        name: 'Intel Core i3-10100',
+        category: 'CPU',
+        price: 6832,
+        quantity: 1,
+        buildType: 'part',
+      },
+    ],
+    totalPrice: 6832,
+    status: 'pending',
+    fulfillmentStage: 'order_placed',
+    createdAt: new Date(),
+  };
+
+  assert.equal(orderHasBuildOrPrebuilt(singleComponentOrder), false);
+
+  // 2. Multiple standalone components (no build configuration)
+  const multiplePartsOrder: Order = {
+    id: 'ord_parts_multi',
+    userId: 'user_1',
+    userEmail: 'user@example.com',
+    items: [
+      {
+        id: 'part_cpu_1',
+        name: 'Intel Core i3-10100',
+        category: 'CPU',
+        price: 6832,
+        quantity: 1,
+        buildType: 'part',
+      },
+      {
+        id: 'part_mouse_1',
+        name: 'Logitech G Pro Mouse',
+        category: 'Peripherals',
+        price: 4500,
+        quantity: 1,
+        buildType: 'additional',
+      },
+    ],
+    totalPrice: 11332,
+    status: 'pending',
+    fulfillmentStage: 'order_placed',
+    createdAt: new Date(),
+  };
+
+  assert.equal(orderHasBuildOrPrebuilt(multiplePartsOrder), false);
+
+  // 3. Custom rig order
+  const customRigOrder: Order = {
+    id: 'ord_custom',
+    userId: 'user_1',
+    userEmail: 'user@example.com',
+    items: [mockCpu, mockGpu],
+    totalPrice: 62000,
+    status: 'building',
+    fulfillmentStage: 'assembling_testing',
+    createdAt: new Date(),
+  };
+
+  assert.equal(orderHasBuildOrPrebuilt(customRigOrder), true);
+
+  // 4. Prebuilt system order
+  const prebuiltOrder: Order = {
+    id: 'ord_prebuilt',
+    userId: 'user_1',
+    userEmail: 'user@example.com',
+    type: 'prebuilt',
+    prebuiltName: 'Valkyrie V2',
+    items: [
+      {
+        id: 'part_pb_1',
+        name: 'Valkyrie V2 Rig',
+        category: 'Prebuilt',
+        price: 75000,
+        quantity: 1,
+        buildType: 'prebuilt',
+      },
+    ],
+    totalPrice: 75000,
+    status: 'pending',
+    fulfillmentStage: 'order_placed',
+    createdAt: new Date(),
+  };
+
+  assert.equal(orderHasBuildOrPrebuilt(prebuiltOrder), true);
 });

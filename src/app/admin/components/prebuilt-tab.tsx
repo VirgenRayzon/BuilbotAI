@@ -21,6 +21,8 @@ import { InventoryToolbar } from '@/components/inventory-toolbar';
 import { PaginationControls } from "@/components/pagination-controls";
 import type { Part, PrebuiltSystem } from '@/lib/types';
 import { AddPrebuiltFormSchema } from '@/components/add-prebuilt-dialog';
+import { SearchNoResults } from '@/components/search-no-results';
+import { shouldShowSearchNoResults } from '@/lib/search-empty-state';
 
 interface PrebuiltTabProps {
     prebuiltSystems: PrebuiltSystem[];
@@ -106,6 +108,7 @@ export function PrebuiltTab({
         const startIndex = (prebuiltCurrentPage - 1) * prebuiltItemsPerPage;
         return filteredAndSortedPrebuilts.slice(startIndex, startIndex + prebuiltItemsPerPage);
     }, [filteredAndSortedPrebuilts, prebuiltCurrentPage, prebuiltItemsPerPage]);
+    const hasNoSearchResults = shouldShowSearchNoResults(productSearch, filteredAndSortedPrebuilts.length, prebuiltsLoading);
 
     const togglePrebuiltExpand = (id: string) => {
         setExpandedPrebuiltIds(prev =>
@@ -247,7 +250,9 @@ export function PrebuiltTab({
                 </div>
             )}
 
-            {activeView === 'grid' ? (
+            {hasNoSearchResults ? (
+                <SearchNoResults query={productSearch} itemLabel="systems" onClear={() => setProductSearch('')} />
+            ) : activeView === 'grid' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {prebuiltsLoading ? null : (
                         currentPrebuilts.map((system) => (
@@ -289,13 +294,13 @@ export function PrebuiltTab({
                     />
                 </Paper>
             )}
-            <PaginationControls
+            {filteredAndSortedPrebuilts.length > 0 && <PaginationControls
                 currentPage={prebuiltCurrentPage}
                 totalPages={prebuiltTotalPages}
                 itemsPerPage={prebuiltItemsPerPage}
                 onPageChange={setPrebuiltCurrentPage}
                 onItemsPerPageChange={setPrebuiltItemsPerPage}
-            />
+            />}
         </div>
     );
 }

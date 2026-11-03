@@ -28,17 +28,7 @@ import {
   QrCode,
 } from "lucide-react";
 import type { PrebuiltSystem, Part } from "@/lib/types";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ConfirmationAlertDialog } from "@/components/ui/confirmation-alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { getMissingParts, checkSystemStock } from "@/lib/prebuilt-utils";
 import { includedCpuCoolerName } from "@/lib/included-cpu-cooler";
@@ -377,9 +367,8 @@ function PrebuiltTableRow({
         <Table.Td onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-end gap-2">
             {showActions && onArchive && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <ActionIcon
+              <ConfirmationAlertDialog
+                trigger={<ActionIcon
                     variant="subtle"
                     size="sm"
                     color="gray"
@@ -387,39 +376,19 @@ function PrebuiltTableRow({
                     title={isArchiveView ? "Restore" : "Archive"}
                   >
                     {isArchiveView ? <RotateCcw size={15} /> : <Archive size={15} />}
-                  </ActionIcon>
-                </AlertDialogTrigger>
-                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      {isArchiveView ? "Restore System?" : "Archive System?"}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {isArchiveView
-                        ? `This will restore ${system.name} to the public showcase.`
-                        : `This will move ${system.name} to the archive. It will no longer be visible to customers.`}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onArchive(system.id, !isArchiveView);
-                      }}
-                      className={isArchiveView ? "bg-cyan-600 hover:bg-cyan-700" : "bg-orange-500 hover:bg-orange-600"}
-                    >
-                      {isArchiveView ? "Restore" : "Archive"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                  </ActionIcon>}
+                icon={isArchiveView ? <RotateCcw size={16} /> : <Archive size={16} />}
+                title={isArchiveView ? "Restore System" : "Archive System"}
+                description={isArchiveView ? `This will restore ${system.name} to the public showcase.` : `This will move ${system.name} to the archive. It will no longer be visible to customers.`}
+                actionLabel={isArchiveView ? "Restore" : "Archive"}
+                tone={isArchiveView ? "cyan" : "orange"}
+                onConfirm={() => onArchive(system.id, !isArchiveView)}
+              />
             )}
 
             {showActions && onDelete && isSuperAdmin && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <ActionIcon
+              <ConfirmationAlertDialog
+                trigger={<ActionIcon
                     variant="subtle"
                     size="sm"
                     color="red"
@@ -427,26 +396,14 @@ function PrebuiltTableRow({
                     title="Delete"
                   >
                     <Trash2 size={15} />
-                  </ActionIcon>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete System?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete {system.name}.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => onDelete(system.id)}
-                      className="bg-red-600 hover:bg-red-700"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                  </ActionIcon>}
+                icon={<Trash2 size={16} />}
+                title="Delete System"
+                description={<>This action cannot be undone. This will permanently delete <strong>{system.name}</strong>.</>}
+                actionLabel="Delete"
+                tone="red"
+                onConfirm={() => onDelete(system.id)}
+              />
             )}
 
             {!showActions && (
