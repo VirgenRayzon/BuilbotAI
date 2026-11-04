@@ -68,10 +68,39 @@ test('staff public page refresh never exposes customer navigation', async ({ pag
 test('builder hard refresh hydrates without a header mismatch', async ({ page }) => {
   const hydrationErrors: string[] = [];
   page.on('pageerror', error => { if (/hydration|server rendered HTML/i.test(error.message)) hydrationErrors.push(error.message); });
+  await page.addInitScript(() => {
+    (window as Window & { __builderShellSeen?: boolean }).__builderShellSeen = false;
+    new MutationObserver(() => {
+      if (location.pathname === '/builder' && document.querySelector('[aria-label="Page loading"]')) {
+        (window as Window & { __builderShellSeen?: boolean }).__builderShellSeen = true;
+      }
+    }).observe(document, { childList: true, subtree: true });
+  });
   await page.goto(`${baseURL}/builder`);
   await expect(page.getByRole('heading', { name: /Select PC Components/i })).toBeVisible({ timeout: 30000 });
   await expect(page.locator('header a[href="/signin"]').first()).toBeVisible({ timeout: 30000 });
+  expect(await page.evaluate(() => (window as Window & { __builderShellSeen?: boolean }).__builderShellSeen)).toBe(true);
   expect(hydrationErrors).toEqual([]);
+});
+
+test('signed-in builder refresh shows its shell before content', async ({ page }) => {
+  test.setTimeout(90000);
+  await page.goto(`${baseURL}/signin`);
+  await page.getByLabel('Email Address').fill(process.env.E2E_USER_EMAIL || 'user@test.com');
+  await page.locator('form input[type="password"]').first().fill(process.env.E2E_USER_PASSWORD || '123456');
+  await page.locator('form').getByRole('button', { name: 'Sign In' }).click();
+  await expect(page).toHaveURL(/\/builder(?:\?|$)/, { timeout: 45000 });
+  await page.addInitScript(() => {
+    (window as Window & { __builderShellSeen?: boolean }).__builderShellSeen = false;
+    new MutationObserver(() => {
+      if (location.pathname === '/builder' && document.querySelector('[aria-label="Page loading"]')) {
+        (window as Window & { __builderShellSeen?: boolean }).__builderShellSeen = true;
+      }
+    }).observe(document, { childList: true, subtree: true });
+  });
+  await page.reload();
+  await expect(page.getByRole('heading', { name: /Select PC Components/i })).toBeVisible({ timeout: 30000 });
+  expect(await page.evaluate(() => (window as Window & { __builderShellSeen?: boolean }).__builderShellSeen)).toBe(true);
 });
 
 test('guest advisor redirects without showing account navigation', async ({ page }) => {

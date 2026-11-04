@@ -48,16 +48,10 @@ const prompt = ai.definePrompt({
     schema: AiPrebuiltAdvisorInputSchema,
   },
   output: { schema: AiPrebuiltAdvisorOutputSchema },
-  model: 'googleai/gemini-2.5-flash',
+  model: 'googleai/gemini-3.8-flash',
   config: {
     temperature: 0.2,
-    // Gemini 2.5 uses part of this budget for internal reasoning. A complete
-    // eight-part build with product highlights can otherwise be truncated
-    // after `systemName`, which makes the required structured output invalid.
     maxOutputTokens: 1024,
-    thinkingConfig: {
-      thinkingBudget: 0,
-    },
   },
   prompt: `You write concise product descriptions for complete prebuilt PCs.
 
@@ -94,9 +88,7 @@ const aiPrebuiltAdvisorFlow = ai.defineFlow(
 
       console.log(`[aiPrebuiltAdvisorFlow] Generating structured analysis with ${dynamicModel}...`);
 
-      const { output } = await prompt({
-        ...input,
-      }, { model: dynamicModel });
+      const { output } = await prompt(input, { model: dynamicModel });
 
       if (!output) {
         throw new Error('Failed to get suggestions from the AI.');

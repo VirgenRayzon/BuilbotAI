@@ -17,6 +17,7 @@ import { BuilderHeader } from "./components/builder-header";
 import { InventoryView } from "./components/inventory-view";
 import { YourBuild } from "@/components/your-build";
 import { RouteGuard } from "@/components/auth/route-guard";
+import { ProtectedPageLoading } from "@/components/auth/protected-page-loading";
 import { DeferredBuilderChat } from "@/components/deferred-builder-chat";
 import type { Part, ComponentData, Resolution, WorkloadType } from "@/lib/types";
 import { BUILDER_PART_IMAGE_SIZES } from '@/lib/inventory-image-sizes';
@@ -119,7 +120,7 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
     };
 
     return (
-        <RouteGuard requiredPermission="canUseBuilder">
+        <RouteGuard requiredPermission="canUseBuilder" loadingComponent={<ProtectedPageLoading variant="builder" />}>
             <div className={cn(
                 "min-h-screen transition-colors duration-500 overflow-x-hidden",
                 isDark ? "bg-[#0c0f14] text-slate-50" : "bg-slate-50 text-slate-900"

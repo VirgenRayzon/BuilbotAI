@@ -229,6 +229,8 @@ Please generate the recommendations strictly matching the schema with realistic 
         prompt: promptText + retryFeedback,
         ...(resolved.modelId.startsWith('gemini-2.5-flash') && !resolved.isFineTuned
           ? { providerOptions: { google: { thinkingConfig: { thinkingBudget: 0 } } } }
+          : resolved.modelId.startsWith('gemini-3.5-flash-lite') && !resolved.isFineTuned
+          ? { providerOptions: { google: { thinkingConfig: { thinkingLevel: 'minimal' } } } }
           : {}),
       });
       const issues = validateAdvisorBuild(output, inventory.selected, budgetLimit, !!input.allowAiSearch);

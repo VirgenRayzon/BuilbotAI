@@ -5,6 +5,7 @@
  */
 
 import Link from 'next/link';
+import { Skeleton } from './ui/skeleton';
 import { productAdminUrl } from '@/lib/product-identity';
 import {
   Table,
@@ -28,6 +29,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useSiteSettings } from "@/context/site-settings-context";
 
 interface InventoryTableProps {
+  loading?: boolean;
+  loadingCount?: number;
   parts: Part[];
   onDelete: (partId: string, category: Part['category']) => void;
   onArchive: (partId: string, category: Part['category'], isArchived?: boolean) => void;
@@ -42,6 +45,8 @@ interface InventoryTableProps {
 }
 
 export function InventoryTable({
+  loading = false,
+  loadingCount = 8,
   parts,
   onDelete,
   onArchive,
@@ -63,6 +68,7 @@ export function InventoryTable({
         <TableRow>
           <TableHead className="w-[40px]">
             <Checkbox
+              disabled={loading}
               checked={allSelected}
               onCheckedChange={() => onToggleSelectAll()}
             />
@@ -78,6 +84,13 @@ export function InventoryTable({
         </TableRow>
       </TableHeader>
       <TableBody>
+        {loading && parts.length === 0 && Array.from({length:loadingCount}, (_, index) => (
+          <TableRow key={`loading-${index}`} aria-hidden="true">
+            <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+            <TableCell><div className="flex items-center gap-3"><Skeleton className="h-10 w-10 shrink-0" /><Skeleton>Component name</Skeleton></div></TableCell>
+            {Array.from({length:7}, (_, cell) => <TableCell key={cell}><Skeleton>Loading</Skeleton></TableCell>)}
+          </TableRow>
+        ))}
         {parts.map((part) => (
           <TableRow
             key={part.id}

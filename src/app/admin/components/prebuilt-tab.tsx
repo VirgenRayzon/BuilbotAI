@@ -1,4 +1,5 @@
 "use client";
+import { AdminPrebuiltSkeleton } from "@/components/loading/admin-inventory-skeleton";
 
 import React, { useState, useMemo, useEffect } from 'react';
 import {
@@ -254,7 +255,7 @@ export function PrebuiltTab({
                 <SearchNoResults query={productSearch} itemLabel="systems" onClear={() => setProductSearch('')} />
             ) : activeView === 'grid' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {prebuiltsLoading ? null : (
+                    {prebuiltsLoading ? Array.from({length:prebuiltItemsPerPage}, (_, index) => <AdminPrebuiltSkeleton key={index} />) : (
                         currentPrebuilts.map((system) => (
                             <InventoryPrebuiltCard
                                 key={system.id}
@@ -280,6 +281,8 @@ export function PrebuiltTab({
                     className="overflow-hidden border-slate-200 bg-white/80 shadow-sm dark:border-white/10 dark:bg-[#141a23]/80"
                 >
                     <PrebuiltsTable
+                        loading={prebuiltsLoading}
+                        loadingCount={prebuiltItemsPerPage}
                         systems={currentPrebuilts}
                         parts={parts || []}
                         onDelete={onDeletePrebuilt}

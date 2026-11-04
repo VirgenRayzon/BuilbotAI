@@ -15,6 +15,7 @@ import { PrebuiltPartsList } from "./components/prebuilt-parts-list";
 import { PrebuiltShowcase } from "@/components/landing/prebuilt-showcase";
 import { AccessoriesSection } from "@/components/landing/accessories-section";
 import { getEcommerceFallbackImage } from "@/context/ecommerce-context";
+import { PrebuiltDetailSkeleton } from "@/components/loading/prebuilt-detail-skeleton";
 
 export default function LegacyPrebuiltProductPage({ params }: { params: Promise<{ id: string }> }) {
     const { id: systemId } = use(params);
@@ -55,14 +56,7 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
 
     // 1. Loading State
     if (loadingSystem) {
-        return (
-            <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3">
-                <Loader size="md" color="cyan" />
-                <Text size="sm" c="dimmed" fw={500}>
-                    Loading system specifications...
-                </Text>
-            </div>
-        );
+        return <PrebuiltDetailSkeleton />;
     }
 
     // 2. Not Found State

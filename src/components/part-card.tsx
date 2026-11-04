@@ -11,6 +11,7 @@ import { Plus, Check, AlertTriangle, Sparkles } from "lucide-react";
 import { useSiteSettings } from "@/context/site-settings-context";
 import { PartDetailsDialog } from "./part-details-dialog";
 import { CatalogQRButton } from "./catalog-qr-button";
+import { catalogCardLayout } from './loading/catalog-card-skeleton';
 
 interface PartCardProps {
     part: Part;
@@ -130,7 +131,7 @@ export function PartCard({
                 )}
 
                 {/* --- Top Metadata & Title --- */}
-                <Stack gap={6} className="px-3 pt-3 pb-2">
+                <Stack gap={6} className={catalogCardLayout.header}>
                     <Group justify="space-between" align="center" wrap="nowrap">
                         <Badge
                             size="xs"
@@ -157,7 +158,7 @@ export function PartCard({
                         size="sm"
                         fw={600}
                         lineClamp={2}
-                        className="leading-snug transition-colors group-hover:text-cyan-600 dark:group-hover:text-cyan-400 min-h-[2.5rem]"
+                        className={cn(catalogCardLayout.title, "transition-colors group-hover:text-cyan-600 dark:group-hover:text-cyan-400")}
                         title={part.name}
                     >
                         {part.name}
@@ -166,10 +167,7 @@ export function PartCard({
 
                 {/* --- Clean Image Showcase Surface --- */}
                 <Box
-                    className={cn(
-                        "aspect-[4/3] relative w-full overflow-hidden",
-                        "bg-pure-white border-y border-slate-200/70 dark:border-white/10"
-                    )}
+                    className={catalogCardLayout.image}
                 >
                     <OptimizedImage
                         src={getOptimizedStorageUrl(part.imageUrl, shouldCorruptImages) || "/placeholder-part.png"}
@@ -182,7 +180,7 @@ export function PartCard({
                 </Box>
 
                 {/* --- Price & Inset Action Area --- */}
-                <Stack gap="xs" className="px-3 pt-3 pb-3">
+                <Stack gap="xs" className={catalogCardLayout.footer}>
                     <Group
                         justify="space-between"
                         align="flex-end"

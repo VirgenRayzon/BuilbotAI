@@ -23,6 +23,7 @@ import {
 import { OrderCard } from './order-card';
 import { OrderHistoryModal } from './order-history-modal';
 import { OrdersEmptyState, OrdersHeaderBar } from './orders-header-bar';
+import { OrderCardSkeleton } from '@/components/loading/order-card-skeleton';
 import type { OrderUnifiedFilterStage } from './order-status-config';
 
 export interface OrdersTabProps {
@@ -157,13 +158,10 @@ export function OrdersTab({
       />
 
       {ordersLoading ? (
-        <div className="py-20 text-center space-y-3">
-          <ThemeIcon size={56} radius="xl" color="cyan" variant="light" className="animate-spin mx-auto">
-            <RefreshCw className="h-7 w-7 text-cyan-500" />
-          </ThemeIcon>
-          <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">
-            Loading customer orders...
-          </p>
+        <div className="space-y-4 w-full" aria-label="Loading customer orders" aria-busy="true">
+          {Array.from({ length: 4 }, (_, index) => (
+            <OrderCardSkeleton key={index} />
+          ))}
         </div>
       ) : view.paginatedOrders.length > 0 ? (
         <div className="space-y-4 w-full">

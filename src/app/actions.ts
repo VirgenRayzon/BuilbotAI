@@ -568,8 +568,8 @@ export async function testAiModelConnectionAction(
     }
 
     if (provider === 'default') {
-      let targetModel = (defaultModelId && defaultModelId.trim()) || 'gemini-2.5-flash';
-      if (targetModel === 'gemini-2.5-pro') {
+      let targetModel = (defaultModelId && defaultModelId.trim()) || 'gemini-3.8-flash';
+      if (targetModel === 'gemini-2.5-pro' || targetModel === 'gemini-2.5-flash') {
         targetModel = 'gemini-3.8-flash';
       }
       const google = createGoogleGenerativeAI({ apiKey });

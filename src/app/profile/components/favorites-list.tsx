@@ -1,4 +1,5 @@
 "use client";
+import { ProfileListSkeleton } from "@/components/loading/profile-list-skeleton";
 
 import React, { useState } from "react";
 import {
@@ -96,7 +97,7 @@ export function FavoritesList({ favorites, loading, onDelete, onRename }: Favori
     setEditName("");
   };
 
-  if (loading) return null;
+  if (loading && favorites.length === 0) return <ProfileListSkeleton favorite />;
 
   if (favorites.length === 0) {
     return (

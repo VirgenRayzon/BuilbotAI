@@ -143,9 +143,52 @@ BuilbotAI
 │   │   │   │   ├── devtools.md
 │   │   │   │   └── type-safe-agents.md
 │   │   │   └── SKILL.md
+│   │   ├── brainstorming
+│   │   │   ├── scripts
+│   │   │   │   ├── frame-template.html
+│   │   │   │   ├── helper.js
+│   │   │   │   ├── server.cjs
+│   │   │   │   ├── start-server.sh
+│   │   │   │   └── stop-server.sh
+│   │   │   ├── builder-check-prompt.md
+│   │   │   ├── SKILL.md
+│   │   │   └── visual-companion.md
 │   │   ├── buildbot_master
 │   │   │   └── SKILL.md
+│   │   ├── diagnosing-superpowers
+│   │   │   ├── prompts
+│   │   │   │   ├── analyst-common.md
+│   │   │   │   ├── cost-and-time.md
+│   │   │   │   ├── plan-adherence.md
+│   │   │   │   ├── quality-evidence.md
+│   │   │   │   ├── repeated-work.md
+│   │   │   │   ├── request-conflicts.md
+│   │   │   │   ├── scrub-audit.md
+│   │   │   │   ├── scrub.md
+│   │   │   │   ├── similar-session.md
+│   │   │   │   ├── skill-timeline.md
+│   │   │   │   └── stumbles.md
+│   │   │   ├── references
+│   │   │   │   ├── context-safety.md
+│   │   │   │   ├── github-issues.md
+│   │   │   │   ├── redaction-policy.md
+│   │   │   │   └── session-discovery.md
+│   │   │   ├── templates
+│   │   │   │   ├── bundle-README.md
+│   │   │   │   ├── case.md
+│   │   │   │   ├── issue.md
+│   │   │   │   └── report.md
+│   │   │   └── SKILL.md
+│   │   ├── dispatching-parallel-agents
+│   │   │   └── SKILL.md
+│   │   ├── executing-plans
+│   │   │   ├── scripts
+│   │   │   │   ├── task-done
+│   │   │   │   └── task-start
+│   │   │   └── SKILL.md
 │   │   ├── find-skills
+│   │   │   └── SKILL.md
+│   │   ├── finishing-a-development-branch
 │   │   │   └── SKILL.md
 │   │   ├── firebase
 │   │   │   └── SKILL.md
@@ -171,6 +214,158 @@ BuilbotAI
 │   │   ├── frontend-design
 │   │   │   ├── LICENSE.txt
 │   │   │   └── SKILL.md
+│   │   ├── gemini-api-dev
+│   │   │   ├── references
+│   │   │   │   └── migration.md
+│   │   │   └── SKILL.md
+│   │   ├── grill-with-docs
+│   │   │   ├── agents
+│   │   │   │   └── openai.yaml
+│   │   │   └── SKILL.md
+│   │   ├── gsd-add-tests
+│   │   │   └── SKILL.md
+│   │   ├── gsd-ai-integration-phase
+│   │   │   └── SKILL.md
+│   │   ├── gsd-audit-fix
+│   │   │   └── SKILL.md
+│   │   ├── gsd-audit-milestone
+│   │   │   └── SKILL.md
+│   │   ├── gsd-audit-uat
+│   │   │   └── SKILL.md
+│   │   ├── gsd-autonomous
+│   │   │   └── SKILL.md
+│   │   ├── gsd-capture
+│   │   │   └── SKILL.md
+│   │   ├── gsd-cleanup
+│   │   │   └── SKILL.md
+│   │   ├── gsd-code-review
+│   │   │   └── SKILL.md
+│   │   ├── gsd-complete-milestone
+│   │   │   └── SKILL.md
+│   │   ├── gsd-config
+│   │   │   └── SKILL.md
+│   │   ├── gsd-debug
+│   │   │   └── SKILL.md
+│   │   ├── gsd-discuss-phase
+│   │   │   └── SKILL.md
+│   │   ├── gsd-docs-update
+│   │   │   └── SKILL.md
+│   │   ├── gsd-eval-review
+│   │   │   └── SKILL.md
+│   │   ├── gsd-execute-phase
+│   │   │   └── SKILL.md
+│   │   ├── gsd-explore
+│   │   │   └── SKILL.md
+│   │   ├── gsd-extract-learnings
+│   │   │   └── SKILL.md
+│   │   ├── gsd-fast
+│   │   │   └── SKILL.md
+│   │   ├── gsd-forensics
+│   │   │   └── SKILL.md
+│   │   ├── gsd-graphify
+│   │   │   └── SKILL.md
+│   │   ├── gsd-health
+│   │   │   └── SKILL.md
+│   │   ├── gsd-help
+│   │   │   └── SKILL.md
+│   │   ├── gsd-import
+│   │   │   └── SKILL.md
+│   │   ├── gsd-inbox
+│   │   │   └── SKILL.md
+│   │   ├── gsd-ingest-docs
+│   │   │   └── SKILL.md
+│   │   ├── gsd-manager
+│   │   │   └── SKILL.md
+│   │   ├── gsd-map-codebase
+│   │   │   └── SKILL.md
+│   │   ├── gsd-mempalace-capture
+│   │   │   └── SKILL.md
+│   │   ├── gsd-mempalace-recall
+│   │   │   └── SKILL.md
+│   │   ├── gsd-milestone-summary
+│   │   │   └── SKILL.md
+│   │   ├── gsd-mvp-phase
+│   │   │   └── SKILL.md
+│   │   ├── gsd-new-milestone
+│   │   │   └── SKILL.md
+│   │   ├── gsd-new-project
+│   │   │   └── SKILL.md
+│   │   ├── gsd-next
+│   │   │   └── SKILL.md
+│   │   ├── gsd-ns-context
+│   │   │   └── SKILL.md
+│   │   ├── gsd-ns-ideate
+│   │   │   └── SKILL.md
+│   │   ├── gsd-ns-manage
+│   │   │   └── SKILL.md
+│   │   ├── gsd-ns-project
+│   │   │   └── SKILL.md
+│   │   ├── gsd-ns-review
+│   │   │   └── SKILL.md
+│   │   ├── gsd-ns-workflow
+│   │   │   └── SKILL.md
+│   │   ├── gsd-onboard
+│   │   │   └── SKILL.md
+│   │   ├── gsd-pause-work
+│   │   │   └── SKILL.md
+│   │   ├── gsd-phase
+│   │   │   └── SKILL.md
+│   │   ├── gsd-plan-phase
+│   │   │   └── SKILL.md
+│   │   ├── gsd-plan-review-convergence
+│   │   │   └── SKILL.md
+│   │   ├── gsd-pr-branch
+│   │   │   └── SKILL.md
+│   │   ├── gsd-profile-user
+│   │   │   └── SKILL.md
+│   │   ├── gsd-progress
+│   │   │   └── SKILL.md
+│   │   ├── gsd-quick
+│   │   │   └── SKILL.md
+│   │   ├── gsd-quick-batch
+│   │   │   └── SKILL.md
+│   │   ├── gsd-resume-work
+│   │   │   └── SKILL.md
+│   │   ├── gsd-review
+│   │   │   └── SKILL.md
+│   │   ├── gsd-review-backlog
+│   │   │   └── SKILL.md
+│   │   ├── gsd-secure-phase
+│   │   │   └── SKILL.md
+│   │   ├── gsd-settings
+│   │   │   └── SKILL.md
+│   │   ├── gsd-ship
+│   │   │   └── SKILL.md
+│   │   ├── gsd-sketch
+│   │   │   └── SKILL.md
+│   │   ├── gsd-spec-phase
+│   │   │   └── SKILL.md
+│   │   ├── gsd-spike
+│   │   │   └── SKILL.md
+│   │   ├── gsd-stats
+│   │   │   └── SKILL.md
+│   │   ├── gsd-surface
+│   │   │   └── SKILL.md
+│   │   ├── gsd-thread
+│   │   │   └── SKILL.md
+│   │   ├── gsd-ui-phase
+│   │   │   └── SKILL.md
+│   │   ├── gsd-ui-review
+│   │   │   └── SKILL.md
+│   │   ├── gsd-ultraplan-phase
+│   │   │   └── SKILL.md
+│   │   ├── gsd-undo
+│   │   │   └── SKILL.md
+│   │   ├── gsd-update
+│   │   │   └── SKILL.md
+│   │   ├── gsd-validate-phase
+│   │   │   └── SKILL.md
+│   │   ├── gsd-verify-work
+│   │   │   └── SKILL.md
+│   │   ├── gsd-workspace
+│   │   │   └── SKILL.md
+│   │   ├── gsd-workstreams
+│   │   │   └── SKILL.md
 │   │   ├── mantine-combobox
 │   │   │   ├── references
 │   │   │   │   ├── api.md
@@ -186,13 +381,117 @@ BuilbotAI
 │   │   │   │   ├── api.md
 │   │   │   │   └── patterns.md
 │   │   │   └── SKILL.md
+│   │   ├── migrate-radix-to-base
+│   │   │   ├── class-mapping.md
+│   │   │   ├── consumer-props.md
+│   │   │   ├── disclosure.md
+│   │   │   ├── display-misc.md
+│   │   │   ├── form-controls.md
+│   │   │   ├── menus.md
+│   │   │   ├── overlays.md
+│   │   │   ├── SKILL.md
+│   │   │   ├── universal-patterns.md
+│   │   │   └── wrapper-shapes.md
 │   │   ├── nextjs-app-router-patterns
 │   │   │   └── SKILL.md
 │   │   ├── nextjs-best-practices
 │   │   │   └── SKILL.md
-│   │   └── ui-ux-pro-max
-│   │       ├── data
-│   │       ├── scripts
+│   │   ├── receiving-code-review
+│   │   │   └── SKILL.md
+│   │   ├── requesting-code-review
+│   │   │   ├── code-reviewer.md
+│   │   │   └── SKILL.md
+│   │   ├── shadcn
+│   │   │   ├── agents
+│   │   │   │   └── openai.yml
+│   │   │   ├── assets
+│   │   │   │   ├── showcase
+│   │   │   │   │   ├── color-pair.tsx
+│   │   │   │   │   ├── preview-states.css
+│   │   │   │   │   └── state-matrix.tsx
+│   │   │   │   ├── shadcn-small.png
+│   │   │   │   └── shadcn.png
+│   │   │   ├── evals
+│   │   │   │   └── evals.json
+│   │   │   ├── rules
+│   │   │   │   ├── base-vs-radix.md
+│   │   │   │   ├── chat.md
+│   │   │   │   ├── composition.md
+│   │   │   │   ├── forms.md
+│   │   │   │   ├── icons.md
+│   │   │   │   └── styling.md
+│   │   │   ├── scripts
+│   │   │   │   └── showcase-coverage.mjs
+│   │   │   ├── cli.md
+│   │   │   ├── customization.md
+│   │   │   ├── design-system-page.md
+│   │   │   ├── design-system.md
+│   │   │   ├── mcp.md
+│   │   │   ├── registry.md
+│   │   │   └── SKILL.md
+│   │   ├── subagent-driven-development
+│   │   │   ├── references
+│   │   │   │   ├── batching.md
+│   │   │   │   ├── cannot-verify.md
+│   │   │   │   ├── final-review.md
+│   │   │   │   ├── fix-loop.md
+│   │   │   │   ├── handling-reports.md
+│   │   │   │   ├── preflight.md
+│   │   │   │   └── resuming.md
+│   │   │   ├── scripts
+│   │   │   │   ├── review-package
+│   │   │   │   ├── sdd-workspace
+│   │   │   │   └── task-brief
+│   │   │   ├── implementer-prompt.md
+│   │   │   ├── re-review-prompt.md
+│   │   │   ├── SKILL.md
+│   │   │   └── task-reviewer-prompt.md
+│   │   ├── systematic-debugging
+│   │   │   ├── condition-based-waiting-example.ts
+│   │   │   ├── condition-based-waiting.md
+│   │   │   ├── CREATION-LOG.md
+│   │   │   ├── defense-in-depth.md
+│   │   │   ├── find-polluter.sh
+│   │   │   ├── root-cause-tracing.md
+│   │   │   ├── SKILL.md
+│   │   │   ├── test-academic.md
+│   │   │   ├── test-pressure-1.md
+│   │   │   ├── test-pressure-2.md
+│   │   │   └── test-pressure-3.md
+│   │   ├── test-driven-development
+│   │   │   ├── SKILL.md
+│   │   │   └── writing-good-tests.md
+│   │   ├── ui-ux-pro-max
+│   │   │   ├── data
+│   │   │   ├── scripts
+│   │   │   └── SKILL.md
+│   │   ├── using-git-worktrees
+│   │   │   └── SKILL.md
+│   │   ├── using-superpowers
+│   │   │   ├── references
+│   │   │   │   ├── antigravity-tools.md
+│   │   │   │   ├── claude-code-tools.md
+│   │   │   │   ├── codex-tools.md
+│   │   │   │   ├── gemini-tools.md
+│   │   │   │   ├── hermes-tools.md
+│   │   │   │   ├── muse-tools.md
+│   │   │   │   └── pi-tools.md
+│   │   │   └── SKILL.md
+│   │   ├── verification-before-completion
+│   │   │   └── SKILL.md
+│   │   ├── writing-plans
+│   │   │   └── SKILL.md
+│   │   └── writing-skills
+│   │       ├── references
+│   │       │   ├── anthropic-best-practices.md
+│   │       │   ├── bulletproofing.md
+│   │       │   ├── CLAUDE_MD_TESTING.md
+│   │       │   ├── discovery.md
+│   │       │   ├── flowcharts.md
+│   │       │   ├── graphviz-conventions.dot
+│   │       │   ├── persuasion-principles.md
+│   │       │   └── testing-skills-with-subagents.md
+│   │       ├── render-graphs.js
 │   │       └── SKILL.md
 │   └── workflows
 │       └── buildbotAI-capabilities.md
@@ -219,8 +518,6 @@ BuilbotAI
 │   └── icon.png
 ├── .next-qr-test
 │   ├── cache
-│   │   ├── fetch-cache
-│   │   │   └── a4b12e31f8ac302e63d078d1c0242bf4336846f9ee9cf48d9e266078f232a5cc
 │   │   ├── swc
 │   │   │   └── plugins
 │   │   │       └── windows_x86_64_18.0.0
@@ -228,9 +525,29 @@ BuilbotAI
 │   │   │   ├── client-production
 │   │   │   │   ├── 0.pack
 │   │   │   │   ├── 1.pack
+│   │   │   │   ├── 10.pack
+│   │   │   │   ├── 11.pack
+│   │   │   │   ├── 12.pack
+│   │   │   │   ├── 13.pack
+│   │   │   │   ├── 14.pack
+│   │   │   │   ├── 15.pack
+│   │   │   │   ├── 16.pack
+│   │   │   │   ├── 17.pack
+│   │   │   │   ├── 18.pack
+│   │   │   │   ├── 19.pack
 │   │   │   │   ├── 2.pack
+│   │   │   │   ├── 20.pack
+│   │   │   │   ├── 21.pack
+│   │   │   │   ├── 22.pack
+│   │   │   │   ├── 23.pack
+│   │   │   │   ├── 24.pack
 │   │   │   │   ├── 3.pack
 │   │   │   │   ├── 4.pack
+│   │   │   │   ├── 5.pack
+│   │   │   │   ├── 6.pack
+│   │   │   │   ├── 7.pack
+│   │   │   │   ├── 8.pack
+│   │   │   │   ├── 9.pack
 │   │   │   │   ├── index.pack
 │   │   │   │   └── index.pack.old
 │   │   │   ├── edge-server-production
@@ -239,31 +556,45 @@ BuilbotAI
 │   │   │   └── server-production
 │   │   │       ├── 0.pack
 │   │   │       ├── 1.pack
+│   │   │       ├── 10.pack
+│   │   │       ├── 11.pack
+│   │   │       ├── 12.pack
+│   │   │       ├── 13.pack
+│   │   │       ├── 14.pack
+│   │   │       ├── 15.pack
+│   │   │       ├── 16.pack
+│   │   │       ├── 17.pack
+│   │   │       ├── 18.pack
+│   │   │       ├── 19.pack
 │   │   │       ├── 2.pack
+│   │   │       ├── 20.pack
+│   │   │       ├── 21.pack
+│   │   │       ├── 22.pack
+│   │   │       ├── 23.pack
+│   │   │       ├── 24.pack
+│   │   │       ├── 25.pack
+│   │   │       ├── 26.pack
+│   │   │       ├── 27.pack
+│   │   │       ├── 28.pack
 │   │   │       ├── 3.pack
 │   │   │       ├── 4.pack
 │   │   │       ├── 5.pack
+│   │   │       ├── 6.pack
+│   │   │       ├── 7.pack
+│   │   │       ├── 8.pack
+│   │   │       ├── 9.pack
 │   │   │       ├── index.pack
 │   │   │       └── index.pack.old
 │   │   ├── .previewinfo
-│   │   ├── .rscinfo
-│   │   └── next-devtools-config.json
+│   │   └── .rscinfo
 │   ├── diagnostics
 │   │   ├── build-diagnostics.json
 │   │   └── framework.json
 │   ├── server
 │   │   ├── app
 │   │   │   ├── _not-found
-│   │   │   │   ├── page
-│   │   │   │   │   ├── app-build-manifest.json
-│   │   │   │   │   ├── app-paths-manifest.json
-│   │   │   │   │   ├── build-manifest.json
-│   │   │   │   │   ├── next-font-manifest.json
-│   │   │   │   │   ├── react-loadable-manifest.json
-│   │   │   │   │   └── server-reference-manifest.json
 │   │   │   │   ├── page_client-reference-manifest.js
 │   │   │   │   ├── page.js
-│   │   │   │   ├── page.js.map
 │   │   │   │   └── page.js.nft.json
 │   │   │   ├── about
 │   │   │   │   ├── page_client-reference-manifest.js
@@ -274,20 +605,12 @@ BuilbotAI
 │   │   │   │   │   ├── page_client-reference-manifest.js
 │   │   │   │   │   ├── page.js
 │   │   │   │   │   └── page.js.nft.json
-│   │   │   │   ├── page
-│   │   │   │   │   ├── app-build-manifest.json
-│   │   │   │   │   ├── app-paths-manifest.json
-│   │   │   │   │   ├── build-manifest.json
-│   │   │   │   │   ├── next-font-manifest.json
-│   │   │   │   │   ├── react-loadable-manifest.json
-│   │   │   │   │   └── server-reference-manifest.json
 │   │   │   │   ├── prebuilt-builder
 │   │   │   │   │   ├── page_client-reference-manifest.js
 │   │   │   │   │   ├── page.js
 │   │   │   │   │   └── page.js.nft.json
 │   │   │   │   ├── page_client-reference-manifest.js
 │   │   │   │   ├── page.js
-│   │   │   │   ├── page.js.map
 │   │   │   │   ├── page.js.nft.json
 │   │   │   │   ├── prebuilt-builder.html
 │   │   │   │   ├── prebuilt-builder.meta
@@ -298,23 +621,31 @@ BuilbotAI
 │   │   │   │   └── page.js.nft.json
 │   │   │   ├── api
 │   │   │   │   ├── admin
-│   │   │   │   │   └── qr-health
-│   │   │   │   │       ├── route
-│   │   │   │   │       │   ├── app-build-manifest.json
-│   │   │   │   │       │   ├── app-paths-manifest.json
-│   │   │   │   │       │   ├── build-manifest.json
-│   │   │   │   │       │   └── server-reference-manifest.json
-│   │   │   │   │       ├── route_client-reference-manifest.js
-│   │   │   │   │       ├── route.js
-│   │   │   │   │       └── route.js.map
+│   │   │   │   │   ├── qr-health
+│   │   │   │   │   │   ├── route_client-reference-manifest.js
+│   │   │   │   │   │   ├── route.js
+│   │   │   │   │   │   └── route.js.nft.json
+│   │   │   │   │   └── qr-status
+│   │   │   │   │       └── [token]
+│   │   │   │   │           ├── route_client-reference-manifest.js
+│   │   │   │   │           ├── route.js
+│   │   │   │   │           └── route.js.nft.json
 │   │   │   │   ├── ai
 │   │   │   │   │   └── build-advisor
+│   │   │   │   │       ├── critique
+│   │   │   │   │       │   ├── route_client-reference-manifest.js
+│   │   │   │   │       │   ├── route.js
+│   │   │   │   │       │   └── route.js.nft.json
 │   │   │   │   │       └── recommendations
 │   │   │   │   │           ├── route_client-reference-manifest.js
 │   │   │   │   │           ├── route.js
 │   │   │   │   │           └── route.js.nft.json
 │   │   │   │   ├── builder
-│   │   │   │   │   └── download
+│   │   │   │   │   ├── download
+│   │   │   │   │   │   ├── route_client-reference-manifest.js
+│   │   │   │   │   │   ├── route.js
+│   │   │   │   │   │   └── route.js.nft.json
+│   │   │   │   │   └── live-recommendations
 │   │   │   │   │       ├── route_client-reference-manifest.js
 │   │   │   │   │       ├── route.js
 │   │   │   │   │       └── route.js.nft.json
@@ -323,6 +654,10 @@ BuilbotAI
 │   │   │   │   │   ├── route.js
 │   │   │   │   │   └── route.js.nft.json
 │   │   │   │   ├── contact
+│   │   │   │   │   ├── delete
+│   │   │   │   │   │   ├── route_client-reference-manifest.js
+│   │   │   │   │   │   ├── route.js
+│   │   │   │   │   │   └── route.js.nft.json
 │   │   │   │   │   ├── gmail
 │   │   │   │   │   │   ├── oauth
 │   │   │   │   │   │   │   ├── callback
@@ -360,21 +695,42 @@ BuilbotAI
 │   │   │   │   │   ├── route_client-reference-manifest.js
 │   │   │   │   │   ├── route.js
 │   │   │   │   │   └── route.js.nft.json
-│   │   │   │   └── qr
-│   │   │   │       └── [token]
-│   │   │   │           ├── route
-│   │   │   │           │   ├── app-build-manifest.json
-│   │   │   │           │   ├── app-paths-manifest.json
-│   │   │   │           │   ├── build-manifest.json
-│   │   │   │           │   └── server-reference-manifest.json
+│   │   │   │   ├── cron
+│   │   │   │   │   └── expire-orders
+│   │   │   │   │       ├── route_client-reference-manifest.js
+│   │   │   │   │       ├── route.js
+│   │   │   │   │       └── route.js.nft.json
+│   │   │   │   ├── featured-accessories
+│   │   │   │   │   ├── route_client-reference-manifest.js
+│   │   │   │   │   ├── route.js
+│   │   │   │   │   └── route.js.nft.json
+│   │   │   │   ├── featured-parts
+│   │   │   │   │   ├── route_client-reference-manifest.js
+│   │   │   │   │   ├── route.js
+│   │   │   │   │   └── route.js.nft.json
+│   │   │   │   ├── qr
+│   │   │   │   │   └── [token]
+│   │   │   │   │       ├── route_client-reference-manifest.js
+│   │   │   │   │       ├── route.js
+│   │   │   │   │       └── route.js.nft.json
+│   │   │   │   ├── system-access
+│   │   │   │   │   └── authenticate
+│   │   │   │   │       ├── route_client-reference-manifest.js
+│   │   │   │   │       ├── route.js
+│   │   │   │   │       └── route.js.nft.json
+│   │   │   │   └── webhooks
+│   │   │   │       └── paymongo
 │   │   │   │           ├── route_client-reference-manifest.js
 │   │   │   │           ├── route.js
-│   │   │   │           ├── route.js.map
 │   │   │   │           └── route.js.nft.json
 │   │   │   ├── apple-icon.png
 │   │   │   │   ├── route.js
 │   │   │   │   └── route.js.nft.json
 │   │   │   ├── builder
+│   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   ├── page.js
+│   │   │   │   └── page.js.nft.json
+│   │   │   ├── checkout
 │   │   │   │   ├── page_client-reference-manifest.js
 │   │   │   │   ├── page.js
 │   │   │   │   └── page.js.nft.json
@@ -393,56 +749,33 @@ BuilbotAI
 │   │   │   │   ├── page_client-reference-manifest.js
 │   │   │   │   ├── page.js
 │   │   │   │   └── page.js.nft.json
+│   │   │   ├── group
+│   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   ├── page.js
+│   │   │   │   └── page.js.nft.json
 │   │   │   ├── icon.svg
 │   │   │   │   ├── route.js
 │   │   │   │   └── route.js.nft.json
+│   │   │   ├── landing-video
+│   │   │   │   └── [name]
+│   │   │   │       ├── route_client-reference-manifest.js
+│   │   │   │       ├── route.js
+│   │   │   │       └── route.js.nft.json
 │   │   │   ├── parts
 │   │   │   │   ├── [productId]
-│   │   │   │   │   ├── page
-│   │   │   │   │   │   ├── app-build-manifest.json
-│   │   │   │   │   │   ├── app-paths-manifest.json
-│   │   │   │   │   │   ├── build-manifest.json
-│   │   │   │   │   │   ├── next-font-manifest.json
-│   │   │   │   │   │   ├── react-loadable-manifest.json
-│   │   │   │   │   │   └── server-reference-manifest.json
 │   │   │   │   │   ├── page_client-reference-manifest.js
 │   │   │   │   │   ├── page.js
-│   │   │   │   │   ├── page.js.map
 │   │   │   │   │   └── page.js.nft.json
-│   │   │   │   ├── page
-│   │   │   │   │   ├── app-build-manifest.json
-│   │   │   │   │   ├── app-paths-manifest.json
-│   │   │   │   │   ├── build-manifest.json
-│   │   │   │   │   ├── next-font-manifest.json
-│   │   │   │   │   ├── react-loadable-manifest.json
-│   │   │   │   │   └── server-reference-manifest.json
 │   │   │   │   ├── page_client-reference-manifest.js
 │   │   │   │   ├── page.js
-│   │   │   │   ├── page.js.map
 │   │   │   │   └── page.js.nft.json
 │   │   │   ├── pre-builts
 │   │   │   │   ├── [id]
-│   │   │   │   │   ├── page
-│   │   │   │   │   │   ├── app-build-manifest.json
-│   │   │   │   │   │   ├── app-paths-manifest.json
-│   │   │   │   │   │   ├── build-manifest.json
-│   │   │   │   │   │   ├── next-font-manifest.json
-│   │   │   │   │   │   ├── react-loadable-manifest.json
-│   │   │   │   │   │   └── server-reference-manifest.json
 │   │   │   │   │   ├── page_client-reference-manifest.js
 │   │   │   │   │   ├── page.js
-│   │   │   │   │   ├── page.js.map
 │   │   │   │   │   └── page.js.nft.json
-│   │   │   │   ├── page
-│   │   │   │   │   ├── app-build-manifest.json
-│   │   │   │   │   ├── app-paths-manifest.json
-│   │   │   │   │   ├── build-manifest.json
-│   │   │   │   │   ├── next-font-manifest.json
-│   │   │   │   │   ├── react-loadable-manifest.json
-│   │   │   │   │   └── server-reference-manifest.json
 │   │   │   │   ├── page_client-reference-manifest.js
 │   │   │   │   ├── page.js
-│   │   │   │   ├── page.js.map
 │   │   │   │   └── page.js.nft.json
 │   │   │   ├── profile
 │   │   │   │   ├── page_client-reference-manifest.js
@@ -450,28 +783,12 @@ BuilbotAI
 │   │   │   │   └── page.js.nft.json
 │   │   │   ├── q
 │   │   │   │   └── [token]
-│   │   │   │       ├── page
-│   │   │   │       │   ├── app-build-manifest.json
-│   │   │   │       │   ├── app-paths-manifest.json
-│   │   │   │       │   ├── build-manifest.json
-│   │   │   │       │   ├── next-font-manifest.json
-│   │   │   │       │   ├── react-loadable-manifest.json
-│   │   │   │       │   └── server-reference-manifest.json
 │   │   │   │       ├── page_client-reference-manifest.js
 │   │   │   │       ├── page.js
-│   │   │   │       ├── page.js.map
 │   │   │   │       └── page.js.nft.json
 │   │   │   ├── signin
-│   │   │   │   ├── page
-│   │   │   │   │   ├── app-build-manifest.json
-│   │   │   │   │   ├── app-paths-manifest.json
-│   │   │   │   │   ├── build-manifest.json
-│   │   │   │   │   ├── next-font-manifest.json
-│   │   │   │   │   ├── react-loadable-manifest.json
-│   │   │   │   │   └── server-reference-manifest.json
 │   │   │   │   ├── page_client-reference-manifest.js
 │   │   │   │   ├── page.js
-│   │   │   │   ├── page.js.map
 │   │   │   │   └── page.js.nft.json
 │   │   │   ├── signup
 │   │   │   │   ├── page_client-reference-manifest.js
@@ -482,20 +799,12 @@ BuilbotAI
 │   │   │   │   ├── page.js
 │   │   │   │   └── page.js.nft.json
 │   │   │   ├── system-access
-│   │   │   │   ├── page
-│   │   │   │   │   ├── app-build-manifest.json
-│   │   │   │   │   ├── app-paths-manifest.json
-│   │   │   │   │   ├── build-manifest.json
-│   │   │   │   │   ├── next-font-manifest.json
-│   │   │   │   │   ├── react-loadable-manifest.json
-│   │   │   │   │   └── server-reference-manifest.json
 │   │   │   │   ├── signup
 │   │   │   │   │   ├── page_client-reference-manifest.js
 │   │   │   │   │   ├── page.js
 │   │   │   │   │   └── page.js.nft.json
 │   │   │   │   ├── page_client-reference-manifest.js
 │   │   │   │   ├── page.js
-│   │   │   │   ├── page.js.map
 │   │   │   │   ├── page.js.nft.json
 │   │   │   │   ├── signup.html
 │   │   │   │   ├── signup.meta
@@ -518,6 +827,9 @@ BuilbotAI
 │   │   │   ├── ai-build-advisor.rsc
 │   │   │   ├── apple-icon.png.body
 │   │   │   ├── apple-icon.png.meta
+│   │   │   ├── checkout.html
+│   │   │   ├── checkout.meta
+│   │   │   ├── checkout.rsc
 │   │   │   ├── contact.html
 │   │   │   ├── contact.meta
 │   │   │   ├── contact.rsc
@@ -529,6 +841,9 @@ BuilbotAI
 │   │   │   ├── forgot-password.html
 │   │   │   ├── forgot-password.meta
 │   │   │   ├── forgot-password.rsc
+│   │   │   ├── group.html
+│   │   │   ├── group.meta
+│   │   │   ├── group.rsc
 │   │   │   ├── icon.svg.body
 │   │   │   ├── icon.svg.meta
 │   │   │   ├── index.html
@@ -556,385 +871,86 @@ BuilbotAI
 │   │   │   ├── team.meta
 │   │   │   └── team.rsc
 │   │   ├── chunks
-│   │   │   ├── ssr
-│   │   │   │   ├── _16e50adc._.js
-│   │   │   │   ├── _16e50adc._.js.map
-│   │   │   │   ├── _2e094f6c._.js
-│   │   │   │   ├── _2e094f6c._.js.map
-│   │   │   │   ├── _7d37fb37._.js
-│   │   │   │   ├── _7d37fb37._.js.map
-│   │   │   │   ├── _aa91a7b3._.js
-│   │   │   │   ├── _aa91a7b3._.js.map
-│   │   │   │   ├── [root-of-the-server]__22a492be._.js
-│   │   │   │   ├── [root-of-the-server]__22a492be._.js.map
-│   │   │   │   ├── [root-of-the-server]__275c6f36._.js
-│   │   │   │   ├── [root-of-the-server]__275c6f36._.js.map
-│   │   │   │   ├── [root-of-the-server]__28b01990._.js
-│   │   │   │   ├── [root-of-the-server]__28b01990._.js.map
-│   │   │   │   ├── [root-of-the-server]__2dbc566f._.js
-│   │   │   │   ├── [root-of-the-server]__2dbc566f._.js.map
-│   │   │   │   ├── [root-of-the-server]__31e8d935._.js
-│   │   │   │   ├── [root-of-the-server]__31e8d935._.js.map
-│   │   │   │   ├── [root-of-the-server]__3a7754cd._.js
-│   │   │   │   ├── [root-of-the-server]__3a7754cd._.js.map
-│   │   │   │   ├── [root-of-the-server]__4d3c106c._.js
-│   │   │   │   ├── [root-of-the-server]__4d3c106c._.js.map
-│   │   │   │   ├── [root-of-the-server]__59ad1344._.js
-│   │   │   │   ├── [root-of-the-server]__59ad1344._.js.map
-│   │   │   │   ├── [root-of-the-server]__5daf21c4._.js
-│   │   │   │   ├── [root-of-the-server]__5daf21c4._.js.map
-│   │   │   │   ├── [root-of-the-server]__61549fff._.js
-│   │   │   │   ├── [root-of-the-server]__61549fff._.js.map
-│   │   │   │   ├── [root-of-the-server]__7cec573e._.js
-│   │   │   │   ├── [root-of-the-server]__7cec573e._.js.map
-│   │   │   │   ├── [root-of-the-server]__910c8955._.js
-│   │   │   │   ├── [root-of-the-server]__910c8955._.js.map
-│   │   │   │   ├── [root-of-the-server]__a55a4bb7._.js
-│   │   │   │   ├── [root-of-the-server]__a55a4bb7._.js.map
-│   │   │   │   ├── [root-of-the-server]__bea21583._.js
-│   │   │   │   ├── [root-of-the-server]__bea21583._.js.map
-│   │   │   │   ├── [root-of-the-server]__c80f7c8f._.js
-│   │   │   │   ├── [root-of-the-server]__c80f7c8f._.js.map
-│   │   │   │   ├── [root-of-the-server]__cbe2c887._.js
-│   │   │   │   ├── [root-of-the-server]__cbe2c887._.js.map
-│   │   │   │   ├── [root-of-the-server]__d0dc6bca._.js
-│   │   │   │   ├── [root-of-the-server]__d0dc6bca._.js.map
-│   │   │   │   ├── [root-of-the-server]__f0336b73._.js
-│   │   │   │   ├── [root-of-the-server]__f0336b73._.js.map
-│   │   │   │   ├── [turbopack]_browser_dev_hmr-client_hmr-client_ts_818f0fdf._.js
-│   │   │   │   ├── [turbopack]_browser_dev_hmr-client_hmr-client_ts_818f0fdf._.js.map
-│   │   │   │   ├── [turbopack]_runtime.js
-│   │   │   │   ├── [turbopack]_runtime.js.map
-│   │   │   │   ├── 2a4f4_@grpc_grpc-js_e65e1e96._.js
-│   │   │   │   ├── 2a4f4_@grpc_grpc-js_e65e1e96._.js.map
-│   │   │   │   ├── 94568_@firebase_auth_dist_node-esm_39d07344._.js
-│   │   │   │   ├── 94568_@firebase_auth_dist_node-esm_39d07344._.js.map
-│   │   │   │   ├── node_modules_@ai-sdk_5bc85d02._.js
-│   │   │   │   ├── node_modules_@ai-sdk_5bc85d02._.js.map
-│   │   │   │   ├── node_modules_@ai-sdk_google_dist_index_mjs_bdc4cc50._.js
-│   │   │   │   ├── node_modules_@ai-sdk_google_dist_index_mjs_bdc4cc50._.js.map
-│   │   │   │   ├── node_modules_@firebase_firestore_dist_index_node_mjs_8bec9454._.js
-│   │   │   │   ├── node_modules_@firebase_firestore_dist_index_node_mjs_8bec9454._.js.map
-│   │   │   │   ├── node_modules_@firebase_storage_dist_node-esm_index_node_esm_7eeaaba0.js
-│   │   │   │   ├── node_modules_@firebase_storage_dist_node-esm_index_node_esm_7eeaaba0.js.map
-│   │   │   │   ├── node_modules_@floating-ui_react_dist_3d79f7db._.js
-│   │   │   │   ├── node_modules_@floating-ui_react_dist_3d79f7db._.js.map
-│   │   │   │   ├── node_modules_@genkit-ai_ai_lib_6fe21ff5._.js
-│   │   │   │   ├── node_modules_@genkit-ai_ai_lib_6fe21ff5._.js.map
-│   │   │   │   ├── node_modules_@genkit-ai_core_lib_5b1526ac._.js
-│   │   │   │   ├── node_modules_@genkit-ai_core_lib_5b1526ac._.js.map
-│   │   │   │   ├── node_modules_@genkit-ai_google-genai_lib_a20550b7._.js
-│   │   │   │   ├── node_modules_@genkit-ai_google-genai_lib_a20550b7._.js.map
-│   │   │   │   ├── node_modules_@grpc_grpc-js_dee9e152._.js
-│   │   │   │   ├── node_modules_@grpc_grpc-js_dee9e152._.js.map
-│   │   │   │   ├── node_modules_@mantine_core_esm_21d35c07._.js
-│   │   │   │   ├── node_modules_@mantine_core_esm_21d35c07._.js.map
-│   │   │   │   ├── node_modules_@mantine_core_esm_365b8ea5._.js
-│   │   │   │   ├── node_modules_@mantine_core_esm_365b8ea5._.js.map
-│   │   │   │   ├── node_modules_@mantine_core_esm_4b77b7ea._.js
-│   │   │   │   ├── node_modules_@mantine_core_esm_4b77b7ea._.js.map
-│   │   │   │   ├── node_modules_@mantine_core_esm_b930ce9b._.js
-│   │   │   │   ├── node_modules_@mantine_core_esm_b930ce9b._.js.map
-│   │   │   │   ├── node_modules_@mantine_core_esm_c5779e9b._.js
-│   │   │   │   ├── node_modules_@mantine_core_esm_c5779e9b._.js.map
-│   │   │   │   ├── node_modules_@opentelemetry_05992674._.js
-│   │   │   │   ├── node_modules_@opentelemetry_05992674._.js.map
-│   │   │   │   ├── node_modules_@opentelemetry_28b1336a._.js
-│   │   │   │   ├── node_modules_@opentelemetry_28b1336a._.js.map
-│   │   │   │   ├── node_modules_@opentelemetry_4a05c3bf._.js
-│   │   │   │   ├── node_modules_@opentelemetry_4a05c3bf._.js.map
-│   │   │   │   ├── node_modules_@opentelemetry_otlp-transformer_build_esm_6522dc85._.js
-│   │   │   │   ├── node_modules_@opentelemetry_otlp-transformer_build_esm_6522dc85._.js.map
-│   │   │   │   ├── node_modules_@opentelemetry_resources_build_esm_5f5d2121._.js
-│   │   │   │   ├── node_modules_@opentelemetry_resources_build_esm_5f5d2121._.js.map
-│   │   │   │   ├── node_modules_@opentelemetry_sdk-metrics_build_esm_1ea28c64._.js
-│   │   │   │   ├── node_modules_@opentelemetry_sdk-metrics_build_esm_1ea28c64._.js.map
-│   │   │   │   ├── node_modules_@opentelemetry_sdk-trace-base_build_esm_4b613864._.js
-│   │   │   │   ├── node_modules_@opentelemetry_sdk-trace-base_build_esm_4b613864._.js.map
-│   │   │   │   ├── node_modules_@vercel_oidc_dist_339f32a4._.js
-│   │   │   │   ├── node_modules_@vercel_oidc_dist_339f32a4._.js.map
-│   │   │   │   ├── node_modules_@vercel_oidc_dist_token_931a56ab.js
-│   │   │   │   ├── node_modules_@vercel_oidc_dist_token_931a56ab.js.map
-│   │   │   │   ├── node_modules_@vercel_oidc_dist_token_c8b2c1a7.js
-│   │   │   │   ├── node_modules_@vercel_oidc_dist_token_c8b2c1a7.js.map
-│   │   │   │   ├── node_modules_01dd0587._.js
-│   │   │   │   ├── node_modules_01dd0587._.js.map
-│   │   │   │   ├── node_modules_063e2c9a._.js
-│   │   │   │   ├── node_modules_063e2c9a._.js.map
-│   │   │   │   ├── node_modules_0b24718f._.js
-│   │   │   │   ├── node_modules_0b24718f._.js.map
-│   │   │   │   ├── node_modules_0b81925b._.js
-│   │   │   │   ├── node_modules_0b81925b._.js.map
-│   │   │   │   ├── node_modules_0df20cbe._.js
-│   │   │   │   ├── node_modules_0df20cbe._.js.map
-│   │   │   │   ├── node_modules_2971e4ab._.js
-│   │   │   │   ├── node_modules_2971e4ab._.js.map
-│   │   │   │   ├── node_modules_365bf203._.js
-│   │   │   │   ├── node_modules_365bf203._.js.map
-│   │   │   │   ├── node_modules_3e30fd05._.js
-│   │   │   │   ├── node_modules_3e30fd05._.js.map
-│   │   │   │   ├── node_modules_4dcd2a7a._.js
-│   │   │   │   ├── node_modules_4dcd2a7a._.js.map
-│   │   │   │   ├── node_modules_63581b6b._.js
-│   │   │   │   ├── node_modules_63581b6b._.js.map
-│   │   │   │   ├── node_modules_778616d7._.js
-│   │   │   │   ├── node_modules_778616d7._.js.map
-│   │   │   │   ├── node_modules_803ddb3a._.js
-│   │   │   │   ├── node_modules_803ddb3a._.js.map
-│   │   │   │   ├── node_modules_976992af._.js
-│   │   │   │   ├── node_modules_976992af._.js.map
-│   │   │   │   ├── node_modules_a918f8b3._.js
-│   │   │   │   ├── node_modules_a918f8b3._.js.map
-│   │   │   │   ├── node_modules_ai_dist_index_mjs_56ee2b81._.js
-│   │   │   │   ├── node_modules_ai_dist_index_mjs_56ee2b81._.js.map
-│   │   │   │   ├── node_modules_ai_dist_index_mjs_7a62fa11._.js
-│   │   │   │   ├── node_modules_ai_dist_index_mjs_7a62fa11._.js.map
-│   │   │   │   ├── node_modules_ajv_dist_7f0a026b._.js
-│   │   │   │   ├── node_modules_ajv_dist_7f0a026b._.js.map
-│   │   │   │   ├── node_modules_bb681d96._.js
-│   │   │   │   ├── node_modules_bb681d96._.js.map
-│   │   │   │   ├── node_modules_c1738bf7._.js
-│   │   │   │   ├── node_modules_c1738bf7._.js.map
-│   │   │   │   ├── node_modules_c74958c7._.js
-│   │   │   │   ├── node_modules_c74958c7._.js.map
-│   │   │   │   ├── node_modules_e8f6801c._.js
-│   │   │   │   ├── node_modules_e8f6801c._.js.map
-│   │   │   │   ├── node_modules_e9b3bdf2._.js
-│   │   │   │   ├── node_modules_e9b3bdf2._.js.map
-│   │   │   │   ├── node_modules_ecd861af._.js
-│   │   │   │   ├── node_modules_ecd861af._.js.map
-│   │   │   │   ├── node_modules_efcaee88._.js
-│   │   │   │   ├── node_modules_efcaee88._.js.map
-│   │   │   │   ├── node_modules_framer-motion_dist_es_514a1049._.js
-│   │   │   │   ├── node_modules_framer-motion_dist_es_514a1049._.js.map
-│   │   │   │   ├── node_modules_gaxios_345b1140._.js
-│   │   │   │   ├── node_modules_gaxios_345b1140._.js.map
-│   │   │   │   ├── node_modules_google-auth-library_cabb386c._.js
-│   │   │   │   ├── node_modules_google-auth-library_cabb386c._.js.map
-│   │   │   │   ├── node_modules_handlebars_dist_cjs_670ea975._.js
-│   │   │   │   ├── node_modules_handlebars_dist_cjs_670ea975._.js.map
-│   │   │   │   ├── node_modules_lodash_84097691._.js
-│   │   │   │   ├── node_modules_lodash_84097691._.js.map
-│   │   │   │   ├── node_modules_lucide-react_dist_esm_icons_5379007d._.js
-│   │   │   │   ├── node_modules_lucide-react_dist_esm_icons_5379007d._.js.map
-│   │   │   │   ├── node_modules_lucide-react_dist_esm_icons_9373f846._.js
-│   │   │   │   ├── node_modules_lucide-react_dist_esm_icons_9373f846._.js.map
-│   │   │   │   ├── node_modules_lucide-react_dist_esm_icons_d18f4625._.js
-│   │   │   │   ├── node_modules_lucide-react_dist_esm_icons_d18f4625._.js.map
-│   │   │   │   ├── node_modules_lucide-react_dist_esm_icons_fd46b353._.js
-│   │   │   │   ├── node_modules_lucide-react_dist_esm_icons_fd46b353._.js.map
-│   │   │   │   ├── node_modules_lucide-react_dist_esm_icons_type_5697afda.js
-│   │   │   │   ├── node_modules_lucide-react_dist_esm_icons_type_5697afda.js.map
-│   │   │   │   ├── node_modules_micromark-core-commonmark_dev_lib_db259fd5._.js
-│   │   │   │   ├── node_modules_micromark-core-commonmark_dev_lib_db259fd5._.js.map
-│   │   │   │   ├── node_modules_next_1a7a45c3._.js
-│   │   │   │   ├── node_modules_next_1a7a45c3._.js.map
-│   │   │   │   ├── node_modules_next_4fddc522._.js
-│   │   │   │   ├── node_modules_next_4fddc522._.js.map
-│   │   │   │   ├── node_modules_next_541eaa37._.js
-│   │   │   │   ├── node_modules_next_541eaa37._.js.map
-│   │   │   │   ├── node_modules_next_67b8332a._.js
-│   │   │   │   ├── node_modules_next_67b8332a._.js.map
-│   │   │   │   ├── node_modules_next_a4821b77._.js
-│   │   │   │   ├── node_modules_next_a4821b77._.js.map
-│   │   │   │   ├── node_modules_next_b4a2133c._.js
-│   │   │   │   ├── node_modules_next_b4a2133c._.js.map
-│   │   │   │   ├── node_modules_next_bc790d8d._.js
-│   │   │   │   ├── node_modules_next_bc790d8d._.js.map
-│   │   │   │   ├── node_modules_next_d492c570._.js
-│   │   │   │   ├── node_modules_next_d492c570._.js.map
-│   │   │   │   ├── node_modules_next_ded47c9a._.js
-│   │   │   │   ├── node_modules_next_ded47c9a._.js.map
-│   │   │   │   ├── node_modules_next_dist_291d111f._.js
-│   │   │   │   ├── node_modules_next_dist_291d111f._.js.map
-│   │   │   │   ├── node_modules_next_dist_9afa1ded._.js
-│   │   │   │   ├── node_modules_next_dist_9afa1ded._.js.map
-│   │   │   │   ├── node_modules_next_dist_client_70549d4a._.js
-│   │   │   │   ├── node_modules_next_dist_client_70549d4a._.js.map
-│   │   │   │   ├── node_modules_next_dist_client_components_9774470f._.js
-│   │   │   │   ├── node_modules_next_dist_client_components_9774470f._.js.map
-│   │   │   │   ├── node_modules_next_dist_client_components_builtin_forbidden_45780354.js
-│   │   │   │   ├── node_modules_next_dist_client_components_builtin_forbidden_45780354.js.map
-│   │   │   │   ├── node_modules_next_dist_client_components_builtin_global-error_ece394eb.js
-│   │   │   │   ├── node_modules_next_dist_client_components_builtin_global-error_ece394eb.js.map
-│   │   │   │   ├── node_modules_next_dist_client_components_builtin_unauthorized_15817684.js
-│   │   │   │   ├── node_modules_next_dist_client_components_builtin_unauthorized_15817684.js.map
-│   │   │   │   ├── node_modules_next_dist_compiled_b1baabe8._.js
-│   │   │   │   ├── node_modules_next_dist_compiled_b1baabe8._.js.map
-│   │   │   │   ├── node_modules_next_dist_compiled_next-devtools_index_a19313bf.js
-│   │   │   │   ├── node_modules_next_dist_compiled_next-devtools_index_a19313bf.js.map
-│   │   │   │   ├── node_modules_next_dist_esm_968ff1ee._.js
-│   │   │   │   ├── node_modules_next_dist_esm_968ff1ee._.js.map
-│   │   │   │   ├── node_modules_next_dist_server_route-modules_app-page_f354387c._.js
-│   │   │   │   ├── node_modules_next_dist_server_route-modules_app-page_f354387c._.js.map
-│   │   │   │   ├── node_modules_next_e36c7a06._.js
-│   │   │   │   ├── node_modules_next_e36c7a06._.js.map
-│   │   │   │   ├── node_modules_next_navigation_34126abf.js
-│   │   │   │   ├── node_modules_next_navigation_34126abf.js.map
-│   │   │   │   ├── node_modules_node-fetch_src_utils_multipart-parser_431de5b8.js
-│   │   │   │   ├── node_modules_node-fetch_src_utils_multipart-parser_431de5b8.js.map
-│   │   │   │   ├── node_modules_node-fetch_src_utils_multipart-parser_a6debb5a.js
-│   │   │   │   ├── node_modules_node-fetch_src_utils_multipart-parser_a6debb5a.js.map
-│   │   │   │   ├── node_modules_protobufjs_24557efc._.js
-│   │   │   │   ├── node_modules_protobufjs_24557efc._.js.map
-│   │   │   │   ├── node_modules_protobufjs_5977de25._.js
-│   │   │   │   ├── node_modules_protobufjs_5977de25._.js.map
-│   │   │   │   ├── node_modules_recharts_es6_84aedca2._.js
-│   │   │   │   ├── node_modules_recharts_es6_84aedca2._.js.map
-│   │   │   │   ├── node_modules_recharts_es6_d6d7a17e._.js
-│   │   │   │   ├── node_modules_recharts_es6_d6d7a17e._.js.map
-│   │   │   │   ├── node_modules_thriftrw_d9865ef6._.js
-│   │   │   │   ├── node_modules_thriftrw_d9865ef6._.js.map
-│   │   │   │   ├── node_modules_tr46_742a71cf._.js
-│   │   │   │   ├── node_modules_tr46_742a71cf._.js.map
-│   │   │   │   ├── node_modules_xlsx_xlsx_mjs_959e58f3._.js
-│   │   │   │   ├── node_modules_xlsx_xlsx_mjs_959e58f3._.js.map
-│   │   │   │   ├── node_modules_yaml_dist_c70cf5b3._.js
-│   │   │   │   ├── node_modules_yaml_dist_c70cf5b3._.js.map
-│   │   │   │   ├── node_modules_zod_38be36f2._.js
-│   │   │   │   ├── node_modules_zod_38be36f2._.js.map
-│   │   │   │   ├── node_modules_zod_832854bf._.js
-│   │   │   │   ├── node_modules_zod_832854bf._.js.map
-│   │   │   │   ├── node_modules_zod_v3_0c6b243f._.js
-│   │   │   │   ├── node_modules_zod_v3_0c6b243f._.js.map
-│   │   │   │   ├── src_03ab0394._.js
-│   │   │   │   ├── src_03ab0394._.js.map
-│   │   │   │   ├── src_135e9501._.js
-│   │   │   │   ├── src_135e9501._.js.map
-│   │   │   │   ├── src_17077995._.js
-│   │   │   │   ├── src_17077995._.js.map
-│   │   │   │   ├── src_226260cc._.js
-│   │   │   │   ├── src_226260cc._.js.map
-│   │   │   │   ├── src_26edb94e._.js
-│   │   │   │   ├── src_26edb94e._.js.map
-│   │   │   │   ├── src_49d1ed74._.js
-│   │   │   │   ├── src_49d1ed74._.js.map
-│   │   │   │   ├── src_76ee5cf5._.js
-│   │   │   │   ├── src_76ee5cf5._.js.map
-│   │   │   │   ├── src_88d7c8aa._.js
-│   │   │   │   ├── src_88d7c8aa._.js.map
-│   │   │   │   ├── src_app_62f4ffe8._.js
-│   │   │   │   ├── src_app_62f4ffe8._.js.map
-│   │   │   │   ├── src_app_admin_components_reservations-tab_tsx_63150948._.js
-│   │   │   │   ├── src_app_admin_components_reservations-tab_tsx_63150948._.js.map
-│   │   │   │   ├── src_app_bffc5095._.js
-│   │   │   │   ├── src_app_bffc5095._.js.map
-│   │   │   │   ├── src_app_ca777385._.js
-│   │   │   │   ├── src_app_ca777385._.js.map
-│   │   │   │   ├── src_app_caa950af._.js
-│   │   │   │   ├── src_app_caa950af._.js.map
-│   │   │   │   ├── src_b7af6fa7._.js
-│   │   │   │   ├── src_b7af6fa7._.js.map
-│   │   │   │   ├── src_be102fa8._.js
-│   │   │   │   ├── src_be102fa8._.js.map
-│   │   │   │   ├── src_c7605114._.js
-│   │   │   │   ├── src_c7605114._.js.map
-│   │   │   │   ├── src_cab69afa._.js
-│   │   │   │   ├── src_cab69afa._.js.map
-│   │   │   │   ├── src_components_196ef470._.js
-│   │   │   │   ├── src_components_196ef470._.js.map
-│   │   │   │   ├── src_components_5cf2eb3d._.js
-│   │   │   │   ├── src_components_5cf2eb3d._.js.map
-│   │   │   │   ├── src_components_fa253cb2._.js
-│   │   │   │   ├── src_components_fa253cb2._.js.map
-│   │   │   │   ├── src_daa9fc52._.js
-│   │   │   │   ├── src_daa9fc52._.js.map
-│   │   │   │   ├── src_e48ee555._.js
-│   │   │   │   ├── src_e48ee555._.js.map
-│   │   │   │   ├── src_ee914ed7._.js
-│   │   │   │   ├── src_ee914ed7._.js.map
-│   │   │   │   ├── src_fac2f4e6._.js
-│   │   │   │   ├── src_fac2f4e6._.js.map
-│   │   │   │   ├── src_fcf1c53c._.js
-│   │   │   │   ├── src_fcf1c53c._.js.map
-│   │   │   │   ├── src_lib_b828d407._.js
-│   │   │   │   ├── src_lib_b828d407._.js.map
-│   │   │   │   ├── src_lib_constants_default-system-prompts_ts_a1084dd3._.js
-│   │   │   │   └── src_lib_constants_default-system-prompts_ts_a1084dd3._.js.map
-│   │   │   ├── [root-of-the-server]__04e2d3e5._.js
-│   │   │   ├── [root-of-the-server]__04e2d3e5._.js.map
-│   │   │   ├── [root-of-the-server]__b77afd01._.js
-│   │   │   ├── [root-of-the-server]__b77afd01._.js.map
-│   │   │   ├── [turbopack]_runtime.js
-│   │   │   ├── [turbopack]_runtime.js.map
-│   │   │   ├── 1116.js
-│   │   │   ├── 1156.js
+│   │   │   ├── 101.js
+│   │   │   ├── 1056.js
+│   │   │   ├── 1070.js
+│   │   │   ├── 113.js
 │   │   │   ├── 13.js
-│   │   │   ├── 1318.js
+│   │   │   ├── 1412.js
 │   │   │   ├── 1428.js
-│   │   │   ├── 1435.js
 │   │   │   ├── 1452.js
-│   │   │   ├── 154.js
 │   │   │   ├── 1680.js
-│   │   │   ├── 1776.js
 │   │   │   ├── 1803.js
 │   │   │   ├── 1824.js
-│   │   │   ├── 1852.js
+│   │   │   ├── 2058.js
 │   │   │   ├── 2274.js
-│   │   │   ├── 2278.js
-│   │   │   ├── 2394.js
-│   │   │   ├── 2508.js
-│   │   │   ├── 2571.js
+│   │   │   ├── 2436.js
+│   │   │   ├── 2494.js
+│   │   │   ├── 2866.js
+│   │   │   ├── 2930.js
+│   │   │   ├── 3022.js
 │   │   │   ├── 3026.js
-│   │   │   ├── 3349.js
-│   │   │   ├── 3709.js
-│   │   │   ├── 3919.js
-│   │   │   ├── 3934.js
-│   │   │   ├── 4118.js
+│   │   │   ├── 3217.js
+│   │   │   ├── 3276.js
+│   │   │   ├── 3321.js
+│   │   │   ├── 3691.js
+│   │   │   ├── 3754.js
+│   │   │   ├── 3827.js
+│   │   │   ├── 3897.js
 │   │   │   ├── 4148.js
-│   │   │   ├── 4161.js
+│   │   │   ├── 4211.js
+│   │   │   ├── 4349.js
 │   │   │   ├── 4351.js
-│   │   │   ├── 4417.js
-│   │   │   ├── 4429.js
-│   │   │   ├── 4515.js
-│   │   │   ├── 4563.js
-│   │   │   ├── 4589.js
-│   │   │   ├── 4821.js
-│   │   │   ├── 490.js
-│   │   │   ├── 4915.js
+│   │   │   ├── 4479.js
+│   │   │   ├── 4597.js
+│   │   │   ├── 4657.js
+│   │   │   ├── 4753.js
+│   │   │   ├── 4797.js
+│   │   │   ├── 4809.js
+│   │   │   ├── 4814.js
 │   │   │   ├── 5166.js
+│   │   │   ├── 5270.js
+│   │   │   ├── 5322.js
+│   │   │   ├── 5350.js
+│   │   │   ├── 5369.js
+│   │   │   ├── 5387.js
 │   │   │   ├── 5396.js
-│   │   │   ├── 5549.js
+│   │   │   ├── 5450.js
+│   │   │   ├── 5603.js
 │   │   │   ├── 5611.js
-│   │   │   ├── 5615.js
-│   │   │   ├── 5662.js
-│   │   │   ├── 5711.js
 │   │   │   ├── 5873.js
+│   │   │   ├── 592.js
 │   │   │   ├── 5966.js
 │   │   │   ├── 6055.js
 │   │   │   ├── 6125.js
-│   │   │   ├── 6260.js
-│   │   │   ├── 6301.js
+│   │   │   ├── 6245.js
 │   │   │   ├── 634.js
-│   │   │   ├── 6366.js
 │   │   │   ├── 641.js
-│   │   │   ├── 6780.js
+│   │   │   ├── 6749.js
 │   │   │   ├── 6813.js
-│   │   │   ├── 7755.js
-│   │   │   ├── 8172.js
+│   │   │   ├── 6870.js
+│   │   │   ├── 7231.js
+│   │   │   ├── 7255.js
+│   │   │   ├── 7257.js
+│   │   │   ├── 7532.js
+│   │   │   ├── 756.js
+│   │   │   ├── 7908.js
+│   │   │   ├── 8212.js
 │   │   │   ├── 8253.js
 │   │   │   ├── 8276.js
+│   │   │   ├── 831.js
+│   │   │   ├── 8322.js
+│   │   │   ├── 8575.js
 │   │   │   ├── 8626.js
 │   │   │   ├── 8882.js
-│   │   │   ├── 8931.js
-│   │   │   ├── 8937.js
-│   │   │   ├── 8942.js
+│   │   │   ├── 8888.js
 │   │   │   ├── 8945.js
+│   │   │   ├── 9349.js
 │   │   │   ├── 937.js
-│   │   │   ├── 9386.js
+│   │   │   ├── 9401.js
+│   │   │   ├── 944.js
 │   │   │   ├── 9455.js
-│   │   │   ├── 9535.js
-│   │   │   ├── 9644.js
-│   │   │   ├── 9662.js
-│   │   │   ├── 9877.js
-│   │   │   ├── node_modules_@opentelemetry_api_build_esm_7e8f41ca._.js
-│   │   │   ├── node_modules_@opentelemetry_api_build_esm_7e8f41ca._.js.map
-│   │   │   ├── node_modules_f74b9372._.js
-│   │   │   ├── node_modules_f74b9372._.js.map
-│   │   │   ├── node_modules_next_03be8da3._.js
-│   │   │   ├── node_modules_next_03be8da3._.js.map
-│   │   │   ├── node_modules_zod_v3_f358d7b3._.js
-│   │   │   └── node_modules_zod_v3_f358d7b3._.js.map
+│   │   │   └── 9560.js
 │   │   ├── pages
 │   │   │   ├── _app.js
 │   │   │   ├── _app.js.nft.json
@@ -957,7 +973,7 @@ BuilbotAI
 │   │   ├── server-reference-manifest.json
 │   │   └── webpack-runtime.js
 │   ├── static
-│   │   ├── 5T4YoS7h2yStaqth-odDp
+│   │   ├── -EOu7W50sRUsng1ffbOZg
 │   │   │   ├── _buildManifest.js
 │   │   │   └── _ssgManifest.js
 │   │   ├── chunks
@@ -965,413 +981,250 @@ BuilbotAI
 │   │   │   │   ├── _not-found
 │   │   │   │   │   └── page-180c5c33fc4b7a40.js
 │   │   │   │   ├── about
-│   │   │   │   │   └── page-efce537501bbd72f.js
+│   │   │   │   │   └── page-7482561a8cb06a72.js
 │   │   │   │   ├── admin
 │   │   │   │   │   ├── contact-inquiries
-│   │   │   │   │   │   └── page-25828d65e8963c7a.js
+│   │   │   │   │   │   └── page-c5912e06adca8f8a.js
 │   │   │   │   │   ├── prebuilt-builder
-│   │   │   │   │   │   └── page-6d645ccf8b9d8066.js
-│   │   │   │   │   └── page-bd0ddd46fcf4295e.js
+│   │   │   │   │   │   └── page-cd17e8a9a7f1c1c0.js
+│   │   │   │   │   └── page-953f2349ce0978ad.js
 │   │   │   │   ├── ai-build-advisor
-│   │   │   │   │   └── page-8a9131b5e62a019b.js
+│   │   │   │   │   └── page-18ab13a727e9f864.js
 │   │   │   │   ├── api
+│   │   │   │   │   ├── admin
+│   │   │   │   │   │   ├── qr-health
+│   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
+│   │   │   │   │   │   └── qr-status
+│   │   │   │   │   │       └── [token]
+│   │   │   │   │   │           └── route-c5912e06adca8f8a.js
 │   │   │   │   │   ├── ai
 │   │   │   │   │   │   └── build-advisor
+│   │   │   │   │   │       ├── critique
+│   │   │   │   │   │       │   └── route-c5912e06adca8f8a.js
 │   │   │   │   │   │       └── recommendations
-│   │   │   │   │   │           └── route-25828d65e8963c7a.js
+│   │   │   │   │   │           └── route-c5912e06adca8f8a.js
 │   │   │   │   │   ├── builder
-│   │   │   │   │   │   └── download
-│   │   │   │   │   │       └── route-25828d65e8963c7a.js
+│   │   │   │   │   │   ├── download
+│   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
+│   │   │   │   │   │   └── live-recommendations
+│   │   │   │   │   │       └── route-c5912e06adca8f8a.js
 │   │   │   │   │   ├── chat
-│   │   │   │   │   │   └── route-25828d65e8963c7a.js
+│   │   │   │   │   │   └── route-c5912e06adca8f8a.js
 │   │   │   │   │   ├── contact
+│   │   │   │   │   │   ├── delete
+│   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
 │   │   │   │   │   │   ├── gmail
 │   │   │   │   │   │   │   ├── oauth
 │   │   │   │   │   │   │   │   ├── callback
-│   │   │   │   │   │   │   │   │   └── route-25828d65e8963c7a.js
+│   │   │   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
 │   │   │   │   │   │   │   │   └── start
-│   │   │   │   │   │   │   │       └── route-25828d65e8963c7a.js
+│   │   │   │   │   │   │   │       └── route-c5912e06adca8f8a.js
 │   │   │   │   │   │   │   ├── renew
-│   │   │   │   │   │   │   │   └── route-25828d65e8963c7a.js
+│   │   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
 │   │   │   │   │   │   │   └── webhook
-│   │   │   │   │   │   │       └── route-25828d65e8963c7a.js
+│   │   │   │   │   │   │       └── route-c5912e06adca8f8a.js
 │   │   │   │   │   │   ├── messages
 │   │   │   │   │   │   │   ├── retry
-│   │   │   │   │   │   │   │   └── route-25828d65e8963c7a.js
-│   │   │   │   │   │   │   └── route-25828d65e8963c7a.js
+│   │   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
+│   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
 │   │   │   │   │   │   ├── read
-│   │   │   │   │   │   │   └── route-25828d65e8963c7a.js
+│   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
 │   │   │   │   │   │   ├── status
-│   │   │   │   │   │   │   └── route-25828d65e8963c7a.js
-│   │   │   │   │   │   └── route-25828d65e8963c7a.js
-│   │   │   │   │   └── qr
-│   │   │   │   │       └── [token]
-│   │   │   │   │           └── route-25828d65e8963c7a.js
+│   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
+│   │   │   │   │   │   └── route-c5912e06adca8f8a.js
+│   │   │   │   │   ├── cron
+│   │   │   │   │   │   └── expire-orders
+│   │   │   │   │   │       └── route-c5912e06adca8f8a.js
+│   │   │   │   │   ├── featured-accessories
+│   │   │   │   │   │   └── route-c5912e06adca8f8a.js
+│   │   │   │   │   ├── featured-parts
+│   │   │   │   │   │   └── route-c5912e06adca8f8a.js
+│   │   │   │   │   ├── qr
+│   │   │   │   │   │   └── [token]
+│   │   │   │   │   │       └── route-c5912e06adca8f8a.js
+│   │   │   │   │   ├── system-access
+│   │   │   │   │   │   └── authenticate
+│   │   │   │   │   │       └── route-c5912e06adca8f8a.js
+│   │   │   │   │   └── webhooks
+│   │   │   │   │       └── paymongo
+│   │   │   │   │           └── route-c5912e06adca8f8a.js
 │   │   │   │   ├── builder
-│   │   │   │   │   └── page-64d32ec1e6e6bdf8.js
+│   │   │   │   │   └── page-b4699b48890b9d3e.js
+│   │   │   │   ├── checkout
+│   │   │   │   │   └── page-e7b3563da1a74249.js
 │   │   │   │   ├── contact
-│   │   │   │   │   └── page-5fbd650f642bcaae.js
+│   │   │   │   │   └── page-0b677a8298b5a86b.js
 │   │   │   │   ├── faq
-│   │   │   │   │   └── page-f883c205fc1de0ee.js
+│   │   │   │   │   └── page-7376e14fab64b915.js
 │   │   │   │   ├── forgot-password
-│   │   │   │   │   └── page-63153a6490976081.js
+│   │   │   │   │   └── page-53cdac1fb591cc52.js
+│   │   │   │   ├── group
+│   │   │   │   │   └── page-be650941f7b590bb.js
+│   │   │   │   ├── landing-video
+│   │   │   │   │   └── [name]
+│   │   │   │   │       └── route-c5912e06adca8f8a.js
 │   │   │   │   ├── parts
 │   │   │   │   │   ├── [productId]
-│   │   │   │   │   │   └── page-f3f9981df72b2624.js
-│   │   │   │   │   └── page-ef6e966f54bbc48b.js
+│   │   │   │   │   │   └── page-d643ca4e69051bfd.js
+│   │   │   │   │   └── page-db3cba465929063a.js
 │   │   │   │   ├── pre-builts
 │   │   │   │   │   ├── [id]
-│   │   │   │   │   │   └── page-dca50de03559bf26.js
-│   │   │   │   │   └── page-b9b3f1e0709213fc.js
+│   │   │   │   │   │   └── page-1b6e4b5ef7587fba.js
+│   │   │   │   │   └── page-73a0f32b71d389d7.js
 │   │   │   │   ├── profile
-│   │   │   │   │   └── page-f149926b72cc8b52.js
+│   │   │   │   │   └── page-b1b010d2f9eb8ecc.js
 │   │   │   │   ├── q
 │   │   │   │   │   └── [token]
-│   │   │   │   │       └── page-045a3baa987e7b22.js
+│   │   │   │   │       └── page-69177804fde06df2.js
 │   │   │   │   ├── signin
-│   │   │   │   │   └── page-c3935c25cea8dc85.js
+│   │   │   │   │   └── page-67408ca0e8410a30.js
 │   │   │   │   ├── signup
-│   │   │   │   │   └── page-083c4ade0a5773b7.js
+│   │   │   │   │   └── page-fdd8f04077767325.js
 │   │   │   │   ├── support-requests
-│   │   │   │   │   └── page-25828d65e8963c7a.js
+│   │   │   │   │   └── page-c5912e06adca8f8a.js
 │   │   │   │   ├── system-access
 │   │   │   │   │   ├── signup
-│   │   │   │   │   │   └── page-b4188b1b6a6f22e3.js
-│   │   │   │   │   └── page-434c5bfbf2cd6113.js
+│   │   │   │   │   │   └── page-2905bbd44294e555.js
+│   │   │   │   │   └── page-813933bd4918a61b.js
 │   │   │   │   ├── team
-│   │   │   │   │   └── page-026002d07673e36f.js
-│   │   │   │   ├── layout-35d352b8e0ca41c6.js
-│   │   │   │   ├── loading-d666bc69994e7df6.js
-│   │   │   │   └── page-62c22080e2457930.js
+│   │   │   │   │   └── page-bf96b8614e0e27c4.js
+│   │   │   │   ├── layout-fefd62bb50bd04bf.js
+│   │   │   │   ├── loading-569ffd2dc5ffeedf.js
+│   │   │   │   └── page-6517a0174d30b26c.js
 │   │   │   ├── pages
 │   │   │   │   ├── _app-e8b861c87f6f033c.js
 │   │   │   │   └── _error-c8f84f7bd11d43d4.js
-│   │   │   ├── _08f774aa._.js
-│   │   │   ├── _08f774aa._.js.map
-│   │   │   ├── _32cabe29._.js
-│   │   │   ├── _32cabe29._.js.map
-│   │   │   ├── _a0ff3932._.js
-│   │   │   ├── _cdba956c._.js.map
-│   │   │   ├── [next]_internal_font_google_inter_377e5bcb_module_css_bad6b30c._.single.css
-│   │   │   ├── [next]_internal_font_google_inter_377e5bcb_module_css_bad6b30c._.single.css.map
-│   │   │   ├── [next]_internal_font_google_space_grotesk_8678ec55_module_css_bad6b30c._.single.css
-│   │   │   ├── [next]_internal_font_google_space_grotesk_8678ec55_module_css_bad6b30c._.single.css.map
-│   │   │   ├── [root-of-the-server]__f747fe81._.css
-│   │   │   ├── [root-of-the-server]__f747fe81._.css.map
-│   │   │   ├── [turbopack]_browser_dev_hmr-client_hmr-client_ts_285433b7._.js
-│   │   │   ├── [turbopack]_browser_dev_hmr-client_hmr-client_ts_57d40746._.js
-│   │   │   ├── [turbopack]_browser_dev_hmr-client_hmr-client_ts_57d40746._.js.map
-│   │   │   ├── [turbopack]_browser_dev_hmr-client_hmr-client_ts_c8c997ce._.js
-│   │   │   ├── [turbopack]_browser_dev_hmr-client_hmr-client_ts_c8c997ce._.js.map
 │   │   │   ├── 1076-532d472b27128792.js
+│   │   │   ├── 1150-d87bc5c90e7efcbe.js
 │   │   │   ├── 1255-de0c1abd22c7cccd.js
-│   │   │   ├── 1319.efda2285e7628464.js
-│   │   │   ├── 1435.a77e962cc3d1c05d.js
-│   │   │   ├── 1436-7115b95ffb64399b.js
-│   │   │   ├── 1554-11a11a9b1d2ebec2.js
+│   │   │   ├── 1392-4d30fa57c1ea4bc2.js
+│   │   │   ├── 1435.5c7a558ded609655.js
+│   │   │   ├── 1506-da63817904ce3a16.js
 │   │   │   ├── 1646.a93085a0445ba909.js
-│   │   │   ├── 1649.8a99b2b9a1c8b692.js
-│   │   │   ├── 1668.cff0f87bf54449e8.js
-│   │   │   ├── 1678-14442fdf523c514b.js
-│   │   │   ├── 1855-c7bf380b1f101ab7.js
-│   │   │   ├── 2046.8f0c7ba290ea638f.js
-│   │   │   ├── 21-210bd0486708c4ba.js
-│   │   │   ├── 2170a4aa.23e3b5dc934453fe.js
-│   │   │   ├── 2264-b97e69a0251f9a15.js
-│   │   │   ├── 2310-dc4aaab6cba3b084.js
-│   │   │   ├── 2515.254c8020ca5352da.js
+│   │   │   ├── 1668-811000b8382ec9eb.js
+│   │   │   ├── 1669.1f32fe08f0d810a4.js
+│   │   │   ├── 1708-385526e50e2906ea.js
+│   │   │   ├── 1757.92e047c9783e353b.js
+│   │   │   ├── 1902-3f1557941953d68a.js
+│   │   │   ├── 1917.2e9ceca8774c1cba.js
+│   │   │   ├── 2017-b0ce573dc486ace3.js
+│   │   │   ├── 2046-23026b0e27541614.js
+│   │   │   ├── 2170a4aa-23e3b5dc934453fe.js
+│   │   │   ├── 235.29b58935d26fe0b2.js
+│   │   │   ├── 2432-7e5cfc815b3f9722.js
+│   │   │   ├── 2459-c0e192efdfd220e1.js
+│   │   │   ├── 2465.ed8700984e6ed382.js
+│   │   │   ├── 2467-04d4a325c8f36031.js
+│   │   │   ├── 2530-b4987e3a501dcedd.js
+│   │   │   ├── 2543-0155fa9d5c4cf276.js
 │   │   │   ├── 2619-b8db57ac19da49ac.js
+│   │   │   ├── 274-5da7280e14a31b08.js
 │   │   │   ├── 2769.761d3c2b27e34704.js
-│   │   │   ├── 2913.c8c9648da62d9eb6.js
-│   │   │   ├── 305-8a69d2eeb88a6711.js
-│   │   │   ├── 3191-b86615278a498783.js
-│   │   │   ├── 3218-f1efff9a6025739a.js
-│   │   │   ├── 3387.6f950bfc6e039c14.js
-│   │   │   ├── 3430.766b8b9edd1c1c3b.js
-│   │   │   ├── 3498-ec9f52ca9c7d7833.js
-│   │   │   ├── 3792.efdb15b3847a4f31.js
-│   │   │   ├── 3813-9820628eebdb54c7.js
-│   │   │   ├── 4003-f5e67193973a5297.js
+│   │   │   ├── 2990.5f1040e4cd837f36.js
+│   │   │   ├── 3166-10b311ab6664fa09.js
+│   │   │   ├── 3430.e8aa836554894d70.js
+│   │   │   ├── 3568-275252d8aab4c0de.js
+│   │   │   ├── 3667.f29d0e9f7b93570a.js
+│   │   │   ├── 3792.872e5ff9a2957249.js
+│   │   │   ├── 3890-1b829a3136758e7a.js
+│   │   │   ├── 4036-f3d5b68130dc3633.js
 │   │   │   ├── 4095-44222ec53810d7e5.js
-│   │   │   ├── 4381.c55a71b054d07235.js
-│   │   │   ├── 4390-dc145bd7d77d1ce7.js
+│   │   │   ├── 4103.b96eba06d0135ae0.js
+│   │   │   ├── 4260-996ec32fa4e3f7fe.js
 │   │   │   ├── 4432-94faf78e2ed239ad.js
-│   │   │   ├── 4679-ceaca0a5317a5c6a.js
-│   │   │   ├── 4846.4f1bd021b6dd2ada.js
+│   │   │   ├── 4488.13886f767eadab9b.js
+│   │   │   ├── 4540-17ce4e8f5b8026d1.js
+│   │   │   ├── 4679-7b3b76de3d70d2ed.js
+│   │   │   ├── 4721-b2077cb22ae3ac24.js
+│   │   │   ├── 4776-033c0a3fbb34f161.js
+│   │   │   ├── 4846.23217743c947ea2d.js
+│   │   │   ├── 488-eac181ed2f3bf4dc.js
 │   │   │   ├── 4bd1b696-182b6b13bdad92e3.js
-│   │   │   ├── 5114.b73ba3c75bebd9b9.js
+│   │   │   ├── 5008-23ef350c844b2bdd.js
+│   │   │   ├── 5010.bb099d501036a19f.js
 │   │   │   ├── 5139.e4ff9cc3669129ed.js
-│   │   │   ├── 5239.5572dbde2a9efa1d.js
-│   │   │   ├── 5287-74e1549ca7ccb56e.js
-│   │   │   ├── 5417-bc5ab3b13a42e091.js
-│   │   │   ├── 5530-a1cc7a73c2fbbff9.js
-│   │   │   ├── 5770.cd3cd9eb76b8190a.js
-│   │   │   ├── 5788.a1b9f2864d7867fb.js
-│   │   │   ├── 5813-9994611299021ad1.js
-│   │   │   ├── 5859-f5a4d0b01fcb6912.js
-│   │   │   ├── 5861-282a02336cd61782.js
+│   │   │   ├── 5158-640d4a26b96e6b20.js
+│   │   │   ├── 5287-c9ae512f936018af.js
+│   │   │   ├── 5554-15253666c5358bc9.js
+│   │   │   ├── 5788.a2d6e27810bbbd4b.js
 │   │   │   ├── 5889-77a82109fffb7f6f.js
 │   │   │   ├── 5937-a37d798cf08beeb6.js
-│   │   │   ├── 6029.0d8fd89ec442f473.js
-│   │   │   ├── 6047-858f2639503235dd.js
-│   │   │   ├── 6120-8ff906976694316e.js
-│   │   │   ├── 6782-0ab2f58bd1abab62.js
-│   │   │   ├── 6937-10d55df312eb0cc7.js
+│   │   │   ├── 5953.fa3307501a415256.js
+│   │   │   ├── 6026.100e6d25317c698c.js
+│   │   │   ├── 6120-f4116f5d079d1821.js
+│   │   │   ├── 6572-3b18558e3f30ee99.js
+│   │   │   ├── 6605-1592588efcdba16f.js
+│   │   │   ├── 6834-af6681615c46f4b7.js
+│   │   │   ├── 6882-49102e1bef36ce65.js
 │   │   │   ├── 6942-213792197da03d19.js
-│   │   │   ├── 7339.6d278cb99cf3bfea.js
-│   │   │   ├── 7355-53dae2d041fa9556.js
-│   │   │   ├── 7367-a8e898650823f46f.js
-│   │   │   ├── 7381.ab6a171e07b92690.js
-│   │   │   ├── 7614-8f8cdf6ebb54f11e.js
-│   │   │   ├── 767-2fadf5d7843428a7.js
-│   │   │   ├── 7755-1e12341cf30efeb7.js
-│   │   │   ├── 7785-c6ac0c5807d1f9b0.js
-│   │   │   ├── 8217-9a2e217929b946cb.js
-│   │   │   ├── 8264.6a651ea41bcc832f.js
-│   │   │   ├── 8473-0fd5b0764e5c44b1.js
+│   │   │   ├── 7014-f77bd8ea72a8d3bd.js
+│   │   │   ├── 7635.b7c50f19d7570e11.js
+│   │   │   ├── 7647-d9b170f994514c4b.js
+│   │   │   ├── 767-79e409318d2cfa57.js
+│   │   │   ├── 7697-67c820e5d02fcedf.js
+│   │   │   ├── 7793-0fbb931250b1811f.js
+│   │   │   ├── 801-33f7a31de8a00426.js
+│   │   │   ├── 82-3e31cebbcabb0d18.js
+│   │   │   ├── 8285-c5a54337afb83707.js
+│   │   │   ├── 8513-fb3c821099d581ca.js
 │   │   │   ├── 856-a353dd9eea81959d.js
-│   │   │   ├── 8641-232dcad727820dd3.js
-│   │   │   ├── 8654-b7c41fa00dd5f266.js
-│   │   │   ├── 8668-71a37d141c4cf3b7.js
-│   │   │   ├── 87-aa1590c177e8dc96.js
-│   │   │   ├── 8734-9baea29d30cdf5d8.js
-│   │   │   ├── 8968-282a5eab4ed0d08d.js
-│   │   │   ├── 9054-67a4e839549e3a9b.js
-│   │   │   ├── 9087.4cd86136eebfe486.js
-│   │   │   ├── 9182-abbb624b0cf4b39c.js
-│   │   │   ├── 9303.84d7050749a55b0f.js
-│   │   │   ├── 9372-3bde15c4c14523fc.js
-│   │   │   ├── 94568_@firebase_auth_dist_esm2017_39867e80._.js
-│   │   │   ├── 94568_@firebase_auth_dist_esm2017_39867e80._.js.map
-│   │   │   ├── 9672-0d43332c58182294.js
-│   │   │   ├── 9689-1c662df93c61bf27.js
-│   │   │   ├── 9706.6cc7b2a8a91539a0.js
-│   │   │   ├── 9762-560b70681ce8d886.js
-│   │   │   ├── 996-41afd3a0870ed5c3.js
+│   │   │   ├── 8583-9e210b9f746ec8b1.js
+│   │   │   ├── 8658-e1f15b298d36fc04.js
+│   │   │   ├── 8685.467533c43a657f62.js
+│   │   │   ├── 8725.636bc571cc7ca98e.js
+│   │   │   ├── 8734-27b44844a90f2ff8.js
+│   │   │   ├── 90-3281dc3884815f88.js
+│   │   │   ├── 9000-900d55344be8f5d1.js
+│   │   │   ├── 9327-fedb4d0b3b187d1a.js
+│   │   │   ├── 9330-8b2e37f936c8e951.js
+│   │   │   ├── 9353-23f344bd080da4f0.js
+│   │   │   ├── 9478-171ad3d5ff09c553.js
+│   │   │   ├── 9496-0ca25bd242817033.js
+│   │   │   ├── 9624-3f5bded12791bb26.js
+│   │   │   ├── 9773-66f5b21185c89f8d.js
+│   │   │   ├── 994-ac527d8bdc3609e3.js
 │   │   │   ├── ba12c10f-8063feea5a12ad92.js
 │   │   │   ├── bc9e92e6-97565be9ace941ed.js
 │   │   │   ├── c16f53c3-f2ef374b4e911d59.js
-│   │   │   ├── ceb9e9aa-4d0f2733b74eb147.js
+│   │   │   ├── ceb9e9aa-c4675496ca701b39.js
+│   │   │   ├── d0f5a89a-af7b72e16913fa3e.js
 │   │   │   ├── framework-5c6aa4eeab4c6f34.js
-│   │   │   ├── main-8d526c73b911ce44.js
 │   │   │   ├── main-app-4dbf0c597e8ab152.js
-│   │   │   ├── node_modules_@firebase_firestore_dist_index_esm2017_d9c36ae7.js
-│   │   │   ├── node_modules_@firebase_firestore_dist_index_esm2017_d9c36ae7.js.map
-│   │   │   ├── node_modules_@firebase_storage_dist_index_esm2017_46d20e3b.js
-│   │   │   ├── node_modules_@firebase_storage_dist_index_esm2017_46d20e3b.js.map
-│   │   │   ├── node_modules_@floating-ui_react_dist_22386cb2._.js
-│   │   │   ├── node_modules_@floating-ui_react_dist_22386cb2._.js.map
-│   │   │   ├── node_modules_@mantine_core_esm_25a343e9._.js
-│   │   │   ├── node_modules_@mantine_core_esm_25a343e9._.js.map
-│   │   │   ├── node_modules_@mantine_core_esm_28acc42a._.js
-│   │   │   ├── node_modules_@mantine_core_esm_28acc42a._.js.map
-│   │   │   ├── node_modules_@mantine_core_esm_48abab63._.js
-│   │   │   ├── node_modules_@mantine_core_esm_48abab63._.js.map
-│   │   │   ├── node_modules_@mantine_core_esm_7cec9394._.js
-│   │   │   ├── node_modules_@mantine_core_esm_7cec9394._.js.map
-│   │   │   ├── node_modules_@mantine_core_esm_7e82ab37._.js
-│   │   │   ├── node_modules_@mantine_core_esm_7e82ab37._.js.map
-│   │   │   ├── node_modules_@mantine_core_styles_css_bad6b30c._.single.css
-│   │   │   ├── node_modules_@mantine_core_styles_css_bad6b30c._.single.css.map
-│   │   │   ├── node_modules_@swc_helpers_cjs_b3dc30d6._.js
-│   │   │   ├── node_modules_@swc_helpers_cjs_b3dc30d6._.js.map
-│   │   │   ├── node_modules_42209f89._.js
-│   │   │   ├── node_modules_42209f89._.js.map
-│   │   │   ├── node_modules_46efe371._.js
-│   │   │   ├── node_modules_46efe371._.js.map
-│   │   │   ├── node_modules_5a121b96._.js
-│   │   │   ├── node_modules_5a121b96._.js.map
-│   │   │   ├── node_modules_5da75128._.js
-│   │   │   ├── node_modules_5da75128._.js.map
-│   │   │   ├── node_modules_794854e6._.js
-│   │   │   ├── node_modules_794854e6._.js.map
-│   │   │   ├── node_modules_7b2bdff9._.js
-│   │   │   ├── node_modules_7b2bdff9._.js.map
-│   │   │   ├── node_modules_8c689470._.js
-│   │   │   ├── node_modules_8c689470._.js.map
-│   │   │   ├── node_modules_97fef675._.js
-│   │   │   ├── node_modules_97fef675._.js.map
-│   │   │   ├── node_modules_9fd7fd78._.js
-│   │   │   ├── node_modules_9fd7fd78._.js.map
-│   │   │   ├── node_modules_aa1694c2._.js
-│   │   │   ├── node_modules_aa1694c2._.js.map
-│   │   │   ├── node_modules_ac2eac59._.js
-│   │   │   ├── node_modules_ac2eac59._.js.map
-│   │   │   ├── node_modules_ai_dist_index_mjs_a7281a1b._.js
-│   │   │   ├── node_modules_ai_dist_index_mjs_a7281a1b._.js.map
-│   │   │   ├── node_modules_b770b0d6._.js
-│   │   │   ├── node_modules_b770b0d6._.js.map
-│   │   │   ├── node_modules_c1c22457._.js
-│   │   │   ├── node_modules_c1c22457._.js.map
-│   │   │   ├── node_modules_c3ef5513._.js
-│   │   │   ├── node_modules_c3ef5513._.js.map
-│   │   │   ├── node_modules_d3b11640._.js
-│   │   │   ├── node_modules_d3b11640._.js.map
-│   │   │   ├── node_modules_eac0eddb._.js
-│   │   │   ├── node_modules_eac0eddb._.js.map
-│   │   │   ├── node_modules_fd964b14._.js
-│   │   │   ├── node_modules_fd964b14._.js.map
-│   │   │   ├── node_modules_framer-motion_dist_es_011a2bde._.js
-│   │   │   ├── node_modules_framer-motion_dist_es_011a2bde._.js.map
-│   │   │   ├── node_modules_lodash_0ce7be08._.js
-│   │   │   ├── node_modules_lodash_0ce7be08._.js.map
-│   │   │   ├── node_modules_lucide-react_dist_esm_icons_00a313b0._.js
-│   │   │   ├── node_modules_lucide-react_dist_esm_icons_00a313b0._.js.map
-│   │   │   ├── node_modules_lucide-react_dist_esm_icons_62222077._.js
-│   │   │   ├── node_modules_lucide-react_dist_esm_icons_62222077._.js.map
-│   │   │   ├── node_modules_lucide-react_dist_esm_icons_99ac1d08._.js
-│   │   │   ├── node_modules_lucide-react_dist_esm_icons_99ac1d08._.js.map
-│   │   │   ├── node_modules_lucide-react_dist_esm_icons_ab792436._.js
-│   │   │   ├── node_modules_lucide-react_dist_esm_icons_ab792436._.js.map
-│   │   │   ├── node_modules_lucide-react_dist_esm_icons_type_fbf5a37d.js
-│   │   │   ├── node_modules_lucide-react_dist_esm_icons_type_fbf5a37d.js.map
-│   │   │   ├── node_modules_micromark-core-commonmark_dev_lib_fc41dd51._.js
-│   │   │   ├── node_modules_micromark-core-commonmark_dev_lib_fc41dd51._.js.map
-│   │   │   ├── node_modules_next_23f5b8d1._.js
-│   │   │   ├── node_modules_next_23f5b8d1._.js.map
-│   │   │   ├── node_modules_next_dist_8db7fb1f._.js
-│   │   │   ├── node_modules_next_dist_8db7fb1f._.js.map
-│   │   │   ├── node_modules_next_dist_b0daae9a._.js
-│   │   │   ├── node_modules_next_dist_b0daae9a._.js.map
-│   │   │   ├── node_modules_next_dist_build_polyfills_polyfill-nomodule.js
-│   │   │   ├── node_modules_next_dist_client_cf1d9188._.js
-│   │   │   ├── node_modules_next_dist_client_cf1d9188._.js.map
-│   │   │   ├── node_modules_next_dist_client_components_builtin_global-error_ac29ae45.js
-│   │   │   ├── node_modules_next_dist_compiled_5150ccfd._.js
-│   │   │   ├── node_modules_next_dist_compiled_5150ccfd._.js.map
-│   │   │   ├── node_modules_next_dist_compiled_next-devtools_index_a9cb0712.js
-│   │   │   ├── node_modules_next_dist_compiled_next-devtools_index_a9cb0712.js.map
-│   │   │   ├── node_modules_next_dist_compiled_react-dom_1e674e59._.js
-│   │   │   ├── node_modules_next_dist_compiled_react-dom_1e674e59._.js.map
-│   │   │   ├── node_modules_next_f06cca34._.js
-│   │   │   ├── node_modules_next_f06cca34._.js.map
-│   │   │   ├── node_modules_qrcode_lib_browser_c873a604.js
-│   │   │   ├── node_modules_recharts_es6_30a93e51._.js
-│   │   │   ├── node_modules_recharts_es6_30a93e51._.js.map
-│   │   │   ├── node_modules_recharts_es6_fc2da180._.js
-│   │   │   ├── node_modules_recharts_es6_fc2da180._.js.map
-│   │   │   ├── node_modules_xlsx_xlsx_mjs_fef98e92._.js
-│   │   │   ├── node_modules_xlsx_xlsx_mjs_fef98e92._.js.map
-│   │   │   ├── node_modules_zod_acdecf88._.js
-│   │   │   ├── node_modules_zod_acdecf88._.js.map
-│   │   │   ├── node_modules_zod_v3_511383c7._.js
-│   │   │   ├── node_modules_zod_v3_511383c7._.js.map
+│   │   │   ├── main-bb339113ec47b886.js
 │   │   │   ├── polyfills-42372ed130431b0a.js
-│   │   │   ├── src_0045f76e._.js
-│   │   │   ├── src_0045f76e._.js.map
-│   │   │   ├── src_0ab44118._.js
-│   │   │   ├── src_0ab44118._.js.map
-│   │   │   ├── src_1a6a1d83._.js
-│   │   │   ├── src_1a6a1d83._.js.map
-│   │   │   ├── src_4dd72d59._.js
-│   │   │   ├── src_4dd72d59._.js.map
-│   │   │   ├── src_4e5f0ee7._.js
-│   │   │   ├── src_4e5f0ee7._.js.map
-│   │   │   ├── src_4f3dd29f._.js
-│   │   │   ├── src_4f3dd29f._.js.map
-│   │   │   ├── src_5156a713._.js
-│   │   │   ├── src_5156a713._.js.map
-│   │   │   ├── src_51f701d1._.js
-│   │   │   ├── src_51f701d1._.js.map
-│   │   │   ├── src_58c1c0f8._.js
-│   │   │   ├── src_58c1c0f8._.js.map
-│   │   │   ├── src_66e2c10f._.js
-│   │   │   ├── src_66e2c10f._.js.map
-│   │   │   ├── src_67ba552b._.js
-│   │   │   ├── src_67ba552b._.js.map
-│   │   │   ├── src_760c1f06._.js
-│   │   │   ├── src_760c1f06._.js.map
-│   │   │   ├── src_84e01acc._.js
-│   │   │   ├── src_84e01acc._.js.map
-│   │   │   ├── src_9647d412._.js
-│   │   │   ├── src_9647d412._.js.map
-│   │   │   ├── src_96e7b1f5._.js
-│   │   │   ├── src_96e7b1f5._.js.map
-│   │   │   ├── src_a04f2fc1._.js
-│   │   │   ├── src_a04f2fc1._.js.map
-│   │   │   ├── src_af405e0e._.js
-│   │   │   ├── src_af405e0e._.js.map
-│   │   │   ├── src_app_312a6890._.js
-│   │   │   ├── src_app_312a6890._.js.map
-│   │   │   ├── src_app_admin_components_archive-tab_tsx_e160f769._.js
-│   │   │   ├── src_app_admin_components_prebuilt-tab_tsx_e160f769._.js
-│   │   │   ├── src_app_admin_components_reservations-tab_tsx_727dd54b._.js
-│   │   │   ├── src_app_admin_components_reservations-tab_tsx_727dd54b._.js.map
-│   │   │   ├── src_app_admin_components_reservations-tab_tsx_e160f769._.js
-│   │   │   ├── src_app_admin_components_sales-tab_tsx_e160f769._.js
-│   │   │   ├── src_app_admin_page_tsx_ac29ae45._.js
-│   │   │   ├── src_app_favicon_ico_mjs_243aa161._.js
-│   │   │   ├── src_app_globals_css_bad6b30c._.single.css
-│   │   │   ├── src_app_globals_css_bad6b30c._.single.css.map
-│   │   │   ├── src_app_layout_tsx_0a548d63._.js
-│   │   │   ├── src_app_loading_tsx_ac29ae45._.js
-│   │   │   ├── src_app_parts_[productId]_page_tsx_ac29ae45._.js
-│   │   │   ├── src_app_parts_page_tsx_ac29ae45._.js
-│   │   │   ├── src_app_pre-builts_[id]_page_tsx_ac29ae45._.js
-│   │   │   ├── src_app_pre-builts_page_tsx_ac29ae45._.js
-│   │   │   ├── src_app_profile_components_audit-logs-section_tsx_e160f769._.js
-│   │   │   ├── src_app_q_[token]_page_tsx_ac29ae45._.js
-│   │   │   ├── src_app_signin_page_tsx_ac29ae45._.js
-│   │   │   ├── src_app_system-access_page_tsx_ac29ae45._.js
-│   │   │   ├── src_c5869fec._.js
-│   │   │   ├── src_c5869fec._.js.map
-│   │   │   ├── src_components_258ca094._.js
-│   │   │   ├── src_components_258ca094._.js.map
-│   │   │   ├── src_components_47e799de._.js
-│   │   │   ├── src_components_47e799de._.js.map
-│   │   │   ├── src_components_52b8e475._.js
-│   │   │   ├── src_components_52b8e475._.js.map
-│   │   │   ├── src_components_about-management_tsx_e160f769._.js
-│   │   │   ├── src_components_add-part-editor_tsx_c873a604._.js
-│   │   │   ├── src_components_ai-model-settings_tsx_e160f769._.js
-│   │   │   ├── src_components_ai-system-prompts-settings_tsx_e160f769._.js
-│   │   │   ├── src_components_header_module_css_bad6b30c._.single.css
-│   │   │   ├── src_components_header_module_css_bad6b30c._.single.css.map
-│   │   │   ├── src_components_notification-center_tsx_c79a6827._.js
-│   │   │   ├── src_components_super-admin-settings_tsx_e160f769._.js
-│   │   │   ├── src_components_user-notifications_tsx_c79a6827._.js
-│   │   │   ├── src_context_advisor-jobs-scope_tsx_c79a6827._.js
-│   │   │   ├── src_f81caa8e._.js
-│   │   │   ├── src_f81caa8e._.js.map
-│   │   │   ├── turbopack-_cdba956c._.js
-│   │   │   └── webpack-719e1c0cf83a8e47.js
+│   │   │   └── webpack-3b1ae21515358f64.js
 │   │   ├── css
-│   │   │   ├── 51725c77dcf20c98.css
-│   │   │   ├── 560f4892b710496d.css
-│   │   │   ├── af27b7a09844e271.css
+│   │   │   ├── 686b6b70651cde05.css
+│   │   │   ├── 71d96a07ba072a09.css
+│   │   │   ├── 793d9152bb43398a.css
+│   │   │   ├── c6ebfc4485e94f61.css
 │   │   │   └── e35dfb38818993df.css
-│   │   ├── development
-│   │   │   ├── _buildManifest.js
-│   │   │   ├── _clientMiddlewareManifest.json
-│   │   │   └── _ssgManifest.js
 │   │   └── media
-│   │       ├── 0c89a48fa5027cee-s.p.4564287c.woff2
 │   │       ├── 19cfc7226ec3afaa-s.woff2
-│   │       ├── 1bffadaabf893a1e-s.7cd81963.woff2
 │   │       ├── 21350d82a1f187e9-s.woff2
-│   │       ├── 28868e710e86be81-s.c30238d4.woff2
-│   │       ├── 2bbe8d2671613f1f-s.76dcb0b2.woff2
-│   │       ├── 2c55a0e60120577a-s.2a48534a.woff2
-│   │       ├── 32687112bd2dd8db-s.cfdd66c2.woff2
 │   │       ├── 36966cca54120369-s.p.woff2
-│   │       ├── 5476f68d60460930-s.c995e352.woff2
-│   │       ├── 83afe278b6a6bb3c-s.p.3a6ba036.woff2
 │   │       ├── 8e9860b6e62d6359-s.woff2
-│   │       ├── 9c72aa0f40e4eef8-s.18a48cbc.woff2
-│   │       ├── ad66f9afd8947f86-s.7a40eb73.woff2
-│   │       ├── apple-icon.7fe38eb7.png
 │   │       ├── b7387a63dd068245-s.woff2
 │   │       ├── ba9851c3c22cd980-s.woff2
 │   │       ├── c5fe6dc8356a8c31-s.woff2
+│   │       ├── custom-builder-parts.f35e2f48.png
 │   │       ├── df0a9ae256c0569c-s.woff2
+│   │       ├── documentation_m.c85f8142.png
 │   │       ├── e1aab0933260df4d-s.woff2
 │   │       ├── e4af272ccee01ff0-s.p.woff2
-│   │       ├── favicon.90ff4d21.ico
 │   │       ├── feature-1.d184a8af.webp
 │   │       ├── feature-2.efc2a3c3.webp
 │   │       ├── feature-3.a6afbd5f.webp
-│   │       ├── hero-custom.294d3161.webp
-│   │       └── icon.6c4fd102.svg
+│   │       ├── hero-custom-v2.112d5cfa.webp
+│   │       ├── king45-poster.c86d4155.webp
+│   │       ├── netcodex_cc_2026_white.png.28987f1e.webp
+│   │       ├── netcodex-emblem.da68c994.png
+│   │       ├── netcodex-storefront.300dc261.png
+│   │       ├── pm_m.7d1c15dc.png
+│   │       ├── prebuilt-pcs.13b2e5ef.png
+│   │       ├── prism5-poster.ccf8d37c.webp
+│   │       ├── rayzon.e41856c3.png
+│   │       └── ui_m.833ba0df.png
 │   ├── types
 │   │   ├── app
 │   │   │   ├── about
@@ -1385,16 +1238,28 @@ BuilbotAI
 │   │   │   ├── ai-build-advisor
 │   │   │   │   └── page.ts
 │   │   │   ├── api
+│   │   │   │   ├── admin
+│   │   │   │   │   ├── qr-health
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   └── qr-status
+│   │   │   │   │       └── [token]
+│   │   │   │   │           └── route.ts
 │   │   │   │   ├── ai
 │   │   │   │   │   └── build-advisor
+│   │   │   │   │       ├── critique
+│   │   │   │   │       │   └── route.ts
 │   │   │   │   │       └── recommendations
 │   │   │   │   │           └── route.ts
 │   │   │   │   ├── builder
-│   │   │   │   │   └── download
+│   │   │   │   │   ├── download
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   └── live-recommendations
 │   │   │   │   │       └── route.ts
 │   │   │   │   ├── chat
 │   │   │   │   │   └── route.ts
 │   │   │   │   ├── contact
+│   │   │   │   │   ├── delete
+│   │   │   │   │   │   └── route.ts
 │   │   │   │   │   ├── gmail
 │   │   │   │   │   │   ├── oauth
 │   │   │   │   │   │   │   ├── callback
@@ -1414,10 +1279,25 @@ BuilbotAI
 │   │   │   │   │   ├── status
 │   │   │   │   │   │   └── route.ts
 │   │   │   │   │   └── route.ts
-│   │   │   │   └── qr
-│   │   │   │       └── [token]
+│   │   │   │   ├── cron
+│   │   │   │   │   └── expire-orders
+│   │   │   │   │       └── route.ts
+│   │   │   │   ├── featured-accessories
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── featured-parts
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── qr
+│   │   │   │   │   └── [token]
+│   │   │   │   │       └── route.ts
+│   │   │   │   ├── system-access
+│   │   │   │   │   └── authenticate
+│   │   │   │   │       └── route.ts
+│   │   │   │   └── webhooks
+│   │   │   │       └── paymongo
 │   │   │   │           └── route.ts
 │   │   │   ├── builder
+│   │   │   │   └── page.ts
+│   │   │   ├── checkout
 │   │   │   │   └── page.ts
 │   │   │   ├── contact
 │   │   │   │   └── page.ts
@@ -1425,6 +1305,11 @@ BuilbotAI
 │   │   │   │   └── page.ts
 │   │   │   ├── forgot-password
 │   │   │   │   └── page.ts
+│   │   │   ├── group
+│   │   │   │   └── page.ts
+│   │   │   ├── landing-video
+│   │   │   │   └── [name]
+│   │   │   │       └── route.ts
 │   │   │   ├── parts
 │   │   │   │   ├── [productId]
 │   │   │   │   │   └── page.ts
@@ -1448,8 +1333,6 @@ BuilbotAI
 │   │   │   │   ├── signup
 │   │   │   │   │   └── page.ts
 │   │   │   │   └── page.ts
-│   │   │   ├── team
-│   │   │   │   └── page.ts
 │   │   │   └── page.ts
 │   │   ├── cache-life.d.ts
 │   │   ├── package.json
@@ -1460,19 +1343,22 @@ BuilbotAI
 │   ├── BUILD_ID
 │   ├── build-manifest.json
 │   ├── export-marker.json
-│   ├── fallback-build-manifest.json
 │   ├── images-manifest.json
 │   ├── next-minimal-server.js.nft.json
 │   ├── next-server.js.nft.json
 │   ├── package.json
-│   ├── postcss.js
-│   ├── postcss.js.map
 │   ├── prerender-manifest.json
 │   ├── react-loadable-manifest.json
 │   ├── required-server-files.json
 │   ├── routes-manifest.json
 │   └── trace
 ├── .tmp
+│   ├── phase2-sales-results
+│   │   └── .last-run.json
+│   ├── phase34-sales-results
+│   │   └── .last-run.json
+│   ├── phase5-sales-results
+│   │   └── .last-run.json
 │   ├── qr-browser-results
 │   │   └── .last-run.json
 │   ├── qr-runtime
@@ -1858,6 +1744,14 @@ BuilbotAI
 │   │   └── jre.zip
 │   ├── advisor-light.png
 │   ├── inspect-advisor-inventory.ts
+│   ├── phase2-build.log
+│   ├── phase2-emulator.log
+│   ├── phase34-build.log
+│   ├── phase34-emulator.log
+│   ├── phase34-focused-emulator.log
+│   ├── phase5-build.log
+│   ├── phase5-emulator.log
+│   ├── phase5-unit.log
 │   ├── qr-admin-focus.png
 │   ├── qr-backup.json
 │   ├── qr-browser-server.log
@@ -1915,24 +1809,38 @@ BuilbotAI
 │   ├── admin_prebuilt_pricing.md
 │   ├── admin_session_and_idle_timeout.md
 │   ├── ai_model_routing.md
+│   ├── ai_part_images.md
 │   ├── build_advisor_performance.md
+│   ├── builder_compatibility.md
+│   ├── catalog_images.md
 │   ├── chatbot_build_context.md
+│   ├── checkout_order_persistence.md
 │   ├── component_description_formatting.md
 │   ├── customer_build_pdf.md
+│   ├── customer_order_workflow.md
 │   ├── customer_ui_spacing.md
 │   ├── google_auth_feedback.md
 │   ├── import_catalog_images.md
 │   ├── ingest_knowledge.md
+│   ├── integrated_graphics.md
 │   ├── inventory_hierarchy_migration.md
 │   ├── inventory_performance.md
 │   ├── landing_static_assets.md
+│   ├── live_builder_recommendations.md
 │   ├── password_reset.md
 │   ├── prebuilt_product_availability.md
 │   ├── public_parts_performance.md
 │   ├── qr_inventory.md
 │   ├── sales_analytics_export.md
+│   ├── saved_build_loading.md
 │   └── support_requests.md
 ├── docs
+│   ├── diagrams
+│   │   ├── data-flow-level-0.svg
+│   │   ├── data-flow-level-1.svg
+│   │   ├── data-flow-level-2-contact.svg
+│   │   ├── data-flow-level-2-reservation.svg
+│   │   └── firestore-data-map.svg
 │   ├── flowcharts
 │   │   ├── ai-system
 │   │   │   ├── ai-architecture-flowchart.md
@@ -2002,6 +1910,22 @@ BuilbotAI
 │   │   ├── super-admin-flowchart.mmd
 │   │   ├── user-flowchart.md
 │   │   └── user-flowchart.mmd
+│   ├── superpowers
+│   │   ├── plans
+│   │   │   ├── 2026-11-02-customer-order-activity-payment-gate.md
+│   │   │   ├── 2026-11-02-order-receipt.md
+│   │   │   ├── 2026-11-04-admin-verification-loader.md
+│   │   │   ├── 2026-11-04-loading-layouts.md
+│   │   │   └── 2026-11-04-public-auth-flicker.md
+│   │   └── specs
+│   │       ├── 2026-11-02-customer-order-activity-payment-gate-design.md
+│   │       ├── 2026-11-02-order-receipt-design.md
+│   │       └── 2026-11-04-admin-verification-loader-design.md
+│   ├── test-cases
+│   │   └── all-pages-manual-test-cases.md
+│   ├── admin-order-phase-5.md
+│   ├── admin-order-phase-6-7.md
+│   ├── admin-order-phases-3-4.md
 │   ├── api-and-integrations.md
 │   ├── architecture.md
 │   ├── backend.json
@@ -2009,16 +1933,20 @@ BuilbotAI
 │   ├── build_advisor_performance_plan.md
 │   ├── build_advisor_web_search_plan.md
 │   ├── contact-inquiries-setup.md
+│   ├── data-flow-diagram.md
 │   ├── database_scalability_plan.md
 │   ├── firebase-and-data.md
+│   ├── firestore-data-map.md
 │   ├── implementation-plan-and-results.md
+│   ├── input-output-audit.md
 │   ├── inventory_performance_audit.md
 │   ├── landing_performance_audit.md
 │   ├── pages.md
 │   ├── project_structure.md
 │   ├── qr_inventory_feature_plan.md
 │   ├── qr_system_improvement_plan.md
-│   └── ui-pages-and-overlays-audit.md
+│   ├── ui-pages-and-overlays-audit.md
+│   └── user-guide.md
 ├── execution
 │   ├── audit_inventory_performance.mjs
 │   ├── audit_landing_performance.mjs
@@ -2035,12 +1963,15 @@ BuilbotAI
 │   ├── migrate_product_identities.ts
 │   ├── update_changelog.js
 │   ├── verify_inventory_hierarchy.ts
+│   ├── verify_loading_layouts.mjs
 │   ├── verify_product_identities.ts
 │   ├── verify_public_firestore_reads.ts
 │   └── verify_qr_feature.mjs
 ├── output
 │   └── pdf
-│       └── buildbotai-ui-pages-and-overlays-audit.pdf
+│       ├── buildbotai-all-pages-test-cases-printable.pdf
+│       ├── buildbotai-ui-pages-and-overlays-audit.pdf
+│       └── netcodex-order-receipt-preview.pdf
 ├── public
 │   ├── placeholders
 │   │   └── components
@@ -2062,10 +1993,16 @@ BuilbotAI
 │   │   ├── pm.png
 │   │   ├── ui_m.png
 │   │   └── ui.png
+│   ├── videos
+│   │   ├── king45.mp4
+│   │   └── prism5.mp4
 │   ├── cosmic-bg.png
-│   ├── favicon.ico
 │   ├── hero-pc.png
-│   └── landing-hero.png
+│   ├── landing-hero.png
+│   ├── netcodex_cc_2026_white.png.webp
+│   ├── netcodex-emblem.png
+│   ├── netcodex-logo-white.png
+│   └── netcodex-storefront.png
 ├── scratch
 │   ├── test_placeholders
 │   │   ├── case.jpg
@@ -2110,6 +2047,7 @@ BuilbotAI
 │   ├── test-mega-menu.js
 │   ├── verify-rbac.ts
 │   └── verify-server-actions.ts
+├── scripts
 ├── src
 │   ├── ai
 │   │   ├── flows
@@ -2120,7 +2058,8 @@ BuilbotAI
 │   │   │   ├── ai-smart-budget.ts
 │   │   │   └── extract-part-details.ts
 │   │   ├── schemas
-│   │   │   └── build-advisor-schemas.ts
+│   │   │   ├── build-advisor-schemas.ts
+│   │   │   └── critique-schemas.ts
 │   │   ├── dev.ts
 │   │   └── genkit.ts
 │   ├── app
@@ -2128,8 +2067,38 @@ BuilbotAI
 │   │   │   └── page.tsx
 │   │   ├── admin
 │   │   │   ├── components
+│   │   │   │   ├── orders
+│   │   │   │   │   ├── copyable-order-id.tsx
+│   │   │   │   │   ├── order-action-modals.tsx
+│   │   │   │   │   ├── order-activity-timeline.tsx
+│   │   │   │   │   ├── order-assembly-verification.tsx
+│   │   │   │   │   ├── order-card-controls.tsx
+│   │   │   │   │   ├── order-card-customer-finance.tsx
+│   │   │   │   │   ├── order-card-fulfillment-stepper.tsx
+│   │   │   │   │   ├── order-card-history-ledgers.tsx
+│   │   │   │   │   ├── order-card-items-layout.test.ts
+│   │   │   │   │   ├── order-card-items-list.tsx
+│   │   │   │   │   ├── order-card.tsx
+│   │   │   │   │   ├── order-history-ledgers.tsx
+│   │   │   │   │   ├── order-history-modal.tsx
+│   │   │   │   │   ├── order-payment-control.tsx
+│   │   │   │   │   ├── order-payment-dialogs.tsx
+│   │   │   │   │   ├── order-stage-control.tsx
+│   │   │   │   │   ├── order-stage-dialog.tsx
+│   │   │   │   │   ├── order-status-config.ts
+│   │   │   │   │   ├── orders-card-layout.test.ts
+│   │   │   │   │   ├── orders-filter-panel.tsx
+│   │   │   │   │   ├── orders-header-bar.tsx
+│   │   │   │   │   ├── orders-tab.tsx
+│   │   │   │   │   ├── orders-table.tsx
+│   │   │   │   │   └── refund-reconcile-control.tsx
+│   │   │   │   ├── admin-sidebar-order-counts.test.ts
+│   │   │   │   ├── admin-sidebar.tsx
 │   │   │   │   ├── admin-tab-header.tsx
+│   │   │   │   ├── admin-topbar.tsx
 │   │   │   │   ├── archive-tab.tsx
+│   │   │   │   ├── order-payment-status-dialog.tsx
+│   │   │   │   ├── order-refund-dialog.tsx
 │   │   │   │   ├── prebuilt-tab.tsx
 │   │   │   │   ├── reservations-tab.tsx
 │   │   │   │   ├── sales-tab.tsx
@@ -2140,16 +2109,28 @@ BuilbotAI
 │   │   │   │   ├── use-admin-core.ts
 │   │   │   │   ├── use-bulk-actions.ts
 │   │   │   │   ├── use-inventory.ts
+│   │   │   │   ├── use-order-actions.ts
+│   │   │   │   ├── use-order-activity.ts
+│   │   │   │   ├── use-order-assembly.ts
+│   │   │   │   ├── use-orders-listener.test.ts
+│   │   │   │   ├── use-orders-view.ts
 │   │   │   │   ├── use-orders.ts
+│   │   │   │   ├── use-payment-status-dialog.ts
 │   │   │   │   ├── use-prebuilt-builder-import.ts
+│   │   │   │   ├── use-refund-reconciliation.ts
 │   │   │   │   └── use-sales-actions.ts
 │   │   │   ├── prebuilt-builder
 │   │   │   │   └── page.tsx
+│   │   │   ├── order-activity-actions.ts
+│   │   │   ├── order-assembly-actions.ts
+│   │   │   ├── order-refund-actions.ts
 │   │   │   ├── page.tsx
-│   │   │   └── reservation-actions.ts
+│   │   │   ├── reservation-actions.ts
+│   │   │   └── sales-admin-actions.ts
 │   │   ├── ai-build-advisor
 │   │   │   ├── components
 │   │   │   │   ├── advisor-header.tsx
+│   │   │   │   ├── advisor-loading-content.tsx
 │   │   │   │   ├── critique-tab.tsx
 │   │   │   │   └── recommendation-tab.tsx
 │   │   │   ├── hooks
@@ -2157,6 +2138,7 @@ BuilbotAI
 │   │   │   │   ├── use-advisor-state.ts
 │   │   │   │   ├── use-critique-logic.ts
 │   │   │   │   └── use-recommendation-logic.ts
+│   │   │   ├── loading.tsx
 │   │   │   └── page.tsx
 │   │   ├── api
 │   │   │   ├── admin
@@ -2166,12 +2148,16 @@ BuilbotAI
 │   │   │   │       └── [token]
 │   │   │   │           └── route.ts
 │   │   │   ├── ai
-│   │   │   │   └── build-advisor
-│   │   │   │       ├── critique
-│   │   │   │       └── recommendations
-│   │   │   │           └── route.ts
+│   │   │   │   ├── build-advisor
+│   │   │   │   │   ├── critique
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   └── recommendations
+│   │   │   │   │       └── route.ts
+│   │   │   │   └── live-build-recommendations
 │   │   │   ├── builder
-│   │   │   │   └── download
+│   │   │   │   ├── download
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── live-recommendations
 │   │   │   │       └── route.ts
 │   │   │   ├── chat
 │   │   │   │   └── route.ts
@@ -2197,8 +2183,21 @@ BuilbotAI
 │   │   │   │   ├── status
 │   │   │   │   │   └── route.ts
 │   │   │   │   └── route.ts
-│   │   │   └── qr
-│   │   │       └── [token]
+│   │   │   ├── cron
+│   │   │   │   └── expire-orders
+│   │   │   │       └── route.ts
+│   │   │   ├── featured-accessories
+│   │   │   │   └── route.ts
+│   │   │   ├── featured-parts
+│   │   │   │   └── route.ts
+│   │   │   ├── qr
+│   │   │   │   └── [token]
+│   │   │   │       └── route.ts
+│   │   │   ├── system-access
+│   │   │   │   └── authenticate
+│   │   │   │       └── route.ts
+│   │   │   └── webhooks
+│   │   │       └── paymongo
 │   │   │           └── route.ts
 │   │   ├── builder
 │   │   │   ├── components
@@ -2209,33 +2208,51 @@ BuilbotAI
 │   │   │   │   ├── use-filtered-inventory.ts
 │   │   │   │   └── use-inventory-query.ts
 │   │   │   ├── builder-page.tsx
+│   │   │   ├── loading.tsx
+│   │   │   └── page.tsx
+│   │   ├── checkout
 │   │   │   └── page.tsx
 │   │   ├── contact
 │   │   │   └── page.tsx
 │   │   ├── faq
+│   │   │   ├── faq-data.ts
 │   │   │   └── page.tsx
 │   │   ├── forgot-password
 │   │   │   └── page.tsx
+│   │   ├── group
+│   │   │   └── page.tsx
+│   │   ├── landing-video
+│   │   │   └── [name]
+│   │   │       └── route.ts
+│   │   ├── loading-audit-preview
 │   │   ├── parts
 │   │   │   ├── [productId]
+│   │   │   │   ├── loading.tsx
 │   │   │   │   └── page.tsx
+│   │   │   ├── loading.tsx
 │   │   │   └── page.tsx
 │   │   ├── pre-builts
 │   │   │   ├── [id]
 │   │   │   │   ├── components
 │   │   │   │   │   ├── prebuilt-action-card.tsx
+│   │   │   │   │   ├── prebuilt-ai-highlights.tsx
 │   │   │   │   │   ├── prebuilt-ai-review.tsx
 │   │   │   │   │   ├── prebuilt-component-carousel.tsx
+│   │   │   │   │   ├── prebuilt-header-card.tsx
 │   │   │   │   │   ├── prebuilt-image-view.tsx
-│   │   │   │   │   └── prebuilt-parts-accordion.tsx
+│   │   │   │   │   ├── prebuilt-parts-accordion.tsx
+│   │   │   │   │   ├── prebuilt-parts-list.tsx
+│   │   │   │   │   └── prebuilt-performance-analyzer.tsx
 │   │   │   │   ├── hooks
 │   │   │   │   │   └── use-prebuilt-details.ts
 │   │   │   │   ├── legacy-prebuilt-product.tsx
+│   │   │   │   ├── loading.tsx
 │   │   │   │   └── page.tsx
 │   │   │   └── page.tsx
 │   │   ├── profile
 │   │   │   ├── components
 │   │   │   │   ├── account-details.tsx
+│   │   │   │   ├── address-book-section.tsx
 │   │   │   │   ├── audit-logs-section.tsx
 │   │   │   │   ├── compose-inquiry-modal.tsx
 │   │   │   │   ├── contact-inbox-tab.tsx
@@ -2292,13 +2309,38 @@ BuilbotAI
 │   │   ├── product-actions.ts
 │   │   └── public-product-actions.ts
 │   ├── assets
-│   │   └── landing
-│   │       ├── feature-1.webp
-│   │       ├── feature-2.webp
-│   │       ├── feature-3.webp
-│   │       └── hero-custom.webp
+│   │   ├── about
+│   │   │   └── netcodex-storefront.png
+│   │   ├── branding
+│   │   │   ├── netcodex_cc_2026_white.png.webp
+│   │   │   ├── netcodex-emblem.png
+│   │   │   └── netcodex-logo-white.png
+│   │   ├── landing
+│   │   │   ├── custom-builder-parts.png
+│   │   │   ├── feature-1.webp
+│   │   │   ├── feature-2.webp
+│   │   │   ├── feature-3.webp
+│   │   │   ├── hero-custom-v2.webp
+│   │   │   ├── hero-custom.webp
+│   │   │   ├── king45-poster.webp
+│   │   │   ├── prebuilt-pcs.png
+│   │   │   └── prism5-poster.webp
+│   │   └── team
+│   │       ├── developer_m.png
+│   │       ├── developer.png
+│   │       ├── documentation_m.png
+│   │       ├── documentation.png
+│   │       ├── pm_m.png
+│   │       ├── pm.png
+│   │       ├── rayzon.jpg
+│   │       ├── rayzon.png
+│   │       ├── ui_m.png
+│   │       └── ui.png
 │   ├── components
 │   │   ├── auth
+│   │   │   ├── auth-background.module.css
+│   │   │   ├── auth-background.tsx
+│   │   │   ├── protected-page-loading.tsx
 │   │   │   ├── route-guard.tsx
 │   │   │   ├── session-timeout.tsx
 │   │   │   ├── sign-out-loader.tsx
@@ -2307,6 +2349,7 @@ BuilbotAI
 │   │   │   ├── bottleneck-prototype-controller.tsx
 │   │   │   ├── bottleneck-status-card.tsx
 │   │   │   ├── dual-sidebar-analyzer.tsx
+│   │   │   ├── fps-chart-plot.tsx
 │   │   │   ├── fps-performance-chart.tsx
 │   │   │   ├── optimization-swaps-card.tsx
 │   │   │   ├── prototype-bottom-dock.tsx
@@ -2329,18 +2372,43 @@ BuilbotAI
 │   │   │   └── types.ts
 │   │   ├── contact
 │   │   │   └── contact-thread.tsx
+│   │   ├── ecommerce
+│   │   │   ├── cart-drawer.tsx
+│   │   │   ├── checkout-modal.tsx
+│   │   │   ├── header-cart-button.tsx
+│   │   │   ├── mock-orders-section.tsx
+│   │   │   ├── paymongo-checkout-modal.tsx
+│   │   │   └── simulated-gcash-modal.tsx
 │   │   ├── landing
 │   │   │   ├── accessories-section.tsx
-│   │   │   ├── cta-section.tsx
 │   │   │   ├── deferred-prebuilt-showcase.tsx
 │   │   │   ├── feature-showcase.tsx
+│   │   │   ├── featured-products-section.tsx
 │   │   │   ├── features-section.tsx
 │   │   │   ├── hero-section.tsx
 │   │   │   ├── landing-page.tsx
 │   │   │   ├── prebuilt-showcase.tsx
 │   │   │   ├── section-header.tsx
+│   │   │   ├── shopping-paths-section.tsx
 │   │   │   ├── team-section.tsx
-│   │   │   └── unified-background.tsx
+│   │   │   ├── unified-background.tsx
+│   │   │   └── why-choose-section.tsx
+│   │   ├── loading
+│   │   │   ├── admin-inventory-skeleton.tsx
+│   │   │   ├── admin-panel-skeleton.tsx
+│   │   │   ├── carousel-skeleton.tsx
+│   │   │   ├── catalog-card-skeleton.tsx
+│   │   │   ├── dashboard-card-skeleton.tsx
+│   │   │   ├── inventory-loading.tsx
+│   │   │   ├── order-card-skeleton.tsx
+│   │   │   ├── prebuilt-card-skeleton.tsx
+│   │   │   ├── prebuilt-detail-skeleton.tsx
+│   │   │   ├── prebuilt-showcase-skeleton.tsx
+│   │   │   ├── profile-list-skeleton.tsx
+│   │   │   └── table-loading-rows.tsx
+│   │   ├── orders
+│   │   │   ├── customer-order-activity.tsx
+│   │   │   └── download-receipt-button.tsx
 │   │   ├── parts
 │   │   │   ├── multi-image-upload.tsx
 │   │   │   ├── part-identity-section.tsx
@@ -2360,6 +2428,7 @@ BuilbotAI
 │   │   │   ├── animated-icons.tsx
 │   │   │   ├── avatar.tsx
 │   │   │   ├── badge.tsx
+│   │   │   ├── breadcrumb.tsx
 │   │   │   ├── button.tsx
 │   │   │   ├── calendar.tsx
 │   │   │   ├── canvas-text.tsx
@@ -2369,6 +2438,7 @@ BuilbotAI
 │   │   │   ├── checkbox.tsx
 │   │   │   ├── collapsible.tsx
 │   │   │   ├── compact-info.tsx
+│   │   │   ├── confirmation-alert-dialog.tsx
 │   │   │   ├── deferred-dialog.tsx
 │   │   │   ├── dialog.tsx
 │   │   │   ├── dropdown-menu.tsx
@@ -2386,6 +2456,7 @@ BuilbotAI
 │   │   │   ├── separator.tsx
 │   │   │   ├── sheet.tsx
 │   │   │   ├── sidebar.tsx
+│   │   │   ├── skeleton.tsx
 │   │   │   ├── slider.tsx
 │   │   │   ├── sliding-image.tsx
 │   │   │   ├── sparkle-button.tsx
@@ -2398,7 +2469,6 @@ BuilbotAI
 │   │   │   ├── toggle-group.tsx
 │   │   │   ├── toggle.tsx
 │   │   │   └── tooltip.tsx
-│   │   ├── about-management.tsx
 │   │   ├── add-part-dialog.tsx
 │   │   ├── add-part-editor.tsx
 │   │   ├── add-prebuilt-dialog.tsx
@@ -2407,14 +2477,17 @@ BuilbotAI
 │   │   ├── admin-qr-lifecycle-modal.tsx
 │   │   ├── advisor-job-toast.tsx
 │   │   ├── ai-build-critique.tsx
+│   │   ├── ai-disclaimer.tsx
 │   │   ├── ai-model-settings.tsx
 │   │   ├── ai-progress-modal.tsx
 │   │   ├── ai-system-prompts-settings.tsx
 │   │   ├── app-layout.tsx
+│   │   ├── budget-slider.tsx
 │   │   ├── build-recommendation-notes.tsx
 │   │   ├── build-summary.tsx
 │   │   ├── builder-floating-analytics.tsx
 │   │   ├── builder-floating-chat.tsx
+│   │   ├── catalog-qr-button.tsx
 │   │   ├── chat-form.tsx
 │   │   ├── component-card.tsx
 │   │   ├── deferred-builder-chat.tsx
@@ -2426,18 +2499,20 @@ BuilbotAI
 │   │   ├── image-upload.tsx
 │   │   ├── inventory-part-card.tsx
 │   │   ├── inventory-prebuilt-card.tsx
+│   │   ├── inventory-save-success-dialog.tsx
 │   │   ├── inventory-table.tsx
 │   │   ├── inventory-toolbar.tsx
 │   │   ├── logo.tsx
 │   │   ├── maintenance-screen.tsx
-│   │   ├── neutral-page-loader.tsx
 │   │   ├── notification-center.tsx
 │   │   ├── order-details-modal.tsx
+│   │   ├── order-expiration-timer.tsx
 │   │   ├── pagination-controls.tsx
 │   │   ├── part-builder-compatibility-modal.tsx
 │   │   ├── part-card.tsx
 │   │   ├── part-details-content.tsx
 │   │   ├── part-details-dialog.tsx
+│   │   ├── part-related-products.tsx
 │   │   ├── prebuilt-builder-add-dialog.tsx
 │   │   ├── prebuilt-card-specs.tsx
 │   │   ├── prebuilt-system-card.tsx
@@ -2445,12 +2520,16 @@ BuilbotAI
 │   │   ├── product-identification.tsx
 │   │   ├── product-identity-link.tsx
 │   │   ├── product-qr.tsx
+│   │   ├── public-part-list-item.tsx
 │   │   ├── public-part-page.tsx
 │   │   ├── public-parts-catalog.tsx
+│   │   ├── public-parts-toolbar.tsx
 │   │   ├── public-product-page.tsx
 │   │   ├── qr-health-dialog.tsx
 │   │   ├── qr-scanner-dialog.tsx
 │   │   ├── sales-analytics.tsx
+│   │   ├── sales-financial-kpis.tsx
+│   │   ├── search-no-results.tsx
 │   │   ├── smart-budget.tsx
 │   │   ├── stock-editor.tsx
 │   │   ├── super-admin-settings.tsx
@@ -2460,6 +2539,7 @@ BuilbotAI
 │   ├── context
 │   │   ├── advisor-jobs-context.tsx
 │   │   ├── advisor-jobs-scope.tsx
+│   │   ├── ecommerce-context.tsx
 │   │   ├── loading-context.tsx
 │   │   ├── sign-out-transition.tsx
 │   │   ├── site-settings-context.tsx
@@ -2484,15 +2564,20 @@ BuilbotAI
 │   │   ├── provider.tsx
 │   │   └── server-init.ts
 │   ├── hooks
+│   │   ├── use-address-book.ts
 │   │   ├── use-admin-session-guard.ts
 │   │   ├── use-build-actions.ts
 │   │   ├── use-build-pdf-download.ts
+│   │   ├── use-customer-rig-assembly.ts
 │   │   ├── use-idle-timeout.ts
 │   │   ├── use-inventory-image-count.ts
+│   │   ├── use-live-build-recommendations.ts
 │   │   ├── use-mobile.tsx
 │   │   ├── use-near-viewport.ts
+│   │   ├── use-order-details-modal.ts
 │   │   ├── use-part-builder-compatibility.ts
 │   │   ├── use-part-form.ts
+│   │   ├── use-paymongo-checkout-modal.ts
 │   │   ├── use-persistent-state.ts
 │   │   ├── use-product-qr.ts
 │   │   ├── use-product-save-operation.ts
@@ -2529,6 +2614,14 @@ BuilbotAI
 │       │   ├── builder-catalog.ts
 │       │   ├── contact-auth.ts
 │       │   ├── gmail.ts
+│       │   ├── order-activity.ts
+│       │   ├── order-auth.ts
+│       │   ├── order-expiration-sweep.ts
+│       │   ├── order-operations.ts
+│       │   ├── order-payment-session.ts
+│       │   ├── order-refund-notifications.ts
+│       │   ├── order-refund-reconciliation.ts
+│       │   ├── paymongo.ts
 │       │   ├── product-identities.ts
 │       │   ├── public-products.ts
 │       │   ├── qr-auth.ts
@@ -2543,6 +2636,10 @@ BuilbotAI
 │       ├── build-advisor-goals.ts
 │       ├── build-pdf-categories.ts
 │       ├── build-pdf.ts
+│       ├── catalog-name-validation.test.ts
+│       ├── catalog-name-validation.ts
+│       ├── chat-conversation.test.ts
+│       ├── chat-conversation.ts
 │       ├── chat-message-parts.test.ts
 │       ├── chat-message-parts.ts
 │       ├── chat-part-specifications.ts
@@ -2552,19 +2649,60 @@ BuilbotAI
 │       ├── chat-recommendations.ts
 │       ├── chat-stream-fallback.test.ts
 │       ├── chat-stream-fallback.ts
+│       ├── compatibility.test.ts
 │       ├── compatibility.ts
 │       ├── contact-config.ts
 │       ├── contact-schemas.ts
 │       ├── contact-types.ts
+│       ├── customer-order-activity.test.ts
+│       ├── customer-order-activity.ts
+│       ├── customer-order-workflow.test.ts
+│       ├── customer-order-workflow.ts
+│       ├── export-excel.test.ts
 │       ├── export-excel.ts
+│       ├── firestore-document.test.ts
+│       ├── firestore-document.ts
 │       ├── fps-estimator.ts
+│       ├── included-cpu-cooler.test.ts
+│       ├── included-cpu-cooler.ts
+│       ├── integrated-graphics.test.ts
+│       ├── integrated-graphics.ts
 │       ├── inventory-fetcher.ts
 │       ├── inventory-image-sizes.ts
 │       ├── inventory-paths.test.ts
 │       ├── inventory-paths.ts
 │       ├── knowledge-retriever.ts
+│       ├── live-build-recommendation-schema.ts
+│       ├── live-build-recommendations.test.ts
+│       ├── live-build-recommendations.ts
 │       ├── normalize-product-description.ts
+│       ├── order-activity.test.ts
+│       ├── order-activity.ts
+│       ├── order-assembly.test.ts
+│       ├── order-assembly.ts
+│       ├── order-classification.test.ts
+│       ├── order-classification.ts
+│       ├── order-expiration.test.ts
+│       ├── order-expiration.ts
+│       ├── order-fulfillment.test.ts
+│       ├── order-fulfillment.ts
+│       ├── order-image-resolver.test.ts
+│       ├── order-image-resolver.ts
+│       ├── order-item-groups.test.ts
+│       ├── order-item-groups.ts
+│       ├── order-operation-cache.test.ts
+│       ├── order-operation-cache.ts
+│       ├── order-payment.test.ts
+│       ├── order-payment.ts
+│       ├── order-permissions.test.ts
+│       ├── order-permissions.ts
+│       ├── order-receipt-pdf.test.ts
+│       ├── order-receipt-pdf.ts
+│       ├── order-workflow.test.ts
+│       ├── order-workflow.ts
 │       ├── parse-peso-budget.ts
+│       ├── payment-methods.test.ts
+│       ├── payment-methods.ts
 │       ├── placeholder-images.ts
 │       ├── popularity.ts
 │       ├── prebuilt-utils.test.ts
@@ -2576,7 +2714,11 @@ BuilbotAI
 │       ├── qr-health.ts
 │       ├── qr-lifecycle.ts
 │       ├── qr-response.ts
+│       ├── rule-based-advisor.test.ts
+│       ├── rule-based-advisor.ts
 │       ├── save-catalog-product.ts
+│       ├── search-empty-state.test.ts
+│       ├── search-empty-state.ts
 │       ├── styled-excel.ts
 │       ├── system-prompts.ts
 │       ├── types.ts
@@ -2588,14 +2730,85 @@ BuilbotAI
 ├── test-results
 │   └── .last-run.json
 ├── tests
+│   ├── fixtures
+│   │   └── loading-layout-page.tsx
 │   ├── auth-role-navigation.spec.ts
 │   ├── chat-part-specifications.spec.ts
+│   ├── landing-featured-products.spec.ts
+│   ├── landing-hero-guest-builder.spec.ts
+│   ├── landing-loading-layouts.spec.ts
 │   ├── landing-performance.spec.ts
+│   ├── live-build-recommendations.spec.ts
+│   ├── loading-layouts.spec.ts
+│   ├── order-management.integration.ts
+│   ├── order-phase2.test.ts
+│   ├── prebuilt-toolbar.spec.ts
+│   ├── public-auth-header.spec.ts
+│   ├── public-parts-toolbar.spec.ts
 │   ├── qr-inventory.integration.ts
 │   ├── qr-inventory.spec.ts
 │   ├── qr-phase2.test.ts
 │   └── sales-export.spec.ts
 ├── tmp
+│   ├── loading-audit
+│   │   ├── accessories-heading-loaded-1440.png
+│   │   ├── accessories-heading-loaded-390.png
+│   │   ├── accessories-heading-loaded-768.png
+│   │   ├── accessories-heading-loading-1440.png
+│   │   ├── accessories-heading-loading-390.png
+│   │   ├── accessories-heading-loading-768.png
+│   │   ├── builder-before-1440.png
+│   │   ├── builder-before-390.png
+│   │   ├── builder-before-768.png
+│   │   ├── builder-before.json
+│   │   ├── builder-loaded-1440.png
+│   │   ├── builder-loaded-390.png
+│   │   ├── builder-loaded-768.png
+│   │   ├── builder-loading-1440.png
+│   │   ├── builder-loading-390.png
+│   │   ├── builder-loading-768.png
+│   │   ├── customer--ai-build-advisor-1440.png
+│   │   ├── customer--ai-build-advisor-390.png
+│   │   ├── customer--ai-build-advisor-768.png
+│   │   ├── customer--profile-1440.png
+│   │   ├── customer--profile-390.png
+│   │   ├── customer--profile-768.png
+│   │   ├── customer--support-requests-1440.png
+│   │   ├── customer--support-requests-390.png
+│   │   ├── customer--support-requests-768.png
+│   │   ├── featured-products-heading-loaded-1440.png
+│   │   ├── featured-products-heading-loaded-390.png
+│   │   ├── featured-products-heading-loaded-768.png
+│   │   ├── featured-products-heading-loading-1440.png
+│   │   ├── featured-products-heading-loading-390.png
+│   │   ├── featured-products-heading-loading-768.png
+│   │   ├── guest---1440.png
+│   │   ├── guest---390.png
+│   │   ├── guest---768.png
+│   │   ├── guest--ai-build-advisor-1440.png
+│   │   ├── guest--ai-build-advisor-390.png
+│   │   ├── guest--ai-build-advisor-768.png
+│   │   ├── guest--parts-1440.png
+│   │   ├── guest--parts-390.png
+│   │   ├── guest--parts-768.png
+│   │   ├── guest--pre-builts-1440.png
+│   │   ├── guest--pre-builts-390.png
+│   │   ├── guest--pre-builts-768.png
+│   │   ├── manager--admin-1440.png
+│   │   ├── manager--admin-390.png
+│   │   ├── manager--admin-768.png
+│   │   ├── manager--admin-contact-inquiries-1440.png
+│   │   ├── manager--admin-contact-inquiries-390.png
+│   │   ├── manager--admin-contact-inquiries-768.png
+│   │   ├── manager--admin-prebuilt-builder-1440.png
+│   │   ├── manager--admin-prebuilt-builder-390.png
+│   │   ├── manager--admin-prebuilt-builder-768.png
+│   │   ├── manager--profile-1440.png
+│   │   ├── manager--profile-390.png
+│   │   ├── manager--profile-768.png
+│   │   └── pages-before.json
+│   ├── loading-test-results
+│   │   └── .last-run.json
 │   ├── pdfs
 │   │   ├── audit-page-1.png
 │   │   ├── audit-page-2.png
@@ -2670,6 +2883,17 @@ BuilbotAI
 │   │   └── .last-run.json
 │   ├── playwright-verified
 │   │   └── .last-run.json
+│   ├── audit-loading.mjs
+│   ├── audit-pages.mjs
+│   ├── extend-loading-tests.mjs
+│   ├── loading-fixture.tsx
+│   ├── refactor-admin-loading.mjs
+│   ├── refactor-builder-loading.mjs
+│   ├── refactor-catalog-loading.mjs
+│   ├── refactor-chart-loading.mjs
+│   ├── refactor-landing-loading.mjs
+│   ├── refactor-profile-loading.mjs
+│   ├── refactor-protected-loading.mjs
 │   ├── test_knowledge_tools.ts
 │   ├── test_local_extraction.ts
 │   ├── test_search.ts
@@ -2687,6 +2911,7 @@ BuilbotAI
 ├── CLAUDE.md
 ├── components.json
 ├── debug-response.json
+├── debug.log
 ├── DESIGN.md
 ├── eslint.config.mjs
 ├── firebase.json
@@ -2701,6 +2926,7 @@ BuilbotAI
 ├── next.config.ts
 ├── package-lock.json
 ├── package.json
+├── playwright.config.ts
 ├── postcss.config.mjs
 ├── README.md
 ├── skills-lock.json

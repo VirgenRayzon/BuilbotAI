@@ -11,9 +11,7 @@ import { SynergyGaugeCard } from "./synergy-gauge-card";
 import { BottleneckStatusCard } from "./bottleneck-status-card";
 import { OptimizationSwapsCard } from "./optimization-swaps-card";
 
-const FpsPerformanceChart = dynamic(() => import('./fps-performance-chart').then(module => module.FpsPerformanceChart), {
-  loading: () => <div className="min-h-[220px]" role="status" aria-label="Loading performance chart" />,
-});
+import { FpsPerformanceChart } from './fps-performance-chart';
 
 interface DualSidebarAnalyzerProps {
   build: Record<string, ComponentData | ComponentData[] | null>;

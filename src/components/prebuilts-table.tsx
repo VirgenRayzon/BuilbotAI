@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { productAdminUrl } from '@/lib/product-identity';
 
 import { useState, useEffect } from "react";
+import { Skeleton } from './ui/skeleton';
 import { cn, formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
 import {
   Table,
@@ -40,6 +41,8 @@ import { doc, getDoc, collection, query, where, getDocs } from "firebase/firesto
 import { useSiteSettings } from "@/context/site-settings-context";
 
 interface PrebuiltsTableProps {
+  loading?: boolean;
+  loadingCount?: number;
   systems: PrebuiltSystem[];
   isAdminPreview?: boolean;
   onDelete?: (systemId: string) => void;
@@ -57,6 +60,8 @@ interface PrebuiltsTableProps {
 }
 
 export function PrebuiltsTable({
+  loading = false,
+  loadingCount = 8,
   systems,
   isAdminPreview = false,
   onDelete,
@@ -75,12 +80,13 @@ export function PrebuiltsTable({
   const allSelected = systems.length > 0 && systems.every((s) => selectedIds.includes(s.id));
 
   return (
-    <Table highlightOnHover verticalSpacing="sm" horizontalSpacing="md">
+    <Table highlightOnHover verticalSpacing="sm" horizontalSpacing="md" aria-busy={loading}>
       <Table.Thead className="bg-slate-50 dark:bg-white/[0.03] border-b border-slate-200/80 dark:border-white/10">
         <Table.Tr>
           {showActions && (
             <Table.Th className="w-[40px]">
               <Checkbox
+                disabled={loading}
                 checked={allSelected}
                 onChange={() => onToggleSelectAll()}
                 size="xs"
@@ -107,6 +113,13 @@ export function PrebuiltsTable({
         </Table.Tr>
       </Table.Thead>
       <Table.Tbody>
+        {loading && systems.length === 0 && Array.from({length:loadingCount}, (_, index) => (
+          <Table.Tr key={`loading-${index}`} aria-hidden="true">
+            {showActions && <Table.Td><Skeleton className="h-4 w-4" /></Table.Td>}
+            <Table.Td><Skeleton className="h-10 w-10" /></Table.Td>
+            {Array.from({length:6}, (_, cell) => <Table.Td key={cell}><Skeleton><Text size="sm">Loading</Text></Skeleton></Table.Td>)}
+          </Table.Tr>
+        ))}
         {systems.map((system) => (
           <PrebuiltTableRow
             key={system.id}

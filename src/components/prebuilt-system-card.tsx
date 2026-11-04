@@ -30,6 +30,7 @@ import { includedCpuCoolerName } from "@/lib/included-cpu-cooler";
 import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
 import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '@/lib/integrated-graphics';
 import { PrebuiltCardSpecs } from "./prebuilt-card-specs";
+import { prebuiltCardLayout } from './loading/prebuilt-card-skeleton';
 import { OptimizedImage } from "./ui/optimized-image";
 import { useFirestore } from "@/firebase";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
@@ -391,7 +392,7 @@ export function PrebuiltSystemCard({
         radius="lg"
         padding={0}
         className={cn(
-          "flex flex-col justify-between min-h-[600px] sm:min-h-[640px] h-full relative group overflow-hidden transition-all duration-300 shadow-lg",
+          prebuiltCardLayout.card,
           "hover:border-cyan-500 dark:hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/20 dark:hover:shadow-cyan-500/30 hover:-translate-y-1.5",
           isClickable ? "cursor-pointer" : "cursor-default",
           "bg-white/85 dark:bg-[#111722]",
@@ -441,7 +442,7 @@ export function PrebuiltSystemCard({
           )}
 
           {/* 60% Product Image Canvas (Edge-to-edge, transparent background) */}
-          <Box className="relative w-full h-[360px] sm:h-[380px] overflow-hidden bg-transparent border-b border-slate-200/70 dark:border-white/10">
+          <Box className={prebuiltCardLayout.image}>
             <OptimizedImage
               src={getOptimizedStorageUrl(system.imageUrl, shouldCorruptImages) || "/placeholder-system.png"}
               alt={system.name}
@@ -454,7 +455,7 @@ export function PrebuiltSystemCard({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 flex flex-col justify-between p-4 sm:p-5">
+        <div className={prebuiltCardLayout.content}>
           <Stack gap={3}>
             {/* Title & SKU */}
             <Text

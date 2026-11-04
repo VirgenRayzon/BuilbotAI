@@ -3,6 +3,7 @@
  * Shows image, specs, stock, price, and provides archive/delete/edit actions with tooltips.
  */
 'use client';
+import { adminPartLayout } from './loading/admin-inventory-skeleton';
 
 import { AddPartDialog } from './add-part-dialog';
 import { type AddPartFormSchema } from '@/hooks/use-part-form';
@@ -96,11 +97,11 @@ export function InventoryPartCard({
                         </div>
                     )}
 
-                    <div className="p-2 md:p-3.5 pb-0 space-y-1.5 md:space-y-2.5 z-10 flex-grow flex flex-col">
+                    <div className={adminPartLayout.body}>
                         <div className="flex justify-between items-start gap-2">
                             <div className={cn("space-y-0.5 flex-grow", isSelected && "pl-5")}>
                                 <p className="text-[8px] md:text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{part.brand}</p>
-                                <div className="h-10 md:h-12 flex flex-col justify-center overflow-hidden">
+                                <div className={adminPartLayout.title}>
                                     <CardTitle className="text-xs md:text-base font-headline leading-snug line-clamp-2 m-0 p-0">
                                         {part.name.length > 60 ? `${part.name.substring(0, 57)}...` : part.name}
                                     </CardTitle>
@@ -164,7 +165,7 @@ export function InventoryPartCard({
 
                         <Separator className={isOutOfStock ? "bg-yellow-500/20" : "bg-border/40"} />
 
-                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 md:gap-x-3 md:gap-y-1.5 py-0.5">
+                        <div className={adminPartLayout.specs}>
                             {specKeys.map((key) => {
                                 const value = part.specifications?.[key] || (key === 'Wattage' ? part.wattage : null);
                                 return (
@@ -177,7 +178,7 @@ export function InventoryPartCard({
                         </div>
                     </div>
 
-                    <div className="mt-auto p-2 md:p-3 pt-0 z-20" onClick={(event) => event.stopPropagation()}>
+                    <div className={adminPartLayout.footer} onClick={(event) => event.stopPropagation()}>
                         <AddStockDialog part={part} onAddStock={onAddStock || ((id, category, amount) => onUpdateStock(id, category, part.stock + amount))}>
                             <Button variant="outline" size="sm" className={cn("w-full h-8 md:h-9 text-xs md:text-sm font-semibold transition-all gap-1.5 shadow-sm", isOutOfStock ? "border-yellow-500/30 hover:border-yellow-500/60 hover:bg-yellow-500/10" : "border-primary/20 hover:border-primary/50 hover:bg-primary/10")}>
                                 <span>Edit Stock</span>

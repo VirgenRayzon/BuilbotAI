@@ -1,4 +1,7 @@
 'use client';
+import { CatalogCardSkeleton, catalogCardLayout } from '@/components/loading/catalog-card-skeleton';
+import { CarouselSkeleton } from '@/components/loading/carousel-skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -73,7 +76,7 @@ export function FeaturedProductsSection() {
                     padding={0}
                     className="group flex h-full flex-col justify-between overflow-hidden border-slate-200/80 bg-white/85 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-cyan-500/40 dark:border-white/10 dark:bg-[#111722] dark:hover:border-cyan-500/40"
                   >
-                    <Stack gap={6} className="px-3 pb-2 pt-3">
+                    <Stack gap={6} className={catalogCardLayout.header}>
                       <Group justify="space-between" align="center" wrap="nowrap">
                         <Badge size="xs" variant="light" color="gray" radius="sm" className="max-w-[55%] uppercase tracking-wide">
                           <span className="block truncate">{product.brand || product.category}</span>
@@ -88,12 +91,12 @@ export function FeaturedProductsSection() {
                     </Stack>
 
                     <Link href={detailHref} aria-label={`View ${product.name}`}>
-                      <Box className="relative aspect-[4/3] w-full overflow-hidden border-y border-slate-200/70 bg-pure-white dark:border-white/10">
+                      <Box className={catalogCardLayout.image}>
                         <OptimizedImage src={product.imageUrl || '/placeholder-part.png'} alt={product.name} fill sizes="(max-width: 439px) 100vw, (max-width: 1023px) 50vw, 25vw" className="object-contain p-2" />
                       </Box>
                     </Link>
 
-                    <Stack gap="xs" className="px-3 pb-3 pt-3">
+                    <Stack gap="xs" className={catalogCardLayout.footer}>
                       <Stack gap={0}>
                         <Text size="xs" c="dimmed" tt="uppercase" fw={600} className="text-[10px] tracking-wider">Price</Text>
                         <Text size="lg" fw={700} className="font-mono leading-none text-slate-900 dark:text-slate-100">{formatCurrency(product.price)}</Text>
@@ -135,9 +138,9 @@ export function FeaturedProductsSection() {
             <Link href="/parts" className="mt-2 inline-flex min-h-11 items-center font-semibold text-cyan-700 dark:text-cyan-300">Browse the catalog <ArrowRight size={16} className="ml-2" /></Link>
           </Paper>
         ) : (
-          <div className="grid grid-cols-1 gap-3 md:gap-4 min-[440px]:grid-cols-2 lg:grid-cols-4" aria-label="Loading featured products" aria-busy="true">
-            {Array.from({ length: 12 }, (_, index) => <div key={index} className="aspect-[3/4] animate-pulse rounded-lg border border-slate-200 bg-slate-100/80 dark:border-white/10 dark:bg-[#141a23]/90" />)}
-          </div>
+          <div aria-label="Loading featured products" aria-busy="true"><div className="grid grid-cols-1 gap-3 md:gap-4 min-[440px]:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 12 }, (_, index) => <CatalogCardSkeleton key={index} />)}
+          </div><div className="mt-12 flex justify-center"><Skeleton className="flex"><Button size="lg" className="h-12" disabled>View All</Button></Skeleton></div></div>
         )}
       </div>
     </section>

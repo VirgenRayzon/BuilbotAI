@@ -17,6 +17,7 @@ import {
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { formatCurrency, cn, getOptimizedStorageUrl } from "@/lib/utils";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
+import { InventoryLoading, BuilderTableHeader } from "@/components/loading/inventory-loading";
 import { PartCard } from "@/components/part-card";
 import { PaginationControls } from "@/components/pagination-controls";
 import type { Part } from "@/lib/types";
@@ -135,46 +136,7 @@ export function InventoryView({
 
         {/* Content Body */}
         {loading ? (
-          <div className={cn("grid gap-3 md:gap-4", gridColsClass)}>
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Card
-                key={`builder-skeleton-${i}`}
-                withBorder
-                radius="lg"
-                padding={0}
-                className="flex flex-col justify-between h-full relative overflow-hidden bg-white/85 dark:bg-[#111722] border-slate-200/80 dark:border-white/10 animate-pulse select-none"
-              >
-                {/* --- Top Metadata & Title --- */}
-                <Stack gap={6} className="px-3 pt-3 pb-2">
-                  <Group justify="space-between" align="center" wrap="nowrap">
-                    <div className="h-5 w-16 bg-slate-200 dark:bg-white/10 rounded-sm" />
-                    <div className="h-5 w-20 bg-slate-200/60 dark:bg-white/5 rounded-sm" />
-                  </Group>
-                  <div className="min-h-[2.5rem] flex flex-col justify-center gap-1.5">
-                    <div className="h-4 bg-slate-200 dark:bg-white/10 rounded w-4/5" />
-                    <div className="h-4 bg-slate-200 dark:bg-white/10 rounded w-1/2" />
-                  </div>
-                </Stack>
-
-                {/* --- Clean Image Showcase Surface --- */}
-                <Box className="aspect-[4/3] relative w-full overflow-hidden bg-pure-white dark:bg-[#111722] border-y border-slate-200/70 dark:border-white/10 flex items-center justify-center">
-                  <div className="w-12 h-12 rounded-lg bg-slate-200/60 dark:bg-white/5" />
-                </Box>
-
-                {/* --- Bottom Controls Surface --- */}
-                <Stack gap="xs" className="px-3 pt-3 pb-3">
-                  <Group justify="space-between" align="center">
-                    <Stack gap={4}>
-                      <div className="h-2.5 w-14 bg-slate-200/80 dark:bg-white/10 rounded" />
-                      <div className="h-5 w-24 bg-slate-200 dark:bg-white/10 rounded" />
-                    </Stack>
-                    <div className="h-7 w-7 rounded-md bg-slate-200/60 dark:bg-white/5" />
-                  </Group>
-                  <div className="h-9 w-full rounded-md bg-slate-200 dark:bg-white/10" />
-                </Stack>
-              </Card>
-            ))}
-          </div>
+          <InventoryLoading view={view} count={itemsPerPage} gridClassName={cn("grid gap-3 md:gap-4", gridColsClass)} />
         ) : paginatedParts.length > 0 ? (
           view === "grid" ? (
             <div className={cn("grid gap-x-3 md:gap-x-4", recommendations?.suggestions.length ? "gap-y-8 pt-10" : "gap-y-3 md:gap-y-4", gridColsClass)}>
@@ -204,17 +166,7 @@ export function InventoryView({
               className="overflow-hidden bg-white/70 dark:bg-[#141a23]/90 border-slate-200/80 dark:border-white/10"
             >
               <Table verticalSpacing="sm" horizontalSpacing="md" highlightOnHover>
-                <Table.Thead className="bg-slate-50/50 dark:bg-white/[0.02]">
-                  <Table.Tr>
-                    <Table.Th className="w-16">Item</Table.Th>
-                    <Table.Th>Component</Table.Th>
-                    <Table.Th>Category</Table.Th>
-                    <Table.Th>Brand</Table.Th>
-                    <Table.Th className="text-right">Price</Table.Th>
-                    <Table.Th className="w-24 text-center">Status</Table.Th>
-                    <Table.Th className="w-32 text-right">Action</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
+                <BuilderTableHeader />
                 <Table.Tbody>
                   {paginatedParts.map((part) => {
                     const selected = isSelected(part);

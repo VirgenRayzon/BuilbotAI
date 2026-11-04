@@ -9,7 +9,7 @@ import { MaintenanceScreen } from "@/components/maintenance-screen";
 import { useSiteSettings } from "@/context/site-settings-context";
 import { cn } from "@/lib/utils";
 
-import { Button, Paper, Text, Title } from "@mantine/core";
+import { Button, Paper, Skeleton, Text, Title } from "@mantine/core";
 import { SignOutLoader } from "@/components/auth/sign-out-loader";
 import { SignOutTransitionContext } from "@/context/sign-out-transition";
 import { EcommerceProvider } from "@/context/ecommerce-context";
@@ -80,6 +80,22 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   if (showMaintenance) return <MaintenanceScreen />;
+
+  // Profile has different staff/customer chrome; avoid mounting the customer
+  // header while restoring a staff session.
+  if (pathname === '/profile' && loading) {
+    return (
+      <div className="min-h-screen w-full bg-slate-50 dark:bg-[#0a0d14] p-6">
+        <div className="max-w-[1600px] mx-auto space-y-6">
+          <Skeleton h={120} radius="lg" />
+          <div className="flex flex-col lg:flex-row gap-6">
+            <Skeleton h={360} w={{ base: '100%', lg: 325 }} radius="lg" />
+            <Skeleton h={480} className="flex-1" radius="lg" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <EcommerceProvider>

@@ -38,7 +38,7 @@ const aiBuildAdvisorRecommendationsPrompt = ai.definePrompt({
     }),
   },
   output: { schema: AiBuildAdvisorRecommendationsOutputSchema },
-  model: 'googleai/gemini-2.5-flash',
+  model: 'googleai/gemini-3.8-flash',
   config: { temperature: 0.1 },
   prompt: `{{#if customSystemPrompt}}
 {{{customSystemPrompt}}}

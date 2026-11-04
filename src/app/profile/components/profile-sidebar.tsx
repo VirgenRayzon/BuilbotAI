@@ -34,7 +34,6 @@ import { signOut } from "firebase/auth";
 import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/lib/types";
 import { useSignOutTransition } from "@/context/sign-out-transition";
-import { useSiteSettings } from "@/context/site-settings-context";
 
 interface ProfileSidebarProps {
   profile: UserProfile | null;
@@ -69,7 +68,6 @@ export function ProfileSidebar({
 }: ProfileSidebarProps) {
   const router = useRouter();
   const auth = useAuth();
-  const { isEcommerceMode } = useSiteSettings();
   const [signOutModalOpen, setSignOutModalOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const { startSignOut, cancelSignOut } = useSignOutTransition();
@@ -237,8 +235,8 @@ export function ProfileSidebar({
       label: "System Safeguards",
       icon: Activity,
       color: "amber",
-      badge: "5 Controls",
-      badgeColor: isEcommerceMode ? "cyan" : "yellow",
+      badge: "4 Controls",
+      badgeColor: "amber",
     });
   }
 

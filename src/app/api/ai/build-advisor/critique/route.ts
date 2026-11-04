@@ -259,6 +259,8 @@ REQUIRED OUTPUT: A valid JSON object matching the requested schema.`;
             output: Output.object({ schema: aiBuildCritiqueOutputSchema }),
             ...(resolvedModel.modelId.startsWith('gemini-2.5-flash') && !resolvedModel.isFineTuned
                 ? { providerOptions: { google: { thinkingConfig: { thinkingBudget: 0 } } } }
+                : resolvedModel.modelId.startsWith('gemini-3.5-flash-lite') && !resolvedModel.isFineTuned
+                ? { providerOptions: { google: { thinkingConfig: { thinkingLevel: 'minimal' } } } }
                 : {}),
         });
 

@@ -30,16 +30,20 @@ import { AdminProductFocus } from '@/components/admin-product-focus';
 import { safeStaffProductReturn } from '@/lib/product-identity';
 import { AdminTabHeader, AdminTabHeaderProvider } from './components/admin-tab-header';
 import { useSalesActions } from './hooks/use-sales-actions';
+import { AdminPanelSkeleton } from '@/components/loading/admin-panel-skeleton';
 
-const PanelLoading = () => <div role="status" className="min-h-40 flex items-center justify-center text-slate-600 dark:text-slate-400">Loading section...</div>;
-const PrebuiltTab = dynamic(() => import('./components/prebuilt-tab').then(module => module.PrebuiltTab), { loading: PanelLoading });
-const ReservationsTab = dynamic(() => import('./components/reservations-tab').then(module => module.ReservationsTab), { loading: PanelLoading });
-const SalesTab = dynamic(() => import('./components/sales-tab').then(module => module.SalesTab), { loading: PanelLoading });
-const ArchiveTab = dynamic(() => import('./components/archive-tab').then(module => module.ArchiveTab), { loading: PanelLoading });
-const SuperAdminSettings = dynamic(() => import('@/components/super-admin-settings').then(module => module.SuperAdminSettings), { loading: PanelLoading });
-const AuditLogsSection = dynamic(() => import('@/app/profile/components/audit-logs-section').then(module => module.AuditLogsSection), { loading: PanelLoading });
-const AiModelSettings = dynamic(() => import('@/components/ai-model-settings').then(module => module.AiModelSettings), { loading: PanelLoading });
-const AiSystemPromptsSettings = dynamic(() => import('@/components/ai-system-prompts-settings').then(module => module.AiSystemPromptsSettings), { loading: PanelLoading });
+const CardsPanelLoading = () => <AdminPanelSkeleton variant="cards" />;
+const OrdersPanelLoading = () => <AdminPanelSkeleton variant="orders" />;
+const AnalyticsPanelLoading = () => <AdminPanelSkeleton variant="analytics" />;
+
+const PrebuiltTab = dynamic(() => import('./components/prebuilt-tab').then(module => module.PrebuiltTab), { loading: CardsPanelLoading });
+const ReservationsTab = dynamic(() => import('./components/reservations-tab').then(module => module.ReservationsTab), { loading: OrdersPanelLoading });
+const SalesTab = dynamic(() => import('./components/sales-tab').then(module => module.SalesTab), { loading: AnalyticsPanelLoading });
+const ArchiveTab = dynamic(() => import('./components/archive-tab').then(module => module.ArchiveTab), { loading: CardsPanelLoading });
+const SuperAdminSettings = dynamic(() => import('@/components/super-admin-settings').then(module => module.SuperAdminSettings), { loading: CardsPanelLoading });
+const AuditLogsSection = dynamic(() => import('@/app/profile/components/audit-logs-section').then(module => module.AuditLogsSection), { loading: OrdersPanelLoading });
+const AiModelSettings = dynamic(() => import('@/components/ai-model-settings').then(module => module.AiModelSettings), { loading: CardsPanelLoading });
+const AiSystemPromptsSettings = dynamic(() => import('@/components/ai-system-prompts-settings').then(module => module.AiSystemPromptsSettings), { loading: CardsPanelLoading });
 
 /**
  * Admin Dashboard - Orchestrator Component

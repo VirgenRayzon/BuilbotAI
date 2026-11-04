@@ -1,6 +1,7 @@
 /**
  * SiteSettingsContext — Firestore-backed global site configuration provider.
- * Manages maintenance mode, storage kill switch, e-commerce UI mode, and image corruption logic.
+ * Manages maintenance mode, storage kill switch, live builder recommendations, and image corruption logic.
+ * Defaults to full e-commerce storefront mode.
  * Super Admins bypass image corruption even when the kill switch is active.
  */
 "use client";
@@ -74,38 +75,17 @@ interface SiteSettingsContextType {
 
 const SiteSettingsContext = createContext<SiteSettingsContextType | undefined>(undefined);
 
-const ECOMMERCE_LOCAL_KEY = "buildbot_ecommerce_mode_override";
-
 export function SiteSettingsProvider({ children }: { children: React.ReactNode }) {
     const firestore = useFirestore();
     const { profile } = useUserProfile();
-    const [localEcommerceOverride, setLocalEcommerceOverride] = useState<boolean | null>(null);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
-        const stored = window.localStorage.getItem(ECOMMERCE_LOCAL_KEY);
-        if (stored === "true") setLocalEcommerceOverride(true);
-        else if (stored === "false") setLocalEcommerceOverride(false);
-
-        const handleStorage = (event: StorageEvent) => {
-            if (event.key === ECOMMERCE_LOCAL_KEY) {
-                if (event.newValue === "true") setLocalEcommerceOverride(true);
-                else if (event.newValue === "false") setLocalEcommerceOverride(false);
-                else setLocalEcommerceOverride(null);
-            }
-        };
-        const handleCustom = (event: Event) => {
-            const customEvent = event as CustomEvent<boolean>;
-            if (typeof customEvent.detail === "boolean") {
-                setLocalEcommerceOverride(customEvent.detail);
-            }
-        };
-        window.addEventListener("storage", handleStorage);
-        window.addEventListener("buildbot:ecommerce-mode-change", handleCustom);
-        return () => {
-            window.removeEventListener("storage", handleStorage);
-            window.removeEventListener("buildbot:ecommerce-mode-change", handleCustom);
-        };
+        try {
+            window.localStorage.removeItem("buildbot_ecommerce_mode_override");
+        } catch {
+            // Ignore storage access errors in restricted iframe/browser environments
+        }
     }, []);
 
     const settingsDocRef = useMemo(() => {
@@ -117,14 +97,13 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
     
     const isMaintenanceMode = settings?.isMaintenanceMode || false;
     const isStorageKillSwitch = settings?.isStorageKillSwitch || false;
-    const isEcommerceMode = typeof settings?.isEcommerceMode === "boolean"
-        ? settings.isEcommerceMode
-        : (localEcommerceOverride ?? false);
+    // Platform now defaults to e-commerce storefront mode across the entire platform.
+    const isEcommerceMode = true;
     const isLiveBuilderRecommendationsEnabled = settings?.isLiveBuilderRecommendationsEnabled === true;
     const aiModelProvider = settings?.aiModelProvider || 'default';
     const fineTunedModelId = settings?.fineTunedModelId || 'projects/781722135778/locations/us-central1/endpoints/2302171190132736000';
-    const rawDefaultGeminiModel = settings?.defaultGeminiModel || 'gemini-2.5-flash';
-    const defaultGeminiModel = rawDefaultGeminiModel === 'gemini-2.5-pro' ? 'gemini-3.8-flash' : rawDefaultGeminiModel;
+    const rawDefaultGeminiModel = settings?.defaultGeminiModel || 'gemini-3.8-flash';
+    const defaultGeminiModel = (rawDefaultGeminiModel === 'gemini-2.5-pro' || rawDefaultGeminiModel === 'gemini-2.5-flash') ? 'gemini-3.8-flash' : rawDefaultGeminiModel;
     const fineTunedProjects: FineTunedProject[] = settings?.fineTunedProjects || [
         {
             id: 'default-proj-1',

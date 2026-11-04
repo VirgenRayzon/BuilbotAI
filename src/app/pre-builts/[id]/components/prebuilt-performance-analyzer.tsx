@@ -7,13 +7,7 @@ import { Gauge, Monitor, Zap, AlertTriangle, Wrench } from "lucide-react";
 import type { Part, Resolution, WorkloadType, ComponentData } from "@/lib/types";
 import type { PrebuiltPartStatus } from "@/lib/prebuilt-utils";
 
-const FpsPerformanceChart = dynamic(
-  () => import("@/components/bottleneck/fps-performance-chart").then((m) => m.FpsPerformanceChart),
-  {
-    loading: () => <Skeleton height={240} radius="md" />,
-    ssr: false,
-  }
-);
+import { FpsPerformanceChart } from '@/components/bottleneck/fps-performance-chart';
 
 interface PrebuiltPerformanceAnalyzerProps {
   components: Record<string, Part | null>;
@@ -157,7 +151,7 @@ export function PrebuiltPerformanceAnalyzer({
 
       {/* Main Performance Content */}
       {loadingParts ? (
-        <Skeleton height={240} radius="md" />
+        <FpsPerformanceChart build={buildData} resolution={resolution} workload={workload} chartHeight={200} withBorder={false} hideHeader className="bg-transparent border-0 shadow-none p-0" loading />
       ) : !isHardwareAvailable ? (
         <div className="py-8 px-4 flex flex-col items-center justify-center text-center rounded-lg border border-dashed border-amber-300/60 dark:border-amber-500/30 bg-amber-50/40 dark:bg-amber-950/10">
           <div className="w-10 h-10 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3">

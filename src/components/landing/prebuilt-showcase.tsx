@@ -1,4 +1,5 @@
 'use client';
+import { PrebuiltShowcaseLoadingBody, showcaseLayout } from '@/components/loading/prebuilt-showcase-skeleton';
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -75,8 +76,8 @@ export function PrebuiltShowcase({
     }, [activeSystems, layout, limit]);
 
     return (
-        <section className={cn("py-32 relative overflow-hidden transition-colors duration-1000", className)}>
-            <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 relative z-10">
+        <section className={cn(showcaseLayout.section, className)}>
+            <div className={showcaseLayout.container}>
                 <SectionHeader
                     badge={badge}
                     title={title}
@@ -84,7 +85,7 @@ export function PrebuiltShowcase({
                 />
 
                 <div className={cn("relative mt-16 sm:mt-20", layout === "carousel" && "px-4 md:px-12")}>
-                    {loading ? null : activeSystems.length > 0 ? (
+                    {loading ? <PrebuiltShowcaseLoadingBody layout={layout} limit={limit} showViewAll={showViewAll} /> : activeSystems.length > 0 ? (
                         layout === "carousel" ? (
                             <Carousel
                                 opts={{
@@ -139,7 +140,7 @@ export function PrebuiltShowcase({
                             </Carousel>
                         ) : (
                             <>
-                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+                                <div className={showcaseLayout.grid}>
                                     {displayedSystems.map((system, index) => (
                                         <motion.div
                                             key={system.id}

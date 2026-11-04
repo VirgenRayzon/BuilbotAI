@@ -1,4 +1,5 @@
 "use client";
+import { ProfileListSkeleton } from "@/components/loading/profile-list-skeleton";
 
 import React from "react";
 import {
@@ -62,9 +63,7 @@ export function ReservationsList({
   const firestore = useFirestore();
   const { data: liveCatalogParts } = useInventoryParts(firestore);
   const catalogParts = propCatalogParts || liveCatalogParts;
-  if (loading) {
-    return null;
-  }
+  if (loading && reservations.length === 0) return <ProfileListSkeleton />;
 
   if (reservations.length === 0) {
     return (

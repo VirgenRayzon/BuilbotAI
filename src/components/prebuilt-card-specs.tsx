@@ -1,4 +1,5 @@
 "use client";
+import { PrebuiltSpecsSkeleton, prebuiltCardLayout } from "./loading/prebuilt-card-skeleton";
 
 import { useEffect, useState } from "react";
 import { useFirestore } from "@/firebase";
@@ -151,15 +152,7 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
         return () => { isMounted = false; };
     }, [firestore, components]);
 
-    if (loading) {
-        return (
-            <div className="space-y-1.5 py-1 animate-pulse">
-                {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="h-4 bg-slate-200/60 dark:bg-white/5 rounded w-full" />
-                ))}
-            </div>
-        );
-    }
+    if (loading) return <PrebuiltSpecsSkeleton expanded={expanded} />;
 
     const coreSpecs = [
         { label: 'CPU', value: specs.cpu, icon: Cpu },
@@ -190,7 +183,7 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
                     <div
                         key={s.label}
                         className={cn(
-                            "flex items-center gap-2 py-1",
+                            prebuiltCardLayout.specRow,
                             ((expanded && remainingSpecs.length > 0) || i < coreSpecs.length - 1) &&
                                 "border-b border-slate-200/60 dark:border-white/5"
                         )}
@@ -211,7 +204,7 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
                             <div
                                 key={s.label}
                                 className={cn(
-                                    "flex items-center gap-2 py-1",
+                                    prebuiltCardLayout.specRow,
                                     i < remainingSpecs.length - 1 && "border-b border-slate-200/60 dark:border-white/5"
                                 )}
                             >

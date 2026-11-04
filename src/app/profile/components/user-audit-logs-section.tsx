@@ -1,4 +1,5 @@
 "use client";
+import { TableLoadingRows } from "@/components/loading/table-loading-rows";
 
 import React, { useState, useMemo } from "react";
 import { format } from "date-fns";
@@ -112,22 +113,6 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
         return <Shield size={15} />;
     }
   };
-
-  if (loading) {
-    return (
-      <Paper
-        withBorder
-        radius="lg"
-        p="xl"
-        className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 flex flex-col items-center justify-center p-12 space-y-4"
-      >
-        <Loader2 className="w-8 h-8 animate-spin text-cyan-600 dark:text-cyan-400" />
-        <Text size="sm" className="text-slate-700 dark:text-slate-300 font-medium">
-          Loading your activity history...
-        </Text>
-      </Paper>
-    );
-  }
 
   const rows = currentLogs.map((log) => {
     const actionColor = actionColors[log.actionName] || "gray";
@@ -349,7 +334,7 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
             </Table.Thead>
 
               <Table.Tbody>
-                {rows.length === 0 ? (
+                {loading && rows.length === 0 ? <TableLoadingRows count={itemsPerPage} /> : rows.length === 0 ? (
                   <Table.Tr>
                     <Table.Td colSpan={6} className="h-32 text-center text-slate-600 dark:text-slate-400 font-medium">
                       No activity logs match your selected filter criteria.

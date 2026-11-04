@@ -1,4 +1,5 @@
 "use client";
+import { AdminPartSkeleton, AdminPrebuiltSkeleton } from "@/components/loading/admin-inventory-skeleton";
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -246,7 +247,7 @@ export function ArchiveTab({
             radius="md"
             className="overflow-hidden border-slate-200 bg-white/80 shadow-sm dark:border-white/10 dark:bg-[#141a23]/80"
           >
-            {partsLoading ? null : (
+            {partsLoading ? Array.from({length:8}, (_, index) => <AdminPartSkeleton key={index} />) : (
               <InventoryTable
                 parts={archivedParts}
                 onDelete={onDeletePart}
@@ -321,7 +322,7 @@ export function ArchiveTab({
             radius="md"
             className="overflow-hidden border-slate-200 bg-white/80 shadow-sm dark:border-white/10 dark:bg-[#141a23]/80"
           >
-            {prebuiltsLoading ? null : (
+            {prebuiltsLoading ? Array.from({length:8}, (_, index) => <AdminPrebuiltSkeleton key={index} />) : (
               <PrebuiltsTable
                 systems={archivedPrebuilts}
                 onDelete={onDeletePrebuilt}
