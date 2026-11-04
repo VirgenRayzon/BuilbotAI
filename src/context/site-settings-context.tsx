@@ -123,7 +123,8 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
     const isLiveBuilderRecommendationsEnabled = settings?.isLiveBuilderRecommendationsEnabled === true;
     const aiModelProvider = settings?.aiModelProvider || 'default';
     const fineTunedModelId = settings?.fineTunedModelId || 'projects/781722135778/locations/us-central1/endpoints/2302171190132736000';
-    const defaultGeminiModel = settings?.defaultGeminiModel || 'gemini-2.5-flash';
+    const rawDefaultGeminiModel = settings?.defaultGeminiModel || 'gemini-2.5-flash';
+    const defaultGeminiModel = rawDefaultGeminiModel === 'gemini-2.5-pro' ? 'gemini-3.8-flash' : rawDefaultGeminiModel;
     const fineTunedProjects: FineTunedProject[] = settings?.fineTunedProjects || [
         {
             id: 'default-proj-1',

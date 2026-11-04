@@ -111,7 +111,8 @@ export async function getActiveAiModelConfig(feature?: AiFeatureKey): Promise<Ac
                     rawModelId = process.env.GEMINI_FINE_TUNED_MODEL;
                 }
                 if (data?.defaultGeminiModel?.trim()) {
-                    configuredDefaultGeminiModel = data.defaultGeminiModel.trim();
+                    const candidate = data.defaultGeminiModel.trim();
+                    configuredDefaultGeminiModel = candidate === 'gemini-2.5-pro' ? 'gemini-3.8-flash' : candidate;
                 }
 
                 if (data?.featureModelRouting) {

@@ -104,17 +104,6 @@ export const AVAILABLE_GEMINI_MODELS = [
         icon: Zap,
     },
     {
-        id: 'gemini-2.5-pro',
-        name: 'Gemini 2.5 Pro',
-        tag: 'Reasoning',
-        tagColor: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30',
-        badgeVariant: 'secondary' as const,
-        description: 'Fully operational for complex architectural reasoning and intricate compatibility validation.',
-        speed: 'High Intelligence',
-        contextWindow: '2M tokens',
-        icon: Brain,
-    },
-    {
         id: 'gemini-1.5-flash',
         name: 'Gemini 1.5 Flash',
         tag: 'Throughput',
@@ -189,9 +178,10 @@ export function AiModelSettings() {
     const [activeEngineTab, setActiveEngineTab] = useState<'gemini' | 'finetuned'>(() => {
         return activeAiProvider === 'finetuned' ? 'finetuned' : 'gemini';
     });
-    const [selectedGeminiModel, setSelectedGeminiModel] = useState<string>(
-        activeGeminiModel || 'gemini-2.5-flash'
-    );
+    const [selectedGeminiModel, setSelectedGeminiModel] = useState<string>(() => {
+        const model = activeGeminiModel || 'gemini-2.5-flash';
+        return model === 'gemini-2.5-pro' ? 'gemini-3.8-flash' : model;
+    });
 
     // Per-feature model routing state
     const [featureRouting, setFeatureRouting] = useState<FeatureModelRouting>(() => {
@@ -250,7 +240,9 @@ export function AiModelSettings() {
 
     // Synchronize from context
     useEffect(() => {
-        if (activeGeminiModel) setSelectedGeminiModel(activeGeminiModel);
+        if (activeGeminiModel) {
+            setSelectedGeminiModel(activeGeminiModel === 'gemini-2.5-pro' ? 'gemini-3.8-flash' : activeGeminiModel);
+        }
     }, [activeGeminiModel]);
 
     useEffect(() => {

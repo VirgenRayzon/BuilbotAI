@@ -1,7 +1,6 @@
 import { createGoogleGenerativeAI, type GoogleGenerativeAIProviderMetadata } from '@ai-sdk/google';
 import { generateText } from 'ai';
 import type { AiBuildAdvisorRecommendationsInput } from '@/ai/schemas/build-advisor-schemas';
-import { DEFAULT_MODEL } from '@/lib/ai-model-resolver';
 import type { AdvisorWebResearchInfo } from '@/lib/types';
 
 const MAX_SOURCES = 4;
@@ -29,6 +28,8 @@ function safeSource(url: string, title?: string | null) {
   }
 }
 
+export const ADVISOR_RESEARCH_MODEL = 'gemini-3.8-flash';
+
 export async function researchAdvisorHardware(input: AiBuildAdvisorRecommendationsInput): Promise<{
   brief: string;
   info: AdvisorWebResearchInfo;
@@ -38,16 +39,12 @@ export async function researchAdvisorHardware(input: AiBuildAdvisorRecommendatio
   if (!apiKey) throw new AdvisorWebSearchError();
 
   const google = createGoogleGenerativeAI({ apiKey });
-  try {
-    const result = await generateText({
-      model: google(DEFAULT_MODEL),
-      tools: { google_search: google.tools.googleSearch({}) },
-      prompt: `Use Google Search to check current PC hardware information as of ${new Date().toISOString().slice(0, 10)} for a Philippine PC build.
-Intended use: ${input.intendedUse.slice(0, 100)}
-Budget: ${input.budget.slice(0, 80)} PHP
-Priority: ${input.performanceLevel.slice(0, 500)}
 
-Return a brief under 500 words covering the most relevant current CPU/GPU choices, platform compatibility, and Philippine retailer price context. Include prices only when a source supports them. Prefer manufacturer specifications and Philippine retailers. Mention dates when available. Do not invent availability, specifications, or prices.`,
+  const executeResearchPass = async (searchPrompt: string) => {
+    const result = await generateText({
+      model: google(ADVISOR_RESEARCH_MODEL),
+      tools: { google_search: google.tools.googleSearch({}) },
+      prompt: searchPrompt,
     });
 
     const metadata = (result.providerMetadata?.google as GoogleGenerativeAIProviderMetadata | undefined)?.groundingMetadata;
@@ -71,21 +68,57 @@ Return a brief under 500 words covering the most relevant current CPU/GPU choice
       })
       .slice(0, MAX_SOURCES);
     const brief = result.text.trim().slice(0, MAX_RESEARCH_CHARS);
-    console.info('[Build Advisor Web Search]', JSON.stringify({ queryCount, sourceCount: sources.length, briefLength: brief.length }));
-    if (!brief || !sources.length || !queryCount) throw new AdvisorWebSearchError();
 
-    const suggestedHtml = metadata?.searchEntryPoint?.renderedContent;
+    return { result, metadata, queryCount, sources, brief };
+  };
+
+  try {
+    const primaryPrompt = `Use Google Search to check current PC hardware information as of ${new Date().toISOString().slice(0, 10)} for a Philippine PC build.
+Intended use: ${input.intendedUse.slice(0, 100)}
+Budget: ${input.budget.slice(0, 80)} PHP
+Priority: ${input.performanceLevel.slice(0, 500)}
+
+Return a brief under 500 words covering the most relevant current CPU/GPU choices, platform compatibility, and Philippine retailer price context. Include prices only when a source supports them. Prefer manufacturer specifications and Philippine retailers. Mention dates when available. Do not invent availability, specifications, or prices.`;
+
+    let research = await executeResearchPass(primaryPrompt);
+
+    // If model answered from parametric memory without searching, retry once with an explicit search instruction
+    if ((!research.queryCount || !research.sources.length) && research.brief) {
+      console.warn('[Build Advisor Web Search] Model skipped search tool on primary pass. Retrying with explicit query prompt...');
+      const fallbackPrompt = `Search Google for current Philippine retailer prices (e.g., Dynaquest, Bermor Techzone, PC Express, Gilmore) for PC hardware:
+Target build: ${input.intendedUse.slice(0, 100)}
+Budget: ${input.budget.slice(0, 80)} PHP
+Requirements: ${input.performanceLevel.slice(0, 300)}
+
+You MUST execute Google Search queries to look up current pricing and stock. Provide a concise summary of current Philippine prices, best-value parts, and retailers.`;
+      const retryResearch = await executeResearchPass(fallbackPrompt);
+      if (retryResearch.queryCount && retryResearch.sources.length) {
+        research = retryResearch;
+      }
+    }
+
+    console.info('[Build Advisor Web Search]', JSON.stringify({
+      queryCount: research.queryCount,
+      sourceCount: research.sources.length,
+      briefLength: research.brief.length,
+    }));
+
+    if (!research.brief || !research.sources.length || !research.queryCount) {
+      throw new Error(`Insufficient grounding (queries: ${research.queryCount}, sources: ${research.sources.length})`);
+    }
+
+    const suggestedHtml = research.metadata?.searchEntryPoint?.renderedContent;
     const searchSuggestionHtml = suggestedHtml && !/<script|on\w+\s*=|javascript:/i.test(suggestedHtml)
       ? suggestedHtml
       : undefined;
 
     return {
-      brief,
-      info: { searchedAt: new Date().toISOString(), sources, searchSuggestionHtml },
-      queryCount,
+      brief: research.brief,
+      info: { searchedAt: new Date().toISOString(), sources: research.sources, searchSuggestionHtml },
+      queryCount: research.queryCount,
     };
   } catch (error) {
-    console.warn('[Build Advisor Web Search] Grounded research failed:', error instanceof Error ? error.name : 'unknown_error');
+    console.warn('[Build Advisor Web Search] Grounded research failed:', error instanceof Error ? error.message : 'unknown_error');
     throw new AdvisorWebSearchError();
   }
 }
