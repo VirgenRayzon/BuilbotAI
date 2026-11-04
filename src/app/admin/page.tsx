@@ -16,6 +16,7 @@ import { useOrders } from './hooks/use-orders';
 import { useBulkActions } from './hooks/use-bulk-actions';
 import { usePersistentState } from '@/hooks/use-persistent-state';
 import { RouteGuard } from '@/components/auth/route-guard';
+import { ProtectedPageLoading } from '@/components/auth/protected-page-loading';
 import { useAuditLogs } from '@/app/profile/hooks/use-audit-logs';
 import { useSiteSettings } from '@/context/site-settings-context';
 
@@ -157,7 +158,7 @@ export default function AdminPage() {
     };
 
     return (
-        <RouteGuard requiredPermission="canAccessAdmin" fallbackPath={itemReturn === '/admin' ? '/system-access' : `/system-access?returnTo=${encodeURIComponent(itemReturn)}`}>
+        <RouteGuard requiredPermission="canAccessAdmin" fallbackPath={itemReturn === '/admin' ? '/system-access' : `/system-access?returnTo=${encodeURIComponent(itemReturn)}`} loadingComponent={<ProtectedPageLoading variant="admin" />}>
             <SidebarProvider defaultOpen={true}>
                 <AdminSidebar
                     currentTab={currentTab}

@@ -4,7 +4,6 @@ import React, { useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUserProfile } from '@/context/user-profile';
 import { getEffectiveRole, AuthPermissions } from '@/lib/auth-utils';
-import { NeutralPageLoader } from '@/components/neutral-page-loader';
 
 interface RouteGuardProps {
     children: React.ReactNode;
@@ -59,7 +58,7 @@ export function RouteGuard({
     }, [destination, isDenied, pathname, router]);
 
     if (status === 'loading') {
-        return loadingComponent || <NeutralPageLoader />;
+        return loadingComponent ?? null;
     }
 
     // Denied and unresolved-error states never render protected children.

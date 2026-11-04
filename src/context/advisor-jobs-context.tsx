@@ -4,10 +4,10 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { useUserProfile } from '@/context/user-profile';
-import { NeutralPageLoader } from '@/components/neutral-page-loader';
 import type { Part } from '@/lib/types';
 import type { useCritiqueLogic } from '@/app/ai-build-advisor/hooks/use-critique-logic';
 import type { useRecommendationLogic } from '@/app/ai-build-advisor/hooks/use-recommendation-logic';
+import { AdvisorLoadingContent } from '@/app/ai-build-advisor/components/advisor-loading-content';
 
 interface AdvisorJobsContextValue {
   critique: ReturnType<typeof useCritiqueLogic>;
@@ -18,7 +18,7 @@ interface AdvisorJobsContextValue {
 export const AdvisorJobsContext = createContext<AdvisorJobsContextValue | null>(null);
 
 const AdvisorJobsScope = dynamic(() => import('./advisor-jobs-scope'), {
-  loading: () => <NeutralPageLoader />,
+  loading: () => <AdvisorLoadingContent />,
 });
 
 export function AdvisorJobsProvider({ children }: { children: ReactNode }) {

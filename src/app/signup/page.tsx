@@ -27,7 +27,6 @@ import {
   Checkbox,
   Divider,
   Progress,
-  Loader,
 } from '@mantine/core';
 import { Mail, Lock, AlertCircle, ArrowLeft, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -198,12 +197,7 @@ export default function SignUpPage() {
 
   // If already authenticated or in process of redirecting, do not flash the registration form
   if ((authUser && !loading && !googleLoading) || redirectingRef.current) {
-    return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center gap-3 bg-slate-50 text-slate-600 dark:bg-[#0c0f14] dark:text-slate-300" role="status">
-        <Loader size="sm" color="cyan" />
-        <Text size="sm">Verifying your account...</Text>
-      </div>
-    );
+    return null;
   }
 
   return (

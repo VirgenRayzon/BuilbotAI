@@ -44,12 +44,12 @@ export default function RootLayout({
               <LoadingProvider>
                 <SiteSettingsProvider>
                   <MantineAppProvider>
-                    <AdvisorJobsProvider>
-                      <AppLayout>
+                    <AppLayout>
+                      <AdvisorJobsProvider>
                         {children}
-                      </AppLayout>
-                      <SessionTimeout />
-                    </AdvisorJobsProvider>
+                      </AdvisorJobsProvider>
+                    </AppLayout>
+                    <SessionTimeout />
                   </MantineAppProvider>
                 </SiteSettingsProvider>
               </LoadingProvider>

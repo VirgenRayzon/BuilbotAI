@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RouteGuard } from "@/components/auth/route-guard";
+import { ProtectedPageLoading } from "@/components/auth/protected-page-loading";
 import type { Order } from "@/lib/types";
 import { useSiteSettings } from "@/context/site-settings-context";
 
@@ -235,7 +236,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <RouteGuard requiredPermission="isRegisteredUser">
+    <RouteGuard requiredPermission="isRegisteredUser" loadingComponent={<ProtectedPageLoading variant="profile" />}>
       <div
         className={cn(
           "min-h-screen transition-colors duration-300 overflow-x-hidden",

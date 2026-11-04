@@ -20,6 +20,7 @@ import { useAdvisorJobs } from "@/context/advisor-jobs-context";
 import { AdvisorHeader } from "./components/advisor-header";
 import { CritiqueTab } from "./components/critique-tab";
 import { RecommendationTab } from "./components/recommendation-tab";
+import { AdvisorLoadingContent } from "./components/advisor-loading-content";
 
 /**
  * AI Build Advisor Page
@@ -112,7 +113,7 @@ export default function AiBuildAdvisorPage() {
     }, [builderState, hydrated, workload, resolution, activeCritiqueKey, critiqueLoading, critiqueAnalysis, handleCritique, setCritiqueAnalysis, setCritiqueDuration]);
 
     return (
-        <RouteGuard requiredPermission="isClientOnly">
+        <RouteGuard requiredPermission="isClientOnly" loadingComponent={<AdvisorLoadingContent />}>
             <div className={cn(
                 "min-h-screen transition-colors duration-500 overflow-x-hidden relative",
                 isDark ? "bg-[#0c0f14] text-slate-50" : "bg-slate-50 text-slate-900"

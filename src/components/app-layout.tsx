@@ -3,7 +3,6 @@
 import { useUserProfile } from "@/context/user-profile";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { NeutralPageLoader } from "@/components/neutral-page-loader";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MaintenanceScreen } from "@/components/maintenance-screen";
@@ -11,7 +10,6 @@ import { useSiteSettings } from "@/context/site-settings-context";
 import { cn } from "@/lib/utils";
 
 import { Button, Paper, Text, Title } from "@mantine/core";
-import { AnimatePresence } from "framer-motion";
 import { SignOutLoader } from "@/components/auth/sign-out-loader";
 import { SignOutTransitionContext } from "@/context/sign-out-transition";
 import { EcommerceProvider } from "@/context/ecommerce-context";
@@ -38,7 +36,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     setIsAdminPreview(isPreviewCatalog && new URLSearchParams(window.location.search).get('preview') === 'admin');
   }, [pathname]);
 
-  const isLandingRedirect = pathname === "/" && !!authUser;
   const isAuthPage = ['/signin', '/signup', '/system-access'].includes(pathname);
   const isPublicCatalog = pathname === '/parts' || pathname.startsWith('/parts/') || pathname === '/pre-builts' || pathname.startsWith('/pre-builts/') || pathname === '/checkout' || pathname.startsWith('/q/');
   const isCustomerSignInPage = pathname === '/signin';
@@ -66,16 +63,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const isHeaderHidden = pathname.startsWith('/admin') || (pathname === '/profile' && isAdmin) || isAdminPreview;
 
-  // Loader overlay condition:
-  // 1. Initial auth profile is loading (the customer sign-in form owns its transition)
-  // 2. Landing page is redirecting an authenticated user
-  // 3. User is authenticated on an auth page other than /signin while route redirection completes
-  const showLoaderOverlay = signOutStartedAt === null && (
-    (loading && !isCustomerSignInPage && !isPublicCatalog) ||
-    isLandingRedirect ||
-    (isAuthPage && !isCustomerSignInPage && !!authUser)
-  );
-
   if ((status === 'missing' || status === 'error') && !isCustomerSignInPage && !isPublicCatalog) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 text-slate-900 dark:bg-[#0c0f14] dark:text-slate-100">
@@ -101,14 +88,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         cancelSignOut: () => setSignOutStartedAt(null),
       }}>
         <div className="flex flex-col min-h-screen overflow-x-clip relative">
-          <AnimatePresence>
-            {showLoaderOverlay && (
-              <NeutralPageLoader
-                key="neutral-page-loader"
-                isOverlay
-              />
-            )}
-          </AnimatePresence>
           <SignOutLoader visible={signOutStartedAt !== null} />
 
           {signOutStartedAt === null && !isHeaderHidden && <Header />}

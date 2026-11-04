@@ -50,6 +50,7 @@ import { prioritizeRecommendedParts } from '@/lib/live-build-recommendations';
 import { useSiteSettings } from '@/context/site-settings-context';
 
 import { RouteGuard } from "@/components/auth/route-guard";
+import { ProtectedPageLoading } from "@/components/auth/protected-page-loading";
 import { PREBUILT_EDIT_SESSION_KEY, usePrebuiltBuilderImport } from "@/app/admin/hooks/use-prebuilt-builder-import";
 import { AdminSidebar, SidebarInset, SidebarProvider } from "@/app/admin/components/admin-sidebar";
 import { AdminTopbar } from "@/app/admin/components/admin-topbar";
@@ -606,7 +607,7 @@ export default function PrebuiltBuilderPage() {
     const isBuilderLoading = partsLoading || authLoading;
 
     return (
-        <RouteGuard requiredPermission="canAccessAdmin" fallbackPath="/system-access">
+        <RouteGuard requiredPermission="canAccessAdmin" fallbackPath="/system-access" loadingComponent={<ProtectedPageLoading variant="admin" />}>
             <SidebarProvider defaultOpen={true}>
                 <AdminSidebar
                     profile={profile}

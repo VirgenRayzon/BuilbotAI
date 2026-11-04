@@ -198,8 +198,9 @@ test('advisor loads on first visit and keeps a pending job across client navigat
     await route.fulfill({ status: 400, json: { error: 'Performance regression test completed.' } }).catch(() => {});
   });
   try {
-    await page.locator('header nav a[href="/ai-build-advisor"]').click();
+    await page.locator('header nav a[href="/ai-build-advisor"]').press('Enter');
     await expect(page.getByRole('textbox', { name: 'Intended Use', exact: true })).toBeVisible();
+    await expect(page.getByText('Verifying your account...')).toBeHidden();
     await page.getByRole('textbox', { name: 'Intended Use', exact: true }).click();
     await page.getByRole('option', { name: 'Gaming', exact: true }).click();
     await page.getByRole('textbox', { name: 'Gaming priority', exact: true }).click();
@@ -208,9 +209,9 @@ test('advisor loads on first visit and keeps a pending job across client navigat
     await page.getByRole('button', { name: 'Get Recommendations', exact: true }).click();
     await expect.poll(() => requests).toBe(1);
     await expect(page.getByRole('button', { name: 'Stop Generation' })).toBeVisible();
-    await page.locator('header nav a[href="/builder"]').click();
+    await page.locator('header nav a[href="/builder"]').press('Enter');
     await expect(page).toHaveURL(/\/builder(?:\?|$)/);
-    await page.locator('header nav a[href="/ai-build-advisor"]').click();
+    await page.locator('header nav a[href="/ai-build-advisor"]').press('Enter');
     await expect(page.getByRole('button', { name: 'Stop Generation' })).toBeVisible();
     expect(requests).toBe(1);
     await page.getByRole('button', { name: 'Stop Generation' }).click();

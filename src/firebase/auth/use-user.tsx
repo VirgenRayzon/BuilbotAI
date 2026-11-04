@@ -10,7 +10,7 @@ export const useUser = () => {
 
   useEffect(() => {
     if (!auth) {
-      setUser(null);
+      setUser(undefined);
       return;
     }
     const unsubscribe = onIdTokenChanged(auth, (user) => {

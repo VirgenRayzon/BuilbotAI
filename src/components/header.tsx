@@ -61,7 +61,7 @@ interface NavTab {
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const { authUser, profile, loading } = useUserProfile();
+  const { authUser, profile, loading, status } = useUserProfile();
   const auth = useAuth();
   const [mounted, setMounted] = useState(false);
   const [userMenuOpened, setUserMenuOpened] = useState(false);
@@ -146,6 +146,8 @@ export function Header() {
   })();
 
   // Render HeaderMegaMenu on onboarding/landing page, auth pages, or for unauthenticated visitors on public pages
+  const isAlwaysMegaMenuPage = pathname === "/" ||
+    ["/signin", "/signup", "/system-access", "/system-access/signup", "/forgot-password"].includes(pathname);
   const isPublicCatalogOrInfoPage =
     pathname === "/builder" ||
     pathname === "/parts" ||
@@ -154,10 +156,25 @@ export function Header() {
     pathname.startsWith("/pre-builts/") ||
     ["/about", "/faq", "/team", "/contact"].includes(pathname);
 
+  // Preserve the header's height while identity and the server-confirmed role
+  // resolve. An undefined auth user is not a confirmed guest.
+  if (!isAlwaysMegaMenuPage && (!mounted || (status !== 'ready' && status !== 'unauthenticated'))) {
+    return (
+      <header className={classes.header} aria-label="Account loading">
+        <div className={classes.inner}>
+          <Link href="/" className="flex items-center no-underline focus:outline-none">
+            <span className="sm:hidden"><Logo showText={false} size="md" /></span>
+            <span className="hidden sm:block"><Logo /></span>
+          </Link>
+          <div className="h-9 w-24 rounded-md bg-slate-200/60 dark:bg-white/10" aria-hidden="true" />
+        </div>
+      </header>
+    );
+  }
+
   if (
-    pathname === "/" ||
-    ["/signin", "/signup", "/system-access", "/system-access/signup", "/forgot-password"].includes(pathname) ||
-    (!authUser && isPublicCatalogOrInfoPage)
+    isAlwaysMegaMenuPage ||
+    (status === 'unauthenticated' && isPublicCatalogOrInfoPage)
   ) {
     return <HeaderMegaMenu />;
   }
