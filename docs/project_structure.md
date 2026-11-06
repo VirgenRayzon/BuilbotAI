@@ -660,6 +660,7 @@ BuilbotAI
 │   ├── implementation-plan-and-results.md
 │   ├── input-output-audit.md
 │   ├── inventory_performance_audit.md
+│   ├── inventory_scaling_rollout_2026-11-06.md
 │   ├── landing_performance_audit.md
 │   ├── pages.md
 │   ├── project_structure.md
@@ -1433,6 +1434,7 @@ BuilbotAI
 │   ├── admin-inventory-queries.integration.ts
 │   ├── auth-role-navigation.spec.ts
 │   ├── chat-part-specifications.spec.ts
+│   ├── inventory-catalog-pagination.spec.ts
 │   ├── landing-featured-products.spec.ts
 │   ├── landing-hero-guest-builder.spec.ts
 │   ├── landing-loading-layouts.spec.ts
