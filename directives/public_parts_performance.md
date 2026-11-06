@@ -3,7 +3,7 @@
 ## Read path
 
 - The default `/parts` path reads `listPublicPartsCatalog`, a ten-minute tagged Next data cache. The page stays dynamic, but repeat requests must not query all inventory categories.
-- When `NEXT_PUBLIC_PUBLIC_CATALOG_INDEXED_ENABLED=true`, the initial page and next/previous page requests use `listPublicCatalogPage`: eight products ordered by availability, creation date, and product ID, plus an aggregate count. The Firestore query is bounded to nine documents. This flag remains off until indexes and the query-field backfill are verified.
+- With `NEXT_PUBLIC_PUBLIC_CATALOG_INDEXED_ENABLED=true`, the initial page and next/previous page requests use `listPublicCatalogPage`: eight products ordered by availability, creation date, and product ID, plus an aggregate count. The Firestore query is bounded to nine documents. Production index readiness and the query-field backfill were verified on 2026-11-06 before enabling the flag.
 - Opening filters or entering search loads the complete cached catalog so arbitrary substring, brand, compatibility, availability, and alternate-sort behavior remains exact. Those interactions still read all active products on a cold cache. A dedicated search/facet index is required before claiming the whole public catalog is bounded.
 - Product detail related items read only their category. After the indexed flag is enabled, they use a nine-document category query. Before then, the category-scoped fallback includes legacy records missing `isArchived`.
 - The catalog record contains only card/search/sort fields and the specification keys consumed by `checkCompatibility`. Product detail pages continue to use `getPublicProduct` for full descriptions, galleries and specifications.
@@ -30,4 +30,4 @@
 3. Enable the admin and public flags independently in a test deployment. Verify full catalog IDs/counts, search, brands, compatibility, price/stock changes, archive/restore, checkout, mobile layout, and page boundaries. Keep the flags off if parity differs.
 4. Collect matched cold/warm p50 and p95, bytes, and Firestore reads across normal traffic before changing `apphosting.yaml` instance capacity. Increase `maxInstances` only after shared-cache behavior and invalidation across instances are verified.
 
-No deployed before/after latency claim exists for this path yet.
+The 2026-11-06 production parity check matched all 329 active public product IDs, and a 42-page cursor traversal matched the legacy ordering. A ten-request response baseline was recorded immediately before public activation; repeat the same method after the flagged revision serves and report its conditions and limits.

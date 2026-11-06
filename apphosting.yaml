@@ -13,7 +13,7 @@ env:
     value: "true"
   # Enable after inventory query-field backfill and index readiness are verified.
   - variable: NEXT_PUBLIC_PUBLIC_CATALOG_INDEXED_ENABLED
-    value: "false"
+    value: "true"
   - variable: GOOGLE_API_KEY
     secret: GOOGLE_API_KEY
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
