@@ -506,1293 +506,12 @@ BuilbotAI
 │       │   └── SKILL.md
 │       └── nextjs-best-practices
 │           └── SKILL.md
-├── .firebase
-│   └── studio-3150054754-c7d0b
-│       └── functions
-│           └── .env
 ├── .husky
 │   ├── pre-commit
 │   └── pre-push
 ├── .idx
 │   ├── dev.nix
 │   └── icon.png
-├── .next-qr-test
-│   ├── cache
-│   │   ├── swc
-│   │   │   └── plugins
-│   │   │       └── windows_x86_64_18.0.0
-│   │   ├── webpack
-│   │   │   ├── client-production
-│   │   │   │   ├── 0.pack
-│   │   │   │   ├── 1.pack
-│   │   │   │   ├── 10.pack
-│   │   │   │   ├── 11.pack
-│   │   │   │   ├── 12.pack
-│   │   │   │   ├── 13.pack
-│   │   │   │   ├── 14.pack
-│   │   │   │   ├── 15.pack
-│   │   │   │   ├── 16.pack
-│   │   │   │   ├── 17.pack
-│   │   │   │   ├── 18.pack
-│   │   │   │   ├── 19.pack
-│   │   │   │   ├── 2.pack
-│   │   │   │   ├── 20.pack
-│   │   │   │   ├── 21.pack
-│   │   │   │   ├── 22.pack
-│   │   │   │   ├── 23.pack
-│   │   │   │   ├── 24.pack
-│   │   │   │   ├── 3.pack
-│   │   │   │   ├── 4.pack
-│   │   │   │   ├── 5.pack
-│   │   │   │   ├── 6.pack
-│   │   │   │   ├── 7.pack
-│   │   │   │   ├── 8.pack
-│   │   │   │   ├── 9.pack
-│   │   │   │   ├── index.pack
-│   │   │   │   └── index.pack.old
-│   │   │   ├── edge-server-production
-│   │   │   │   ├── 0.pack
-│   │   │   │   └── index.pack
-│   │   │   └── server-production
-│   │   │       ├── 0.pack
-│   │   │       ├── 1.pack
-│   │   │       ├── 10.pack
-│   │   │       ├── 11.pack
-│   │   │       ├── 12.pack
-│   │   │       ├── 13.pack
-│   │   │       ├── 14.pack
-│   │   │       ├── 15.pack
-│   │   │       ├── 16.pack
-│   │   │       ├── 17.pack
-│   │   │       ├── 18.pack
-│   │   │       ├── 19.pack
-│   │   │       ├── 2.pack
-│   │   │       ├── 20.pack
-│   │   │       ├── 21.pack
-│   │   │       ├── 22.pack
-│   │   │       ├── 23.pack
-│   │   │       ├── 24.pack
-│   │   │       ├── 25.pack
-│   │   │       ├── 26.pack
-│   │   │       ├── 27.pack
-│   │   │       ├── 28.pack
-│   │   │       ├── 3.pack
-│   │   │       ├── 4.pack
-│   │   │       ├── 5.pack
-│   │   │       ├── 6.pack
-│   │   │       ├── 7.pack
-│   │   │       ├── 8.pack
-│   │   │       ├── 9.pack
-│   │   │       ├── index.pack
-│   │   │       └── index.pack.old
-│   │   ├── .previewinfo
-│   │   └── .rscinfo
-│   ├── diagnostics
-│   │   ├── build-diagnostics.json
-│   │   └── framework.json
-│   ├── server
-│   │   ├── app
-│   │   │   ├── _not-found
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   └── page.js.nft.json
-│   │   │   ├── about
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   └── page.js.nft.json
-│   │   │   ├── admin
-│   │   │   │   ├── contact-inquiries
-│   │   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   │   ├── page.js
-│   │   │   │   │   └── page.js.nft.json
-│   │   │   │   ├── prebuilt-builder
-│   │   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   │   ├── page.js
-│   │   │   │   │   └── page.js.nft.json
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   ├── page.js.nft.json
-│   │   │   │   ├── prebuilt-builder.html
-│   │   │   │   ├── prebuilt-builder.meta
-│   │   │   │   └── prebuilt-builder.rsc
-│   │   │   ├── ai-build-advisor
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   └── page.js.nft.json
-│   │   │   ├── api
-│   │   │   │   ├── admin
-│   │   │   │   │   ├── qr-health
-│   │   │   │   │   │   ├── route_client-reference-manifest.js
-│   │   │   │   │   │   ├── route.js
-│   │   │   │   │   │   └── route.js.nft.json
-│   │   │   │   │   └── qr-status
-│   │   │   │   │       └── [token]
-│   │   │   │   │           ├── route_client-reference-manifest.js
-│   │   │   │   │           ├── route.js
-│   │   │   │   │           └── route.js.nft.json
-│   │   │   │   ├── ai
-│   │   │   │   │   └── build-advisor
-│   │   │   │   │       ├── critique
-│   │   │   │   │       │   ├── route_client-reference-manifest.js
-│   │   │   │   │       │   ├── route.js
-│   │   │   │   │       │   └── route.js.nft.json
-│   │   │   │   │       └── recommendations
-│   │   │   │   │           ├── route_client-reference-manifest.js
-│   │   │   │   │           ├── route.js
-│   │   │   │   │           └── route.js.nft.json
-│   │   │   │   ├── builder
-│   │   │   │   │   ├── download
-│   │   │   │   │   │   ├── route_client-reference-manifest.js
-│   │   │   │   │   │   ├── route.js
-│   │   │   │   │   │   └── route.js.nft.json
-│   │   │   │   │   └── live-recommendations
-│   │   │   │   │       ├── route_client-reference-manifest.js
-│   │   │   │   │       ├── route.js
-│   │   │   │   │       └── route.js.nft.json
-│   │   │   │   ├── chat
-│   │   │   │   │   ├── route_client-reference-manifest.js
-│   │   │   │   │   ├── route.js
-│   │   │   │   │   └── route.js.nft.json
-│   │   │   │   ├── contact
-│   │   │   │   │   ├── delete
-│   │   │   │   │   │   ├── route_client-reference-manifest.js
-│   │   │   │   │   │   ├── route.js
-│   │   │   │   │   │   └── route.js.nft.json
-│   │   │   │   │   ├── gmail
-│   │   │   │   │   │   ├── oauth
-│   │   │   │   │   │   │   ├── callback
-│   │   │   │   │   │   │   │   ├── route_client-reference-manifest.js
-│   │   │   │   │   │   │   │   ├── route.js
-│   │   │   │   │   │   │   │   └── route.js.nft.json
-│   │   │   │   │   │   │   └── start
-│   │   │   │   │   │   │       ├── route_client-reference-manifest.js
-│   │   │   │   │   │   │       ├── route.js
-│   │   │   │   │   │   │       └── route.js.nft.json
-│   │   │   │   │   │   ├── renew
-│   │   │   │   │   │   │   ├── route_client-reference-manifest.js
-│   │   │   │   │   │   │   ├── route.js
-│   │   │   │   │   │   │   └── route.js.nft.json
-│   │   │   │   │   │   └── webhook
-│   │   │   │   │   │       ├── route_client-reference-manifest.js
-│   │   │   │   │   │       ├── route.js
-│   │   │   │   │   │       └── route.js.nft.json
-│   │   │   │   │   ├── messages
-│   │   │   │   │   │   ├── retry
-│   │   │   │   │   │   │   ├── route_client-reference-manifest.js
-│   │   │   │   │   │   │   ├── route.js
-│   │   │   │   │   │   │   └── route.js.nft.json
-│   │   │   │   │   │   ├── route_client-reference-manifest.js
-│   │   │   │   │   │   ├── route.js
-│   │   │   │   │   │   └── route.js.nft.json
-│   │   │   │   │   ├── read
-│   │   │   │   │   │   ├── route_client-reference-manifest.js
-│   │   │   │   │   │   ├── route.js
-│   │   │   │   │   │   └── route.js.nft.json
-│   │   │   │   │   ├── status
-│   │   │   │   │   │   ├── route_client-reference-manifest.js
-│   │   │   │   │   │   ├── route.js
-│   │   │   │   │   │   └── route.js.nft.json
-│   │   │   │   │   ├── route_client-reference-manifest.js
-│   │   │   │   │   ├── route.js
-│   │   │   │   │   └── route.js.nft.json
-│   │   │   │   ├── cron
-│   │   │   │   │   └── expire-orders
-│   │   │   │   │       ├── route_client-reference-manifest.js
-│   │   │   │   │       ├── route.js
-│   │   │   │   │       └── route.js.nft.json
-│   │   │   │   ├── featured-accessories
-│   │   │   │   │   ├── route_client-reference-manifest.js
-│   │   │   │   │   ├── route.js
-│   │   │   │   │   └── route.js.nft.json
-│   │   │   │   ├── featured-parts
-│   │   │   │   │   ├── route_client-reference-manifest.js
-│   │   │   │   │   ├── route.js
-│   │   │   │   │   └── route.js.nft.json
-│   │   │   │   ├── qr
-│   │   │   │   │   └── [token]
-│   │   │   │   │       ├── route_client-reference-manifest.js
-│   │   │   │   │       ├── route.js
-│   │   │   │   │       └── route.js.nft.json
-│   │   │   │   ├── system-access
-│   │   │   │   │   └── authenticate
-│   │   │   │   │       ├── route_client-reference-manifest.js
-│   │   │   │   │       ├── route.js
-│   │   │   │   │       └── route.js.nft.json
-│   │   │   │   └── webhooks
-│   │   │   │       └── paymongo
-│   │   │   │           ├── route_client-reference-manifest.js
-│   │   │   │           ├── route.js
-│   │   │   │           └── route.js.nft.json
-│   │   │   ├── apple-icon.png
-│   │   │   │   ├── route.js
-│   │   │   │   └── route.js.nft.json
-│   │   │   ├── builder
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   └── page.js.nft.json
-│   │   │   ├── checkout
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   └── page.js.nft.json
-│   │   │   ├── contact
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   └── page.js.nft.json
-│   │   │   ├── faq
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   └── page.js.nft.json
-│   │   │   ├── favicon.ico
-│   │   │   │   ├── route.js
-│   │   │   │   └── route.js.nft.json
-│   │   │   ├── forgot-password
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   └── page.js.nft.json
-│   │   │   ├── group
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   └── page.js.nft.json
-│   │   │   ├── icon.svg
-│   │   │   │   ├── route.js
-│   │   │   │   └── route.js.nft.json
-│   │   │   ├── landing-video
-│   │   │   │   └── [name]
-│   │   │   │       ├── route_client-reference-manifest.js
-│   │   │   │       ├── route.js
-│   │   │   │       └── route.js.nft.json
-│   │   │   ├── parts
-│   │   │   │   ├── [productId]
-│   │   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   │   ├── page.js
-│   │   │   │   │   └── page.js.nft.json
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   └── page.js.nft.json
-│   │   │   ├── pre-builts
-│   │   │   │   ├── [id]
-│   │   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   │   ├── page.js
-│   │   │   │   │   └── page.js.nft.json
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   └── page.js.nft.json
-│   │   │   ├── profile
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   └── page.js.nft.json
-│   │   │   ├── q
-│   │   │   │   └── [token]
-│   │   │   │       ├── page_client-reference-manifest.js
-│   │   │   │       ├── page.js
-│   │   │   │       └── page.js.nft.json
-│   │   │   ├── signin
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   └── page.js.nft.json
-│   │   │   ├── signup
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   └── page.js.nft.json
-│   │   │   ├── support-requests
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   └── page.js.nft.json
-│   │   │   ├── system-access
-│   │   │   │   ├── signup
-│   │   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   │   ├── page.js
-│   │   │   │   │   └── page.js.nft.json
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   ├── page.js.nft.json
-│   │   │   │   ├── signup.html
-│   │   │   │   ├── signup.meta
-│   │   │   │   └── signup.rsc
-│   │   │   ├── team
-│   │   │   │   ├── page_client-reference-manifest.js
-│   │   │   │   ├── page.js
-│   │   │   │   └── page.js.nft.json
-│   │   │   ├── _not-found.html
-│   │   │   ├── _not-found.meta
-│   │   │   ├── _not-found.rsc
-│   │   │   ├── about.html
-│   │   │   ├── about.meta
-│   │   │   ├── about.rsc
-│   │   │   ├── admin.html
-│   │   │   ├── admin.meta
-│   │   │   ├── admin.rsc
-│   │   │   ├── ai-build-advisor.html
-│   │   │   ├── ai-build-advisor.meta
-│   │   │   ├── ai-build-advisor.rsc
-│   │   │   ├── apple-icon.png.body
-│   │   │   ├── apple-icon.png.meta
-│   │   │   ├── checkout.html
-│   │   │   ├── checkout.meta
-│   │   │   ├── checkout.rsc
-│   │   │   ├── contact.html
-│   │   │   ├── contact.meta
-│   │   │   ├── contact.rsc
-│   │   │   ├── faq.html
-│   │   │   ├── faq.meta
-│   │   │   ├── faq.rsc
-│   │   │   ├── favicon.ico.body
-│   │   │   ├── favicon.ico.meta
-│   │   │   ├── forgot-password.html
-│   │   │   ├── forgot-password.meta
-│   │   │   ├── forgot-password.rsc
-│   │   │   ├── group.html
-│   │   │   ├── group.meta
-│   │   │   ├── group.rsc
-│   │   │   ├── icon.svg.body
-│   │   │   ├── icon.svg.meta
-│   │   │   ├── index.html
-│   │   │   ├── index.meta
-│   │   │   ├── index.rsc
-│   │   │   ├── page_client-reference-manifest.js
-│   │   │   ├── page.js
-│   │   │   ├── page.js.nft.json
-│   │   │   ├── pre-builts.html
-│   │   │   ├── pre-builts.meta
-│   │   │   ├── pre-builts.rsc
-│   │   │   ├── profile.html
-│   │   │   ├── profile.meta
-│   │   │   ├── profile.rsc
-│   │   │   ├── signin.html
-│   │   │   ├── signin.meta
-│   │   │   ├── signin.rsc
-│   │   │   ├── signup.html
-│   │   │   ├── signup.meta
-│   │   │   ├── signup.rsc
-│   │   │   ├── system-access.html
-│   │   │   ├── system-access.meta
-│   │   │   ├── system-access.rsc
-│   │   │   ├── team.html
-│   │   │   ├── team.meta
-│   │   │   └── team.rsc
-│   │   ├── chunks
-│   │   │   ├── 101.js
-│   │   │   ├── 1056.js
-│   │   │   ├── 1070.js
-│   │   │   ├── 113.js
-│   │   │   ├── 13.js
-│   │   │   ├── 1412.js
-│   │   │   ├── 1428.js
-│   │   │   ├── 1452.js
-│   │   │   ├── 1680.js
-│   │   │   ├── 1803.js
-│   │   │   ├── 1824.js
-│   │   │   ├── 2058.js
-│   │   │   ├── 2274.js
-│   │   │   ├── 2436.js
-│   │   │   ├── 2494.js
-│   │   │   ├── 2866.js
-│   │   │   ├── 2930.js
-│   │   │   ├── 3022.js
-│   │   │   ├── 3026.js
-│   │   │   ├── 3217.js
-│   │   │   ├── 3276.js
-│   │   │   ├── 3321.js
-│   │   │   ├── 3691.js
-│   │   │   ├── 3754.js
-│   │   │   ├── 3827.js
-│   │   │   ├── 3897.js
-│   │   │   ├── 4148.js
-│   │   │   ├── 4211.js
-│   │   │   ├── 4349.js
-│   │   │   ├── 4351.js
-│   │   │   ├── 4479.js
-│   │   │   ├── 4597.js
-│   │   │   ├── 4657.js
-│   │   │   ├── 4753.js
-│   │   │   ├── 4797.js
-│   │   │   ├── 4809.js
-│   │   │   ├── 4814.js
-│   │   │   ├── 5166.js
-│   │   │   ├── 5270.js
-│   │   │   ├── 5322.js
-│   │   │   ├── 5350.js
-│   │   │   ├── 5369.js
-│   │   │   ├── 5387.js
-│   │   │   ├── 5396.js
-│   │   │   ├── 5450.js
-│   │   │   ├── 5603.js
-│   │   │   ├── 5611.js
-│   │   │   ├── 5873.js
-│   │   │   ├── 592.js
-│   │   │   ├── 5966.js
-│   │   │   ├── 6055.js
-│   │   │   ├── 6125.js
-│   │   │   ├── 6245.js
-│   │   │   ├── 634.js
-│   │   │   ├── 641.js
-│   │   │   ├── 6749.js
-│   │   │   ├── 6813.js
-│   │   │   ├── 6870.js
-│   │   │   ├── 7231.js
-│   │   │   ├── 7255.js
-│   │   │   ├── 7257.js
-│   │   │   ├── 7532.js
-│   │   │   ├── 756.js
-│   │   │   ├── 7908.js
-│   │   │   ├── 8212.js
-│   │   │   ├── 8253.js
-│   │   │   ├── 8276.js
-│   │   │   ├── 831.js
-│   │   │   ├── 8322.js
-│   │   │   ├── 8575.js
-│   │   │   ├── 8626.js
-│   │   │   ├── 8882.js
-│   │   │   ├── 8888.js
-│   │   │   ├── 8945.js
-│   │   │   ├── 9349.js
-│   │   │   ├── 937.js
-│   │   │   ├── 9401.js
-│   │   │   ├── 944.js
-│   │   │   ├── 9455.js
-│   │   │   └── 9560.js
-│   │   ├── pages
-│   │   │   ├── _app.js
-│   │   │   ├── _app.js.nft.json
-│   │   │   ├── _document.js
-│   │   │   ├── _document.js.nft.json
-│   │   │   ├── _error.js
-│   │   │   ├── _error.js.nft.json
-│   │   │   ├── 404.html
-│   │   │   └── 500.html
-│   │   ├── app-paths-manifest.json
-│   │   ├── functions-config-manifest.json
-│   │   ├── interception-route-rewrite-manifest.js
-│   │   ├── middleware-build-manifest.js
-│   │   ├── middleware-manifest.json
-│   │   ├── middleware-react-loadable-manifest.js
-│   │   ├── next-font-manifest.js
-│   │   ├── next-font-manifest.json
-│   │   ├── pages-manifest.json
-│   │   ├── server-reference-manifest.js
-│   │   ├── server-reference-manifest.json
-│   │   └── webpack-runtime.js
-│   ├── static
-│   │   ├── -EOu7W50sRUsng1ffbOZg
-│   │   │   ├── _buildManifest.js
-│   │   │   └── _ssgManifest.js
-│   │   ├── chunks
-│   │   │   ├── app
-│   │   │   │   ├── _not-found
-│   │   │   │   │   └── page-180c5c33fc4b7a40.js
-│   │   │   │   ├── about
-│   │   │   │   │   └── page-7482561a8cb06a72.js
-│   │   │   │   ├── admin
-│   │   │   │   │   ├── contact-inquiries
-│   │   │   │   │   │   └── page-c5912e06adca8f8a.js
-│   │   │   │   │   ├── prebuilt-builder
-│   │   │   │   │   │   └── page-cd17e8a9a7f1c1c0.js
-│   │   │   │   │   └── page-953f2349ce0978ad.js
-│   │   │   │   ├── ai-build-advisor
-│   │   │   │   │   └── page-18ab13a727e9f864.js
-│   │   │   │   ├── api
-│   │   │   │   │   ├── admin
-│   │   │   │   │   │   ├── qr-health
-│   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
-│   │   │   │   │   │   └── qr-status
-│   │   │   │   │   │       └── [token]
-│   │   │   │   │   │           └── route-c5912e06adca8f8a.js
-│   │   │   │   │   ├── ai
-│   │   │   │   │   │   └── build-advisor
-│   │   │   │   │   │       ├── critique
-│   │   │   │   │   │       │   └── route-c5912e06adca8f8a.js
-│   │   │   │   │   │       └── recommendations
-│   │   │   │   │   │           └── route-c5912e06adca8f8a.js
-│   │   │   │   │   ├── builder
-│   │   │   │   │   │   ├── download
-│   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
-│   │   │   │   │   │   └── live-recommendations
-│   │   │   │   │   │       └── route-c5912e06adca8f8a.js
-│   │   │   │   │   ├── chat
-│   │   │   │   │   │   └── route-c5912e06adca8f8a.js
-│   │   │   │   │   ├── contact
-│   │   │   │   │   │   ├── delete
-│   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
-│   │   │   │   │   │   ├── gmail
-│   │   │   │   │   │   │   ├── oauth
-│   │   │   │   │   │   │   │   ├── callback
-│   │   │   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
-│   │   │   │   │   │   │   │   └── start
-│   │   │   │   │   │   │   │       └── route-c5912e06adca8f8a.js
-│   │   │   │   │   │   │   ├── renew
-│   │   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
-│   │   │   │   │   │   │   └── webhook
-│   │   │   │   │   │   │       └── route-c5912e06adca8f8a.js
-│   │   │   │   │   │   ├── messages
-│   │   │   │   │   │   │   ├── retry
-│   │   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
-│   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
-│   │   │   │   │   │   ├── read
-│   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
-│   │   │   │   │   │   ├── status
-│   │   │   │   │   │   │   └── route-c5912e06adca8f8a.js
-│   │   │   │   │   │   └── route-c5912e06adca8f8a.js
-│   │   │   │   │   ├── cron
-│   │   │   │   │   │   └── expire-orders
-│   │   │   │   │   │       └── route-c5912e06adca8f8a.js
-│   │   │   │   │   ├── featured-accessories
-│   │   │   │   │   │   └── route-c5912e06adca8f8a.js
-│   │   │   │   │   ├── featured-parts
-│   │   │   │   │   │   └── route-c5912e06adca8f8a.js
-│   │   │   │   │   ├── qr
-│   │   │   │   │   │   └── [token]
-│   │   │   │   │   │       └── route-c5912e06adca8f8a.js
-│   │   │   │   │   ├── system-access
-│   │   │   │   │   │   └── authenticate
-│   │   │   │   │   │       └── route-c5912e06adca8f8a.js
-│   │   │   │   │   └── webhooks
-│   │   │   │   │       └── paymongo
-│   │   │   │   │           └── route-c5912e06adca8f8a.js
-│   │   │   │   ├── builder
-│   │   │   │   │   └── page-b4699b48890b9d3e.js
-│   │   │   │   ├── checkout
-│   │   │   │   │   └── page-e7b3563da1a74249.js
-│   │   │   │   ├── contact
-│   │   │   │   │   └── page-0b677a8298b5a86b.js
-│   │   │   │   ├── faq
-│   │   │   │   │   └── page-7376e14fab64b915.js
-│   │   │   │   ├── forgot-password
-│   │   │   │   │   └── page-53cdac1fb591cc52.js
-│   │   │   │   ├── group
-│   │   │   │   │   └── page-be650941f7b590bb.js
-│   │   │   │   ├── landing-video
-│   │   │   │   │   └── [name]
-│   │   │   │   │       └── route-c5912e06adca8f8a.js
-│   │   │   │   ├── parts
-│   │   │   │   │   ├── [productId]
-│   │   │   │   │   │   └── page-d643ca4e69051bfd.js
-│   │   │   │   │   └── page-db3cba465929063a.js
-│   │   │   │   ├── pre-builts
-│   │   │   │   │   ├── [id]
-│   │   │   │   │   │   └── page-1b6e4b5ef7587fba.js
-│   │   │   │   │   └── page-73a0f32b71d389d7.js
-│   │   │   │   ├── profile
-│   │   │   │   │   └── page-b1b010d2f9eb8ecc.js
-│   │   │   │   ├── q
-│   │   │   │   │   └── [token]
-│   │   │   │   │       └── page-69177804fde06df2.js
-│   │   │   │   ├── signin
-│   │   │   │   │   └── page-67408ca0e8410a30.js
-│   │   │   │   ├── signup
-│   │   │   │   │   └── page-fdd8f04077767325.js
-│   │   │   │   ├── support-requests
-│   │   │   │   │   └── page-c5912e06adca8f8a.js
-│   │   │   │   ├── system-access
-│   │   │   │   │   ├── signup
-│   │   │   │   │   │   └── page-2905bbd44294e555.js
-│   │   │   │   │   └── page-813933bd4918a61b.js
-│   │   │   │   ├── team
-│   │   │   │   │   └── page-bf96b8614e0e27c4.js
-│   │   │   │   ├── layout-fefd62bb50bd04bf.js
-│   │   │   │   ├── loading-569ffd2dc5ffeedf.js
-│   │   │   │   └── page-6517a0174d30b26c.js
-│   │   │   ├── pages
-│   │   │   │   ├── _app-e8b861c87f6f033c.js
-│   │   │   │   └── _error-c8f84f7bd11d43d4.js
-│   │   │   ├── 1076-532d472b27128792.js
-│   │   │   ├── 1150-d87bc5c90e7efcbe.js
-│   │   │   ├── 1255-de0c1abd22c7cccd.js
-│   │   │   ├── 1392-4d30fa57c1ea4bc2.js
-│   │   │   ├── 1435.5c7a558ded609655.js
-│   │   │   ├── 1506-da63817904ce3a16.js
-│   │   │   ├── 1646.a93085a0445ba909.js
-│   │   │   ├── 1668-811000b8382ec9eb.js
-│   │   │   ├── 1669.1f32fe08f0d810a4.js
-│   │   │   ├── 1708-385526e50e2906ea.js
-│   │   │   ├── 1757.92e047c9783e353b.js
-│   │   │   ├── 1902-3f1557941953d68a.js
-│   │   │   ├── 1917.2e9ceca8774c1cba.js
-│   │   │   ├── 2017-b0ce573dc486ace3.js
-│   │   │   ├── 2046-23026b0e27541614.js
-│   │   │   ├── 2170a4aa-23e3b5dc934453fe.js
-│   │   │   ├── 235.29b58935d26fe0b2.js
-│   │   │   ├── 2432-7e5cfc815b3f9722.js
-│   │   │   ├── 2459-c0e192efdfd220e1.js
-│   │   │   ├── 2465.ed8700984e6ed382.js
-│   │   │   ├── 2467-04d4a325c8f36031.js
-│   │   │   ├── 2530-b4987e3a501dcedd.js
-│   │   │   ├── 2543-0155fa9d5c4cf276.js
-│   │   │   ├── 2619-b8db57ac19da49ac.js
-│   │   │   ├── 274-5da7280e14a31b08.js
-│   │   │   ├── 2769.761d3c2b27e34704.js
-│   │   │   ├── 2990.5f1040e4cd837f36.js
-│   │   │   ├── 3166-10b311ab6664fa09.js
-│   │   │   ├── 3430.e8aa836554894d70.js
-│   │   │   ├── 3568-275252d8aab4c0de.js
-│   │   │   ├── 3667.f29d0e9f7b93570a.js
-│   │   │   ├── 3792.872e5ff9a2957249.js
-│   │   │   ├── 3890-1b829a3136758e7a.js
-│   │   │   ├── 4036-f3d5b68130dc3633.js
-│   │   │   ├── 4095-44222ec53810d7e5.js
-│   │   │   ├── 4103.b96eba06d0135ae0.js
-│   │   │   ├── 4260-996ec32fa4e3f7fe.js
-│   │   │   ├── 4432-94faf78e2ed239ad.js
-│   │   │   ├── 4488.13886f767eadab9b.js
-│   │   │   ├── 4540-17ce4e8f5b8026d1.js
-│   │   │   ├── 4679-7b3b76de3d70d2ed.js
-│   │   │   ├── 4721-b2077cb22ae3ac24.js
-│   │   │   ├── 4776-033c0a3fbb34f161.js
-│   │   │   ├── 4846.23217743c947ea2d.js
-│   │   │   ├── 488-eac181ed2f3bf4dc.js
-│   │   │   ├── 4bd1b696-182b6b13bdad92e3.js
-│   │   │   ├── 5008-23ef350c844b2bdd.js
-│   │   │   ├── 5010.bb099d501036a19f.js
-│   │   │   ├── 5139.e4ff9cc3669129ed.js
-│   │   │   ├── 5158-640d4a26b96e6b20.js
-│   │   │   ├── 5287-c9ae512f936018af.js
-│   │   │   ├── 5554-15253666c5358bc9.js
-│   │   │   ├── 5788.a2d6e27810bbbd4b.js
-│   │   │   ├── 5889-77a82109fffb7f6f.js
-│   │   │   ├── 5937-a37d798cf08beeb6.js
-│   │   │   ├── 5953.fa3307501a415256.js
-│   │   │   ├── 6026.100e6d25317c698c.js
-│   │   │   ├── 6120-f4116f5d079d1821.js
-│   │   │   ├── 6572-3b18558e3f30ee99.js
-│   │   │   ├── 6605-1592588efcdba16f.js
-│   │   │   ├── 6834-af6681615c46f4b7.js
-│   │   │   ├── 6882-49102e1bef36ce65.js
-│   │   │   ├── 6942-213792197da03d19.js
-│   │   │   ├── 7014-f77bd8ea72a8d3bd.js
-│   │   │   ├── 7635.b7c50f19d7570e11.js
-│   │   │   ├── 7647-d9b170f994514c4b.js
-│   │   │   ├── 767-79e409318d2cfa57.js
-│   │   │   ├── 7697-67c820e5d02fcedf.js
-│   │   │   ├── 7793-0fbb931250b1811f.js
-│   │   │   ├── 801-33f7a31de8a00426.js
-│   │   │   ├── 82-3e31cebbcabb0d18.js
-│   │   │   ├── 8285-c5a54337afb83707.js
-│   │   │   ├── 8513-fb3c821099d581ca.js
-│   │   │   ├── 856-a353dd9eea81959d.js
-│   │   │   ├── 8583-9e210b9f746ec8b1.js
-│   │   │   ├── 8658-e1f15b298d36fc04.js
-│   │   │   ├── 8685.467533c43a657f62.js
-│   │   │   ├── 8725.636bc571cc7ca98e.js
-│   │   │   ├── 8734-27b44844a90f2ff8.js
-│   │   │   ├── 90-3281dc3884815f88.js
-│   │   │   ├── 9000-900d55344be8f5d1.js
-│   │   │   ├── 9327-fedb4d0b3b187d1a.js
-│   │   │   ├── 9330-8b2e37f936c8e951.js
-│   │   │   ├── 9353-23f344bd080da4f0.js
-│   │   │   ├── 9478-171ad3d5ff09c553.js
-│   │   │   ├── 9496-0ca25bd242817033.js
-│   │   │   ├── 9624-3f5bded12791bb26.js
-│   │   │   ├── 9773-66f5b21185c89f8d.js
-│   │   │   ├── 994-ac527d8bdc3609e3.js
-│   │   │   ├── ba12c10f-8063feea5a12ad92.js
-│   │   │   ├── bc9e92e6-97565be9ace941ed.js
-│   │   │   ├── c16f53c3-f2ef374b4e911d59.js
-│   │   │   ├── ceb9e9aa-c4675496ca701b39.js
-│   │   │   ├── d0f5a89a-af7b72e16913fa3e.js
-│   │   │   ├── framework-5c6aa4eeab4c6f34.js
-│   │   │   ├── main-app-4dbf0c597e8ab152.js
-│   │   │   ├── main-bb339113ec47b886.js
-│   │   │   ├── polyfills-42372ed130431b0a.js
-│   │   │   └── webpack-3b1ae21515358f64.js
-│   │   ├── css
-│   │   │   ├── 686b6b70651cde05.css
-│   │   │   ├── 71d96a07ba072a09.css
-│   │   │   ├── 793d9152bb43398a.css
-│   │   │   ├── c6ebfc4485e94f61.css
-│   │   │   └── e35dfb38818993df.css
-│   │   └── media
-│   │       ├── 19cfc7226ec3afaa-s.woff2
-│   │       ├── 21350d82a1f187e9-s.woff2
-│   │       ├── 36966cca54120369-s.p.woff2
-│   │       ├── 8e9860b6e62d6359-s.woff2
-│   │       ├── b7387a63dd068245-s.woff2
-│   │       ├── ba9851c3c22cd980-s.woff2
-│   │       ├── c5fe6dc8356a8c31-s.woff2
-│   │       ├── custom-builder-parts.f35e2f48.png
-│   │       ├── df0a9ae256c0569c-s.woff2
-│   │       ├── documentation_m.c85f8142.png
-│   │       ├── e1aab0933260df4d-s.woff2
-│   │       ├── e4af272ccee01ff0-s.p.woff2
-│   │       ├── feature-1.d184a8af.webp
-│   │       ├── feature-2.efc2a3c3.webp
-│   │       ├── feature-3.a6afbd5f.webp
-│   │       ├── hero-custom-v2.112d5cfa.webp
-│   │       ├── king45-poster.c86d4155.webp
-│   │       ├── netcodex_cc_2026_white.png.28987f1e.webp
-│   │       ├── netcodex-emblem.da68c994.png
-│   │       ├── netcodex-storefront.300dc261.png
-│   │       ├── pm_m.7d1c15dc.png
-│   │       ├── prebuilt-pcs.13b2e5ef.png
-│   │       ├── prism5-poster.ccf8d37c.webp
-│   │       ├── rayzon.e41856c3.png
-│   │       └── ui_m.833ba0df.png
-│   ├── types
-│   │   ├── app
-│   │   │   ├── about
-│   │   │   │   └── page.ts
-│   │   │   ├── admin
-│   │   │   │   ├── contact-inquiries
-│   │   │   │   │   └── page.ts
-│   │   │   │   ├── prebuilt-builder
-│   │   │   │   │   └── page.ts
-│   │   │   │   └── page.ts
-│   │   │   ├── ai-build-advisor
-│   │   │   │   └── page.ts
-│   │   │   ├── api
-│   │   │   │   ├── admin
-│   │   │   │   │   ├── qr-health
-│   │   │   │   │   │   └── route.ts
-│   │   │   │   │   └── qr-status
-│   │   │   │   │       └── [token]
-│   │   │   │   │           └── route.ts
-│   │   │   │   ├── ai
-│   │   │   │   │   └── build-advisor
-│   │   │   │   │       ├── critique
-│   │   │   │   │       │   └── route.ts
-│   │   │   │   │       └── recommendations
-│   │   │   │   │           └── route.ts
-│   │   │   │   ├── builder
-│   │   │   │   │   ├── download
-│   │   │   │   │   │   └── route.ts
-│   │   │   │   │   └── live-recommendations
-│   │   │   │   │       └── route.ts
-│   │   │   │   ├── chat
-│   │   │   │   │   └── route.ts
-│   │   │   │   ├── contact
-│   │   │   │   │   ├── delete
-│   │   │   │   │   │   └── route.ts
-│   │   │   │   │   ├── gmail
-│   │   │   │   │   │   ├── oauth
-│   │   │   │   │   │   │   ├── callback
-│   │   │   │   │   │   │   │   └── route.ts
-│   │   │   │   │   │   │   └── start
-│   │   │   │   │   │   │       └── route.ts
-│   │   │   │   │   │   ├── renew
-│   │   │   │   │   │   │   └── route.ts
-│   │   │   │   │   │   └── webhook
-│   │   │   │   │   │       └── route.ts
-│   │   │   │   │   ├── messages
-│   │   │   │   │   │   ├── retry
-│   │   │   │   │   │   │   └── route.ts
-│   │   │   │   │   │   └── route.ts
-│   │   │   │   │   ├── read
-│   │   │   │   │   │   └── route.ts
-│   │   │   │   │   ├── status
-│   │   │   │   │   │   └── route.ts
-│   │   │   │   │   └── route.ts
-│   │   │   │   ├── cron
-│   │   │   │   │   └── expire-orders
-│   │   │   │   │       └── route.ts
-│   │   │   │   ├── featured-accessories
-│   │   │   │   │   └── route.ts
-│   │   │   │   ├── featured-parts
-│   │   │   │   │   └── route.ts
-│   │   │   │   ├── qr
-│   │   │   │   │   └── [token]
-│   │   │   │   │       └── route.ts
-│   │   │   │   ├── system-access
-│   │   │   │   │   └── authenticate
-│   │   │   │   │       └── route.ts
-│   │   │   │   └── webhooks
-│   │   │   │       └── paymongo
-│   │   │   │           └── route.ts
-│   │   │   ├── builder
-│   │   │   │   └── page.ts
-│   │   │   ├── checkout
-│   │   │   │   └── page.ts
-│   │   │   ├── contact
-│   │   │   │   └── page.ts
-│   │   │   ├── faq
-│   │   │   │   └── page.ts
-│   │   │   ├── forgot-password
-│   │   │   │   └── page.ts
-│   │   │   ├── group
-│   │   │   │   └── page.ts
-│   │   │   ├── landing-video
-│   │   │   │   └── [name]
-│   │   │   │       └── route.ts
-│   │   │   ├── parts
-│   │   │   │   ├── [productId]
-│   │   │   │   │   └── page.ts
-│   │   │   │   └── page.ts
-│   │   │   ├── pre-builts
-│   │   │   │   ├── [id]
-│   │   │   │   │   └── page.ts
-│   │   │   │   └── page.ts
-│   │   │   ├── profile
-│   │   │   │   └── page.ts
-│   │   │   ├── q
-│   │   │   │   └── [token]
-│   │   │   │       └── page.ts
-│   │   │   ├── signin
-│   │   │   │   └── page.ts
-│   │   │   ├── signup
-│   │   │   │   └── page.ts
-│   │   │   ├── support-requests
-│   │   │   │   └── page.ts
-│   │   │   ├── system-access
-│   │   │   │   ├── signup
-│   │   │   │   │   └── page.ts
-│   │   │   │   └── page.ts
-│   │   │   └── page.ts
-│   │   ├── cache-life.d.ts
-│   │   ├── package.json
-│   │   ├── routes.d.ts
-│   │   └── validator.ts
-│   ├── app-build-manifest.json
-│   ├── app-path-routes-manifest.json
-│   ├── BUILD_ID
-│   ├── build-manifest.json
-│   ├── export-marker.json
-│   ├── images-manifest.json
-│   ├── next-minimal-server.js.nft.json
-│   ├── next-server.js.nft.json
-│   ├── package.json
-│   ├── prerender-manifest.json
-│   ├── react-loadable-manifest.json
-│   ├── required-server-files.json
-│   ├── routes-manifest.json
-│   └── trace
-├── .tmp
-│   ├── phase2-sales-results
-│   │   └── .last-run.json
-│   ├── phase34-sales-results
-│   │   └── .last-run.json
-│   ├── phase5-sales-results
-│   │   └── .last-run.json
-│   ├── qr-browser-results
-│   │   └── .last-run.json
-│   ├── qr-runtime
-│   │   ├── java
-│   │   │   └── jdk-21.0.12.1+1-jre
-│   │   │       ├── bin
-│   │   │       │   ├── server
-│   │   │       │   │   ├── classes_nocoops.jsa
-│   │   │       │   │   ├── classes.jsa
-│   │   │       │   │   └── jvm.dll
-│   │   │       │   ├── api-ms-win-core-console-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-console-l1-2-0.dll
-│   │   │       │   ├── api-ms-win-core-datetime-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-debug-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-errorhandling-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-fibers-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-fibers-l1-1-1.dll
-│   │   │       │   ├── api-ms-win-core-file-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-file-l1-2-0.dll
-│   │   │       │   ├── api-ms-win-core-file-l2-1-0.dll
-│   │   │       │   ├── api-ms-win-core-handle-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-heap-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-interlocked-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-kernel32-legacy-l1-1-1.dll
-│   │   │       │   ├── api-ms-win-core-libraryloader-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-localization-l1-2-0.dll
-│   │   │       │   ├── api-ms-win-core-memory-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-namedpipe-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-processenvironment-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-processthreads-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-processthreads-l1-1-1.dll
-│   │   │       │   ├── api-ms-win-core-profile-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-rtlsupport-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-string-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-synch-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-synch-l1-2-0.dll
-│   │   │       │   ├── api-ms-win-core-sysinfo-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-sysinfo-l1-2-0.dll
-│   │   │       │   ├── api-ms-win-core-timezone-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-core-util-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-crt-conio-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-crt-convert-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-crt-environment-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-crt-filesystem-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-crt-heap-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-crt-locale-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-crt-math-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-crt-multibyte-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-crt-private-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-crt-process-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-crt-runtime-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-crt-stdio-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-crt-string-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-crt-time-l1-1-0.dll
-│   │   │       │   ├── api-ms-win-crt-utility-l1-1-0.dll
-│   │   │       │   ├── awt.dll
-│   │   │       │   ├── dt_socket.dll
-│   │   │       │   ├── extnet.dll
-│   │   │       │   ├── fontmanager.dll
-│   │   │       │   ├── freetype.dll
-│   │   │       │   ├── instrument.dll
-│   │   │       │   ├── j2gss.dll
-│   │   │       │   ├── j2pcsc.dll
-│   │   │       │   ├── j2pkcs11.dll
-│   │   │       │   ├── jaas.dll
-│   │   │       │   ├── jabswitch.exe
-│   │   │       │   ├── jaccessinspector.exe
-│   │   │       │   ├── jaccesswalker.exe
-│   │   │       │   ├── java.dll
-│   │   │       │   ├── java.exe
-│   │   │       │   ├── javaaccessbridge.dll
-│   │   │       │   ├── javajpeg.dll
-│   │   │       │   ├── javaw.exe
-│   │   │       │   ├── jawt.dll
-│   │   │       │   ├── jdwp.dll
-│   │   │       │   ├── jfr.exe
-│   │   │       │   ├── jimage.dll
-│   │   │       │   ├── jli.dll
-│   │   │       │   ├── jrunscript.exe
-│   │   │       │   ├── jsound.dll
-│   │   │       │   ├── jsvml.dll
-│   │   │       │   ├── jwebserver.exe
-│   │   │       │   ├── keytool.exe
-│   │   │       │   ├── kinit.exe
-│   │   │       │   ├── klist.exe
-│   │   │       │   ├── ktab.exe
-│   │   │       │   ├── lcms.dll
-│   │   │       │   ├── management_agent.dll
-│   │   │       │   ├── management_ext.dll
-│   │   │       │   ├── management.dll
-│   │   │       │   ├── mlib_image.dll
-│   │   │       │   ├── msvcp140.dll
-│   │   │       │   ├── net.dll
-│   │   │       │   ├── nio.dll
-│   │   │       │   ├── prefs.dll
-│   │   │       │   ├── rmi.dll
-│   │   │       │   ├── rmiregistry.exe
-│   │   │       │   ├── splashscreen.dll
-│   │   │       │   ├── sspi_bridge.dll
-│   │   │       │   ├── sunmscapi.dll
-│   │   │       │   ├── syslookup.dll
-│   │   │       │   ├── ucrtbase.dll
-│   │   │       │   ├── vcruntime140_1.dll
-│   │   │       │   ├── vcruntime140.dll
-│   │   │       │   ├── verify.dll
-│   │   │       │   ├── w2k_lsa_auth.dll
-│   │   │       │   ├── windowsaccessbridge-64.dll
-│   │   │       │   └── zip.dll
-│   │   │       ├── conf
-│   │   │       │   ├── management
-│   │   │       │   │   ├── jmxremote.access
-│   │   │       │   │   ├── jmxremote.password.template
-│   │   │       │   │   └── management.properties
-│   │   │       │   ├── security
-│   │   │       │   │   ├── policy
-│   │   │       │   │   │   ├── limited
-│   │   │       │   │   │   │   ├── default_local.policy
-│   │   │       │   │   │   │   ├── default_US_export.policy
-│   │   │       │   │   │   │   └── exempt_local.policy
-│   │   │       │   │   │   ├── unlimited
-│   │   │       │   │   │   │   ├── default_local.policy
-│   │   │       │   │   │   │   └── default_US_export.policy
-│   │   │       │   │   │   └── README.txt
-│   │   │       │   │   ├── java.policy
-│   │   │       │   │   └── java.security
-│   │   │       │   ├── jaxp.properties
-│   │   │       │   ├── logging.properties
-│   │   │       │   ├── net.properties
-│   │   │       │   └── sound.properties
-│   │   │       ├── legal
-│   │   │       │   ├── java.base
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── aes.md
-│   │   │       │   │   ├── asm.md
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   ├── c-libutl.md
-│   │   │       │   │   ├── cldr.md
-│   │   │       │   │   ├── icu.md
-│   │   │       │   │   ├── LICENSE
-│   │   │       │   │   ├── public_suffix.md
-│   │   │       │   │   ├── siphash.md
-│   │   │       │   │   ├── unicode.md
-│   │   │       │   │   ├── wepoll.md
-│   │   │       │   │   └── zlib.md
-│   │   │       │   ├── java.compiler
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.datatransfer
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.desktop
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   ├── colorimaging.md
-│   │   │       │   │   ├── freetype.md
-│   │   │       │   │   ├── giflib.md
-│   │   │       │   │   ├── harfbuzz.md
-│   │   │       │   │   ├── jpeg.md
-│   │   │       │   │   ├── lcms.md
-│   │   │       │   │   ├── libpng.md
-│   │   │       │   │   ├── LICENSE
-│   │   │       │   │   └── mesa3d.md
-│   │   │       │   ├── java.instrument
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.logging
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.management
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.management.rmi
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.naming
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.net.http
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.prefs
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.rmi
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.scripting
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.se
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.security.jgss
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.security.sasl
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.smartcardio
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.sql
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.sql.rowset
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.transaction.xa
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── java.xml
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   ├── bcel.md
-│   │   │       │   │   ├── dom.md
-│   │   │       │   │   ├── jcup.md
-│   │   │       │   │   ├── LICENSE
-│   │   │       │   │   ├── xalan.md
-│   │   │       │   │   └── xerces.md
-│   │   │       │   ├── java.xml.crypto
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   ├── LICENSE
-│   │   │       │   │   └── santuario.md
-│   │   │       │   ├── jdk.accessibility
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.charsets
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.crypto.cryptoki
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   ├── LICENSE
-│   │   │       │   │   ├── pkcs11cryptotoken.md
-│   │   │       │   │   └── pkcs11wrapper.md
-│   │   │       │   ├── jdk.crypto.ec
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.crypto.mscapi
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.dynalink
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   ├── dynalink.md
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.httpserver
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.incubator.vector
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.internal.vm.ci
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.internal.vm.compiler
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.internal.vm.compiler.management
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.jdwp.agent
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.jfr
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.jsobject
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.localedata
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   ├── cldr.md
-│   │   │       │   │   ├── LICENSE
-│   │   │       │   │   └── thaidict.md
-│   │   │       │   ├── jdk.management
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.management.agent
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.management.jfr
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.naming.dns
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.naming.rmi
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.net
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.nio.mapmode
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.sctp
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.security.auth
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.security.jgss
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.unsupported
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   ├── jdk.xml.dom
-│   │   │       │   │   ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │   │   ├── ASSEMBLY_EXCEPTION
-│   │   │       │   │   └── LICENSE
-│   │   │       │   └── jdk.zipfs
-│   │   │       │       ├── ADDITIONAL_LICENSE_INFO
-│   │   │       │       ├── ASSEMBLY_EXCEPTION
-│   │   │       │       └── LICENSE
-│   │   │       ├── lib
-│   │   │       │   ├── jfr
-│   │   │       │   │   ├── default.jfc
-│   │   │       │   │   └── profile.jfc
-│   │   │       │   ├── security
-│   │   │       │   │   ├── blocked.certs
-│   │   │       │   │   ├── cacerts
-│   │   │       │   │   ├── default.policy
-│   │   │       │   │   └── public_suffix_list.dat
-│   │   │       │   ├── classlist
-│   │   │       │   ├── fontconfig.bfc
-│   │   │       │   ├── fontconfig.properties.src
-│   │   │       │   ├── jawt.lib
-│   │   │       │   ├── jrt-fs.jar
-│   │   │       │   ├── jvm.cfg
-│   │   │       │   ├── jvm.lib
-│   │   │       │   ├── modules
-│   │   │       │   ├── psfont.properties.ja
-│   │   │       │   ├── psfontj2d.properties
-│   │   │       │   ├── tzdb.dat
-│   │   │       │   └── tzmappings
-│   │   │       ├── NOTICE
-│   │   │       └── release
-│   │   └── jre.zip
-│   ├── advisor-light.png
-│   ├── inspect-advisor-inventory.ts
-│   ├── phase2-build.log
-│   ├── phase2-emulator.log
-│   ├── phase34-build.log
-│   ├── phase34-emulator.log
-│   ├── phase34-focused-emulator.log
-│   ├── phase5-build.log
-│   ├── phase5-emulator.log
-│   ├── phase5-unit.log
-│   ├── qr-admin-focus.png
-│   ├── qr-backup.json
-│   ├── qr-browser-server.log
-│   ├── qr-health-dark-1280.png
-│   ├── qr-health-dark-390.png
-│   ├── qr-health-light-1280.png
-│   ├── qr-health-light-390.png
-│   ├── qr-live-firestore.rules
-│   ├── qr-live-part-desktop.png
-│   ├── qr-live-part-mobile.png
-│   ├── qr-live-system-debug.png
-│   ├── qr-migration-applied.json
-│   ├── qr-migration-final-dry-run.json
-│   ├── qr-migration-resumed.json
-│   ├── qr-migration.json
-│   ├── qr-original-fields.json
-│   ├── qr-part-desktop.png
-│   ├── qr-part-mobile.png
-│   ├── qr-phase0-hosted-checks.json
-│   ├── qr-phase0-hosted-checks.ts
-│   ├── qr-phase0-release.cjs
-│   ├── qr-phase0-release.json
-│   ├── qr-phase01-before.json
-│   ├── qr-phase01-dry-run.json
-│   ├── qr-phase01-health.json
-│   ├── qr-private-copy-check.json
-│   ├── qr-safety-check.json
-│   ├── qr-system-popup.png
-│   ├── smoke-advisor.cjs
-│   ├── smoke-new-build.cjs
-│   ├── validate-advisor-result.ts
-│   ├── verify-advisor-background.cjs
-│   ├── verify-advisor-parallel.cjs
-│   ├── verify-advisor-web-search.ts
-│   ├── verify-advisor-web-ui.cjs
-│   ├── web-search-mobile-dark.png
-│   ├── web-search-mobile-light.png
-│   ├── web-search-mobile.png
-│   ├── web-search-result-dark.png
-│   ├── web-search-result-light.png
-│   └── web-search-result.png
 ├── .vscode
 │   └── settings.json
 ├── design_mocks
@@ -1916,7 +635,8 @@ BuilbotAI
 │   │   │   ├── 2026-11-02-order-receipt.md
 │   │   │   ├── 2026-11-04-admin-verification-loader.md
 │   │   │   ├── 2026-11-04-loading-layouts.md
-│   │   │   └── 2026-11-04-public-auth-flicker.md
+│   │   │   ├── 2026-11-04-public-auth-flicker.md
+│   │   │   └── 2026-11-06-inventory-catalog-scaling.md
 │   │   └── specs
 │   │       ├── 2026-11-02-customer-order-activity-payment-gate-design.md
 │   │       ├── 2026-11-02-order-receipt-design.md
@@ -1950,6 +670,7 @@ BuilbotAI
 ├── execution
 │   ├── audit_inventory_performance.mjs
 │   ├── audit_landing_performance.mjs
+│   ├── backfill_inventory_query_fields.ts
 │   ├── backup_qr_catalog.ts
 │   ├── benchmark_build_advisor.mjs
 │   ├── benchmark_build_critique.ts
@@ -2004,15 +725,6 @@ BuilbotAI
 │   ├── netcodex-logo-white.png
 │   └── netcodex-storefront.png
 ├── scratch
-│   ├── test_placeholders
-│   │   ├── case.jpg
-│   │   ├── cooler.jpg
-│   │   ├── cpu.jpg
-│   │   ├── gpu.jpg
-│   │   ├── motherboard.jpg
-│   │   ├── psu.jpg
-│   │   ├── ram.jpg
-│   │   └── storage.jpg
 │   ├── app.spec.ts
 │   ├── build_summary_diff.txt
 │   ├── check-firestore-schema.js
@@ -2021,33 +733,12 @@ BuilbotAI
 │   ├── find-bad-data.js
 │   ├── list-models.js
 │   ├── print-raw-response.js
-│   ├── screenshot-admin-ai.png
-│   ├── screenshot-admin-management.png
-│   ├── screenshot-admin-reservations.png
-│   ├── screenshot-admin-sales-light.png
-│   ├── screenshot-admin-sales.png
-│   ├── screenshot-admin-stock.png
 │   ├── screenshot-home.png
-│   ├── screenshot-mega-menu-dark.png
-│   ├── screenshot-mega-menu-light.png
-│   ├── screenshot-mega-menu.png
-│   ├── screenshot-onboarding-header.png
-│   ├── screenshot-reservations-5cols.png
-│   ├── screenshot-signin.png
-│   ├── screenshot-signup-form.png
-│   ├── screenshot-signup-toa-v2.png
-│   ├── screenshot-signup-toa.png
-│   ├── screenshot-system-access-modal.png
-│   ├── screenshot-system-access-new.png
 │   ├── screenshot-system-access.png
-│   ├── screenshot-terms-updated.png
 │   ├── test-chat.js
-│   ├── test-critique-speed.ts
 │   ├── test-fetch.ts
-│   ├── test-mega-menu.js
 │   ├── verify-rbac.ts
 │   └── verify-server-actions.ts
-├── scripts
 ├── src
 │   ├── ai
 │   │   ├── flows
@@ -2108,6 +799,7 @@ BuilbotAI
 │   │   │   ├── hooks
 │   │   │   │   ├── use-admin-core.ts
 │   │   │   │   ├── use-bulk-actions.ts
+│   │   │   │   ├── use-inventory-page.ts
 │   │   │   │   ├── use-inventory.ts
 │   │   │   │   ├── use-order-actions.ts
 │   │   │   │   ├── use-order-activity.ts
@@ -2121,6 +813,7 @@ BuilbotAI
 │   │   │   │   └── use-sales-actions.ts
 │   │   │   ├── prebuilt-builder
 │   │   │   │   └── page.tsx
+│   │   │   ├── inventory-query-actions.ts
 │   │   │   ├── order-activity-actions.ts
 │   │   │   ├── order-assembly-actions.ts
 │   │   │   ├── order-refund-actions.ts
@@ -2148,12 +841,11 @@ BuilbotAI
 │   │   │   │       └── [token]
 │   │   │   │           └── route.ts
 │   │   │   ├── ai
-│   │   │   │   ├── build-advisor
-│   │   │   │   │   ├── critique
-│   │   │   │   │   │   └── route.ts
-│   │   │   │   │   └── recommendations
-│   │   │   │   │       └── route.ts
-│   │   │   │   └── live-build-recommendations
+│   │   │   │   └── build-advisor
+│   │   │   │       ├── critique
+│   │   │   │       │   └── route.ts
+│   │   │   │       └── recommendations
+│   │   │   │           └── route.ts
 │   │   │   ├── builder
 │   │   │   │   ├── download
 │   │   │   │   │   └── route.ts
@@ -2224,11 +916,11 @@ BuilbotAI
 │   │   ├── landing-video
 │   │   │   └── [name]
 │   │   │       └── route.ts
-│   │   ├── loading-audit-preview
 │   │   ├── parts
 │   │   │   ├── [productId]
 │   │   │   │   ├── loading.tsx
 │   │   │   │   └── page.tsx
+│   │   │   ├── catalog-actions.ts
 │   │   │   ├── loading.tsx
 │   │   │   └── page.tsx
 │   │   ├── pre-builts
@@ -2280,7 +972,6 @@ BuilbotAI
 │   │   ├── q
 │   │   │   └── [token]
 │   │   │       └── page.tsx
-│   │   ├── settings
 │   │   ├── signin
 │   │   │   └── page.tsx
 │   │   ├── signup
@@ -2520,6 +1211,7 @@ BuilbotAI
 │   │   ├── product-identification.tsx
 │   │   ├── product-identity-link.tsx
 │   │   ├── product-qr.tsx
+│   │   ├── public-part-card.tsx
 │   │   ├── public-part-list-item.tsx
 │   │   ├── public-part-page.tsx
 │   │   ├── public-parts-catalog.tsx
@@ -2611,6 +1303,7 @@ BuilbotAI
 │       │   ├── category-specs.ts
 │       │   └── default-system-prompts.ts
 │       ├── server
+│       │   ├── admin-inventory-queries.ts
 │       │   ├── builder-catalog.ts
 │       │   ├── contact-auth.ts
 │       │   ├── gmail.ts
@@ -2623,10 +1316,13 @@ BuilbotAI
 │       │   ├── order-refund-reconciliation.ts
 │       │   ├── paymongo.ts
 │       │   ├── product-identities.ts
+│       │   ├── public-catalog-queries.ts
 │       │   ├── public-products.ts
 │       │   ├── qr-auth.ts
 │       │   ├── qr-health-analysis.ts
 │       │   └── qr-health.ts
+│       ├── admin-inventory-query.test.ts
+│       ├── admin-inventory-query.ts
 │       ├── advisor-inventory.ts
 │       ├── advisor-timing.ts
 │       ├── advisor-web-research.ts
@@ -2671,6 +1367,8 @@ BuilbotAI
 │       ├── inventory-image-sizes.ts
 │       ├── inventory-paths.test.ts
 │       ├── inventory-paths.ts
+│       ├── inventory-query-fields.test.ts
+│       ├── inventory-query-fields.ts
 │       ├── knowledge-retriever.ts
 │       ├── live-build-recommendation-schema.ts
 │       ├── live-build-recommendations.test.ts
@@ -2732,6 +1430,7 @@ BuilbotAI
 ├── tests
 │   ├── fixtures
 │   │   └── loading-layout-page.tsx
+│   ├── admin-inventory-queries.integration.ts
 │   ├── auth-role-navigation.spec.ts
 │   ├── chat-part-specifications.spec.ts
 │   ├── landing-featured-products.spec.ts
@@ -2749,159 +1448,6 @@ BuilbotAI
 │   ├── qr-inventory.spec.ts
 │   ├── qr-phase2.test.ts
 │   └── sales-export.spec.ts
-├── tmp
-│   ├── loading-audit
-│   │   ├── accessories-heading-loaded-1440.png
-│   │   ├── accessories-heading-loaded-390.png
-│   │   ├── accessories-heading-loaded-768.png
-│   │   ├── accessories-heading-loading-1440.png
-│   │   ├── accessories-heading-loading-390.png
-│   │   ├── accessories-heading-loading-768.png
-│   │   ├── builder-before-1440.png
-│   │   ├── builder-before-390.png
-│   │   ├── builder-before-768.png
-│   │   ├── builder-before.json
-│   │   ├── builder-loaded-1440.png
-│   │   ├── builder-loaded-390.png
-│   │   ├── builder-loaded-768.png
-│   │   ├── builder-loading-1440.png
-│   │   ├── builder-loading-390.png
-│   │   ├── builder-loading-768.png
-│   │   ├── customer--ai-build-advisor-1440.png
-│   │   ├── customer--ai-build-advisor-390.png
-│   │   ├── customer--ai-build-advisor-768.png
-│   │   ├── customer--profile-1440.png
-│   │   ├── customer--profile-390.png
-│   │   ├── customer--profile-768.png
-│   │   ├── customer--support-requests-1440.png
-│   │   ├── customer--support-requests-390.png
-│   │   ├── customer--support-requests-768.png
-│   │   ├── featured-products-heading-loaded-1440.png
-│   │   ├── featured-products-heading-loaded-390.png
-│   │   ├── featured-products-heading-loaded-768.png
-│   │   ├── featured-products-heading-loading-1440.png
-│   │   ├── featured-products-heading-loading-390.png
-│   │   ├── featured-products-heading-loading-768.png
-│   │   ├── guest---1440.png
-│   │   ├── guest---390.png
-│   │   ├── guest---768.png
-│   │   ├── guest--ai-build-advisor-1440.png
-│   │   ├── guest--ai-build-advisor-390.png
-│   │   ├── guest--ai-build-advisor-768.png
-│   │   ├── guest--parts-1440.png
-│   │   ├── guest--parts-390.png
-│   │   ├── guest--parts-768.png
-│   │   ├── guest--pre-builts-1440.png
-│   │   ├── guest--pre-builts-390.png
-│   │   ├── guest--pre-builts-768.png
-│   │   ├── manager--admin-1440.png
-│   │   ├── manager--admin-390.png
-│   │   ├── manager--admin-768.png
-│   │   ├── manager--admin-contact-inquiries-1440.png
-│   │   ├── manager--admin-contact-inquiries-390.png
-│   │   ├── manager--admin-contact-inquiries-768.png
-│   │   ├── manager--admin-prebuilt-builder-1440.png
-│   │   ├── manager--admin-prebuilt-builder-390.png
-│   │   ├── manager--admin-prebuilt-builder-768.png
-│   │   ├── manager--profile-1440.png
-│   │   ├── manager--profile-390.png
-│   │   ├── manager--profile-768.png
-│   │   └── pages-before.json
-│   ├── loading-test-results
-│   │   └── .last-run.json
-│   ├── pdfs
-│   │   ├── audit-page-1.png
-│   │   ├── audit-page-2.png
-│   │   ├── audit-page-3.png
-│   │   ├── audit-page-4.png
-│   │   ├── audit-page-5.png
-│   │   ├── audit-page-6.png
-│   │   ├── audit-page-7.png
-│   │   ├── contact-sheet.png
-│   │   ├── create_ui_audit_pdf.py
-│   │   ├── live-approved-page-1.png
-│   │   ├── live-approved-page-5.png
-│   │   ├── live-final-last.png
-│   │   ├── live-final-page-1.png
-│   │   ├── live-final-page-5.png
-│   │   ├── live-page-1.png
-│   │   ├── live-page-5.png
-│   │   ├── make_ui_audit_pdf.py
-│   │   ├── page-1.png
-│   │   ├── page-4.png
-│   │   └── your-build-sample.pdf
-│   ├── performance
-│   │   ├── hosted-before-desktop.png
-│   │   ├── hosted-before-mobile.png
-│   │   ├── hosted-before.json
-│   │   ├── inventory-after-admin-desktop.png
-│   │   ├── inventory-after-builder-desktop.png
-│   │   ├── inventory-before-admin-desktop.png
-│   │   ├── inventory-before-admin-mobile.png
-│   │   ├── inventory-before-builder-desktop.png
-│   │   ├── inventory-before-builder-mobile.png
-│   │   ├── inventory-before.json
-│   │   ├── inventory-final-admin-desktop.png
-│   │   ├── inventory-final-admin-mobile.png
-│   │   ├── inventory-final-builder-desktop.png
-│   │   ├── inventory-final-builder-mobile.png
-│   │   ├── inventory-final.json
-│   │   ├── local-after-desktop.png
-│   │   ├── local-after-mobile.png
-│   │   ├── local-after.json
-│   │   ├── local-before-desktop.png
-│   │   ├── local-before-mobile.png
-│   │   ├── local-before.json
-│   │   ├── local-final-desktop.png
-│   │   ├── local-final-mobile.png
-│   │   ├── local-final.json
-│   │   ├── trace-sample-desktop.png
-│   │   ├── trace-sample-mobile.png
-│   │   ├── trace-sample-mobile.trace.json
-│   │   └── trace-sample.json
-│   ├── playwright
-│   │   ├── tests-auth-role-navigation-6f874-ustomer-route-after-refresh
-│   │   │   └── error-context.md
-│   │   ├── tests-auth-role-navigation-78924-ut-removes-protected-access
-│   │   │   └── error-context.md
-│   │   ├── tests-auth-role-navigation-82e0d-ob-across-client-navigation
-│   │   │   └── error-context.md
-│   │   └── .last-run.json
-│   ├── playwright-advisor
-│   │   └── .last-run.json
-│   ├── playwright-final
-│   │   ├── tests-auth-role-navigation-82e0d-ob-across-client-navigation
-│   │   │   └── error-context.md
-│   │   └── .last-run.json
-│   ├── playwright-image-motion
-│   │   └── .last-run.json
-│   ├── playwright-inventory
-│   │   └── .last-run.json
-│   ├── playwright-inventory-final
-│   │   └── .last-run.json
-│   ├── playwright-prebuilt-toast
-│   │   └── .last-run.json
-│   ├── playwright-verified
-│   │   └── .last-run.json
-│   ├── audit-loading.mjs
-│   ├── audit-pages.mjs
-│   ├── extend-loading-tests.mjs
-│   ├── loading-fixture.tsx
-│   ├── refactor-admin-loading.mjs
-│   ├── refactor-builder-loading.mjs
-│   ├── refactor-catalog-loading.mjs
-│   ├── refactor-chart-loading.mjs
-│   ├── refactor-landing-loading.mjs
-│   ├── refactor-profile-loading.mjs
-│   ├── refactor-protected-loading.mjs
-│   ├── test_knowledge_tools.ts
-│   ├── test_local_extraction.ts
-│   ├── test_search.ts
-│   ├── v2-model-verified.png
-│   ├── verify_google_search.ts
-│   ├── verify_local_db.ts
-│   └── verify-build-pdf.ts
-├── .env
 ├── .firebaserc
 ├── .gitignore
 ├── .modified
@@ -2911,16 +1457,13 @@ BuilbotAI
 ├── CLAUDE.md
 ├── components.json
 ├── debug-response.json
-├── debug.log
 ├── DESIGN.md
 ├── eslint.config.mjs
 ├── firebase.json
 ├── firebase.qr-test.json
-├── firestore-debug.log
 ├── firestore.indexes.json
 ├── firestore.rules
 ├── GEMINI.md
-├── grounding-debug.log
 ├── models.json
 ├── next-env.d.ts
 ├── next.config.ts

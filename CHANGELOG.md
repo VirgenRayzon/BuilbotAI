@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-11-06]
+
+### Features
+- Stage indexed inventory and public catalog pagination ([36e1e56](https://github.com/VirgenRayzon/BuilbotAI/commit/36e1e56))
+
+## [2026-11-04]
+
+### Features
+- **ui**: Implement route-specific loading layouts, skeletons, and AI advisor model updates ([f50c258](https://github.com/VirgenRayzon/BuilbotAI/commit/f50c258))
+- **ai**: Update AI model settings, resolver, and Gemini API skill ([3521c80](https://github.com/VirgenRayzon/BuilbotAI/commit/3521c80))
+
+### Bug Fixes
+- **auth**: Eliminate public auth header flicker and unify protected page loading states ([1aff477](https://github.com/VirgenRayzon/BuilbotAI/commit/1aff477))
+
+## [2026-11-03]
+
+### Features
+- Refine catalog validation, search empty states, and order checkout UX ([d9c3d08](https://github.com/VirgenRayzon/BuilbotAI/commit/d9c3d08))
+
+## [2026-11-02]
+
+### Features
+- **orders**: Unify order management, payment integrity, refunds, and financial reporting ([36ac65e](https://github.com/VirgenRayzon/BuilbotAI/commit/36ac65e))
+
+## [2026-11-01]
+
+### Features
+- **landing**: Update team section and add team assets ([cac74c0](https://github.com/VirgenRayzon/BuilbotAI/commit/cac74c0))
+- **landing**: Revamp landing page with featured products, shopping paths, and assets ([a46af0c](https://github.com/VirgenRayzon/BuilbotAI/commit/a46af0c))
+
+## [2026-10-31]
+
+### Features
+- **ai-advisor**: Add build critique api route and enhance smart budget logic ([1b836d5](https://github.com/VirgenRayzon/BuilbotAI/commit/1b836d5))
+
 ## [2026-10-30]
 
 ### Features
