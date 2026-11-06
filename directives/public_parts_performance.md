@@ -30,4 +30,4 @@
 3. Enable the admin and public flags independently in a test deployment. Verify full catalog IDs/counts, search, brands, compatibility, price/stock changes, archive/restore, checkout, mobile layout, and page boundaries. Keep the flags off if parity differs.
 4. Collect matched cold/warm p50 and p95, bytes, and Firestore reads across normal traffic before changing `apphosting.yaml` instance capacity. Increase `maxInstances` only after shared-cache behavior and invalidation across instances are verified.
 
-The 2026-11-06 production parity check matched all 329 active public product IDs, and a 42-page cursor traversal matched the legacy ordering. A ten-request response baseline was recorded immediately before public activation; repeat the same method after the flagged revision serves and report its conditions and limits.
+The 2026-11-06 production parity check matched all 329 active public product IDs, and a 42-page cursor traversal matched the legacy ordering. The flagged live browser tests and matched ten-request HTTP sample passed. See `docs/inventory_scaling_rollout_2026-11-06.md` for exact measurements and limits.
