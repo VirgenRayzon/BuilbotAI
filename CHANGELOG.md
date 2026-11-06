@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [2026-11-06]
 
 ### Features
+- Enable indexed public catalog after parity checks ([6844727](https://github.com/VirgenRayzon/BuilbotAI/commit/6844727))
 - Enable paged admin inventory after parity checks ([77662d5](https://github.com/VirgenRayzon/BuilbotAI/commit/77662d5))
 - Stage indexed inventory and public catalog pagination ([36e1e56](https://github.com/VirgenRayzon/BuilbotAI/commit/36e1e56))
 
