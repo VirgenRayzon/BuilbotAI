@@ -10,7 +10,7 @@ env:
   # Enable only after inventory query indexes are ready and the dry-run/backfill
   # confirms every inventory item has inventoryQueryVersion: 1.
   - variable: NEXT_PUBLIC_INVENTORY_PAGINATION_ENABLED
-    value: "false"
+    value: "true"
   # Enable after inventory query-field backfill and index readiness are verified.
   - variable: NEXT_PUBLIC_PUBLIC_CATALOG_INDEXED_ENABLED
     value: "false"

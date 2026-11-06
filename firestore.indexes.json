@@ -29,6 +29,21 @@
       "collectionGroup": "items", "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "inventoryQueryVersion", "order": "ASCENDING" },
+        { "fieldPath": "isArchived", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "items", "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "inventoryQueryVersion", "order": "ASCENDING" },
+        { "fieldPath": "isArchived", "order": "ASCENDING" },
+        { "fieldPath": "publicCatalogEligible", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "items", "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "inventoryQueryVersion", "order": "ASCENDING" },
         { "fieldPath": "isArchived", "order": "ASCENDING" },
         { "fieldPath": "publicCatalogEligible", "order": "ASCENDING" },
         { "fieldPath": "inStock", "order": "DESCENDING" },
