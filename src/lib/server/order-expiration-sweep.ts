@@ -92,6 +92,7 @@ export function applyOrderStockRestore(
     if (entry.snap.exists) {
       transaction.update(entry.ref, {
         stock: admin.firestore.FieldValue.increment(entry.quantity),
+        inStock: Number(entry.snap.get('stock')) + entry.quantity > 0,
       });
     } else {
       missingItems.push({

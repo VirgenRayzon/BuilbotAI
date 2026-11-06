@@ -10,6 +10,7 @@ import { nameKey } from '@/lib/server/product-identities';
 import { z } from 'zod';
 import { createHash } from 'node:crypto';
 import { invalidatePublicPartsCatalog } from '@/lib/server/public-products';
+import { deriveInventoryQueryFields } from '@/lib/inventory-query-fields';
 
 async function requireStaff(idToken: string) {
   const decoded = await getAdminAuth().verifyIdToken(idToken, true);
@@ -25,6 +26,7 @@ export async function createCatalogProduct(input: unknown) {
   const collection = parsed.kind === 'part' ? inventoryItemsPath(parsed.payload.category) : 'prebuiltSystems';
   const category = parsed.kind === 'part' ? parsed.payload.category : 'PC';
   const payload: Record<string, unknown> = JSON.parse(JSON.stringify(parsed.payload));
+  if (parsed.kind === 'part') Object.assign(payload, deriveInventoryQueryFields({ ...payload, createdAt: new Date() }));
   // Bind retry keys to server-validated business fields as well as the source
   // form hash. Uploaded URLs can change when the same source image is retried.
   const logicalPayload = { ...payload };
@@ -74,6 +76,7 @@ export async function updateCatalogPart(input: unknown) {
     const skuMap = sku ? await tx.get(db.doc(`productSkus/${sku}`)) : null;
     if ((identityMap?.exists && identityMap.get('path') !== oldRef.path) || (skuMap?.exists && skuMap.get('path') !== oldRef.path)) throw new Error('Identity mapping is inconsistent.');
     const payload = JSON.parse(JSON.stringify(request.payload));
+    Object.assign(payload, deriveInventoryQueryFields({ ...source.data(), ...payload }));
     if (target.path === oldRef.path) tx.update(oldRef, payload);
     else {
       tx.create(target, { ...source.data(), ...payload, category });

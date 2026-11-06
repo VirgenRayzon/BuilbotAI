@@ -1,6 +1,92 @@
 {
   "indexes": [
     {
+      "collectionGroup": "items", "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "inventoryQueryVersion", "order": "ASCENDING" },
+        { "fieldPath": "isArchived", "order": "ASCENDING" },
+        { "fieldPath": "publicCatalogEligible", "order": "ASCENDING" },
+        { "fieldPath": "stock", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "items", "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "inventoryQueryVersion", "order": "ASCENDING" },
+        { "fieldPath": "isArchived", "order": "ASCENDING" },
+        { "fieldPath": "publicCatalogEligible", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "items", "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "inventoryQueryVersion", "order": "ASCENDING" },
+        { "fieldPath": "isArchived", "order": "ASCENDING" },
+        { "fieldPath": "category", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "items", "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "inventoryQueryVersion", "order": "ASCENDING" },
+        { "fieldPath": "isArchived", "order": "ASCENDING" },
+        { "fieldPath": "publicCatalogEligible", "order": "ASCENDING" },
+        { "fieldPath": "inStock", "order": "DESCENDING" },
+        { "fieldPath": "createdAtSort", "order": "DESCENDING" },
+        { "fieldPath": "productId", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "items", "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "inventoryQueryVersion", "order": "ASCENDING" },
+        { "fieldPath": "isArchived", "order": "ASCENDING" },
+        { "fieldPath": "category", "order": "ASCENDING" },
+        { "fieldPath": "createdAtSort", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "items", "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "inventoryQueryVersion", "order": "ASCENDING" },
+        { "fieldPath": "isArchived", "order": "ASCENDING" },
+        { "fieldPath": "category", "order": "ASCENDING" },
+        { "fieldPath": "nameSort", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "items", "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "inventoryQueryVersion", "order": "ASCENDING" },
+        { "fieldPath": "isArchived", "order": "ASCENDING" },
+        { "fieldPath": "category", "order": "ASCENDING" },
+        { "fieldPath": "price", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "items", "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "inventoryQueryVersion", "order": "ASCENDING" },
+        { "fieldPath": "isArchived", "order": "ASCENDING" },
+        { "fieldPath": "category", "order": "ASCENDING" },
+        { "fieldPath": "brandSort", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "items", "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "inventoryQueryVersion", "order": "ASCENDING" },
+        { "fieldPath": "isArchived", "order": "ASCENDING" },
+        { "fieldPath": "category", "order": "ASCENDING" },
+        { "fieldPath": "stock", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "items",
       "queryScope": "COLLECTION",
       "fields": [
@@ -47,6 +133,46 @@
       "fields": [
         {
           "fieldPath": "resourceId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isArchived",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isArchived",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "queueStage",
           "order": "ASCENDING"
         },
         {

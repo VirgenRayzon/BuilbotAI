@@ -28,6 +28,8 @@ import { useInventoryImageCount } from '@/hooks/use-inventory-image-count';
 import { ADMIN_PART_IMAGE_SIZES } from '@/lib/inventory-image-sizes';
 import { SearchNoResults } from '@/components/search-no-results';
 import { shouldShowSearchNoResults } from '@/lib/search-empty-state';
+import { useInventoryPage } from '../hooks/use-inventory-page';
+import type { AdminInventoryQuery } from '@/lib/admin-inventory-query';
 
 type PartSelection = { id: string; category: Part['category'] };
 type PartCategorySelection = { name: Part['category']; selected: boolean };
@@ -48,6 +50,9 @@ function getCreatedAtTime(value: unknown): number {
 interface StockTabProps {
     parts: Part[];
     partsLoading: boolean;
+    paged?: boolean;
+    onRequestLegacy?: () => void;
+    onCountChange?: (count: number) => void;
     profile: Pick<UserProfile, 'isSuperAdmin'> | null;
     partCategories: PartCategorySelection[];
     onSetCategories: (categories: PartCategorySelection[]) => void;
@@ -75,6 +80,9 @@ interface StockTabProps {
 export function StockTab({
     parts,
     partsLoading,
+    paged = false,
+    onRequestLegacy,
+    onCountChange,
     profile,
     partCategories,
     onSetCategories,
@@ -107,6 +115,23 @@ export function StockTab({
     const [partCurrentPage, setPartCurrentPage] = useState(1);
     const [partItemsPerPage, setPartItemsPerPage] = useState(8);
 
+    const pageOptions = useMemo<AdminInventoryQuery>(() => ({
+        categories: partCategories.filter(category => category.selected).map(category => category.name),
+        brands: [], availability: 'all', search: '', sortBy: 'Date Added',
+        sortDirection: 'desc', pageSize: partItemsPerPage,
+    }), [partCategories, partItemsPerPage]);
+    const page = useInventoryPage(pageOptions, paged);
+    const displayParts = paged ? page.parts : parts;
+    const displayLoading = paged ? page.loading : partsLoading;
+
+    useEffect(() => {
+        if (paged) onCountChange?.(page.count);
+    }, [paged, page.count, onCountChange]);
+
+    useEffect(() => {
+        if (paged && partSearchQuery.trim()) onRequestLegacy?.();
+    }, [paged, partSearchQuery, onRequestLegacy]);
+
     useEffect(() => {
         setPartCurrentPage(1);
     }, [partSearchQuery]);
@@ -115,7 +140,7 @@ export function StockTab({
         const selectedCategories = partCategories.filter(c => c.selected).map(c => c.name);
         const searchLower = partSearchQuery.toLowerCase();
 
-        return (parts || [])
+        return (displayParts || [])
             .filter(part => {
                 const isNotArchived = !part.isArchived;
                 const matchesCategory = selectedCategories.includes(part.category);
@@ -146,13 +171,13 @@ export function StockTab({
                 }
                 return partSortDirection === 'asc' ? compare : -compare;
             });
-    }, [parts, partCategories, selectedBrands, partSearchQuery, availability, partSortBy, partSortDirection]);
+    }, [displayParts, partCategories, selectedBrands, partSearchQuery, availability, partSortBy, partSortDirection]);
 
     const availableBrands = useMemo(() => {
         const selectedCategories = partCategories.filter(c => c.selected).map(c => c.name);
         const searchLower = partSearchQuery.toLowerCase();
 
-        const activeParts = (parts || []).filter(part => {
+        const activeParts = (displayParts || []).filter(part => {
             const isNotArchived = !part.isArchived;
             const matchesCategory = selectedCategories.includes(part.category);
             const matchesSearch =
@@ -168,14 +193,14 @@ export function StockTab({
             }
         });
         return Array.from(brands).sort();
-    }, [parts, partCategories, partSearchQuery]);
+    }, [displayParts, partCategories, partSearchQuery]);
 
-    const partTotalPages = Math.ceil(filteredAndSortedParts.length / partItemsPerPage);
+    const partTotalPages = Math.ceil((paged ? page.count : filteredAndSortedParts.length) / partItemsPerPage);
     const currentParts = useMemo(() => {
         const startIndex = (partCurrentPage - 1) * partItemsPerPage;
-        return filteredAndSortedParts.slice(startIndex, startIndex + partItemsPerPage);
-    }, [filteredAndSortedParts, partCurrentPage, partItemsPerPage]);
-    const hasNoSearchResults = shouldShowSearchNoResults(partSearchQuery, filteredAndSortedParts.length, partsLoading);
+        return paged ? filteredAndSortedParts : filteredAndSortedParts.slice(startIndex, startIndex + partItemsPerPage);
+    }, [filteredAndSortedParts, partCurrentPage, partItemsPerPage, paged]);
+    const hasNoSearchResults = shouldShowSearchNoResults(partSearchQuery, filteredAndSortedParts.length, displayLoading);
 
     return (
         <div className="space-y-6">
@@ -201,7 +226,7 @@ export function StockTab({
                     onSetCategories(partCategories.map(c => ({ ...c, selected: false })));
                     setPartCurrentPage(1);
                 }}
-                itemCount={filteredAndSortedParts.length}
+                itemCount={paged ? page.count : filteredAndSortedParts.length}
                 itemLabel="parts"
                 categoryLabel="Categories"
                 searchQuery={partSearchQuery}
@@ -213,21 +238,25 @@ export function StockTab({
                 availableBrands={availableBrands}
                 selectedBrands={selectedBrands}
                 onBrandChange={(brands) => {
+                    onRequestLegacy?.();
                     setSelectedBrands(brands);
                     setPartCurrentPage(1);
                 }}
                 availability={availability}
                 onAvailabilityChange={(val) => {
+                    onRequestLegacy?.();
                     setAvailability(val);
                     setPartCurrentPage(1);
                 }}
                 sortBy={partSortBy}
                 onSortByChange={(val) => {
+                    onRequestLegacy?.();
                     setPartSortBy(val);
                     setPartCurrentPage(1);
                 }}
                 sortDirection={partSortDirection}
                 onSortDirectionChange={(val) => {
+                    onRequestLegacy?.();
                     setPartSortDirection(val);
                     setPartCurrentPage(1);
                 }}
@@ -237,6 +266,7 @@ export function StockTab({
                 onViewChange={setActiveView}
                 showViewToggle={true}
                 supportedViews={['grid', 'table']}
+                onFiltersOpen={onRequestLegacy}
                 leadingActions={
                     <Tooltip label={isPartSelectionMode ? "Exit Selection Mode" : "Bulk Select Mode"} withArrow position="top">
                         <ActionIcon
@@ -256,7 +286,7 @@ export function StockTab({
                     </Tooltip>
                 }
                 actions={
-                    <AddPartDialog onSave={onAddPart} existingPartNames={parts.map(part => part.name)}>
+                    <AddPartDialog onSave={onAddPart} existingPartNames={displayParts.map(part => part.name)}>
                         <Button
                             size="sm"
                             radius="md"
@@ -282,6 +312,11 @@ export function StockTab({
             />
 
             {/* Bulk Selection Actions Bar when selection mode is active */}
+            {paged && page.error && (
+                <Paper withBorder radius="lg" p="md" role="alert">
+                    Inventory could not be loaded. <Button variant="subtle" onClick={page.refresh}>Retry</Button>
+                </Paper>
+            )}
             {isPartSelectionMode && (
                 <div className="flex flex-wrap items-center gap-2 rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-2 animate-in fade-in">
                     <Button
@@ -329,7 +364,7 @@ export function StockTab({
                 <SearchNoResults query={partSearchQuery} itemLabel="components" onClear={() => setPartSearchQuery('')} />
             ) : activeView === 'grid' ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
-                    {partsLoading ? (
+                    {displayLoading ? (
                         Array.from({length:partItemsPerPage}, (_, index) => <AdminPartSkeleton key={index} />)
                     ) : (
                         currentParts.map((part, index) => (
@@ -358,7 +393,7 @@ export function StockTab({
                     className="overflow-hidden border-slate-200 bg-white/80 shadow-sm dark:border-white/10 dark:bg-[#141a23]/80"
                 >
                     <InventoryTable
-                        loading={partsLoading}
+                        loading={displayLoading}
                         loadingCount={partItemsPerPage}
                         parts={currentParts}
                         onDelete={onDeletePart}
@@ -373,12 +408,13 @@ export function StockTab({
                     />
                 </Paper>
             )}
-            {filteredAndSortedParts.length > 0 && <PaginationControls
-                currentPage={partCurrentPage}
+            {(paged ? page.count : filteredAndSortedParts.length) > 0 && <PaginationControls
+                currentPage={paged ? page.page : partCurrentPage}
                 totalPages={partTotalPages}
                 itemsPerPage={partItemsPerPage}
-                onPageChange={setPartCurrentPage}
+                onPageChange={paged ? page.navigate : setPartCurrentPage}
                 onItemsPerPageChange={setPartItemsPerPage}
+                cursorMode={paged}
             />}
         </div>
     );

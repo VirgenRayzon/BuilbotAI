@@ -69,8 +69,8 @@ export async function assignProductIdentity(db: Firestore, ref: DocumentReferenc
         const identity = { productId, ...random, schemaVersion: 1 };
         const result = { id: ref.id, productId, ...random, adminUrl: productAdminUrl(kind, productId) };
         tx.set(counterRef, { value: Number(counter.get('value') || 0) + 1 });
-        if (create) tx.create(ref, { ...productPayload, ...identity, isArchived: false, createdAt: FieldValue.serverTimestamp() });
-        else tx.update(ref, identity);
+        if (create) tx.create(ref, { ...productPayload, ...identity, ...(kind === 'part' ? { publicCatalogEligible: true } : {}), isArchived: false, createdAt: FieldValue.serverTimestamp() });
+        else tx.update(ref, { ...identity, ...(kind === 'part' ? { publicCatalogEligible: true } : {}) });
         tx.create(publicRef, { path: ref.path, kind, category });
         tx.create(skuRef, { path: ref.path, productId });
         tx.create(qrRef, { productId, enabled: true });

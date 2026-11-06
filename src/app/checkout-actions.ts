@@ -510,6 +510,7 @@ async function processCheckoutInternal(
       for (const [, group] of groupedRequirements) {
         transaction.update(group.ref, {
           stock: admin.firestore.FieldValue.increment(-group.quantity),
+          inStock: Number(group.snap.get('stock')) - group.quantity > 0,
           popularity: admin.firestore.FieldValue.increment(group.quantity),
         });
       }

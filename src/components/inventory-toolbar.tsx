@@ -69,6 +69,7 @@ export interface InventoryToolbarProps {
   availableBrands?: string[];
   selectedBrands?: string[];
   onBrandChange?: (brands: string[]) => void;
+  onFiltersOpen?: () => void;
 
   hideIncompatible?: boolean;
   onHideIncompatibleChange?: (value: boolean) => void;
@@ -116,6 +117,7 @@ export function InventoryToolbar({
   availableBrands = [],
   selectedBrands = [],
   onBrandChange,
+  onFiltersOpen,
   hideIncompatible,
   onHideIncompatibleChange,
   availability,
@@ -228,7 +230,7 @@ export function InventoryToolbar({
       leftSection={<Filter size={isCompactHeader ? 15 : 17} />}
       rightSection={activeCount ? <Badge color="cyan" circle size={isCompactHeader ? 'xs' : 'sm'}>{activeCount}</Badge> : undefined}
       className={isCompactHeader ? 'whitespace-nowrap' : 'min-h-11 flex-1 whitespace-nowrap sm:flex-none'}
-      onClick={mobile ? () => setMobileOpened(true) : undefined}
+      onClick={mobile ? () => { onFiltersOpen?.(); setMobileOpened(true); } : undefined}
       aria-expanded={mobile ? mobileOpened : desktopOpened}
       aria-label={`Filters and sort${activeCount ? `, ${activeCount} active` : ''}`}
     >
@@ -462,7 +464,7 @@ export function InventoryToolbar({
         <div className="hidden sm:block">
           <Popover opened={desktopOpened} onChange={setDesktopOpened} width={360} position="bottom-end" shadow="lg" withinPortal>
             <Popover.Target>
-              <div onClick={() => setDesktopOpened((opened) => !opened)}>{filterButton(false)}</div>
+              <div onClick={() => { onFiltersOpen?.(); setDesktopOpened((opened) => !opened); }}>{filterButton(false)}</div>
             </Popover.Target>
             <Popover.Dropdown p={0} className="border-slate-200 bg-white shadow-lg dark:border-white/10 dark:bg-[#111722]">
               {filterContent(() => setDesktopOpened(false), 'min(78vh, 760px)')}
@@ -607,7 +609,7 @@ export function InventoryToolbar({
           <div className="hidden sm:block">
             <Popover opened={desktopOpened} onChange={setDesktopOpened} width={360} position="bottom-start" shadow="lg" withinPortal>
               <Popover.Target>
-                <div onClick={() => setDesktopOpened((opened) => !opened)}>{filterButton(false)}</div>
+                <div onClick={() => { onFiltersOpen?.(); setDesktopOpened((opened) => !opened); }}>{filterButton(false)}</div>
               </Popover.Target>
               <Popover.Dropdown p={0} className="border-slate-200 bg-white shadow-lg dark:border-white/10 dark:bg-[#111722]">
                 {filterContent(() => setDesktopOpened(false), 'min(78vh, 760px)')}

@@ -7,6 +7,13 @@ runConfig:
   maxInstances: 1
 
 env:
+  # Enable only after inventory query indexes are ready and the dry-run/backfill
+  # confirms every inventory item has inventoryQueryVersion: 1.
+  - variable: NEXT_PUBLIC_INVENTORY_PAGINATION_ENABLED
+    value: "false"
+  # Enable after inventory query-field backfill and index readiness are verified.
+  - variable: NEXT_PUBLIC_PUBLIC_CATALOG_INDEXED_ENABLED
+    value: "false"
   - variable: GOOGLE_API_KEY
     secret: GOOGLE_API_KEY
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY

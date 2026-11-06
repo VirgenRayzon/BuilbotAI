@@ -5,13 +5,13 @@ import { collection, onSnapshot, type Firestore, type FirestoreError } from 'fir
 import { INVENTORY_CATEGORY_SLUGS, inventoryItemsPath } from '@/lib/inventory-paths';
 import type { Part } from '@/lib/types';
 
-export function useInventoryParts(firestore: Firestore | null | undefined) {
+export function useInventoryParts(firestore: Firestore | null | undefined, enabled = true) {
     const [data, setData] = useState<Part[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<FirestoreError | null>(null);
 
     useEffect(() => {
-        if (!firestore) {
+        if (!firestore || !enabled) {
             setData([]);
             setLoading(false);
             return;
@@ -42,7 +42,7 @@ export function useInventoryParts(firestore: Firestore | null | undefined) {
         ));
 
         return () => unsubscribers.forEach(unsubscribe => unsubscribe());
-    }, [firestore]);
+    }, [firestore, enabled]);
 
     return { data, loading, error };
 }

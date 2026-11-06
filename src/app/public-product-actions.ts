@@ -119,9 +119,10 @@ export async function reservePublicProduct(input: unknown) {
     if (request.expectedPrice !== undefined && Math.abs(request.expectedPrice - totalPrice) > 0.005) {
       throw new Error('Pricing has changed. Refresh the page before reserving.');
     }
-    for (const { ref, line } of stocks) {
+    for (const { ref, line, snap } of stocks) {
       tx.update(ref, {
         stock: FieldValue.increment(-line.quantity),
+        inStock: Number(snap.get('stock')) - line.quantity > 0,
         popularity: FieldValue.increment(line.quantity),
       });
     }

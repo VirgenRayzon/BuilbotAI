@@ -1,33 +1,45 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ActionIcon, Badge, Box, Button, Card, Group, Paper, Stack, Text, Tooltip } from '@mantine/core';
-import { ArrowLeft, ArrowRight, ShoppingCart } from 'lucide-react';
+import { Button, Paper, Text } from '@mantine/core';
+import { ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PublicPartsToolbar } from '@/components/public-parts-toolbar';
 import { PaginationControls } from '@/components/pagination-controls';
-import { OptimizedImage } from '@/components/ui/optimized-image';
 import type { PublicCatalogPart } from '@/lib/public-product-types';
-import { cn, formatCurrency } from '@/lib/utils';
 import { usePublicPartsCompatibility } from '@/hooks/use-public-parts-compatibility';
 import { useSiteSettings } from '@/context/site-settings-context';
 import { useEcommerce } from '@/context/ecommerce-context';
-import { CatalogQRButton } from '@/components/catalog-qr-button';
 import { PublicPartListItem } from '@/components/public-part-list-item';
+import { PublicPartCard } from '@/components/public-part-card';
+import { INVENTORY_CATEGORY_LABELS } from '@/lib/inventory-paths';
+import type { PublicCatalogPage } from '@/lib/server/public-catalog-queries';
+import { fetchCompletePublicCatalog, fetchPublicCatalogPage } from '@/app/parts/catalog-actions';
 
 const ITEMS_PER_PAGE = 8;
 type CatalogView = 'grid' | 'list';
 type SortDirection = 'asc' | 'desc';
 
-export function PublicPartsCatalog({ products, isAdminPreview = false }: { products: PublicCatalogPart[]; isAdminPreview?: boolean }) {
+export function PublicPartsCatalog({ products, initialPage, isAdminPreview = false }: { products: PublicCatalogPart[]; initialPage?: PublicCatalogPage; isAdminPreview?: boolean }) {
   const { hideIncompatible, setHideIncompatible, isCompatible } = usePublicPartsCompatibility();
   const { isEcommerceMode } = useSiteSettings();
   const { addToCart } = useEcommerce();
-  const categoryNames = useMemo(() => [...new Set(products.map((product) => product.category))].sort(), [products]);
+  const [pageProducts, setPageProducts] = useState(products);
+  const [pageCount, setPageCount] = useState(initialPage?.count ?? products.length);
+  const [completeProducts, setCompleteProducts] = useState<PublicCatalogPart[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const completeRequested = useRef(false);
+  const cursors = useRef<Array<string | null>>([null, initialPage?.nextCursor ?? null]);
+  const catalogProducts = completeProducts ?? pageProducts;
+  const paged = Boolean(initialPage) && !completeRequested.current;
+  const categoryNames = useMemo(() => initialPage && !completeProducts
+    ? Object.values(INVENTORY_CATEGORY_LABELS).sort()
+    : [...new Set(catalogProducts.map((product) => product.category))].sort(), [catalogProducts, completeProducts, initialPage]);
   const availableBrands = useMemo(
-    () => [...new Set(products.map((product) => product.brand).filter(Boolean))].sort(),
-    [products]
+    () => [...new Set(catalogProducts.map((product) => product.brand).filter(Boolean))].sort(),
+    [catalogProducts]
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState(categoryNames);
@@ -41,7 +53,7 @@ export function PublicPartsCatalog({ products, isAdminPreview = false }: { produ
   const filteredProducts = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
     const direction = sortDirection === 'asc' ? 1 : -1;
-    return products
+    return catalogProducts
       .filter((product) => {
         const searchableText = `${product.name} ${product.brand} ${product.sku} ${product.productId}`.toLowerCase();
         return selectedCategories.includes(product.category)
@@ -61,14 +73,55 @@ export function PublicPartsCatalog({ products, isAdminPreview = false }: { produ
             : a.name.localeCompare(b.name);
         return comparison * direction;
       });
-  }, [products, searchQuery, selectedBrands, selectedCategories, sortBy, sortDirection, hideIncompatible, hideOutOfStock, isCompatible]);
+  }, [catalogProducts, searchQuery, selectedBrands, selectedCategories, sortBy, sortDirection, hideIncompatible, hideOutOfStock, isCompatible]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
+  const resultCount = paged ? pageCount : filteredProducts.length;
+  const totalPages = Math.max(1, Math.ceil(resultCount / ITEMS_PER_PAGE));
   const safeCurrentPage = Math.min(currentPage, totalPages);
-  const visibleProducts = filteredProducts.slice((safeCurrentPage - 1) * ITEMS_PER_PAGE, safeCurrentPage * ITEMS_PER_PAGE);
+  const visibleProducts = paged ? filteredProducts : filteredProducts.slice((safeCurrentPage - 1) * ITEMS_PER_PAGE, safeCurrentPage * ITEMS_PER_PAGE);
   const resetToFirstPage = () => setCurrentPage(1);
 
+  const requestCompleteCatalog = () => {
+    if (!initialPage || completeRequested.current) return;
+    completeRequested.current = true;
+    setLoading(true);
+    setLoadError(null);
+    fetchCompletePublicCatalog().then(all => {
+      setCompleteProducts(all);
+      setCurrentPage(1);
+      setLoading(false);
+    }).catch(() => {
+      completeRequested.current = false;
+      setLoadError('Could not load the complete catalog. Please retry.');
+      setLoading(false);
+    });
+  };
+
+  const handlePageChange = (target: number) => {
+    if (!paged) { setCurrentPage(target); return; }
+    const cursor = cursors.current[target - 1];
+    if (target < 1 || target > totalPages || (target > 1 && !cursor)) return;
+    setLoading(true);
+    setLoadError(null);
+    fetchPublicCatalogPage(cursor ?? null).then(result => {
+      if (completeRequested.current) return;
+      setPageProducts(result.products);
+      setPageCount(result.count);
+      cursors.current[target] = result.nextCursor;
+      setCurrentPage(target);
+      setLoading(false);
+    }).catch((error: unknown) => {
+      if (error instanceof Error && error.message.includes('cursor is stale')) {
+        cursors.current = [null, initialPage?.nextCursor ?? null];
+        setCurrentPage(1);
+      }
+      setLoadError('Could not load this page. Please retry.');
+      setLoading(false);
+    });
+  };
+
   const handleCategoryChange = (categoryName: string, selected: boolean) => {
+    requestCompleteCatalog();
     if (categoryName === 'All') setSelectedCategories(categoryNames);
     else {
       setSelectedCategories((current) => selected
@@ -79,6 +132,7 @@ export function PublicPartsCatalog({ products, isAdminPreview = false }: { produ
   };
 
   const handleResetFilters = () => {
+    requestCompleteCatalog();
     setSelectedCategories(categoryNames);
     setSelectedBrands([]);
     setHideIncompatible(false);
@@ -132,31 +186,33 @@ export function PublicPartsCatalog({ products, isAdminPreview = false }: { produ
               categories={categoryNames}
               selectedCategories={selectedCategories}
               onCategoryChange={handleCategoryChange}
-              onClearCategories={() => { setSelectedCategories([]); resetToFirstPage(); }}
+              onClearCategories={() => { requestCompleteCatalog(); setSelectedCategories([]); resetToFirstPage(); }}
               brands={availableBrands}
               selectedBrands={selectedBrands}
-              onBrandChange={(brands) => { setSelectedBrands(brands); resetToFirstPage(); }}
+              onBrandChange={(brands) => { requestCompleteCatalog(); setSelectedBrands(brands); resetToFirstPage(); }}
               hideIncompatible={hideIncompatible}
-              onHideIncompatibleChange={(value) => { setHideIncompatible(value); resetToFirstPage(); }}
+              onHideIncompatibleChange={(value) => { requestCompleteCatalog(); setHideIncompatible(value); resetToFirstPage(); }}
               hideOutOfStock={hideOutOfStock}
-              onHideOutOfStockChange={(value) => { setHideOutOfStock(value); resetToFirstPage(); }}
-              itemCount={filteredProducts.length}
+              onHideOutOfStockChange={(value) => { requestCompleteCatalog(); setHideOutOfStock(value); resetToFirstPage(); }}
+              itemCount={resultCount}
               sortBy={sortBy}
               sortDirection={sortDirection}
-              onSortChange={(by, direction) => { setSortBy(by); setSortDirection(direction); resetToFirstPage(); }}
+              onSortChange={(by, direction) => { requestCompleteCatalog(); setSortBy(by); setSortDirection(direction); resetToFirstPage(); }}
               view={view}
               onViewChange={setView}
               searchQuery={searchQuery}
-              onSearchQueryChange={(value) => { setSearchQuery(value); resetToFirstPage(); }}
+              onSearchQueryChange={(value) => { requestCompleteCatalog(); setSearchQuery(value); resetToFirstPage(); }}
               onResetAll={handleResetFilters}
+              onFiltersOpen={requestCompleteCatalog}
             />
           </div>
 
-          {visibleProducts.length > 0 ? (
+          {loadError && <Paper withBorder radius="lg" p={12} role="alert"><Text>{loadError}</Text><Button variant="subtle" onClick={paged ? () => handlePageChange(currentPage) : requestCompleteCatalog}>Retry</Button></Paper>}
+          {loading ? <Paper withBorder radius="lg" p={12}><Text>Loading parts…</Text></Paper> : visibleProducts.length > 0 ? (
             view === 'grid' ? (
               <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3 xl:grid-cols-4">
                 {visibleProducts.map((product, index) => (
-                  <ProductCard
+                  <PublicPartCard
                     key={product.productId}
                     product={product}
                     detailHref={`/parts/${product.productId}${isAdminPreview ? '?preview=admin' : ''}`}
@@ -187,90 +243,13 @@ export function PublicPartsCatalog({ products, isAdminPreview = false }: { produ
             </Paper>
           )}
 
-          {filteredProducts.length > 0 && (
+          {resultCount > 0 && !loading && (
             <div className="mt-5">
-              <PaginationControls currentPage={safeCurrentPage} totalPages={totalPages} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />
+              <PaginationControls currentPage={safeCurrentPage} totalPages={totalPages} itemsPerPage={ITEMS_PER_PAGE} onPageChange={handlePageChange} cursorMode={paged} />
             </div>
           )}
         </section>
       </main>
     </div>
-  );
-}
-function ProductCard({
-  product,
-  detailHref,
-  priority,
-  isEcommerceMode,
-  onQuickAdd,
-}: {
-  product: PublicCatalogPart;
-  detailHref: string;
-  priority: boolean;
-  isEcommerceMode: boolean;
-  onQuickAdd: () => void;
-}) {
-  return (
-    <Card
-      withBorder
-      radius="lg"
-      padding={0}
-      className={cn(
-        'group flex h-full flex-col justify-between overflow-hidden border-slate-200/80 bg-white/85 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-cyan-500/40 hover:shadow-lg dark:border-white/10 dark:bg-[#111722] dark:hover:border-cyan-500/40',
-        !product.inStock && 'opacity-60 grayscale'
-      )}
-    >
-      <Stack gap={6} className="px-3 pb-2 pt-3">
-        <Group justify="space-between" align="center" wrap="nowrap">
-          <Badge size="xs" variant="light" color="gray" radius="sm" className="uppercase tracking-wide">{product.brand || 'Component'}</Badge>
-          <Badge size="xs" variant="light" color={product.inStock ? 'teal' : 'red'} radius="sm">{product.inStock ? 'Available' : 'Out of stock'}</Badge>
-        </Group>
-        <Text size="sm" fw={600} lineClamp={2} className="min-h-[2.5rem] leading-snug transition-colors group-hover:text-cyan-600 dark:group-hover:text-cyan-400">{product.name}</Text>
-      </Stack>
-      <Link href={detailHref} aria-label={`View ${product.name}`}>
-        <Box className="relative aspect-[4/3] w-full overflow-hidden border-y border-slate-200/70 bg-pure-white dark:border-white/10">
-          <OptimizedImage src={product.imageUrl || '/placeholder-part.png'} alt={product.name} fill priority={priority} sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw" className="object-contain p-2" />
-        </Box>
-      </Link>
-      <Stack gap="xs" className="px-3 pb-3 pt-3">
-        <Group justify="space-between" align="end" wrap="nowrap">
-          <Stack gap={0}>
-            <Text size="xs" c="dimmed" tt="uppercase" fw={600} className="text-[10px] tracking-wider">Price</Text>
-            <Text size="lg" fw={700} className="font-mono leading-none text-slate-900 dark:text-slate-100">{formatCurrency(product.price)}</Text>
-          </Stack>
-          <CatalogQRButton token={product.qrToken} sku={product.sku} productName={product.name} />
-        </Group>
-        <Group gap="xs" wrap="nowrap">
-          <Button
-            component={Link}
-            href={detailHref}
-            fullWidth
-            radius="md"
-            size="sm"
-            variant="light"
-            color="cyan"
-            rightSection={<ArrowRight size={15} />}
-            className="flex-1"
-          >
-            View product
-          </Button>
-          {isEcommerceMode && product.inStock && (
-            <Tooltip label="Add to Cart" withArrow>
-              <ActionIcon
-                size={36}
-                radius="md"
-                variant="filled"
-                color="teal"
-                onClick={onQuickAdd}
-                aria-label={`Add ${product.name} to cart`}
-                className="shrink-0"
-              >
-                <ShoppingCart size={16} />
-              </ActionIcon>
-            </Tooltip>
-          )}
-        </Group>
-      </Stack>
-    </Card>
   );
 }

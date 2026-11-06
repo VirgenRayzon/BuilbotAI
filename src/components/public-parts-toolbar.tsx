@@ -53,6 +53,7 @@ interface PublicPartsToolbarProps {
   onViewChange: (value: CatalogView) => void;
   itemCount: number;
   onResetAll: () => void;
+  onFiltersOpen?: () => void;
 }
 
 export function PublicPartsToolbar(props: PublicPartsToolbarProps) {
@@ -85,7 +86,7 @@ export function PublicPartsToolbar(props: PublicPartsToolbarProps) {
       leftSection={<Filter size={17} />}
       rightSection={activeCount ? <Badge color="cyan" circle size="sm">{activeCount}</Badge> : undefined}
       className="min-h-11 flex-1 whitespace-nowrap sm:flex-none"
-      onClick={mobile ? () => setMobileOpened(true) : undefined}
+      onClick={mobile ? () => { props.onFiltersOpen?.(); setMobileOpened(true); } : undefined}
       aria-expanded={mobile ? mobileOpened : desktopOpened}
       aria-label={`Filters and sort${activeCount ? `, ${activeCount} active` : ''}`}
     >
@@ -215,7 +216,7 @@ export function PublicPartsToolbar(props: PublicPartsToolbarProps) {
           <div className="hidden sm:block">
             <Popover opened={desktopOpened} onChange={setDesktopOpened} width={360} position="bottom-start" shadow="lg" withinPortal>
               <Popover.Target>
-                <div onClick={() => setDesktopOpened((opened) => !opened)}>{filterButton(false)}</div>
+                <div onClick={() => { if (!desktopOpened) props.onFiltersOpen?.(); setDesktopOpened((opened) => !opened); }}>{filterButton(false)}</div>
               </Popover.Target>
               <Popover.Dropdown p={0} className="border-slate-200 bg-white shadow-lg dark:border-white/10 dark:bg-[#111722]">
                 {filterContent(() => setDesktopOpened(false), 'min(78vh, 760px)')}

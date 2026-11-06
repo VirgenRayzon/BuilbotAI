@@ -80,6 +80,8 @@ export function useBulkActions(profile: any) {
         if (!firestore || selectedPartIds.length === 0) return;
         try {
             await bulkArchiveParts(firestore, selectedPartIds, isArchived);
+            await Promise.allSettled([clearCatalogCache()]);
+            window.dispatchEvent(new Event('inventory-page-refresh'));
             if (profile?.isManager && !profile?.isSuperAdmin) {
                 await createSystemNotification(firestore, {
                     type: 'item_archived',
@@ -101,6 +103,8 @@ export function useBulkActions(profile: any) {
         if (!firestore || selectedPartIds.length === 0 || !profile?.isSuperAdmin) return;
         try {
             await bulkDeleteParts(firestore, selectedPartIds);
+            await Promise.allSettled([clearCatalogCache()]);
+            window.dispatchEvent(new Event('inventory-page-refresh'));
             toast({ title: "Bulk Delete Complete", description: `Deleted ${selectedPartIds.length} items.` });
             setSelectedPartIds([]);
         } catch (error) {

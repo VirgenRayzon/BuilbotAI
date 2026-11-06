@@ -52,6 +52,10 @@ export default function AdminPage() {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
     const { authUser, profile, handleTabAccess, currentTab, searchParams } = useAdminCore();
+    const [legacyStockView, setLegacyStockView] = useState(false);
+    const [pagedStockCount, setPagedStockCount] = useState(0);
+    const paginationEnabled = process.env.NEXT_PUBLIC_INVENTORY_PAGINATION_ENABLED === 'true';
+    const pagedStockView = paginationEnabled && currentTab === 'stock' && !legacyStockView && !searchParams.get('product');
     const requestedAction = searchParams.get('action') === 'stock' ? '&action=stock' : '';
     const itemReturn = safeStaffProductReturn(`/admin?tab=${searchParams.get('tab') || 'stock'}&product=${searchParams.get('product') || ''}${requestedAction}`);
 
@@ -87,7 +91,7 @@ export default function AdminPage() {
         handleAddPart, handleUpdatePart, handleUpdatePartStock, handleAddPartStock, handleDeletePart, handleArchivePart,
         handleAddPrebuilt, handleUpdatePrebuilt, handleDeletePrebuilt, handleArchivePrebuilt,
         componentCategories: initialCategories
-    } = useInventory(profile);
+    } = useInventory(profile, !pagedStockView);
 
     const {
         orders,
@@ -130,8 +134,8 @@ export default function AdminPage() {
     ]);
 
     const activePartsCount = useMemo(
-        () => (parts || []).filter((part) => !part.isArchived).length,
-        [parts]
+        () => pagedStockView ? pagedStockCount : (parts || []).filter((part) => !part.isArchived).length,
+        [parts, pagedStockView, pagedStockCount]
     );
     const activePrebuiltsCount = useMemo(
         () => (prebuiltSystems || []).filter((system) => !system.isArchived).length,
@@ -246,6 +250,9 @@ export default function AdminPage() {
                                 <StockTab
                                     parts={parts}
                                     partsLoading={partsLoading}
+                                    paged={pagedStockView}
+                                    onRequestLegacy={() => setLegacyStockView(true)}
+                                    onCountChange={setPagedStockCount}
                                     profile={profile}
                                     partCategories={partCategories}
                                     onSetCategories={setPartCategories}

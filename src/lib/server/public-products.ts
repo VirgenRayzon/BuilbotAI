@@ -11,7 +11,7 @@ import { includedCpuCoolerName } from '../included-cpu-cooler';
 import { revalidateTag, unstable_cache } from 'next/cache';
 
 export const PUBLIC_PARTS_CACHE_TAG = 'public-parts-catalog';
-const COMPATIBILITY_SPEC_KEYS = [
+export const COMPATIBILITY_SPEC_KEYS = [
   'Socket', 'socket', 'Memory Type', 'RAM Type', 'Memory', 'Generation', 'Type',
   'NVMe Slots', 'SATA Slots', 'Form Factor', 'Memory Slots', 'Stick Count',
   'Radiator Size', 'Max Radiator Size (mm)', 'Mobo Support',
@@ -106,6 +106,20 @@ function timestampMillis(value: unknown): number {
   return 0;
 }
 
+export function toPublicCatalogPart(data: Part): PublicCatalogPart {
+  const specifications: PublicCatalogPart['specifications'] = {};
+  for (const key of COMPATIBILITY_SPEC_KEYS) {
+    const value = data.specifications?.[key];
+    if (typeof value === 'string' || typeof value === 'number') specifications[key] = value;
+  }
+  return {
+    productId: data.productId!, sku: data.sku || '', qrToken: data.qrToken || '', name: data.name,
+    category: data.category, brand: data.brand || '', price: data.price,
+    inStock: data.stock > 0, createdAt: timestampMillis(data.createdAt),
+    imageUrl: data.imageUrl || data.images?.[0] || '', specifications,
+  };
+}
+
 export async function listPublicProducts(kind: ProductKind): Promise<PublicProduct[]> {
   const db = getAdminFirestore();
   const snapshots = kind === 'part' ? await Promise.all(INVENTORY_CATEGORY_SLUGS.map(c => db.collection(inventoryItemsPath(c)).get())) : [await db.collection('prebuiltSystems').get()];
@@ -115,8 +129,11 @@ export async function listPublicProducts(kind: ProductKind): Promise<PublicProdu
 
 async function readPublicPartsCatalog(): Promise<PublicCatalogPart[]> {
   const db = getAdminFirestore();
+  const indexed = process.env.NEXT_PUBLIC_PUBLIC_CATALOG_INDEXED_ENABLED === 'true';
   const snapshots = await Promise.all(INVENTORY_CATEGORY_SLUGS.map(category =>
-    db.collection(inventoryItemsPath(category)).select(
+    (indexed
+      ? db.collection(inventoryItemsPath(category)).where('inventoryQueryVersion', '==', 1).where('isArchived', '==', false).where('publicCatalogEligible', '==', true)
+      : db.collection(inventoryItemsPath(category))).select(
       'isArchived', 'productId', 'sku', 'name', 'category', 'brand', 'price',
       'qrToken', 'stock', 'createdAt', 'imageUrl', 'images', 'specifications'
     ).get()
@@ -124,20 +141,23 @@ async function readPublicPartsCatalog(): Promise<PublicCatalogPart[]> {
 
   return snapshots.flatMap(snapshot => snapshot.docs)
     .filter(document => !document.get('isArchived') && PRODUCT_ID_PATTERN.test(String(document.get('productId'))))
-    .map(document => {
-      const data = document.data() as Part;
-      const specifications: PublicCatalogPart['specifications'] = {};
-      for (const key of COMPATIBILITY_SPEC_KEYS) {
-        const value = data.specifications?.[key];
-        if (typeof value === 'string' || typeof value === 'number') specifications[key] = value;
-      }
-      return {
-        productId: data.productId!, sku: data.sku || '', qrToken: data.qrToken || '', name: data.name,
-        category: data.category, brand: data.brand || '', price: data.price,
-        inStock: data.stock > 0, createdAt: timestampMillis(data.createdAt),
-        imageUrl: data.imageUrl || data.images?.[0] || '', specifications,
-      };
-    });
+    .map(document => toPublicCatalogPart(document.data() as Part));
+}
+
+/** Related items are limited to the current product's category. */
+export async function listRelatedPublicParts(category: string, excludeProductId: string): Promise<PublicCatalogPart[]> {
+  if (!INVENTORY_CATEGORY_SLUGS.includes(category.trim().toLowerCase() as typeof INVENTORY_CATEGORY_SLUGS[number])) return [];
+  const db = getAdminFirestore();
+  const indexed = process.env.NEXT_PUBLIC_PUBLIC_CATALOG_INDEXED_ENABLED === 'true';
+  const collection = db.collection(inventoryItemsPath(category));
+  const query = indexed
+    ? collection.where('inventoryQueryVersion', '==', 1).where('isArchived', '==', false).where('publicCatalogEligible', '==', true).where('stock', '>', 0).limit(9)
+    : collection;
+  const snapshot = await query.select('isArchived', 'productId', 'sku', 'qrToken', 'name', 'category', 'brand', 'price', 'stock', 'createdAt', 'imageUrl', 'images', 'specifications').get();
+  return snapshot.docs
+    .filter(document => !document.get('isArchived') && Number(document.get('stock')) > 0 && document.get('productId') !== excludeProductId && PRODUCT_ID_PATTERN.test(String(document.get('productId'))))
+    .slice(0, 8)
+    .map(document => toPublicCatalogPart(document.data() as Part));
 }
 
 export const listPublicPartsCatalog = unstable_cache(
