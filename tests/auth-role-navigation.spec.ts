@@ -150,9 +150,20 @@ test('guests can build, while protected routes still require sign-in', async ({ 
   await page.goto(`${baseURL}/builder`);
   await expect(page.getByRole('heading', { name: /Select PC Components/i })).toBeVisible();
   await page.getByRole('button', { name: 'Analyze build' }).click();
-  await expect(page).toHaveURL(/\/signin\?returnTo=%2Fbuilder$/);
+  await expect(page).toHaveURL(/\/signin\?reason=feature_required$/);
+  await expect(page.getByText('You need to sign in to use this feature.', { exact: true })).toBeVisible();
   await page.goto(`${baseURL}/admin`);
   await expect(page).toHaveURL(/\/system-access(?:\?|$)/);
+});
+
+test('feature-required sign-in always opens the builder', async ({ page }) => {
+  test.skip(!credentials.user.email || !credentials.user.password, 'Set E2E_USER_* in .env');
+  await page.goto(`${baseURL}/signin?reason=feature_required&returnTo=${encodeURIComponent('/parts/PRD-123456')}`);
+  await expect(page.getByText('You need to sign in to use this feature.', { exact: true })).toBeVisible();
+  await page.getByLabel('Email Address').fill(credentials.user.email!);
+  await page.locator('form input[type="password"]').first().fill(credentials.user.password!);
+  await page.locator('form').getByRole('button', { name: 'Sign In' }).click();
+  await expect(page).toHaveURL(/\/builder(?:\?|$)/, { timeout: 45000 });
 });
 
 test('customer sign-out returns the builder to guest mode', async ({ page }) => {

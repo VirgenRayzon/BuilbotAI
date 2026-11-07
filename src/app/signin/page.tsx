@@ -1,6 +1,5 @@
 'use client';
 
-import { safeProductReturn } from '@/lib/product-identity';
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -39,6 +38,10 @@ import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/context/user-profile';
 import { Logo } from '@/components/logo';
+import {
+  PUBLIC_FEATURE_SIGN_IN_REASON,
+  getCustomerSignInDestination,
+} from '@/lib/public-feature-auth';
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -66,8 +69,11 @@ function SignInContent() {
   const { toast } = useToast();
   const { authUser, profile, loading: authLoading, status: profileStatus } = useUserProfile();
 
-  const returnTo = safeProductReturn(searchParams?.get('returnTo') ?? null);
   const reason = searchParams?.get('reason');
+  const returnTo = getCustomerSignInDestination(
+    reason,
+    searchParams?.get('returnTo') ?? null
+  );
   const visibleError = error || (!loading && !googleLoading && reason === 'staff_account' ? staffSignInError : null);
 
   // Customer sign-in must never route a staff session into the admin portal.
@@ -331,6 +337,19 @@ function SignInContent() {
                 className="text-xs"
               >
                 Your session expired due to inactivity. Please sign in again to continue your build.
+              </Alert>
+            )}
+
+            {reason === PUBLIC_FEATURE_SIGN_IN_REASON && !error && (
+              <Alert
+                color="yellow"
+                variant="light"
+                radius="md"
+                icon={<AlertCircle size={16} />}
+                title="Sign In Required"
+                className="text-xs"
+              >
+                You need to sign in to use this feature.
               </Alert>
             )}
 

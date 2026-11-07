@@ -35,6 +35,7 @@ import { DualSidebarAnalyzer } from "@/components/bottleneck/dual-sidebar-analyz
 import type { SidebarTab } from "@/components/bottleneck/dual-sidebar-analyzer";
 import { LiveRecommendationsPanel } from "@/components/build/live-recommendations-panel";
 import type { useLiveBuildRecommendations } from "@/hooks/use-live-build-recommendations";
+import { PUBLIC_FEATURE_SIGN_IN_URL } from "@/lib/public-feature-auth";
 
 const UNIFIED_MODAL_CLASSNAMES = {
   content: "bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl overflow-hidden",
@@ -333,7 +334,7 @@ export function YourBuild({
         onUpdatePrebuilt={onUpdatePrebuilt}
         isUpdatingPrebuilt={isUpdatingPrebuilt}
         onIncompleteAction={() => setShowMissingValidation(true)}
-        onSignIn={() => router.push("/signin?returnTo=%2Fbuilder")}
+        onSignIn={() => router.push(PUBLIC_FEATURE_SIGN_IN_URL)}
         showMissingValidation={showMissingValidation}
       />
     </>
