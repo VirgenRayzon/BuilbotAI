@@ -122,6 +122,10 @@ export function BuildActionFooter({
   };
 
   const handleAddRigToCart = () => {
+    if (isGuest) {
+      onSignIn();
+      return;
+    }
     if (!complete) {
       onIncompleteAction();
       return;
@@ -130,6 +134,10 @@ export function BuildActionFooter({
   };
 
   const handleBuyRigNow = () => {
+    if (isGuest) {
+      onSignIn();
+      return;
+    }
     if (!complete) {
       onIncompleteAction();
       return;
@@ -200,8 +208,8 @@ export function BuildActionFooter({
                 radius="md"
                 color="cyan"
                 leftSection={<ShoppingCart size={17} />}
-                aria-disabled={!complete}
-                title={!complete ? "Select every highlighted core part before adding to cart." : undefined}
+                aria-disabled={!complete && !isGuest}
+                title={isGuest ? "Sign in to add your rig to cart." : !complete ? "Select every highlighted core part before adding to cart." : undefined}
                 onClick={handleAddRigToCart}
                 className={cn(
                   "h-[42px] flex-1 font-headline font-bold text-xs uppercase tracking-wider transition-all duration-200",
@@ -217,7 +225,7 @@ export function BuildActionFooter({
                   variant="filled"
                   color="teal"
                   aria-label="Buy Rig Now"
-                  aria-disabled={!complete}
+                  aria-disabled={!complete && !isGuest}
                   onClick={handleBuyRigNow}
                   className="h-[42px] w-[42px] shrink-0 shadow-md shadow-emerald-500/20"
                 >

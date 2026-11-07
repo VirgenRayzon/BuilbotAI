@@ -16,6 +16,7 @@ import { PublicPartCard } from '@/components/public-part-card';
 import { INVENTORY_CATEGORY_LABELS } from '@/lib/inventory-paths';
 import type { PublicCatalogPage } from '@/lib/server/public-catalog-queries';
 import { fetchCompletePublicCatalog, fetchPublicCatalogPage } from '@/app/parts/catalog-actions';
+import { usePublicFeatureAuth } from '@/hooks/use-public-feature-auth';
 
 const ITEMS_PER_PAGE = 8;
 type CatalogView = 'grid' | 'list';
@@ -25,6 +26,7 @@ export function PublicPartsCatalog({ products, initialPage, isAdminPreview = fal
   const { hideIncompatible, setHideIncompatible, isCompatible } = usePublicPartsCompatibility();
   const { isEcommerceMode } = useSiteSettings();
   const { addToCart } = useEcommerce();
+  const { requireAuth } = usePublicFeatureAuth();
   const [pageProducts, setPageProducts] = useState(products);
   const [pageCount, setPageCount] = useState(initialPage?.count ?? products.length);
   const [completeProducts, setCompleteProducts] = useState<PublicCatalogPart[] | null>(null);
@@ -144,20 +146,22 @@ export function PublicPartsCatalog({ products, initialPage, isAdminPreview = fal
 
   const handleQuickAdd = (product: PublicCatalogPart) => {
     if (!product.inStock) return;
-    addToCart(
-      {
-        id: `part-${product.productId}`,
-        productId: product.productId,
-        kind: 'part',
-        name: product.name,
-        price: product.price,
-        category: product.category,
-        brand: product.brand,
-        sku: product.sku,
-        imageUrl: product.imageUrl,
-      },
-      true
-    );
+    requireAuth(() => {
+      addToCart(
+        {
+          id: `part-${product.productId}`,
+          productId: product.productId,
+          kind: 'part',
+          name: product.name,
+          price: product.price,
+          category: product.category,
+          brand: product.brand,
+          sku: product.sku,
+          imageUrl: product.imageUrl,
+        },
+        true
+      );
+    });
   };
 
   return (

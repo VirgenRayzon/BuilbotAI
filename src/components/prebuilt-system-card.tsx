@@ -48,6 +48,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useSiteSettings } from "@/context/site-settings-context";
 import { useEcommerce, getEcommerceFallbackImage } from "@/context/ecommerce-context";
+import { usePublicFeatureAuth } from "@/hooks/use-public-feature-auth";
 
 interface PrebuiltSystemCardProps {
   system: PrebuiltSystem;
@@ -77,6 +78,7 @@ export function PrebuiltSystemCard({
   const detailHref = `/pre-builts/${system.productId || system.id}${isAdminPreview ? "?preview=admin" : ""}`;
   const { shouldCorruptImages, isEcommerceMode } = useSiteSettings();
   const { addToCart } = useEcommerce();
+  const { requireAuth } = usePublicFeatureAuth();
   const [isExpandedLocal, setIsExpandedLocal] = useState(false);
   const isExpanded = expanded !== undefined ? expanded : isExpandedLocal;
   const { toast } = useToast();
@@ -212,52 +214,45 @@ export function PrebuiltSystemCard({
     e.preventDefault();
     e.stopPropagation();
 
-    if (isEcommerceMode) {
-      if (!isComplete || !isInStock) return;
-      const componentsList = Object.entries(resolvedParts)
-        .filter(([, part]) => Boolean(part))
-        .map(([cat, part]) => ({
-          id: part.id,
-          productId: part.productId,
-          category: cat.toUpperCase(),
-          name: part.name,
-          price: part.price || 0,
-          imageUrl:
-            part.imageUrl ||
-            part.images?.[0] ||
-            getEcommerceFallbackImage(cat, "part"),
-        }));
-      addToCart(
-        {
-          id: `prebuilt-${system.id}`,
-          productId: system.productId,
-          kind: "prebuilt",
-          name: system.name,
-          price: system.price,
-          tier: system.tier,
-          imageUrl:
-            system.imageUrl ||
-            system.images?.[0] ||
-            getEcommerceFallbackImage(undefined, "prebuilt"),
-          components: componentsList,
-          includeAssembly: true,
-        },
-        true
-      );
-      return;
-    }
-
-    if (!isComplete || !authUser || !profile || isReserving || !isInStock) {
-      if (!authUser) {
-        toast({
-          title: "Sign In Required",
-          description: "Please sign in to reserve a prebuilt rig.",
-          variant: "destructive",
-        });
+    requireAuth(() => {
+      if (isEcommerceMode) {
+        if (!isComplete || !isInStock) return;
+        const componentsList = Object.entries(resolvedParts)
+          .filter(([, part]) => Boolean(part))
+          .map(([cat, part]) => ({
+            id: part.id,
+            productId: part.productId,
+            category: cat.toUpperCase(),
+            name: part.name,
+            price: part.price || 0,
+            imageUrl:
+              part.imageUrl ||
+              part.images?.[0] ||
+              getEcommerceFallbackImage(cat, "part"),
+          }));
+        addToCart(
+          {
+            id: `prebuilt-${system.id}`,
+            productId: system.productId,
+            kind: "prebuilt",
+            name: system.name,
+            price: system.price,
+            tier: system.tier,
+            imageUrl:
+              system.imageUrl ||
+              system.images?.[0] ||
+              getEcommerceFallbackImage(undefined, "prebuilt"),
+            components: componentsList,
+            includeAssembly: true,
+          },
+          true
+        );
+        return;
       }
-      return;
-    }
-    setIsCheckoutDialogOpen(true);
+
+      if (!isComplete || !profile || isReserving || !isInStock) return;
+      setIsCheckoutDialogOpen(true);
+    });
   };
 
   const handleReserve = async () => {
@@ -329,7 +324,8 @@ export function PrebuiltSystemCard({
     e.preventDefault();
     e.stopPropagation();
 
-    const categoryMap: Record<string, string> = {
+    requireAuth(() => {
+      const categoryMap: Record<string, string> = {
       cpu: "CPU",
       gpu: "GPU",
       motherboard: "Motherboard",
@@ -340,7 +336,7 @@ export function PrebuiltSystemCard({
       cooler: "Cooler",
     };
 
-    const parts = Object.entries(system.components).flatMap(([category, value]) => {
+      const parts = Object.entries(system.components).flatMap(([category, value]) => {
       const ids = Array.isArray(value) ? value : [value];
       return ids.filter(Boolean).map((partId) => {
         const resolvedPart = resolvedParts[category];
@@ -353,14 +349,14 @@ export function PrebuiltSystemCard({
       });
     });
 
-    const unavailableParts = Array.from(new Set([
+      const unavailableParts = Array.from(new Set([
       ...missingParts,
       ...Object.entries(partsStock)
         .filter(([, stock]) => stock <= 0)
         .map(([category]) => resolvedParts[category]?.name || categoryMap[category] || category),
     ]));
 
-    const prebuiltBuildPayload: FavoriteBuild = {
+      const prebuiltBuildPayload: FavoriteBuild = {
       id: system.id,
       name: `${system.name} (Customized)`,
       parts,
@@ -374,8 +370,9 @@ export function PrebuiltSystemCard({
       },
     };
 
-    localStorage.setItem("pc_builder_load_favorite", JSON.stringify(prebuiltBuildPayload));
-    router.push("/builder");
+      localStorage.setItem("pc_builder_load_favorite", JSON.stringify(prebuiltBuildPayload));
+      router.push("/builder");
+    });
   };
 
   const hasRemainingSpecs = Boolean(

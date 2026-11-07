@@ -14,6 +14,7 @@ import { PartBuilderCompatibilityModal } from './part-builder-compatibility-moda
 import { useSiteSettings } from '@/context/site-settings-context';
 import { useEcommerce } from '@/context/ecommerce-context';
 import { PartRelatedProducts } from './part-related-products';
+import { usePublicFeatureAuth } from '@/hooks/use-public-feature-auth';
 
 export function PublicPartPage({
   product,
@@ -27,14 +28,36 @@ export function PublicPartPage({
   const actions = usePublicProductActions(product);
   const { isEcommerceMode } = useSiteSettings();
   const { addToCart, buyNow } = useEcommerce();
+  const { requireAuth } = usePublicFeatureAuth();
   const [compatOpened, setCompatOpened] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [primaryImage = '', ...galleryImages] = product.images;
 
   const handleAddPartToCart = () => {
     if (!product.inStock) return;
-    addToCart(
-      {
+    requireAuth(() => {
+      addToCart(
+        {
+          id: `part-${product.productId}`,
+          productId: product.productId,
+          kind: 'part',
+          name: product.name,
+          price: product.price,
+          quantity,
+          category: product.category,
+          brand: product.brand,
+          sku: product.sku,
+          imageUrl: primaryImage,
+        },
+        true
+      );
+    });
+  };
+
+  const handleBuyPartNow = () => {
+    if (!product.inStock) return;
+    requireAuth(() => {
+      buyNow({
         id: `part-${product.productId}`,
         productId: product.productId,
         kind: 'part',
@@ -45,24 +68,7 @@ export function PublicPartPage({
         brand: product.brand,
         sku: product.sku,
         imageUrl: primaryImage,
-      },
-      true
-    );
-  };
-
-  const handleBuyPartNow = () => {
-    if (!product.inStock) return;
-    buyNow({
-      id: `part-${product.productId}`,
-      productId: product.productId,
-      kind: 'part',
-      name: product.name,
-      price: product.price,
-      quantity,
-      category: product.category,
-      brand: product.brand,
-      sku: product.sku,
-      imageUrl: primaryImage,
+      });
     });
   };
 
@@ -165,7 +171,7 @@ export function PublicPartPage({
                 <Button onClick={actions.reserve} loading={actions.busy} disabled={!product.inStock || actions.loading} color="teal" mih={44}>{actions.signedIn ? 'Reserve this item' : 'Sign in to reserve'}</Button>
               )}
 
-              <Button variant="light" color="cyan" mih={44} leftSection={<Wrench className="h-4 w-4" />} onClick={() => setCompatOpened(true)}>
+              <Button variant="light" color="cyan" mih={44} leftSection={<Wrench className="h-4 w-4" />} onClick={() => requireAuth(() => setCompatOpened(true))}>
                 Check with my build
               </Button>
               {actions.error && <Text role="alert" c="red" size="sm">{actions.error}</Text>}

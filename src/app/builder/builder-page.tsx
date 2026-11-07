@@ -26,6 +26,7 @@ import { prioritizeRecommendedParts } from '@/lib/live-build-recommendations';
 import { useSiteSettings } from '@/context/site-settings-context';
 import Link from 'next/link';
 import { AnimatedMessageIcon } from '@/components/ui/animated-icons';
+import { PUBLIC_FEATURE_SIGN_IN_URL } from '@/lib/public-feature-auth';
 
 /**
  * Masterpiece Architect - PC Builder Page
@@ -192,7 +193,7 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
 
                 {authUser ? <DeferredBuilderChat build={build} /> : (
                     <Link
-                        href="/signin?returnTo=%2Fbuilder"
+                        href={PUBLIC_FEATURE_SIGN_IN_URL}
                         aria-label="Sign in to use Buildbot chat"
                         title="Sign in to use Buildbot chat"
                         className="fixed bottom-20 right-4 z-50 flex h-[52px] w-[52px] items-center justify-center rounded-full bg-cyan-600 text-white shadow-lg transition-colors hover:bg-cyan-700 sm:bottom-24 sm:right-6 lg:bottom-6"

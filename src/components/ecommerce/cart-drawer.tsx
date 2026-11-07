@@ -40,12 +40,14 @@ import { formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { usePublicFeatureAuth } from "@/hooks/use-public-feature-auth";
 
 const FREE_SHIPPING_THRESHOLD = 50000;
 
 export function CartDrawer() {
   const { isEcommerceMode, shouldCorruptImages } = useSiteSettings();
   const router = useRouter();
+  const { requireAuth } = usePublicFeatureAuth();
   const {
     cart,
     cartCount,
@@ -71,9 +73,11 @@ export function CartDrawer() {
   const amountRemaining = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
 
   const handleProceedToCheckout = () => {
-    setIsCartOpen(false);
-    setActiveReceiptOrder(null);
-    router.push("/checkout");
+    requireAuth(() => {
+      setIsCartOpen(false);
+      setActiveReceiptOrder(null);
+      router.push("/checkout");
+    });
   };
 
   return (

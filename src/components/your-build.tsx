@@ -36,6 +36,7 @@ import type { SidebarTab } from "@/components/bottleneck/dual-sidebar-analyzer";
 import { LiveRecommendationsPanel } from "@/components/build/live-recommendations-panel";
 import type { useLiveBuildRecommendations } from "@/hooks/use-live-build-recommendations";
 import { PUBLIC_FEATURE_SIGN_IN_URL } from "@/lib/public-feature-auth";
+import { usePublicFeatureAuth } from "@/hooks/use-public-feature-auth";
 
 const UNIFIED_MODAL_CLASSNAMES = {
   content: "bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl overflow-hidden",
@@ -87,6 +88,7 @@ export function YourBuild({
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("parts");
   const user = useUser();
   const router = useRouter();
+  const { requireAuth } = usePublicFeatureAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [favorites, setFavorites] = useState<FavoriteBuild[]>([]);
@@ -231,7 +233,7 @@ export function YourBuild({
           leftSection={<Bookmark size={15} className="text-cyan-500" />}
           onClick={() => {
             if (!user) {
-              router.push("/signin?returnTo=%2Fbuilder");
+              router.push(PUBLIC_FEATURE_SIGN_IN_URL);
               return;
             }
             setSaveName(`Build ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}`);
@@ -246,7 +248,7 @@ export function YourBuild({
         {!isManagerMode && (
           <Menu.Item
             leftSection={<Download size={15} className="text-cyan-500" />}
-            onClick={() => void downloadBuildPdf()}
+            onClick={() => requireAuth(() => { void downloadBuildPdf(); })}
             disabled={!isBuildComplete || isDownloadingPdf}
             className="min-h-11 text-xs font-medium rounded-md hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
           >

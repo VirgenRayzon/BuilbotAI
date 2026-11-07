@@ -7,6 +7,7 @@ import { ShieldCheck, AlertCircle, ShoppingCart, Zap } from "lucide-react";
 import type { PrebuiltPartStatus } from "@/lib/prebuilt-utils";
 import { useSiteSettings } from "@/context/site-settings-context";
 import { useEcommerce, type EcommerceSubComponent } from "@/context/ecommerce-context";
+import { usePublicFeatureAuth } from "@/hooks/use-public-feature-auth";
 
 interface PrebuiltActionCardProps {
     children?: React.ReactNode;
@@ -47,34 +48,39 @@ export function PrebuiltActionCard({
 }: PrebuiltActionCardProps) {
     const { isEcommerceMode } = useSiteSettings();
     const { addToCart, buyNow } = useEcommerce();
+    const { requireAuth } = usePublicFeatureAuth();
 
     const canPurchase = isComplete && !loadingParts && isInStock && !isReserving;
 
     const handleAddToCart = () => {
         if (!canPurchase) return;
-        addToCart({
-            id: `prebuilt-${systemId}`,
-            kind: "prebuilt",
-            name: systemName,
-            price,
-            tier,
-            imageUrl,
-            components: componentList,
-            includeAssembly: true,
-        }, true);
+        requireAuth(() => {
+            addToCart({
+                id: `prebuilt-${systemId}`,
+                kind: "prebuilt",
+                name: systemName,
+                price,
+                tier,
+                imageUrl,
+                components: componentList,
+                includeAssembly: true,
+            }, true);
+        });
     };
 
     const handleBuyNow = () => {
         if (!canPurchase) return;
-        buyNow({
-            id: `prebuilt-${systemId}`,
-            kind: "prebuilt",
-            name: systemName,
-            price,
-            tier,
-            imageUrl,
-            components: componentList,
-            includeAssembly: true,
+        requireAuth(() => {
+            buyNow({
+                id: `prebuilt-${systemId}`,
+                kind: "prebuilt",
+                name: systemName,
+                price,
+                tier,
+                imageUrl,
+                components: componentList,
+                includeAssembly: true,
+            });
         });
     };
 
