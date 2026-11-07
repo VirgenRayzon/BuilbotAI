@@ -10,7 +10,7 @@ async function expectFeatureSignIn(page: Page) {
 
 test('guest builder cart, instant checkout, and AI actions require sign-in before validation', async ({ page }) => {
   await page.goto(`${baseURL}/builder`);
-  await page.getByRole('button', { name: 'Add Rig to Cart' }).click();
+  await page.getByRole('button', { name: 'Add to Cart' }).click();
   await expectFeatureSignIn(page);
 
   await page.goto(`${baseURL}/builder`);

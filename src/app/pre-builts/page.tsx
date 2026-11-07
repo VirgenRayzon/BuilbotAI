@@ -7,6 +7,8 @@ import { motion } from "framer-motion";
 import { useTheme } from "@/context/theme-provider";
 import { Button, Card, Stack, Group, Box, Paper, Text } from "@mantine/core";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
+import { CategorySelectionEmpty } from "@/components/category-selection-empty";
+import { hasNoSelectedCategories } from "@/lib/category-selection";
 import { PrebuiltSystemCard } from "@/components/prebuilt-system-card";
 import type { PrebuiltSystem } from "@/lib/types";
 import { useCollection } from "@/firebase/firestore/use-collection";
@@ -206,7 +208,9 @@ export default function PreBuiltsPage() {
                 />
               </div>
 
-              {loading ? (
+              {hasNoSelectedCategories(categories) ? (
+                <CategorySelectionEmpty itemLabel="systems" categoryLabel="Tiers" onSelectAll={() => handleCategoryChange("All", true)} />
+              ) : loading ? (
                 view === 'grid' ? <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4" aria-label="Loading systems" aria-busy="true">
                   {Array.from({length:8}, (_, index) => <PrebuiltCardSkeleton key={index} expanded={showAllDetails} />)}
                 </div> : <Paper withBorder radius="lg" className="overflow-hidden bg-white/70 dark:bg-[#141a23]/90 border-slate-200/80 dark:border-white/10">

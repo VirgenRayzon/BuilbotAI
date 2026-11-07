@@ -27,6 +27,8 @@ import { AddPartFormSchema } from '@/hooks/use-part-form';
 import { useInventoryImageCount } from '@/hooks/use-inventory-image-count';
 import { ADMIN_PART_IMAGE_SIZES } from '@/lib/inventory-image-sizes';
 import { SearchNoResults } from '@/components/search-no-results';
+import { CategorySelectionEmpty } from '@/components/category-selection-empty';
+import { hasNoSelectedCategories } from '@/lib/category-selection';
 import { shouldShowSearchNoResults } from '@/lib/search-empty-state';
 import { useInventoryPage } from '../hooks/use-inventory-page';
 import type { AdminInventoryQuery } from '@/lib/admin-inventory-query';
@@ -360,7 +362,9 @@ export function StockTab({
                 </div>
             )}
 
-            {hasNoSearchResults ? (
+            {hasNoSelectedCategories(partCategories) ? (
+                <CategorySelectionEmpty itemLabel="parts" onSelectAll={() => onSetCategories(partCategories.map(c => ({ ...c, selected: true })))} />
+            ) : hasNoSearchResults ? (
                 <SearchNoResults query={partSearchQuery} itemLabel="components" onClear={() => setPartSearchQuery('')} />
             ) : activeView === 'grid' ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">

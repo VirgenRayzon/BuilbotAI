@@ -6,6 +6,7 @@ import { Button, Paper, Text } from '@mantine/core';
 import { ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PublicPartsToolbar } from '@/components/public-parts-toolbar';
+import { CategorySelectionEmpty } from '@/components/category-selection-empty';
 import { PaginationControls } from '@/components/pagination-controls';
 import type { PublicCatalogPart } from '@/lib/public-product-types';
 import { usePublicPartsCompatibility } from '@/hooks/use-public-parts-compatibility';
@@ -212,7 +213,9 @@ export function PublicPartsCatalog({ products, initialPage, isAdminPreview = fal
           </div>
 
           {loadError && <Paper withBorder radius="lg" p={12} role="alert"><Text>{loadError}</Text><Button variant="subtle" onClick={paged ? () => handlePageChange(currentPage) : requestCompleteCatalog}>Retry</Button></Paper>}
-          {loading ? <Paper withBorder radius="lg" p={12}><Text>Loading parts…</Text></Paper> : visibleProducts.length > 0 ? (
+          {selectedCategories.length === 0 ? (
+            <CategorySelectionEmpty itemLabel="parts" onSelectAll={() => handleCategoryChange('All', true)} />
+          ) : loading ? <Paper withBorder radius="lg" p={12}><Text>Loading parts…</Text></Paper> : visibleProducts.length > 0 ? (
             view === 'grid' ? (
               <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3 xl:grid-cols-4">
                 {visibleProducts.map((product, index) => (

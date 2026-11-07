@@ -23,6 +23,8 @@ import { PaginationControls } from "@/components/pagination-controls";
 import type { Part, PrebuiltSystem } from '@/lib/types';
 import { AddPrebuiltFormSchema } from '@/components/add-prebuilt-dialog';
 import { SearchNoResults } from '@/components/search-no-results';
+import { CategorySelectionEmpty } from '@/components/category-selection-empty';
+import { hasNoSelectedCategories } from '@/lib/category-selection';
 import { shouldShowSearchNoResults } from '@/lib/search-empty-state';
 
 interface PrebuiltTabProps {
@@ -251,7 +253,9 @@ export function PrebuiltTab({
                 </div>
             )}
 
-            {hasNoSearchResults ? (
+            {hasNoSelectedCategories(prebuiltCategories) ? (
+                <CategorySelectionEmpty itemLabel="systems" categoryLabel="Tiers" onSelectAll={() => onSetCategories(prebuiltCategories.map(c => ({ ...c, selected: true })))} />
+            ) : hasNoSearchResults ? (
                 <SearchNoResults query={productSearch} itemLabel="systems" onClear={() => setProductSearch('')} />
             ) : activeView === 'grid' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

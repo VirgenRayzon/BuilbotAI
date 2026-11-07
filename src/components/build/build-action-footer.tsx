@@ -216,7 +216,7 @@ export function BuildActionFooter({
                   "shadow-md shadow-cyan-500/20 hover:scale-[1.01] active:scale-[0.99]"
                 )}
               >
-                Add Rig to Cart
+                Add to Cart
               </Button>
               <Tooltip label="Instant Checkout (Buy Now)" withArrow>
                 <ActionIcon

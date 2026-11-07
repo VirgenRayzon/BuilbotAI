@@ -13,6 +13,8 @@ import { Paper } from '@mantine/core';
 import type { Order, Part, PrebuiltSystem } from '@/lib/types';
 import { ReservationsTab } from './reservations-tab';
 import { SearchNoResults } from '@/components/search-no-results';
+import { CategorySelectionEmpty } from '@/components/category-selection-empty';
+import { hasNoSelectedCategories } from '@/lib/category-selection';
 import { shouldShowSearchNoResults } from '@/lib/search-empty-state';
 
 interface ArchiveTabProps {
@@ -240,7 +242,9 @@ export function ArchiveTab({
             </div>
           )}
 
-          {noArchivedPartResults ? (
+          {hasNoSelectedCategories(archivePartCategories) ? (
+            <CategorySelectionEmpty itemLabel="archived parts" onSelectAll={() => setArchivePartCategories((current) => current.map((category) => ({ ...category, selected: true })))} />
+          ) : noArchivedPartResults ? (
             <SearchNoResults query={searchQuery} itemLabel="archived components" onClear={() => onSearchQueryChange?.('')} />
           ) : <Paper
             withBorder
@@ -315,7 +319,9 @@ export function ArchiveTab({
             </div>
           )}
 
-          {noArchivedPrebuiltResults ? (
+          {hasNoSelectedCategories(archivePrebuiltTiers) ? (
+            <CategorySelectionEmpty itemLabel="archived systems" categoryLabel="Tiers" onSelectAll={() => setArchivePrebuiltTiers((current) => current.map((tier) => ({ ...tier, selected: true })))} />
+          ) : noArchivedPrebuiltResults ? (
             <SearchNoResults query={searchQuery} itemLabel="archived systems" onClear={() => onSearchQueryChange?.('')} />
           ) : <Paper
             withBorder

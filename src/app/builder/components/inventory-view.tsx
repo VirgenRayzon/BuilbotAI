@@ -24,6 +24,8 @@ import type { Part } from "@/lib/types";
 import { useInventoryImageCount } from '@/hooks/use-inventory-image-count';
 import { useSiteSettings } from '@/context/site-settings-context';
 import type { useLiveBuildRecommendations } from '@/hooks/use-live-build-recommendations';
+import { CategorySelectionEmpty } from '@/components/category-selection-empty';
+import { hasNoSelectedCategories } from '@/lib/category-selection';
 
 type RecommendationState = ReturnType<typeof useLiveBuildRecommendations>;
 
@@ -135,7 +137,9 @@ export function InventoryView({
 
 
         {/* Content Body */}
-        {loading ? (
+        {hasNoSelectedCategories(categories) ? (
+          <CategorySelectionEmpty itemLabel="parts" onSelectAll={() => onCategoryChange("All", true)} />
+        ) : loading ? (
           <InventoryLoading view={view} count={itemsPerPage} gridClassName={cn("grid gap-3 md:gap-4", gridColsClass)} />
         ) : paginatedParts.length > 0 ? (
           view === "grid" ? (

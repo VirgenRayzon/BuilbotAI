@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import type { ComponentData, Part, PrebuiltSystem, Resolution, WorkloadType } from "@/lib/types";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
+import { CategorySelectionEmpty } from "@/components/category-selection-empty";
+import { hasNoSelectedCategories } from "@/lib/category-selection";
 import { PartCard } from "@/components/part-card";
 import { useInventoryParts } from "@/firebase/firestore/use-inventory-parts";
 import { useFirestore } from "@/firebase";
@@ -704,7 +706,9 @@ export default function PrebuiltBuilderPage() {
                                 </div>
 
                                 <div className="flex min-w-0 flex-col gap-6 lg:col-span-9">
-                                {isBuilderLoading ? null : prioritizedParts.length > 0 ? (
+                                {hasNoSelectedCategories(categories) ? (
+                                    <CategorySelectionEmpty itemLabel="parts" onSelectAll={() => handleCategoryChange("All", true)} />
+                                ) : isBuilderLoading ? null : prioritizedParts.length > 0 ? (
                                     view === 'grid' ? (
                                         <>
                                             <div className={cn("grid grid-cols-2 gap-x-3 md:grid-cols-3 md:gap-x-4 lg:grid-cols-4 xl:grid-cols-4",
