@@ -12,6 +12,8 @@ import { z } from 'genkit';
 import fs from 'fs';
 import { retrieveHardwareVectorSpecs } from '@/lib/vector-retriever';
 import { getGenkitModelName, safeGenkitGenerate } from '@/lib/ai-model-resolver';
+import { hasExactHardwareModelMatch } from '@/lib/hardware-model-identity';
+import { getChatPartSpecifications } from '@/lib/chat-part-specifications';
 
 const DEBUG_LOG = 'grounding-debug.log';
 
@@ -63,9 +65,11 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
   try {
     const vectorResults = await retrieveHardwareVectorSpecs(input.partName, { limit: 1 });
 
-    if (vectorResults.length > 0) {
+    if (hasExactHardwareModelMatch(input.partName, vectorResults)) {
       groundedContext = vectorResults.join('\n\n');
-      logDebug("Successfully retrieved grounded context from Hardware Vector Store.");
+      logDebug("Successfully retrieved an exact model match from Hardware Vector Store.");
+    } else if (vectorResults.length > 0) {
+      logDebug("Hardware Vector Store returned only similar models. Running web search for exact verification.");
     } else {
       logDebug("Hardware Vector Store returned no matches.");
     }
@@ -87,28 +91,11 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
     if (!groundedContext) {
       logDebug("Step 1: No local context found. Running web search pre-research...");
       console.log(`[Extract Part Details] Step 1: Running web search for: ${input.partName} using model ${dynamicModel}`);
-      const researchResponse = await safeGenkitGenerate(ai, {
-        model: dynamicModel,
-        prompt: `You are a PC hardware specification researcher.
-Research the following PC component and provide detailed specifications and current pricing:
-
-Component: ${input.partName}
-
-Provide:
-1. Full official name and brand.
-2. All key specifications (architecture, cores, clock speeds, memory, TDP, dimensions, etc.)
-   For CPUs, check the manufacturer's product page for "Thermal Solution (PIB)" or the included cooler. A retail box does not guarantee a heatsink.
-3. Current street price in USD and estimated PHP price (multiply USD by 60).
-4. Category (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, or Cooler).
-5. Performance score relative to modern high-end standards (0-100).
-
-Be as specific and detailed as possible with exact numbers.`,
-        config: {
-          temperature: 0,
-          googleSearchRetrieval: {},
-        },
-      });
-      webResearchContext = researchResponse.text;
+      const research = await getChatPartSpecifications(input.partName);
+      if (research.source === 'none') {
+        throw new Error(research.message || 'Google Search could not verify this exact component.');
+      }
+      webResearchContext = `${research.specs.join('\n\n')}\nSources:\n${research.sources.map(source => `${source.title}: ${source.url}`).join('\n')}`;
       logDebug("Step 1 complete. Web research context obtained.");
       console.log(`[Extract Part Details] Step 1 complete. Research context obtained.`);
     }
@@ -176,6 +163,9 @@ Output strictly the JSON object matching the schema.`;
           { key: 'Thermal Solution (PIB)', value: 'Not Included' },
         ],
       };
+    }
+    if (webResearchContext && response.output.exists === false) {
+      throw new Error('Grounded research found the exact component, but AI formatting rejected it. Please retry.');
     }
     return response.output;
 
