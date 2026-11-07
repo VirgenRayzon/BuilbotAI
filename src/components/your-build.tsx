@@ -140,7 +140,7 @@ export function YourBuild({
   }, 0);
   const psu = build.PSU;
   const psuWattage = psu && !Array.isArray(psu) ? psu.wattage || 0 : 0;
-  const budget = recommendationState?.budget;
+  const budget = autoRecommendationsEnabled ? recommendationState?.budget : undefined;
   const minimumCompleteTotal = recommendationState?.projection?.minimumCompleteTotal;
   const budgetShortfall = budget && minimumCompleteTotal != null
     ? Math.max(0, minimumCompleteTotal - budget)

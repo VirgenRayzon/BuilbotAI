@@ -71,7 +71,7 @@ export function LiveRecommendationsPanel({
             size="sm"
           />
         </Group>
-        <div>
+        {autoRecommendationsEnabled && <div>
           <Text size="xs" fw={700} mb={6} className="text-slate-700 dark:text-slate-300">
             Use case
           </Text>
@@ -107,8 +107,8 @@ export function LiveRecommendationsPanel({
           <Text size="xs" mt={5} className="text-slate-500 dark:text-slate-400">
             {useCaseDetails[useCase]}
           </Text>
-        </div>
-        <div>
+        </div>}
+        {autoRecommendationsEnabled && <div>
           <TextInput
             size="sm" type="number" min={MIN_BUDGET} max={10_000_000}
             label="Budget in PHP" placeholder="Enter total budget"
@@ -126,8 +126,8 @@ export function LiveRecommendationsPanel({
               Setting a budget does not guarantee every recommendation will fall within it. Compatibility and availability may require higher-priced parts.
             </AiDisclaimer>
           </div>
-        </div>
-        {state.budget && (
+        </div>}
+        {autoRecommendationsEnabled && state.budget && (
           <Paper withBorder radius="md" p="sm"
             className="space-y-1 border-slate-200 bg-slate-50/70 dark:border-white/10 dark:bg-white/[0.03]">
                 <Group justify="space-between" gap="xs">

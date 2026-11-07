@@ -142,3 +142,20 @@ test('rejects GPU suggestions that exceed PSU headroom', () => {
   assert.equal(isSafeRecommendation(part('GPU', 'high-draw', { wattage: 300 }), selected), false);
   assert.equal(isSafeRecommendation(part('GPU', 'reasonable-draw', { wattage: 150 }), selected), true);
 });
+
+test('use case budget shares change the best match without imposing hard category caps', () => {
+  const selected = build([part('Case', 'case', { price: 900 })]);
+  const inventory = [
+    part('GPU', 'premium', { price: 14_000, performanceScore: 95 }),
+    part('GPU', 'balanced', { price: 8_000, performanceScore: 78 }),
+    part('CPU', 'cpu', { price: 1_000 }),
+    part('Motherboard', 'board', { price: 1_000 }),
+    part('RAM', 'ram', { price: 1_000 }),
+    part('Storage', 'storage', { price: 1_000 }),
+    part('PSU', 'psu', { price: 1_000, wattage: 1_000 }),
+    part('Cooler', 'cooler', { price: 1_000 }),
+  ];
+  const options = { resolution: '1440p' as const, budget: 30_000, preferredCategory: 'GPU' };
+  assert.equal(getLiveCandidates(inventory, selected, { ...options, workload: 'AAA' }).candidates[0]?.part.id, 'premium');
+  assert.equal(getLiveCandidates(inventory, selected, { ...options, workload: 'Office' }).candidates[0]?.part.id, 'balanced');
+});

@@ -158,18 +158,36 @@ function valueRank(part: Part, workload: WorkloadType, resolution: Resolution): 
   return (performance * workloadWeight) / Math.sqrt(Math.max(part.price, 1));
 }
 
+const budgetShares: Partial<Record<WorkloadType, Record<(typeof CORE_RECOMMENDATION_CATEGORIES)[number], number>>> = {
+  AAA: { CPU: 18, GPU: 38, Motherboard: 10, RAM: 9, Storage: 8, PSU: 8, Cooler: 6, Case: 3 },
+  Esports: { CPU: 27, GPU: 27, Motherboard: 11, RAM: 11, Storage: 7, PSU: 8, Cooler: 6, Case: 3 },
+  VideoEditing: { CPU: 25, GPU: 22, Motherboard: 10, RAM: 15, Storage: 12, PSU: 8, Cooler: 5, Case: 3 },
+  Rendering: { CPU: 21, GPU: 34, Motherboard: 9, RAM: 13, Storage: 9, PSU: 7, Cooler: 4, Case: 3 },
+  Office: { CPU: 28, GPU: 12, Motherboard: 12, RAM: 12, Storage: 13, PSU: 10, Cooler: 10, Case: 3 },
+};
+
+function allocationPenalty(part: Part, workload: WorkloadType, budget?: number): number {
+  if (!budget) return 0;
+  const share = budgetShares[workload]?.[part.category as (typeof CORE_RECOMMENDATION_CATEGORIES)[number]];
+  if (share === undefined) return 0;
+  return Math.max(0, part.price - budget * share / 100) / budget * 100;
+}
+
 function assignRecommendationRoles(
   candidates: Omit<RecommendationCandidate, 'role'>[],
   workload: WorkloadType,
   resolution: Resolution,
+  budget?: number,
 ): RecommendationCandidate[] {
   if (!candidates.length) return [];
   const bestMatch = candidates.reduce((best, candidate) =>
-    rankPart(candidate.part, workload, resolution) > rankPart(best.part, workload, resolution) ? candidate : best);
+    rankPart(candidate.part, workload, resolution) - allocationPenalty(candidate.part, workload, budget) >
+    rankPart(best.part, workload, resolution) - allocationPenalty(best.part, workload, budget) ? candidate : best);
   const alternatives = candidates.filter(candidate =>
     candidate.part.id !== bestMatch.part.id || candidate.part.category !== bestMatch.part.category);
   const bestValue = alternatives.reduce<typeof alternatives[number] | null>((best, candidate) =>
-    !best || valueRank(candidate.part, workload, resolution) > valueRank(best.part, workload, resolution)
+    !best || valueRank(candidate.part, workload, resolution) - allocationPenalty(candidate.part, workload, budget) / 100 >
+      valueRank(best.part, workload, resolution) - allocationPenalty(best.part, workload, budget) / 100
       ? candidate : best, null);
   return [
     { ...bestMatch, role: 'bestMatch' },
@@ -211,7 +229,7 @@ export function getLiveCandidates(
     const shortfall = projection?.minimumCompleteTotal !== null && projection?.minimumCompleteTotal !== undefined
       ? Math.ceil(projection.minimumCompleteTotal - options.budget) : null;
     return {
-      candidates: assignRecommendationRoles(repairs, options.workload, options.resolution),
+      candidates: assignRecommendationRoles(repairs, options.workload, options.resolution, options.budget),
       category: repairs[0]?.part.category || null,
       projection,
       message: shortfall && shortfall > 0
@@ -245,8 +263,8 @@ export function getLiveCandidates(
       ? getBudgetProjection(inventory, trialBuild(build, part)).minimumCompleteTotal : null;
     if (options.budget && (projectedCompleteTotal === null || projectedCompleteTotal > options.budget)) return [];
     return [{ part, projectedCompleteTotal: projectedCompleteTotal ?? undefined }];
-  }).sort((a, b) => rankPart(b.part, options.workload, options.resolution) -
-      rankPart(a.part, options.workload, options.resolution))
+  }).sort((a, b) => rankPart(b.part, options.workload, options.resolution) - allocationPenalty(b.part, options.workload, options.budget) -
+      rankPart(a.part, options.workload, options.resolution) + allocationPenalty(a.part, options.workload, options.budget))
     .slice(0, 8)
     .map(({ part, projectedCompleteTotal }) => ({
       part,
@@ -259,7 +277,7 @@ export function getLiveCandidates(
       projectedCompleteTotal,
     }));
 
-  const recommendations = assignRecommendationRoles(candidates, options.workload, options.resolution);
+  const recommendations = assignRecommendationRoles(candidates, options.workload, options.resolution, options.budget);
   return {
     candidates: recommendations,
     category,
