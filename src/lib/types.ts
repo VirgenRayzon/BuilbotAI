@@ -298,7 +298,7 @@ export type AuditLog = {
   actorId: string;
   actorName: string;
   actorEmail?: string;
-  scope: 'Part' | 'Prebuilt' | 'Order' | 'User' | 'System';
+  scope: import('./audit-scopes').StaffAuditScope;
   resourceName: string;
   resourceId?: string;
   details?: string;
@@ -310,7 +310,7 @@ export type UserAuditLog = {
   userId: string;
   userEmail?: string;
   actionName: 'created' | 'updated' | 'deleted' | 'restored' | 'status_changed' | 'auth_update' | 'auto_cancelled' | 'other';
-  scope: 'Order' | 'Favorite' | 'Profile' | 'System';
+  scope: import('./audit-scopes').CustomerAuditScope;
   resourceName: string;
   resourceId?: string;
   details?: string;

@@ -14,15 +14,6 @@ export function HeaderCartButton() {
 
   return (
     <div className="flex items-center gap-1.5">
-      <Badge
-        size="xs"
-        color="cyan"
-        variant="light"
-        radius="sm"
-        className="hidden xl:inline-flex uppercase tracking-wider text-[9px] font-bold border border-cyan-500/30"
-      >
-        E-Commerce UI
-      </Badge>
       <Tooltip label={`Shopping Cart (${cartCount} items)`} withArrow position="bottom">
         <Indicator
           inline

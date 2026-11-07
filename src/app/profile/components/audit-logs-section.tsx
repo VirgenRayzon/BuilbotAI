@@ -11,7 +11,6 @@ import {
   Loader2,
   X,
   Shield,
-  Info,
 } from "lucide-react";
 import {
   ActionIcon,
@@ -30,8 +29,6 @@ import {
   Text,
   ThemeIcon,
   Title,
-  Tooltip,
-  VisuallyHidden,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -40,6 +37,7 @@ import { DateRange } from "react-day-picker";
 import { PaginationControls } from "@/components/pagination-controls";
 import { CompactInfo } from "@/components/ui/compact-info";
 import type { AuditLog } from "@/lib/types";
+import { STAFF_AUDIT_SCOPES } from "@/lib/audit-scopes";
 import { AdminHeaderSlot } from "@/app/admin/components/admin-tab-header";
 
 interface AuditLogsSectionProps {
@@ -197,16 +195,18 @@ export function AuditLogsSection({
           </Badge>
         </Table.Td>
 
-        {/* Target Resource & Scope */}
+        {/* Target resource */}
         <Table.Td>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <Badge color={scopeColor} variant="outline" size="sm" className="font-semibold text-[11px]">
-              {log.scope}
-            </Badge>
-            <Text fz="sm" fw={500} className="text-slate-900 dark:text-slate-100 truncate max-w-[160px]">
-              {log.resourceName}
-            </Text>
-          </div>
+          <Text fz="sm" fw={500} className="text-slate-900 dark:text-slate-100 truncate max-w-[200px]">
+            {log.resourceName}
+          </Text>
+        </Table.Td>
+
+        {/* Scope */}
+        <Table.Td>
+          <Badge color={scopeColor} variant="outline" size="sm" className="font-semibold text-[11px]">
+            {log.scope}
+          </Badge>
         </Table.Td>
 
         {/* Event Details */}
@@ -223,28 +223,11 @@ export function AuditLogsSection({
           </Text>
         </Table.Td>
 
-        {/* Row Action/Info */}
-        <Table.Td>
-          <Group gap={0} justify="flex-end">
-            <Tooltip label={log.details ? `${log.resourceName}: ${log.details}` : log.resourceName} withArrow position="left">
-              <ActionIcon variant="subtle" color="gray" size="sm" aria-label="Event metadata">
-                <Info size={16} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-        </Table.Td>
       </Table.Tr>
     );
   });
 
-    const scopeOptions = [
-    { value: "all", label: "All Resources" },
-    { value: "Part", label: "Inventory Parts" },
-    { value: "Prebuilt", label: "Prebuilts" },
-    { value: "Order", label: "Orders" },
-    { value: "User", label: "Users" },
-    { value: "System", label: "System Config" },
-  ];
+  const scopeOptions = [{ value: "all", label: "All Resources" }, ...STAFF_AUDIT_SCOPES];
 
   const sortOptions = [
     { value: "newest", label: "Newest first" },
@@ -560,16 +543,16 @@ export function AuditLogsSection({
                   Action
                 </Table.Th>
                 <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3">
-                  Resource & Scope
+                  Resource
+                </Table.Th>
+                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3">
+                  Scope
                 </Table.Th>
                 <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3">
                   Details
                 </Table.Th>
                 <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3">
                   Timestamp
-                </Table.Th>
-                <Table.Th className="py-3">
-                  <VisuallyHidden>Actions</VisuallyHidden>
                 </Table.Th>
               </Table.Tr>
             </Table.Thead>

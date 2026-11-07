@@ -13,7 +13,6 @@ import {
   Heart,
   User as UserIcon,
   Shield,
-  Info,
 } from "lucide-react";
 import {
   ActionIcon,
@@ -29,14 +28,13 @@ import {
   TextInput,
   ThemeIcon,
   Title,
-  Tooltip,
-  VisuallyHidden,
 } from "@mantine/core";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
 import { PaginationControls } from "@/components/pagination-controls";
 import type { UserAuditLog } from "@/lib/types";
+import { CUSTOMER_AUDIT_SCOPES } from "@/lib/audit-scopes";
 
 interface UserAuditLogsSectionProps {
   logs: UserAuditLog[];
@@ -133,12 +131,9 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
             >
               {getScopeIcon(log.scope)}
             </Avatar>
-            <div className="flex flex-col min-w-0">
+            <div className="min-w-0">
               <Text fz="sm" fw={600} className="text-slate-900 dark:text-slate-100 truncate max-w-[200px] sm:max-w-xs">
                 {log.resourceName}
-              </Text>
-              <Text fz="xs" className="text-slate-500 dark:text-slate-400">
-                {log.scope === "Order" ? "Reservation Item" : log.scope}
               </Text>
             </div>
           </Group>
@@ -177,16 +172,6 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
           </Text>
         </Table.Td>
 
-        {/* Row Action/Info */}
-        <Table.Td>
-          <Group gap={0} justify="flex-end">
-            <Tooltip label={log.details || log.resourceName} withArrow position="left">
-              <ActionIcon variant="subtle" color="gray" size="sm" aria-label="Event details">
-                <Info size={16} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-        </Table.Td>
       </Table.Tr>
     );
   });
@@ -223,12 +208,7 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
               setFilterScope(val || "all");
               setCurrentPage(1);
             }}
-            data={[
-              { value: "all", label: "All Categories" },
-              { value: "Order", label: "Reservations" },
-              { value: "Favorite", label: "Favorites" },
-              { value: "Profile", label: "Profile" },
-            ]}
+            data={[{ value: "all", label: "All Categories" }, ...CUSTOMER_AUDIT_SCOPES]}
             radius="md"
             className="w-full md:w-44"
             classNames={{
@@ -313,13 +293,13 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
             <Table.Thead className="bg-slate-50/80 dark:bg-white/[0.025] border-b border-slate-200 dark:border-white/10">
               <Table.Tr>
                 <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
-                  Resource / Activity
+                  Resource
                 </Table.Th>
                 <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
                   Action
                 </Table.Th>
                 <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
-                  Category
+                  Scope
                 </Table.Th>
                 <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
                   Details
@@ -327,16 +307,13 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
                 <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
                   Timestamp
                 </Table.Th>
-                <Table.Th className="py-3.5">
-                  <VisuallyHidden>Actions</VisuallyHidden>
-                </Table.Th>
               </Table.Tr>
             </Table.Thead>
 
               <Table.Tbody>
                 {loading && rows.length === 0 ? <TableLoadingRows count={itemsPerPage} /> : rows.length === 0 ? (
                   <Table.Tr>
-                    <Table.Td colSpan={6} className="h-32 text-center text-slate-600 dark:text-slate-400 font-medium">
+                    <Table.Td colSpan={5} className="h-32 text-center text-slate-600 dark:text-slate-400 font-medium">
                       No activity logs match your selected filter criteria.
                     </Table.Td>
                   </Table.Tr>

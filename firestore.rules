@@ -131,13 +131,17 @@ service cloud.firestore {
 
     match /auditLogs/{logId} {
       allow read: if isManager();
-      allow create: if isManager();
+      allow create: if isManager()
+        && request.resource.data.actorId == request.auth.uid
+        && request.resource.data.scope in ['Part', 'Prebuilt', 'Order', 'User', 'System'];
       allow update, delete: if isSuperAdmin();
     }
 
     match /user_auditLogs/{logId} {
       allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isManager());
-      allow create: if request.auth != null && (request.auth.uid == request.resource.data.userId || isManager());
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.userId
+        && request.resource.data.scope in ['Order', 'Favorite', 'Profile', 'System'];
       allow update, delete: if isSuperAdmin();
     }
 
