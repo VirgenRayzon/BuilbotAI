@@ -1,15 +1,51 @@
 import type { NextConfig } from 'next';
-
 import path from 'path';
 
+const securityHeaders = [
+  {
+    key: 'X-DNS-Prefetch-Control',
+    value: 'on',
+  },
+  {
+    key: 'Strict-Transport-Security',
+    value: 'max-age=63072000; includeSubDomains; preload',
+  },
+  {
+    key: 'X-XSS-Protection',
+    value: '1; mode=block',
+  },
+  {
+    key: 'X-Frame-Options',
+    value: 'SAMEORIGIN',
+  },
+  {
+    key: 'X-Content-Type-Options',
+    value: 'nosniff',
+  },
+  {
+    key: 'Referrer-Policy',
+    value: 'strict-origin-when-cross-origin',
+  },
+  {
+    key: 'Permissions-Policy',
+    value: 'camera=(self), microphone=(), geolocation=()',
+  },
+];
+
 const nextConfig: NextConfig = {
-  // Browser verification uses its own build output so a normal dev server cannot
-  // overwrite the emulator client's compiled Firebase configuration.
   distDir: process.env.QR_INVENTORY_TEST === 'true' ? '.next-qr-test' : '.next',
   async headers() {
-    return process.env.QR_INVENTORY_TEST === 'true' ? [{ source: '/:path*', headers: [{ key: 'X-Buildbot-QR-Test', value: 'demo-buildbot-qr' }] }] : [];
+    const headersList = [...securityHeaders];
+    if (process.env.QR_INVENTORY_TEST === 'true') {
+      headersList.push({ key: 'X-Buildbot-QR-Test', value: 'demo-buildbot-qr' });
+    }
+    return [
+      {
+        source: '/:path*',
+        headers: headersList,
+      },
+    ];
   },
-  /* config options here */
   outputFileTracingRoot: path.join(__dirname),
   outputFileTracingIncludes: {
     '/landing-video/*': ['./public/videos/*.mp4'],
@@ -18,10 +54,10 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['@mantine/core', '@mantine/hooks'],
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   images: {
     unoptimized: true,
