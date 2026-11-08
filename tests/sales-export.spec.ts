@@ -169,13 +169,9 @@ test('sales workbook distinguishes placed value, collected payments, refunds iss
     );
     const byMetric = new Map(summaryRows.map((row) => [row.Metric, row.Value]));
 
-    // Placed value counts non-cancelled orders only (24000 unpaid COD + 40000 paid = 64000)
     expect(byMetric.get('Placed Order Value (PHP)')).toBe(64000);
-    // Collected payments counts gross paid orders only (40000 + 8000 = 48000; excludes 24000 unpaid COD)
     expect(byMetric.get('Collected Payments (PHP)')).toBe(48000);
-    // Refunds issued sums recorded refunds (5000 + 8000 = 13000)
     expect(byMetric.get('Refunds Issued (PHP)')).toBe(13000);
-    // Net sales = collected minus refunds (48000 - 13000 = 35000)
     expect(byMetric.get('Net Sales (PHP)')).toBe(35000);
 
     const orderRows = XLSX.utils.sheet_to_json<Record<string, string | number>>(

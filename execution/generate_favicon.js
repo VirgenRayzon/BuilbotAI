@@ -10,24 +10,20 @@ async function generateIcons() {
     throw new Error(`Emblem not found at ${emblemPath}`);
   }
 
-  // Generate crisp PNGs at standard sizes
   const png16 = await sharp(emblemPath).resize(16, 16).png().toBuffer();
   const png32 = await sharp(emblemPath).resize(32, 32).png().toBuffer();
   const png48 = await sharp(emblemPath).resize(48, 48).png().toBuffer();
   const png64 = await sharp(emblemPath).resize(64, 64).png().toBuffer();
   const png180 = await sharp(emblemPath).resize(180, 180).png().toBuffer();
 
-  // Write apple-icon.png
   fs.writeFileSync(path.join(rootDir, 'src/app/apple-icon.png'), png180);
 
-  // Write icon.svg using crisp embedded data URI
   const base64Png64 = png64.toString('base64');
   const svgContent = `<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
   <image href="data:image/png;base64,${base64Png64}" width="64" height="64" />
 </svg>`;
   fs.writeFileSync(path.join(rootDir, 'src/app/icon.svg'), svgContent, 'utf8');
 
-  // Multi-resolution ICO builder
   function createIco(images) {
     const numImages = images.length;
     const header = Buffer.alloc(6);

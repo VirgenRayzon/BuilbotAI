@@ -7,9 +7,7 @@ async function checkInventory() {
     console.log("Checking Firestore Inventory...");
     for (const cat of categories) {
         try {
-            // Check uppercase
             const snapshot = await db.collection(cat).limit(1).get();
-            // Check lowercase
             const snapshotLower = await db.collection(cat.toLowerCase()).limit(1).get();
             
             console.log(`${cat}: UppercaseDocs=${snapshot.size}, LowercaseDocs=${snapshotLower.size}`);

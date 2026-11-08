@@ -3,7 +3,6 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-// Initialize Firebase Admin
 if (!admin.apps.length) {
     admin.initializeApp({
         credential: admin.credential.applicationDefault()

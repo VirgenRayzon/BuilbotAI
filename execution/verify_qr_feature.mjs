@@ -1,4 +1,3 @@
-/** Run inside `firebase emulators:exec` with the demo project, never live Firebase. */
 import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
 import { mkdir, realpath, rm } from 'node:fs/promises';
@@ -18,8 +17,6 @@ await mkdir('.tmp', { recursive: true });
 let occupied = false;
 try { await fetch('http://localhost:9002/signin', { signal: AbortSignal.timeout(3000) }); occupied = true; } catch { /* Port is free. */ }
 if (occupied) throw new Error('Port 9002 is in use. Stop this workspace dev server before isolated browser verification.');
-// Emulator fixtures are recreated on each run; persisted Next data must not refer
-// to a prior run's products. Remove only this test server's validated fetch cache.
 const cachePath = resolve('.next-qr-test/cache/fetch-cache');
 try {
   const actual = await realpath(cachePath);

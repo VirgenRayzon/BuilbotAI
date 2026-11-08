@@ -2,8 +2,6 @@ import { chromium } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-// Production-only audit: start with `npm run build` and `npm run start -- -p 9002`.
-// Usage: node execution/audit_landing_performance.mjs <url> <output.json> [runs=3]
 const [url = 'http://127.0.0.1:9002', output = 'tmp/performance.json', count = '3'] = process.argv.slice(2);
 const runs = Number(count);
 if (!Number.isInteger(runs) || runs < 1) throw new Error('runs must be a positive integer');

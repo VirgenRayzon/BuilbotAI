@@ -1,7 +1,3 @@
-/**
- * Dry-run inventory query field audit; use --apply only with a completed private
- * export manifest and an explicit project ID. Resume with --after=category/docId.
- */
 import 'dotenv/config';
 import { readFile } from 'node:fs/promises';
 import { FieldPath } from 'firebase-admin/firestore';

@@ -4,7 +4,6 @@ const path = require('path');
 
 function generateChangelog() {
   try {
-    // Get commit logs: hash, date (YYYY-MM-DD), and subject
     const logOutput = execSync('git log --pretty=format:"%h|%ad|%s" --date=short', { encoding: 'utf-8' });
     const lines = logOutput.split('\n').filter(Boolean);
 
@@ -18,7 +17,6 @@ function generateChangelog() {
       const date = parts[1];
       const subject = parts.slice(2).join('|'); // Rejoin in case subject contains '|'
 
-      // Clean up common noise and skip ci commits
       const lowerSubject = subject.toLowerCase();
       if (
         lowerSubject.startsWith('merge ') ||
@@ -41,7 +39,6 @@ function generateChangelog() {
         };
       }
 
-      // Regex to match conventional commits like: feat(scope): description or feat: description
       const match = subject.match(/^(\w+)(?:\(([^)]+)\))?\s*:\s*(.+)$/);
       if (match) {
         const type = match[1].toLowerCase();
@@ -65,15 +62,12 @@ function generateChangelog() {
           groups[date].others.push(entry);
         }
       } else {
-        // Fallback for non-conventional commits
         groups[date].others.push({ hash, scope: null, desc: subject, raw: subject });
       }
     });
 
-    // Format Markdown
     let markdown = '# Changelog\n\nAll notable changes to this project will be documented in this file.\n\n';
 
-    // Sort dates descending
     const sortedDates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
 
     sortedDates.forEach(date => {
@@ -95,7 +89,6 @@ function generateChangelog() {
       const formatEntry = (entry) => {
         const scopeStr = entry.scope ? `**${entry.scope}**: ` : '';
         let descStr = entry.desc.trim();
-        // Capitalize the first letter
         descStr = descStr.charAt(0).toUpperCase() + descStr.slice(1);
         return `- ${scopeStr}${descStr} ([${entry.hash}](https://github.com/VirgenRayzon/BuilbotAI/commit/${entry.hash}))\n`;
       };

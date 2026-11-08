@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 test.skip(!process.env.LOADING_LAYOUT_FIXTURE, 'Run through node execution/verify_loading_layouts.mjs');
 
-// The fixture is installed temporarily by execution/verify_loading_layouts.mjs.
 for (const width of [1440, 768, 390]) {
   test(`builder loading geometry at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });

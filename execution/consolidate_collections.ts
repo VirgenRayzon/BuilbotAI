@@ -1,13 +1,8 @@
 import * as admin from 'firebase-admin';
 import * as dotenv from 'dotenv';
 
-// Legacy migration target: /parts. The planned lowercase inventory hierarchy is
-// /inventory/{categorySlug}/items/{partId}; see directives/inventory_hierarchy_migration.md.
-// Do not use this script to perform that migration.
-
 dotenv.config();
 
-// Initialize Firebase Admin
 function initializeFirebase() {
     if (admin.apps.length > 0) return admin.firestore();
 
@@ -48,7 +43,6 @@ function generateSearchKeywords(name: string, brand: string, category: string, m
 
     const processString = (str: string) => {
         if (!str) return;
-        // Split by spaces, dashes, slashes, underscores, commas, and parentheses
         const parts = str.toLowerCase().split(/[\s\-_/,\(\)]+/);
         parts.forEach(part => {
             const cleaned = part.replace(/[^a-z0-9]/g, '').trim();
@@ -85,7 +79,6 @@ async function runMigration() {
         for (const doc of snapshot.docs) {
             const data = doc.data();
             
-            // Generate search keywords
             const keywords = generateSearchKeywords(
                 data.name || '',
                 data.brand || '',

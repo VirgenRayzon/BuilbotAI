@@ -46,8 +46,6 @@ async function testQuery(name, prompt, userProfile = null) {
             done = doneReading;
             if (value) {
                 const chunk = decoder.decode(value);
-                // Vercel AI SDK text stream outputs parts prefixed by types (e.g., 0:"text", b:"tool-call", etc.)
-                // Let's print raw chunk or scan for tool calls
                 textResult += chunk;
             }
         }
@@ -56,7 +54,6 @@ async function testQuery(name, prompt, userProfile = null) {
         console.log(`Time taken: ${duration}ms`);
         console.log(`Raw stream output length: ${textResult.length} characters`);
         
-        // Check if tools were invoked in the stream
         const toolCallRegex = /"toolName"\s*:\s*"([^"]+)"/g;
         let match;
         const toolsCalled = [];
@@ -70,21 +67,16 @@ async function testQuery(name, prompt, userProfile = null) {
             console.log(`Tools Called: None (Pure Conversational)`);
         }
 
-        // Output first 250 characters of the answer or clean text if we can find it
-        // The Vercel AI SDK streams look like: 0:"hello"\n0:" world"\n
         const lines = textResult.split('\n');
         let answerText = '';
         for (const line of lines) {
             if (line.startsWith('0:"')) {
                 try {
-                    // Extract the string inside 0:"..."
                     const jsonStr = line.substring(2);
                     answerText += JSON.parse(jsonStr);
                 } catch (e) {
-                    // fallback
                 }
             } else if (line.startsWith('9:{') || line.startsWith('b:{') || line.startsWith('c:{')) {
-                // Tool call or result part
                 try {
                     const jsonStr = line.substring(2);
                     const parsed = JSON.parse(jsonStr);
@@ -103,19 +95,14 @@ async function testQuery(name, prompt, userProfile = null) {
 async function runAll() {
     console.log("Starting verification suite...");
 
-    // Test 1: Simple Greeting
     await testQuery("Simple Conversational turn", "Hi there, who are you and what can you do?");
 
-    // Test 2: Hardware specs look up
     await testQuery("Hardware specs look up", "what are the specs of Ryzen 5 7600X?");
 
-    // Test 3: Compatibility look up
     await testQuery("Compatibility rules query", "are ATX motherboards compatible with Mini-ITX cases?");
 
-    // Test 4: Catalog recommendation query
     await testQuery("Live catalog recommendation check", "Recommend some budget-friendly graphics cards under 20000 PHP");
 
-    // Test 5: Dynamic context profile injection check
     await testQuery(
         "User profile context injection",
         "Which motherboard would you recommend for me?",

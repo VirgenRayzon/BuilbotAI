@@ -6,7 +6,6 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-// Initialize Client SDK
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -20,7 +19,6 @@ const clientApp = initializeClientApp(firebaseConfig);
 const clientAuth = getClientAuth(clientApp);
 const clientDb = getClientFirestore(clientApp);
 
-// Initialize Admin SDK
 const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
 if (!serviceAccount) {
   console.error("Missing FIREBASE_SERVICE_ACCOUNT environment variable.");
@@ -47,7 +45,6 @@ async function runTests() {
     userId = userCredential.user.uid;
     console.log(`[1] User created. UID: ${userId}`);
 
-    // Create user profile as standard user (must not have isManager or isSuperAdmin)
     console.log(`[2] Initializing standard user profile in Firestore...`);
     await adminDb.collection('users').doc(userId).set({
       email,
@@ -57,7 +54,6 @@ async function runTests() {
     });
     console.log(`[2] Profile initialized successfully.`);
 
-    // Test Privilege Escalation via Client SDK
     console.log(`[3] Attempting to self-promote to isManager = true via Client SDK...`);
     const clientUserDocRef = clientDoc(clientDb, 'users', userId);
     
@@ -80,7 +76,6 @@ async function runTests() {
       console.error(`\n❌ SECURITY FAILURE: The client was able to self-promote to 'isManager'!\n`);
     }
 
-    // Test Privilege Escalation for activeManagerKey
     console.log(`[4] Attempting to set activeManagerKey via Client SDK...`);
     let keyEscalated = false;
     try {

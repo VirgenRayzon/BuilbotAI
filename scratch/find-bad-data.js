@@ -21,11 +21,9 @@ async function findBadData() {
                     count++;
                 }
                 if (!data.imageUrl) {
-                    // console.log(`[${colName}] Document ID: ${doc.id} is MISSING 'imageUrl' field!`);
                 }
             });
             if (count === 0) {
-                // console.log(`[${colName}] All items have 'model' field.`);
             }
         }
         console.log("Scan complete.");

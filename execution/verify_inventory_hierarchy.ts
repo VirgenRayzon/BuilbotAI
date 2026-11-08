@@ -1,4 +1,3 @@
-/** Read-only check for the new inventory paths and active catalog queries. */
 import 'dotenv/config';
 import { getAdminFirestore } from '../src/firebase/server-init';
 import {

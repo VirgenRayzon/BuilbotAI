@@ -7,7 +7,6 @@ function generateTree(dir, prefix = '') {
   let output = '';
   const files = fs.readdirSync(dir);
   
-  // Separate directories and files, and sort them
   const entries = files.map(file => {
     const fullPath = path.join(dir, file);
     try {
@@ -52,7 +51,6 @@ _Auto-generated on git push._
 
 const outputPath = path.join(rootDir, 'docs', 'project_structure.md');
 
-// ensure docs directory exists
 if (!fs.existsSync(path.join(rootDir, 'docs'))) {
   fs.mkdirSync(path.join(rootDir, 'docs'));
 }

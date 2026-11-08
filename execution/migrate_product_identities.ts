@@ -1,4 +1,3 @@
-/** Dry-run by default. Requires a fresh completed managed export before --apply. */
 import 'dotenv/config';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
@@ -40,7 +39,6 @@ async function main() {
     if (usedIds.has(productId) || usedSkus.has(sku) || usedTokens.has(token)) throw new Error(`Duplicate identity: ${doc.ref.path}`);
     usedIds.add(productId); usedSkus.add(sku); usedTokens.add(token);
     highest = Math.max(highest, Number(productId.slice(4)));
-    // Audit uses reads only. The mutating helper is called only in the --apply branch below.
     const [publicMap, skuMap, qrMap] = await Promise.all([
       db.doc(`productIds/${productId}`).get(), db.doc(`productSkus/${sku}`).get(), db.doc(`qrLinks/${token}`).get(),
     ]);

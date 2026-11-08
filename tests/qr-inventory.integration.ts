@@ -216,7 +216,6 @@ test('health report detects defects and missing targets without modifying catalo
   assert.equal(response.status, 200);
   assert.match(response.headers.get('cache-control') || '', /no-store/);
   assert.ok((await response.json()).issues.length > 0);
-  // Authorization is checked even after a successful report has been cached.
   assert.equal((await call(customerToken)).status, 403);
   await Promise.all([ref.delete(), db.doc('productIds/PRD-999998').delete(), db.doc('inventory/mouse/items/health-missing').delete()]);
   await productRef.update({ isArchived: false });
@@ -322,23 +321,19 @@ test('simulated GCash and COD checkout lifecycle, client write protection, and q
   assert.equal(created.paymentMethod, 'gcash_simulated');
   assert.equal(created.paymentStatus, 'pending');
   assert.match(created.paymentReference || '', /^GCASH-/);
-  // Subtotal 7000 is below the voucher minimum of 20000: 7000 + 250 shipping + 350 protection = 7600
   assert.equal(created.totalPrice, 7600);
 
-  // Idempotent replay with same operationId does not double deduct stock
   const replayed = await createCheckoutOrder(checkoutInput);
   assert.equal(replayed.orderId, created.orderId);
   assert.equal((await ssdRef.get()).get('stock'), 3);
   assert.equal((await ssdRef.get()).get('popularity'), 2);
 
-  // Security rules: authenticated customer cannot directly forge paymentStatus: 'paid' from client SDK
   await signInWithEmailAndPassword(auth, 'customer@qr.test', '12345678');
   await assert.rejects(
     updateDoc(doc(clientDb, 'orders', created.orderId!), { paymentStatus: 'paid' }),
     /permission/i
   );
 
-  // Simulate failed GCash payment first
   const failedRes = await resolveSimulatedPayment({
     orderId: created.orderId!,
     outcome: 'failed',
@@ -347,7 +342,6 @@ test('simulated GCash and COD checkout lifecycle, client write protection, and q
   assert.equal(failedRes.success, true);
   assert.equal(failedRes.paymentStatus, 'failed');
 
-  // Retry and simulate successful GCash payment
   const paidRes = await resolveSimulatedPayment({
     orderId: created.orderId!,
     outcome: 'success',
@@ -357,7 +351,6 @@ test('simulated GCash and COD checkout lifecycle, client write protection, and q
   assert.equal(paidRes.paymentStatus, 'paid');
   assert.ok(paidRes.paidAt);
 
-  // Cannot downgrade an already paid order to failed
   const downgradeAttempt = await resolveSimulatedPayment({
     orderId: created.orderId!,
     outcome: 'failed',
@@ -365,7 +358,6 @@ test('simulated GCash and COD checkout lifecycle, client write protection, and q
   });
   assert.equal(downgradeAttempt.success, false);
 
-  // Create a second order and switch it from failed GCash to COD, then have Manager mark COD as Paid
   const secondOrder = await createCheckoutOrder({
     ...checkoutInput,
     operationId: randomUUID(),
@@ -378,7 +370,6 @@ test('simulated GCash and COD checkout lifecycle, client write protection, and q
   assert.equal(switchedCod.paymentMethod, 'cod');
   assert.equal(switchedCod.paymentStatus, 'unpaid');
 
-  // Customer cannot call staff payment status update
   const customerStaffAttempt = await updateOrderPaymentStatusByStaff(
     secondOrder.orderId!,
     'paid',
@@ -386,7 +377,6 @@ test('simulated GCash and COD checkout lifecycle, client write protection, and q
   );
   assert.equal(customerStaffAttempt.success, false);
 
-  // Manager can mark COD order as paid
   const managerPaid = await updateOrderPaymentStatusByStaff(
     secondOrder.orderId!,
     'paid',
@@ -395,7 +385,6 @@ test('simulated GCash and COD checkout lifecycle, client write protection, and q
   assert.equal(managerPaid.success, true);
   assert.equal((await db.doc(`orders/${secondOrder.orderId}`).get()).get('paymentStatus'), 'paid');
 
-  // Cancelling the second order (quantity: 2) restores exact stock (+2 -> back to 3)
   const cancelledRes = await updateReservationStatus(secondOrder.orderId!, 'cancelled', managerToken);
   assert.equal(cancelledRes.success, true);
   assert.equal((await ssdRef.get()).get('stock'), 3);
@@ -418,7 +407,6 @@ test('order rules require current staff profiles and deny direct staff mutations
   assert.equal((await getDoc(clientRef)).exists(), true);
   assert.equal((await orderRef.get()).get('paymentStatus'), 'unpaid');
 });
-
 
 test('confirmed stage operations are atomic, retry safe, stale aware and auditable', async () => {
   const ref = db.doc('orders/phase34-stage');
@@ -490,7 +478,6 @@ test('cancellation retry restores stock once and activity pagination preserves l
   }
   assert.equal(legacy, 61);
 });
-
 
 test('COD collection and correction remain separate from fulfillment and preserve records on retry', async () => {
   const ref = db.doc('orders/phase5-cod');
@@ -585,14 +572,12 @@ test('unknown provider refunds stay locked; verified matching receipts settle on
     assert.equal((await db.doc(`orderRefundReceipts/${providerId}`).get()).get('operationId'), operationId);
     await signInWithEmailAndPassword(auth, 'customer@qr.test', '12345678');
     await assert.rejects(getDoc(doc(clientDb, `orderRefundReceipts/${providerId}`)), /permission/i);
-    // A different pending operation cannot claim the same verified provider receipt.
     const otherId = randomUUID();
     await ref.update({ pendingRefundOperationId: otherId, refundStatus: 'pending' });
     await db.doc(`orderRefundOperations/${ref.id}_${otherId}`).set({ orderId: ref.id, operationId: otherId, paymentId: 'pay_phase5', amount: 100,
       status: 'pending', destination: 'original_payment_method', reason: 'Legacy refund', actorId: 'manager', actorName: 'Manager', actorRole: 'Manager' });
     assert.equal((await reconcileOrderRefundByStaff({ orderId: ref.id, idToken: managerToken, reference })).success, false);
     assert.equal((await ref.get()).get('refundedAmount'), 100);
-    // A verified failed provider resource may release its own hold without adding a refund.
     globalThis.fetch = async (input, init) => String(input).includes('/refunds/') ? new Response(JSON.stringify({ data: { id: 'ref_phase5failed', attributes: {
       status: 'failed', amount: 10000, payment_id: 'pay_phase5', currency: 'PHP', notes: 'Legacy refund' } } }), { status: 200 }) : originalFetch(input, init);
     const failed = await reconcileOrderRefundByStaff({ orderId: ref.id, idToken: managerToken,

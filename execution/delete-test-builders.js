@@ -3,7 +3,6 @@ const path = require('path');
 
 console.log("=== Buildbot AI - A/B Test Builders Cleanup ===");
 
-// 1. Delete test-builder-1 and test-builder-2 directories
 const pathsToDelete = [
     path.join(__dirname, '../src/app/test-builder-1'),
     path.join(__dirname, '../src/app/test-builder-2')
@@ -22,20 +21,17 @@ pathsToDelete.forEach(dir => {
     }
 });
 
-// 2. Clean up src/components/super-admin-settings.tsx
 const adminSettingsPath = path.join(__dirname, '../src/components/super-admin-settings.tsx');
 if (fs.existsSync(adminSettingsPath)) {
     try {
         let content = fs.readFileSync(adminSettingsPath, 'utf8');
         
-        // Remove layout A/B testing card between markers
         const cardRegex = /\/\*\s*TEST_BUILDERS_AB_TESTING_START\s*\*\/[\s\S]*?\/\*\s*TEST_BUILDERS_AB_TESTING_END\s*\*\//g;
         if (cardRegex.test(content)) {
             content = content.replace(cardRegex, '');
             console.log("[REMOVED] A/B Layout Testing Card block from super-admin-settings.tsx");
         }
 
-        // Revert imports if needed
         content = content.replace(
             "import { Loader2, Check, X, RefreshCw, Mail, Key, Shield, Layout, ExternalLink } from 'lucide-react';",
             "import { Loader2, Check, X, RefreshCw, Mail, Key, Shield } from 'lucide-react';"
@@ -58,8 +54,6 @@ if (fs.existsSync(adminSettingsPath)) {
     console.log(`[SKIPPED] File not found: ${adminSettingsPath}`);
 }
 
-// 3. Revert modified workspace files (inventory-view.tsx and use-filtered-inventory.ts)
-// We try git checkout first since it's 100% precise.
 try {
     const { execSync } = require('child_process');
     execSync('git checkout HEAD -- src/app/builder/components/inventory-view.tsx');
@@ -68,13 +62,11 @@ try {
 } catch (gitErr) {
     console.log("[FALLBACK] Git checkout failed, executing manual string replacement reverts...");
     
-    // Fallback revert for inventory-view.tsx
     const inventoryViewPath = path.join(__dirname, '../src/app/builder/components/inventory-view.tsx');
     if (fs.existsSync(inventoryViewPath)) {
         try {
             let content = fs.readFileSync(inventoryViewPath, 'utf8');
             
-            // Revert interface
             content = content.replace(/gridCols\??:\s*number;?/g, '');
             content = content.replace(
                 "    className?: string;\n",
@@ -85,7 +77,6 @@ try {
                 "    className?: string;"
             );
 
-            // Revert signature and class
             content = content.replace(/,\r\n\s*gridCols/g, '');
             content = content.replace(/,\n\s*gridCols/g, '');
             content = content.replace(/const gridColsClass = [\s\S]*?;\r\n\r\n/g, '');
@@ -99,7 +90,6 @@ try {
         }
     }
 
-    // Fallback revert for use-filtered-inventory.ts
     const useFilteredInventoryPath = path.join(__dirname, '../src/app/builder/hooks/use-filtered-inventory.ts');
     if (fs.existsSync(useFilteredInventoryPath)) {
         try {

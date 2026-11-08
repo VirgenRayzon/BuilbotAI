@@ -4,8 +4,6 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 config({ quiet: true });
-// Production baseline/after audit; does not save credentials or browser storage.
-// Usage: node execution/audit_inventory_performance.mjs <origin> <output.json> [runs=3]
 const [origin = 'http://127.0.0.1:9002', output = 'tmp/performance/inventory.json', count = '3'] = process.argv.slice(2);
 const runs = Number(count);
 if (!Number.isInteger(runs) || runs < 1) throw new Error('runs must be positive');
@@ -97,8 +95,6 @@ try {
           if (mode === 'soft-warm') {
             await page.goto(origin + '/about', { waitUntil: 'load' });
             await page.locator(`header nav a[href="${account.route}"]`).waitFor({ state: 'attached' });
-            // Mobile menu links are hidden; click the same Next.js Link via DOM
-            // without a document navigation, rather than substituting page.goto.
             await page.evaluate(() => window.__resetInventoryAudit());
           }
           const errors = [];
@@ -137,7 +133,6 @@ try {
           const record = { route: account.route, mobile, run, mode, errors, ...metrics };
           if (mode === 'soft-warm') record.lcp = []; // standard hard-navigation LCP does not reset on a Next Link transition
           results.push(record);
-          // Checkpoint between samples so an interrupted audit remains reviewable.
           await saveResults();
           console.log(JSON.stringify({ route: account.route, mobile, run, mode,
             lcp: record.lcp.at(-1)?.time, firstImageMounted: metrics.firstImageMounted,

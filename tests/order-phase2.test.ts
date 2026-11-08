@@ -8,7 +8,6 @@ import { manageReservation, clearAllOrders } from '../src/app/admin/reservation-
 import { refundOrderByStaff, reconcileOrderRefundByStaff } from '../src/app/admin/order-refund-actions';
 import { resetSalesMetricsByAdmin, ingestDummySalesDataByAdmin } from '../src/app/admin/sales-admin-actions';
 
-// These tests execute real Server Actions with mocked SDK boundaries. No network/database writes.
 test('Phase 2 order action authorization and history guards', async t => {
   if (!admin.apps.length) admin.initializeApp({ projectId: 'demo-order-phase2' });
   const auth = admin.auth();

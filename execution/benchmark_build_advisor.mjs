@@ -1,5 +1,3 @@
-// Run while `npm run dev` serves http://localhost:9002.
-// Prints timings only; it never prints generated recommendations.
 const url = process.env.BUILD_ADVISOR_URL || 'http://localhost:9002/api/ai/build-advisor/recommendations';
 const body = {
   intendedUse: process.argv[2] || 'Gaming',

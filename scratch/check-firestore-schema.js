@@ -1,5 +1,4 @@
 const { getAdminFirestore } = require('../src/firebase/server-init');
-// FIREBASE_SERVICE_ACCOUNT should be set in environment variables
 
 async function checkSample() {
     try {

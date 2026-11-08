@@ -1,8 +1,3 @@
-/**
- * Copy the current part catalog to /inventory/{lowercaseCategory}/items/{partId}.
- * Dry-run by default. Run --apply --project=<id> only after a Firestore export
- * and after coordinating writes to the source collections.
- */
 import 'dotenv/config';
 import { isDeepStrictEqual } from 'node:util';
 import type { DocumentData, DocumentSnapshot } from 'firebase-admin/firestore';
@@ -100,12 +95,9 @@ async function main() {
                     );
 
                     if (onlyStockAndPopularity && checkoutCount > 0 && stockDifference === checkoutCount) {
-                        // Checkout used legacy collections; admin stock edits used /parts.
-                        // The exact stock/popularity delta identifies checkout deductions.
                         existing.data = { ...existing.data, stock: legacyStock, popularity: legacyPopularity };
                         reconciliations.push(`${destination}: applied ${checkoutCount} legacy checkout deduction(s)`);
                     } else if (onlyStockAndPopularity && checkoutCount === 0 && differences.length === 1 && differences[0].startsWith('stock:')) {
-                        // No checkout activity since consolidation; retain the newer /parts stock edit.
                         reconciliations.push(`${destination}: retained /parts stock ${partStock} over legacy ${legacyStock}`);
                     } else {
                         conflicts.push(`${existing.source} vs ${part.ref.path}: ${differences.join('; ')}`);

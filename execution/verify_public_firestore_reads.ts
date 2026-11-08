@@ -1,4 +1,3 @@
-/** Read-only client SDK check for public catalog paths after rules deployment. */
 import 'dotenv/config';
 import { deleteApp, initializeApp } from 'firebase/app';
 import { collection, doc, getDoc, getDocs, getFirestore, limit, query, terminate } from 'firebase/firestore';

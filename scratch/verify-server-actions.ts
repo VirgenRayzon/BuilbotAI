@@ -6,7 +6,6 @@ import { authenticateSystemAccessAction } from '../src/app/actions';
 
 dotenv.config();
 
-// Initialize Client SDK
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -19,7 +18,6 @@ const firebaseConfig = {
 const clientApp = initializeClientApp(firebaseConfig);
 const clientAuth = getClientAuth(clientApp);
 
-// Initialize Admin SDK (if not already done inside any imports)
 if (admin.apps.length === 0) {
   const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (!serviceAccount) {
@@ -44,23 +42,19 @@ async function runTests() {
   const tempSuperAdminKey = `test-super-${Date.now()}`;
 
   try {
-    // 1. Create temporary auth keys in firestore using Admin SDK
     console.log(`[1] Creating temporary auth keys: ${tempManagerKey} (manager) and ${tempSuperAdminKey} (superadmin)...`);
     await adminDb.collection('authKeys').doc(tempManagerKey).set({ role: 'manager' });
     await adminDb.collection('authKeys').doc(tempSuperAdminKey).set({ role: 'superadmin' });
     console.log(`[1] Keys created successfully.`);
 
-    // 2. Register a new test user
     console.log(`[2] Registering test user: ${email}...`);
     const userCredential = await createUserWithEmailAndPassword(clientAuth, email, password);
     const user = userCredential.user;
     userId = user.uid;
     console.log(`[2] Test user registered. UID: ${userId}`);
 
-    // Get client ID Token
     const idToken = await user.getIdToken();
 
-    // 3. Test authenticateSystemAccessAction with incorrect key
     console.log(`[3] Testing authenticateSystemAccessAction with incorrect key...`);
     const badKeyRes = await authenticateSystemAccessAction(idToken, 'invalid-key-xyz', 'manager');
     console.log(`[3] Result:`, badKeyRes);
@@ -70,14 +64,12 @@ async function runTests() {
       console.error(`❌ FAILURE: Incorrect key was accepted!`);
     }
 
-    // 4. Test authenticateSystemAccessAction with valid manager key
     console.log(`[4] Testing authenticateSystemAccessAction with valid manager key...`);
     const goodKeyRes = await authenticateSystemAccessAction(idToken, tempManagerKey, 'manager');
     console.log(`[4] Result:`, goodKeyRes);
     if (goodKeyRes.success) {
       console.log(`✅ SUCCESS: Valid manager key was accepted!`);
       
-      // Verify user document has been updated
       const userDoc = await adminDb.collection('users').doc(userId).get();
       const userData = userDoc.data();
       console.log(`[4] User document in Firestore:`, userData);
@@ -87,7 +79,6 @@ async function runTests() {
         console.error(`❌ FAILURE: Firestore profile fields not updated correctly!`);
       }
 
-      // Verify custom claims on auth
       const userRecord = await adminAuth.getUser(userId);
       console.log(`[4] User custom claims:`, userRecord.customClaims);
       if (userRecord.customClaims?.isManager === true) {
@@ -99,13 +90,9 @@ async function runTests() {
       console.error(`❌ FAILURE: Valid manager key was rejected:`, goodKeyRes.error);
     }
 
-    // 5. Test authenticateSystemAccessAction as Super Admin (should verify key and user role)
-    // Note: To be authenticated as a superadmin, the user document must already have isSuperAdmin: true.
-    // Let's set that on the profile first, then try authenticating.
     console.log(`[5] Setting isSuperAdmin: true in user document to allow super admin authentication...`);
     await adminDb.collection('users').doc(userId).update({ isSuperAdmin: true });
 
-    // Refresh ID Token to pick up changes (if any) or just pass it
     const idToken2 = await user.getIdToken(true);
 
     console.log(`[6] Testing authenticateSystemAccessAction with incorrect super admin key...`);
@@ -123,7 +110,6 @@ async function runTests() {
     if (goodSaKeyRes.success) {
       console.log(`✅ SUCCESS: Valid super admin key was accepted!`);
 
-      // Verify custom claims on auth
       const userRecord = await adminAuth.getUser(userId);
       console.log(`[7] User custom claims:`, userRecord.customClaims);
       if (userRecord.customClaims?.isSuperAdmin === true && userRecord.customClaims?.isManager === true) {

@@ -12,7 +12,6 @@ test('hero preload is discoverable before JavaScript or authentication resolves'
   await expect(preload).toHaveAttribute('fetchpriority', 'high');
   const candidates = await preload.getAttribute('imagesrcset') || await preload.getAttribute('href');
   expect(candidates).toContain('prism5-poster');
-  // Preloading a public asset must not expose gated page content.
   await expect(page.locator('img[alt="Netcodex Prism 5 PC"]')).toHaveCount(0);
   await context.close();
 });
@@ -30,7 +29,6 @@ for (const width of [390, 1440]) {
     const heroURL = await hero.evaluate(image => (image as HTMLImageElement).currentSrc);
     const downloads = await page.evaluate(imageURL => performance.getEntriesByType('resource').filter(entry => entry.name === imageURL).length, heroURL);
     expect(downloads).toBe(1);
-    // The carousel remains out of the initial render/network path.
     await expect(page.locator('#prebuilts [aria-roledescription="carousel"]')).toHaveCount(0);
     const heroRegion = page.getByRole('region', { name: 'Featured PCs and ways to shop' });
     const featureSlides = [
@@ -76,7 +74,6 @@ for (const width of [390, 1440]) {
     }
     await expect(page.getByRole('heading', { name: /Ready to Build Your/i })).toHaveCount(0);
 
-    // Exercise both stored themes on reload without changing the visual design.
     for (const theme of ['light', 'dark']) {
       await page.evaluate(value => localStorage.setItem('buildbot-ui-theme-v2', value), theme);
       await page.reload();

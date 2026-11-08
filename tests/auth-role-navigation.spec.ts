@@ -260,7 +260,6 @@ test('builder details, analyzer and chat work after loading on demand', async ({
   await expect(details.getByRole('heading', { name: name!, exact: true })).toBeVisible();
   await details.getByRole('button', { name: 'Close product details', exact: true }).click();
   await expect(details).toHaveCount(0);
-  // Reopening uses the loaded dialog and keeps its gallery functional.
   await firstImage.click();
   await expect(details.getByRole('heading', { name: name!, exact: true })).toBeVisible();
   await page.keyboard.press('Escape');

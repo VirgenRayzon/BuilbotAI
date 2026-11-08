@@ -66,7 +66,6 @@ test('Phase 6 & 7 Order Management & Assembly Verification', async (t) => {
   await t.test('Custom rig dispatch gating: allows dispatch once picking, assembly, testing, and QC pass', async () => {
     let record = initializeRigVerification('order-101', 'rig-alpha', 'Custom Gaming Rig', customRigItems);
 
-    // Pick all components
     record = applyStepUpdateAndInvalidation(
       record,
       'picking',
@@ -76,7 +75,6 @@ test('Phase 6 & 7 Order Management & Assembly Verification', async (t) => {
     );
     assert.equal(record.picking.completed, true);
 
-    // Assembly step
     record = applyStepUpdateAndInvalidation(
       record,
       'assembly',
@@ -86,7 +84,6 @@ test('Phase 6 & 7 Order Management & Assembly Verification', async (t) => {
     );
     assert.equal(record.assembly.completed, true);
 
-    // Testing step
     record = applyStepUpdateAndInvalidation(
       record,
       'testing',
@@ -97,7 +94,6 @@ test('Phase 6 & 7 Order Management & Assembly Verification', async (t) => {
     assert.equal(record.testing.completed, true);
     assert.equal(record.testing.passed, true);
 
-    // QC step
     record = applyStepUpdateAndInvalidation(
       record,
       'qc',
@@ -109,7 +105,6 @@ test('Phase 6 & 7 Order Management & Assembly Verification', async (t) => {
     assert.equal(record.qc.passed, true);
     assert.equal(record.status, 'passed');
 
-    // Should not throw now
     assert.doesNotThrow(() => assertCustomRigDispatchAllowed(testOrder, { 'rig-alpha': record }));
   });
 
@@ -121,7 +116,6 @@ test('Phase 6 & 7 Order Management & Assembly Verification', async (t) => {
     record = applyStepUpdateAndInvalidation(record, 'qc', { completed: true, passed: true }, managerVerifier, '2026-11-01T13:00:00Z');
     assert.equal(record.status, 'passed');
 
-    // A component is unpicked due to a discovered defect
     record = applyStepUpdateAndInvalidation(
       record,
       'picking',
@@ -154,7 +148,6 @@ test('Phase 6 & 7 Order Management & Assembly Verification', async (t) => {
     rig1 = applyStepUpdateAndInvalidation(rig1, 'qc', { completed: true, passed: true }, managerVerifier, 'now');
 
     const rig2 = initializeRigVerification('order-101', 'rig-beta', 'My Build #2', multiRigOrder.items.slice(7));
-    // rig2 not verified yet
 
     assert.throws(
       () => assertCustomRigDispatchAllowed(multiRigOrder, { 'rig-alpha': rig1, 'rig-beta': rig2 }),
@@ -249,14 +242,12 @@ test('Phase 6 & 7 Order Management & Assembly Verification', async (t) => {
       });
     });
 
-    // 1. Cancel the dispatched order
     const cancelRes = await updateReservationStatus('dispatched-order-1', 'cancelled', 'mock-token');
     assert.equal(cancelRes.success, true);
     assert.equal(writtenOrder.status, 'cancelled');
     assert.equal(writtenOrder.stockState, 'pending_return');
     assert.equal(writtenOrder.physicalReturnRequired, true);
 
-    // 2. Confirm physical return
     const returnRes = await confirmOrderPhysicalStockReturn({
       orderId: 'dispatched-order-1',
       idToken: 'mock-token',
@@ -321,7 +312,6 @@ test('Phase 6 & 7 Order Management & Assembly Verification', async (t) => {
 
     const timeline = mergeOrderActivity(activityOrder, newActivity);
 
-    // Verify ordering is reverse chronological (newest first)
     assert.equal(timeline.length, 3);
     assert.equal(timeline[0].type, 'refund'); // 12:00
     assert.equal(timeline[1].type, 'stage_change'); // 11:30

@@ -19,11 +19,9 @@ test('desktop prebuilt filters use compact option rows and popover', async ({ pa
   expect(tierRowHeight).toBeLessThanOrEqual(32);
   expect(sortRowHeight).toBeLessThanOrEqual(32);
 
-  // Toggle Entry tier off
   await page.getByRole('checkbox', { name: 'Entry' }).click();
   await page.getByRole('button', { name: /^Show \d+ systems$/ }).click();
 
-  // Active chip should be visible showing active tiers count
   const activeChip = page.getByRole('button', { name: /Remove .* filter/ });
   await expect(activeChip).toBeVisible();
 });
