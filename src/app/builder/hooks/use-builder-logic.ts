@@ -423,11 +423,14 @@ export function useBuilderLogic(allParts: Part[]) {
         }
     }, [allParts, setBuild, toast]);
 
-    useEffect(() => {
-        const handleLoadFavorite = (e: any) => {
-            loadFavoriteBuild(e.detail as FavoriteBuild);
-        };
+    const handleLoadFavorite = useCallback((e: Event) => {
+        const customEvent = e as CustomEvent<FavoriteBuild>;
+        if (customEvent.detail) {
+            loadFavoriteBuild(customEvent.detail);
+        }
+    }, [loadFavoriteBuild]);
 
+    useEffect(() => {
         window.addEventListener('load-favorite-build', handleLoadFavorite);
 
         if (allParts.length > 0 && !hasProcessedPendingBuildRef.current) {
@@ -445,7 +448,7 @@ export function useBuilderLogic(allParts: Part[]) {
         return () => {
             window.removeEventListener('load-favorite-build', handleLoadFavorite);
         };
-    }, [allParts, loadFavoriteBuild]);
+    }, [allParts, handleLoadFavorite, loadFavoriteBuild]);
 
     return {
         build,
