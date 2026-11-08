@@ -40,6 +40,11 @@ next-env.d.ts
 
 .genkit/*
 .env*
+!.env.example
+
+# playwright / test results
+test-results/
+playwright-report/
 
 # firebase
 firebase-debug.log
