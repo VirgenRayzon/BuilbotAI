@@ -1,8 +1,3 @@
-/**
- * ComponentCard — Mantine UI card for displaying a single PC component in the AI build summary.
- * Designed with strict Mantine UI aesthetics, light/dark mode harmony, standardized headers,
- * edge-to-edge product canvas, line-clamped AI rationale with Popover expansion, and structured price stack.
- */
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -59,7 +54,6 @@ export function ComponentCard({ name, component, icon: Icon }: ComponentCardProp
         isAiSuggested && "border-yellow-500/70 dark:border-yellow-400/70 bg-yellow-50/40 dark:bg-yellow-950/15 shadow-lg shadow-yellow-500/10 hover:border-yellow-500 dark:hover:border-yellow-400"
       )}
     >
-      {/* --- Top Header: Slot Icon, Badges & Model Name --- */}
       <Stack gap={8} mb="xs">
         <Group justify="space-between" align="center" wrap="nowrap">
           <Group gap={6} align="center" wrap="nowrap">
@@ -106,7 +100,6 @@ export function ComponentCard({ name, component, icon: Icon }: ComponentCardProp
           )}
         </Group>
 
-        {/* 2-line clamped Model Name with consistent min-height for row alignment */}
         <Text
           size="sm"
           fw={700}
@@ -121,7 +114,6 @@ export function ComponentCard({ name, component, icon: Icon }: ComponentCardProp
         </Text>
       </Stack>
 
-      {/* --- Product Showcase Canvas --- */}
       <Box
         className={cn(
           "aspect-square relative w-full overflow-hidden rounded-xl my-1",
@@ -143,7 +135,6 @@ export function ComponentCard({ name, component, icon: Icon }: ComponentCardProp
         />
       </Box>
 
-      {/* --- AI Rationale & Explanation Section --- */}
       <Stack gap={4} className="flex-grow justify-start my-2">
         <Text
           size="xs"
@@ -192,7 +183,6 @@ export function ComponentCard({ name, component, icon: Icon }: ComponentCardProp
         )}
       </Stack>
 
-      {/* --- Structured Footer: Price & Stock Status --- */}
       <Stack gap="xs" mt="xs" className="pt-2 border-t border-slate-100 dark:border-white/5">
         <Group justify="space-between" align="baseline">
           <Stack gap={0}>

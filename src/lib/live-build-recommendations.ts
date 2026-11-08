@@ -21,7 +21,6 @@ export type BudgetProjection = {
   unavailableCategories: Part['category'][];
 };
 
-/** Show the two recommendation roles before the filtered catalog, without duplicate cards. */
 export function prioritizeRecommendedParts<T extends Part>(
   filteredParts: T[], suggestions: readonly { part: Part }[],
 ): Part[] {
@@ -110,7 +109,6 @@ export function isSafeRecommendation(part: Part, build: BuilderSelection, budget
   return true;
 }
 
-/** An optimistic lower bound for finishing all eight core categories with in-stock catalog parts. */
 export function getBudgetProjection(inventory: Part[], build: BuilderSelection): BudgetProjection {
   const currentTotal = buildTotal(build);
   const missingCategories = CORE_RECOMMENDATION_CATEGORIES.filter(category => itemsIn(build, category).length === 0);

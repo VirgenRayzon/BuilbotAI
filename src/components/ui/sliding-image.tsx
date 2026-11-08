@@ -10,7 +10,6 @@ interface SlidingImageProps extends Omit<ImageProps, 'src'> {
   direction: -1 | 1;
 }
 
-/** Direction-aware gallery image transition with the shared card-image loader. */
 export function SlidingImage({ imageKey, direction, ...imageProps }: SlidingImageProps) {
   const reduceMotion = useReducedMotion();
   const offset = reduceMotion ? 0 : direction * 64;

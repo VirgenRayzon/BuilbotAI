@@ -21,12 +21,6 @@ const BUILD_CATEGORIES = new Set([
   "FANS",
 ]);
 
-/**
- * Groups an order's items into structured sets:
- * 1. "My Build" for custom PC configurations (with distinct rig instances preserved)
- * 2. Prebuilt Name (e.g., "Archangel 5") for prebuilt rigs
- * 3. "Additional" for loose accessories, extra components, or peripheral parts
- */
 export function groupOrderItems(order: {
   items?: OrderItem[];
   type?: string;
@@ -231,10 +225,6 @@ export function groupOrderItems(order: {
   ];
 }
 
-/**
- * Generates a concise summary title for a custom rig build when collapsed in an accordion.
- * Example output: "Custom Rig (AMD Ryzen 9 9900X3D, Asus ProArt RTX 5070 Ti, Corsair Vengeance RGB 32GB)"
- */
 export function getCustomRigSummary(items: OrderItem[]): string {
   if (!items || items.length === 0) return "Custom Rig";
 

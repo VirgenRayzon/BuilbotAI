@@ -19,7 +19,6 @@ type SocketSource = {
   specifications?: Record<string, string | number>;
 };
 
-/** Resolve catalog socket data first, then use conservative model/chipset fallbacks for legacy records. */
 export const resolveSocket = (part?: SocketSource | null) => {
   const explicit = normalize(part?.specifications?.['Socket'] || part?.specifications?.['socket'] || part?.socket)
     .replace(/[\s-]/g, '');

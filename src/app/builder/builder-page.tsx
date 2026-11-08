@@ -26,10 +26,6 @@ import Link from 'next/link';
 import { AnimatedMessageIcon } from '@/components/ui/animated-icons';
 import { PUBLIC_FEATURE_SIGN_IN_URL } from '@/lib/public-feature-auth';
 
-/**
- * Masterpiece Architect - PC Builder Page
- * Refactored to separate inventory fetching, build logic, and presentation.
- */
 export default function BuilderPage({ initialParts }: { initialParts?: Part[] }) {
     const { theme } = useTheme();
     const isDark = theme === "dark";
@@ -119,7 +115,6 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
                 "min-h-screen transition-colors duration-500 overflow-x-hidden",
                 isDark ? "bg-[#0c0f14] text-slate-50" : "bg-slate-50 text-slate-900"
             )}>
-                {/* Circuit Pattern Background */}
                 <div className={cn(
                     "fixed inset-0 opacity-[0.05] pointer-events-none z-0",
                     isDark ? "invert" : ""
@@ -129,7 +124,6 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
                     <BuilderHeader />
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">
-                        {/* Your Build — Desktop Left Column & Mobile FAB Drawer */}
                         <div className="contents lg:block lg:col-span-3 self-start">
                             <YourBuild
                                 build={build}
@@ -151,7 +145,6 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
                             />
                         </div>
 
-                        {/* Inventory — Right Column */}
                         <InventoryView
                             imageSizes={BUILDER_PART_IMAGE_SIZES}
                             loading={inventoryLoading}

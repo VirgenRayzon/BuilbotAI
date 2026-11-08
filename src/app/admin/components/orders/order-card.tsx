@@ -99,9 +99,7 @@ export function OrderCard({
       )}
     >
       <Stack gap="md" className="w-full">
-        {/* Full-Width Header Row: Customer Identity & Price + Action Icons */}
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-3 border-b border-slate-200 dark:border-white/10">
-          {/* Customer / Order Identity */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <Avatar
               size={44}
@@ -140,7 +138,6 @@ export function OrderCard({
             </div>
           </div>
 
-          {/* Payment, cancellation, archive, and delete actions */}
           <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
             <OrderCardControls
               order={order}
@@ -186,7 +183,6 @@ export function OrderCard({
           </div>
         </div>
 
-        {/* 1. Fulfillment Progress Stepper (Interactive Step Advancer) */}
         <OrderCardFulfillmentStepper
           order={order}
           onUpdateFulfillmentStage={onUpdateFulfillmentStage}
@@ -194,17 +190,14 @@ export function OrderCard({
           isAssemblyVerified={isAssemblyVerified}
         />
 
-        {/* 2. Grouped Hardware Items with Images (Custom Build & Additional Items) */}
         <OrderCardItemsList
           order={order}
           catalogParts={catalogParts}
           onAssemblyVerificationChange={setIsAssemblyVerified}
         />
 
-        {/* 3. Customer & Delivery Address and Financial Breakdown */}
         <OrderCardCustomerFinance order={order} />
 
-        {/* 4. Payment & Refund Activity Ledger */}
         <OrderCardHistoryLedgers
           order={order}
           archived={archived}

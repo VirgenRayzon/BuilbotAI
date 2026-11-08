@@ -2,7 +2,6 @@
 
 import { useMediaQuery } from '@mantine/hooks';
 
-/** Match the existing grid's first row, rather than prioritizing four on mobile. */
 export function useInventoryImageCount(mode: 'admin' | 'builder', wide = false) {
   const sm = useMediaQuery('(min-width: 640px)', false, { getInitialValueInEffect: false });
   const md = useMediaQuery('(min-width: 768px)', false, { getInitialValueInEffect: false });

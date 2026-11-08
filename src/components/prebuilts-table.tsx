@@ -238,7 +238,6 @@ function PrebuiltTableRow({
     fetchStock();
   }, [firestore, isComplete, system.components]);
 
-
   return (
     <>
       <Table.Tr
@@ -265,7 +264,6 @@ function PrebuiltTableRow({
           </ActionIcon>
         </Table.Td>
 
-        {/* System identity */}
         <Table.Td>
           <Group gap="sm" wrap="nowrap">
             <Box className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-slate-200/70 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.03]">
@@ -306,12 +304,10 @@ function PrebuiltTableRow({
           </Group>
         </Table.Td>
 
-        {/* SKU */}
         <Table.Td className="font-mono text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
           {system.sku || '—'}
         </Table.Td>
 
-        {/* QR Button */}
         <Table.Td className="text-center" onClick={(e) => e.stopPropagation()}>
           {system.productId && (
             <ActionIcon
@@ -327,7 +323,6 @@ function PrebuiltTableRow({
           )}
         </Table.Td>
 
-        {/* Tier & Stock badge */}
         <Table.Td className="w-[140px] whitespace-nowrap">
           <Group gap={6} wrap="nowrap">
             <Badge
@@ -369,14 +364,12 @@ function PrebuiltTableRow({
           </Group>
         </Table.Td>
 
-        {/* Price */}
         <Table.Td className="w-[140px] text-right whitespace-nowrap">
           <Text size="sm" fw={700} className="font-mono">
             {formatCurrency(system.price)}
           </Text>
         </Table.Td>
 
-        {/* Action column */}
         <Table.Td onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-end gap-2">
             {showActions && onArchive && (
@@ -436,7 +429,6 @@ function PrebuiltTableRow({
         </Table.Td>
       </Table.Tr>
 
-      {/* Expanded Specs Row */}
       {isExpanded && (
         <Table.Tr className="bg-slate-50/30 dark:bg-white/[0.01]">
           <Table.Td colSpan={showActions ? 8 : 7} className="p-4 pt-1">

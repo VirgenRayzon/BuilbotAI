@@ -609,7 +609,6 @@ export default function PrebuiltBuilderPage() {
                         isDark ? "bg-[#0c0f14] text-slate-50" : "bg-slate-50 text-slate-900"
                     )}
                 >
-                    {/* Circuit Pattern Background */}
                     <div
                         className={cn(
                             "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
@@ -634,7 +633,6 @@ export default function PrebuiltBuilderPage() {
 
                     <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 py-4 sm:py-6 md:py-8 pb-24 lg:pb-12 relative z-10 flex-1">
                         <div className="flex flex-col gap-6 xl:gap-8">
-                            {/* Full-width catalog controls */}
                             <InventoryToolbar
                                     categories={categories}
                                     onCategoryChange={handleCategoryChange}
@@ -666,7 +664,6 @@ export default function PrebuiltBuilderPage() {
                             />
 
                             <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 xl:gap-8">
-                                {/* Your Build and part results share the same starting line */}
                                 <div className="contents lg:block lg:col-span-3 lg:self-start">
                                     <YourBuild
                                         build={build}

@@ -34,9 +34,6 @@ export interface StaffRefundSubmission {
     proofUrl?: string;
 }
 
-/**
- * Hook to manage unified customer orders (including legacy reservation records).
- */
 export function useOrders(_profile?: UserProfile | null) {
     const firestore = useFirestore();
     const auth = useAuth();

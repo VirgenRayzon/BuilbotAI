@@ -27,7 +27,6 @@ export function activityTime(value: unknown): number {
   return Number.isFinite(time) ? time : 0;
 }
 
-/** Read-only adapters preserve old records; new events reference their original IDs. */
 export function mergeOrderActivity(order: Order, events: OrderActivity[], audits: OrderActivity[] = []) {
   const result = new Map<string, OrderActivity>();
   for (const event of getOrderPaymentHistory(order)) {

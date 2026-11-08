@@ -132,7 +132,6 @@ export function AIProgressModal({
                             className="bg-white/95 dark:bg-[#111722]/95 border-slate-200/80 dark:border-white/10 shadow-xl overflow-hidden !p-3 backdrop-blur-md"
                         >
                             <Stack gap="xs">
-                                {/* Header: 12px padding container, clean Mantine group */}
                                 <Group justify="space-between" align="center" wrap="nowrap" className="p-3 bg-slate-50/80 dark:bg-white/[0.03] rounded-lg border border-slate-200/60 dark:border-white/5">
                                     <Group gap="xs" align="center">
                                         <ThemeIcon size={34} radius="md" variant="light" color="cyan">
@@ -177,7 +176,6 @@ export function AIProgressModal({
                                                     {elapsedTime.toFixed(1)}s turnaround
                                                 </Badge>
 
-                                                {/* Mini Telemetry Tooltip popover */}
                                                 {showTooltip && (
                                                     <Paper
                                                         withBorder
@@ -210,7 +208,6 @@ export function AIProgressModal({
                                     </Group>
                                 </Group>
 
-                                {/* Terminal Console Area: Compact Minimalist surface */}
                                 <div className="p-3 bg-slate-950/95 dark:bg-black/85 rounded-lg border border-slate-800/80 dark:border-white/10 font-mono text-xs text-slate-300">
                                     <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/10 text-[10px] text-slate-400">
                                         <div className="flex items-center gap-1.5">
@@ -257,7 +254,6 @@ export function AIProgressModal({
                                     </ScrollArea>
                                 </div>
 
-                                {/* Progress Indicator / Completion Action */}
                                 <div className="p-3 bg-slate-50/70 dark:bg-white/[0.02] rounded-lg border border-slate-200/60 dark:border-white/5 space-y-2.5">
                                     {!isFinished ? (
                                         <Stack gap="xs">

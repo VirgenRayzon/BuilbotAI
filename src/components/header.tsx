@@ -202,7 +202,6 @@ export function Header() {
     <>
       <header className={classes.header}>
         <div className={classes.inner}>
-          {/* Left: Brand Logo with Blue Robot Icon */}
           <div className="flex-none">
             <Link
               href={logoHref}
@@ -216,13 +215,11 @@ export function Header() {
             </Link>
           </div>
 
-          {/* Right Section: Aligned Tabs & User Actions */}
           <div className="flex items-center gap-2 md:gap-3">
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin text-cyan-500/70" />
             ) : authUser ? (
               <>
-                {/* Desktop Tabs aligned with user */}
                 <nav className="hidden sm:flex items-center gap-1" aria-label="Main Navigation">
                   {tabs.map((tab) => {
                     const isActive = tab.href === activeTabHref;
@@ -266,7 +263,6 @@ export function Header() {
                   className="hidden sm:block border-slate-200 dark:border-white/10"
                 />
 
-                {/* Notification Center & E-Commerce Cart */}
                 <div className="flex items-center gap-1.5">
                   <HeaderCartButton />
                   {!profile?.isManager && <UserNotifications />}
@@ -274,7 +270,6 @@ export function Header() {
                   <ThemeToggle />
                 </div>
 
-                {/* Mantine User Dropdown Menu */}
                 <Menu
                   width={260}
                   position="bottom-end"
@@ -323,7 +318,6 @@ export function Header() {
                   </Menu.Target>
 
                   <Menu.Dropdown className="bg-white/95 dark:bg-[#111722]/95 border-slate-200 dark:border-white/10 backdrop-blur-xl shadow-2xl p-1.5 rounded-xl">
-                    {/* User Identity Header */}
                     <div className="px-3 py-2.5 mb-1 border-b border-slate-100 dark:border-white/10">
                       <Text fw={600} size="sm" className="text-slate-900 dark:text-slate-100">
                         {userName}
@@ -345,7 +339,6 @@ export function Header() {
                       </div>
                     </div>
 
-                    {/* Account Section */}
                     <Menu.Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                       Account
                     </Menu.Label>
@@ -358,7 +351,6 @@ export function Header() {
                       Profile
                     </Menu.Item>
 
-                    {/* Non-staff Customer Workspaces */}
                     {!isStaff && (
                       <>
                         <Menu.Item
@@ -386,7 +378,6 @@ export function Header() {
                       </>
                     )}
 
-                    {/* Staff Portals: Management Portal */}
                     {isStaff && profile?.isSuperAdmin && (
                       <Menu.Item
                         leftSection={<Sliders size={16} className="text-cyan-500" />}
@@ -427,7 +418,6 @@ export function Header() {
 
                     <Menu.Divider className="my-1 border-slate-100 dark:border-white/10" />
 
-                    {/* Settings Section */}
                     <Menu.Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                       Settings
                     </Menu.Label>
@@ -442,7 +432,6 @@ export function Header() {
 
                     <Menu.Divider className="my-1 border-slate-100 dark:border-white/10" />
 
-                    {/* Session / Danger Zone Section */}
                     <Menu.Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                       Session
                     </Menu.Label>
@@ -458,7 +447,6 @@ export function Header() {
                   </Menu.Dropdown>
                 </Menu>
 
-                {/* Mobile Hamburger Burger */}
                 <Burger
                   opened={drawerOpened}
                   onClick={toggleDrawer}
@@ -469,7 +457,6 @@ export function Header() {
                 />
               </>
             ) : (
-              /* Public / Logged-out State */
               <div className="flex items-center gap-2">
                 <HeaderCartButton />
                 {pathname === "/signin" || pathname === "/signup" ? (
@@ -502,7 +489,6 @@ export function Header() {
           </div>
         </div>
 
-        {/* Mobile Navigation Drawer */}
         <Drawer
           opened={drawerOpened}
           onClose={closeDrawer}
@@ -704,7 +690,6 @@ export function Header() {
         </Drawer>
       </header>
 
-      {/* Mantine Sign Out Confirmation Modal */}
       <Modal
         opened={signOutModalOpen}
         onClose={() => setSignOutModalOpen(false)}

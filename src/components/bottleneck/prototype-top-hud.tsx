@@ -41,7 +41,6 @@ export function PrototypeTopHud({
       radius="lg"
       className="mb-6 bg-white/80 dark:bg-[#111722]/80 backdrop-blur-xl border-slate-200 dark:border-white/10 shadow-xs overflow-hidden"
     >
-      {/* Slim Top Ribbon */}
       <div className="px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 bg-slate-50/60 dark:bg-white/[0.02]">
         <Group gap="sm" align="center" className="flex-wrap">
           <Group gap={6} align="center">
@@ -51,7 +50,6 @@ export function PrototypeTopHud({
             </Text>
           </Group>
 
-          {/* Quick Metrics Chips */}
           <Badge
             variant="light"
             color={synergy.status === "Incomplete" ? "red" : "teal"}
@@ -103,7 +101,6 @@ export function PrototypeTopHud({
         </Group>
       </div>
 
-      {/* Expandable Accordion Body */}
       <Collapse in={expanded}>
         <div className="p-4 border-t border-slate-200 dark:border-white/10 space-y-4 bg-slate-50/30 dark:bg-black/20">
           <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">

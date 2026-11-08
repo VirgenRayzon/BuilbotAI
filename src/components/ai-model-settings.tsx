@@ -454,7 +454,6 @@ export function AiModelSettings() {
     return (
         <TooltipProvider delayDuration={150}>
             <Card className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-sm">
-                {/* COMPACT CARD HEADER */}
                 <CardHeader className="p-3 border-b border-slate-100 dark:border-white/5">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                         <div className="flex items-center gap-2">
@@ -494,7 +493,6 @@ export function AiModelSettings() {
                 </CardHeader>
 
                 <CardContent className="p-3 space-y-3">
-                    {/* SECTION 1: ENGINE STRIP & MODEL CATALOG */}
                     <div className="space-y-2.5">
                         <div className="flex items-center justify-between">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
@@ -506,9 +504,7 @@ export function AiModelSettings() {
                             </span>
                         </div>
 
-                        {/* HIGH-DENSITY ENGINE SELECTOR TABS */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {/* GEMINI ENGINE BUTTON */}
                             <div
                                 role="button"
                                 tabIndex={0}
@@ -559,7 +555,6 @@ export function AiModelSettings() {
                                 </Badge>
                             </div>
 
-                            {/* VERTEX AI ENGINE BUTTON */}
                             <div
                                 role="button"
                                 tabIndex={0}
@@ -611,7 +606,6 @@ export function AiModelSettings() {
                             </div>
                         </div>
 
-                        {/* COMPACT GEMINI MODEL CARDS VIEW */}
                         {activeEngineTab === 'gemini' && (
                             <div className="p-2.5 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.02] dark:bg-cyan-500/[0.03] space-y-2">
                                 <div className="flex items-center justify-between">
@@ -692,7 +686,6 @@ export function AiModelSettings() {
                             </div>
                         )}
 
-                        {/* COMPACT VERTEX PROJECTS VIEW */}
                         {activeEngineTab === 'finetuned' && (
                             <div className="p-2.5 rounded-xl border border-amber-500/30 bg-amber-50/20 dark:bg-amber-950/10 space-y-2.5">
                                 <div className="flex items-center justify-between gap-2">
@@ -711,7 +704,6 @@ export function AiModelSettings() {
                                     </Button>
                                 </div>
 
-                                {/* COLLAPSIBLE ADD PROJECT PANEL */}
                                 {isAddingProject && (
                                     <div className="p-2.5 rounded-lg border border-amber-400/30 bg-white dark:bg-[#161d2b] shadow-sm space-y-2">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -763,7 +755,6 @@ export function AiModelSettings() {
                                     </div>
                                 )}
 
-                                {/* COMPACT PROJECTS LIST */}
                                 {projects.length === 0 ? (
                                     <div className="p-4 text-center rounded-lg border border-dashed border-amber-300 dark:border-amber-500/30 bg-white/50 dark:bg-black/20 space-y-1.5">
                                         <p className="text-xs font-bold text-slate-900 dark:text-white">No Fine-Tuned Projects Registered</p>
@@ -836,7 +827,6 @@ export function AiModelSettings() {
                         )}
                     </div>
 
-                    {/* SECTION 2: WORKLOAD ROUTING MATRIX (HIGH DENSITY ROWS) */}
                     <div className="p-2.5 rounded-xl border border-indigo-500/20 bg-indigo-500/[0.02] dark:bg-indigo-500/[0.03] space-y-2.5">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div className="flex items-center gap-1.5">
@@ -847,7 +837,6 @@ export function AiModelSettings() {
                                 <InfoPopover label="Workload Routing" message="Assign each platform feature to either Default Gemini API or Fine-Tuned Vertex AI." />
                             </div>
 
-                            {/* QUICK PRESET TOOLBAR */}
                             <div className="flex items-center gap-1.5 self-end sm:self-auto">
                                 <Button
                                     size="sm"
@@ -870,7 +859,6 @@ export function AiModelSettings() {
                             </div>
                         </div>
 
-                        {/* COMPACT MATRIX ROWS */}
                         <div className="space-y-1.5">
                             {AI_FEATURES_CONFIG.map((feat) => {
                                 const currentRoute = featureRouting[feat.key] || 'default';
@@ -904,7 +892,6 @@ export function AiModelSettings() {
                                             </div>
                                         </div>
 
-                                        {/* INLINE SEGMENTED TOGGLE */}
                                         <div className="inline-flex rounded-lg border border-slate-200 dark:border-white/10 p-0.5 bg-slate-100 dark:bg-black/30 shrink-0 self-end sm:self-center">
                                             <button
                                                 type="button"
@@ -941,7 +928,6 @@ export function AiModelSettings() {
                         </div>
                     </div>
 
-                    {/* SECTION 3: FOOTER ACTIONS & DIAGNOSTICS */}
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-1">
                         <Button
                             type="button"
@@ -986,7 +972,6 @@ export function AiModelSettings() {
                         </div>
                     </div>
 
-                    {/* CONNECTION TEST RESULT BANNER */}
                     {testResult && (
                         <div
                             className={`p-2.5 rounded-xl border text-xs space-y-1.5 relative ${testResult.success
@@ -1065,7 +1050,6 @@ export function AiModelSettings() {
                     )}
                 </CardContent>
 
-                {/* CONFIRM DELETE PROJECT DIALOG */}
                 <AlertDialog open={!!projectToDelete} onOpenChange={(open) => !open && setProjectToDelete(null)}>
                     <AlertDialogContent className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl">
                         <AlertDialogHeader>

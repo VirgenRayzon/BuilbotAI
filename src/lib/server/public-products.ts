@@ -144,7 +144,6 @@ async function readPublicPartsCatalog(): Promise<PublicCatalogPart[]> {
     .map(document => toPublicCatalogPart(document.data() as Part));
 }
 
-/** Related items are limited to the current product's category. */
 export async function listRelatedPublicParts(category: string, excludeProductId: string): Promise<PublicCatalogPart[]> {
   if (!INVENTORY_CATEGORY_SLUGS.includes(category.trim().toLowerCase() as typeof INVENTORY_CATEGORY_SLUGS[number])) return [];
   const db = getAdminFirestore();

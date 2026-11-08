@@ -293,7 +293,6 @@ export function BuildActionFooter({
         </form>
       </Modal>
 
-      {/* Confirm Reservation Modal */}
       <Modal
         opened={reserveOpen}
         onClose={() => setReserveOpen(false)}
@@ -319,7 +318,6 @@ export function BuildActionFooter({
         classNames={UNIFIED_MODAL_CLASSNAMES}
       >
         <div className="space-y-4">
-          {/* Scrollable Parts List with Mantine themed scrollbar */}
           <Paper withBorder radius="md" className="overflow-hidden border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.01]">
             <div className="px-4 pr-5 py-2.5 bg-slate-100/70 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/10 flex justify-between items-center text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               <span>Component</span>
@@ -372,7 +370,6 @@ export function BuildActionFooter({
             </ScrollArea.Autosize>
           </Paper>
 
-          {/* Payment Method Selector */}
           <div className="space-y-2">
             <Text size="xs" fw={800} tt="uppercase" className="tracking-wider text-slate-500 dark:text-slate-400">
               Select Payment Method
@@ -438,7 +435,6 @@ export function BuildActionFooter({
             </Stack>
           </div>
 
-          {/* Pricing & Reservation Summary */}
           <Paper withBorder radius="md" p="md" className="bg-slate-50/80 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 shadow-xs">
             <Group justify="space-between" align="center">
               <div>

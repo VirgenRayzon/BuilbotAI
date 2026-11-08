@@ -178,7 +178,6 @@ export function AddPartEditor({
         className="w-[90vw] max-w-[90vw] max-h-[calc(100vh-24px)] p-0 gap-0 overflow-hidden border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#111722] shadow-lg rounded-xl [&>button.absolute]:hidden"
       >
         
-        {/* Header */}
         <DialogHeader className="p-3 border-b border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] flex flex-row items-center justify-between gap-3 space-y-0">
           <div className="flex items-center gap-3">
             <ThemeIcon size={46} radius="xl" variant="light" color="cyan" className="shadow-sm">
@@ -209,7 +208,6 @@ export function AddPartEditor({
           </div>
         </DialogHeader>
 
-        {/* AI Progress Banner */}
         {isAiPending && (
           <div className="relative overflow-hidden bg-cyan-500/10 dark:bg-cyan-500/10 border-b border-cyan-500/20">
             <div className="absolute inset-x-0 bottom-0 h-0.5 bg-cyan-500/20">
@@ -266,7 +264,6 @@ export function AddPartEditor({
           </Paper>
         )}
 
-        {/* Form Body */}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col">
             <ScrollArea className="h-[70vh]">
@@ -285,7 +282,6 @@ export function AddPartEditor({
               </div>
             </ScrollArea>
 
-            {/* Footer */}
             <DialogFooter className="p-3 border-t border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02]">
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-3">

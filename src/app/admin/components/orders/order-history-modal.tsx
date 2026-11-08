@@ -174,7 +174,6 @@ export function OrderHistoryModal({
           </Paper>
         </div>
 
-        {/* Fulfillment Progress */}
         <Paper
           withBorder
           radius="md"

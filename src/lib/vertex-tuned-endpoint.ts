@@ -1,4 +1,3 @@
-/** Resolve a Vertex tuned Model Registry resource to its inference endpoint. */
 export async function resolveVertexTunedEndpoint(resource: string, accessToken: string): Promise<string> {
     const value = resource.trim();
     const match = value.match(/^projects\/([^/]+)\/locations\/([^/]+)\/(endpoints|models)\/([^/]+)$/);

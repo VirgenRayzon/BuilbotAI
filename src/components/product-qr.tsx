@@ -68,7 +68,6 @@ export function ProductQR({
         </Text>
       )}
 
-      {/* Centered Action Toolbar: Pen button, Small Download button, Copy Link, etc. */}
       <Group gap="xs" justify="center" wrap="wrap" mt="xs">
         {extraActions}
 

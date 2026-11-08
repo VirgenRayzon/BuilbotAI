@@ -34,9 +34,6 @@ export const SALES_WORKBOOK_SHEET_STYLES: Parameters<typeof downloadStyledWorkbo
     { currencyColumns: ['B'], percentColumns: ['C'] },
 ];
 
-/**
- * Export complete Sales & Analytics data as a multi-sheet Microsoft Excel (.xlsx) file.
- */
 export function buildSalesAnalyticsWorkbook({
     orders,
     parts,

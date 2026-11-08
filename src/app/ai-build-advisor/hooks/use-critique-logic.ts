@@ -7,9 +7,6 @@ import { useToast } from "@/hooks/use-toast";
 import { showAdvisorProgressToast, showAdvisorReadyToast } from '@/components/advisor-job-toast';
 import { aiBuildCritiqueOutputSchema, type AiBuildCritiqueOutput } from '@/ai/schemas/critique-schemas';
 
-/**
- * Helper to generate a unique key for a given build state.
- */
 export function getBuildKey(state: any) {
     if (!state) return "";
     const partKey = (part: any) => part ? {
@@ -41,9 +38,6 @@ export function getCritiqueCacheKey(state: any, preferences?: { intendedUse?: st
     });
 }
 
-/**
- * Hook to handle streaming AI build critique logic with live progressive updates.
- */
 export function useCritiqueLogic(isAiKillSwitch: boolean) {
     const { toast } = useToast();
     const router = useRouter();

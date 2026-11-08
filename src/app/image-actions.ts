@@ -66,7 +66,6 @@ function hasImageSignature(bytes: Buffer, contentType: string): boolean {
     return false;
 }
 
-/** Fetches a public image for the signed-in manager; Storage upload happens client-side. */
 async function downloadImage(url: string, idToken: string): Promise<{ base64: string; contentType: string; extension: string }> {
     const decoded = await getAdminAuth().verifyIdToken(idToken);
     if (decoded.isManager !== true && decoded.isSuperAdmin !== true) {

@@ -1,4 +1,3 @@
-/** Lightweight, content-free timing for the two Build Advisor request paths. */
 export class AdvisorTiming {
   private readonly startedAt = performance.now();
   private readonly marks: Record<string, number> = {};

@@ -22,9 +22,6 @@ const componentIcons: Record<string, React.ComponentType<{ className?: string }>
     Monitor, Keyboard, Mouse, Headset: Headphones,
 };
 
-/**
- * Hook to manage local builder state, resolution, and workload in the Advisor.
- */
 export function useAdvisorState(allParts: Part[]) {
     const { toast } = useToast();
     const [builderState, setBuilderState] = useState<Record<string, ComponentData | ComponentData[] | null> | null>(null);

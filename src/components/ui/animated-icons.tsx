@@ -278,7 +278,6 @@ export const AnimatedIconButton = React.forwardRef<HTMLButtonElement, AnimatedBu
         disabled={isLoading || props.disabled}
         {...props}
       >
-        {/* Animated Background Glow */}
         <AnimatePresence>
           {isHovered && (
             <motion.div
@@ -293,7 +292,6 @@ export const AnimatedIconButton = React.forwardRef<HTMLButtonElement, AnimatedBu
           )}
         </AnimatePresence>
 
-        {/* Shimmer Effect */}
         <motion.div
           animate={isHovered ? {
             x: ['-100%', '200%'],

@@ -1,7 +1,3 @@
-/**
- * ThemeProvider — Dark/Light theme context with localStorage persistence.
- * Applies the theme class to the document root and exposes useTheme hook.
- */
 
 'use client';
 

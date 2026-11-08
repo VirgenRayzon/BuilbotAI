@@ -1,7 +1,3 @@
-/**
- * Logo — Branded Netcodex logo with white logo asset on theme-legible surface,
- * and genuine 4-color transparent emblem.
- */
 import React from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -71,7 +67,6 @@ export function NetcodexEmblem({
   );
 }
 
-/** Backward compatibility alias for legacy imports */
 export const RobotLogoIcon = NetcodexEmblem;
 
 export function Logo({
@@ -110,4 +105,3 @@ export function Logo({
     </div>
   );
 }
-

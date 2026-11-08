@@ -97,7 +97,6 @@ export function SalesFinancialKpis({
         ))}
       </div>
 
-      {/* Operational Health Summary Strip */}
       <Paper
         withBorder
         radius="lg"
@@ -138,4 +137,3 @@ export function SalesFinancialKpis({
     </div>
   );
 }
-

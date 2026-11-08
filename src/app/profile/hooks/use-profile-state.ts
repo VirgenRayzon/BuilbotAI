@@ -7,9 +7,6 @@ import { updateDoc, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { createUserAuditLog } from "@/firebase/audit";
 
-/**
- * Hook to manage profile and settings state and updates.
- */
 export function useProfileState() {
     const { authUser, profile } = useUserProfile();
     const firestore = useFirestore();

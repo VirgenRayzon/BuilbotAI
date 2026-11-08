@@ -254,9 +254,7 @@ export function MantineSettingsView({
 
   return (
     <div className="space-y-6">
-      {/* Main 2-Column Grid */}
       <Grid gutter="md">
-        {/* LEFT COLUMN: User Information */}
         <Grid.Col span={{ base: 12, lg: 6.5 }}>
           <Paper
             withBorder
@@ -272,7 +270,6 @@ export function MantineSettingsView({
                 User information
               </Title>
 
-              {/* User Name */}
               <TextInput
                 label="Display Name"
                 value={name}
@@ -287,7 +284,6 @@ export function MantineSettingsView({
                 }}
               />
 
-              {/* Biography */}
               <Textarea
                 label="Biography"
                 value={bio}
@@ -303,7 +299,6 @@ export function MantineSettingsView({
                 }}
               />
 
-              {/* Avatar and Upload Image Section */}
               <div className="pt-2">
                 <Text size="xs" fw={600} className="text-slate-700 dark:text-slate-300 mb-2">
                   Profile Picture
@@ -391,7 +386,6 @@ export function MantineSettingsView({
           </Paper>
         </Grid.Col>
 
-        {/* RIGHT COLUMN: Account Information */}
         <Grid.Col span={{ base: 12, lg: 5.5 }} className="self-start">
           <Paper
             withBorder
@@ -417,7 +411,6 @@ export function MantineSettingsView({
                 </Badge>
               </Group>
 
-              {/* First Name & Last Name */}
               <Grid gutter="xs">
                 <Grid.Col span={{ base: 12, sm: 6 }}>
                   <TextInput
@@ -451,7 +444,6 @@ export function MantineSettingsView({
                 </Grid.Col>
               </Grid>
 
-              {/* Email Address */}
               <TextInput
                 label="Email"
                 type="email"
@@ -470,7 +462,6 @@ export function MantineSettingsView({
                 }}
               />
 
-              {/* Change Password Section below Email */}
               <div className="pt-1">
                 <div className="flex items-center justify-between mb-1.5">
                   <Text size="xs" fw={600} className="text-slate-700 dark:text-slate-300">
@@ -505,7 +496,6 @@ export function MantineSettingsView({
                 </Text>
               </div>
 
-              {/* Super Admin Privileged Key Management */}
               {isSuperAdmin && superAdminKey !== undefined && setSuperAdminKey && handleSaveSuperAdminKey && (
                 <div className="pt-2">
                   <Divider my="sm" />
@@ -562,7 +552,6 @@ export function MantineSettingsView({
         </Grid.Col>
       </Grid>
 
-      {/* Change Password Modal */}
       <Modal
         opened={passwordModalOpened}
         onClose={() => setPasswordModalOpened(false)}

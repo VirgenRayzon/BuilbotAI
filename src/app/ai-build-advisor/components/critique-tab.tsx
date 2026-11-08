@@ -45,7 +45,6 @@ export function CritiqueTab({
 
     return (
         <div className="grid lg:grid-cols-12 gap-5 xl:gap-6 h-full">
-            {/* Sidebar Column - Left (Consistent with main Builder Page) */}
             <div className="lg:col-span-3">
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
@@ -72,7 +71,6 @@ export function CritiqueTab({
                 </motion.div>
             </div>
 
-            {/* Performance Diagnostics Column - Right */}
             <div className="lg:col-span-9 h-full">
                 <AIBuildCritique
                     build={builderState}

@@ -86,7 +86,6 @@ export function SessionTimeout() {
             : 'To protect your account and active builds, your session will automatically expire due to inactivity.'}
         </Text>
 
-        {/* Live Countdown Surface */}
         <Paper
           withBorder
           radius="md"
@@ -113,7 +112,6 @@ export function SessionTimeout() {
           />
         </Paper>
 
-        {/* Actions */}
         <Group justify="space-between" gap="xs" mt="sm">
           <Button
             variant="subtle"

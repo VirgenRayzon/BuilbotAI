@@ -138,7 +138,6 @@ export function AdminTabHeader({
         <div className="relative mb-4 space-y-2.5">
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-2">
                 <div ref={ctx?.setCountSlot} className="contents" />
-                {/* Unified 36px Action Bar */}
                 <div className={cn("ml-auto flex flex-wrap items-center gap-2 shrink-0", currentTab === "orders" && "w-full min-w-0 sm:w-auto")}>
                     {(currentTab === 'stock' || currentTab === 'prebuilts') && (
                         <Menu position="bottom-end" shadow="md" width={180} withinPortal>
@@ -189,7 +188,6 @@ export function AdminTabHeader({
                         </Badge>
                     )}
 
-                    {/* Dynamic Tab Controls Slot (Bulk Select, Filters & sort, View Toggle, Primary CTA) */}
                     <div ref={ctx?.setActionsSlot} className="contents" />
 
                     {currentTab === 'sales' && (
@@ -225,7 +223,6 @@ export function AdminTabHeader({
                 </div>
             </div>
 
-            {/* Ingest Dummy Data Modal */}
             {onCloseIngestDummyConfirm && onConfirmIngestDummy && (
                 <Modal
                     opened={showIngestDummyConfirm}
@@ -285,7 +282,6 @@ export function AdminTabHeader({
                 </Modal>
             )}
 
-            {/* Reset Sales Analytics Modal */}
             {onCloseResetSalesConfirm && onConfirmResetSales && (
                 <Modal
                     opened={showResetSalesConfirm}

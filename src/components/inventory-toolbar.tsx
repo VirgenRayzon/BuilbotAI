@@ -240,7 +240,6 @@ export function InventoryToolbar({
   const filterContent = (close: () => void, maxHeight: string) => (
     <div className="flex flex-col" style={{ maxHeight }}>
       <Stack gap="sm" className="min-h-0 overflow-y-auto p-3">
-        {/* Categories / Tiers */}
         {categories.length > 0 && (
           <div>
             <Group justify="space-between" mb={4}>
@@ -281,7 +280,6 @@ export function InventoryToolbar({
           </div>
         )}
 
-        {/* Brands Section */}
         {availableBrands.length > 0 && onBrandChange && (
           <>
             {categories.length > 0 && <Divider />}
@@ -329,7 +327,6 @@ export function InventoryToolbar({
           </>
         )}
 
-        {/* Availability Section */}
         {onAvailabilityChange && (
           <>
             <Divider />
@@ -349,7 +346,6 @@ export function InventoryToolbar({
           </>
         )}
 
-        {/* Switches */}
         {(onHideIncompatibleChange !== undefined || onShowDetailsChange !== undefined) && (
           <>
             <Divider />
@@ -376,7 +372,6 @@ export function InventoryToolbar({
           </>
         )}
 
-        {/* Sort Radio Group */}
         {sortOptions.length > 0 && (
           <>
             <Divider />
@@ -408,7 +403,6 @@ export function InventoryToolbar({
         )}
       </Stack>
 
-      {/* Popover / Drawer Action Footer */}
       <Group grow className="border-t border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-[#111722]">
         <Button variant="default" radius="md" className="h-11" onClick={handleResetFilters}>
           Reset all
@@ -673,7 +667,6 @@ export function InventoryToolbar({
         </div>
       </div>
 
-      {/* Active Filter Chips */}
       <Group gap="xs" align="center" className="min-h-6 flex-wrap">
         <Text size="sm" c="dimmed" className="whitespace-nowrap sm:hidden">
           {itemCount} {itemLabel}
@@ -726,7 +719,6 @@ export function InventoryToolbar({
         )}
       </Group>
 
-      {/* Mobile Drawer */}
       {mobileDrawerNode}
     </div>
   );

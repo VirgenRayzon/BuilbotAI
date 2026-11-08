@@ -400,7 +400,6 @@ export function YourBuild({
         </Paper>
       </div>
 
-      {/* Mobile FAB Trigger & Right Drawer Sheet */}
       <div className="lg:hidden">
         <Sheet>
           <SheetTrigger asChild>
@@ -482,7 +481,6 @@ export function YourBuild({
         </Sheet>
       </div>
 
-      {/* Save Build Modal */}
       <Modal
         opened={saveOpen}
         onClose={() => setSaveOpen(false)}
@@ -566,7 +564,6 @@ export function YourBuild({
         </form>
       </Modal>
 
-      {/* Clear Build Modal */}
       <Modal
         opened={clearOpen}
         onClose={() => setClearOpen(false)}

@@ -1,11 +1,3 @@
-/**
- * ai-model-resolver.ts — Centralized resolution of the active AI model.
- * Inspects Firestore `siteSettings/main` (or fallback environment variables)
- * to determine whether to use the Default Gemini API (gemini-3.8-flash)
- * or the fine-tuned Vertex AI model.
- *
- * Includes automatic degradation detection, fallback handling, and Service Account token management.
- */
 
 import { getAdminFirestore } from '@/firebase/server-init';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
@@ -189,10 +181,6 @@ export async function getActiveAiModelConfig(feature?: AiFeatureKey): Promise<Ac
     };
 }
 
-/**
- * Returns model identifier formatted for Genkit flows:
- * e.g. 'googleai/gemini-3.8-flash' or fine-tuned model path
- */
 export async function getGenkitModelName(feature?: AiFeatureKey): Promise<string> {
     const config = await getActiveAiModelConfig(feature);
     if (config.isFineTuned && !config.isDegraded) {
@@ -203,9 +191,6 @@ export async function getGenkitModelName(feature?: AiFeatureKey): Promise<string
     return `googleai/${config.modelId || DEFAULT_MODEL}`;
 }
 
-/**
- * Invalidate model cache when a Super Admin changes the model in settings
- */
 export function invalidateAiModelCache() {
     cachedSettings = null;
     lastCacheTime = 0;
@@ -214,9 +199,6 @@ export function invalidateAiModelCache() {
     markTunedModelHealthy();
 }
 
-/**
- * Acquire Google Cloud OAuth2 Access Token for Vertex AI invocation
- */
 let cachedAccessToken: string | null = null;
 let tokenExpiry = 0;
 
@@ -269,10 +251,6 @@ export async function getVertexAccessToken(forceRefresh = false): Promise<string
     return null;
 }
 
-/**
- * Resolves the active LanguageModel instance for Vercel AI SDK (Chat Route & Server Actions).
- * Automatically provides fallback to Gemini 3.8 Flash if fine-tuned model cannot be initialized.
- */
 export async function getLanguageModelForChat(options?: { forceDefault?: boolean; feature?: AiFeatureKey }): Promise<{
     model: LanguageModel;
     modelId: string;
@@ -366,12 +344,6 @@ export async function getLanguageModelForChat(options?: { forceDefault?: boolean
     }
 }
 
-/**
- * Safe wrapper around ai.generate() for Genkit flows.
- * Attempts execution with the configured model (default or fine-tuned);
- * if the fine-tuned model throws any error (e.g. 403, 404, network), it
- * immediately falls back to googleai/gemini-3.8-flash and marks the tuned model degraded.
- */
 export async function safeGenkitGenerate<T = any>(
     aiInstance: { generate: (options: any) => Promise<T> },
     options: any

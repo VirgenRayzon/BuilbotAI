@@ -138,12 +138,9 @@ export function CustomerOrderActivity({
       </div>
 
         <div className="pt-2 space-y-4">
-          {/* Main Activity Timeline Container */}
           <div className="relative pl-7 space-y-4">
-            {/* Continuous Vertical Connecting Line */}
             <div className="absolute left-[11px] top-2.5 bottom-2.5 w-[2px] bg-slate-300 dark:bg-slate-800" />
 
-            {/* Step 1: Order placed */}
             <div className="relative space-y-1">
               <span
                 data-testid="completed-order-stage-marker"
@@ -164,7 +161,6 @@ export function CustomerOrderActivity({
               </div>
             </div>
 
-            {/* Step 2: Stock reserved */}
             <div className="relative space-y-1">
               <span
                 data-testid="completed-order-stage-marker"
@@ -191,7 +187,6 @@ export function CustomerOrderActivity({
               </div>
             </div>
 
-            {/* Step 3: Moved to Assembling & Testing (Only shown for custom builds or prebuilt orders) */}
             {hasBuildOrPrebuilt && (
               <div className="relative space-y-2.5">
                 <span
@@ -218,9 +213,7 @@ export function CustomerOrderActivity({
                 </p>
               </div>
 
-              {/* Image 2 Stages: 4 Assembly & Testing Sub-Stages */}
               <div data-testid="customer-assembly-workflow" className="mt-2 divide-y divide-slate-200/80 dark:divide-white/10">
-                {/* 1. Component Picking */}
                 <div className="py-2.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -277,7 +270,6 @@ export function CustomerOrderActivity({
                     </div>
                   </div>
 
-                  {/* Component Picking List Expandable */}
                   {pickingItems.length > 0 && (
                     <Collapse in={showPickingDetails}>
                       <div className="mt-2.5 pt-2 border-t border-slate-200/80 divide-y divide-slate-200/70 overflow-hidden dark:border-white/10 dark:divide-white/5">
@@ -347,7 +339,6 @@ export function CustomerOrderActivity({
                   )}
                 </div>
 
-                {/* 2. Physical Assembly */}
                 <div className="py-2.5">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -392,7 +383,6 @@ export function CustomerOrderActivity({
                   )}
                 </div>
 
-                {/* 3. Hardware Bench Testing */}
                 <div className="py-2.5">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -443,7 +433,6 @@ export function CustomerOrderActivity({
                   )}
                 </div>
 
-                {/* 4. Final Quality Control (QC) */}
                 <div className="py-2.5">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -499,7 +488,6 @@ export function CustomerOrderActivity({
             </div>
             )}
 
-            {/* Delivery step (Step 3 for parts-only, Step 4 for custom/prebuilts) */}
             {(!isCancelled || isStage4Active || isStage4Completed) && (
               <div className="relative space-y-1">
                 <span
@@ -544,7 +532,6 @@ export function CustomerOrderActivity({
               </div>
             )}
 
-            {/* Delivered step (Step 4 for parts-only, Step 5 for custom/prebuilts) */}
             {(!isCancelled || isStage5Completed) && (
               <div className="relative space-y-1">
                 <span
@@ -583,7 +570,6 @@ export function CustomerOrderActivity({
               </div>
             )}
 
-            {/* Cancellation step if order is cancelled */}
             {isCancelled && (
               <div className="relative space-y-1">
                 <span className="absolute -left-7 top-0.5 flex h-6 w-6 items-center justify-center rounded-full border border-rose-400 bg-rose-50 font-mono text-xs font-bold text-rose-700 dark:border-rose-500 dark:bg-rose-950 dark:text-rose-300">
@@ -606,7 +592,6 @@ export function CustomerOrderActivity({
             )}
           </div>
 
-          {/* Footer note matching Image 1 */}
           <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-600 dark:border-slate-800/80 dark:text-slate-400 italic">
             {hasBuildOrPrebuilt
               ? 'Real-time fulfillment timeline; timestamps and technician assembly milestones update automatically.'

@@ -235,7 +235,6 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
 
     return (
         <div className="space-y-6">
-            {/* TAB 1: Performance & Revenue Overview */}
             {activeSubTab === 'overview' && (
                 <div className="space-y-6">
                     <SalesFinancialKpis
@@ -244,9 +243,7 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
                         cancellationRate={metrics.cancellationRate}
                     />
 
-                    {/* Revenue Performance & Order Status Distribution Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Revenue Area Chart */}
                         <Paper
                             withBorder
                             radius="lg"
@@ -345,7 +342,6 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
                             </div>
                         </Paper>
 
-                        {/* Order Status Distribution (Donut Pie Chart with Yellow for Pending!) */}
                         <Paper
                             withBorder
                             radius="lg"
@@ -416,7 +412,6 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
                                 </div>
                             </div>
 
-                            {/* Status legend beside the chart on larger screens */}
                             <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:min-w-[168px]">
                                 {statusData.map((d, i) => (
                                     <div key={i} className="flex items-center justify-between gap-3 p-2 rounded-md bg-slate-50 dark:bg-black/20 border border-slate-200/50 dark:border-white/5">
@@ -436,9 +431,7 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
                         </Paper>
                     </div>
 
-                    {/* Prebuilt Tier Distribution & Revenue by Category Row */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Prebuilt Tier Distribution */}
                         <Paper
                             withBorder
                             radius="lg"
@@ -531,7 +524,6 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
                             </div>
                         </Paper>
 
-                        {/* Revenue by Category (Horizontal Bar Chart) */}
                         <Paper
                             withBorder
                             radius="lg"
@@ -606,10 +598,8 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
                 </div>
             )}
 
-            {/* TAB 2: Dedicated Component Popularity Matrix */}
             {activeSubTab === 'popularity' && (
                 <div className="space-y-6">
-                    {/* Popularity Matrix Category Grid */}
                     {popularityCategories.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                             {popularityCategories.map(({ category, parts: topParts, maxPopularity }) => (
@@ -625,7 +615,6 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
                                         className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm overflow-hidden h-full flex flex-col justify-between hover:border-cyan-500/40 transition-colors"
                                     >
                                         <div>
-                                            {/* Category Card Header */}
                                             <div className="p-3 border-b border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-black/20 flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
                                                     {getCategoryIcon(category)}
@@ -638,7 +627,6 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
                                                 </Badge>
                                             </div>
 
-                                            {/* Ranked Component Items List */}
                                             <div className="divide-y divide-slate-200 dark:divide-white/5">
                                                 {topParts.map((item, index) => {
                                                     const pop = item.popularity ?? 0;
@@ -650,7 +638,6 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
                                                             className="p-3 flex flex-col hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group/item"
                                                         >
                                                             <div className="flex items-center gap-3">
-                                                                {/* Rank Badge */}
                                                                 <div className={cn(
                                                                     "w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border transition-all duration-300 group-hover/item:scale-105",
                                                                     index === 0
@@ -664,7 +651,6 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
                                                                     #{index + 1}
                                                                 </div>
 
-                                                                {/* Component Name & Brand */}
                                                                 <div className="flex-1 min-w-0">
                                                                     <p className="font-bold text-xs truncate leading-tight text-slate-900 dark:text-white group-hover/item:text-cyan-600 dark:group-hover/item:text-cyan-400 transition-colors">
                                                                         {item.name}
@@ -680,7 +666,6 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Purchases Count */}
                                                                 <div className="text-right shrink-0">
                                                                     <div className="flex items-center gap-1.5 justify-end">
                                                                         <span className="font-mono font-bold text-sm text-slate-900 dark:text-white">
@@ -692,7 +677,6 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
                                                                 </div>
                                                             </div>
 
-                                                            {/* Relative Demand Progress Bar with framer-motion */}
                                                             <div className="mt-2 flex items-center gap-2">
                                                                 <span className="text-[8px] text-slate-400 uppercase font-mono tracking-tighter">Relative Demand</span>
                                                                 <div className="flex-1 h-1.5 bg-slate-100 dark:bg-black/40 rounded-full overflow-hidden relative">

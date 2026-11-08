@@ -39,9 +39,6 @@ function summarizeCatalogDescription(value: string): string {
     return `${excerpt.slice(0, excerpt.lastIndexOf(' ') || 180).trimEnd()}…`;
 }
 
-/**
- * Hook to handle streaming AI build recommendations and live matching.
- */
 export function useRecommendationLogic(isAiKillSwitch: boolean, allParts: Part[]) {
     const { toast } = useToast();
     const router = useRouter();

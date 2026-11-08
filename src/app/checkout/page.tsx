@@ -776,7 +776,6 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#07090e] text-slate-900 dark:text-slate-100 transition-colors pb-16">
-      {/* Top Header */}
       <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 pt-6">
         <div className="flex items-center justify-between pb-6 border-b border-slate-200 dark:border-white/10 mb-6">
           <div className="space-y-1">
@@ -836,7 +835,6 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* STATE A: ORDER CONFIRMATION & RECEIPT */}
         {activeReceiptOrder ? (
           <div className="w-full space-y-6">
             {activeReceiptOrder.paymentStatus === "Payment Failed" ||
@@ -996,7 +994,6 @@ export default function CheckoutPage() {
               </Paper>
             </SimpleGrid>
 
-            {/* Delivery Details Summary Card */}
             <Paper
               withBorder
               radius="md"
@@ -1107,7 +1104,6 @@ export default function CheckoutPage() {
             </Group>
           </div>
         ) : cart.length === 0 ? (
-          /* STATE B: EMPTY CART */
           <Paper
             withBorder
             radius="md"
@@ -1154,9 +1150,7 @@ export default function CheckoutPage() {
             </Group>
           </Paper>
         ) : (
-          /* STATE C: 2-COLUMN UNIFIED CHECKOUT INTERFACE */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-            {/* Left Column (7 cols): Single Unified Card with Mantine Stepper */}
             <div className="lg:col-span-7">
               <Paper
                 withBorder
@@ -1164,7 +1158,6 @@ export default function CheckoutPage() {
                 p={{ base: "md", sm: "lg" }}
                 className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm space-y-6"
               >
-                {/* Visual Step Progress Header */}
                 <Stepper
                   active={step - 1}
                   onStepClick={(s) => setStep((s + 1) as 1 | 2 | 3)}
@@ -1189,7 +1182,6 @@ export default function CheckoutPage() {
                   />
                 </Stepper>
 
-                {/* Error Banner */}
                 {checkoutError && (
                   <Alert
                     color="red"
@@ -1202,16 +1194,13 @@ export default function CheckoutPage() {
                   </Alert>
                 )}
 
-                {/* STEP 1: FULFILLMENT & SHIPPING ADDRESS */}
                 {step === 1 && (
                   <Stack gap="lg">
-                    {/* Courier Fulfillment Selector */}
                     <div className="space-y-3">
                       <Text size="xs" fw={700} tt="uppercase" c="dimmed">
                         Select Fulfillment Method
                       </Text>
 
-                      {/* Unified selectable group ?reduces nested box division */}
                       <div className="divide-y divide-slate-200 dark:divide-white/10 rounded-md border border-slate-200 dark:border-white/10 overflow-hidden bg-slate-50/40 dark:bg-white/[0.02]">
                         {SHIPPING_METHODS.map((method) => {
                           const selected = shippingMethod === method.id;
@@ -1271,7 +1260,6 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
-                    {/* Fragile PC Crate Protection */}
                     {shippingMethod !== "store_pickup" &&
                       hasBuildForCrateProtection && (
                         <div className="flex items-start gap-3 p-3 rounded-md bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20">
@@ -1302,7 +1290,6 @@ export default function CheckoutPage() {
                         </div>
                       )}
 
-                    {/* Philippine Delivery Address / Showroom Info */}
                     <div className="space-y-4 pt-1">
                       <div className="flex items-center justify-between">
                         <Group gap={6}>
@@ -1326,7 +1313,6 @@ export default function CheckoutPage() {
                         )}
                       </div>
 
-                      {/* Saved Address Book Selector */}
                       {shippingMethod !== "store_pickup" && savedAddresses.length > 0 && (
                         <div className="space-y-2.5">
                           <Text size="xs" fw={600} c="dimmed">
@@ -1376,7 +1362,6 @@ export default function CheckoutPage() {
                               );
                             })}
 
-                            {/* + Use New Address at the bottom of the address list */}
                             <div
                               onClick={handleSelectCustomAddress}
                               className={cn(
@@ -1421,7 +1406,6 @@ export default function CheckoutPage() {
                         </div>
                       )}
 
-                      {/* Store Pickup Form */}
                       {shippingMethod === "store_pickup" ? (
                         <div className="space-y-4 pt-1">
                           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
@@ -1478,7 +1462,6 @@ export default function CheckoutPage() {
                           </div>
                         </div>
                       ) : (
-                        /* Delivery Mode: Manual Address Form only appears if "Use New Address" is selected, or if user has no saved addresses */
                         (savedAddresses.length === 0 || selectedAddressId === "custom") && (
                           <div className="space-y-4 pt-2 border-t border-slate-200/80 dark:border-white/10">
                             {savedAddresses.length > 0 && (
@@ -1620,7 +1603,6 @@ export default function CheckoutPage() {
                               }
                             />
 
-                            {/* Save custom address to Address Book */}
                             <div className="p-3.5 rounded-xl bg-cyan-500/5 dark:bg-cyan-500/10 border border-cyan-500/20 space-y-2.5">
                               <Checkbox
                                 checked={saveAddressToBook}
@@ -1659,7 +1641,6 @@ export default function CheckoutPage() {
                   </Stack>
                 )}
 
-                {/* STEP 2: PAYMENT METHOD */}
                 {step === 2 && (
                   <Stack gap="lg">
                     <div className="space-y-3">
@@ -1667,7 +1648,6 @@ export default function CheckoutPage() {
                         Choose Payment Method
                       </Text>
 
-                      {/* Unified selectable list */}
                       <div className="divide-y divide-slate-200 dark:divide-white/10 rounded-md border border-slate-200 dark:border-white/10 overflow-hidden bg-slate-50/40 dark:bg-white/[0.02]">
                         {PAYMENT_METHODS_LIST.map((pm) => {
                           const active = paymentMethod === pm.id;
@@ -1739,7 +1719,6 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
-                    {/* Notice */}
                     <div className="p-3 rounded-md bg-cyan-50/60 dark:bg-cyan-950/20 border border-cyan-200 dark:border-cyan-800/30">
                       <div className="flex items-center gap-2 mb-1">
                         <Lock size={13} className="text-cyan-600 dark:text-cyan-400" />
@@ -1762,7 +1741,6 @@ export default function CheckoutPage() {
                   </Stack>
                 )}
 
-                {/* STEP 3: ORDER REVIEW */}
                 {step === 3 && (
                   <Stack gap="lg">
                     <div className="space-y-3">
@@ -1770,7 +1748,6 @@ export default function CheckoutPage() {
                         Final Order Summary Review
                       </Text>
 
-                      {/* Fulfillment Method Review */}
                       <div className="p-3 rounded-md bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 space-y-1">
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wide">
@@ -1796,7 +1773,6 @@ export default function CheckoutPage() {
                         </p>
                       </div>
 
-                      {/* Payment Method Review */}
                       <div className="p-3 rounded-md bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 space-y-1">
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wide">
@@ -1818,7 +1794,6 @@ export default function CheckoutPage() {
                         </p>
                       </div>
 
-                      {/* Items Review */}
                       <div className="p-3 rounded-md bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 space-y-2">
                         <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wide">
                           3. Items in Order ({cart.length})
@@ -1880,7 +1855,6 @@ export default function CheckoutPage() {
                   </Stack>
                 )}
 
-                {/* Bottom Step Navigation Buttons */}
                 <Group
                   justify="space-between"
                   pt="md"
@@ -1942,7 +1916,6 @@ export default function CheckoutPage() {
               </Paper>
             </div>
 
-            {/* Right Column (5 cols): Cohesive Order Summary Card */}
             <div className="lg:col-span-5 lg:sticky lg:top-24">
               <Paper
                 withBorder
@@ -1967,7 +1940,6 @@ export default function CheckoutPage() {
                   </Badge>
                 </div>
 
-                {/* Items List ?Clean continuous flow without nested cards */}
                 <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1">
                   {cart.map((item) => {
                     const fallbackImg = getEcommerceFallbackImage(
@@ -2012,7 +1984,6 @@ export default function CheckoutPage() {
                   })}
                 </div>
 
-                {/* Promo Code Input */}
                 <div className="pt-2 border-t border-slate-200 dark:border-white/10 space-y-2">
                   <Text size="11px" fw={600} tt="uppercase" c="dimmed">
                     Promo / Voucher Code
@@ -2055,7 +2026,6 @@ export default function CheckoutPage() {
 
                 <Divider className="border-slate-200 dark:border-white/10" />
 
-                {/* Price Breakdown */}
                 <div className="space-y-1.5 text-xs">
                   <div className="flex justify-between text-slate-600 dark:text-slate-300">
                     <span>Hardware Subtotal</span>

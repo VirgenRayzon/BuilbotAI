@@ -57,7 +57,6 @@ export function OptimizedImage({
             !fill && "w-full h-full",
             className
         )}>
-            {/* One quiet rotating indicator keeps image loading feedback consistent. */}
             {isLoading && !error && (
                 <div
                     className="absolute inset-0 z-20 flex items-center justify-center bg-slate-100/85 text-cyan-600 pointer-events-none dark:bg-slate-900/80 dark:text-cyan-400"
@@ -68,7 +67,6 @@ export function OptimizedImage({
                 </div>
             )}
 
-            {/* Error Placeholder Overlay */}
             {error && (
                 <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-muted/30">
                     <div className="text-muted-foreground flex flex-col items-center gap-2">

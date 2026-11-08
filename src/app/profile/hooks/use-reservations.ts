@@ -9,9 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 import { updateReservationStatus, autoCancelExpiredOrder } from "@/app/checkout-actions";
 import { isOrderPendingWithNoProgression, isOrderExpired } from "@/lib/order-expiration";
 
-/**
- * Hook to manage user reservations (fetching, cancelling, deleting).
- */
 export function useReservations() {
     const { authUser, loading: userLoading } = useUserProfile();
     const firestore = useFirestore();

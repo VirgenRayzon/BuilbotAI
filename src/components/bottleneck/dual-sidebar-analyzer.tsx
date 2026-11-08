@@ -55,7 +55,6 @@ export function DualSidebarAnalyzer({
 
   return (
     <div className="flex flex-col">
-      {/* Active tab expands; inactive tabs remain compact icon controls. */}
       <Box className="p-2 bg-slate-100/70 dark:bg-white/[0.04] border-b border-slate-200 dark:border-white/10">
         <div role="tablist" aria-label="Your Build views"
           className="flex w-full gap-0.5 rounded-md border border-slate-200/80 bg-white/80 p-0.5 shadow-inner dark:border-white/10 dark:bg-[#151922]">
@@ -107,14 +106,12 @@ export function DualSidebarAnalyzer({
         </div>
       </Box>
 
-      {/* Content based on Tab */}
       {activeTab === "parts" ? (
         children
       ) : activeTab === "budget" && budgetContent ? (
         <div className="p-3">{budgetContent}</div>
       ) : (
         <div className="p-4 space-y-3">
-          {/* Resolution & Workload Controls */}
           <Group grow gap="xs">
             <Select
               value={resolution}

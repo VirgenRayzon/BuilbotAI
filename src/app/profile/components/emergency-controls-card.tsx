@@ -75,7 +75,6 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
         )}
 
         <Stack gap="sm">
-          {/* Maintenance Mode */}
           <Paper
             p="sm"
             radius="lg"
@@ -115,7 +114,6 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
             </Group>
           </Paper>
 
-          {/* Chaos / Storage Mode */}
           <Paper
             p="sm"
             radius="lg"
@@ -155,7 +153,6 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
             </Group>
           </Paper>
 
-          {/* AI Kill Switch */}
           <Paper
             p="sm"
             radius="lg"
@@ -195,7 +192,6 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
             </Group>
           </Paper>
 
-          {/* Live Builder Recommendations */}
           <Paper
             p="sm"
             radius="lg"

@@ -1,7 +1,3 @@
-/**
- * InventoryPartCard — Grid-view card for a single inventory part in the admin dashboard.
- * Shows image, specs, stock, price, and provides archive/delete/edit actions with tooltips.
- */
 'use client';
 import { adminPartLayout } from './loading/admin-inventory-skeleton';
 

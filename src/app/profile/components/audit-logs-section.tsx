@@ -160,7 +160,6 @@ export function AuditLogsSection({
         key={log.id}
         className="transition-colors hover:bg-cyan-50/60 dark:hover:bg-cyan-500/[0.035] [&>td]:border-slate-100 dark:[&>td]:border-white/[0.06]"
       >
-        {/* Employee / Actor with Avatar */}
         <Table.Td>
           <Group gap="sm" wrap="nowrap">
             <Avatar
@@ -183,7 +182,6 @@ export function AuditLogsSection({
           </Group>
         </Table.Td>
 
-        {/* Action Badge */}
         <Table.Td>
           <Badge
             color={actionColor}
@@ -195,28 +193,24 @@ export function AuditLogsSection({
           </Badge>
         </Table.Td>
 
-        {/* Target resource */}
         <Table.Td>
           <Text fz="sm" fw={500} className="text-slate-900 dark:text-slate-100 truncate max-w-[200px]">
             {log.resourceName}
           </Text>
         </Table.Td>
 
-        {/* Scope */}
         <Table.Td>
           <Badge color={scopeColor} variant="outline" size="sm" className="font-semibold text-[11px]">
             {log.scope}
           </Badge>
         </Table.Td>
 
-        {/* Event Details */}
         <Table.Td>
           <Text fz="sm" className="text-slate-700 dark:text-slate-300 line-clamp-1 max-w-[260px]">
             {log.details || "—"}
           </Text>
         </Table.Td>
 
-        {/* Timestamp */}
         <Table.Td>
           <Text fz="xs" className="text-slate-600 dark:text-slate-400 font-mono whitespace-nowrap">
             {logDate ? format(logDate, "MMM dd, yyyy • p") : "Unknown date"}
@@ -268,7 +262,6 @@ export function AuditLogsSection({
   const filterContent = (close: () => void, maxHeight: string) => (
     <div className="flex flex-col" style={{ maxHeight }}>
       <Stack gap="sm" className="min-h-0 overflow-y-auto p-3">
-        {/* Resource Scope Section */}
         <div>
           <Group justify="space-between" mb="xs">
             <Text fw={700} size="sm">Resource Scope</Text>
@@ -310,7 +303,6 @@ export function AuditLogsSection({
 
         <Divider />
 
-        {/* Date Filter Quick Presets */}
         <div>
           <Group justify="space-between" mb="xs">
             <Text fw={700} size="sm">Date Presets</Text>
@@ -382,7 +374,6 @@ export function AuditLogsSection({
 
         <Divider />
 
-        {/* Sort Section */}
         <div>
           <Text fw={700} size="sm" mb="xs">Sort by</Text>
           <Radio.Group
@@ -408,7 +399,6 @@ export function AuditLogsSection({
         </div>
       </Stack>
 
-      {/* Popover / Drawer Action Footer */}
       <Group grow className="border-t border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-[#111722]">
         <Button variant="default" radius="md" className="h-11" onClick={handleResetAll}>
           Reset all
@@ -572,7 +562,6 @@ export function AuditLogsSection({
           </Table.ScrollContainer>
         </Paper>
 
-        {/* Pagination */}
         <div className="pt-1">
           <PaginationControls
             currentPage={currentPage}

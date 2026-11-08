@@ -51,10 +51,6 @@ function normalizeKey(str?: string): string {
   return (str || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-/**
- * Resolves a product's own authentic image for order items, preventing generic
- * category placeholders from appearing when real catalog images exist.
- */
 export function resolveOrderItemImageUrl(
   item: OrderItemLike,
   allItems?: OrderItemLike[],

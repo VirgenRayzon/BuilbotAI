@@ -8,9 +8,6 @@ import type { FavoriteBuild, FavoriteBuildPart } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { createUserAuditLog } from "@/firebase/audit";
 
-/**
- * Hook to manage user favorite builds (CRUD operations for the favorites subcollection).
- */
 export function useFavorites() {
     const { authUser, loading: userLoading } = useUserProfile();
     const firestore = useFirestore();
@@ -47,9 +44,6 @@ export function useFavorites() {
         return () => unsubscribe();
     }, [authUser, firestore, userLoading, toast]);
 
-    /**
-     * Save a new favorite build.
-     */
     const saveFavorite = useCallback(async (name: string, parts: FavoriteBuildPart[], source: 'builder' | 'advisor') => {
         if (!authUser || !firestore) return;
 
@@ -79,9 +73,6 @@ export function useFavorites() {
         }
     }, [authUser, firestore, toast]);
 
-    /**
-     * Delete a favorite build.
-     */
     const deleteFavorite = useCallback(async (favoriteId: string) => {
         if (!authUser || !firestore) return;
 
@@ -106,9 +97,6 @@ export function useFavorites() {
         }
     }, [authUser, firestore, favorites, toast]);
 
-    /**
-     * Rename a favorite build.
-     */
     const renameFavorite = useCallback(async (favoriteId: string, newName: string) => {
         if (!authUser || !firestore) return;
 

@@ -388,7 +388,6 @@ function SystemAccessContent() {
           className="w-full bg-white/85 dark:bg-[#111722] border-red-500/30 dark:border-red-500/30 shadow-sm relative transition-all"
         >
           <Stack gap="md">
-            {/* Header with Red Netcodex Emblem */}
             <div className="text-center flex flex-col items-center gap-1.5">
               <Link href="/" className="mb-0.5">
                 <Logo showText={false} size="lg" variant="red" />
@@ -404,7 +403,6 @@ function SystemAccessContent() {
               </Text>
             </div>
 
-            {/* Role Switcher using Mantine SegmentedControl */}
             <SegmentedControl
               value={activeTab}
               onChange={handleTabChange}
@@ -424,7 +422,6 @@ function SystemAccessContent() {
               }}
             />
 
-            {/* Social Authentication */}
             <Button
               variant="default"
               size="md"
@@ -446,7 +443,6 @@ function SystemAccessContent() {
               }}
             />
 
-            {/* Session Expiration / Timeout Notice */}
             {reasonNotice && !error && (
               <Alert
                 color="yellow"
@@ -460,7 +456,6 @@ function SystemAccessContent() {
               </Alert>
             )}
 
-            {/* Error Message */}
             {error && (
               <Alert
                 color="red"
@@ -474,7 +469,6 @@ function SystemAccessContent() {
               </Alert>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)} autoComplete="on">
               <Stack gap="md">
                 <Controller
@@ -579,7 +573,6 @@ function SystemAccessContent() {
               </Stack>
             </form>
 
-            {/* Footer Links */}
             <div className="flex flex-col items-center gap-1.5 text-center text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-white/10">
               <div>
                 New manager with an access key?{' '}
@@ -606,7 +599,6 @@ function SystemAccessContent() {
         </Paper>
       </div>
 
-      {/* Request Manager Key Modal */}
       <RequestKeyModal
         opened={isRequestDialogOpen}
         onClose={() => setIsRequestDialogOpen(false)}
@@ -616,7 +608,6 @@ function SystemAccessContent() {
         loading={requestLoading}
       />
 
-      {/* Google Staff Key Verification Modal */}
       <Modal
         opened={googleModalOpened}
         onClose={() => {

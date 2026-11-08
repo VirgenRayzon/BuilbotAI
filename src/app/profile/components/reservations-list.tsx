@@ -115,7 +115,6 @@ export function ReservationsList({
             className="bg-white dark:bg-[#121824] border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md transition-all duration-200"
           >
             <Stack gap="md">
-              {/* Header: Order info & Actions */}
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-4 border-b border-slate-200 dark:border-white/10">
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2.5">
@@ -145,7 +144,6 @@ export function ReservationsList({
                 </div>
 
                 <div className="flex items-center justify-between sm:justify-end gap-4">
-                  {/* Price display */}
                   <div className="text-left sm:text-right pr-4 sm:border-r border-slate-200 dark:border-white/10">
                     <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-500 dark:text-slate-400">
                       Total Amount
@@ -159,7 +157,6 @@ export function ReservationsList({
                     <DownloadReceiptButton order={reservation} />
                   )}
 
-                  {/* Action Buttons */}
                   <Group gap="xs">
                     {reservation.status !== "cancelled" &&
                       getOrderFulfillmentStage(reservation) !== "delivered" && (
@@ -179,12 +176,10 @@ export function ReservationsList({
                 </div>
               </div>
 
-              {/* Order Activity Stepper & Courier details */}
               {showActivity && (
                 <CustomerOrderActivity order={reservation} catalogParts={catalogParts} />
               )}
 
-              {/* Items List */}
               <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-black/20 overflow-hidden">
                 <div className="max-h-[220px] overflow-y-auto divide-y divide-slate-200 dark:divide-white/5">
                   {reservation.items.map((item, idx) => {
@@ -202,7 +197,6 @@ export function ReservationsList({
                         className="p-2.5 sm:p-3 px-3.5 sm:px-4 flex justify-between items-center text-sm hover:bg-slate-100/60 dark:hover:bg-white/[0.02] transition-colors gap-3"
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          {/* Part Image Thumbnail */}
                           <div className="relative h-10 w-10 sm:h-11 sm:w-11 shrink-0 overflow-hidden rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0e131d]">
                             <OptimizedImage
                               src={resolvedImg}

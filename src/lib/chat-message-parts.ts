@@ -39,7 +39,6 @@ function firstCompleteExplanation(text: string): string {
     return explanation.join('\n\n');
 }
 
-/** Keep the model's meaningful bubble boundaries while joining interrupted sentences. */
 export function groupChatMessageParts(parts: UIMessage['parts']): ChatDisplayPart[] {
     const displayParts: ChatDisplayPart[] = [];
     let pendingText: Extract<ChatDisplayPart, { kind: 'text' }> | null = null;
@@ -71,7 +70,6 @@ export function groupChatMessageParts(parts: UIMessage['parts']): ChatDisplayPar
     return displayParts;
 }
 
-/** A recommendation turn may contain several model steps, but it is one answer. */
 export function getRecommendationTurnPresentation(parts: UIMessage['parts']): {
     displayParts: ChatDisplayPart[];
     recommendationGroups: RecommendationGroup[];

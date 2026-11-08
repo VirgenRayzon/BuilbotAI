@@ -36,7 +36,6 @@ export function BottleneckPrototypeController({
 }: BottleneckPrototypeControllerProps) {
   return (
     <div className="w-full mb-5">
-      {/* Prototype Switcher Ribbon */}
       <Paper
         withBorder
         radius="lg"
@@ -63,7 +62,6 @@ export function BottleneckPrototypeController({
             </div>
           </Group>
 
-          {/* Segmented control to pick paradigm */}
           <div className="overflow-x-auto max-w-full">
             <SegmentedControl
               value={activeMode}
@@ -85,7 +83,6 @@ export function BottleneckPrototypeController({
         </div>
       </Paper>
 
-      {/* Conditionally Render HUD / Dock / FAB depending on active mode */}
       {activeMode === "top-hud" && (
         <div className="mt-4">
           <PrototypeTopHud

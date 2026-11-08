@@ -30,10 +30,6 @@ const AiPrebuiltPerformanceInputSchema = z.record(
 
 export type AiPrebuiltPerformanceInput = z.infer<typeof AiPrebuiltPerformanceInputSchema>;
 
-/**
- * Unified Output Schema for the Prebuilt Performance Analysis.
- * As requested, this strictly only returns Pros/Strengths.
- */
 const aiPrebuiltPerformanceOutputSchema = z.object({
     pros: z.array(z.string()),
 });

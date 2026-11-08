@@ -58,9 +58,6 @@ function buildPartToComponent(part: SmartBudgetPart): ComponentData {
     };
 }
 
-/**
- * Validates whether the selected components form a valid and compatible build.
- */
 function validateBuildSelection(
     selectedIds: Record<string, string | null>,
     inventoryById: Map<string, SmartBudgetPart>,
@@ -123,10 +120,6 @@ function validateBuildSelection(
     };
 }
 
-/**
- * Deterministic fallback solver: Finds the highest-performance compatible parts
- * within budget if the AI model output misses or violates constraints.
- */
 function deterministicFallbackSolver(
     inventory: SmartBudgetPart[],
     budget: number

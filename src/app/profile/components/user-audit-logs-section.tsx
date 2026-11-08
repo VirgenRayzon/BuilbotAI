@@ -119,7 +119,6 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
 
     return (
       <Table.Tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
-        {/* Resource with Avatar/Icon */}
         <Table.Td>
           <Group gap="sm" wrap="nowrap">
             <Avatar
@@ -139,7 +138,6 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
           </Group>
         </Table.Td>
 
-        {/* Action Badge */}
         <Table.Td>
           <Badge
             color={actionColor}
@@ -151,21 +149,18 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
           </Badge>
         </Table.Td>
 
-        {/* Category Scope */}
         <Table.Td>
           <Badge color={scopeColor} variant="outline" size="sm" className="font-semibold text-[11px]">
             {log.scope === "Order" ? "Reservation" : log.scope}
           </Badge>
         </Table.Td>
 
-        {/* Activity Details */}
         <Table.Td>
           <Text fz="sm" className="text-slate-700 dark:text-slate-300 line-clamp-1 max-w-[260px]">
             {log.details || "Action recorded successfully"}
           </Text>
         </Table.Td>
 
-        {/* Date & Time */}
         <Table.Td>
           <Text fz="xs" className="text-slate-600 dark:text-slate-400 font-mono whitespace-nowrap">
             {logDate ? format(logDate, "MMM dd, yyyy • p") : "Unknown date"}
@@ -184,7 +179,6 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
         p={12}
         className="bg-white dark:bg-[#12161f] border-slate-200 dark:border-white/10 shadow-sm"
       >
-        {/* Search & Filter Bar */}
         <div className="flex flex-col md:flex-row gap-3 items-center flex-wrap">
           <TextInput
             placeholder="Search activity by title or details..."
@@ -325,7 +319,6 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
         </Table.ScrollContainer>
       </Paper>
 
-      {/* Pagination */}
       <div className="pt-1">
         <PaginationControls
           currentPage={currentPage}

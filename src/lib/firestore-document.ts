@@ -1,7 +1,3 @@
-/**
- * Removes values that Firestore cannot serialize while preserving SDK value
- * objects such as Timestamp and FieldValue instances.
- */
 export function toFirestoreDocument<T>(value: T): T {
   if (Array.isArray(value)) {
     return value.map((entry) => toFirestoreDocument(entry)) as T;

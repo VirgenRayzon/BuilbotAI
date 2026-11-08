@@ -116,7 +116,6 @@ export function PrebuiltPartsAccordion({ components, loadingParts }: PrebuiltPar
                                                 className="bg-white dark:bg-[#1a2230] border-slate-200/80 dark:border-white/10 hover:border-cyan-500/50 dark:hover:border-cyan-400/50 hover:shadow-sm transition-all cursor-pointer group select-none"
                                             >
                                                 <div className="flex flex-col gap-3">
-                                                    {/* Keep the category label above the component information. */}
                                                     <div>
                                                         <Badge
                                                             variant="light"

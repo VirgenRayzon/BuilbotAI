@@ -85,7 +85,6 @@ export function ChatPresetChips({ hasBuildParts, isDark, onPresetClick }: ChatPr
                 </CarouselContent>
             </Carousel>
 
-            {/* Left Scroll Button */}
             {canScrollPrev && (
                 <button
                     type="button"
@@ -102,7 +101,6 @@ export function ChatPresetChips({ hasBuildParts, isDark, onPresetClick }: ChatPr
                 </button>
             )}
 
-            {/* Right Scroll Button */}
             {canScrollNext && (
                 <button
                     type="button"

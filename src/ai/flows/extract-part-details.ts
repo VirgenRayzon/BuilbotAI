@@ -1,11 +1,4 @@
 'use server';
-/**
- * @fileOverview A Genkit flow for extracting PC part details using AI.
- *
- * - extractPartDetails - A function that takes a part name and returns structured details.
- * - ExtractPartDetailsInput - The input type for the extractPartDetails function.
- * - ExtractPartDetailsOutput - The return type for the extractPartDetails function.
- */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';

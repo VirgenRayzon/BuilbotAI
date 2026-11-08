@@ -38,7 +38,6 @@ export function PrototypeBottomDock({
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-40 pointer-events-auto">
-      {/* Expanded Drawer Tray */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -99,7 +98,6 @@ export function PrototypeBottomDock({
         )}
       </AnimatePresence>
 
-      {/* Docked Status Bar */}
       <div className="h-12 bg-white/90 dark:bg-[#0c0f14]/90 backdrop-blur-xl border-t border-slate-200 dark:border-white/10 px-4 sm:px-6 flex items-center justify-between shadow-lg">
         <Group gap="sm" align="center">
           <div className="flex items-center gap-2">

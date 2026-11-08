@@ -1,4 +1,3 @@
-/** Scope values stored in Firestore. Keep labels separate from persisted values. */
 export const STAFF_AUDIT_SCOPES = [
   { value: 'Part', label: 'Inventory Parts' },
   { value: 'Prebuilt', label: 'Prebuilts' },

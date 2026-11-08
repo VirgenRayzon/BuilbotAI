@@ -1,9 +1,6 @@
 import { getAdminFirestore } from "@/firebase/server-init";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-/**
- * Supported hardware categories in the vector store.
- */
 export const VECTOR_CATEGORIES = [
     'cpu',
     'gpu',
@@ -21,9 +18,6 @@ export const VECTOR_CATEGORIES = [
 
 export type VectorCategory = typeof VECTOR_CATEGORIES[number];
 
-/**
- * Generates a 768-dimensional normalized embedding using Google's Gemini Embedding model.
- */
 export async function generateHardwareEmbedding(text: string): Promise<number[]> {
     const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) {
@@ -41,9 +35,6 @@ export async function generateHardwareEmbedding(text: string): Promise<number[]>
     return result.embedding.values;
 }
 
-/**
- * Detects the most probable category from a query string, or returns null if generic.
- */
 function inferCategoryFromQuery(query: string): VectorCategory | null {
     const q = query.toLowerCase();
     if (/\b(ryzen|intel core|xeon|i3|i5|i7|i9|cpu|processor)\b/.test(q)) return 'cpu';
@@ -61,9 +52,6 @@ function inferCategoryFromQuery(query: string): VectorCategory | null {
     return null;
 }
 
-/**
- * Formats metadata object into clean, human-readable specification text for AI consumption.
- */
 function formatMetadataToSpec(docId: string, category: string, metadata: Record<string, any>): string {
     const name = metadata.name || docId;
     let text = `[Hardware Spec: ${category.toUpperCase()}] ${name}\n`;
@@ -99,10 +87,6 @@ export interface VectorRetrieveOptions {
     searchAllCategories?: boolean;
 }
 
-/**
- * Retrieves hardware specifications from the Firestore vector storage (`buildbot_hardware_vector`).
- * Uses findNearest with cosine distance over 768-dim embeddings.
- */
 export async function retrieveHardwareVectorSpecs(
     query: string,
     options: VectorRetrieveOptions = {}

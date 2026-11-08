@@ -107,7 +107,6 @@ export function InventoryView({
       className={className ? className : "lg:col-span-9"}
     >
       <>
-        {/* Top Filter and Search Toolbar */}
         <div className="mb-4">
           <InventoryToolbar
             categories={categories}
@@ -135,8 +134,6 @@ export function InventoryView({
           />
         </div>
 
-
-        {/* Content Body */}
         {hasNoSelectedCategories(categories) ? (
           <CategorySelectionEmpty itemLabel="parts" onSelectAll={() => onCategoryChange("All", true)} />
         ) : loading ? (
@@ -280,7 +277,6 @@ export function InventoryView({
           </Paper>
         )}
 
-        {/* Bottom Pagination Control */}
         {totalPages > 1 && (
           <div className="mt-6 flex justify-center">
             <PaginationControls

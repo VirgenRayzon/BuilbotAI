@@ -18,8 +18,6 @@ function serializeDate(value: unknown): string | undefined {
   return undefined;
 }
 
-/** Same public catalog, serialization and cache policy used by the server action.
- * Kept separate from AI actions so the page does not bootstrap Genkit to read it. */
 export async function getBuilderCatalog(): Promise<Part[]> {
   const now = Date.now();
   const hasGalleryShape = catalogCache?.every(part => Array.isArray(part.images));

@@ -7,7 +7,6 @@ interface SignOutLoaderProps {
   visible: boolean;
 }
 
-/** In-place modal overlay during sign-out transition */
 export function SignOutLoader({ visible }: SignOutLoaderProps) {
   return (
     <AnimatePresence>

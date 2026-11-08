@@ -4,7 +4,6 @@ import { randomUUID } from 'node:crypto';
 import { getAdminAuth, getAdminFirestore } from '@/firebase/server-init';
 import { reservePublicProduct } from './public-product-actions';
 
-/** Compatibility adapter: legacy pages reserve using authoritative server product data. */
 export async function reservePrebuiltSystem(
   userId: string,
   _userEmail: string,

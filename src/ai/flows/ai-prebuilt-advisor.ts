@@ -1,11 +1,4 @@
 'use server';
-/**
- * @fileOverview A Genkit flow for providing AI assistance for building a pre-built PC.
- *
- * - aiPrebuiltAdvisor - A function that validates a set of components and suggests a name, description, and price.
- * - AiPrebuiltAdvisorInput - The input type for the aiPrebuiltAdvisor function.
- * - AiPrebuiltAdvisorOutput - The return type for the aiPrebuiltAdvisor function.
- */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';

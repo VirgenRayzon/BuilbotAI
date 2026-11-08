@@ -4,9 +4,6 @@ import { useEffect, useState } from 'react';
 import { getCachedInventory } from '@/app/actions';
 import type { Part } from '@/lib/types';
 
-/**
- * Hook to fetch all PC components from Firestore (cached server-side) and combine them.
- */
 export function useInventoryQuery(initialParts?: Part[]) {
     const [allParts, setAllParts] = useState<Part[]>([]);
     const [loading, setLoading] = useState(true);

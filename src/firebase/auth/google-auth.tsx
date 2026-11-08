@@ -13,9 +13,6 @@ import {
 import { Firestore, doc, getDocFromServer, setDoc } from 'firebase/firestore';
 import { syncUserClaimsAction } from '@/app/actions';
 
-/**
- * Modern Google 'G' official SVG icon.
- */
 export function GoogleIcon({ className = 'w-4 h-4' }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -39,9 +36,6 @@ export function GoogleIcon({ className = 'w-4 h-4' }: { className?: string }) {
   );
 }
 
-/**
- * Returns a configured GoogleAuthProvider instance with account selector prompt and profile scopes.
- */
 export function getGoogleProvider(): GoogleAuthProvider {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
@@ -50,10 +44,6 @@ export function getGoogleProvider(): GoogleAuthProvider {
   return provider;
 }
 
-/**
- * Maps Firebase Auth error codes to helpful, user-friendly messages.
- * Returns null if the error was a user-initiated dismissal (e.g. closing the popup).
- */
 export function formatGoogleAuthError(err: any): string | null {
   if (!err) return null;
   const code = err.code || '';
@@ -94,11 +84,6 @@ export interface CustomerGoogleAuthResult {
   isNewUser?: boolean;
 }
 
-/**
- * Executes customer Google Sign-In / Sign-Up.
- * Enforces local persistence, verifies customer permissions (disallows manager/admin sign-in via public portal),
- * provisions or updates customer profile in Firestore, and syncs custom claims.
- */
 export async function executeCustomerGoogleAuth(
   auth: Auth,
   firestore: Firestore,
@@ -203,10 +188,6 @@ export interface StaffGoogleAuthResult {
   needsKeyVerification?: boolean;
 }
 
-/**
- * Initiates Google sign-in for administrative personnel on /system-access.
- * Enforces browserSessionPersistence, verifies that the user is an authorized manager or superadmin in Firestore.
- */
 export async function executeStaffGoogleAuthInitiate(
   auth: Auth,
   firestore: Firestore

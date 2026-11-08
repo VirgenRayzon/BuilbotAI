@@ -32,7 +32,6 @@ import { OrderDetailsModal } from "./order-details-modal";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
-/* ── Web Audio Feedback ── */
 let _userAudioCtx: AudioContext | null = null;
 function playSoftTick() {
   try {
@@ -54,11 +53,9 @@ function playSoftTick() {
     src.connect(g).connect(_userAudioCtx.destination);
     src.start();
   } catch {
-    /* silent on browser audio policy restrictions */
   }
 }
 
-/* ── Categories ── */
 const USER_CATEGORIES = ["All", "Orders", "Support", "Updates", "Alerts"] as const;
 type UserCategoryType = (typeof USER_CATEGORIES)[number];
 
@@ -232,7 +229,6 @@ export function UserNotifications() {
         </Popover.Target>
 
         <Popover.Dropdown p={0} className="bg-white/95 dark:bg-[#111722]/95 border-slate-200 dark:border-white/10 backdrop-blur-xl shadow-2xl rounded-2xl overflow-hidden w-[460px] max-w-[95vw]">
-          {/* Header */}
           <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-slate-100 dark:border-white/5">
             <div className="flex items-center gap-2">
               <span className="text-[13px] font-semibold text-slate-900 dark:text-white tracking-tight">
@@ -259,7 +255,6 @@ export function UserNotifications() {
             )}
           </div>
 
-          {/* Spring Pill Filter Bar (Rauno Freiberg craft inspired) */}
           <div className="px-3.5 py-2 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01]">
             <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
               {USER_CATEGORIES.map((cat) => {
@@ -302,7 +297,6 @@ export function UserNotifications() {
             </div>
           </div>
 
-          {/* Notifications Scroll Area with Staggered Transition */}
           <div className="max-h-[340px] overflow-y-auto">
             {notificationsLoading ? (
               <div className="flex items-center justify-center h-32">
@@ -436,7 +430,6 @@ export function UserNotifications() {
             )}
           </div>
 
-          {/* Footer Link */}
           <div className="border-t border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
             <Button
               component={Link}
@@ -456,7 +449,6 @@ export function UserNotifications() {
         </Popover.Dropdown>
       </Popover>
 
-      {/* Order Details Modal */}
       {selectedOrderId && (
         <OrderDetailsModal
           orderId={selectedOrderId}

@@ -38,7 +38,6 @@ export async function createCatalogProduct(input: unknown) {
   return result;
 }
 
-/** Return expected form errors explicitly; Next hides thrown server errors in production. */
 export async function submitCatalogProduct(input: unknown) {
   try { return { success: true as const, product: await createCatalogProduct(input) }; }
   catch (error) {

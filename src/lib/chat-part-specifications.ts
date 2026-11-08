@@ -51,7 +51,6 @@ function productTokens(value: string): string[] {
     .filter(token => token.length > 0 && !QUERY_STOPWORDS.has(token));
 }
 
-/** A nearest vector hit is useful only when it names the requested product. */
 export function matchesRequestedPart(query: string, spec: string): boolean {
   const requestedModel = partModelIdentifier(query);
   const candidateName = spec.split('\n', 1)[0];

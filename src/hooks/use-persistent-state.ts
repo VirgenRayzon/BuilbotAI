@@ -2,10 +2,6 @@
 
 import { useState, useEffect } from 'react';
 
-/**
- * usePersistentState — A hook that syncs state with LocalStorage.
- * Useful for UI preferences that should survive a refresh.
- */
 export function usePersistentState<T>(key: string, defaultValue: T): [T, (value: T | ((prev: T) => T)) => void] {
     const [state, setState] = useState<T>(defaultValue);
 

@@ -20,7 +20,6 @@ export default function PartsLoading() {
         </header>
 
         <section aria-label="Loading parts catalog" aria-busy="true">
-          {/* Toolbar Skeleton matching PublicPartsToolbar */}
           <div className="mb-4 space-y-2">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Skeleton h={44} radius="md" className="w-full min-w-0 flex-1 sm:max-w-[560px]" />
@@ -36,7 +35,6 @@ export default function PartsLoading() {
             </div>
           </div>
 
-          {/* Product grid matching PublicPartsCatalog grid */}
           <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }, (_, index) => (
               <CatalogCardSkeleton key={index} />
@@ -47,4 +45,3 @@ export default function PartsLoading() {
     </div>
   );
 }
-

@@ -7,9 +7,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useUserProfile } from "@/context/user-profile";
 import { useSiteSettings } from "@/context/site-settings-context";
 
-/**
- * Hook to manage site-wide emergency controls & UI modes (Maintenance, Storage, AI, E-Commerce Mode).
- */
 export function useEmergencyControls() {
     const firestore = useFirestore();
     const { toast } = useToast();

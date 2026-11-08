@@ -54,7 +54,6 @@ export function AiActionButton({
 
   return (
     <Group gap="xs" align="center" className="flex-wrap">
-      {/* Telemetry Turnaround Badge (Available after generation) */}
       {aiDuration !== null && !isPending && (
         <Popover
           width={280}
@@ -107,7 +106,6 @@ export function AiActionButton({
         </Popover>
       )}
 
-      {/* Dynamic Action Trigger / Live Pending State */}
       {isPending ? (
         <div className="flex items-center gap-2 p-1 pl-3 pr-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 backdrop-blur-md animate-in fade-in duration-300">
           <div className="flex items-center gap-2 text-cyan-700 dark:text-cyan-300 text-xs font-medium">

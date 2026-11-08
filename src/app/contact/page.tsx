@@ -205,7 +205,6 @@ export default function ContactPage() {
       <AuthBackground className="fixed" />
 
       <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 relative z-10">
-        {/* Top Navigation */}
         <div className="mb-6">
           <MantineButton
             component={Link}
@@ -222,7 +221,6 @@ export default function ContactPage() {
         </div>
 
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-start">
-          {/* Left Column: Contact Channels & Info */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -252,7 +250,6 @@ export default function ContactPage() {
             </p>
 
             <Stack gap="sm" className="mb-6">
-              {/* Channel 1: In-App Support Inbox */}
               <Paper
                 withBorder
                 radius="xl"
@@ -282,7 +279,6 @@ export default function ContactPage() {
                 </div>
               </Paper>
 
-              {/* Channel 2: Headquarters & Warehouse */}
               <Paper
                 withBorder
                 radius="xl"
@@ -315,7 +311,6 @@ export default function ContactPage() {
                 </div>
               </Paper>
 
-              {/* Channel 3: Daily Operating Hours */}
               <Paper
                 withBorder
                 radius="xl"
@@ -345,7 +340,6 @@ export default function ContactPage() {
                 </div>
               </Paper>
 
-              {/* Channel 4: Phone & Verified Email */}
               <Paper
                 withBorder
                 radius="xl"
@@ -389,7 +383,6 @@ export default function ContactPage() {
             </Stack>
           </motion.div>
 
-          {/* Right Column: Mantine Contact Form */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}

@@ -624,7 +624,6 @@ export function AdminSidebar({
         data-active="false"
         className="peer/menu-button flex h-8 w-full items-center justify-center gap-2 overflow-hidden rounded-md !p-0 text-left text-sm outline-none ring-sidebar-ring transition-[width,height,padding] hover:bg-transparent focus-visible:ring-2 active:bg-transparent group-data-[collapsible=icon]:!size-8"
       >
-        {/* Collapsed / Shrink Icon Emblem */}
         <div className="hidden group-data-[collapsible=icon]:flex aspect-square size-8 items-center justify-center rounded-lg bg-slate-900 dark:bg-[#071322] border border-slate-700 dark:border-cyan-400/40 p-1 shrink-0">
           <Image
             src={netcodexEmblem}
@@ -637,7 +636,6 @@ export function AdminSidebar({
           />
         </div>
 
-        {/* Expanded Full Netcodex Logo (same h-8 height & same background/border as shrink) */}
         <div className="flex h-8 w-full items-center justify-center rounded-lg bg-slate-900 dark:bg-[#071322] border border-slate-700 dark:border-cyan-400/40 px-3 overflow-hidden group-data-[collapsible=icon]:hidden">
           <Image
             src={netcodexLogoWhite}
@@ -661,7 +659,6 @@ export function AdminSidebar({
         isMobile ? "min-h-0 !flex-1" : "h-full"
       )}
     >
-      {/* Fixed-Height Brand Header with identical surface in Expanded & Collapsed states */}
       {!isMobile && (
         <Box
           data-sidebar="header"
@@ -683,7 +680,6 @@ export function AdminSidebar({
         </Box>
       )}
 
-      {/* Platform Navigation */}
       <Box
         data-sidebar="content"
         className={cn(
@@ -843,7 +839,6 @@ export function AdminSidebar({
         </Box>
       </Box>
 
-      {/* NavUser Footer */}
       <Box
         data-sidebar="footer"
         className={cn(
@@ -945,7 +940,6 @@ export function AdminSidebar({
         </Box>
       </Box>
 
-      {/* Edge Rail Toggle */}
       <UnstyledButton
         unstyled
         type="button"
@@ -989,7 +983,6 @@ export function AdminSidebar({
           data-variant="sidebar"
           data-side="left"
         >
-          {/* Desktop sidebar width spacer */}
           <Box className="relative w-[--sidebar-width] bg-transparent transition-[width] duration-200 ease-linear group-data-[collapsible=icon]:w-[--sidebar-width-icon]" />
           <Box
             className={cn(

@@ -269,7 +269,6 @@ export default function ManagerSignupPage() {
       <UnifiedBackground />
 
       <div className="w-full max-w-[480px] z-10 flex flex-col gap-2.5">
-        {/* Top bar */}
         <div className="flex items-center justify-between px-1">
           <Link
             href="/system-access"
@@ -290,7 +289,6 @@ export default function ManagerSignupPage() {
           className="w-full bg-white/85 dark:bg-[#111722] border-red-500/30 dark:border-red-500/30 shadow-sm relative transition-all"
         >
           <Stack gap="md">
-            {/* Header with Red Netcodex Emblem */}
             <div className="text-center flex flex-col items-center gap-1.5">
               <Link href="/" className="mb-0.5">
                 <Logo showText={false} size="lg" variant="red" />
@@ -306,7 +304,6 @@ export default function ManagerSignupPage() {
               </Text>
             </div>
 
-            {/* Social Registration */}
             <Button
               variant="default"
               size="md"
@@ -328,7 +325,6 @@ export default function ManagerSignupPage() {
               }}
             />
 
-            {/* Error Message */}
             {error && (
               <Alert
                 color="red"
@@ -342,7 +338,6 @@ export default function ManagerSignupPage() {
               </Alert>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)} autoComplete="on">
               <Stack gap="md">
                 <Controller
@@ -388,7 +383,6 @@ export default function ManagerSignupPage() {
                         {...field}
                       />
 
-                      {/* Password Strength Meter */}
                       {field.value && (
                         <div className="mt-2 space-y-1.5">
                           <Progress
@@ -453,7 +447,6 @@ export default function ManagerSignupPage() {
               </Stack>
             </form>
 
-            {/* Footer Links */}
             <div className="text-center text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-white/10 whitespace-nowrap">
               Already have manager credentials?{' '}
               <Anchor
@@ -468,7 +461,6 @@ export default function ManagerSignupPage() {
         </Paper>
       </div>
 
-      {/* Google Signup Manager Key Prompt Modal */}
       <Modal
         opened={googleModalOpened}
         onClose={() => {

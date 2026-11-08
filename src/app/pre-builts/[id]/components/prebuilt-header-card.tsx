@@ -34,7 +34,6 @@ export function PrebuiltHeaderCard({
             withBorder
             className="bg-white/90 dark:bg-[#141a23]/90 border-slate-200 dark:border-white/10 shadow-sm backdrop-blur-md"
         >
-            {/* Badges */}
             <Group gap="xs" mb="xs">
                 <Badge
                     variant="filled"
@@ -70,7 +69,6 @@ export function PrebuiltHeaderCard({
                 )}
             </Group>
 
-            {/* Prebuilt Name */}
             <Title
                 order={1}
                 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50 mb-1"
@@ -95,14 +93,12 @@ export function PrebuiltHeaderCard({
                 </Group>
             )}
 
-            {/* Description with proper spacing before the separator line */}
             {system.description && (
                 <Text size="md" c="dimmed" className="leading-relaxed mb-6 pb-2">
                     {system.description}
                 </Text>
             )}
 
-            {/* Starting At + Price on left, Customize in Builder aligned to the right */}
             <div className="mt-6 pt-5 border-t border-slate-200/70 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <Text size="xs" fw={800} c="dimmed" className="uppercase tracking-[0.16em] mb-1">

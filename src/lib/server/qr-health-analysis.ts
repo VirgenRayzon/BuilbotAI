@@ -4,7 +4,6 @@ import type { QRHealthRecord, QRHealthReport } from '../qr-health';
 const skuPattern = /^SKU-(CPU|GPU|MTB|RAM|STG|PSU|CSE|CLR|MNT|KBD|MOU|HDT|PC)[23456789ABCDEFGHJKMNPQRSTVWXYZ]{8}$/;
 type Input = { products: QRHealthRecord[]; ids: QRHealthRecord[]; skus: QRHealthRecord[]; links: QRHealthRecord[]; counter: unknown };
 
-/** Pure diagnostics: no repair, allocation or writes. */
 export function analyzeQRHealth(input: Input): QRHealthReport {
   const issues: QRHealthReport['issues'] = [];
   const ids = new Map(input.ids.map(row => [row.id, row]));

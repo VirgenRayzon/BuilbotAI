@@ -50,9 +50,6 @@ const SuggestionSchema = z.object({
     reason: z.string(),
 });
 
-/**
- * Unified Output Schema for the AI Critique.
- */
 const aiBuildCritiqueOutputSchema = z.object({
     pros: z.array(z.string()),
     cons: z.array(z.string()),
@@ -72,9 +69,6 @@ import { Resolution, WorkloadType } from "@/lib/types";
 
 const CRITIQUE_CACHE_COLLECTION = 'ai_critique_cache_v1';
 
-/**
- * Generate a cache key for the entire critique output.
- */
 function generateCritiqueCacheKey(input: AiBuildCritiqueInput, modelSettings: unknown): string {
     const parts = Object.entries(input.build || {}).sort(([a], [b]) => a.localeCompare(b));
     return createHash('sha256').update(JSON.stringify({
@@ -87,9 +81,6 @@ function generateCritiqueCacheKey(input: AiBuildCritiqueInput, modelSettings: un
     })).digest('hex');
 }
 
-/**
- * Clean redundant marketing boilerplate for focused knowledge retrieval.
- */
 function cleanPartName(name: string): string {
     return name
         .replace(/\b(80\s*Plus\s*(Bronze|Gold|Platinum|Silver|Titanium))\b/gi, '')

@@ -7,7 +7,6 @@ import type { Part } from '@/lib/types';
 
 const categories = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler', 'Monitor', 'Keyboard', 'Mouse', 'Headset'] as const;
 
-/** Keep the existing favorite stock sources, with a fixed Hook order on startup. */
 export function useFavoriteInventory() {
   const firestore = useFirestore();
   const refs = useMemo(() => categories.map(category => firestore ? collection(firestore, category) : null), [firestore]);

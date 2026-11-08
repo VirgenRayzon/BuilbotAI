@@ -73,7 +73,6 @@ export function BuilderFloatingAnalytics({
               shadow="xl"
               className="overflow-hidden bg-white/95 dark:bg-[#0d1117]/95 border-slate-200 dark:border-cyan-500/20 backdrop-blur-xl shadow-xl max-h-[85vh] overflow-y-auto custom-scrollbar"
             >
-              {/* Header */}
               <div className="p-4 bg-slate-50/90 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/10 space-y-3">
                 <Group justify="space-between" align="center">
                   <Group gap="xs" align="center">
@@ -97,7 +96,6 @@ export function BuilderFloatingAnalytics({
                   </ActionIcon>
                 </Group>
 
-                {/* Preset Selectors */}
                 <Group grow gap="xs">
                   <Select
                     value={resolution}
@@ -128,7 +126,6 @@ export function BuilderFloatingAnalytics({
                 </Group>
               </div>
 
-              {/* Body */}
               <div className="p-4 space-y-3.5">
                 <SynergyGaugeCard build={build} resolution={resolution} />
                 <BottleneckStatusCard build={build} resolution={resolution} />
@@ -140,7 +137,6 @@ export function BuilderFloatingAnalytics({
         )}
       </AnimatePresence>
 
-      {/* FAB */}
       <div className="relative group">
         <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-cyan-600 to-blue-600 blur opacity-40 group-hover:opacity-100 transition duration-1000 animate-pulse"></div>
         <AnimatedIconButton

@@ -200,7 +200,6 @@ export function MantineProfileView({
   return (
     <div className="space-y-6">
 
-      {/* Profile Card */}
       <div className="w-full">
         <div className="w-full">
           <Paper

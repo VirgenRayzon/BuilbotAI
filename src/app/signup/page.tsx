@@ -208,7 +208,6 @@ export default function SignUpPage() {
       <AuthBackground />
 
       <div className="w-full max-w-[440px] z-10 flex flex-col gap-2.5">
-        {/* Top bar back link */}
         <div className="flex items-center justify-start px-1">
           <Link
             href="/"
@@ -226,7 +225,6 @@ export default function SignUpPage() {
           className="w-full bg-white/85 dark:bg-[#111722] border-slate-200/80 dark:border-white/10 shadow-sm relative transition-all"
         >
           <Stack gap="md">
-            {/* Header / Logo + Title */}
             <div className="text-center flex flex-col items-center gap-1.5">
               <Link href="/" className="mb-0.5">
                 <Logo showText={false} size="lg" />
@@ -242,7 +240,6 @@ export default function SignUpPage() {
               </Text>
             </div>
 
-            {/* Social Registration */}
             <Button
               variant="default"
               size="md"
@@ -264,7 +261,6 @@ export default function SignUpPage() {
               }}
             />
 
-            {/* Error Message */}
             {error && (
               <Alert
                 color="red"
@@ -278,7 +274,6 @@ export default function SignUpPage() {
               </Alert>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)}>
               <Stack gap="md">
                 <Controller
@@ -323,7 +318,6 @@ export default function SignUpPage() {
                         {...field}
                       />
 
-                      {/* Password Strength Meter */}
                       {field.value && (
                         <div className="mt-2 space-y-1.5">
                           <Progress
@@ -352,7 +346,6 @@ export default function SignUpPage() {
                   )}
                 />
 
-                {/* Terms and Conditions Checkbox */}
                 <Controller
                   name="terms"
                   control={control}
@@ -420,7 +413,6 @@ export default function SignUpPage() {
               </Stack>
             </form>
 
-            {/* Footer Links */}
             <div className="text-center text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-white/10">
               Already have an account?{' '}
               <Anchor
@@ -435,7 +427,6 @@ export default function SignUpPage() {
         </Paper>
       </div>
 
-      {/* Terms of Agreement Modal */}
       <TermsOfAgreementModal
         opened={toaOpened}
         onClose={() => setToaOpened(false)}

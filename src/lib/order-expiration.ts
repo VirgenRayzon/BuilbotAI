@@ -1,7 +1,3 @@
-/**
- * Order expiration utilities for pending review and payment pending orders.
- * Orders with no progression for 1 hour automatically transition to cancelled.
- */
 
 export const ORDER_EXPIRATION_DURATION_MS = 60 * 60 * 1000; // 1 hour = 3,600,000 ms
 

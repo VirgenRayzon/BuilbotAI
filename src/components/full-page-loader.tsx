@@ -21,7 +21,6 @@ export function FullPageLoader({
       exit={{ opacity: 0, transition: { duration: 0.5, delay: 1 } }}
       className="fixed inset-0 z-[999] flex items-center justify-center bg-[#0c0f14] overflow-hidden"
     >
-      {/* Dynamic Background */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.08),transparent_70%)] animate-pulse" />
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -30,7 +29,6 @@ export function FullPageLoader({
 
       <div className="relative flex flex-col items-center gap-10">
         <div className="relative">
-          {/* Main Visual Core */}
           <motion.div
             animate={{
               scale: [1, 1.1, 1],
@@ -41,7 +39,6 @@ export function FullPageLoader({
           />
 
           <div className="relative w-32 h-32">
-            {/* Outer Tech Ring */}
             <svg className="w-full h-full rotate-[-90deg]">
               <circle
                 cx="64"
@@ -66,14 +63,12 @@ export function FullPageLoader({
               />
             </svg>
 
-            {/* Middle Rotating Hexagon-ish shape */}
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
               className="absolute inset-4 border border-primary/20 rounded-2xl"
             />
 
-            {/* Inner Glowing Point */}
             <div className="absolute inset-0 flex items-center justify-center">
               <motion.div
                 animate={{
@@ -105,7 +100,6 @@ export function FullPageLoader({
             </p>
           </motion.div>
 
-          {/* Precision Loading Bar */}
           <div className="w-64 h-[2px] bg-white/5 rounded-full overflow-hidden relative">
             <motion.div
               animate={{
@@ -131,7 +125,6 @@ export function FullPageLoader({
         </div>
       </div>
 
-      {/* Edge Accents */}
       <div className="absolute top-0 left-0 w-32 h-32 border-t border-l border-primary/10 rounded-tl-3xl m-8" />
       <div className="absolute top-0 right-0 w-32 h-32 border-t border-r border-primary/10 rounded-tr-3xl m-8" />
       <div className="absolute bottom-0 left-0 w-32 h-32 border-b border-l border-primary/10 rounded-bl-3xl m-8" />

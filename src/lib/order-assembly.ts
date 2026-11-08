@@ -54,10 +54,6 @@ export interface CustomRigInstance {
   items: OrderItem[];
 }
 
-/**
- * Extracts distinct custom rigs from an order using item groups.
- * Prebuilt rigs and additional parts are excluded.
- */
 export function getCustomRigsFromOrder(
   order: Pick<Order, 'items' | 'type' | 'prebuiltName'>
 ): CustomRigInstance[] {
@@ -75,10 +71,6 @@ export function getCustomRigsFromOrder(
   });
 }
 
-/**
- * Checks if an order requires custom rig assembly verification.
- * Prebuilts and parts-only orders do not require the custom-rig verification checklist.
- */
 export function isOrderCustomRigAssemblyRequired(
   order: Pick<Order, 'items' | 'type' | 'prebuiltName' | 'status' | 'fulfillmentStage'>
 ): boolean {
@@ -87,18 +79,12 @@ export function isOrderCustomRigAssemblyRequired(
   return customRigs.length > 0;
 }
 
-/**
- * Derives a stable line identifier for an item if not already set.
- */
 export function getOrderItemLineId(item: OrderItem, index: number, rigId?: string): string {
   if (item.lineId) return item.lineId;
   const prefix = rigId ? `${rigId}_` : '';
   return `${prefix}line_${index}_${item.productId || item.id || 'part'}`;
 }
 
-/**
- * Initializes a blank verification record for a custom rig.
- */
 export function initializeRigVerification(
   orderId: string,
   rigId: string,
@@ -144,10 +130,6 @@ export interface StepUpdateInput {
   notes?: string;
 }
 
-/**
- * Applies a step verification update and strictly invalidates downstream steps
- * when an earlier stage is corrected or un-done.
- */
 export function applyStepUpdateAndInvalidation(
   current: RigVerificationRecord,
   step: RigAssemblyStep,
@@ -259,11 +241,6 @@ export function applyStepUpdateAndInvalidation(
   return record;
 }
 
-/**
- * Validates that all custom rigs in an order have completed and passed verification.
- * Throws an error if any custom rig is unverified or failed.
- * Historical delivered orders are exempted from retroactive blocking.
- */
 export function assertCustomRigDispatchAllowed(
   order: Order,
   verifications: Record<string, RigVerificationRecord | null | undefined>
@@ -302,10 +279,6 @@ export function assertCustomRigDispatchAllowed(
   }
 }
 
-/**
- * Serializes any timestamp-like value (Date, Firestore Timestamp, {_seconds, _nanoseconds}, etc.)
- * into a standard ISO 8601 string or null.
- */
 export function serializeTimestamp(val: unknown): string | null {
   if (!val) return null;
   if (typeof val === 'string') return val;
@@ -336,10 +309,6 @@ export function serializeTimestamp(val: unknown): string | null {
   return null;
 }
 
-/**
- * Normalizes a RigVerificationRecord into a 100% plain JSON-serializable object
- * safe to cross the React Server Components / Server Actions boundary (Flight serialization).
- */
 export function serializeRigVerificationRecord(
   record: RigVerificationRecord
 ): RigVerificationRecord {

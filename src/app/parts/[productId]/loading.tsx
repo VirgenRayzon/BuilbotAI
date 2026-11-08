@@ -7,7 +7,6 @@ export default function PartDetailLoading() {
         <Skeleton h={32} w={120} radius="sm" className="mb-8" />
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:grid-rows-[auto_1fr_auto] md:gap-x-10 md:gap-y-4">
-          {/* Left Column: Image Gallery Skeleton */}
           <div className="order-1 md:col-start-1 md:row-start-1 md:row-span-3">
             <Paper
               withBorder
@@ -25,7 +24,6 @@ export default function PartDetailLoading() {
             </div>
           </div>
 
-          {/* Right Column Row 1: Header Skeleton */}
           <div className="order-2 md:col-start-2 md:row-start-1">
             <Group gap="xs" mb="xs">
               <Skeleton h={22} w={80} radius="sm" />
@@ -39,7 +37,6 @@ export default function PartDetailLoading() {
             </Group>
           </div>
 
-          {/* Right Column Row 2: Specifications Skeleton */}
           <div className="order-4 md:col-start-2 md:row-start-2">
             <Paper
               withBorder
@@ -59,7 +56,6 @@ export default function PartDetailLoading() {
             </Paper>
           </div>
 
-          {/* Right Column Row 3: Action Card Skeleton */}
           <Paper
             withBorder
             radius="md"
@@ -85,4 +81,3 @@ export default function PartDetailLoading() {
     </div>
   );
 }
-

@@ -42,9 +42,6 @@ const AuditLogsSection = dynamic(() => import('@/app/profile/components/audit-lo
 const AiModelSettings = dynamic(() => import('@/components/ai-model-settings').then(module => module.AiModelSettings), { loading: CardsPanelLoading });
 const AiSystemPromptsSettings = dynamic(() => import('@/components/ai-system-prompts-settings').then(module => module.AiSystemPromptsSettings), { loading: CardsPanelLoading });
 
-/**
- * Admin Dashboard - Orchestrator Component
- */
 export default function AdminPage() {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
@@ -185,7 +182,6 @@ export default function AdminPage() {
                         isDark ? "bg-[#0c0f14] text-slate-50" : "bg-slate-50 text-slate-900"
                     )}
                 >
-                    {/* Circuit Pattern Background */}
                     <div
                         className={cn(
                             "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
@@ -392,7 +388,6 @@ export default function AdminPage() {
                                 </div>
                             )}
 
-                            {/* Global Bulk Action Confirmation Modal */}
                             <Modal
                                 opened={confirmAction.isOpen}
                                 onClose={() => setConfirmAction(prev => ({ ...prev, isOpen: false }))}

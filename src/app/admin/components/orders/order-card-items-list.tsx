@@ -70,7 +70,6 @@ function OrderItemGroupAccordion({
         groupIdx > 0 && 'border-t border-slate-200 dark:border-white/10'
       )}
     >
-      {/* Accordion Trigger Header */}
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
@@ -116,7 +115,6 @@ function OrderItemGroupAccordion({
         </div>
       </button>
 
-      {/* Accordion Content: Custom Rig Verification + Group Items */}
       <Collapse in={isOpen}>
         <div className="border-t border-slate-200/80 dark:border-white/10">
           {isCustomBuild ? (
@@ -149,7 +147,6 @@ function OrderItemGroupAccordion({
                     className="p-2.5 sm:p-3 px-3.5 sm:px-4 flex justify-between items-center text-sm hover:bg-slate-100/60 dark:hover:bg-white/[0.02] transition-colors gap-3"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      {/* Authentic Product Image Thumbnail */}
                       <div className="relative h-11 w-11 sm:h-12 sm:w-12 shrink-0 overflow-hidden bg-white dark:bg-[#0e131d]">
                         <OptimizedImage
                           src={resolvedImg}
@@ -160,7 +157,6 @@ function OrderItemGroupAccordion({
                         />
                       </div>
 
-                      {/* Part Details */}
                       <div className="flex flex-col min-w-0">
                         <span className="text-[10px] font-bold text-cyan-700 dark:text-cyan-400 uppercase tracking-wider">
                           {(item as any).category || 'Item'}
@@ -176,7 +172,6 @@ function OrderItemGroupAccordion({
                       </div>
                     </div>
 
-                    {/* Line Total */}
                     <span className="font-mono font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 shrink-0">
                       {formatCurrency(lineTotal)}
                     </span>

@@ -1,8 +1,3 @@
-/**
- * system-prompts.ts — Centralized resolution and caching of active AI System Prompts.
- * Reads configured prompts from Firestore `siteSettings/main` (under `systemPrompts`),
- * falling back to the defaults defined in `default-system-prompts.ts`.
- */
 
 import { getAdminFirestore } from '@/firebase/server-init';
 import {

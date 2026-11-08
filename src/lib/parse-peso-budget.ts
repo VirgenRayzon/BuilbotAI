@@ -1,4 +1,3 @@
-/** Parses common PHP budget inputs such as "₱50,000" and "75k PHP". */
 export function parsePesoBudget(value: string): number | null {
   const normalized = value.toLowerCase().replace(/,/g, '');
   const match = normalized.match(/(\d+(?:\.\d+)?)\s*([km])?/);

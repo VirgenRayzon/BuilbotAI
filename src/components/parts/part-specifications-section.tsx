@@ -128,7 +128,6 @@ export function PartSpecificationsSection({ form, setSpecValue, justAutofilled }
         ))}
       </div>
 
-      {/* Custom Specs */}
       <div className="pt-6 border-t border-dashed border-slate-200 dark:border-white/10">
         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2.5">
           <span className="inline-block w-3.5 h-0.5 bg-slate-400/40 rounded-full" />

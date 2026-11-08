@@ -1,7 +1,3 @@
-/**
- * LoadingContext — Global page-level loading state provider.
- * Controls the full-page loader overlay during route transitions.
- */
 
 "use client";
 

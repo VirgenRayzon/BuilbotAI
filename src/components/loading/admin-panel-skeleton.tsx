@@ -7,7 +7,6 @@ import { OrderCardSkeleton } from './order-card-skeleton';
 export function AdminPanelSkeleton({ variant = 'cards' }: { variant?: 'cards' | 'table' | 'orders' | 'analytics' }) {
   return (
     <div className="space-y-4 w-full" aria-label="Loading admin section" aria-busy="true">
-      {/* Tab toolbar skeleton */}
       <Paper
         withBorder
         radius="lg"
@@ -62,4 +61,3 @@ export function AdminPanelSkeleton({ variant = 'cards' }: { variant?: 'cards' | 
     </div>
   );
 }
-

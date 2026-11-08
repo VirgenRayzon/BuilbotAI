@@ -259,7 +259,6 @@ export function QRScannerDialog({ trigger, opened: controlledOpened, onClose }: 
                 />
                 <canvas ref={canvasRef} className="hidden" />
 
-                {/* Viewfinder Target Overlay */}
                 {isScanning && (
                   <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                     <div className="w-48 h-48 border-2 border-cyan-400 rounded-lg relative opacity-85 shadow-[0_0_15px_rgba(6,182,212,0.3)]">

@@ -41,9 +41,6 @@ function refreshInventoryPage() {
     window.dispatchEvent(new Event('inventory-page-refresh'));
 }
 
-/**
- * Hook to manage parts and prebuilt systems inventory.
- */
 export function useInventory(profile: any, loadAllParts = true) {
     const firestore = useFirestore();
     const { toast } = useToast();

@@ -67,7 +67,6 @@ export function ComponentFields({ form, inventory, openSlot, setOpenSlot }: Comp
                 </div>
 
                 <div className="col-span-2 space-y-4 pt-2">
-                    {/* RAM Modules */}
                     <MultiSlotField 
                         form={form} 
                         name="ram" 
@@ -77,7 +76,6 @@ export function ComponentFields({ form, inventory, openSlot, setOpenSlot }: Comp
                         openSlot={openSlot} 
                         onOpenSlot={handleOpenSlot} 
                     />
-                    {/* Storage Drives */}
                     <MultiSlotField 
                         form={form} 
                         name="storage" 

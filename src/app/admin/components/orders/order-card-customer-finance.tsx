@@ -32,7 +32,6 @@ export function OrderCardCustomerFinance({ order }: OrderCardCustomerFinanceProp
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
-      {/* Customer & Delivery Address Panel */}
       <Paper
         withBorder
         radius="md"
@@ -101,7 +100,6 @@ export function OrderCardCustomerFinance({ order }: OrderCardCustomerFinanceProp
         </div>
       </Paper>
 
-      {/* Financial Summary Panel */}
       <Paper
         withBorder
         radius="md"

@@ -118,7 +118,6 @@ export function PrebuiltShowcase({
                                     ))}
                                 </CarouselContent>
                                 
-                                {/* Premium Navigation Controls */}
                                 <div className="flex items-center justify-center gap-6 mt-16">
                                     <CarouselPrevious className={cn(
                                         "static translate-y-0 h-14 w-14 rounded-2xl border-2 transition-all duration-300 hover:scale-110 active:scale-95",

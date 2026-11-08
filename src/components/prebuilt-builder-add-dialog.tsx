@@ -36,11 +36,6 @@ interface PrebuiltBuilderAddDialogProps {
     title?: string;
 }
 
-/**
- * Prebuilt Builder Add/Edit Dialog Orchestrator
- * This component manages the dialog state and coordinates form logic, 
- * identity fields, and component selection modules.
- */
 export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData, title }: PrebuiltBuilderAddDialogProps) {
     const [open, setOpen] = useState(false);
     const [openSlot, setOpenSlot] = useState<string | null>(null);
@@ -101,7 +96,6 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent onEscapeKeyDown={event => { if (isSaving) event.preventDefault(); }} onPointerDownOutside={event => { if (isSaving) event.preventDefault(); }} className="sm:max-w-5xl p-0 gap-0 overflow-hidden border-primary/20 bg-background/95 backdrop-blur-xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] rounded-3xl [&>button.absolute]:hidden">
 
-                {/* ── Header ── */}
                 <DialogHeader className="px-8 pt-8 pb-6 border-b border-border/40 bg-muted/20 flex-row items-center gap-4 space-y-0">
                     <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
                         <Cpu className="h-6 w-6 text-primary" />
@@ -132,7 +126,6 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                                     <span>{aiDuration.toFixed(1)}s TURNAROUND TIME</span>
                                 </button>
 
-                                {/* Tooltip Content */}
                                 <div className={cn(
                                     "absolute right-0 top-full mt-2 w-64 p-3 rounded-xl border border-cyan-500/20 bg-slate-950/95 backdrop-blur-xl shadow-2xl transition-all duration-300 z-50 text-[10px] font-mono text-zinc-300 space-y-1.5 leading-relaxed text-left",
                                     showTelemetry ? "opacity-100 pointer-events-auto scale-100" : "opacity-0 pointer-events-none scale-95"

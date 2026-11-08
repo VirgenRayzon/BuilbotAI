@@ -1,8 +1,3 @@
-/**
- * InventoryPrebuiltCard — Grid card for a prebuilt system in the admin inventory dashboard.
- * Styled to match the user-facing pre-builts page with Mantine UI primitives, identical
- * specs dropdown (Collapse + Paper), image canvas, and side-by-side admin action buttons.
- */
 'use client';
 import { productAdminUrl } from '@/lib/product-identity';
 
@@ -118,16 +113,13 @@ export function InventoryPrebuiltCard({
           }
         }}
       >
-        {/* Multi-select Checkmark (shown only when selected) */}
         {isSelected && (
           <div className="absolute top-3 left-3 z-30 p-1 rounded-md bg-cyan-600 text-white shadow-lg animate-in zoom-in-50 duration-200">
             <Check className="h-4 w-4 stroke-[3px]" />
           </div>
         )}
 
-        {/* --- Top Content Stack --- */}
         <Stack gap="xs">
-          {/* Header Row: Tier Badge on left, Stock Badge & Admin Actions on right */}
           <Group justify="space-between" align="center" wrap="nowrap">
             <Badge
               size="xs"
@@ -160,7 +152,6 @@ export function InventoryPrebuiltCard({
                 </Badge>
               )}
 
-              {/* Open QR & details action */}
               {system.productId && (
                 <ActionIcon
                   component={Link}
@@ -177,7 +168,6 @@ export function InventoryPrebuiltCard({
                 </ActionIcon>
               )}
 
-              {/* Archive / Restore Action */}
               <ConfirmationAlertDialog
                 trigger={<ActionIcon
                     variant="subtle"
@@ -198,7 +188,6 @@ export function InventoryPrebuiltCard({
                 onConfirm={() => onArchive(system.id, !isArchiveView)}
               />
 
-              {/* Super Admin Delete Action */}
               {isSuperAdmin && (
                 <ConfirmationAlertDialog
                   trigger={<ActionIcon
@@ -223,7 +212,6 @@ export function InventoryPrebuiltCard({
             </Group>
           </Group>
 
-          {/* Clean Rounded Image Canvas */}
           <Box
             className={cn(
               "aspect-square relative -mx-3 w-auto overflow-hidden",
@@ -239,7 +227,6 @@ export function InventoryPrebuiltCard({
             />
           </Box>
 
-          {/* Title & Description below image */}
           <Stack gap={4}>
             <Text
               size="md"
@@ -260,7 +247,6 @@ export function InventoryPrebuiltCard({
             </Text>
           </Stack>
 
-          {/* Component Specs (Core Specs always visible, Remaining Specs collapsible) */}
           <div className="mt-2">
             <Paper
               withBorder
@@ -273,9 +259,7 @@ export function InventoryPrebuiltCard({
           </div>
         </Stack>
 
-        {/* --- Bottom Price & Dual Action Area --- */}
         <Stack gap="xs" mt="md">
-          {/* Price & Expand Chevron */}
           <Group justify="space-between" align="center">
             <Stack gap={0}>
               <Text
@@ -313,7 +297,6 @@ export function InventoryPrebuiltCard({
             </ActionIcon>
           </Group>
 
-          {/* Side-by-side Action Buttons: Edit System & Launch Page */}
           <Group gap="xs" mt="xs" wrap="nowrap">
             <AddPrebuiltDialog
               initialData={system}

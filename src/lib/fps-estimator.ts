@@ -1,8 +1,3 @@
-/**
- * fps-estimator — Estimated FPS calculation engine for the analytics sidebar.
- * Uses CPU/GPU performance tiers and resolution to generate average FPS values
- * and chart data for the Recharts visualization in BuilderSidebarLeft.
- */
 import { ComponentData, Resolution, WorkloadType } from "./types";
 import { getTier, ComponentTier } from "./bottleneck";
 import { isIncludedIntegratedGpu } from './integrated-graphics';

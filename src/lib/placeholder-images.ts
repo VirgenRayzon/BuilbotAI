@@ -62,10 +62,6 @@ export const PlaceHolderImages: ImagePlaceholder[] = [
   }
 ];
 
-/**
- * Returns a high-quality, category-specific local placeholder image
- * for computer components when an inventory image is not available.
- */
 export function getComponentPlaceholderImage(category?: string, modelOrName?: string): string {
   const cat = (category || "").toLowerCase().trim();
   const name = (modelOrName || "").toLowerCase().trim();

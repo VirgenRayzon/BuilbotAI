@@ -40,7 +40,6 @@ export function ChatMessageBubble({
 
     return (
         <div className={`flex gap-3 w-full min-w-0 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-            {/* Avatar */}
             <div className={cn(
                 "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
                 isUser
@@ -50,7 +49,6 @@ export function ChatMessageBubble({
                 {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
             </div>
 
-            {/* Bubble */}
             <div className={cn(
                 "flex flex-col gap-1.5 flex-1 min-w-0 max-w-full group/bubble",
                 isUser ? "items-end" : "items-start"
@@ -80,7 +78,6 @@ export function ChatMessageBubble({
                             ? 'bg-[#1b2432] text-slate-100 rounded-tl-sm border-white/10'
                             : 'bg-white text-slate-900 rounded-tl-sm border-slate-200')
                 )}>
-                    {/* Corner "!" button for telemetry logistics */}
                     {!isUser && hasTelemetry && !isStreaming && onToggleTelemetry && (
                         <button
                             type="button"
@@ -127,7 +124,6 @@ export function ChatMessageBubble({
                     </div>
                 </div>
 
-                {/* Bubble Footer Actions */}
                 {!isUser && text && !isStreaming && (
                     <div className="flex items-center gap-2 px-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity duration-200">
                         <button

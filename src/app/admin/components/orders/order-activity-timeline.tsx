@@ -64,7 +64,6 @@ export function OrderActivityTimeline({
 
       <Collapse in={opened}>
         <Stack gap="xs" pt="xs">
-          {/* Financial Breakdown Summary */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5 rounded-lg bg-slate-100/90 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-xs">
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -100,7 +99,6 @@ export function OrderActivityTimeline({
             </div>
           </div>
 
-          {/* Activity Events */}
           {activity.events.map((event) => (
             <Paper
               key={event.id}

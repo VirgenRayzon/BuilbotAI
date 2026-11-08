@@ -109,7 +109,6 @@ export function TeamSection() {
                 )}
               >
                 <div>
-                  {/* Member Image Wrapper */}
                   <div className="relative mb-6 aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 group-hover:border-cyan-500/40 transition-colors duration-300">
                     <Image
                       src={member.image}
@@ -121,7 +120,6 @@ export function TeamSection() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 z-10" />
 
-                    {/* Role Icon Floating */}
                     <div className="absolute top-3 right-3 z-20">
                       <ThemeIcon size={38} radius="md" variant="light" color={member.color} className="backdrop-blur-md shadow-md">
                         <member.icon size={18} />
@@ -129,7 +127,6 @@ export function TeamSection() {
                     </div>
                   </div>
 
-                  {/* Info */}
                   <div className="space-y-2">
                     <Badge variant="light" color={member.color} size="sm" radius="md" className="font-bold tracking-wider uppercase">
                       {member.role}
@@ -144,7 +141,6 @@ export function TeamSection() {
           ))}
         </div>
 
-        {/* Project Purpose & Overview */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -153,7 +149,6 @@ export function TeamSection() {
           className="mt-16 sm:mt-24"
         >
           <div className="relative mx-auto max-w-5xl rounded-3xl border border-slate-200/90 bg-gradient-to-b from-white/95 to-slate-50/90 p-8 sm:p-12 shadow-xl shadow-slate-200/60 dark:border-white/10 dark:from-[#111722]/95 dark:to-[#0c1017]/95 dark:shadow-black/50">
-            {/* Header Badge */}
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/70 pb-6 dark:border-white/10">
               <div className="flex items-center gap-3">
                 <ThemeIcon size={38} radius="xl" variant="light" color="cyan">
@@ -170,9 +165,7 @@ export function TeamSection() {
               </div>
             </div>
 
-            {/* Content Cards */}
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-              {/* Card 1: Individual Builders */}
               <div className="flex flex-col justify-between rounded-2xl border border-slate-200/70 bg-white/70 p-6 sm:p-8 dark:border-white/5 dark:bg-white/[0.02] shadow-sm">
                 <div>
                   <div className="mb-4 inline-flex items-center gap-2 rounded-lg bg-cyan-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-400">
@@ -187,7 +180,6 @@ export function TeamSection() {
                 </div>
               </div>
 
-              {/* Card 2: Decision Support & Industry */}
               <div className="flex flex-col justify-between rounded-2xl border border-slate-200/70 bg-white/70 p-6 sm:p-8 dark:border-white/5 dark:bg-white/[0.02] shadow-sm">
                 <div>
                   <div className="mb-4 inline-flex items-center gap-2 rounded-lg bg-blue-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">

@@ -94,14 +94,11 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
           p={12}
           className="relative overflow-hidden bg-white/90 dark:bg-[#111722]/95 border-slate-200 dark:border-white/10 shadow-sm backdrop-blur-xl"
         >
-          {/* Subtle Accent Glow */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 dark:bg-cyan-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
           <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
 
           <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-            {/* Left: Large Avatar & Comprehensive User Identity */}
             <div className="flex flex-col sm:flex-row items-center sm:items-start lg:items-center gap-5 sm:gap-6 text-center sm:text-left w-full lg:w-auto">
-              {/* Avatar */}
               <div className="relative shrink-0">
                 <Avatar
                   src={profile?.photoURL || authUser?.photoURL}
@@ -130,7 +127,6 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
                 )}
               </div>
 
-              {/* Identity Details */}
               <div className="space-y-2 min-w-0 flex flex-col items-center sm:items-start text-center sm:text-left">
                 <Title
                   order={1}
@@ -139,7 +135,6 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
                   {profile?.name || authUser?.displayName || "PC Builder"}
                 </Title>
 
-                {/* Access Badge & Status Pill */}
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   {isSuperAdmin ? (
                     <Badge
@@ -176,7 +171,6 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
                   </span>
                 </div>
 
-                {/* Email and Joined Date (Stacked on Mobile, Inline on sm+) */}
                 <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1.5 sm:gap-4 text-xs font-medium text-slate-600 dark:text-slate-300 pt-0.5">
                   {authUser?.email && (
                     <span className="flex items-center gap-1.5">
@@ -193,7 +187,6 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
               </div>
             </div>
 
-            {/* Right: Hardware Metrics (for Regular Users) OR Quick Actions (for Staff) */}
             <div className="w-full lg:w-auto flex flex-col sm:flex-row items-center justify-center sm:justify-end gap-3 shrink-0">
               {isRegularUser && stats ? (
                 <div className="grid grid-cols-3 sm:flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
@@ -243,7 +236,6 @@ export function ProfileHero({ profile, authUser, stats }: ProfileHeroProps) {
         </Paper>
       </div>
 
-      {/* Sign Out Confirmation Modal */}
       <Modal
         opened={signOutModalOpen}
         onClose={() => !isSigningOut && setSignOutModalOpen(false)}

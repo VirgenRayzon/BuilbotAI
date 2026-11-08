@@ -821,7 +821,6 @@ export function CheckoutModal() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12">
-            {/* Left Column: Step Navigation & Active Step Form */}
             <div className="lg:col-span-7 p-4 sm:p-5 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-white/10">
               <div className="grid grid-cols-3 gap-2 mb-4">
                 {[
@@ -1009,7 +1008,6 @@ export function CheckoutModal() {
                         )}
                       </div>
 
-                      {/* Saved Address Book Selector */}
                       {shippingMethod !== "store_pickup" && savedAddresses.length > 0 && (
                         <div className="space-y-2">
                           <Text size="xs" fw={600} c="dimmed">
@@ -1167,7 +1165,6 @@ export function CheckoutModal() {
                             }
                           />
 
-                          {/* Save custom address to Address Book */}
                           {selectedAddressId === "custom" && (
                             <div className="p-2.5 rounded-xl bg-cyan-500/5 dark:bg-cyan-500/10 border border-cyan-500/20 space-y-2">
                               <Checkbox
@@ -1472,7 +1469,6 @@ export function CheckoutModal() {
               </Group>
             </div>
 
-            {/* Right Column: Order Summary */}
             <div className="lg:col-span-5 p-4 sm:p-5 bg-slate-50/50 dark:bg-[#111722] space-y-4">
               <Text
                 size="xs"

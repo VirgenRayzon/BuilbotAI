@@ -20,9 +20,6 @@ const componentIcons: Record<string, any> = {
 const isIncludedStockCooler = (component: ComponentData | null | undefined) =>
     isIncludedStockCoolerPart(component);
 
-/**
- * Hook to manage the PC build logic, including part toggling, removal, and compatibility.
- */
 export function useBuilderLogic(allParts: Part[]) {
     const { toast } = useToast();
     const [build, setBuild] = useState<Record<string, ComponentData | ComponentData[] | null>>({

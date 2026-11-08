@@ -394,7 +394,6 @@ export function PrebuiltSystemCard({
           className
         )}
       >
-        {/* Top Area: Badges (if enabled) + 60% Product Image Canvas */}
         <div className="flex flex-col shrink-0">
           {showBadges && (
             <Group justify="space-between" align="center" wrap="nowrap" className="px-3 pt-3 pb-2">
@@ -434,7 +433,6 @@ export function PrebuiltSystemCard({
             </Group>
           )}
 
-          {/* 60% Product Image Canvas (Edge-to-edge, transparent background) */}
           <Box className={prebuiltCardLayout.image}>
             <OptimizedImage
               src={getOptimizedStorageUrl(system.imageUrl, shouldCorruptImages) || "/placeholder-system.png"}
@@ -447,10 +445,8 @@ export function PrebuiltSystemCard({
           </Box>
         </div>
 
-        {/* Content Area */}
         <div className={prebuiltCardLayout.content}>
           <Stack gap={3}>
-            {/* Title & SKU */}
             <Text
               size="md"
               fw={700}
@@ -469,7 +465,6 @@ export function PrebuiltSystemCard({
               {system.sku || system.productId || system.id}
             </Text>
 
-            {/* 4 Core Parts + Dropdown for remaining parts (No bounding box div) */}
             <div className="pt-2">
               <PrebuiltCardSpecs components={system.components} expanded={isExpanded} />
 
@@ -486,7 +481,6 @@ export function PrebuiltSystemCard({
             </div>
           </Stack>
 
-          {/* Bottom Price & Actions */}
           <Stack gap="xs" className="pt-4">
             <Group justify="space-between" align="center">
               <Stack gap={0}>
@@ -579,7 +573,6 @@ export function PrebuiltSystemCard({
         </div>
       </Card>
 
-      {/* Confirmation Dialog */}
       <Dialog open={isCheckoutDialogOpen} onOpenChange={setIsCheckoutDialogOpen}>
         <DialogContent className="max-w-md" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>

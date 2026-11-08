@@ -25,7 +25,6 @@ export function PaginationControls({
             "flex items-center justify-end py-2 transition-colors",
             className
         )}>
-            {/* Pagination Controls & Indicator */}
             <div className="flex items-center space-x-3 sm:space-x-5">
                 <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 font-mono whitespace-nowrap">
                     Page <span className="text-cyan-600 dark:text-cyan-400 font-bold">{currentPage}</span> of {totalPages || 1}

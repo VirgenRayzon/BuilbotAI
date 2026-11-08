@@ -11,9 +11,6 @@ import {
 } from '@/firebase/database';
 import { clearCatalogCache } from '@/app/actions';
 
-/**
- * Hook to manage multi-select and bulk actions for parts and prebuilts.
- */
 export function useBulkActions(profile: any) {
     const firestore = useFirestore();
     const { toast } = useToast();

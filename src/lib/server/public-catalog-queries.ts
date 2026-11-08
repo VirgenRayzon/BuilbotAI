@@ -12,7 +12,6 @@ export interface PublicCatalogPage {
 
 const cursorSchema = z.string().max(500).regex(/^[A-Za-z0-9_-]+$/).nullable();
 
-/** Indexed first-page browsing. Exact substring and compatibility filters use the legacy catalog. */
 export async function listPublicCatalogPage(rawCursor: unknown = null): Promise<PublicCatalogPage> {
   const cursor = cursorSchema.parse(rawCursor);
   const db = getAdminFirestore();

@@ -1,12 +1,4 @@
 'use server';
-/**
- * @fileOverview This file defines a Genkit flow for the AI Build Advisor chatbot,
- * providing initial recommendations for core PC components based on user goals.
- *
- * - aiBuildAdvisorRecommendations - A function that handles the AI-powered component recommendation process.
- * - AiBuildAdvisorRecommendationsInput - The input type for the aiBuildAdvisorRecommendations function.
- * - AiBuildAdvisorRecommendationsOutput - The return type for the aiBuildAdvisorRecommendations function.
- */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';

@@ -10,7 +10,6 @@ import { BudgetSlider, MAX_BUDGET, MIN_BUDGET } from '@/components/budget-slider
 
 type RecommendationState = ReturnType<typeof useLiveBuildRecommendations>;
 
-/** The sidebar owns only the whole-build budget. */
 export function LiveRecommendationsPanel({
   state,
   workload,

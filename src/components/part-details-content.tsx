@@ -137,7 +137,6 @@ export function PartDetailsContent({ part, children, isAdded, onToggle, isDisabl
                 )}
             >
                 <div className="flex flex-col md:flex-row items-stretch max-h-[85vh]">
-                    {/* Left: Product Image & Action Section */}
                     <div
                         className={cn(
                             "w-full md:w-[400px] lg:w-[420px] shrink-0 flex flex-col justify-between border-b md:border-b-0 md:border-r transition-colors",
@@ -169,7 +168,6 @@ export function PartDetailsContent({ part, children, isAdded, onToggle, isDisabl
                                 sizes="(max-width: 768px) 100vw, 380px"
                             />
 
-                            {/* Category Badge */}
                             <div
                                 className="z-20"
                                 style={{ position: "absolute", top: "16px", left: "16px" }}
@@ -187,7 +185,6 @@ export function PartDetailsContent({ part, children, isAdded, onToggle, isDisabl
                                 </Badge>
                             </div>
 
-                            {/* Carousel Left and Right Navigation Buttons */}
                             {allImages.length > 1 && (
                                 <>
                                     <button
@@ -230,7 +227,6 @@ export function PartDetailsContent({ part, children, isAdded, onToggle, isDisabl
                                         <ChevronRight className="h-5 w-5" />
                                     </button>
 
-                                    {/* Photo Counter */}
                                     <div
                                         className="z-20"
                                         style={{
@@ -308,7 +304,6 @@ export function PartDetailsContent({ part, children, isAdded, onToggle, isDisabl
                             </div>
                         )}
 
-                        {/* Action CTA Button */}
                         {onToggle && (
                             <div
                                 className={cn(
@@ -357,14 +352,12 @@ export function PartDetailsContent({ part, children, isAdded, onToggle, isDisabl
                         )}
                     </div>
 
-                    {/* Right: Content Section (Header + Scrollable Highlights & Specs) */}
                     <div
                         className={cn(
                             "flex-1 min-w-0 flex flex-col p-3 transition-colors",
                             isDark ? "bg-[#0c1017]" : "bg-white"
                         )}
                     >
-                        {/* Header: Brand, Title, Price */}
                         <div className="space-y-2.5">
                             <div className="flex items-center justify-between gap-2">
                                 <Badge
@@ -431,7 +424,6 @@ export function PartDetailsContent({ part, children, isAdded, onToggle, isDisabl
                             </Group>
                         </div>
 
-                        {/* Scrollable Body: Auto-fits height up to max-height */}
                         <ScrollArea.Autosize
                             mah="min(56vh, 500px)"
                             offsetScrollbars
@@ -440,7 +432,6 @@ export function PartDetailsContent({ part, children, isAdded, onToggle, isDisabl
                             className="mt-5 pr-2"
                         >
                             <div className="space-y-6 pb-2">
-                                {/* Product Highlights */}
                                 {part.description && (
                                     <div>
                                         <Divider
@@ -490,7 +481,6 @@ export function PartDetailsContent({ part, children, isAdded, onToggle, isDisabl
                                     </div>
                                 )}
 
-                                {/* Technical Specifications */}
                                 <div>
                                     <Divider
                                         my="sm"
@@ -542,7 +532,6 @@ export function PartDetailsContent({ part, children, isAdded, onToggle, isDisabl
                                                 </Paper>
                                             ))}
 
-                                            {/* TDP / Wattage if not already in specifications */}
                                             {Boolean(part.wattage && part.wattage > 0) && !hasTdpInSpecs && (
                                                 <Paper
                                                     p="10px 14px"
@@ -574,7 +563,6 @@ export function PartDetailsContent({ part, children, isAdded, onToggle, isDisabl
                                                 </Paper>
                                             )}
 
-                                            {/* Stock Availability */}
                                             <Paper
                                                 p="10px 14px"
                                                 radius="md"

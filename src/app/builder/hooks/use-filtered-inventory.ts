@@ -4,9 +4,6 @@ import { useState, useMemo, useCallback } from 'react';
 import type { Part } from '@/lib/types';
 import { checkCompatibility } from "@/lib/compatibility";
 
-/**
- * Hook to manage sorting, filtering, and pagination for the builder inventory.
- */
 export function useFilteredInventory(allParts: Part[], build: any, getCountInBuild: (name: string) => number) {
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState('Date Added');

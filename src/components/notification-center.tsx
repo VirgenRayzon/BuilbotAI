@@ -39,7 +39,6 @@ import { SystemNotification } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 
-/* ── Web Audio Feedback ── */
 let _audioCtx: AudioContext | null = null;
 function playSoftTick() {
   try {
@@ -61,11 +60,9 @@ function playSoftTick() {
     src.connect(g).connect(_audioCtx.destination);
     src.start();
   } catch {
-    /* silent on browser restrictions */
   }
 }
 
-/* ── Categories ── */
 const CATEGORIES = ["All", "Orders", "Support", "Stock", "Status", "Archived"] as const;
 type CategoryType = (typeof CATEGORIES)[number];
 
@@ -263,7 +260,6 @@ export function NotificationCenter() {
         </Popover.Target>
 
         <Popover.Dropdown p={0} className="w-full max-w-[calc(100vw-1rem)] overflow-hidden rounded-md border-0 bg-white shadow-lg dark:bg-[#111722]">
-          {/* Header */}
           <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-white/5">
             <div className="flex items-center gap-2">
               <span className="text-[13px] font-semibold text-slate-900 dark:text-white tracking-tight">
@@ -290,7 +286,6 @@ export function NotificationCenter() {
             )}
           </div>
 
-          {/* Spring Pill Filter Bar (Rauno Freiberg craft inspired) */}
           <div className="overflow-x-auto overscroll-x-contain border-b border-slate-100 px-3 py-1.5 [scrollbar-width:thin] dark:border-white/5 sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden" aria-label="Alert category filters">
             <div className="flex min-w-max items-center gap-1.5 py-0.5 sm:min-w-full">
               {CATEGORIES.map((cat) => {
@@ -333,7 +328,6 @@ export function NotificationCenter() {
             </div>
           </div>
 
-          {/* Alerts List with Staggered Transition */}
           <div className="max-h-[340px] overflow-y-auto">
             {loading ? (
               <div className="flex items-center justify-center h-32">
@@ -447,7 +441,6 @@ export function NotificationCenter() {
             )}
           </div>
 
-          {/* Footer View Audit Log */}
           <div className="p-2 border-t border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
             <Button
               variant="subtle"
@@ -467,7 +460,6 @@ export function NotificationCenter() {
         </Popover.Dropdown>
       </Popover>
 
-      {/* Mantine Alert Details Modal */}
       <Modal
         opened={!!selectedNotification}
         onClose={() => setSelectedNotification(null)}

@@ -1,6 +1,5 @@
 import type { Part } from './types';
 
-/** A retail box is not evidence that a heatsink is included. */
 export function includedCpuCoolerName(cpu: Part): string | null {
     if (cpu.category !== 'CPU' || cpu.packageType !== 'BOX') return null;
     if (cpu.brand.toLowerCase() === 'amd' && /^(?:AMD\s+)?Ryzen(?:™)?\s+7\s+9850X3D\b/i.test(cpu.name.trim())) return null;

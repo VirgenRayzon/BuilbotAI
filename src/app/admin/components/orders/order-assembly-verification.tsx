@@ -146,7 +146,6 @@ export function OrderAssemblyVerification({
 
   return (
     <div className="space-y-3 p-3">
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 dark:border-white/10 pb-2.5">
         <div className="flex items-center gap-2">
           <Wrench className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
@@ -183,9 +182,7 @@ export function OrderAssemblyVerification({
         </div>
       )}
 
-      {/* 4-Step Linear Workflow */}
       <div data-testid="assembly-workflow" className="divide-y divide-slate-200/80 text-xs dark:divide-white/10">
-        {/* Step 1: Component Picking */}
         <div className="py-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -270,7 +267,6 @@ export function OrderAssemblyVerification({
                           aria-label={`Pick ${pickItem.name}`}
                         />
 
-                        {/* Authentic Product Image Thumbnail */}
                         {resolvedImg ? (
                           <div data-testid="assembly-product-image" className="relative h-11 w-11 sm:h-12 sm:w-12 shrink-0 overflow-hidden bg-white dark:bg-[#0e131d]">
                             <OptimizedImage
@@ -283,7 +279,6 @@ export function OrderAssemblyVerification({
                           </div>
                         ) : null}
 
-                        {/* Part Details */}
                         <div className="flex flex-col min-w-0">
                           <span className="text-[10px] font-bold text-cyan-700 dark:text-cyan-400 uppercase tracking-wider">
                             {pickItem.category || (orderItem as any)?.category || 'Component'}
@@ -299,7 +294,6 @@ export function OrderAssemblyVerification({
                         </div>
                       </div>
 
-                      {/* Line Total */}
                       {lineTotal !== null && (
                         <span className="font-mono font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 shrink-0">
                           {formatCurrency(lineTotal)}
@@ -313,7 +307,6 @@ export function OrderAssemblyVerification({
           </Collapse>
         </div>
 
-        {/* Step 2: Physical Assembly */}
         <div
           className={cn(
             'py-2.5',
@@ -383,7 +376,6 @@ export function OrderAssemblyVerification({
           )}
         </div>
 
-        {/* Step 3: Hardware Bench Testing */}
         <div
           className={cn(
             'py-2.5',
@@ -475,7 +467,6 @@ export function OrderAssemblyVerification({
           )}
         </div>
 
-        {/* Step 4: Final Quality Control */}
         <div
           className={cn(
             'py-2.5',

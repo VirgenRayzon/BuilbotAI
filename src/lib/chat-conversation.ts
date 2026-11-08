@@ -58,7 +58,6 @@ function findBudget(text: string): number | null {
     return null;
 }
 
-/** A completed recommendation request can use resolution in place of a stated use case. */
 export function getChatRecommendationContext(messages: UIMessage[]): ChatRecommendationContext | null {
     const recent = messages.slice(-16);
     const latestUser = [...recent].reverse().find(message => message.role === 'user');
@@ -88,7 +87,6 @@ export function getChatRecommendationContext(messages: UIMessage[]): ChatRecomme
     return { category, budget, intendedUse };
 }
 
-/** Old streamed tool steps are display history, not safe Gemini conversation turns. */
 export function getChatModelHistory(messages: UIMessage[]): UIMessage[] {
     const textMessages = messages.flatMap(message => {
         if (message.role !== 'user' && message.role !== 'assistant') return [];

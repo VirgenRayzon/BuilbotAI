@@ -136,7 +136,6 @@ export default function PreBuiltsPage() {
           isDark ? "bg-[#0c0f14] text-slate-50" : "bg-slate-50 text-slate-900"
         )}
       >
-        {/* Subtle Circuit / Dot Background */}
         <div
           className={cn(
             "fixed inset-0 opacity-[0.03] pointer-events-none z-0",

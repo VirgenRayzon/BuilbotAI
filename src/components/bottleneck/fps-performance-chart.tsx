@@ -54,7 +54,6 @@ export function FpsPerformanceChart({
     );
   }
 
-
   return (
     <Paper
       radius="md"
@@ -64,7 +63,6 @@ export function FpsPerformanceChart({
       style={{ backgroundColor: withBorder ? undefined : "transparent" }}
       className={className || "bg-slate-50/80 dark:bg-slate-900/50 border-slate-200 dark:border-white/10 shadow-xs"}
     >
-      {/* Header */}
       {!hideHeader && (
         <Group justify="space-between" align="center" className="mb-2">
           <Text size="xs" fw={800} className="tracking-wider uppercase text-slate-800 dark:text-slate-200">
@@ -81,7 +79,6 @@ export function FpsPerformanceChart({
         </Text>
       )}
 
-      {/* Metrics Row */}
       <Paper
         radius="sm"
         p="xs"
@@ -124,12 +121,10 @@ export function FpsPerformanceChart({
         </Group>
       </Paper>
 
-      {/* Chart Area */}
       <div style={{ height: chartHeight }} className="w-full -ml-3">
         {fpsData ? <FpsChartPlot fpsData={fpsData} isDark={isDark} /> : <Skeleton className="h-full w-full" />}
       </div>
 
-      {/* Legend */}
       <div className="flex items-center justify-center gap-4 mt-2.5 pt-2 border-t border-slate-200/80 dark:border-white/5">
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-1.5 bg-fuchsia-500 rounded-full" />

@@ -310,7 +310,6 @@ export function StockTab({
                 }}
             />
 
-            {/* Bulk Selection Actions Bar when selection mode is active */}
             {paged && page.error && (
                 <Paper withBorder radius="lg" p="md" role="alert">
                     Inventory could not be loaded. <Button variant="subtle" onClick={page.refresh}>Retry</Button>

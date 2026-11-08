@@ -13,11 +13,6 @@ interface RouteGuardProps {
     loadingComponent?: React.ReactNode;
 }
 
-/**
- * RouteGuard — Centralized component for enforcing access control.
- * Prevents "flashes" of unauthorized content by ensuring auth state is resolved
- * before rendering protected children.
- */
 export function RouteGuard({
     children,
     requiredPermission,

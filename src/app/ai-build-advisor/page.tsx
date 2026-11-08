@@ -20,10 +20,6 @@ import { CritiqueTab } from "./components/critique-tab";
 import { RecommendationTab } from "./components/recommendation-tab";
 import { AdvisorLoadingContent } from "./components/advisor-loading-content";
 
-/**
- * AI Build Advisor Page
- * Orchestrates AI recommendations and build critiques.
- */
 export default function AiBuildAdvisorPage() {
     const { theme } = useTheme();
     const isDark = theme === "dark";

@@ -17,10 +17,6 @@ export interface PaymentMethodDefinition {
   initialPaymentStatus: PaymentStatus;
 }
 
-/**
- * Extensible Payment Method Registry
- * Supports Cash on Delivery (COD), GCash, and PayMongo.
- */
 export const PAYMENT_METHOD_REGISTRY: Record<PaymentMethod, PaymentMethodDefinition> = {
   cod: {
     id: 'cod',
@@ -192,9 +188,6 @@ export interface AuthoritativeOrderTotals {
   totalPrice: number;
 }
 
-/**
- * Pure, single-source-of-truth calculation of order pricing.
- */
 export function calculateAuthoritativeOrderTotals(
   input: AuthoritativeOrderTotalsInput
 ): AuthoritativeOrderTotals {
@@ -241,9 +234,6 @@ export function calculateAuthoritativeOrderTotals(
   };
 }
 
-/**
- * Generates a unique, human-readable order number (e.g. "BB-20261101-7F3A").
- */
 export function generateOrderNumber(now: Date = new Date()): string {
   const yyyy = now.getFullYear();
   const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -252,9 +242,6 @@ export function generateOrderNumber(now: Date = new Date()): string {
   return `BB-${yyyy}${mm}${dd}-${randomSuffix}`;
 }
 
-/**
- * Generates a clearly-labeled payment reference ID.
- */
 export function generateSimulatedPaymentReference(
   method: PaymentMethod,
   now: Date = new Date()
@@ -287,10 +274,6 @@ export interface PaymentStatusBadgeInfo {
   canRetrySimulatedPayment: boolean;
 }
 
-/**
- * Resolves display metadata and badge styles for an order's paymentStatus,
- * gracefully handling legacy orders that predate the payment system.
- */
 export function getPaymentStatusInfo(
   paymentStatus?: PaymentStatus,
   paymentMethod?: PaymentMethod

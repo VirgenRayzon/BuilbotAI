@@ -1,4 +1,3 @@
-/** Auth identity and server-confirmed Firestore profile for role-based UI. */
 'use client';
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';

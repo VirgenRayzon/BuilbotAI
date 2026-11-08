@@ -35,7 +35,6 @@ export function PrototypeSlideDrawer({
 
   return (
     <>
-      {/* Compact Trigger Card inside YourBuild */}
       <Paper
         withBorder
         radius="md"
@@ -76,7 +75,6 @@ export function PrototypeSlideDrawer({
         </Group>
       </Paper>
 
-      {/* Slide-Over Drawer */}
       <Drawer
         opened={opened}
         onClose={() => setOpened(false)}
@@ -97,7 +95,6 @@ export function PrototypeSlideDrawer({
           body: "!px-6 !py-5 space-y-4 overflow-y-auto custom-scrollbar",
         }}
       >
-        {/* Preset Selectors */}
         <Group grow gap="xs">
           <Select
             label="Target Resolution"

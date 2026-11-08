@@ -80,7 +80,6 @@ export function PrebuiltPerformanceAnalyzer({
 
   return (
     <div className="w-full">
-      {/* Header and Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3.5 border-b border-slate-200/70 dark:border-white/10">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
@@ -107,7 +106,6 @@ export function PrebuiltPerformanceAnalyzer({
           </div>
         </div>
 
-        {/* Resolution & Workload Dropdown Controls */}
         <Group gap="xs" wrap="nowrap" className="w-full sm:w-auto">
           <Select
             value={resolution}
@@ -145,7 +143,6 @@ export function PrebuiltPerformanceAnalyzer({
         </Group>
       </div>
 
-      {/* Main Performance Content */}
       {loadingParts ? (
         <FpsPerformanceChart build={buildData} resolution={resolution} workload={workload} chartHeight={200} withBorder={false} hideHeader className="bg-transparent border-0 shadow-none p-0" loading />
       ) : !isHardwareAvailable ? (

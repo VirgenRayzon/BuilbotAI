@@ -14,9 +14,6 @@ export function getVisibleQcNotes(notes?: string | null): string | null {
   return normalizedNotes ? normalizedNotes : null;
 }
 
-/**
- * Extracts custom rigs or prebuilt assembly instances from an order.
- */
 export function getAssemblyRigsFromOrder(order: Order): CustomRigInstance[] {
   const customRigs = getCustomRigsFromOrder(order);
   if (customRigs.length > 0) return customRigs;
@@ -34,10 +31,6 @@ export function getAssemblyRigsFromOrder(order: Order): CustomRigInstance[] {
   return [];
 }
 
-/**
- * Derives a customer-friendly description of what was ordered for Step 1.
- * Matches Image 1: "Customer submitted a custom rig and additional item."
- */
 export function getOrderPlacedSummary(order: Order): string {
   const groups = groupOrderItems(order);
   const hasCustom = groups.some((g) => g.type === 'custom-build');
@@ -59,10 +52,6 @@ export function getOrderPlacedSummary(order: Order): string {
   return 'Customer submitted an order for components.';
 }
 
-/**
- * Determines whether an order contains a custom build or prebuilt system.
- * Orders containing only standalone components/accessories do not undergo assembly & testing.
- */
 export function orderHasBuildOrPrebuilt(order: Order): boolean {
   if (
     order.type === 'custom' ||

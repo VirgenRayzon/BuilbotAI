@@ -1,8 +1,3 @@
-/**
- * bottleneck — CPU/GPU balance analysis engine.
- * Compares performance tiers of CPU and GPU at a given resolution
- * to detect mismatches (bottlenecks) and provide actionable guidance.
- */
 import { ComponentData, Resolution } from "./types";
 import { isIncludedIntegratedGpu } from './integrated-graphics';
 

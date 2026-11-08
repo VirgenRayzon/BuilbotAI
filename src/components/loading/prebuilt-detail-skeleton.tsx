@@ -13,7 +13,6 @@ export function PrebuiltDetailSkeleton() {
         <Skeleton h={32} w={120} radius="sm" className="mb-6" />
 
         <Grid gutter={{ base: 'xl', lg: 32 }} align="start">
-          {/* Left Column: Image Preview Skeleton */}
           <Grid.Col span={{ base: 12, lg: 6 }}>
             <div className="flex flex-col gap-6">
               <Paper
@@ -31,7 +30,6 @@ export function PrebuiltDetailSkeleton() {
                 <Skeleton h={64} w={64} radius="md" />
               </div>
 
-              {/* Performance / Highlights placeholder */}
               <Paper
                 withBorder
                 radius="lg"
@@ -44,10 +42,8 @@ export function PrebuiltDetailSkeleton() {
             </div>
           </Grid.Col>
 
-          {/* Right Column: Header & Parts List Skeleton */}
           <Grid.Col span={{ base: 12, lg: 6 }}>
             <div className="flex flex-col gap-6">
-              {/* Header card skeleton */}
               <Paper
                 withBorder
                 radius="lg"
@@ -75,7 +71,6 @@ export function PrebuiltDetailSkeleton() {
                 </Stack>
               </Paper>
 
-              {/* Parts list skeleton */}
               <Paper
                 withBorder
                 radius="lg"
@@ -102,7 +97,6 @@ export function PrebuiltDetailSkeleton() {
                 </div>
               </Paper>
 
-              {/* Action buttons skeleton */}
               <div className="flex gap-3">
                 <Skeleton h={48} radius="md" className="flex-1" />
                 <Skeleton h={48} radius="md" className="flex-1" />
@@ -114,4 +108,3 @@ export function PrebuiltDetailSkeleton() {
     </div>
   );
 }
-

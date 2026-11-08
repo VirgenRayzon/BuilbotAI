@@ -84,7 +84,6 @@ export function OrdersTable({
       radius="md"
       className="overflow-hidden bg-white/80 shadow-sm dark:bg-[#141a23]/80 border-slate-200 dark:border-white/10"
     >
-      {/* Table Header Bar matching Activity log style */}
       <Group justify="space-between" className="border-b border-slate-200 px-4 py-3 dark:border-white/10">
         <Group gap={6} align="center" wrap="nowrap">
           <Text fw={700} size="sm" className="text-slate-900 dark:text-slate-100">
@@ -166,7 +165,6 @@ export function OrdersTable({
                     key={order.id}
                     className="transition-colors hover:bg-cyan-50/60 dark:hover:bg-cyan-500/[0.035] [&>td]:border-slate-100 dark:[&>td]:border-white/[0.06]"
                   >
-                    {/* Customer / Order Identifiers with Avatar */}
                     <Table.Td>
                       <Group gap="sm" wrap="nowrap">
                         <Avatar
@@ -200,7 +198,6 @@ export function OrdersTable({
                       </Group>
                     </Table.Td>
 
-                    {/* Stage & Status (Interactive Fulfillment Stage Select or Cancelled Badge) */}
                     <Table.Td>
                       <div className="flex flex-col gap-1 min-w-[140px] max-w-[170px]">
                         {isCancelled ? (
@@ -242,7 +239,6 @@ export function OrdersTable({
                       </div>
                     </Table.Td>
 
-                    {/* Items & Specs */}
                     <Table.Td>
                       <div className="flex flex-col gap-0.5 max-w-[260px]">
                         <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
@@ -265,7 +261,6 @@ export function OrdersTable({
                       </div>
                     </Table.Td>
 
-                    {/* Payment & Total */}
                     <Table.Td>
                       <div className="flex flex-col gap-1 min-w-[150px]">
                         <Text fw={700} fz="sm" className="font-mono text-slate-900 dark:text-slate-100">
@@ -296,14 +291,12 @@ export function OrdersTable({
                       </div>
                     </Table.Td>
 
-                    {/* Placed Date */}
                     <Table.Td>
                       <Text fz="xs" className="text-slate-600 dark:text-slate-400 font-mono whitespace-nowrap">
                         {formatFirestoreTimestamp(order.createdAt, true)}
                       </Text>
                     </Table.Td>
 
-                    {/* Row Actions */}
                     <Table.Td>
                       <Group gap={4} justify="flex-end" wrap="nowrap">
                         {isCancelled && order.stockState === 'pending_return' && onConfirmStockReturn && (

@@ -16,9 +16,6 @@ interface MultiImageUploadProps {
   className?: string;
 }
 
-/**
- * Compresses an image file to a max dimension of 1200px and returns base64.
- */
 function compressImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -168,7 +165,6 @@ export function MultiImageUpload({
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Hidden File Input supporting multiple files */}
       <input
         ref={fileInputRef}
         type="file"
@@ -178,7 +174,6 @@ export function MultiImageUpload({
         onChange={handleFileInputChange}
       />
 
-      {/* Main Drag & Drop Zone */}
       <div
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
@@ -222,7 +217,6 @@ export function MultiImageUpload({
         </MantineButton>
       </div>
 
-      {/* Uploaded Photos Gallery */}
       {images.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
@@ -251,7 +245,6 @@ export function MultiImageUpload({
                     className="object-contain p-1.5"
                   />
 
-                  {/* Cover Photo Badge */}
                   {isCover && (
                     <div className="absolute top-1.5 left-1.5 z-10">
                       <Badge className="bg-emerald-600 hover:bg-emerald-600 text-[8px] font-bold uppercase tracking-wider py-0 px-1.5 h-4 flex items-center gap-1 shadow-sm">
@@ -261,7 +254,6 @@ export function MultiImageUpload({
                     </div>
                   )}
 
-                  {/* Always reachable, including when the preview failed or on touch screens. */}
                   <Button
                     type="button"
                     size="icon"
@@ -277,7 +269,6 @@ export function MultiImageUpload({
                     <X className="h-3.5 w-3.5" />
                   </Button>
 
-                  {/* Overlay Controls */}
                   <div className="absolute inset-0 z-40 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-1 pointer-events-none">
                     {!isCover && (
                       <Button

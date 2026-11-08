@@ -1,8 +1,3 @@
-/**
- * database — Firebase Firestore CRUD operations for all data models.
- * Handles parts, prebuilt systems, users, and notifications.
- * Includes image upload pipeline (local base64 and remote URL proxy via server actions).
- */
 
 import { collection, deleteDoc, doc, Firestore, getDoc, setDoc, updateDoc, writeBatch } from "firebase/firestore";
 import { getAuth } from "firebase/auth";

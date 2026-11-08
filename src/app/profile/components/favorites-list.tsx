@@ -156,7 +156,6 @@ export function FavoritesList({ favorites, loading, onDelete, onRename }: Favori
               className="bg-white dark:bg-[#121824] border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md transition-all duration-200"
             >
               <Stack gap="md">
-                {/* Header: Rig title, origin badge, and actions */}
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-4 border-b border-slate-200 dark:border-white/10">
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2.5">
@@ -229,7 +228,6 @@ export function FavoritesList({ favorites, loading, onDelete, onRename }: Favori
                   </div>
 
                   <div className="flex items-center justify-between sm:justify-end gap-4">
-                    {/* Live price display */}
                     <div className="text-left sm:text-right pr-4 sm:border-r border-slate-200 dark:border-white/10">
                       <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Live Rig Price
@@ -267,7 +265,6 @@ export function FavoritesList({ favorites, loading, onDelete, onRename }: Favori
                   </div>
                 </div>
 
-                {/* Parts Breakdown List */}
                 <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-black/20 overflow-hidden">
                   <div className="max-h-[190px] overflow-y-auto divide-y divide-slate-200 dark:divide-white/5">
                     {favorite.parts.map((part, idx) => {
@@ -331,7 +328,6 @@ export function FavoritesList({ favorites, loading, onDelete, onRename }: Favori
         })}
       </div>
 
-      {/* Delete Confirmation Alert Dialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 rounded-2xl shadow-xl">
           <AlertDialogHeader>

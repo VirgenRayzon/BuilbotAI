@@ -41,7 +41,6 @@ import {
 } from "@/lib/customer-order-workflow";
 import type { Order } from "@/lib/types";
 
-
 function sanitizeText(val?: string) {
   if (!val) return "";
   return val
@@ -194,7 +193,6 @@ export function MockOrdersSection({
             p="md"
             className="bg-white dark:bg-[#121824] border-slate-200 dark:border-white/10 shadow-sm space-y-4"
           >
-            {/* Order code and actions */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-white/10">
               <div>
                 <Group gap="xs">
@@ -312,7 +310,6 @@ export function MockOrdersSection({
               <Text size="xs" c="dimmed">{sanitizeText(order.courierName)} · {sanitizeText(order.estimatedDelivery)} · {order.trackingNumber}</Text>
             </div>
 
-            {/* Order-aware shipment stepper */}
             <div
               className={cn(
                 "grid grid-cols-2 gap-2",

@@ -144,7 +144,6 @@ export function AddressBookSection() {
 
   return (
     <div className="space-y-6">
-      {/* Header Paper */}
       <Paper
         withBorder
         radius="lg"
@@ -184,7 +183,6 @@ export function AddressBookSection() {
         </div>
       </Paper>
 
-      {/* Address Table */}
       {addresses.length === 0 && !loading ? (
         <Paper
           withBorder
@@ -265,7 +263,6 @@ export function AddressBookSection() {
                           : "hover:bg-slate-50 dark:hover:bg-white/[0.02]"
                       )}
                     >
-                      {/* 1. Full Name */}
                       <Table.Td className="py-3.5">
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-1.5 flex-wrap">
@@ -293,7 +290,6 @@ export function AddressBookSection() {
                         </div>
                       </Table.Td>
 
-                      {/* 2. Address Badge home/work */}
                       <Table.Td className="py-3.5 whitespace-nowrap">
                         <Badge
                           size="sm"
@@ -315,7 +311,6 @@ export function AddressBookSection() {
                         </Badge>
                       </Table.Td>
 
-                      {/* 3. Address */}
                       <Table.Td className="py-3.5 min-w-[240px] max-w-[340px]">
                         <div className="space-y-0.5 text-xs">
                           <Text fw={600} className="text-slate-900 dark:text-slate-100">
@@ -327,7 +322,6 @@ export function AddressBookSection() {
                         </div>
                       </Table.Td>
 
-                      {/* 4. Postcode */}
                       <Table.Td className="py-3.5 whitespace-nowrap">
                         <Badge
                           variant="outline"
@@ -339,7 +333,6 @@ export function AddressBookSection() {
                         </Badge>
                       </Table.Td>
 
-                      {/* 5. Phone Number */}
                       <Table.Td className="py-3.5 whitespace-nowrap">
                         <div className="flex items-center gap-1.5 text-xs font-mono font-medium text-slate-700 dark:text-slate-300">
                           <Phone size={12} className="text-cyan-500 shrink-0" />
@@ -347,7 +340,6 @@ export function AddressBookSection() {
                         </div>
                       </Table.Td>
 
-                      {/* 6. Edit button / Actions */}
                       <Table.Td className="py-3.5 text-right whitespace-nowrap">
                         <Group gap={6} justify="flex-end" wrap="nowrap">
                           {!addr.isDefault && (
@@ -396,7 +388,6 @@ export function AddressBookSection() {
         </Paper>
       )}
 
-      {/* Add / Edit Address Modal */}
       <Modal
         opened={modalOpened}
         onClose={() => setModalOpened(false)}
@@ -423,7 +414,6 @@ export function AddressBookSection() {
         }}
       >
         <Stack gap="sm">
-          {/* Preset Label Chips */}
           <div>
             <Text size="xs" fw={700} c="dimmed" tt="uppercase" className="tracking-wider mb-1.5">
               Address Label
@@ -452,7 +442,6 @@ export function AddressBookSection() {
             />
           </div>
 
-          {/* Recipient Details */}
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
             <TextInput
               label="Recipient Full Name"
@@ -483,7 +472,6 @@ export function AddressBookSection() {
             radius="md"
           />
 
-          {/* Region and City */}
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
             <Select
               label="Region / Province"
@@ -505,7 +493,6 @@ export function AddressBookSection() {
             />
           </SimpleGrid>
 
-          {/* Barangay and Postal Code */}
           <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
             <TextInput
               label="Barangay"
@@ -528,7 +515,6 @@ export function AddressBookSection() {
             />
           </SimpleGrid>
 
-          {/* Street Address */}
           <TextInput
             label="House / Unit No., Building, Street Name"
             placeholder="35G Liberty Avenue, corner 9th Ave"
@@ -539,7 +525,6 @@ export function AddressBookSection() {
             required
           />
 
-          {/* Rider Notes */}
           <Textarea
             label="Delivery Instructions / Rider Landmark (Optional)"
             placeholder="e.g. Near 9th Ave entrance, leave with lobby security. Keep box upright."
@@ -550,7 +535,6 @@ export function AddressBookSection() {
             rows={2}
           />
 
-          {/* Set as Default Checkbox */}
           <Checkbox
             label="Set as default shipping address for checkout"
             checked={isDefault}
@@ -560,7 +544,6 @@ export function AddressBookSection() {
             className="pt-1"
           />
 
-          {/* Modal Buttons */}
           <Group justify="flex-end" gap="xs" pt="sm">
             <Button
               variant="default"

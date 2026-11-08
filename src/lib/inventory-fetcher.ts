@@ -35,9 +35,6 @@ export function clearInventoryCache() {
     structuredCache.clear();
 }
 
-/**
- * Maps frontend category keys to Firestore collection names.
- */
 const CATEGORY_MAP: Record<string, string> = {
     'cpu': 'CPU',
     'gpu': 'GPU',
@@ -57,9 +54,6 @@ const CATEGORY_MAP: Record<string, string> = {
     'headset': 'Headset'
 };
 
-/**
- * Fetches parts exclusively from the live Firestore database collections.
- */
 export async function getInventoryFromFirestore(category: string, searchTerm?: string, limitCount: number = 50, includeImage: boolean = true): Promise<string[]> {
     const normalizedCat = category.toLowerCase();
     const cacheKey = `${normalizedCat}:${searchTerm || ''}:${limitCount}:${includeImage}`;
@@ -143,9 +137,6 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
     }
 }
 
-/**
- * Fetches structured parts from Firestore collections.
- */
 export async function getStructuredInventory(category: string, searchTerm?: string, limitCount: number = 50, fresh = false): Promise<StructuredPart[]> {
     const normalizedCat = category.toLowerCase();
     const cacheKey = `${normalizedCat}:${searchTerm || ''}:${limitCount}`;

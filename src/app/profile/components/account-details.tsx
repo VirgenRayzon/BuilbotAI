@@ -84,7 +84,6 @@ export function AccountDetails({
         </Group>
 
         <Stack gap="sm">
-          {/* Full Name */}
           <div>
             <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
               Full Name
@@ -103,7 +102,6 @@ export function AccountDetails({
             />
           </div>
 
-          {/* Email */}
           <div>
             <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
               Contact Email
@@ -123,7 +121,6 @@ export function AccountDetails({
             />
           </div>
 
-          {/* Super Admin Key (Privileged Only) */}
           {profile?.isSuperAdmin && (
             <div className="pt-2 border-t border-slate-200 dark:border-white/10">
               <Group justify="space-between" mb={4}>

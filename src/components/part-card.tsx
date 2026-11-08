@@ -113,7 +113,6 @@ export function PartCard({
                 isDisabled={Boolean(isIncompatible)}
             >
                 <div className="flex h-full flex-col justify-between">
-                {/* --- Incompatibility Overlay --- */}
                 {compatibility && !compatibility.compatible && (
                     <div className="absolute inset-0 z-30 bg-background/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center rounded-[var(--mantine-radius-lg)] border border-red-500/30 animate-in fade-in duration-200">
                         <div className="p-3 rounded-full mb-3 bg-red-500/10 text-red-500 border border-red-500/20 shadow-sm">
@@ -130,7 +129,6 @@ export function PartCard({
                     </div>
                 )}
 
-                {/* --- Top Metadata & Title --- */}
                 <Stack gap={6} className={catalogCardLayout.header}>
                     <Group justify="space-between" align="center" wrap="nowrap">
                         <Badge
@@ -165,7 +163,6 @@ export function PartCard({
                     </Text>
                 </Stack>
 
-                {/* --- Clean Image Showcase Surface --- */}
                 <Box
                     className={catalogCardLayout.image}
                 >
@@ -179,7 +176,6 @@ export function PartCard({
                     />
                 </Box>
 
-                {/* --- Price & Inset Action Area --- */}
                 <Stack gap="xs" className={catalogCardLayout.footer}>
                     <Group
                         justify="space-between"
@@ -204,7 +200,6 @@ export function PartCard({
                         </Group>
                     </Group>
 
-                    {/* --- Inset Rounded Mantine Button --- */}
                     {(!compatibility || compatibility.compatible || isSelected) && (
                         <Button
                             onClick={handleToggle}

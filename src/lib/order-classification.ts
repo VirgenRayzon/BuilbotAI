@@ -8,7 +8,6 @@ function itemKind(item: OrderItem): 'build' | 'part' | 'unknown' {
   return 'unknown';
 }
 
-/** Explicit line metadata wins; legacy heuristics remain visible as review cases. */
 export function classifyOrder(order: Pick<Order, 'items' | 'type' | 'prebuiltName'>) {
   const items = order.items || [];
   const kinds = items.map(itemKind);

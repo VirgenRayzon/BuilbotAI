@@ -13,7 +13,6 @@ type CpuGraphicsSource = {
 
 const cpuName = (cpu: CpuGraphicsSource) => cpu.name || cpu.model || '';
 
-/** An explicit catalog specification always takes precedence over a model-name fallback. */
 export function integratedGraphicsName(cpu: CpuGraphicsSource | null | undefined): string | null {
   if (!cpu) return null;
   const name = cpuName(cpu);

@@ -8,13 +8,6 @@ import { signOut } from 'firebase/auth';
 
 const ADMIN_SESSION_KEY = 'buildbot_admin_session_active';
 
-/**
- * useAdminSessionGuard
- *
- * Enforces strict tab/window closure logouts for Super Admins and Managers.
- * Ensures that if a browser window was closed, any lingering credentials from older
- * local storage are immediately invalidated when visiting protected admin routes.
- */
 export function useAdminSessionGuard() {
   const auth = useAuth();
   const user = useUser();

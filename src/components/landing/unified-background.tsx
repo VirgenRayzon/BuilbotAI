@@ -9,7 +9,6 @@ export function UnifiedBackground() {
 
   return (
     <div className="fixed inset-0 z-[-1] pointer-events-none overflow-hidden select-none">
-      {/* Base Canvas Layer */}
       <div
         className={cn(
           "absolute inset-0 transition-colors duration-700",
@@ -17,7 +16,6 @@ export function UnifiedBackground() {
         )}
       />
 
-      {/* Soft Ambient Radial Light - Top Header / Horizon (Static, CSS-only) */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -27,7 +25,6 @@ export function UnifiedBackground() {
         }}
       />
 
-      {/* Subtle Counter-Glow - Bottom Right Soft Depth */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -37,7 +34,6 @@ export function UnifiedBackground() {
         }}
       />
 
-      {/* Refined Geometric Dot Matrix Grid (Completely Static) */}
       <div
         className={cn(
           "absolute inset-0 transition-opacity duration-700",
@@ -51,7 +47,6 @@ export function UnifiedBackground() {
         }}
       />
 
-      {/* Subtle Soft Vignette for Enhanced Focus on Center Content */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{

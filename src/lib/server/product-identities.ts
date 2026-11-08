@@ -13,7 +13,6 @@ function newIdentity(category: string) {
     qrToken: randomBytes(16).toString('hex') };
 }
 
-/** All references remain internal. Never change stock while assigning identity. */
 export async function assignProductIdentity(db: Firestore, ref: DocumentReference, kind: ProductKind,
   category: string, create?: { payload: Record<string, unknown>; uid: string; operationId: string; fingerprint: string }): Promise<CreatedProduct> {
   for (let attempt = 0; attempt < 8; attempt++) {

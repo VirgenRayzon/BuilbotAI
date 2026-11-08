@@ -6,9 +6,6 @@ import { useUserProfile } from '@/context/user-profile';
 import { useLoading } from "@/context/loading-context";
 import { useToast } from "@/hooks/use-toast";
 
-/**
- * Hook to handle admin page authentication, routing, and loading states.
- */
 export function useAdminCore() {
     const router = useRouter();
     const searchParams = useSearchParams();

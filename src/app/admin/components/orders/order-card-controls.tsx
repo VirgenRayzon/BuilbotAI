@@ -45,7 +45,6 @@ export function OrderCardControls({
           <OrderPaymentControl order={order} archived={archived} onRequest={onRequestPaymentStatus} />
         )}
 
-        {/* Right: Operational Actions */}
         <Group gap="xs" wrap="wrap" className="justify-end">
           {isCancelled && order.stockState === 'pending_return' && onConfirmStockReturn && (
             <Button

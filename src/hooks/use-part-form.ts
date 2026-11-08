@@ -1,8 +1,3 @@
-/**
- * usePartForm — Custom hook for AddPartDialog form state and AI autofill logic.
- * Manages Zod-validated form schema, spec value helpers, PSU dimension auto-fill,
- * and AI-driven specification pre-filling via Genkit flows.
- */
 "use client";
 
 import { useState, useEffect, useRef } from "react";

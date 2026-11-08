@@ -1,8 +1,3 @@
-/**
- * InventoryTable — Admin data table for managing inventory parts.
- * Supports inline stock editing, bulk selection, archive/restore, and delete actions.
- * Part names are clickable to open the AddPartDialog for editing.
- */
 
 import Link from 'next/link';
 import { Skeleton } from './ui/skeleton';

@@ -1,8 +1,3 @@
-/**
- * useBuildActions — Custom hook encapsulating all Build sidebar business logic.
- * Manages AI prebuilt generation, build critique analysis, checkout flow,
- * and progress modal state. Keeps the YourBuild component presentational.
- */
 "use client";
 
 import { useState, useRef, useEffect } from "react";

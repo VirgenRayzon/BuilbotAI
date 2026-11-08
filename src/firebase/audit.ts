@@ -21,11 +21,6 @@ export async function createUserAuditLog(firestore: Firestore, data: Omit<UserAu
     await setDoc(logRef, userLog);
 }
 
-/**
- * Migration function: Converts existing SystemNotifications into AuditLogs.
- * Note: Only specific types of system notifications are migrated, mainly 
- * item_archived and status_changed, and user_cancelled, depending on what maps well.
- */
 export async function migrateNotificationsToAuditLogs(firestore: Firestore) {
     const notificationsSnap = await getDocs(collection(firestore, 'system_notifications'));
     const notifications = notificationsSnap.docs.map(d => ({ id: d.id, ...d.data() } as SystemNotification));

@@ -187,7 +187,6 @@ export function ArchiveTab({
         />
       )}
 
-      {/* --- Tab 1: Archived Parts --- */}
       {archiveSubTab === 'parts' && (
         <div className="space-y-4 animate-in fade-in duration-200">
           <InventoryToolbar
@@ -268,7 +267,6 @@ export function ArchiveTab({
         </div>
       )}
 
-      {/* --- Tab 2: Archived Prebuilts --- */}
       {archiveSubTab === 'prebuilts' && (
         <div className="space-y-4 animate-in fade-in duration-200">
           <InventoryToolbar

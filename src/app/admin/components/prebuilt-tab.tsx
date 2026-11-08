@@ -207,7 +207,6 @@ export function PrebuiltTab({
                 }}
             />
 
-            {/* Bulk Selection Actions Bar when selection mode is active */}
             {isPrebuiltSelectionMode && (
                 <div className="flex flex-wrap items-center gap-2 rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-2 animate-in fade-in">
                     <Button

@@ -72,11 +72,6 @@ import {
   requiresStaffCancellation,
 } from "@/lib/customer-order-workflow";
 
-/**
- * Profile Page Orchestrator (Facebook & Mantine UI Architecture)
- * Features a sticky left navigation sidebar, full-bleed right workspace,
- * smooth framer-motion transitions, and strict RBAC isolation.
- */
 export default function ProfilePage() {
   const { authUser, profile } = useUserProfile();
   const { theme } = useTheme();
@@ -233,7 +228,6 @@ export default function ProfilePage() {
           isDark ? "bg-[#0a0d14] text-slate-100" : "bg-slate-50 text-slate-900"
         )}
       >
-        {/* Subtle Background Pattern */}
         <div
           className={cn(
             "fixed inset-0 opacity-[0.025] pointer-events-none z-0",
@@ -261,7 +255,6 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* Full-Width Prominent User Identity Banner below Header */}
           <ProfileHero
             profile={profile}
             authUser={authUser}
@@ -269,9 +262,7 @@ export default function ProfilePage() {
           />
 
           <main className="w-full px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 pb-12">
-            {/* Facebook / Mantine UI 2-Column Architecture */}
             <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8 items-start">
-              {/* Left Column: Sticky Navigation Sidebar */}
               <aside className="w-full lg:w-[325px] shrink-0 lg:sticky lg:top-24">
                 <ProfileSidebar
                   profile={profile}
@@ -289,7 +280,6 @@ export default function ProfilePage() {
                 />
               </aside>
 
-              {/* Right Column: Full-Bleed Dynamic Workspace */}
               <section className="flex-1 w-full min-w-0">
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -300,7 +290,6 @@ export default function ProfilePage() {
                     transition={{ duration: 0.2 }}
                     className="space-y-6"
                   >
-                    {/* TAB: Profile (Mantine UI apps/profile) */}
                     {(activeTab === "profile" || activeTab === "account") && (
                       <div className="space-y-6">
                         <Paper
@@ -326,12 +315,10 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* TAB: Address Book */}
                     {activeTab === "address-book" && (
                       <AddressBookSection />
                     )}
 
-                    {/* TAB: Settings (Mantine UI apps/settings) */}
                     {activeTab === "settings" && (
                       <div className="space-y-6">
                         <Paper
@@ -355,12 +342,10 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* TAB: Contact Inbox */}
                     {activeTab === "contact-inbox" && (
                       isRegularUser ? <CustomerSupportTab /> : <ContactInboxTab />
                     )}
 
-                    {/* Customer order workflow queues */}
                     {(activeTab === "to-pay" ||
                       activeTab === "to-ship" ||
                       activeTab === "to-build") &&
@@ -447,7 +432,6 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* TAB: Orders shipped or out for delivery */}
                     {activeTab === "to-receive" && isRegularUser && (
                       <div className="space-y-6">
                         <Paper
@@ -470,7 +454,6 @@ export default function ProfilePage() {
                           </div>
                         </Paper>
 
-                        {/* Customer's real reservation orders currently out for delivery */}
                         {toReceiveReservationOrders.length > 0 && (
                           <ReservationsList
                             reservations={toReceiveReservationOrders}
@@ -484,7 +467,6 @@ export default function ProfilePage() {
                           />
                         )}
 
-                        {/* Fallback to ReservationsList empty state if no mock orders and not in ecommerce UI mode */}
                         {!isEcommerceMode && toReceiveReservationOrders.length === 0 && (
                           <ReservationsList
                             reservations={toReceiveReservationOrders}
@@ -498,7 +480,6 @@ export default function ProfilePage() {
                           />
                         )}
 
-                        {/* Mock orders & UI tracker (in UI mode) */}
                         {isEcommerceMode && (
                           <MockOrdersSection
                             reservations={reservations.reservations}
@@ -510,7 +491,6 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* TAB: Delivered order archive */}
                     {activeTab === "completed" && isRegularUser && (
                       <div className="space-y-6">
                         <Paper
@@ -544,7 +524,6 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* TAB: Cancelled Orders */}
                     {activeTab === "cancelled" && isRegularUser && (
                       <div className="space-y-6">
                         <Paper
@@ -585,7 +564,6 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* TAB: Saved Rigs & Builds (Regular Customers Only) */}
                     {activeTab === "favorites" && isRegularUser && (
                       <div className="space-y-6">
                         <Paper
@@ -624,7 +602,6 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* TAB: Activity Logs (Regular Customers Only) */}
                     {activeTab === "activity" && isRegularUser && (
                       <div className="space-y-6">
                         <Paper
@@ -654,7 +631,6 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* TAB: System Safeguards (Super Admin Only) */}
                     {activeTab === "safeguards" && isSuperAdmin && (
                       <div className="space-y-6">
                         <EmergencyControlsCard emergency={emergency} />
@@ -667,7 +643,6 @@ export default function ProfilePage() {
           </main>
         </div>
 
-        {/* Cancellation Confirmation / Staff Review Dialog */}
         <Modal
           opened={Boolean(cancelModalOrder)}
           onClose={() => setCancelModalOrder(null)}

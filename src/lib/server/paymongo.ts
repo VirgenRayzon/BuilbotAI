@@ -184,21 +184,11 @@ export async function retrievePaymongoRefund(
     amount: parsed.data.data.attributes.amount, paymentId: parsed.data.data.attributes.payment_id, currency: parsed.data.data.attributes.currency, notes: parsed.data.data.attributes.notes };
 }
 
-/**
- * Converts a PHP amount into integer centavos (1 PHP = 100 centavos).
- * PayMongo enforces a minimum of 2000 centavos (₱20.00) per checkout session.
- */
 export function toPaymongoCentavos(phpAmount: number, enforceMinimum = false): number {
   const centavos = Math.max(0, Math.round((Number(phpAmount) || 0) * 100));
   return enforceMinimum ? Math.max(2000, centavos) : centavos;
 }
 
-/**
- * Builds the PayMongo v1 Checkout Session request payload.
- * Because PayMongo rejects negative line items (e.g. voucher discounts) and zero-amount line items,
- * if a voucher discount is applied or if individual positive line items do not match totalPricePhp,
- * we emit a single authoritative summary line item matching the exact order total in centavos.
- */
 export function buildPaymongoCheckoutPayload(
   input: CreatePaymongoCheckoutSessionInput
 ): PaymongoCheckoutSessionRequestPayload {
@@ -313,10 +303,6 @@ function buildBasicAuthHeader(secretKey: string): string {
   return `Basic ${Buffer.from(`${secretKey}:`).toString('base64')}`;
 }
 
-/**
- * Creates a PayMongo Checkout Session via `POST /v1/checkout_sessions` when `PAYMONGO_SECRET_KEY`
- * is set, or returns a local sandbox session descriptor if no key is configured.
- */
 export async function createPaymongoCheckoutSession(
   input: CreatePaymongoCheckoutSessionInput
 ): Promise<PaymongoCheckoutSessionResult> {
@@ -364,10 +350,6 @@ export async function createPaymongoCheckoutSession(
   };
 }
 
-/**
- * Retrieves an existing PayMongo Checkout Session from `GET /v1/checkout_sessions/:id`
- * and normalizes its payment status for server-side verification.
- */
 export async function retrievePaymongoCheckoutSession(
   checkoutSessionId: string
 ): Promise<PaymongoSessionVerificationResult> {
@@ -463,9 +445,6 @@ export async function retrievePaymongoCheckoutSession(
   };
 }
 
-/**
- * Verifies the `Paymongo-Signature` webhook header (`t=<timestamp>,te=<testSig>,li=<liveSig>`).
- */
 export function verifyPaymongoWebhookSignature(
   rawBody: string,
   signatureHeader: string | null,

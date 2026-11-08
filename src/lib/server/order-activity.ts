@@ -8,7 +8,6 @@ import { toFirestoreDocument } from '@/lib/firestore-document';
 
 export interface ActivityActor { actorId?: string; actorName: string; actorRole: string }
 
-/** Called only after all reads. The state, revision and immutable events commit together. */
 export function writeOrderChange(tx: Transaction, ref: DocumentReference, before: Order | null,
   patch: Record<string, unknown>, actor?: ActivityActor, operationId?: string) {
   const next = { ...before, ...patch } as Order;

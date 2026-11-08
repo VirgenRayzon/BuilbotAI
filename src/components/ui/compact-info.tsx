@@ -7,7 +7,6 @@ interface CompactInfoProps {
   label?: string;
 }
 
-/** A small, keyboard-accessible help control for contextual card descriptions. */
 export function CompactInfo({ message, label = "More information" }: CompactInfoProps) {
   return (
     <TooltipProvider delayDuration={150}>

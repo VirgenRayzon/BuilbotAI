@@ -1,7 +1,3 @@
-/**
- * Default System Prompts Configuration
- * Baseline prompt instructions for Buildbot AI assistants and advisors.
- */
 
 export type SystemPromptKey = 'chatbot' | 'buildAdvisor' | 'prebuiltAdvisor' | 'partExtractor';
 

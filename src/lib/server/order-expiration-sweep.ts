@@ -21,10 +21,6 @@ export interface PreparedStockRestore {
   entries: PreparedStockRestoreEntry[];
 }
 
-/**
- * Reads all unique physical inventory item documents inside a Firestore transaction
- * before any writes occur, enforcing once-only stock restoration.
- */
 export async function prepareOrderStockRestore(
   firestore: admin.firestore.Firestore,
   transaction: admin.firestore.Transaction,
@@ -74,9 +70,6 @@ export async function prepareOrderStockRestore(
   return { alreadyRestored: false, entries };
 }
 
-/**
- * Applies prepared inventory stock increments inside an active Firestore transaction.
- */
 export interface StockRestoreResult {
   restored: boolean;
   missingItems: Array<{ path: string; quantity: number }>;
@@ -293,10 +286,6 @@ export async function autoCancelExpiredOrderInternal(options: {
   }
 }
 
-/**
- * Paginates through all pending orders in cursor batches of 100 (no 50-order ceiling)
- * and cancels every unpaid online order past the 1-hour hold window.
- */
 export async function runExpiredOrdersSweep(
   actorUid: string = "system_cron",
   batchSize: number = 100,
@@ -364,4 +353,3 @@ export async function runExpiredOrdersSweep(
     };
   }
 }
-

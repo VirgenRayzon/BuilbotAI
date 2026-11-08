@@ -82,7 +82,6 @@ export default function ForgotPasswordPage() {
       <UnifiedBackground />
 
       <div className="w-full max-w-[440px] z-10 flex flex-col gap-2.5">
-        {/* Navigation & Brand Header */}
         <div className="flex items-center justify-start px-1">
           <Link
             href="/signin"
@@ -100,7 +99,6 @@ export default function ForgotPasswordPage() {
           className="w-full bg-white/85 dark:bg-[#111722] border-slate-200/80 dark:border-white/10 shadow-sm relative transition-all"
         >
           <Stack gap="md">
-            {/* Header / Logo + Title */}
             <div className="text-center flex flex-col items-center gap-1.5">
               <Link href="/" className="mb-0.5">
                 <Logo showText={false} size="lg" />
@@ -116,7 +114,6 @@ export default function ForgotPasswordPage() {
               </Text>
             </div>
 
-            {/* Success Alert */}
             {success && (
               <Alert
                 color="teal"
@@ -130,7 +127,6 @@ export default function ForgotPasswordPage() {
               </Alert>
             )}
 
-            {/* Error Message */}
             {error && (
               <Alert
                 color="red"
@@ -144,7 +140,6 @@ export default function ForgotPasswordPage() {
               </Alert>
             )}
 
-            {/* Form */}
             {!success ? (
               <form onSubmit={handleSubmit(onSubmit)}>
                 <Stack gap="md">
@@ -197,7 +192,6 @@ export default function ForgotPasswordPage() {
               </Button>
             )}
 
-            {/* Footer Links */}
             <div className="text-center text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-white/10">
               Remember your password?{' '}
               <Anchor

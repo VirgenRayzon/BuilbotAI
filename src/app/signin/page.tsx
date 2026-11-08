@@ -263,7 +263,6 @@ function SignInContent() {
       <AuthBackground />
 
       <div className="w-full max-w-[440px] z-10 flex flex-col gap-2.5">
-        {/* Navigation & Brand Header */}
         <div className="flex items-center justify-start px-1">
           <Link
             href="/"
@@ -281,7 +280,6 @@ function SignInContent() {
           className="w-full bg-white/85 dark:bg-[#111722] border-slate-200/80 dark:border-white/10 shadow-sm relative transition-all"
         >
           <Stack gap="md">
-            {/* Header / Logo + Title */}
             <div className="text-center flex flex-col items-center gap-1.5">
               <Link href="/" className="mb-0.5">
                 <Logo showText={false} size="lg" />
@@ -297,7 +295,6 @@ function SignInContent() {
               </Text>
             </div>
 
-            {/* Social Authentication */}
             <Button
               variant="default"
               size="md"
@@ -319,7 +316,6 @@ function SignInContent() {
               }}
             />
 
-            {/* Session Timeout Notice */}
             {reason === 'idle_timeout' && !error && (
               <Alert
                 color="yellow"
@@ -346,7 +342,6 @@ function SignInContent() {
               </Alert>
             )}
 
-            {/* Error Message */}
             {visibleError && (
               <Alert
                 color="red"
@@ -360,7 +355,6 @@ function SignInContent() {
               </Alert>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)}>
               <Stack gap="md">
                 <Controller
@@ -454,7 +448,6 @@ function SignInContent() {
               </Stack>
             </form>
 
-            {/* Footer Links */}
             <div className="text-center text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-white/10">
               Don&apos;t have an account yet?{' '}
               <Anchor

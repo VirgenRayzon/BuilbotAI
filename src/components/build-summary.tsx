@@ -168,7 +168,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
             shadow="xl"
             className="w-full overflow-hidden bg-white/95 dark:bg-[#0d1117]/95 border-slate-200 dark:border-cyan-500/20 backdrop-blur-xl relative shadow-xl dark:shadow-[0_0_35px_rgba(0,0,0,0.5)]"
         >
-            {/* Header Box */}
             <Box className="p-3 bg-slate-50/90 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/10">
                 <Group justify="space-between" align="center">
                     <Group gap="xs" align="center">
@@ -180,7 +179,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                         </Text>
                     </Group>
 
-                    {/* Turnaround Badge */}
                     {finalResponseTime && !isPending && (
                         <div className="relative group/tooltip">
                             <span className="cursor-help px-3 py-1 rounded-full border border-cyan-300 dark:border-cyan-400/80 bg-cyan-50/80 dark:bg-gradient-to-r dark:from-cyan-950/70 dark:via-cyan-900/60 dark:to-blue-950/70 text-cyan-800 dark:text-cyan-300 font-mono text-xs font-black uppercase tracking-widest select-none shadow-sm dark:shadow-[0_0_15px_rgba(34,211,238,0.45)] hover:shadow-md hover:scale-105 transition-all duration-300 flex items-center gap-1.5">
@@ -209,7 +207,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
 
             <div className="p-3 space-y-5">
                 <AnimatePresence mode="wait">
-                    {/* Error State */}
                     {error ? (
                         <motion.div
                             key="error"
@@ -229,7 +226,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                             </div>
                         </motion.div>
                     ) : isPending ? (
-                        /* Progressive Streaming Grid View */
                         <motion.div
                             key="streaming"
                             initial={{ opacity: 0 }}
@@ -237,7 +233,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                             exit={{ opacity: 0 }}
                             className="space-y-6"
                         >
-                            {/* Streaming Status Banner */}
                             <div className="p-4 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2.5 rounded-xl bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 shrink-0">
@@ -299,7 +294,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                 </Paper>
                             )}
 
-                            {/* Summary Banner if partially streamed */}
                             {build?.summary && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
@@ -316,7 +310,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                 </motion.div>
                             )}
 
-                            {/* Progressive Slots Grid */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                                 {COMPONENT_SLOTS.map((slot, index) => {
                                     const compData = build ? (build as any)[slot.key] : null;
@@ -367,7 +360,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                             </div>
                         </motion.div>
                     ) : !build ? (
-                        /* Empty State */
                         <motion.div
                             key="empty"
                             initial={{ opacity: 0 }}
@@ -396,14 +388,12 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                             </Paper>
                         </motion.div>
                     ) : (
-                        /* Complete Build Ready View */
                         <motion.div
                             key="content"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-5"
                         >
-                            {/* Build total and actions */}
                             <div className="grid gap-3 md:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.2fr)] md:items-center">
                                 <div className="flex items-center gap-3">
                                     <div className="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20 w-16 h-16 flex items-center justify-center select-none shrink-0">
@@ -444,7 +434,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                 </div>
                             </div>
 
-                            {/* Summary Section */}
                             <div className="bg-emerald-500/10 rounded-2xl p-4 border border-emerald-500/20 relative overflow-hidden group">
                                 <div className="flex items-center gap-3 mb-4 text-emerald-600 dark:text-emerald-400">
                                     <Sparkles className="h-5 w-5" />
@@ -457,7 +446,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
 
                             <BuildRecommendationNotes webResearchInfo={webResearchInfo} hasExternalParts={hasExternalParts} />
 
-                            {/* Components Grid */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                                 {COMPONENT_SLOTS.map((slot, index) => {
                                     const compData = (build as any)[slot.key];

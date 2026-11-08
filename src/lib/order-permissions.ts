@@ -4,7 +4,6 @@ export interface OrderRoleFlags {
   isSuperAdmin?: unknown;
 }
 
-/** Reject stale claims and incomplete System Access sign-ins before order access. */
 export function resolveOrderRoles(claims: OrderRoleFlags, profile?: OrderRoleFlags | null) {
   const isManager = claims.isManager === true && profile?.isManager === true;
   const isSuperAdmin = claims.isSuperAdmin === true && profile?.isSuperAdmin === true;
@@ -15,7 +14,6 @@ export function resolveOrderRoles(claims: OrderRoleFlags, profile?: OrderRoleFla
   return { isManager, isSuperAdmin, isStaff: isManager || isSuperAdmin };
 }
 
-/** Destructive order tools must never target a real Firebase project. */
 export function assertOrderTestEnvironment(env: Readonly<Record<string, string | undefined>>) {
   if (!env.FIRESTORE_EMULATOR_HOST || !env.FIREBASE_AUTH_EMULATOR_HOST ||
       !env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.startsWith('demo-')) {

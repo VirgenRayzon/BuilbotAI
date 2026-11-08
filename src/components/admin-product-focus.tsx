@@ -61,7 +61,6 @@ export function AdminProductFocus({ parts, systems, loading, addPartStock }: {
               </Badge>
             )}
 
-            {/* Centered QR code with cyan pen edit button, small download, copy, and view buttons */}
             <ProductQR
               token={product.qrToken}
               sku={product.sku}
@@ -104,7 +103,6 @@ export function AdminProductFocus({ parts, systems, loading, addPartStock }: {
               }
             />
 
-            {/* Product identification spanning full width below the QR code */}
             <div className="w-full">
               <ProductIdentification category={part?.category || 'PC'} product={product} showLink={false} compact />
             </div>

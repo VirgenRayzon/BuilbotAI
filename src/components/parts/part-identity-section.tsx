@@ -33,7 +33,6 @@ export function PartIdentitySection({ form, onCategoryChange, justAutofilled, du
 
   return (
     <div className="grid grid-cols-12 gap-8 items-start">
-      {/* Left Column: Image Preview */}
       <div className="col-span-12 md:col-span-4 md:sticky md:top-0">
         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-400 mb-4 flex items-center gap-2.5">
           <span className="inline-block w-3.5 h-0.5 bg-cyan-500/60 rounded-full" />
@@ -62,7 +61,6 @@ export function PartIdentitySection({ form, onCategoryChange, justAutofilled, du
         </Paper>
       </div>
 
-      {/* Right Column: Fields */}
       <div className="col-span-12 md:col-span-8 space-y-6">
         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-400 mb-4 flex items-center gap-2.5">
           <span className="inline-block w-3.5 h-0.5 bg-cyan-500/60 rounded-full" />

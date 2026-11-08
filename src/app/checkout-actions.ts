@@ -230,10 +230,6 @@ export interface CheckoutOrderResult {
   error?: string;
 }
 
-/**
- * Resolves a component's Firestore DocumentSnapshot inside a transaction
- * using its canonical ID, PRD-XXXXXX productId, or exact category + name.
- */
 async function resolveInventoryDocInTransaction(
   firestore: admin.firestore.Firestore,
   transaction: admin.firestore.Transaction,
@@ -310,10 +306,6 @@ async function resolveInventoryDocInTransaction(
   throw new Error(`Item "${candidate.name}" (${canonicalCategory}) not found.`);
 }
 
-/**
- * Private low-level checkout writer. Only invoked after `createCheckoutOrder`
- * verifies the caller's Firebase ID token and validates input payload via Zod.
- */
 async function processCheckoutInternal(
   verifiedUser: { uid: string; email: string },
   items: OrderItem[],
@@ -778,11 +770,6 @@ export interface CreateCheckoutOrderInput {
   voucherCode?: string | null;
 }
 
-/**
- * Verifies user authentication and payload schema, flattens cart items
- * into authoritative component line items, validates and deducts stock in Firestore,
- * and creates a persistent `orders/{orderId}` document.
- */
 export async function createCheckoutOrder(
   rawInput: CreateCheckoutOrderInput
 ): Promise<CheckoutOrderResult> {
@@ -972,11 +959,6 @@ export interface SimulatedPaymentResult {
   error?: string;
 }
 
-/**
- * Processes an in-app simulated payment outcome ('success' | 'failed' | 'cancelled')
- * for simulated methods (such as Simulated GCash). Never allows simulated outcomes
- * to confirm a PayMongo gateway payment.
- */
 export async function resolveSimulatedPayment(
   rawInput: ResolveSimulatedPaymentInput
 ): Promise<SimulatedPaymentResult> {
@@ -1205,10 +1187,6 @@ async function resolvePaymentOutcome(
   }
 }
 
-/**
- * Creates or refreshes a PayMongo Test Checkout Session (`POST /v1/checkout_sessions`)
- * for an existing order so the customer can launch or retry PayMongo Checkout.
- */
 export async function createOrderPaymongoCheckoutSession(
   rawOrderId: string,
   rawIdToken: string,
@@ -1317,10 +1295,6 @@ export async function createOrderPaymongoCheckoutSession(
   }
 }
 
-/**
- * Queries PayMongo's v1 API (`GET /v1/checkout_sessions/:id`) to verify the live
- * status of an order's Checkout Session and synchronizes Firestore `paymentStatus`.
- */
 export async function verifyAndSyncPaymongoOrder(rawInput: {
   orderId: string;
   idToken: string;
@@ -1467,10 +1441,6 @@ export async function verifyAndSyncPaymongoOrder(rawInput: {
   }
 }
 
-/**
- * Allows a customer to switch an unpaid/failed/cancelled online order
- * to Cash on Delivery (COD) so their order proceeds with paymentStatus: 'unpaid'.
- */
 export async function switchOrderPaymentToCod(
   rawOrderId: string,
   rawIdToken: string
@@ -1575,10 +1545,6 @@ export async function switchOrderPaymentToCod(
   }
 }
 
-/**
- * Allows Managers and Super Admins to update an order's paymentStatus across all methods
- * under the unified order transition policy.
- */
 export async function updateOrderPaymentStatusByStaff(
   rawOrderId: string,
   rawNewPaymentStatus: PaymentStatus,
@@ -2165,10 +2131,6 @@ export async function autoCancelExpiredOrder(
   });
 }
 
-/**
- * Staff-authenticated Server Action wrapper around the paginated expiration sweep.
- * Scheduled background sweeps invoke `/api/cron/expire-orders` with `CRON_SECRET`.
- */
 export async function sweepExpiredPendingOrders(
   rawIdToken?: string
 ): Promise<{

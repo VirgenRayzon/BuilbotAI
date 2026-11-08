@@ -13,8 +13,6 @@ export default function StartPage() {
 
   return (
     <>
-      {/* Discover the public hero before hydration without bypassing Auth UI gates.
-          Match next/image's responsive candidates so the download is reused. */}
       <link
         rel="preload"
         as="image"

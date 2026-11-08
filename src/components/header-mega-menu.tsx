@@ -99,7 +99,6 @@ export function HeaderMegaMenu() {
           )}
         </div>
 
-        {/* Mobile Burger Toggle */}
         <div className="flex items-center gap-2 lg:hidden">
           <HeaderCartButton />
           <ThemeToggle />
@@ -112,7 +111,6 @@ export function HeaderMegaMenu() {
         </div>
       </div>
 
-      {/* Mobile Drawer */}
       <Drawer
         opened={drawerOpened}
         onClose={closeDrawer}

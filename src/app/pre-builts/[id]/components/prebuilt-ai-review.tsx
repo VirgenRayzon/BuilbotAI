@@ -53,7 +53,6 @@ export function PrebuiltAiReview({
 
     return (
         <div className="space-y-3">
-            {/* Tab Controls & Re-evaluate Action */}
             <div className="flex items-center justify-between gap-2">
                 <SegmentedControl
                     value={activeTab}
@@ -105,7 +104,6 @@ export function PrebuiltAiReview({
                 <PrebuiltComponentCarousel parts={componentStatuses} loading={loadingParts} />
             )}
 
-            {/* TAB 2: AI HIGHLIGHTS */}
             {activeTab === "highlights" && (
                 <>
                     {loadingAnalysis ? (

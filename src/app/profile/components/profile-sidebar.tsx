@@ -290,7 +290,6 @@ export function ProfileSidebar({
 
   return (
     <>
-      {/* MOBILE HORIZONTAL NAVIGATION (< lg) */}
       <div className="block lg:hidden w-full mb-4 sm:mb-6">
         <Paper
           hiddenFrom="lg"
@@ -340,7 +339,6 @@ export function ProfileSidebar({
         </Paper>
       </div>
 
-      {/* DESKTOP SIDEBAR (>= lg) */}
       <div className="hidden lg:block w-full">
         <Paper
           visibleFrom="lg"
@@ -350,7 +348,6 @@ export function ProfileSidebar({
           className="flex flex-col justify-between bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
         >
           <div className="space-y-5">
-            {/* SECTION 1: ACCOUNT */}
             <div className="space-y-1.5">
               <Text
                 size="xs"
@@ -364,7 +361,6 @@ export function ProfileSidebar({
               </div>
             </div>
 
-            {/* SECTION 2: ORDER WORKFLOW */}
             {ordersAndShipmentsItems.length > 0 && (
               <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-white/10">
                 <Text
@@ -380,7 +376,6 @@ export function ProfileSidebar({
               </div>
             )}
 
-            {/* SECTION 3: SAVED & INBOX */}
             {activityItems.length > 0 && (
               <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-white/10">
                 <Text
@@ -396,7 +391,6 @@ export function ProfileSidebar({
               </div>
             )}
 
-            {/* SECTION 4: ADMINISTRATION */}
             {adminItems.length > 0 && (
               <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-white/10">
                 <Text
@@ -413,7 +407,6 @@ export function ProfileSidebar({
             )}
           </div>
 
-          {/* FOOTER ACTIONS: SESSION */}
           <div className="pt-3 border-t border-slate-200 dark:border-white/10 space-y-1.5 mt-5">
             <Text
               size="xs"
@@ -422,7 +415,6 @@ export function ProfileSidebar({
               Session
             </Text>
 
-            {/* Sign Out Button */}
             <UnstyledButton
               onClick={() => setSignOutModalOpen(true)}
               className="w-full h-[46px] min-h-[46px] max-h-[46px] flex items-center justify-between px-3 rounded-xl text-xs font-headline font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors group"
@@ -444,7 +436,6 @@ export function ProfileSidebar({
         </Paper>
       </div>
 
-      {/* Sign Out Confirmation Modal */}
       <Modal
         opened={signOutModalOpen}
         onClose={() => !isSigningOut && setSignOutModalOpen(false)}

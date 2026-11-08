@@ -84,7 +84,6 @@ export function BuilderFloatingChat({ build, onAddPart, initiallyOpen = false }:
                             style={{ display: 'flex', flexDirection: 'column', backgroundColor: isDark ? '#111722' : '#FDFBF7' }}
                         >
 
-                            {/* Header */}
                             <ChatHeader
                                 isDark={isDark}
                                 isAiKillSwitch={isAiKillSwitch}
@@ -95,7 +94,6 @@ export function BuilderFloatingChat({ build, onAddPart, initiallyOpen = false }:
                                 onClose={toggleOpen}
                             />
 
-                            {/* Scrollable Message List */}
                             <div className={cn("flex-1 p-0 min-h-0 flex flex-col overflow-hidden", isDark ? "bg-[#0f1520]" : "bg-slate-50/70")}>
                                 <ChatMessageList
                                     messages={messages}
@@ -115,9 +113,7 @@ export function BuilderFloatingChat({ build, onAddPart, initiallyOpen = false }:
                                 />
                             </div>
 
-                            {/* Footer Input & Actions */}
                             <div className={cn("p-3 flex-none border-t flex flex-col gap-2.5", isDark ? "bg-[#111722] border-white/10" : "bg-white border-slate-200")}>
-                                {/* Preset Chips (shown when conversation has no user messages) */}
                                 <AnimatePresence>
                                     {!hasUserMessages && !isLoading && !isAiKillSwitch && (
                                         <motion.div
@@ -136,7 +132,6 @@ export function BuilderFloatingChat({ build, onAddPart, initiallyOpen = false }:
                                     )}
                                 </AnimatePresence>
 
-                                {/* Input Bar */}
                                 <ChatInputBar
                                     input={input}
                                     setInput={setInput}
@@ -151,7 +146,6 @@ export function BuilderFloatingChat({ build, onAddPart, initiallyOpen = false }:
                 )}
             </AnimatePresence>
 
-            {/* Floating Action Trigger Button */}
             <div>
                 <ActionIcon
                     onClick={toggleOpen}

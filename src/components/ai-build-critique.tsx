@@ -236,7 +236,6 @@ export function AIBuildCritique({
                                 <span>{activeDuration.toFixed(1)}s Turnaround Time</span>
                             </span>
 
-                            {/* Tooltip Content positioned downwards and leftwards so it stays visible */}
                             <div className="absolute right-0 top-full mt-2 w-64 p-3 rounded-xl border border-slate-200 dark:border-cyan-500/20 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-300 pointer-events-none z-50 text-[10px] font-mono text-slate-700 dark:text-zinc-300 space-y-1.5 leading-relaxed">
                                 <div className="border-b border-slate-200 dark:border-white/5 pb-1 flex justify-between">
                                     <span className="text-[9px] font-black text-cyan-600 dark:text-cyan-400 uppercase">Review Time</span>
@@ -297,12 +296,10 @@ export function AIBuildCritique({
                         exit={{ opacity: 0, scale: 0.96 }}
                         className="flex flex-col items-center justify-center py-14 space-y-7"
                     >
-                        {/* Glowing Radial Elapsed Timer (Counting UP) */}
                         <div className="relative flex items-center justify-center">
                             <div className="absolute inset-0 bg-cyan-500/15 blur-3xl rounded-full animate-pulse pointer-events-none" />
 
                             <svg className="w-36 h-36 transform -rotate-90 relative z-10">
-                                {/* Subtle background ring */}
                                 <circle
                                     cx="72"
                                     cy="72"
@@ -311,7 +308,6 @@ export function AIBuildCritique({
                                     strokeWidth="4"
                                     fill="transparent"
                                 />
-                                {/* Smooth rotating active ring */}
                                 <motion.circle
                                     cx="72"
                                     cy="72"
@@ -330,7 +326,6 @@ export function AIBuildCritique({
                                 />
                             </svg>
 
-                            {/* Center Elapsed Counter */}
                             <div className="absolute z-20 flex flex-col items-center justify-center text-center font-mono">
                                 <span className="text-[22px] font-black text-cyan-400 tracking-tight leading-none">
                                     {(() => {
@@ -348,7 +343,6 @@ export function AIBuildCritique({
 
                         <QuickReviewChecks checks={quickChecks} />
 
-                        {/* Stop Diagnostics Button */}
                         {onCancel && (
                             <motion.div
                                 initial={{ opacity: 0, y: 8 }}
@@ -409,7 +403,6 @@ export function AIBuildCritique({
 
                         <AiDisclaimer />
 
-                        {/* Strengths and Opportunities */}
                         <div className="space-y-4">
                             <div className="bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/20">
                                 <h4 className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-2 mb-3">
@@ -433,7 +426,6 @@ export function AIBuildCritique({
                             </div>
                         </div>
 
-                        {/* Bottleneck Analysis */}
                         <div className="space-y-3">
                             <h4 className="font-semibold flex items-center gap-2">
                                 <AlertTriangle className="h-5 w-5 text-yellow-500" /> Bottleneck Analysis
@@ -443,7 +435,6 @@ export function AIBuildCritique({
                             </div>
                         </div>
 
-                        {/* FPS Estimates */}
                         <div className="space-y-3">
                             <h4 className="font-semibold flex items-center gap-2">
                                 <MonitorPlay className="h-5 w-5 text-primary" /> Estimated Performance
@@ -487,7 +478,6 @@ export function AIBuildCritique({
                             </div>
                         </div>
 
-                        {/* Suggestions */}
                         {analysis.suggestions && analysis.suggestions.length > 0 && (
                             <div className="space-y-3">
                                 <h4 className="font-semibold flex items-center gap-2">

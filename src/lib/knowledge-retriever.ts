@@ -1,9 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 
-/**
- * In-memory cache for knowledge base sections.
- */
 interface CachedSection {
     source: string;
     text: string;
@@ -73,10 +70,6 @@ if (typeof window === 'undefined') {
     setTimeout(initializeKnowledgeCache, 0);
 }
 
-/**
- * Reads all markdown files in the src/knowledge/ directory
- * and performs a simple keyword-based search to find relevant paragraphs.
- */
 export async function retrieveLocalKnowledge(query: string, maxResults: number = 4): Promise<string[]> {
     const knowledgeDir = path.join(process.cwd(), 'src', 'knowledge');
     const scoredResults: { text: string; score: number }[] = [];

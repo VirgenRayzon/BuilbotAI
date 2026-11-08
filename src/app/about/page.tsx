@@ -204,7 +204,6 @@ export default function AboutPage() {
     <div className="min-h-screen bg-transparent font-body text-foreground pt-24 pb-20 w-full relative overflow-hidden">
       <AuthBackground className="fixed" />
       <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 relative z-10">
-        {/* Hero Header */}
         <div className="mb-10 md:mb-14 text-center md:text-left">
           <Badge
             variant="light"
@@ -225,7 +224,6 @@ export default function AboutPage() {
             Built on over 25 years of IT infrastructure expertise, Netcodex delivers authentic PC components, custom high-performance rigs, and transparent pricing—powered by Buildbot AI intelligence.
           </p>
 
-          {/* Key Facts Strip */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mt-8">
             {KEY_FACTS.map((fact) => (
               <Paper
@@ -249,9 +247,7 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Content Layout: Sticky Navigation + Story Cards */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5 lg:gap-6 items-start relative w-full">
-          {/* Left Column: Floating Quick Navigation (Anchored Sticky) */}
           <aside className="col-span-1 md:col-span-4 lg:col-span-3 xl:col-span-3 hidden md:block sticky top-20 z-20 self-start">
             <Paper
               withBorder
@@ -312,7 +308,6 @@ export default function AboutPage() {
             </Paper>
           </aside>
 
-          {/* Right Column: Editorial Sections */}
           <div className="col-span-1 md:col-span-8 lg:col-span-9 space-y-6">
             {ABOUT_SECTIONS.map((section) => {
               const SectionIcon = section.icon;
@@ -342,7 +337,6 @@ export default function AboutPage() {
                       </Title>
                     </div>
 
-                    {/* Storefront Facade & Core Pillars Showcase for Who We Are */}
                     {section.id === 'who-we-are' && (
                       <div className="mb-6 rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-[#0c121d] shadow-sm">
                         <div className="relative w-full aspect-[1535/513] overflow-hidden bg-slate-950">
@@ -356,7 +350,6 @@ export default function AboutPage() {
                           />
                         </div>
 
-                        {/* 4 Pillars Under Photo */}
                         <div className="p-4 sm:p-5 lg:p-6 border-t border-slate-200/80 dark:border-white/10">
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
                             {STOREFRONT_PILLARS.map((pillar, idx) => (
@@ -378,7 +371,6 @@ export default function AboutPage() {
                       {section.lead}
                     </p>
 
-                    {/* Secondary Texts as Clean Bullet Points */}
                     {section.subItems && section.subItems.length > 0 && (
                       <ul className="mt-4 pt-3.5 border-t border-slate-200/60 dark:border-white/10 space-y-2.5 list-none p-0 m-0">
                         {section.subItems.map((sub, subIdx) => (

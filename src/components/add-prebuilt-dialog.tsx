@@ -138,7 +138,6 @@ interface AddPrebuiltDialogProps {
     onOpenChange?: (open: boolean) => void;
 }
 
-/** Inline searchable part selector — sits inside a FormField */
 function PartSelector({
     category,
     items,
@@ -809,7 +808,6 @@ export function AddPrebuiltDialog({
                 className="w-[90vw] max-w-[90vw] max-h-[calc(100vh-24px)] p-0 gap-0 overflow-hidden border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#111722] shadow-lg rounded-xl [&>button.absolute]:hidden"
             >
 
-                {/* ── Header ── */}
                 <DialogHeader className="p-3 border-b border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] flex flex-row items-center justify-between gap-3 space-y-0">
                     <div className="flex items-center gap-3">
                         <ThemeIcon size={46} radius="xl" variant="light" color="cyan" className="shadow-sm">
@@ -870,14 +868,11 @@ export function AddPrebuiltDialog({
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit, onFormError)} className="flex flex-col">
 
-                        {/* ── Scrollable Body ── */}
                         <ScrollArea className="h-[70vh]">
                             <div className="p-3 space-y-3">
 
-                                {/* Section: System Identity */}
                                 <div className="grid grid-cols-12 gap-8 items-start">
                                     
-                                    {/* Left Column: Image Preview */}
                                     <div className="col-span-12 md:col-span-4 md:sticky md:top-0">
                                         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-400 mb-4 flex items-center gap-2.5">
                                             <span className="inline-block w-3.5 h-0.5 bg-cyan-500/60 rounded-full" />
@@ -906,7 +901,6 @@ export function AddPrebuiltDialog({
                                         </Paper>
                                     </div>
 
-                                    {/* Right Column: Identity Fields */}
                                     <div className="col-span-12 md:col-span-8 space-y-6">
                                         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-400 mb-4 flex items-center gap-2.5">
                                             <span className="inline-block w-3.5 h-0.5 bg-cyan-500/60 rounded-full" />
@@ -989,7 +983,6 @@ export function AddPrebuiltDialog({
                                             )} />
                                         </div>
 
-                                        {/* Description */}
                                         <div className="pt-2">
                                             <FormField control={form.control} name="description" render={({ field }) => (
                                                 <FormItem>
@@ -1103,7 +1096,6 @@ export function AddPrebuiltDialog({
                                     </div>
                                 </div>
 
-                                {/* Section: Components */}
                                 <div>
                                     <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-400 mb-4 flex items-center gap-2.5">
                                         <span className="inline-block w-3.5 h-0.5 bg-cyan-500/60 rounded-full" />
@@ -1111,7 +1103,6 @@ export function AddPrebuiltDialog({
                                         <span className="text-slate-400 dark:text-slate-500 normal-case font-normal tracking-normal ml-1">(sorted A–Z · type to search)</span>
                                     </p>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {/* CPU Card */}
                                         <Paper withBorder radius="xl" p="md" className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 shadow-sm space-y-2.5 transition-all hover:border-cyan-500/30">
                                             <FormField control={form.control} name="cpu" render={({ field }) => (
                                                 <FormItem className="space-y-2">
@@ -1138,7 +1129,6 @@ export function AddPrebuiltDialog({
                                             )} />
                                         </Paper>
 
-                                        {/* Motherboard Card */}
                                         <Paper withBorder radius="xl" p="md" className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 shadow-sm space-y-2.5 transition-all hover:border-cyan-500/30">
                                             <FormField control={form.control} name="motherboard" render={({ field }) => (
                                                 <FormItem className="space-y-2">
@@ -1165,7 +1155,6 @@ export function AddPrebuiltDialog({
                                             )} />
                                         </Paper>
 
-                                        {/* GPU Card */}
                                         <Paper withBorder radius="xl" p="md" className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 shadow-sm space-y-2.5 transition-all hover:border-cyan-500/30">
                                             <FormField control={form.control} name="gpu" render={({ field }) => (
                                                 <FormItem className="space-y-2">
@@ -1198,7 +1187,6 @@ export function AddPrebuiltDialog({
                                             )} />
                                         </Paper>
 
-                                        {/* Cooler Card */}
                                         <Paper withBorder radius="xl" p="md" className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 shadow-sm space-y-2.5 transition-all hover:border-cyan-500/30">
                                             <FormField control={form.control} name="cooler" render={({ field }) => (
                                                 <FormItem className="space-y-2">
@@ -1225,7 +1213,6 @@ export function AddPrebuiltDialog({
                                             )} />
                                         </Paper>
 
-                                        {/* PSU Card */}
                                         <Paper withBorder radius="xl" p="md" className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 shadow-sm space-y-2.5 transition-all hover:border-cyan-500/30">
                                             <FormField control={form.control} name="psu" render={({ field }) => (
                                                 <FormItem className="space-y-2">
@@ -1252,7 +1239,6 @@ export function AddPrebuiltDialog({
                                             )} />
                                         </Paper>
 
-                                        {/* Case Card */}
                                         <Paper withBorder radius="xl" p="md" className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 shadow-sm space-y-2.5 transition-all hover:border-cyan-500/30">
                                             <FormField control={form.control} name="case" render={({ field }) => (
                                                 <FormItem className="space-y-2">
@@ -1280,9 +1266,7 @@ export function AddPrebuiltDialog({
                                         </Paper>
                                     </div>
 
-                                    {/* Multi-slot Arrays (RAM & Storage) */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6">
-                                        {/* RAM Card */}
                                         <Paper withBorder radius="xl" p="md" className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 shadow-sm space-y-3 transition-all hover:border-cyan-500/30">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
@@ -1348,7 +1332,6 @@ export function AddPrebuiltDialog({
                                             </div>
                                         </Paper>
 
-                                        {/* Storage Card */}
                                         <Paper withBorder radius="xl" p="md" className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 shadow-sm space-y-3 transition-all hover:border-cyan-500/30">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
@@ -1404,7 +1387,6 @@ export function AddPrebuiltDialog({
                             </div>
                         </ScrollArea>
 
-                        {/* ── Sticky Footer ── */}
                         <DialogFooter className="relative z-[60] p-3 border-t border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-[#111722] flex-row justify-between items-center sm:justify-between">
                             <Button
                                 type="button"
