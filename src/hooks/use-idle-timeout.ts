@@ -9,12 +9,12 @@ import { createAuditLog } from '@/firebase/audit';
 const ACTIVITY_STORAGE_KEY = 'buildbot_last_activity_timestamp';
 const AUTH_SYNC_CHANNEL = 'buildbot_auth_sync';
 
-const STAFF_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
-const STAFF_WARNING_MS = 2 * 60 * 1000;  // 2 minutes warning countdown
-const USER_TIMEOUT_MS = 30 * 60 * 1000;  // 30 minutes
-const USER_WARNING_MS = 5 * 60 * 1000;   // 5 minutes warning countdown
+const STAFF_TIMEOUT_MS = 15 * 60 * 1000;
+const STAFF_WARNING_MS = 2 * 60 * 1000;
+const USER_TIMEOUT_MS = 30 * 60 * 1000;
+const USER_WARNING_MS = 5 * 60 * 1000;
 
-const ACTIVITY_THROTTLE_MS = 2500; // Record at most once every 2.5s
+const ACTIVITY_THROTTLE_MS = 2500;
 
 export interface UseIdleTimeoutReturn {
   showWarning: boolean;

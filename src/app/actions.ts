@@ -321,7 +321,7 @@ export async function authenticateSystemAccessAction(
 
         const keyDocSnap = await db.collection('authKeys').doc(roleKey).get();
         const isDbKey = keyDocSnap.exists && keyDocSnap.data()?.role === 'superadmin';
-        const isHardcodedKey = roleKey === 'SUPER_ADMIN_123'; // Allowed server-side only fallback
+        const isHardcodedKey = roleKey === 'SUPER_ADMIN_123';
 
         if (!isDbKey && !isHardcodedKey) {
           return { error: 'Incorrect super admin key. Please verify your master key and try again.' };

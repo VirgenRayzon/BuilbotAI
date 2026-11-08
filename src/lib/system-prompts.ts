@@ -20,7 +20,7 @@ export type SystemPromptKey = 'chatbot' | 'buildAdvisor' | 'prebuiltAdvisor' | '
 
 let cachedPrompts: SystemPromptsConfig | null = null;
 let lastCacheTime = 0;
-const CACHE_TTL_MS = 15000; // 15 seconds
+const CACHE_TTL_MS = 15000;
 
 export function invalidateSystemPromptsCache() {
   cachedPrompts = null;

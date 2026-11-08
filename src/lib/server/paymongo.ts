@@ -40,7 +40,7 @@ export interface CreatePaymongoCheckoutSessionInput {
 
 export interface PaymongoLineItemPayload {
   name: string;
-  amount: number; // in centavos (1 PHP = 100 centavos)
+  amount: number;
   currency: 'PHP';
   quantity: number;
   description?: string;

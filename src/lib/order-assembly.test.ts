@@ -113,7 +113,7 @@ test('order-assembly: multi-rig orders separate duplicate parts and track each r
         rigInstanceId: 'rig_ws_1',
       },
       {
-        id: 'cpu_1', // same product ID
+        id: 'cpu_1',
         name: 'Intel Core i5-13600K',
         category: 'CPU',
         price: 18000,

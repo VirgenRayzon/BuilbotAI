@@ -7,7 +7,7 @@ interface CacheEntry {
 }
 
 const inventoryCache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const structuredCache = new Map<string, { data: StructuredPart[], timestamp: number }>();
 
@@ -57,7 +57,7 @@ const CATEGORY_MAP: Record<string, string> = {
 export async function getInventoryFromFirestore(category: string, searchTerm?: string, limitCount: number = 50, includeImage: boolean = true): Promise<string[]> {
     const normalizedCat = category.toLowerCase();
     const cacheKey = `${normalizedCat}:${searchTerm || ''}:${limitCount}:${includeImage}`;
-    
+
     try {
         const cached = inventoryCache.get(cacheKey);
         if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
@@ -67,21 +67,21 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
 
         const db = getAdminFirestore();
         const collectionName = CATEGORY_MAP[normalizedCat] || category;
-        
+
         const items = db.collection(inventoryItemsPath(collectionName));
         let query = items.where('isArchived', '==', false);
-        
+
         if (searchTerm && searchTerm !== "undefined" && searchTerm.trim() !== "") {
             const terms = searchTerm.toLowerCase().split(/[\s\-_/,\(\)]+/).map(t => t.replace(/[^a-z0-9]/g, '').trim()).filter(t => t.length > 0);
             if (terms.length > 0) {
                 query = query.where('searchKeywords', 'array-contains', terms[0]);
             }
         }
-        
+
         const snapshot = await query.limit(searchTerm ? limitCount * 2 : limitCount).get();
-        
+
         let docs = snapshot.docs;
- 
+
         if (searchTerm && searchTerm !== "undefined" && searchTerm.trim() !== "") {
             const terms = searchTerm.toLowerCase().split(/[\s\-_/,\(\)]+/).map(t => t.replace(/[^a-z0-9]/g, '').trim()).filter(t => t.length > 0);
             if (terms.length > 0) {
@@ -91,17 +91,17 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
                     const brand = (data.brand || '').toLowerCase();
                     const series = (data.series || '').toLowerCase();
                     const model = (data.model || '').toLowerCase();
-                    
-                    return terms.every(term => 
-                        name.includes(term) || 
-                        brand.includes(term) || 
+
+                    return terms.every(term =>
+                        name.includes(term) ||
+                        brand.includes(term) ||
                         series.includes(term) ||
                         model.includes(term)
                     );
-                }).slice(0, limitCount); // Trim back to requested limit
+                }).slice(0, limitCount);
             }
         }
-        
+
         if (docs.length === 0) {
             console.log(`[Inventory] No results found for category: ${category}${searchTerm && searchTerm !== "undefined" ? `, searchTerm: ${searchTerm}` : ''}`);
         }
@@ -111,7 +111,7 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
             const brand = data.brand || '';
             const name = data.name || 'Unknown Part';
             const model = data.model || '';
-            
+
             let displayName = name;
             if (brand && !displayName.toLowerCase().includes(brand.toLowerCase())) {
                 displayName = `${brand} ${displayName}`;
@@ -119,7 +119,7 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
             if (model && !displayName.toLowerCase().includes(model.toLowerCase())) {
                 displayName = `${displayName} ${model}`;
             }
-            
+
             const price = typeof data.price === 'number' ? ` - Price: ₱${data.price.toLocaleString()}` : '';
             const imageUrl = includeImage && data.imageUrl ? ` - Image: ${data.imageUrl}` : '';
             return `[ID: ${doc.id}] [${category.toUpperCase()}] Name: "${displayName}"${price}${imageUrl}`;
@@ -140,7 +140,7 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
 export async function getStructuredInventory(category: string, searchTerm?: string, limitCount: number = 50, fresh = false): Promise<StructuredPart[]> {
     const normalizedCat = category.toLowerCase();
     const cacheKey = `${normalizedCat}:${searchTerm || ''}:${limitCount}`;
-    
+
     try {
         const cached = structuredCache.get(cacheKey);
         if (!fresh && cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
@@ -150,21 +150,21 @@ export async function getStructuredInventory(category: string, searchTerm?: stri
 
         const db = getAdminFirestore();
         const collectionName = CATEGORY_MAP[normalizedCat] || category;
-        
+
         const items = db.collection(inventoryItemsPath(collectionName));
         let query = items.where('isArchived', '==', false);
-        
+
         if (searchTerm && searchTerm !== "undefined" && searchTerm.trim() !== "") {
             const terms = searchTerm.toLowerCase().split(/[\s\-_/,\(\)]+/).map(t => t.replace(/[^a-z0-9]/g, '').trim()).filter(t => t.length > 0);
             if (terms.length > 0) {
                 query = query.where('searchKeywords', 'array-contains', terms[0]);
             }
         }
-        
+
         const snapshot = await query.limit(searchTerm ? limitCount * 2 : limitCount).get();
-        
+
         let docs = snapshot.docs;
-  
+
         if (searchTerm && searchTerm !== "undefined" && searchTerm.trim() !== "") {
             const terms = searchTerm.toLowerCase().split(/[\s\-_/,\(\)]+/).map(t => t.replace(/[^a-z0-9]/g, '').trim()).filter(t => t.length > 0);
             if (terms.length > 0) {
@@ -174,23 +174,23 @@ export async function getStructuredInventory(category: string, searchTerm?: stri
                     const brand = (data.brand || '').toLowerCase();
                     const series = (data.series || '').toLowerCase();
                     const model = (data.model || '').toLowerCase();
-                    
-                    return terms.every(term => 
-                        name.includes(term) || 
-                        brand.includes(term) || 
+
+                    return terms.every(term =>
+                        name.includes(term) ||
+                        brand.includes(term) ||
                         series.includes(term) ||
                         model.includes(term)
                     );
                 }).slice(0, limitCount);
             }
         }
-        
+
         const results: StructuredPart[] = docs.map(doc => {
             const data = doc.data();
             const brand = data.brand || '';
             const name = data.name || 'Unknown Part';
             const model = data.model || '';
-            
+
             let displayName = name;
             if (brand && !displayName.toLowerCase().includes(brand.toLowerCase())) {
                 displayName = `${brand} ${displayName}`;
@@ -198,7 +198,7 @@ export async function getStructuredInventory(category: string, searchTerm?: stri
             if (model && !displayName.toLowerCase().includes(model.toLowerCase())) {
                 displayName = `${displayName} ${model}`;
             }
-            
+
             return {
                 id: doc.id,
                 name: displayName,

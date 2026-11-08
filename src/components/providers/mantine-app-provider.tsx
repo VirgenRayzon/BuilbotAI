@@ -37,7 +37,7 @@ const mantineTheme = createTheme({
       "#373A40",
       "#2C2E33",
       "#25262b",
-      "#141a23", // deeper sleek background
+      "#141a23",
       "#0f131a",
       "#0a0d12",
     ],

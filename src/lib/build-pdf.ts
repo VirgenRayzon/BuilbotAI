@@ -12,12 +12,12 @@ export type BuildPdfPart = Pick<Part, 'name' | 'price' | 'specifications' | 'des
 const WIDTH = 612;
 const HEIGHT = 792;
 const MARGIN_X = 26;
-const CONTENT_WIDTH = WIDTH - MARGIN_X * 2; // 560 pt
+const CONTENT_WIDTH = WIDTH - MARGIN_X * 2;
 
-const INK = rgb(0.07, 0.10, 0.16); // Slate 950
-const MUTED = rgb(0.40, 0.46, 0.54); // Slate 500
-const LIGHT_BORDER = rgb(0.88, 0.91, 0.94); // Slate 200
-const CYAN = rgb(0.02, 0.59, 0.69); // Buildbot Brand Cyan
+const INK = rgb(0.07, 0.10, 0.16);
+const MUTED = rgb(0.40, 0.46, 0.54);
+const LIGHT_BORDER = rgb(0.88, 0.91, 0.94);
+const CYAN = rgb(0.02, 0.59, 0.69);
 const CYAN_LIGHT = rgb(0.38, 0.88, 0.94);
 
 function safeText(value: string): string {
@@ -410,7 +410,7 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
   });
 
   const listTop = INFO_BAR_Y - 10;
-  const listBottom = 42; // Above footer divider
+  const listBottom = 42;
   const usableHeight = listTop - listBottom;
 
   const count = parts.length;

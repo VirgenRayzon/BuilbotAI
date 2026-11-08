@@ -8,7 +8,7 @@ interface CachedSection {
 }
 
 let knowledgeCache: CachedSection[] | null = null;
-const CACHE_TTL = 1000 * 60 * 60 * 24; // 24 hour cache TTL for static knowledge
+const CACHE_TTL = 1000 * 60 * 60 * 24;
 let cacheTimestamp = 0;
 
 export function initializeKnowledgeCache(): void {
@@ -25,7 +25,7 @@ export function initializeKnowledgeCache(): void {
     for (const file of files) {
         const filePath = path.join(knowledgeDir, file);
         const content = fs.readFileSync(filePath, 'utf-8');
-        
+
         const lines = content.split(/\r?\n/);
         let current: string[] = [];
         let currentLen = 0;
@@ -101,7 +101,7 @@ export async function retrieveLocalKnowledge(query: string, maxResults: number =
                 } else {
                     score += 1;
                 }
-                
+
                 if (coreWords.includes(word)) coreMatch = true;
             }
         }
@@ -126,7 +126,7 @@ export async function retrieveLocalKnowledge(query: string, maxResults: number =
             if (uniqueResults.length >= maxResults) break;
         }
     }
-    
+
     if (uniqueResults.length > 0) {
         const sources = [...new Set(uniqueResults.map(r => r.split('\n')[0].replace('[Source: ', '').replace(']', '')))];
         const timestamp = new Date().toLocaleTimeString();

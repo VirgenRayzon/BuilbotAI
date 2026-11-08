@@ -77,7 +77,7 @@ export function OrderExpirationBadge({
 
   if (!isPendingNoProgression) return null;
 
-  const isUrgent = remainingMs <= 10 * 60 * 1000; // < 10 mins
+  const isUrgent = remainingMs <= 10 * 60 * 1000;
   const isExpired = remainingMs <= 0;
 
   const badgeColor = isExpired ? "gray" : isUrgent ? "red" : "amber";

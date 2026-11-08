@@ -92,7 +92,7 @@ export function SmartBudget({ inventory, onApplyBuild, onClose }: SmartBudgetPro
                 description: Object.entries(fullPart.specifications || {}).slice(0, 2).map(([key, value]) => `${key}: ${value}`).join(' | '),
                 image: fullPart.imageUrl,
                 imageHint: fullPart.name.toLowerCase().split(' ').slice(0, 2).join(' '),
-                icon: null, // Will be filled by the parent
+                icon: null,
                 wattage: fullPart.wattage,
                 socket: fullPart.specifications?.['Socket']?.toString() || fullPart.specifications?.['socket']?.toString(),
                 ramType: fullPart.specifications?.['Memory Type']?.toString() || fullPart.specifications?.['RAM Type']?.toString() || fullPart.specifications?.['Memory']?.toString(),

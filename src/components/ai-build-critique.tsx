@@ -441,7 +441,7 @@ export function AIBuildCritique({
                             </h4>
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                 {analysis.fpsEstimates && Array.isArray(analysis.fpsEstimates) && analysis.fpsEstimates.map((est: any, idx: number) => {
-                                    if (!est.fps) return null; // Skip old format
+                                    if (!est.fps) return null;
                                     const perf = getPerformanceStyle(est.fps);
                                     return (
                                         <div key={idx} className="bg-card border rounded-xl overflow-hidden flex flex-col hover:border-primary/30 transition-all shadow-sm">

@@ -20,8 +20,8 @@ export type ComponentData = {
   wattage?: number;
   socket?: string;
   ramType?: string;
-  performanceTier?: number; // 1-4 (Entry=1, Mid=2, High=3, Enthusiast=4)
-  performanceScore?: number; // 0-100 (preferred – used for tier fallback)
+  performanceTier?: number;
+  performanceScore?: number;
   dimensions?: {
     width: number;
     height: number;
@@ -67,8 +67,8 @@ export type Part = {
   images?: string[];
   specifications: Record<string, string | number>;
   wattage?: number;
-  performanceTier?: number; // 1-4 (Entry=1, Mid=2, High=3, Enthusiast=4)
-  performanceScore?: number; // 0-100 (preferred – used for tier fallback)
+  performanceTier?: number;
+  performanceScore?: number;
   socket?: string;
   ramType?: string;
   dimensions?: {
@@ -194,7 +194,7 @@ export type Order = {
   physicalReturnConfirmedAt?: unknown;
   physicalReturnConfirmedBy?: string;
   stockExceptions?: Array<{ path: string; quantity: number }>;
-  createdAt: any; // Firestore Timestamp
+  createdAt: any;
   updatedAt?: any;
 };
 
@@ -261,7 +261,7 @@ export type Notification = {
   targetId?: string;
   type?: 'support_reply' | 'support_status';
   read: boolean;
-  createdAt: any; // Firestore Timestamp
+  createdAt: any;
 };
 
 export type SystemNotification = {
@@ -271,9 +271,9 @@ export type SystemNotification = {
   actorName: string;
   title: string;
   message: string;
-  targetId: string; // part ID or order ID
-  readBy: string[]; // List of user IDs who have seen it
-  createdAt: any; // Firestore Timestamp
+  targetId: string;
+  readBy: string[];
+  createdAt: any;
 };
 
 export type AuditLog = {
@@ -297,7 +297,7 @@ export type AuditLog = {
   resourceName: string;
   resourceId?: string;
   details?: string;
-  createdAt: any; // Firestore Timestamp
+  createdAt: any;
 };
 
 export type UserAuditLog = {
@@ -309,7 +309,7 @@ export type UserAuditLog = {
   resourceName: string;
   resourceId?: string;
   details?: string;
-  createdAt: any; // Firestore Timestamp
+  createdAt: any;
 };
 
 export type FavoriteBuildPart = {
@@ -325,7 +325,7 @@ export type FavoriteBuild = {
   parts: FavoriteBuildPart[];
   totalPrice: number;
   source: 'builder' | 'advisor';
-  createdAt: any; // Firestore Timestamp
+  createdAt: any;
   loadContext?: {
     type: 'prebuilt' | 'advisor';
     systemName: string;
@@ -335,7 +335,7 @@ export type FavoriteBuild = {
 
 export type SavedAddress = {
   id: string;
-  label: string; // e.g. "Home", "Office", "Condo"
+  label: string;
   fullName: string;
   phone: string;
   email: string;

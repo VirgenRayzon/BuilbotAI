@@ -438,7 +438,7 @@ export function useBuilderLogic(allParts: Part[]) {
                     hasProcessedPendingBuildRef.current = true;
                     loadFavoriteBuild(pendingBuild);
                     localStorage.removeItem('pc_builder_load_favorite');
-                } catch (e) { /* ignore parse errors */ }
+                } catch (e) {}
             }
         }
 

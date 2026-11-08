@@ -14,9 +14,9 @@ export function storedOrderOperation(storage: OperationStorage | undefined, key:
     const raw = storage?.getItem(key);
     if (raw) { const parsed = schema.safeParse(JSON.parse(raw)); if (parsed.success) return parsed.data; }
     storage?.setItem(key, JSON.stringify(fallback));
-  } catch { /* Storage restrictions must not bypass the server operation guard. */ }
+  } catch {}
   return fallback;
 }
 export function clearStoredOrderOperation(storage: OperationStorage | undefined, key: string) {
-  try { storage?.removeItem(key); } catch { /* In-memory retries remain available. */ }
+  try { storage?.removeItem(key); } catch {}
 }

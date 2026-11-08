@@ -153,18 +153,18 @@ export default function PrebuiltBuilderPage() {
             }
 
             const singleSlotCategories = ['Case', 'Motherboard', 'CPU', 'GPU', 'PSU', 'Cooler', 'Monitor', 'Keyboard', 'Mouse', 'Headset'];
-            
+
             for (const cat of singleSlotCategories) {
                 const item = updatedBuild[cat] as ComponentData | null;
                 if (!item || !item.id) continue;
                 if (cat === 'Cooler' && isIncludedStockCooler(item)) continue;
-                
+
                 const livePart = allParts.find(p => p.id === item.id || p.name === item.model);
                 if (livePart) {
                     if (livePart.category !== cat) {
                         changed = true;
-                        updatedBuild[cat] = null; // Remove from old slot
-                        
+                        updatedBuild[cat] = null;
+
                         if (singleSlotCategories.includes(livePart.category)) {
                             updatedBuild[livePart.category] = {
                                 ...item,

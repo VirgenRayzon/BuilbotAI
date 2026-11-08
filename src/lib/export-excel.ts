@@ -70,28 +70,28 @@ export function buildSalesAnalyticsWorkbook({
     }
 
     const summaryData = [
-        { Metric: 'Report Title', Value: 'Netcodex - Sales & Analytics Report' }, // B2
-        { Metric: 'Generated At', Value: new Date().toLocaleString() }, // B3
-        { Metric: 'Selected Time Range Filter', Value: timeRange.toUpperCase() }, // B4
-        { Metric: '', Value: '' }, // B5
-        { Metric: 'Placed Order Value (PHP)', Value: financials.placedOrderValue }, // B6
-        { Metric: 'Collected Payments (PHP)', Value: financials.collectedPayments }, // B7
-        { Metric: 'Refunds Issued (PHP)', Value: financials.refundsIssued }, // B8
-        { Metric: 'Net Sales (PHP)', Value: financials.netSales }, // B9
-        { Metric: 'Average Net Order Value (AOV)', Value: Math.round(avgOrderValue * 100) / 100 }, // B10
-        { Metric: 'Active Orders', Value: financials.activeOrderCount }, // B11
-        { Metric: 'Paid Orders', Value: financials.paidOrderCount }, // B12
-        { Metric: 'All-Time Total Orders', Value: financials.totalOrderCount }, // B13
-        { Metric: 'Cancellation Rate', Value: cancellationRate / 100 }, // B14
-        { Metric: '', Value: '' }, // B15
-        { Metric: 'Orders - Order Placed', Value: stageCounts.order_placed }, // B16
-        { Metric: 'Orders - Assembling & Testing', Value: stageCounts.assembling_testing }, // B17
-        { Metric: 'Orders - Out for Delivery / Pickup', Value: stageCounts.out_for_delivery }, // B18
-        { Metric: 'Orders - Delivered', Value: stageCounts.delivered }, // B19
-        { Metric: 'Orders - Cancelled / Void', Value: stageCounts.cancelled }, // B20
-        { Metric: '', Value: '' }, // B21
-        { Metric: 'Total Components Tracked', Value: (parts || []).length }, // B22
-        { Metric: 'Total Prebuilt Systems Tracked', Value: (prebuilts || []).length }, // B23
+        { Metric: 'Report Title', Value: 'Netcodex - Sales & Analytics Report' },
+        { Metric: 'Generated At', Value: new Date().toLocaleString() },
+        { Metric: 'Selected Time Range Filter', Value: timeRange.toUpperCase() },
+        { Metric: '', Value: '' },
+        { Metric: 'Placed Order Value (PHP)', Value: financials.placedOrderValue },
+        { Metric: 'Collected Payments (PHP)', Value: financials.collectedPayments },
+        { Metric: 'Refunds Issued (PHP)', Value: financials.refundsIssued },
+        { Metric: 'Net Sales (PHP)', Value: financials.netSales },
+        { Metric: 'Average Net Order Value (AOV)', Value: Math.round(avgOrderValue * 100) / 100 },
+        { Metric: 'Active Orders', Value: financials.activeOrderCount },
+        { Metric: 'Paid Orders', Value: financials.paidOrderCount },
+        { Metric: 'All-Time Total Orders', Value: financials.totalOrderCount },
+        { Metric: 'Cancellation Rate', Value: cancellationRate / 100 },
+        { Metric: '', Value: '' },
+        { Metric: 'Orders - Order Placed', Value: stageCounts.order_placed },
+        { Metric: 'Orders - Assembling & Testing', Value: stageCounts.assembling_testing },
+        { Metric: 'Orders - Out for Delivery / Pickup', Value: stageCounts.out_for_delivery },
+        { Metric: 'Orders - Delivered', Value: stageCounts.delivered },
+        { Metric: 'Orders - Cancelled / Void', Value: stageCounts.cancelled },
+        { Metric: '', Value: '' },
+        { Metric: 'Total Components Tracked', Value: (parts || []).length },
+        { Metric: 'Total Prebuilt Systems Tracked', Value: (prebuilts || []).length },
     ];
     const wsSummary = XLSX.utils.json_to_sheet(summaryData);
     wsSummary['!cols'] = [{ wch: 36 }, { wch: 36 }];
@@ -172,24 +172,24 @@ export function buildSalesAnalyticsWorkbook({
                 .join(', ') || 'N/A';
 
         return {
-            'Order ID': order.orderNumber || `#${order.id}`, // A
-            'Customer Email': order.userEmail || 'N/A', // B
-            'Order Type': isPrebuilt ? 'Prebuilt' : 'Custom Build', // C
-            'Build / Rig Details': buildInfo, // D
-            'Fulfillment Stage': getOrderFulfillmentStageLabel(order), // E
-            'Stock State': getOrderStockState(order) === 'restored' ? 'Returned' : 'Reserved', // F
-            'Items Count': order.items?.length || 0, // G (count)
-            'Placed Value (PHP)': order.totalPrice || 0, // H (currency)
-            'Order Date': dateStr, // I
-            'Payment Method': getPaymentMethodLabel(order.paymentMethod, false), // J
-            'Payment Status': paymentStatusInfo.label, // K
-            'Payment Reference': order.paymentReference || 'N/A', // L
-            'Collected (PHP)': collectedAmount, // M (currency)
-            'Refunded (PHP)': getRefundedAmount(order), // N (currency)
-            'Net Sales (PHP)': getNetCollectedAmount(order), // O (currency)
-            'Refund Status': order.refundStatus || 'none', // P
-            'Refund Destinations': refundDestinations, // Q
-            'Refund References': order.refunds?.map((refund) => refund.reference).join(', ') || 'N/A', // R
+            'Order ID': order.orderNumber || `#${order.id}`,
+            'Customer Email': order.userEmail || 'N/A',
+            'Order Type': isPrebuilt ? 'Prebuilt' : 'Custom Build',
+            'Build / Rig Details': buildInfo,
+            'Fulfillment Stage': getOrderFulfillmentStageLabel(order),
+            'Stock State': getOrderStockState(order) === 'restored' ? 'Returned' : 'Reserved',
+            'Items Count': order.items?.length || 0,
+            'Placed Value (PHP)': order.totalPrice || 0,
+            'Order Date': dateStr,
+            'Payment Method': getPaymentMethodLabel(order.paymentMethod, false),
+            'Payment Status': paymentStatusInfo.label,
+            'Payment Reference': order.paymentReference || 'N/A',
+            'Collected (PHP)': collectedAmount,
+            'Refunded (PHP)': getRefundedAmount(order),
+            'Net Sales (PHP)': getNetCollectedAmount(order),
+            'Refund Status': order.refundStatus || 'none',
+            'Refund Destinations': refundDestinations,
+            'Refund References': order.refunds?.map((refund) => refund.reference).join(', ') || 'N/A',
         };
     });
 

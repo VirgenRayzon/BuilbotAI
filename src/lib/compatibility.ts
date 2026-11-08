@@ -58,9 +58,9 @@ const ffOrder: Record<string, number> = {
     'EATX': 4,
     'EXTENDEDATX': 4,
     'ATX': 3,
-    'MATX': 2, 
+    'MATX': 2,
     'MICROATX': 2,
-    'ITX': 1, 
+    'ITX': 1,
     'MINIITX': 1,
     'THINMINIITX': 1
 };
@@ -70,7 +70,7 @@ export const caseFFMatch = (caseSupport: string, moboFF: string, caseType: strin
 
     const normalizedMobo = normalizeFF(moboFF);
     const targetSize = ffOrder[normalizedMobo] || 0;
-    if (targetSize === 0) return true; // Unknown mobo format, skip
+    if (targetSize === 0) return true;
 
     const supported = (caseSupport || '').split(',').map(s => normalizeFF(s.trim())).filter(Boolean);
     let isSupported = supported.some(ff => (ffOrder[ff] || 0) >= targetSize);
@@ -291,7 +291,7 @@ export const checkFullBuildCompatibility = (build: Record<string, ComponentData 
 
         const storageData = build['Storage'];
         const storagesList = Array.isArray(storageData) ? storageData : (storageData ? [storageData as ComponentData] : []);
-        
+
         const totalNvme = parseInt(mobo.specifications?.['NVMe Slots']?.toString() || "0");
         const usedNvme = storagesList.filter(s => normalize(s.specifications?.['Type']).includes('nvme')).length;
         if (usedNvme > totalNvme) {

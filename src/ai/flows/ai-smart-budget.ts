@@ -213,8 +213,8 @@ export async function aiSmartBudgetAction(input: AiSmartBudgetInput): Promise<Ai
         if (parts.length <= 6) {
             shortlisted.push(...parts);
         } else {
-            shortlisted.push(...parts.slice(0, 3)); // lowest budget options
-            shortlisted.push(...parts.slice(-3)); // best performance within budget
+            shortlisted.push(...parts.slice(0, 3));
+            shortlisted.push(...parts.slice(-3));
         }
 
         compactMenu[cat] = shortlisted.map(p => ({

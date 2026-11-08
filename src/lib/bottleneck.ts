@@ -1,12 +1,12 @@
 import { ComponentData, Resolution } from "./types";
 import { isIncludedIntegratedGpu } from './integrated-graphics';
 
-export type ComponentTier = 1 | 2 | 3 | 4; // 1: Entry, 2: Mid, 3: High, 4: Enthusiast
+export type ComponentTier = 1 | 2 | 3 | 4;
 
 export interface BottleneckResult {
     status: 'Balanced' | 'Slight Mismatch' | 'Severe Mismatch' | 'Incomplete';
     message: string;
-    color: string; // For UI styling
+    color: string;
 }
 
 export const getTier = (comp: ComponentData): ComponentTier => {
@@ -17,7 +17,7 @@ export const getTier = (comp: ComponentData): ComponentTier => {
         if (comp.performanceScore >= 45) return 2;
         return 1;
     }
-    return 2; // Default to mid-range if unknown
+    return 2;
 };
 
 export const calculateBottleneck = (
@@ -31,7 +31,7 @@ export const calculateBottleneck = (
         return {
             status: 'Incomplete',
             message: 'Add both a CPU and GPU to see the system balance analysis.',
-            color: '#9ca3af', // Gray
+            color: '#9ca3af',
         };
     }
 
@@ -52,7 +52,7 @@ export const calculateBottleneck = (
         return {
             status: 'Severe Mismatch',
             message: `Your CPU is significantly underpowered for this GPU. Expect major stutters at ${resolution}.`,
-            color: '#ef4444', // Red
+            color: '#ef4444',
         };
     }
 
@@ -61,13 +61,13 @@ export const calculateBottleneck = (
             return {
                 status: 'Balanced',
                 message: 'At 4K, this pairing is well-balanced as the workload is GPU-heavy.',
-                color: '#22c55e', // Green
+                color: '#22c55e',
             };
         }
         return {
             status: 'Slight Mismatch',
             message: `Minor CPU bottleneck possible at ${resolution}. Consider a one-tier higher CPU for better 1% lows.`,
-            color: '#f59e0b', // Amber
+            color: '#f59e0b',
         };
     }
 
@@ -75,14 +75,14 @@ export const calculateBottleneck = (
         return {
             status: 'Slight Mismatch',
             message: 'Your CPU is overkill for this GPU. You could save money by dropping a CPU tier without losing FPS.',
-            color: '#f59e0b', // Amber
+            color: '#f59e0b',
         };
     }
 
     return {
         status: 'Balanced',
         message: 'This is a high-efficiency pairing with optimal performance scaling.',
-        color: '#22c55e', // Green
+        color: '#22c55e',
     };
 };
 
@@ -137,7 +137,7 @@ export const calculateSynergyScore = (
     let powerScore = 0;
     if (psuWattage > 0) {
         const ratio = totalWattage / psuWattage;
-        if (ratio > 0.4 && ratio < 0.8) powerScore = 20; // Ideal efficiency
+        if (ratio > 0.4 && ratio < 0.8) powerScore = 20;
         else if (ratio <= 0.4 || (ratio >= 0.8 && ratio < 1.0)) powerScore = 10;
         else if (ratio >= 1.0) powerScore = 0;
     }
@@ -146,7 +146,7 @@ export const calculateSynergyScore = (
         .flat()
         .filter(p => p !== null)
         .map(p => getTier(p as ComponentData));
-    
+
     let tierScore = 0;
     if (tiers.length > 1) {
         const avgTier = tiers.reduce((a, b) => a + b, 0) / tiers.length;
@@ -157,13 +157,13 @@ export const calculateSynergyScore = (
     const totalScore = Math.min(100, Math.round(completenessScore + balanceScore + powerScore + tierScore));
 
     let status: SynergyResult['status'] = 'Fair';
-    let color = '#f59e0b'; // Amber
+    let color = '#f59e0b';
 
-    if (totalScore >= 95) { status = 'Perfect'; color = '#22d3ee'; } // Cyan
-    else if (totalScore >= 80) { status = 'Great'; color = '#22c55e'; } // Green
-    else if (totalScore >= 65) { status = 'Good'; color = '#10b981'; } // Emerald
-    else if (totalScore >= 40) { status = 'Fair'; color = '#f59e0b'; } // Amber
-    else { status = 'Poor'; color = '#ef4444'; } // Red
+    if (totalScore >= 95) { status = 'Perfect'; color = '#22d3ee'; }
+    else if (totalScore >= 80) { status = 'Great'; color = '#22c55e'; }
+    else if (totalScore >= 65) { status = 'Good'; color = '#10b981'; }
+    else if (totalScore >= 40) { status = 'Fair'; color = '#f59e0b'; }
+    else { status = 'Poor'; color = '#ef4444'; }
 
     if (selectedCount < mandatoryCategories.length) status = 'Incomplete';
 

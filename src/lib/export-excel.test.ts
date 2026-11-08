@@ -79,10 +79,10 @@ test('buildSalesAnalyticsWorkbook separates placed value, collected payments, re
     );
     const byMetric = new Map(summaryRows.map((r) => [r.Metric, r.Value]));
 
-    assert.equal(byMetric.get('Placed Order Value (PHP)'), 45000); // 9000 + 36000
-    assert.equal(byMetric.get('Collected Payments (PHP)'), 40500); // 36000 + 4500 (unpaid 9000 excluded)
-    assert.equal(byMetric.get('Refunds Issued (PHP)'), 10500); // 6000 + 4500
-    assert.equal(byMetric.get('Net Sales (PHP)'), 30000); // 40500 - 10500
+    assert.equal(byMetric.get('Placed Order Value (PHP)'), 45000);
+    assert.equal(byMetric.get('Collected Payments (PHP)'), 40500);
+    assert.equal(byMetric.get('Refunds Issued (PHP)'), 10500);
+    assert.equal(byMetric.get('Net Sales (PHP)'), 30000);
     assert.equal(byMetric.get('Orders - Assembling & Testing'), 1);
     assert.equal(byMetric.get('Orders - Delivered'), 1);
     assert.equal(byMetric.get('Orders - Cancelled / Void'), 1);

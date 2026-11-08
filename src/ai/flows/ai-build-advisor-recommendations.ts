@@ -2,7 +2,10 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getGenkitModelName, safeGenkitGenerate } from '@/lib/ai-model-resolver';
+import { getGenkitModelName } from '@/lib/ai-model-resolver';
+import { retrieveLocalKnowledge } from '@/lib/knowledge-retriever';
+import { getAdminFirestore } from '@/firebase/server-init';
+import { getInventoryFromFirestore } from '@/lib/inventory-fetcher';
 
 import {
   AiBuildAdvisorRecommendationsInputSchema,
@@ -93,16 +96,12 @@ Additional Notes: {{{additionalNotes}}}
 Please format your response as a JSON object strictly following the output schema provided. The estimatedPrice for each component must be a realistic PHP price number (not a string).`,
 });
 
-import { retrieveLocalKnowledge } from '@/lib/knowledge-retriever';
-import { getAdminFirestore } from '@/firebase/server-init';
-import { getInventoryFromFirestore } from '@/lib/inventory-fetcher';
-
 const CACHE_COLLECTION = 'ai_recommendation_cache_v3';
 
 const generateCacheKey = (input: AiBuildAdvisorRecommendationsInput, promptSig: string = '') => {
   const parts = [
     input.intendedUse.toLowerCase().trim(),
-    input.budget.toLowerCase().trim().replace(/[^\d]/g, ''), // Extract numbers for more consistent caching (e.g. 20000)
+    input.budget.toLowerCase().trim().replace(/[^\d]/g, ''),
     input.performanceLevel.toLowerCase().trim(),
     (input.additionalNotes || '').toLowerCase().trim(),
     input.allowFlexibleBudget ? 'flexible' : 'strict',

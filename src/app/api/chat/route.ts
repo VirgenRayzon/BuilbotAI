@@ -260,7 +260,7 @@ USER PROFILE:
                         }
                     })
                 },
-                stopWhen: stepCountIs(5), // Allow for tool calling loops automatically
+                stopWhen: stepCountIs(5),
                 prepareStep: recommendationContext
                     ? ({ stepNumber }) => ({ toolChoice: stepNumber === 0
                         ? { type: 'tool' as const, toolName: 'searchInventory' as const }

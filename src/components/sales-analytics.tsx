@@ -51,11 +51,11 @@ interface SalesAnalyticsProps {
 }
 
 const COLORS = {
-    primary: '#22d3ee', // Cyan
-    secondary: '#818cf8', // Indigo
-    accent: '#fbbf24', // Amber/Yellow
-    success: '#10b981', // Emerald
-    destructive: '#ef4444', // Red
+    primary: '#22d3ee',
+    secondary: '#818cf8',
+    accent: '#fbbf24',
+    success: '#10b981',
+    destructive: '#ef4444',
     chart: [
         '#22d3ee', '#818cf8', '#10b981', '#fbbf24', '#f472b6', '#a78bfa'
     ]
@@ -173,10 +173,10 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
         });
 
         return [
-            { name: 'Entry Level', value: counts['Entry'], color: COLORS.chart[2] }, // Emerald
-            { name: 'Mid-Range', value: counts['Mid-Range'], color: COLORS.chart[0] }, // Cyan
-            { name: 'High-End', value: counts['High-End'], color: COLORS.chart[1] }, // Indigo
-            { name: 'Workstation', value: counts['Workstation'], color: COLORS.chart[3] } // Amber
+            { name: 'Entry Level', value: counts['Entry'], color: COLORS.chart[2] },
+            { name: 'Mid-Range', value: counts['Mid-Range'], color: COLORS.chart[0] },
+            { name: 'High-End', value: counts['High-End'], color: COLORS.chart[1] },
+            { name: 'Workstation', value: counts['Workstation'], color: COLORS.chart[3] }
         ].filter(d => d.value > 0);
     }, [orders, prebuilts]);
 
@@ -257,8 +257,8 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
                                         Revenue Performance
                                     </Title>
                                     <Text size="xs" className="text-slate-500 dark:text-slate-400 uppercase tracking-widest font-mono mt-0.5">
-                                        {timeRange === 'week' ? 'Daily revenue tracking (Last 7 Days)' : 
-                                         timeRange === 'month' ? 'Daily revenue tracking (Last 30 Days)' : 
+                                        {timeRange === 'week' ? 'Daily revenue tracking (Last 7 Days)' :
+                                         timeRange === 'month' ? 'Daily revenue tracking (Last 30 Days)' :
                                          'Monthly revenue tracking (Last 12 Months)'}
                                     </Text>
                                 </div>

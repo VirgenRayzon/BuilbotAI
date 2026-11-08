@@ -1,5 +1,5 @@
 
-export const ORDER_EXPIRATION_DURATION_MS = 60 * 60 * 1000; // 1 hour = 3,600,000 ms
+export const ORDER_EXPIRATION_DURATION_MS = 60 * 60 * 1000;
 
 export function getOrderCreatedDate(createdAt: unknown): Date | null {
   if (!createdAt) return null;

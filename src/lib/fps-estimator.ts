@@ -26,16 +26,16 @@ export const estimateFPS = (
 
     let baseFps = 60;
     switch (gpuTier) {
-        case 4: // Enthusiast (e.g., RTX 4090)
+        case 4:
             baseFps = resolution === '1080p' ? 240 : resolution === '1440p' ? 170 : 100;
             break;
-        case 3: // High (e.g., RTX 4070)
+        case 3:
             baseFps = resolution === '1080p' ? 160 : resolution === '1440p' ? 110 : 60;
             break;
-        case 2: // Mid (e.g., RTX 4060)
+        case 2:
             baseFps = resolution === '1080p' ? 110 : resolution === '1440p' ? 70 : 40;
             break;
-        case 1: // Entry (e.g., RX 6400)
+        case 1:
             baseFps = resolution === '1080p' ? 60 : resolution === '1440p' ? 40 : 25;
             break;
     }
@@ -65,9 +65,9 @@ export const estimateFPS = (
     const averageFps = Math.max(Math.round(baseFps * (1 - penaltyPercent)), 10);
 
     const chartData = [];
-    
+
     let peakRes = 1080;
-    if (resolution === '4K') peakRes = 2160; // 4K vertical height
+    if (resolution === '4K') peakRes = 2160;
     else if (resolution === '1440p') peakRes = 1440;
     else peakRes = 1080;
 
@@ -80,17 +80,17 @@ export const estimateFPS = (
         resolutionSteps.push("360", "480", "720", "900", "1080");
     }
 
-    let currentAvg = Math.max(averageFps * 0.3, 10); // Start low for the curve
-    let currentLows = Math.max(currentAvg * 0.7, 5); // Lows are beneath average
+    let currentAvg = Math.max(averageFps * 0.3, 10);
+    let currentLows = Math.max(currentAvg * 0.7, 5);
 
     for (let i = 0; i < resolutionSteps.length; i++) {
         const progress = (i + 1) / resolutionSteps.length;
 
         let pointAvg = currentAvg + (averageFps - currentAvg) * progress;
         pointAvg += averageFps * (Math.random() * 0.1 - 0.05);
-        
-        let pointLows = pointAvg * (0.7 + Math.random() * 0.1); // ~70-80% of average
-        let pointPeak = pointAvg * (1.2 + Math.random() * 0.1); // ~120-130% of average
+
+        let pointLows = pointAvg * (0.7 + Math.random() * 0.1);
+        let pointPeak = pointAvg * (1.2 + Math.random() * 0.1);
 
         chartData.push({
             resolution: resolutionSteps[i],

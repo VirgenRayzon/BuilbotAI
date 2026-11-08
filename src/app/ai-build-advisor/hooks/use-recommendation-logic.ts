@@ -207,7 +207,7 @@ function getSmartDescription(type: string, modelName: string): string {
             progressToastRef.current = null;
             console.error("[useRecommendationLogic] Stream error:", err);
             let msg = err.message || "Failed to get recommendations.";
-            try { msg = JSON.parse(msg).error || msg; } catch { /* Non-JSON provider error. */ }
+            try { msg = JSON.parse(msg).error || msg; } catch {}
             setErrorMessage(msg);
             toast({ variant: "destructive", title: "Error", description: msg });
         },

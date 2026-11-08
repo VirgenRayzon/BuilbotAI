@@ -9,7 +9,7 @@ import type {
 
 const TOAST_LIMIT = 3
 const TOAST_REMOVE_DELAY = 1000
-const DEFAULT_TOAST_DURATION = 8000 // 8 seconds automatically disappear
+const DEFAULT_TOAST_DURATION = 8000
 
 type ToasterToast = ToastProps & {
   id: string

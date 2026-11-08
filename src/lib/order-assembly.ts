@@ -251,7 +251,7 @@ export function assertCustomRigDispatchAllowed(
 
   const customRigs = getCustomRigsFromOrder(order);
   if (customRigs.length === 0) {
-    return; // No custom rigs, allowed!
+    return;
   }
 
   for (const rig of customRigs) {

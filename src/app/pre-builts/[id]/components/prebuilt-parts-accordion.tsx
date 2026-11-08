@@ -26,7 +26,7 @@ export function PrebuiltPartsAccordion({ components, loadingParts }: PrebuiltPar
             className="bg-white/80 dark:bg-[#141a23]/80 border-slate-200 dark:border-white/10 overflow-hidden shadow-sm"
         >
             <Accordion
-                defaultValue={null} // Closed by default as requested
+                defaultValue={null}
                 variant="separated"
                 styles={{
                     item: {

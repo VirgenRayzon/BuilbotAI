@@ -31,7 +31,7 @@ export async function migrateNotificationsToAuditLogs(firestore: Firestore) {
     for (const notif of notifications) {
         let actionName: AuditLog['actionName'] = 'other';
         let scope: AuditLog['scope'] = 'System';
-        
+
         if (notif.type === 'item_archived') {
             actionName = notif.title.includes('Restored') ? 'restored' : 'archived';
             scope = notif.title.includes('Prebuilt') ? 'Prebuilt' : 'Part';
@@ -39,7 +39,7 @@ export async function migrateNotificationsToAuditLogs(firestore: Firestore) {
             actionName = 'status_changed';
             scope = 'Order';
         } else if (notif.type === 'user_cancelled') {
-            actionName = 'status_changed'; // user cancelling is essentially an order status change
+            actionName = 'status_changed';
             scope = 'Order';
         }
 
@@ -76,7 +76,7 @@ export async function migrateNotificationsToAuditLogs(firestore: Firestore) {
             await batch.commit();
         }
     }
-    
+
     if (count % 500 !== 0) {
         await batch.commit();
     }

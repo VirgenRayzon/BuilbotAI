@@ -47,7 +47,7 @@ export function useCollection<T>(
     );
 
     return () => unsubscribe();
-  }, [query]); // Refetch on query change
+  }, [query]);
 
   return { data, loading, error };
 }

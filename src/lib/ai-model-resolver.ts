@@ -43,11 +43,11 @@ interface CachedSettingsData {
 
 let cachedSettings: CachedSettingsData | null = null;
 let lastCacheTime = 0;
-const CACHE_TTL_MS = 15000; // 15 seconds cache
+const CACHE_TTL_MS = 15000;
 
 let isTunedModelDegraded = false;
 let degradedUntil = 0;
-const DEGRADED_COOLDOWN_MS = 60000; // 60 seconds cooldown if permission/network error occurs
+const DEGRADED_COOLDOWN_MS = 60000;
 
 export function markTunedModelDegraded(reason: string) {
     isTunedModelDegraded = true;
@@ -226,7 +226,7 @@ export async function getVertexAccessToken(forceRefresh = false): Promise<string
             const tokenResponse = await client.getAccessToken();
             if (tokenResponse.token) {
                 cachedAccessToken = tokenResponse.token;
-                tokenExpiry = now + 3500 * 1000; // ~1 hour
+                tokenExpiry = now + 3500 * 1000;
                 return cachedAccessToken;
             }
         } catch (err) {
