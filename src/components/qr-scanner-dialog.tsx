@@ -83,7 +83,6 @@ export function QRScannerDialog({ trigger, opened: controlledOpened, onClose }: 
             const idToken = await authUser.getIdToken();
             authHeader = `Bearer ${idToken}`;
           } catch {
-            // Proceed without header if token retrieval fails
           }
         }
 
@@ -107,7 +106,6 @@ export function QRScannerDialog({ trigger, opened: controlledOpened, onClose }: 
       }
 
       if (result.sku) {
-        // If it's a SKU, we can navigate or search in stock tab
         setStatusMessage(`Looking up SKU ${result.sku}…`);
         setOpened(false);
         router.push(`/admin?tab=stock&search=${encodeURIComponent(result.sku)}`);
@@ -125,7 +123,6 @@ export function QRScannerDialog({ trigger, opened: controlledOpened, onClose }: 
   };
 
   handleDetectedResultRef.current = handleDetectedResult;
-
 
   useEffect(() => {
     if (opened && activeTab === 'camera') {

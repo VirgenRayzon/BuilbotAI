@@ -48,7 +48,6 @@ async function validateRemoteUrl(value: string): Promise<URL> {
     if (hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".local")) {
         throw new Error("Use a public image URL.");
     }
-    // Reject any host that resolves to a non-public address, including redirects.
     const addresses = await lookup(hostname, { all: true });
     if (addresses.length === 0 || addresses.some(({ address, family }) =>
         family === 4 ? isPrivateIpv4(address) : family === 6 ? isPrivateIpv6(address) : true

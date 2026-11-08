@@ -25,7 +25,6 @@ export function ComponentFields({ form, inventory, openSlot, setOpenSlot }: Comp
             const currentMobo = form.getValues('motherboard');
             const currentCpu = form.getValues('cpu');
             
-            // Sequence Validation (Removed)
         }
         setOpenSlot(isOpen ? slotName : null);
     };

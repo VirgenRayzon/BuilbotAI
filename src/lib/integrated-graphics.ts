@@ -27,8 +27,6 @@ export function integratedGraphicsName(cpu: CpuGraphicsSource | null | undefined
     return value || null;
   }
 
-  // Catalogs with older, incomplete CPU specifications still need a safe fallback.
-  // Intel F/KF and X/XE desktop parts require discrete graphics.
   if (/\bintel\b/i.test(`${cpu.brand || ''} ${name}`) && /\b(?:core|pentium|celeron)\b/i.test(name)) {
     if (/\b\d{3,5}(?:KF|F|XE|X)\b/i.test(name)) return null;
     return `${name} integrated graphics`;

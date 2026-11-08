@@ -145,7 +145,6 @@ export function PrebuiltSystemCard({
               }
               return;
             }
-            // 1. Try canonical path: inventory/{category}/items/{partId}
             const canonicalRef = doc(firestore, inventoryItemPath(collectionName, partId as string));
             const canonicalSnap = await getDoc(canonicalRef);
             if (canonicalSnap.exists()) {
@@ -155,7 +154,6 @@ export function PrebuiltSystemCard({
               return;
             }
 
-            // 2. Try canonical query by name in inventory/{category}/items
             const canonicalQuery = query(
               collection(firestore, inventoryItemsPath(collectionName)),
               where("name", "==", partId)
@@ -168,7 +166,6 @@ export function PrebuiltSystemCard({
               return;
             }
 
-            // 3. Fallback to legacy root collection: {collectionName}/{partId}
             const partRef = doc(firestore, collectionName, partId as string);
             const snap = await getDoc(partRef);
             if (snap.exists()) {
@@ -178,7 +175,6 @@ export function PrebuiltSystemCard({
               return;
             }
 
-            // 4. Fallback query by name in legacy collection
             const q = query(collection(firestore, collectionName), where("name", "==", partId));
             const querySnap = await getDocs(q);
             if (!querySnap.empty) {

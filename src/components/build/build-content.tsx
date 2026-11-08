@@ -89,7 +89,6 @@ export function BuildContent({
     Storage: false,
   });
 
-  // Auto-expand if filter is active
   useEffect(() => {
     if (activeFilter === 'RAM') {
       setExpandedSections({ RAM: true, Storage: false });
@@ -103,7 +102,6 @@ export function BuildContent({
   const toggleSection = (section: string) => {
     setExpandedSections(prev => {
       const isCurrentlyOpen = prev[section];
-      // Close others when opening one (exclusive focus)
       if (!isCurrentlyOpen) {
         return { RAM: false, Storage: false, [section]: true };
       }

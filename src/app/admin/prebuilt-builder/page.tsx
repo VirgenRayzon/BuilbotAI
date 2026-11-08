@@ -115,13 +115,11 @@ export default function PrebuiltBuilderPage() {
 
     usePrebuiltBuilderImport(allParts, isLoaded, setBuild, setEditingPrebuilt);
 
-    // Persistence
     useEffect(() => {
         const saved = localStorage.getItem('admin_pc_builder_state');
         if (saved) {
             try {
                 const parsedState = JSON.parse(saved);
-                // Sanitize orphaned stock cooler if no CPU is present in saved state
                 if (!parsedState.CPU && isIncludedStockCooler(parsedState.Cooler)) {
                     parsedState.Cooler = null;
                 }
@@ -133,7 +131,6 @@ export default function PrebuiltBuilderPage() {
         setIsLoaded(true);
     }, []);
 
-    // Sync builder state when inventory parts update (e.g., category changed or part renamed/updated)
     useEffect(() => {
         if (!isLoaded || allParts.length === 0) return;
 
@@ -141,7 +138,6 @@ export default function PrebuiltBuilderPage() {
             let changed = false;
             const updatedBuild = { ...prevBuild };
 
-            // Clean up orphaned stock cooler if CPU is missing
             if (!updatedBuild['CPU'] && isIncludedStockCooler(updatedBuild['Cooler'] as ComponentData | null)) {
                 updatedBuild['Cooler'] = null;
                 changed = true;
@@ -156,7 +152,6 @@ export default function PrebuiltBuilderPage() {
                 }
             }
 
-            // Check single-slot categories
             const singleSlotCategories = ['Case', 'Motherboard', 'CPU', 'GPU', 'PSU', 'Cooler', 'Monitor', 'Keyboard', 'Mouse', 'Headset'];
             
             for (const cat of singleSlotCategories) {
@@ -164,15 +159,12 @@ export default function PrebuiltBuilderPage() {
                 if (!item || !item.id) continue;
                 if (cat === 'Cooler' && isIncludedStockCooler(item)) continue;
                 
-                // Find matching live part from catalog by ID or model
                 const livePart = allParts.find(p => p.id === item.id || p.name === item.model);
                 if (livePart) {
-                    // If the category in catalog has changed (e.g. from Cooler to Case)
                     if (livePart.category !== cat) {
                         changed = true;
                         updatedBuild[cat] = null; // Remove from old slot
                         
-                        // If the destination slot is empty or compatible, place it or update it
                         if (singleSlotCategories.includes(livePart.category)) {
                             updatedBuild[livePart.category] = {
                                 ...item,
@@ -218,7 +210,6 @@ export default function PrebuiltBuilderPage() {
         } else {
             next[category] = null;
 
-            // Destructive removal logic
             if (category === 'Case') {
                 const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
                 dependentParts.forEach(key => {
@@ -292,7 +283,6 @@ export default function PrebuiltBuilderPage() {
     const handlePartToggle = (part: Part) => {
         const category = part.category;
 
-        // Determine if we are removing an existing single-slot part
         const isCurrentlySelected = category !== 'Storage' && category !== 'RAM' && (build[category] as ComponentData)?.model === part.name;
 
         const { compatible, message } = checkCompatibility(part, build);
@@ -360,7 +350,6 @@ export default function PrebuiltBuilderPage() {
                 toastsToShow.push({ title: 'Components Removed', description: 'Motherboard removed.' });
             }
 
-            // Handle CPU stock cooler logic
             const currentCooler = next['Cooler'] as ComponentData | null;
             if (category === 'CPU' && isIncludedStockCooler(currentCooler)) {
                 next['Cooler'] = null;
@@ -425,7 +414,6 @@ export default function PrebuiltBuilderPage() {
             }
             toastsToShow.push({ title: 'Part Added', description: `${part.name} has been added to your build.` });
 
-            // Handle CPU stock cooler logic
             if (category === 'CPU') {
                 const coolerModel = includedCpuCoolerName(part);
                 if (coolerModel) {
@@ -441,7 +429,6 @@ export default function PrebuiltBuilderPage() {
                         specifications: { "Type": "Air (Stock)" }
                     };
                 } else {
-                    // If tray and currently have stock cooler, remove it
                     if (isIncludedStockCooler(next['Cooler'] as ComponentData | null)) {
                         next['Cooler'] = null;
                     }
@@ -451,7 +438,6 @@ export default function PrebuiltBuilderPage() {
             toastsToShow.forEach(t => toast(t));
         }
     };
-
 
     const sortedAndFilteredParts = useMemo(() => {
         const selectedCategories = categories.filter(c => c.selected).map(c => c.name);

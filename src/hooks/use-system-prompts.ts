@@ -27,7 +27,6 @@ export function useSystemPrompts() {
 
   const [activeKey, setActiveKey] = useState<SystemPromptKey>('chatbot');
 
-  // Form state holding current (possibly unsaved) prompt text
   const [draftPrompts, setDraftPrompts] = useState<Record<SystemPromptKey, string>>({
     chatbot: DEFAULT_CHATBOT_PROMPT,
     buildAdvisor: DEFAULT_BUILD_ADVISOR_PROMPT,
@@ -39,7 +38,6 @@ export function useSystemPrompts() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetTarget, setResetTarget] = useState<SystemPromptKey | 'all'>('chatbot');
 
-  // Sync draft prompts when savedPrompts load from Firestore (unless user is actively typing)
   useEffect(() => {
     setDraftPrompts((prev) => ({
       chatbot: savedPrompts?.chatbot ?? DEFAULT_CHATBOT_PROMPT,
@@ -49,14 +47,12 @@ export function useSystemPrompts() {
     }));
   }, [savedPrompts?.chatbot, savedPrompts?.buildAdvisor, savedPrompts?.prebuiltAdvisor, savedPrompts?.partExtractor]);
 
-  // Active prompt metadata
   const activeMeta = useMemo<SystemPromptMeta>(() => {
     return (
       SYSTEM_PROMPT_METAS.find((m) => m.id === activeKey) || SYSTEM_PROMPT_METAS[0]
     );
   }, [activeKey]);
 
-  // Check if a specific prompt has unsaved edits
   const isDirty = useCallback(
     (key?: SystemPromptKey) => {
       const target = key || activeKey;
@@ -67,7 +63,6 @@ export function useSystemPrompts() {
     [draftPrompts, savedPrompts, activeKey]
   );
 
-  // Check if any prompt has unsaved edits
   const hasAnyUnsavedChanges = useMemo(() => {
     return (
       isDirty('chatbot') ||
@@ -77,7 +72,6 @@ export function useSystemPrompts() {
     );
   }, [isDirty]);
 
-  // Check if prompt differs from hardcoded default baseline
   const isCustomized = useCallback(
     (key: SystemPromptKey) => {
       const current = (draftPrompts[key] ?? "").trim();
@@ -87,7 +81,6 @@ export function useSystemPrompts() {
     [draftPrompts]
   );
 
-  // Update draft prompt text
   const setPromptValue = useCallback((key: SystemPromptKey, value: string) => {
     setDraftPrompts((prev) => ({
       ...prev,
@@ -95,7 +88,6 @@ export function useSystemPrompts() {
     }));
   }, []);
 
-  // Discard unsaved changes for a specific key
   const handleDiscard = useCallback(
     (key: SystemPromptKey) => {
       const saved = savedPrompts?.[key] ?? getBaselineDefault(key);
@@ -111,7 +103,6 @@ export function useSystemPrompts() {
     [savedPrompts, toast]
   );
 
-  // Save changes to Firestore
   const handleSave = useCallback(
     async (saveAll: boolean = false) => {
       setIsSaving(true);
@@ -132,13 +123,11 @@ export function useSystemPrompts() {
               updatedBy: editorEmail,
             };
 
-        // 1. Server-side persistence via Admin SDK
         const serverRes = await updateSystemPromptsAction(payload);
         if (!serverRes.success) {
           throw new Error(serverRes.error || "Failed to persist prompts");
         }
 
-        // 2. Client-side Firestore write for immediate local reactivity
         if (firestore) {
           const siteSettingsRef = doc(firestore, "siteSettings", "main");
           await setDoc(
@@ -156,7 +145,6 @@ export function useSystemPrompts() {
           ).catch(() => {});
         }
 
-        // 3. Audit Log
         if (firestore) {
           await createAuditLog(firestore, {
             actionName: "updated",
@@ -190,7 +178,6 @@ export function useSystemPrompts() {
     [activeKey, draftPrompts, firestore, profile, toast]
   );
 
-  // Confirm reset to defaults
   const handleConfirmReset = useCallback(async () => {
     setIsSaving(true);
     const editorEmail = profile?.email || "Super Admin";
@@ -215,7 +202,6 @@ export function useSystemPrompts() {
         }));
       }
 
-      // Audit Log
       if (firestore) {
         await createAuditLog(firestore, {
           actionName: "updated",
@@ -249,7 +235,6 @@ export function useSystemPrompts() {
     }
   }, [resetTarget, profile, firestore, toast]);
 
-  // Copy to clipboard
   const handleCopy = useCallback(
     (key?: SystemPromptKey) => {
       const target = key || activeKey;

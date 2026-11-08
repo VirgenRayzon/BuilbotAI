@@ -61,7 +61,6 @@ export async function POST(req: Request) {
     const db = getAdminFirestore();
     let settingsData: FirebaseFirestore.DocumentData | undefined;
 
-    // 0. Check Maintenance Mode (Kill Switch)
     try {
       const settingsSnap = await db.collection('siteSettings').doc('main').get();
       settingsData = settingsSnap.data();
@@ -89,7 +88,6 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify(output), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
     }
 
-    // The same settings snapshot supplies the maintenance flag and active prompt.
     const storedPrompt = settingsData?.systemPrompts?.buildAdvisor;
     const customSystemPrompt = typeof storedPrompt === 'string' && storedPrompt.trim()
       ? storedPrompt.trim()
@@ -101,7 +99,6 @@ export async function POST(req: Request) {
       inventoryRevision: settingsData?.advisorInventoryRevision,
     });
 
-    // Web Search requests must perform fresh research for each generation.
     if (!input.allowWebSearch) try {
       const cacheRef = db.collection(CACHE_COLLECTION).doc(cacheKey);
       const cacheSnap = await cacheRef.get();
@@ -136,9 +133,7 @@ export async function POST(req: Request) {
 
     console.log(`[Build Advisor API] Cache Miss for key: ${cacheKey}. Generating a validated build (AI Search: ${!!input.allowAiSearch}, Web Search: ${!!input.allowWebSearch})...`);
 
-    // 2. Fast Context Gathering using Internal/Local Knowledge and Store Inventory
     const query = `${input.intendedUse} ${input.performanceLevel} ${input.additionalNotes || ''}`;
-    // Candidate selection, local knowledge, and model routing run together.
     const [knowledgeResults, inventory, resolved] = await Promise.all([
       retrieveLocalKnowledge(query, 3),
       getAdvisorInventoryMenu(budgetLimit),
@@ -158,10 +153,8 @@ export async function POST(req: Request) {
     const knowledgeContext = knowledgeResults.join('\n\n');
     const storeInventory = inventory.menu;
 
-    // 3. Model resolution ran alongside knowledge and inventory retrieval.
     console.log(`[Build Advisor API] Using language model: ${resolved.modelId} (isFineTuned: ${resolved.isFineTuned}, isFallback: ${resolved.isFallback})`);
 
-    // 4. Construct Prompt
     const promptText = `
 You are an expert PC building advisor specializing in the Philippine market. Your goal is to recommend a set of compatible core components (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, Cooler) for a user based on their specific needs.
 
@@ -218,8 +211,6 @@ Please generate the recommendations strictly matching the schema with realistic 
 
     const systemInstruction = customSystemPrompt || DEFAULT_BUILD_ADVISOR_PROMPT;
 
-    // Validate before sending any part to the client. An invalid attempt is retried
-    // with the exact failures, and is never displayed or cached.
     let retryFeedback = '';
     for (let attempt = 1; attempt <= 3; attempt++) {
       const { output, usage } = await generateText({

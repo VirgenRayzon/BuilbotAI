@@ -22,10 +22,8 @@ export async function POST(req: Request) {
             return new Response(JSON.stringify({ error: "No messages provided" }), { status: 400 });
         }
 
-        // Dynamically resolve active system instruction from Firestore with baseline fallback
         const { getActiveSystemPrompt } = await import("@/lib/system-prompts");
         let systemInstruction = `${await getActiveSystemPrompt('chatbot')}\n\nFor part recommendations, ask only for the intended use and budget in one short question if they are missing. A stated target resolution also counts as intended use. Once the category, budget, and intended use or target resolution are known across the conversation, call searchInventory and show the available compatible options now. Never ask for refresh rate, game titles, or whether an already clarified budget is for the part before searching. For one user question, use tools before writing an explanation, search each category at most once, and give one concise final answer after the tool results. Do not repeat an introductory explanation or narrate the same recommendation in multiple steps; the UI renders the product cards. For a named component review or detailed specifications, call queryPartSpecifications with the full product name and category when known. That tool checks the local vector store and uses Google Search when there is no exact product match. Use only facts about the requested model. Never introduce or change a numeric specification that is absent from the tool result. If the result source is web, cite its supplied links in your answer. If the result source is none, say that the exact specifications could not be verified; never replace them with a similar model's specifications.`;
-
 
         const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 
@@ -34,7 +32,6 @@ export async function POST(req: Request) {
             return new Response(JSON.stringify({ error: "AI service is currently unavailable" }), { status: 500 });
         }
 
-        // Resolve active AI model (Default vs Fine-Tuned with automated fallback for Chatbot)
         const resolved = await getLanguageModelForChat({ feature: 'chatbot' });
         console.log(`[Chat API] Using model: ${resolved.modelId} (feature: chatbot, isFineTuned: ${resolved.isFineTuned}, isFallback: ${resolved.isFallback})`);
 
@@ -44,7 +41,6 @@ export async function POST(req: Request) {
             systemInstruction += `\n\n[ALREADY ANSWERED — SEARCH NOW]\nThe user requested ${recommendationContext.category.toUpperCase()} options, has a ₱${recommendationContext.budget.toLocaleString('en-PH')} budget for this part, and stated ${recommendationContext.intendedUse} as the intended use or target resolution. Call searchInventory for ${recommendationContext.category} with maxPrice ${recommendationContext.budget} before answering. Do not ask any more discovery questions.`;
         }
 
-        // Build context prompt if user has an active rig
         let buildContextPrompt = "";
         if (currentBuild && typeof currentBuild === 'object' && Object.keys(currentBuild).length > 0) {
             const lines: string[] = [];
@@ -103,8 +99,6 @@ export async function POST(req: Request) {
             }
         }
 
-        // Keep profile and build facts in the system instruction. Inserting a
-        // synthetic user turn can break Gemini's required tool-turn ordering.
         if (userProfile || buildContextPrompt) {
             const displayName = userProfile?.displayName || "Customer";
             const experienceLevel = userProfile?.experienceLevel || "Intermediate";
@@ -148,7 +142,6 @@ USER PROFILE:
                                 };
                             }
 
-                            // Run deterministic compatibility analysis
                             const compatibilityIssues = checkFullBuildCompatibility(currentBuild);
                             const missingCoreCategories = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler']
                                 .filter(category => {
@@ -156,10 +149,8 @@ USER PROFILE:
                                     return !selected || (Array.isArray(selected) && selected.length === 0);
                                 });
 
-                            // Run deterministic bottleneck analysis
                             const bottleneckAnalysis = calculateBottleneck(currentBuild, resolutionTarget);
 
-                            // Power calculation
                             let estimatedWattage = 0;
                             let psuCapacity = 0;
                             for (const [cat, comp] of Object.entries(currentBuild)) {

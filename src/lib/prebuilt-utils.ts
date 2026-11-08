@@ -114,7 +114,6 @@ export function isSystemComplete(system: PrebuiltSystem): boolean {
 export function checkSystemStock(components: Record<string, { stock: number } | null>): boolean {
     const essentialKeys = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'];
     
-    // Check if any essential component is missing or out of stock
     for (const key of essentialKeys) {
         const part = components[key];
         if (!part || part.stock <= 0) {

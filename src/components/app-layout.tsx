@@ -40,8 +40,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isPublicCatalog = pathname === '/parts' || pathname.startsWith('/parts/') || pathname === '/pre-builts' || pathname.startsWith('/pre-builts/') || pathname === '/checkout' || pathname.startsWith('/q/');
   const isCustomerSignInPage = pathname === '/signin';
 
-  // Keep the sign-out overlay mounted across the route change, then let its
-  // existing 400 ms exit animation reveal the ready sign-in page once.
   useEffect(() => {
     if (signOutStartedAt === null || !isAuthPage || authUser !== null) return;
     const remaining = Math.max(0, 600 - (Date.now() - signOutStartedAt));
@@ -49,14 +47,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return () => window.clearTimeout(timeout);
   }, [signOutStartedAt, isAuthPage, authUser]);
 
-  // Routes exempt from maintenance screen (admin pages & system access login)
   const isAdminRoute = pathname.startsWith('/admin') || pathname === '/system-access';
 
-  // Kill Switch Logic: Only block PUBLIC non-admin users on non-admin routes
-  // Admins (Super Admin & Manager) and Admin routes are exempted from maintenance mode
   const showMaintenance = isMaintenanceMode && !isAdmin && !loading && !isAdminRoute;
 
-  // Routes where the global footer SHOULD appear (Whitelist)
   const showFooterRoutes = ['/about', '/faq', '/contact', '/team'];
   const isLandingPage = pathname === '/';
   const shouldShowFooter = isLandingPage || showFooterRoutes.some(route => pathname === route);
@@ -81,8 +75,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (showMaintenance) return <MaintenanceScreen />;
 
-  // Profile has different staff/customer chrome; avoid mounting the customer
-  // header while restoring a staff session.
   if (pathname === '/profile' && loading) {
     return (
       <div className="min-h-screen w-full bg-slate-50 dark:bg-[#0a0d14] p-6">

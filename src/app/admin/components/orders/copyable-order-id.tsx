@@ -24,7 +24,6 @@ export function CopyableOrderId({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // fallback
     }
   };
 

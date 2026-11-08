@@ -43,7 +43,6 @@ export function useOrderAssembly(
       if (res.success && res.verifications && res.verifications[rigId]) {
         setVerification(res.verifications[rigId]);
       } else {
-        // Initialize default blank verification in local state if none yet in Firestore
         setVerification(initializeRigVerification(orderId, rigId, rigName, items));
       }
     } catch (err) {

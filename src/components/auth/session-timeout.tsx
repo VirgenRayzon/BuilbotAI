@@ -17,10 +17,8 @@ import { useIdleTimeout } from '@/hooks/use-idle-timeout';
 import { useAdminSessionGuard } from '@/hooks/use-admin-session-guard';
 
 export function SessionTimeout() {
-  // Enforces administrative tab/window close logout
   useAdminSessionGuard();
 
-  // Core inactivity and heartbeat synchronization
   const {
     showWarning,
     secondsRemaining,

@@ -24,8 +24,6 @@ export function OptimizedImage({
     const [error, setError] = useState(false);
     const previousSrcRef = useRef(src);
 
-    // Reset only when an already-mounted image changes. Resetting after the
-    // initial mount can turn the loader back on after a cached image has loaded.
     useEffect(() => {
         if (previousSrcRef.current === src) return;
 
@@ -34,7 +32,6 @@ export function OptimizedImage({
         setError(false);
     }, [src]);
 
-    // Fail-safe: if image hasn't loaded in 3 seconds, clear the loading state
     useEffect(() => {
         if (isLoading && src) {
             const timer = setTimeout(() => setIsLoading(false), 3000);
@@ -42,7 +39,6 @@ export function OptimizedImage({
         }
     }, [isLoading, src]);
 
-    // If no src is provided, show error state immediately
     if (!src) {
         return (
             <div className={cn("relative overflow-hidden bg-muted/30 flex items-center justify-center", className)}>

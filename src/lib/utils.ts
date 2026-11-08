@@ -27,10 +27,8 @@ export function formatCurrency(value: number) {
 export const USD_TO_PHP_RATE = 60;
 
 export const formatToPHP = (usdAmount: number): string => {
-  // 1. Convert to PHP using the safety rate
   const phpAmount = usdAmount * USD_TO_PHP_RATE;
 
-  // 2. Format as Philippine Peso currency
   return new Intl.NumberFormat('en-PH', {
     style: 'currency',
     currency: 'PHP',
@@ -47,34 +45,24 @@ export const formatToPHP = (usdAmount: number): string => {
 export function getOptimizedStorageUrl(url: string | undefined, corrupt: boolean = false): string {
   if (!url) return "";
   
-  // Chaos Mode: Purposefully corrupt the URL by messing with the token
   if (corrupt) {
     return url.replace("alt=media", "alt=broken_by_admin").replace(".webp", "_corrupted.jpg");
   }
 
-  // Only process actual Firebase Storage URLs
   if (!url.includes("firebasestorage.googleapis.com")) return url;
   
-  // If it's already optimized or a data URL, skip
   if (url.includes("_600x600") || url.startsWith("data:")) return url;
 
   try {
-    // 1. Extract the base URL (remove tokens/query params)
     const baseUrl = url.split("?")[0];
     
-    // 2. Find the extension and insert the suffix. 
-    // Since the extension converts everything to WebP, we force that extension here.
     const lastDotIndex = baseUrl.lastIndexOf(".");
     if (lastDotIndex === -1) return url;
 
     const prefix = baseUrl.substring(0, lastDotIndex);
     
-    // We append the suffix and force .webp
     const optimizedUrl = `${prefix}_600x600.webp`;
     
-    // 3. Return the URL with alt=media for public access
-    // This works because the extension makes the resized images public
-    // and our storage rules allow public read.
     return `${optimizedUrl}?alt=media`;
   } catch (error) {
     console.warn("[Utils] Failed to optimize storage URL:", error);

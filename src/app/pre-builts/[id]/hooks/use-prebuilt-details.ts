@@ -115,7 +115,6 @@ export function usePrebuiltDetails(systemId: string) {
     const backLink = backNavigation.link;
     const backText = backNavigation.text;
 
-    // 1. Fetch System
     useEffect(() => {
         if (!firestore || !systemId) return;
 
@@ -153,7 +152,6 @@ export function usePrebuiltDetails(systemId: string) {
         fetchSystem();
     }, [firestore, systemId, isManagerOrAdmin, router, toast]);
 
-    // 2. Fetch Components
     useEffect(() => {
         if (!system || !firestore || resolvedSystemId === system.id) return;
 
@@ -203,14 +201,12 @@ export function usePrebuiltDetails(systemId: string) {
                             const cpu = cpuSnap.exists() ? { id: cpuSnap.id, ...cpuSnap.data() } as Part : null;
                             return entry(cpu && !cpu.isArchived ? createIntegratedGpuPart(cpu) : null);
                         }
-                        // 1. Try canonical path: inventory/{category}/items/{partId}
                         const canonicalRef = doc(firestore, inventoryItemPath(collectionName, partId as string));
                         const canonicalSnap = await getDoc(canonicalRef);
                         if (canonicalSnap.exists()) {
                             return entry({ id: canonicalSnap.id, ...canonicalSnap.data() } as Part);
                         }
 
-                        // 2. Try canonical query by name in inventory/{category}/items
                         const canonicalQuery = query(
                             collection(firestore, inventoryItemsPath(collectionName)),
                             where("name", "==", partId)
@@ -221,14 +217,12 @@ export function usePrebuiltDetails(systemId: string) {
                             return entry({ id: docSnap.id, ...docSnap.data() } as Part);
                         }
 
-                        // 3. Fallback to legacy root collection: {collectionName}/{partId}
                         const partRef = doc(firestore, collectionName, partId as string);
                         const snap = await getDoc(partRef);
                         if (snap.exists()) {
                             return entry({ id: snap.id, ...snap.data() } as Part);
                         }
 
-                        // 4. Fallback query by name in legacy collection
                         const q = query(collection(firestore, collectionName), where("name", "==", partId));
                         const querySnap = await getDocs(q);
                         if (!querySnap.empty) {
@@ -264,7 +258,6 @@ export function usePrebuiltDetails(systemId: string) {
         fetchComponents();
     }, [firestore, system, resolvedSystemId, toast]);
 
-    // 3. Reserve Prebuilt Action
     const handleReserve = async () => {
         if (!isComplete || !system || !profile || !authUser || !isInStock || isReserving) return;
 
@@ -319,7 +312,6 @@ export function usePrebuiltDetails(systemId: string) {
         }
     };
 
-    // 4. Customize Prebuilt into PC Builder
     const handleCustomizePrebuilt = () => {
         if (!system) return;
 
@@ -367,7 +359,6 @@ export function usePrebuiltDetails(systemId: string) {
         }
     };
 
-    // 5. Run AI Analysis
     const handleAnalyze = async () => {
         if (!system || !firestore || !systemId) return;
         setLoadingAnalysis(true);

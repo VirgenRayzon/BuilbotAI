@@ -82,7 +82,6 @@ function SystemAccessContent() {
   const [requestLoading, setRequestLoading] = useState(false);
   const isSubmittingRef = useRef(false);
 
-  // Google admin verification modal state
   const [googleModalOpened, setGoogleModalOpened] = useState(false);
   const [googleUserCredential, setGoogleUserCredential] = useState<any>(null);
   const [googleRoleKey, setGoogleRoleKey] = useState('');
@@ -112,9 +111,7 @@ function SystemAccessContent() {
     };
   }
 
-  // Redirect if already logged in with an active administrator session
   useEffect(() => {
-    // Never auto-redirect while submitting or validating credentials
     if (isSubmittingRef.current || loading || googleLoading) return;
 
     if (!authLoading && authUser && profile) {
@@ -124,7 +121,6 @@ function SystemAccessContent() {
           ? sessionStorage.getItem('buildbot_admin_session_active')
           : null;
 
-      // Only redirect to /admin if the staff user has an active, verified admin session marker in this tab
       if (isStaff && activeAdminMarker === authUser.uid) {
         router.push(returnTo);
       } else if (!isStaff) {
@@ -179,7 +175,6 @@ function SystemAccessContent() {
         return;
       }
 
-      // Key verification SUCCEEDED! Register active admin session in sessionStorage
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('buildbot_admin_session_active', user.uid);
       }
@@ -550,9 +545,6 @@ function SystemAccessContent() {
                         )}
                       </Group>
                       <PasswordInput
-                        // This is a separate authorization factor, not the account password.
-                        // Naming it as a one-time code prevents password managers from replacing
-                        // the user's saved account password with this role key.
                         autoComplete="one-time-code"
                         placeholder={
                           activeTab === 'manager'

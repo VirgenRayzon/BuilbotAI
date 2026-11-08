@@ -39,7 +39,6 @@ export function OrderCardFulfillmentStepper({
     order.type !== 'prebuilt' &&
     !order.prebuiltName;
 
-  // Custom rig assembly is verified either through real-time state or the stored order flag
   const assemblyReady =
     !isCustomRig ||
     Boolean(isAssemblyVerified ?? order.assemblyVerificationPassed);

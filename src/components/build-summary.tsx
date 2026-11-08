@@ -54,7 +54,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
     const { toast } = useToast();
     const router = useRouter();
 
-    // Telemetry history for rolling average
     const [telemetryHistory, setTelemetryHistory] = React.useState<number[]>([]);
 
     React.useEffect(() => {
@@ -99,7 +98,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
         ? `${Math.abs(diff).toFixed(1)}s ${diff > 0 ? 'faster' : 'slower'} than average`
         : 'On par with average';
 
-    // Reset saved state when build changes
     React.useEffect(() => {
         setIsSaved(false);
     }, [build]);

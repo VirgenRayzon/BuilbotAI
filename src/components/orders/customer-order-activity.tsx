@@ -49,7 +49,6 @@ export function CustomerOrderActivity({
   const isCancelled = order.status === 'cancelled';
   const isStorePickup = order.shippingMethod === 'store_pickup';
 
-  // Assembly & testing completion calculations
   const pickingItems = verification?.picking?.items || [];
   const pickedCount = pickingItems.filter((i) => i.picked).length;
   const isPickingComplete =
@@ -83,7 +82,6 @@ export function CustomerOrderActivity({
   const isQcFailed =
     verification?.qc?.completed && verification?.qc?.passed === false;
 
-  // Has stage 3 started or completed?
   const isStage3Active = currentStage === 'assembling_testing' || order.status === 'building';
   const isStage3Completed =
     currentStage === 'out_for_delivery' ||

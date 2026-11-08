@@ -1038,7 +1038,6 @@ async function resolvePaymentOutcome(
               !orderData.paymongoCheckoutSessionId.startsWith("cs_sim_")
           ));
 
-      // Gateway protection: never let an unverified simulated outcome confirm a PayMongo order.
       if (paymentMethod === "paymongo_simulated" && !verifiedPaymongoSession) {
         if (input.outcome === "success" || usesLivePaymongoSession) {
           throw new Error(
@@ -1948,8 +1947,6 @@ export async function updateReservationStatus(
       }
 
             const isDispatched = currentStage === "out_for_delivery" || currentStage === "delivered";
-      // If unshipped (order_placed or assembling_testing): auto-restore stock once-only
-      // If already dispatched (out_for_delivery or delivered): physical return confirmation required before restoring stock!
       const shouldAutoRestoreStock = newStatus === "cancelled" && !isDispatched;
 
       const preparedStock = shouldAutoRestoreStock
@@ -2211,7 +2208,6 @@ export async function sweepExpiredPendingOrders(
     };
   }
 }
-
 
 const confirmStockReturnSchema = z.object({
   orderId: z.string().min(1).max(128).regex(/^[a-zA-Z0-9_-]+$/),

@@ -100,7 +100,6 @@ export async function POST(req: Request) {
         }
         timing.mark('settings');
 
-        // 1. Tier 1 Cache Check
         const critiqueCacheKey = generateCritiqueCacheKey(input, {
             routing: settingsData?.featureModelRouting?.buildAdvisor || settingsData?.aiModelProvider,
             defaultModel: settingsData?.defaultGeminiModel,
@@ -136,7 +135,6 @@ export async function POST(req: Request) {
         }
         timing.mark('cache');
 
-        // 2. Perform deterministic local analysis
         const bottleneck = calculateBottleneck(build as any);
         const compatibilityIssues = checkFullBuildCompatibility(build as any);
 

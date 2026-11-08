@@ -19,15 +19,12 @@ import {
   type AiBuildAdvisorRecommendationsOutput,
 } from '@/ai/schemas/build-advisor-schemas';
 
-
-// Wrapper function to call the Genkit flow
 export async function aiBuildAdvisorRecommendations(
   input: AiBuildAdvisorRecommendationsInput
 ): Promise<AiBuildAdvisorRecommendationsOutput> {
   return aiBuildAdvisorRecommendationsFlow(input);
 }
 
-// Prompt Definition
 const aiBuildAdvisorRecommendationsPrompt = ai.definePrompt({
   name: 'aiBuildAdvisorRecommendationsPrompt',
   input: {
@@ -104,8 +101,6 @@ Additional Notes: {{{additionalNotes}}}
 Please format your response as a JSON object strictly following the output schema provided. The estimatedPrice for each component must be a realistic PHP price number (not a string).`,
 });
 
-
-// Genkit Flow Definition
 import { retrieveLocalKnowledge } from '@/lib/knowledge-retriever';
 import { getAdminFirestore } from '@/firebase/server-init';
 import { getInventoryFromFirestore } from '@/lib/inventory-fetcher';
@@ -132,14 +127,12 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
     outputSchema: AiBuildAdvisorRecommendationsOutputSchema,
   },
   async (input) => {
-    // Resolve dynamic system prompt from Firestore (or baseline default)
     const { getActiveSystemPrompt } = await import('@/lib/system-prompts');
     const customSystemPrompt = await getActiveSystemPrompt('buildAdvisor');
 
     const cacheKey = generateCacheKey(input, customSystemPrompt);
     const db = getAdminFirestore();
 
-    // 0. Check Maintenance Mode (Kill Switch)
     try {
       const settingsSnap = await db.collection('siteSettings').doc('main').get();
       if (settingsSnap.exists && settingsSnap.data()?.isMaintenanceMode) {
@@ -150,14 +143,12 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
       console.warn("Failed to check maintenance mode:", e);
     }
 
-    // 1. Try to fetch from cache
     try {
       const cacheRef = db.collection(CACHE_COLLECTION).doc(cacheKey);
       const cacheSnap = await cacheRef.get();
       
       if (cacheSnap.exists) {
         const cacheData = cacheSnap.data();
-        // Cache expiry check (e.g., 7 days)
         const ageInDays = (Date.now() - cacheData?.timestamp) / (1000 * 60 * 60 * 24);
         if (ageInDays < 7) {
           console.log(`[AI Cache] Hit for key: ${cacheKey}`);
@@ -168,10 +159,8 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
       console.warn(`[AI Cache] Read error:`, e);
     }
 
-    // 2. Cache miss: Run AI
     console.log(`[AI Cache] Miss for key: ${cacheKey}. Generating fresh (AI Search: ${!!input.allowAiSearch})...`);
     
-    // Fetch relevant local knowledge based on the user's intent and performance level
     const query = `${input.intendedUse} ${input.performanceLevel} ${input.additionalNotes || ''}`;
     const dynamicModel = await getGenkitModelName('buildAdvisor');
     
@@ -184,7 +173,6 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
     const knowledgeContext = knowledgeResults.join('\n\n');
     const storeInventory = inventoryResults.flat().join('\n');
 
-    // Step 2: Structured output prompt WITHOUT googleSearchRetrieval
     const { output } = await aiBuildAdvisorRecommendationsPrompt(
       {
         ...input,
@@ -199,7 +187,6 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
       throw new Error('Failed to get recommendations from the AI.');
     }
 
-    // 3. Save to cache
     try {
       await db.collection(CACHE_COLLECTION).doc(cacheKey).set({
         input,

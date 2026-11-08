@@ -80,7 +80,6 @@ export function AdminHeaderSlot({
         );
     }
 
-    // Fallback when rendered standalone outside AdminTabHeaderProvider
     return (
         <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -99,7 +98,6 @@ export interface AdminTabHeaderProps {
     auditLogsCount?: number;
     intelligenceBadge?: string;
     intelligenceBadgeColor?: string;
-    // Sales actions & modals
     onOpenIngestDummy?: () => void;
     onOpenResetSales?: () => void;
     onExportSales?: () => void;

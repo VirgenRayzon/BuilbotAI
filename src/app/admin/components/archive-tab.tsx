@@ -38,7 +38,6 @@ interface ArchiveTabProps {
   onArchivePrebuilt: (id: string, isArchived?: boolean) => Promise<void>;
   onUpdatePrebuilt: (id: string, data: any) => Promise<void>;
 
-  // Bulk state from useBulkActions
   selectedPartIds: { id: string; category: Part['category'] }[];
   setSelectedPartIds: (val: any) => void;
   togglePartSelection: (id: string, category: Part['category']) => void;

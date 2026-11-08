@@ -5,7 +5,6 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { getVertexAccessToken, markTunedModelHealthy, DEFAULT_TUNED_MODEL_ID, type FeatureModelRouting } from '@/lib/ai-model-resolver';
 import { resolveVertexTunedEndpoint } from '@/lib/vertex-tuned-endpoint';
 
-
 import {
   aiBuildAdvisorRecommendations,
 } from "@/ai/flows/ai-build-advisor-recommendations";
@@ -32,7 +31,6 @@ import {
   aiSmartBudgetAction,
   type AiSmartBudgetInput,
 } from "@/ai/flows/ai-smart-budget";
-
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 180000): Promise<T> {
   const timeoutPromise = new Promise<never>((_, reject) =>
@@ -206,7 +204,6 @@ export async function logAdminAction(action: string, details: string, data?: any
   return { success: true };
 }
 
-// In-memory catalog cache variables
 import { getAdminFirestore, getAdminAuth } from "@/firebase/server-init";
 import type { Part } from "@/lib/types";
 import { getBuilderCatalog, clearBuilderCatalogCache } from '@/lib/server/builder-catalog';
@@ -273,13 +270,11 @@ export async function authenticateSystemAccessAction(
     const adminAuth = getAdminAuth();
     const db = getAdminFirestore();
 
-    // 1. Verify idToken to get the user ID securely
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const userId = decodedToken.uid;
 
     console.log(`[authenticateSystemAccessAction] Authenticating system access for user ${userId} for role ${requestedRole}...`);
 
-    // 2. Fetch User Profile from Firestore
     const userDocRef = db.collection('users').doc(userId);
     const userDoc = await userDocRef.get();
 
@@ -290,19 +285,16 @@ export async function authenticateSystemAccessAction(
       if (!userData) return { error: 'No user data found.' };
       effectiveProfile = userData;
 
-      // 3. Perform Role & Key Validation
       if (requestedRole === 'manager') {
         const hasManagerAccess = userData.isManager || userData.isAdmin;
         if (!hasManagerAccess) {
           return { error: 'This account does not have manager privileges.' };
         }
 
-        // Validate Key
         let isKeyValid = false;
         if (userData.activeManagerKey && userData.activeManagerKey === roleKey) {
           isKeyValid = true;
         } else {
-          // Check database authKeys or default key fallback
           const keyDocSnap = await db.collection('authKeys').doc(roleKey).get();
           const isLegacyKey = (keyDocSnap.exists && keyDocSnap.data()?.role === 'manager') || roleKey === '00216764';
           isKeyValid = isLegacyKey;
@@ -312,7 +304,6 @@ export async function authenticateSystemAccessAction(
           return { error: 'Incorrect manager key. Please verify your manager key and try again.' };
         }
 
-        // Apply promotions & key adoption if needed
         const updates: any = { isManager: true };
         if (userData.isAdmin && !userData.isManager) {
           updates.isManager = true;
@@ -328,7 +319,6 @@ export async function authenticateSystemAccessAction(
           return { error: 'This account does not have super admin privileges.' };
         }
 
-        // Validate Key
         const keyDocSnap = await db.collection('authKeys').doc(roleKey).get();
         const isDbKey = keyDocSnap.exists && keyDocSnap.data()?.role === 'superadmin';
         const isHardcodedKey = roleKey === 'SUPER_ADMIN_123'; // Allowed server-side only fallback
@@ -337,16 +327,12 @@ export async function authenticateSystemAccessAction(
           return { error: 'Incorrect super admin key. Please verify your master key and try again.' };
         }
 
-        // Super admins also get manager privileges
         await userDocRef.update({ isSuperAdmin: true, isManager: true });
         effectiveProfile.isSuperAdmin = true;
         effectiveProfile.isManager = true;
       }
     } else {
-      // Profile does not exist yet (but auth user exists). Create profile securely on server.
-      // Note: Only create user profiles if the key is valid.
       
-      // Determine if key is valid before creating profile
       let isKeyValid = false;
       if (requestedRole === 'manager') {
         const keyDocSnap = await db.collection('authKeys').doc(roleKey).get();
@@ -371,7 +357,6 @@ export async function authenticateSystemAccessAction(
       effectiveProfile = newProfile;
     }
 
-    // 4. Set custom claims on Firebase Auth (gracefully catch local environment ADC limitations)
     try {
       await adminAuth.setCustomUserClaims(userId, {
         isManager: true,
@@ -396,13 +381,11 @@ export async function registerManagerAction(
     const adminAuth = getAdminAuth();
     const db = getAdminFirestore();
 
-    // 1. Verify idToken
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const userId = decodedToken.uid;
 
     console.log(`[registerManagerAction] Registering manager account for user ${userId}...`);
 
-    // 2. Validate Default Manager Access Key
     const keyDocSnap = await db.collection('authKeys').doc(managerKey).get();
     const isDbKey = keyDocSnap.exists && keyDocSnap.data()?.role === 'manager';
     const isHardcodedFallback = managerKey === '00216764';
@@ -411,7 +394,6 @@ export async function registerManagerAction(
       return { error: 'Invalid manager access key. Please verify the key provided by your administrator.' };
     }
 
-    // 3. Create or update user profile as Manager in Firestore
     const userDocRef = db.collection('users').doc(userId);
     const userDoc = await userDocRef.get();
 
@@ -432,7 +414,6 @@ export async function registerManagerAction(
       });
     }
 
-    // 4. Set custom claims on Firebase Auth
     try {
       await adminAuth.setCustomUserClaims(userId, {
         isManager: true,
@@ -516,8 +497,6 @@ export async function listManagerAccountsAction(idToken: string) {
   }
 }
 
-
-
 export async function migrateAllUsersClaimsAction() {
   try {
     console.log("[migrateAllUsersClaimsAction] Starting bulk custom claims migration for all users...");
@@ -547,9 +526,6 @@ export async function migrateAllUsersClaimsAction() {
     return { error: error.message };
   }
 }
-
-
-
 
 export async function testAiModelConnectionAction(
   provider: 'default' | 'finetuned',
@@ -586,12 +562,10 @@ export async function testAiModelConnectionAction(
       };
     }
 
-    // Provider is 'finetuned'
     const targetModel = (customModelId && customModelId.trim())
       ? customModelId.trim().replace('7817221357778', '781722135778')
       : DEFAULT_TUNED_MODEL_ID;
 
-    // Always refresh token on test click to catch newly granted IAM roles immediately
     const token = await getVertexAccessToken(true);
     if (!token) {
       return {
@@ -825,4 +799,3 @@ export async function resetSystemPromptsAction(
     return { success: false, error: err.message };
   }
 }
-

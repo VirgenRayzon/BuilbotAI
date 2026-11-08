@@ -60,7 +60,6 @@ export function resolveOrderItemImageUrl(
   allItems?: OrderItemLike[],
   catalogParts?: Part[] | null
 ): string {
-  // 1. If the item itself already has a valid, authentic image, use it directly
   if (!isPlaceholderOrMissingImage(item.imageUrl)) {
     return item.imageUrl!;
   }
@@ -68,9 +67,7 @@ export function resolveOrderItemImageUrl(
   const itemNameNorm = normalizeKey(item.name);
   const itemCategory = (item.category || "").toLowerCase();
 
-  // 2. Lookup against inventory catalog parts if provided
   if (catalogParts && catalogParts.length > 0) {
-    // 2a. Direct ID / productId match
     let matched = catalogParts.find(
       (p) =>
         (item.id && p.id === item.id) ||
@@ -78,12 +75,10 @@ export function resolveOrderItemImageUrl(
         (item.productId && p.productId === item.productId)
     );
 
-    // 2b. Exact normalized name match
     if (!matched && itemNameNorm) {
       matched = catalogParts.find((p) => normalizeKey(p.name) === itemNameNorm);
     }
 
-    // 2c. Category-scoped name containment (e.g., "Intel Laminar RM1 CPU Cooler" vs "Intel Laminar RM1")
     if (!matched && itemNameNorm) {
       const sameCategoryParts = catalogParts.filter(
         (p) => !itemCategory || (p.category || "").toLowerCase() === itemCategory
@@ -94,7 +89,6 @@ export function resolveOrderItemImageUrl(
       });
     }
 
-    // 2d. Cross-category name containment
     if (!matched && itemNameNorm) {
       matched = catalogParts.find((p) => {
         const pNorm = normalizeKey(p.name);
@@ -111,7 +105,6 @@ export function resolveOrderItemImageUrl(
     }
   }
 
-  // 3. Integrated GPU: shares the physical die and package of the order's CPU
   const isIntegratedGpu =
     item.id === "included-integrated-gpu" ||
     (itemCategory === "gpu" && (
@@ -134,6 +127,5 @@ export function resolveOrderItemImageUrl(
     }
   }
 
-  // 4. Default fallback category placeholder
   return getEcommerceFallbackImage(item.category);
 }

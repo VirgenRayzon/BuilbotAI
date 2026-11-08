@@ -82,7 +82,6 @@ Return a brief under 500 words covering the most relevant current CPU/GPU choice
 
     let research = await executeResearchPass(primaryPrompt);
 
-    // If model answered from parametric memory without searching, retry once with an explicit search instruction
     if ((!research.queryCount || !research.sources.length) && research.brief) {
       console.warn('[Build Advisor Web Search] Model skipped search tool on primary pass. Retrying with explicit query prompt...');
       const fallbackPrompt = `Search Google for current Philippine retailer prices (e.g., Dynaquest, Bermor Techzone, PC Express, Gilmore) for PC hardware:

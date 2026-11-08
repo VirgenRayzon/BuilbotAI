@@ -33,7 +33,6 @@ export function BuilderFloatingAnalytics({
 }: BuilderFloatingAnalyticsProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Close when other floating actions open
   React.useEffect(() => {
     const handleOpen = (e: any) => {
       if (e.detail?.type !== "analytics") {

@@ -82,7 +82,6 @@ export function MultiImageUpload({
         const updatedImages = [...images, ...compressedList];
         onImagesChange(updatedImages);
 
-        // If no cover image yet, set the first newly added image as cover
         if (!coverImage && updatedImages.length > 0) {
           onCoverImageChange(updatedImages[0]);
         }
@@ -137,7 +136,6 @@ export function MultiImageUpload({
     const updatedImages = images.filter((_, idx) => idx !== indexToRemove);
     onImagesChange(updatedImages);
 
-    // If the removed image was the cover, reassign to first available
     if (coverImage === removedImage) {
       onCoverImageChange(updatedImages[0] || "");
     }
@@ -166,7 +164,6 @@ export function MultiImageUpload({
     setLinkError("");
   };
 
-  // Determine effective cover
   const effectiveCover = coverImage || images[0] || "";
 
   return (

@@ -72,7 +72,6 @@ const aiPrebuiltAdvisorFlow = ai.defineFlow(
     outputSchema: AiPrebuiltAdvisorOutputSchema,
   },
   async (input) => {
-    // If no components are provided, we can't do much.
     if (Object.values(input.components).every(c => !c)) {
       throw new Error('At least one component must be selected to get an AI suggestion.');
     }

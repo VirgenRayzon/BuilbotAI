@@ -65,7 +65,6 @@ export function AddressBookSection() {
   const [modalOpened, setModalOpened] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Form State
   const [label, setLabel] = useState("Home");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("+63 ");

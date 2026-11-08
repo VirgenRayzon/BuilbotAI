@@ -147,7 +147,6 @@ export function SuperAdminSettings() {
         const newKey = Math.floor(10000000 + Math.random() * 90000000).toString();
         setActionLoading(request.id);
         try {
-            // Find manager by email
             const managerQuery = query(collection(firestore, 'users'), where('email', '==', request.email), limit(1));
             const managerSnap = await getDocs(managerQuery);
 

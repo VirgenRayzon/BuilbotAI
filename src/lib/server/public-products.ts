@@ -170,7 +170,6 @@ export function invalidatePublicPartsCatalog() {
   try {
     revalidateTag(PUBLIC_PARTS_CACHE_TAG);
   } catch (error) {
-    // A completed inventory write must still be reported as successful.
     console.error('[public-parts-catalog] Cache invalidation failed:', error);
   }
 }

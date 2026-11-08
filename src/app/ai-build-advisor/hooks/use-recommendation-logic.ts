@@ -58,7 +58,6 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, allParts: Part[]
     const firstCardReportedRef = useRef(false);
     const lastRequestRef = useRef<AiBuildAdvisorRecommendationsInput | null>(null);
 
-    // Restore only recent recommendations; stock and prices can change.
     useEffect(() => {
         try {
             const cached = localStorage.getItem('pc_ai_build_recommendation');
@@ -312,7 +311,6 @@ function getSmartDescription(type: string, modelName: string): string {
         }
     });
 
-    // Elapsed timer logic
     useEffect(() => {
         let interval: NodeJS.Timeout;
         if (isLoading) {
@@ -378,7 +376,6 @@ function getSmartDescription(type: string, modelName: string): string {
         submit(data);
     }, [isAiKillSwitch, submit, toast]);
 
-    // Live reactive build
     const build = useMemo<Build | null>(() => {
         if (isLoading && object) {
             const cpu = processComponent(object.cpu, 'cpu');
@@ -435,7 +432,6 @@ function getSmartDescription(type: string, modelName: string): string {
     }, []);
 
     const setTotalPrice = useCallback((_price: number) => {
-        // Managed reactively via useMemo
     }, []);
 
     const effectiveError = errorMessage || (streamError ? streamError.message : null);

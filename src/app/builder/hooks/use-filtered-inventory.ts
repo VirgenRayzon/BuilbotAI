@@ -39,22 +39,17 @@ export function useFilteredInventory(allParts: Part[], build: any, getCountInBui
                 return prev.map(cat => ({ ...cat, selected: anyUnselected }));
             }
 
-            // Check if this category is already the ONLY one selected
             const selectedCount = prev.filter(c => c.selected).length;
             const isAlreadyOnlySelected = selectedCount === 1 && prev.find(c => c.name === categoryName)?.selected;
 
-            // If it's already the only one selected, stay on it (remove toggle-off behavior)
-            // unless explicitly unselected (e.g., from a checkbox)
             if (isAlreadyOnlySelected && selected !== false) {
                 return prev;
             }
 
-            // If explicitly unselecting the only active category, reset to all
             if (isAlreadyOnlySelected && selected === false) {
                 return prev.map(cat => ({ ...cat, selected: true }));
             }
 
-            // Otherwise, select ONLY this category
             return prev.map(cat => ({
                 ...cat,
                 selected: cat.name === categoryName
@@ -85,12 +80,10 @@ export function useFilteredInventory(allParts: Part[], build: any, getCountInBui
             return true;
         })
         .sort((a, b) => {
-            // 1. Stock priority: in-stock items come first; out-of-stock items appear at the end of the catalog
             const aInStock = (a.stock || 0) > 0;
             const bInStock = (b.stock || 0) > 0;
             if (aInStock !== bInStock) return aInStock ? -1 : 1;
 
-            // 2. Compatibility priority: compatible items come before incompatible items
             const compA = checkCompatibility(a, build).compatible;
             const compB = checkCompatibility(b, build).compatible;
             if (compA !== compB) return compA ? -1 : 1;

@@ -86,7 +86,6 @@ ${buildContext}
 
     try {
         const dynamicModel = await getGenkitModelName('prebuiltAdvisor');
-        // Step 1: Plain-text research call WITH googleSearchRetrieval (no structured output)
         console.log("[AI Prebuilt Performance] Step 1: Running web search pre-research for component capabilities...");
         const researchResponse = await safeGenkitGenerate(ai, {
             model: dynamicModel,
@@ -110,7 +109,6 @@ Provide detailed, enthusiastic findings focusing ONLY on the strengths and posit
         const webResearchContext = researchResponse.text;
         console.log("[AI Prebuilt Performance] Step 1 complete. Research context obtained.");
 
-        // Step 2: Structured output prompt WITHOUT googleSearchRetrieval
         console.log("[AI Prebuilt Performance] Step 2: Generating structured strengths...");
         const consolidatedPrompt = `${prompt}
 
@@ -149,4 +147,3 @@ Output strictly the JSON object.`;
         throw error;
     }
 }
-

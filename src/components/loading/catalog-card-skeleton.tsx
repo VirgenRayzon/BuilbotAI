@@ -3,8 +3,6 @@
 import { Badge, Box, Button, Card, Group, Stack, Text } from '@mantine/core';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Shared with PartCard and the landing catalog cards. Typography deliberately
-// uses the same Mantine sizes: CSS line-height, not guessed pixel bars, sizes rows.
 export const catalogCardLayout = {
   header: 'px-3 pt-3 pb-2',
   image: 'aspect-[4/3] relative w-full overflow-hidden bg-pure-white border-y border-slate-200/70 dark:border-white/10',

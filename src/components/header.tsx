@@ -46,8 +46,6 @@ import { HeaderMegaMenu } from "./header-mega-menu";
 import { useSignOutTransition } from "@/context/sign-out-transition";
 import { HeaderCartButton } from "./ecommerce/header-cart-button";
 
-// These widgets only render after role verification; public navigation does not
-// need their notification, date formatting, and order-detail code.
 const UserNotifications = dynamic(() => import('./user-notifications').then(module => module.UserNotifications));
 const NotificationCenter = dynamic(() => import('./notification-center').then(module => module.NotificationCenter));
 
@@ -132,8 +130,6 @@ export function Header() {
 
   const isStaff = Boolean(profile?.isSuperAdmin || profile?.isManager);
 
-  // Super Admin & Manager only see administrative portals (Dashboard, Prebuilt Builder).
-  // Standard customers see Builder, Build Advisor, and Pre-builts.
   const tabs: NavTab[] = isStaff ? adminTabs : mainTabs;
 
   const activeTabHref = (() => {
@@ -145,7 +141,6 @@ export function Header() {
     return prefixes[0]?.href;
   })();
 
-  // Render HeaderMegaMenu on onboarding/landing page, auth pages, or for unauthenticated visitors on public pages
   const isAlwaysMegaMenuPage = pathname === "/" ||
     ["/signin", "/signup", "/system-access", "/system-access/signup", "/forgot-password"].includes(pathname);
   const isPublicCatalogOrInfoPage =
@@ -156,8 +151,6 @@ export function Header() {
     pathname.startsWith("/pre-builts/") ||
     ["/about", "/faq", "/team", "/contact"].includes(pathname);
 
-  // Preserve the header's height while identity and the server-confirmed role
-  // resolve. An undefined auth user is not a confirmed guest.
   if (!isAlwaysMegaMenuPage && (!mounted || (status !== 'ready' && status !== 'unauthenticated'))) {
     return (
       <header className={classes.header} aria-label="Account loading">

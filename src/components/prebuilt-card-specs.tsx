@@ -91,8 +91,6 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
                                 return (querySnap.docs[0].data() as Part).name;
                             }
 
-                            // Keep older prebuilt records readable while legacy inventory
-                            // collections are phased out.
                             const legacyRef = doc(firestore, collectionName, val);
                             const legacySnap = await getDoc(legacyRef);
                             if (legacySnap.exists()) {

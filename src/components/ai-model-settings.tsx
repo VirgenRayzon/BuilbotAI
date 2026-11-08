@@ -79,7 +79,6 @@ function InfoPopover({ message, label = 'More information' }: { message: string;
     );
 }
 
-// Standard available Gemini API models with specs & badges
 export const AVAILABLE_GEMINI_MODELS = [
     {
         id: 'gemini-3.8-flash',
@@ -185,7 +184,6 @@ export function AiModelSettings() {
         featureModelRouting: activeFeatureRouting,
     } = useSiteSettings();
 
-    // Active engine tab: choose whether to view/configure the Gemini catalog or Fine-Tuned projects
     const [activeEngineTab, setActiveEngineTab] = useState<'gemini' | 'finetuned'>(() => {
         return activeAiProvider === 'finetuned' ? 'finetuned' : 'gemini';
     });
@@ -194,7 +192,6 @@ export function AiModelSettings() {
         return (model === 'gemini-2.5-pro' || model === 'gemini-2.5-flash') ? 'gemini-3.8-flash' : model;
     });
 
-    // Per-feature model routing state
     const [featureRouting, setFeatureRouting] = useState<FeatureModelRouting>(() => {
         if (activeFeatureRouting) return activeFeatureRouting;
         return {
@@ -204,7 +201,6 @@ export function AiModelSettings() {
         };
     });
 
-    // Fine-tuned projects state
     const [projects, setProjects] = useState<FineTunedProject[]>(() => {
         if (activeProjects && activeProjects.length > 0) return activeProjects;
         return [
@@ -224,13 +220,11 @@ export function AiModelSettings() {
         return projects[0]?.id || 'default-prod-endpoint';
     });
 
-    // Form inputs for adding a new fine-tuned project
     const [newProjectName, setNewProjectName] = useState('');
     const [newProjectEndpoint, setNewProjectEndpoint] = useState('');
     const [isAddingProject, setIsAddingProject] = useState(false);
     const [projectToDelete, setProjectToDelete] = useState<FineTunedProject | null>(null);
 
-    // Saving and testing states
     const [savingAiSettings, setSavingAiSettings] = useState(false);
     const [isAiDirty, setIsAiDirty] = useState(false);
     const [testingConnection, setTestingConnection] = useState(false);
@@ -249,7 +243,6 @@ export function AiModelSettings() {
         };
     } | null>(null);
 
-    // Synchronize from context
     useEffect(() => {
         if (activeGeminiModel) {
             setSelectedGeminiModel((activeGeminiModel === 'gemini-2.5-pro' || activeGeminiModel === 'gemini-2.5-flash') ? 'gemini-3.8-flash' : activeGeminiModel);
@@ -274,11 +267,9 @@ export function AiModelSettings() {
         }
     }, [activeFeatureRouting]);
 
-    // Active project lookup
     const currentActiveProject = projects.find((p) => p.id === activeProjectId) || projects[0];
     const currentTunedEndpoint = currentActiveProject?.endpoint || DEFAULT_PROJECT_ENDPOINT;
 
-    // Routing metrics across all features
     const routingValues = Object.values(featureRouting);
     const allVertex = routingValues.length > 0 && routingValues.every((v) => v === 'finetuned');
     const allGemini = routingValues.length > 0 && routingValues.every((v) => v === 'default');
@@ -288,7 +279,6 @@ export function AiModelSettings() {
             ? 'gemini'
             : 'hybrid';
 
-    // Bulk preset actions
     const handleRouteAll = (mode: 'default' | 'finetuned') => {
         setFeatureRouting({
             chatbot: mode,
@@ -302,7 +292,6 @@ export function AiModelSettings() {
         });
     };
 
-    // Handle adding a new named project
     const handleAddProject = () => {
         const trimmedName = newProjectName.trim();
         const trimmedEndpoint = newProjectEndpoint.trim();
@@ -347,7 +336,6 @@ export function AiModelSettings() {
         });
     };
 
-    // Handle confirming project deletion
     const handleConfirmDeleteProject = () => {
         if (!projectToDelete) return;
         const targetId = projectToDelete.id;
@@ -367,7 +355,6 @@ export function AiModelSettings() {
         });
     };
 
-    // Test Model Connection
     const handleTestConnection = async () => {
         setTestingConnection(true);
         setTestResult(null);
@@ -409,7 +396,6 @@ export function AiModelSettings() {
         }
     };
 
-    // Save and Apply Settings
     const handleSaveAiModelSettings = async () => {
         setSavingAiSettings(true);
         try {

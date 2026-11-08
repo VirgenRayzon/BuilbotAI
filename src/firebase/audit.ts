@@ -48,7 +48,6 @@ export async function migrateNotificationsToAuditLogs(firestore: Firestore) {
             scope = 'Order';
         }
 
-        // We try to extract resource name from the message if possible
         let resourceName = notif.targetId;
         if (notif.message.includes(': ')) {
             const parts = notif.message.split(': ');
@@ -78,7 +77,6 @@ export async function migrateNotificationsToAuditLogs(firestore: Firestore) {
         batch.set(auditRef, auditData);
         count++;
 
-        // Commit in chunks of 500 if there are many, but usually there aren't that many in this scope
         if (count % 500 === 0) {
             await batch.commit();
         }

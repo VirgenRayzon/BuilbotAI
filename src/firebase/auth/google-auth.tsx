@@ -58,7 +58,6 @@ export function formatGoogleAuthError(err: any): string | null {
   if (!err) return null;
   const code = err.code || '';
 
-  // Silent cancellations
   if (
     code === 'auth/popup-closed-by-user' ||
     code === 'auth/cancelled-popup-request'
@@ -130,7 +129,6 @@ export async function executeCustomerGoogleAuth(
     if (userDoc.exists()) {
       const userData = userDoc.data();
 
-      // Protect against staff accounts signing in via customer route
       if (userData.isManager || userData.isSuperAdmin || userData.isAdmin) {
         await signOut(auth);
         return {
@@ -139,7 +137,6 @@ export async function executeCustomerGoogleAuth(
         };
       }
 
-      // Update name/photoURL if missing from previous email sign-ups
       const updates: Record<string, any> = {};
       if (!userData.name && user.displayName) {
         updates.name = user.displayName;
@@ -151,7 +148,6 @@ export async function executeCustomerGoogleAuth(
         await setDoc(userDocRef, updates, { merge: true });
       }
     } else {
-      // First-time customer profile creation
       const newProfile = {
         email: user.email || '',
         name: user.displayName || user.email?.split('@')[0] || 'User',
@@ -163,7 +159,6 @@ export async function executeCustomerGoogleAuth(
       await setDoc(userDocRef, newProfile);
     }
 
-    // Sync claims and refresh client token
     const idToken = await user.getIdToken();
     const claimsResult = await syncUserClaimsAction(idToken);
     if ('error' in claimsResult) throw new Error('Unable to verify account permissions. Please try again.');

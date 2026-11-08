@@ -8,7 +8,6 @@ import {
 import { useEffect, useState } from 'react';
 
 export interface UseDocOptions {
-  // Define any options here if needed in the future
 }
 
 export function useDoc<T>(

@@ -29,7 +29,6 @@ export function initializeKnowledgeCache(): void {
         const filePath = path.join(knowledgeDir, file);
         const content = fs.readFileSync(filePath, 'utf-8');
         
-        // Smart chunking: splits by markdown headers, numbered steps, tier lists, or length caps
         const lines = content.split(/\r?\n/);
         let current: string[] = [];
         let currentLen = 0;
@@ -70,7 +69,6 @@ export function initializeKnowledgeCache(): void {
     console.log(`[Knowledge Base] Cached ${knowledgeCache.length} granular sections from ${files.length} files.`);
 }
 
-// Call on startup
 if (typeof window === 'undefined') {
     setTimeout(initializeKnowledgeCache, 0);
 }
@@ -88,18 +86,15 @@ export async function retrieveLocalKnowledge(query: string, maxResults: number =
         return [];
     }
 
-    // 1. Initialize or Refresh Cache
     if (!knowledgeCache || (Date.now() - cacheTimestamp > CACHE_TTL)) {
         initializeKnowledgeCache();
     }
 
     if (!knowledgeCache) return [];
 
-    // 2. Perform search on cache
     const normalizedQueryWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
     if (normalizedQueryWords.length === 0) return [];
 
-    // Weighting: core concepts like 'bottleneck' or 'compatibility' are important
     const coreWords = ['bottleneck', 'compatibility', 'tier', 'hierarchy', 'guide'];
 
     for (const section of knowledgeCache) {
@@ -108,7 +103,6 @@ export async function retrieveLocalKnowledge(query: string, maxResults: number =
 
         for (const word of normalizedQueryWords) {
             if (section.normalized.includes(word)) {
-                // Higher weight for component model matches (numbers/X-suffix)
                 if (/\d+/.test(word) || word.endsWith('x')) {
                     score += 1.5;
                 } else {
@@ -119,9 +113,6 @@ export async function retrieveLocalKnowledge(query: string, maxResults: number =
             }
         }
 
-        // Relevance threshold: 
-        // 1. If it matches a core word (bottleneck/compatibility) AND at least one other word
-        // 2. Or if it meets a % threshold based on query length
         const threshold = Math.max(1.5, normalizedQueryWords.length * 0.15);
 
         if (score >= threshold || (coreMatch && score >= 2)) {
@@ -132,7 +123,6 @@ export async function retrieveLocalKnowledge(query: string, maxResults: number =
         }
     }
 
-    // 3. Sort by score descending, deduplicate, and limit to maxResults
     scoredResults.sort((a, b) => b.score - a.score);
     const seen = new Set<string>();
     const uniqueResults: string[] = [];
@@ -155,4 +145,3 @@ export async function retrieveLocalKnowledge(query: string, maxResults: number =
 
     return uniqueResults;
 }
-

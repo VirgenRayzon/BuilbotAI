@@ -65,7 +65,6 @@ interface StockTabProps {
     onUpdatePartStock: (id: string, category: Part['category'], stock: number) => Promise<void>;
     onAddPartStock?: (id: string, category: Part['category'], amount: number) => Promise<void>;
 
-    // Bulk state from useBulkActions
     isPartSelectionMode: boolean;
     setIsPartSelectionMode: (val: boolean) => void;
     selectedPartIds: PartSelection[];
@@ -74,7 +73,6 @@ interface StockTabProps {
     toggleAllPartsSelection: (parts: Part[]) => void;
     setConfirmAction: (action: BulkConfirmAction) => void;
 
-    // Optional controlled search from AdminTopbar
     searchQuery?: string;
     onSearchQueryChange?: (val: string) => void;
 }
@@ -152,7 +150,6 @@ export function StockTab({
                     (part.brand && part.brand.toLowerCase().includes(searchLower)) ||
                     (part.sku && part.sku.toLowerCase().includes(searchLower));
 
-                // Availability Filter Logic
                 let matchesAvailability = true;
                 if (availability === 'in-stock') {
                     matchesAvailability = (part.stock || 0) > 0;

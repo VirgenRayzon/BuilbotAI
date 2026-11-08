@@ -78,7 +78,6 @@ export function AIBuildCritique({
     const activeDuration = isControlled ? (externalDuration ?? finalResponseTime) : finalResponseTime;
     const quickChecks = useQuickBuildChecks(build, performanceLevel, intendedUse);
 
-    // Load critique telemetry history from localStorage
     useEffect(() => {
         const saved = localStorage.getItem('pc_critique_telemetry_v1');
         if (saved) {
@@ -90,7 +89,6 @@ export function AIBuildCritique({
         }
     }, []);
 
-    // Save critique telemetry to history on completion
     useEffect(() => {
         if (!loading && analysis && activeDuration) {
             const saved = localStorage.getItem('pc_critique_telemetry_v1');
@@ -110,7 +108,6 @@ export function AIBuildCritique({
         }
     }, [loading, analysis, activeDuration]);
 
-    // Timer logic (counts up elapsed seconds)
     useEffect(() => {
         let timerInterval: NodeJS.Timeout;
 
@@ -149,8 +146,6 @@ export function AIBuildCritique({
         : 'On par with average';
 
     const { toast } = useToast();
-
-
 
     const handleAnalyze = async () => {
         if (isAiKillSwitch) {

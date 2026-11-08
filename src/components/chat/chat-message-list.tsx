@@ -45,8 +45,6 @@ export function ChatMessageList({
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const [openTelemetryMsgId, setOpenTelemetryMsgId] = useState<string | null>(null);
 
-    // Scroll only the message viewport. scrollIntoView also scrolls the outer
-    // overflow-hidden chat panel and can hide its header and input.
     useEffect(() => {
         const viewport = scrollAreaRef.current?.querySelector<HTMLElement>('[data-radix-scroll-area-viewport]');
         viewport?.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });

@@ -70,7 +70,6 @@ export function getComponentPlaceholderImage(category?: string, modelOrName?: st
   const cat = (category || "").toLowerCase().trim();
   const name = (modelOrName || "").toLowerCase().trim();
 
-  // Detect integrated vs discrete graphics
   if (
     cat.includes("gpu") || 
     cat.includes("graphic") || 
@@ -144,7 +143,6 @@ export function getComponentPlaceholderImage(category?: string, modelOrName?: st
     return "/placeholders/components/case.jpg";
   }
 
-  // Fallback if category didn't match, check model name
   if (name.includes("rtx") || name.includes("gtx") || name.includes("radeon") || name.includes("geforce")) {
     return "/placeholders/components/gpu.jpg";
   }

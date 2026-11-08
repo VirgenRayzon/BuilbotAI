@@ -113,7 +113,6 @@ export async function clearAllOrders(input: z.infer<typeof clearAllOrdersSchema>
             return { success: true, count: 0 };
         }
 
-        // Chunk writes in batches of 400
         const chunkSize = 400;
         const docs = ordersSnap.docs;
         for (let i = 0; i < docs.length; i += chunkSize) {

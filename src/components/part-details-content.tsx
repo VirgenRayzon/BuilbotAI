@@ -86,10 +86,6 @@ export function PartDetailsContent({ part, children, isAdded, onToggle, isDisabl
         setPreviewOpen(false);
     }, [part.id]);
 
-    // The inline gallery uses the compact resized versions, but the full-screen
-    // viewer deliberately uses each original image. Warm those originals only
-    // after this part's details are opened so switching photos is immediate
-    // without downloading high-resolution media for every catalog card.
     React.useEffect(() => {
         if (!detailsOpen) return;
 
@@ -113,7 +109,6 @@ export function PartDetailsContent({ part, children, isAdded, onToggle, isDisabl
         setCurrentImageIndex((prev) => (prev === allImages.length - 1 ? 0 : prev + 1));
     };
 
-    // Check if TDP/Wattage is already present in specifications to avoid redundant display
     const hasTdpInSpecs = React.useMemo(() => {
         return Object.keys(part.specifications || {}).some(
             (k) => k.toLowerCase().includes("tdp") || k.toLowerCase().includes("wattage")
@@ -684,4 +679,3 @@ export function PartDetailsContent({ part, children, isAdded, onToggle, isDisabl
         </Dialog>
     );
 }
-

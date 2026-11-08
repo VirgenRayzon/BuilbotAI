@@ -14,7 +14,6 @@ export interface BottleneckResult {
     color: string; // For UI styling
 }
 
-// Use performanceTier (1-4) or fallback to mapping the 0-100 score to 1-4 for safety
 export const getTier = (comp: ComponentData): ComponentTier => {
     if (comp.performanceTier) return Math.min(Math.max(comp.performanceTier, 1), 4) as ComponentTier;
     if (comp.performanceScore) {
@@ -54,7 +53,6 @@ export const calculateBottleneck = (
 
     const delta = cpuTier - gpuTier;
 
-    // Case 1: CPU is much weaker than GPU
     if (delta <= -2) {
         return {
             status: 'Severe Mismatch',
@@ -63,7 +61,6 @@ export const calculateBottleneck = (
         };
     }
 
-    // Case 2: CPU is slightly weaker than GPU
     if (delta === -1) {
         if (resolution === '4K') {
             return {
@@ -79,7 +76,6 @@ export const calculateBottleneck = (
         };
     }
 
-    // Case 3: GPU is much weaker than CPU (Inverse Bottleneck)
     if (delta >= 2) {
         return {
             status: 'Slight Mismatch',
@@ -88,7 +84,6 @@ export const calculateBottleneck = (
         };
     }
 
-    // Default: Perfectly Balanced
     return {
         status: 'Balanced',
         message: 'This is a high-efficiency pairing with optimal performance scaling.',
@@ -118,7 +113,6 @@ export const calculateSynergyScore = (
         return Array.isArray(val) ? val.length > 0 : !!val;
     }).length;
 
-    // 1. Completeness (25 points)
     const completenessScore = (selectedCount / mandatoryCategories.length) * 25;
 
     if (selectedCount < 2) {
@@ -130,14 +124,12 @@ export const calculateSynergyScore = (
         };
     }
 
-    // 2. Balance (Bottleneck) (35 points)
     const bottleneck = calculateBottleneck(build, resolution);
     let balanceScore = 0;
     if (bottleneck.status === 'Balanced') balanceScore = 35;
     else if (bottleneck.status === 'Slight Mismatch') balanceScore = 20;
     else if (bottleneck.status === 'Severe Mismatch') balanceScore = 5;
 
-    // 3. Power Headroom (20 points)
     const totalWattage = Object.entries(build).reduce((acc, [key, component]) => {
         const drawingParts = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage'];
         if (!drawingParts.includes(key)) return acc;
@@ -155,7 +147,6 @@ export const calculateSynergyScore = (
         else if (ratio >= 1.0) powerScore = 0;
     }
 
-    // 4. Tier Consistency (20 points)
     const tiers = Object.values(build)
         .flat()
         .filter(p => p !== null)

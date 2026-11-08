@@ -19,23 +19,16 @@ export const getEffectiveRole = (profile: any): UserRole => {
  * Permission checks for specific areas of the application.
  */
 export const AuthPermissions = {
-    // Admin Dashboard access (Managers and Super Admins)
     canAccessAdmin: (role: UserRole) => role === 'manager' || role === 'superadmin',
     
-    // Super Admin only features (Sales, Site Settings)
     isSuperAdmin: (role: UserRole) => role === 'superadmin',
     
-    // Registered user features (Profile, Reservations)
     isRegisteredUser: (role: UserRole) => role !== 'guest',
 
-    // Strictly for end-users (PC Builder, AI Advisor)
-    // Managers/Admins visiting these will be redirected to /admin
     isClientOnly: (role: UserRole) => role === 'user',
 
-    // Guests may assemble a local build; customer-only actions are gated at use.
     canUseBuilder: (role: UserRole) => role === 'guest' || role === 'user',
     
-    // Public features that admins shouldn't be kicked out of (Pre-builts)
     isInclusive: (role: UserRole) => role !== 'guest'
 };
 

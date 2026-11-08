@@ -32,7 +32,6 @@ export async function POST(request: NextRequest) {
     }
 
     const submission = parsed.data;
-    // Quietly accept honeypot submissions without writing or notifying staff.
     if (submission.companyWebsite.trim()) return Response.json({ success: true });
 
     const identity = await getOptionalCustomerIdentity(getBearerToken(request));

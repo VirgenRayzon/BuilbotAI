@@ -16,15 +16,12 @@ export function useAdminCore() {
     const { setIsPageLoading } = useLoading();
     const { toast } = useToast();
     
-    // Default to 'stock' or the tab in URL (resolving obsolete content tab to stock)
     const urlTab = searchParams.get('tab');
     const initialTab = urlTab === 'content' ? 'stock' : urlTab === 'reservations' ? 'orders' : (urlTab || 'stock');
     const [currentTab, setCurrentTab] = useState(initialTab);
 
-    // Sync tab when searchParams change
     useEffect(() => {
         if (urlTab) {
-            // Map legacy aliases
             const resolvedTab = urlTab === 'ai-models' || urlTab === 'prompts' ? 'ai' : urlTab === 'content' ? 'stock' : urlTab === 'reservations' ? 'orders' : urlTab;
             setCurrentTab(resolvedTab);
             if (urlTab === 'content' || urlTab === 'reservations') {
@@ -35,7 +32,6 @@ export function useAdminCore() {
         }
     }, [urlTab, router, searchParams]);
 
-    // Sync global loading state
     useEffect(() => {
         setIsPageLoading(userLoading);
         return () => setIsPageLoading(false);
@@ -47,7 +43,6 @@ export function useAdminCore() {
         }
         const superAdminOnlyTabs = ['sales', 'management', 'ai'];
 
-        // Restrict Super Admin only tabs
         if (superAdminOnlyTabs.includes(val) && !profile?.isSuperAdmin) {
             toast({
                 title: "Access Restricted",
@@ -58,7 +53,6 @@ export function useAdminCore() {
         }
         
         setCurrentTab(val);
-        // Sync with URL
         const params = new URLSearchParams(searchParams.toString());
         params.set('tab', val);
         router.push(`?${params.toString()}`, { scroll: false });

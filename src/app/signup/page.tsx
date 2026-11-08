@@ -79,7 +79,6 @@ export default function SignUpPage() {
   const { toast } = useToast();
   const { authUser, profile, loading: authLoading } = useUserProfile();
 
-  // Redirect if already logged in (never redirect while actively registering)
   useEffect(() => {
     if (loading || googleLoading || redirectingRef.current) return;
     if (!authLoading && authUser && profile) {
@@ -195,7 +194,6 @@ export default function SignUpPage() {
     }
   };
 
-  // If already authenticated or in process of redirecting, do not flash the registration form
   if ((authUser && !loading && !googleLoading) || redirectingRef.current) {
     return null;
   }

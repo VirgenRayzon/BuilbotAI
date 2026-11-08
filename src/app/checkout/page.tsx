@@ -81,7 +81,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { OrderExpirationNotice } from "@/components/order-expiration-timer";
 
-
 const NETCODEX_STORE_LOCATION = {
   storeName: "Netcodex Computer Center",
   streetAddress: "35G Liberty Avenue, corner 9th Ave",
@@ -189,11 +188,9 @@ export default function CheckoutPage() {
   const operationIdRef = useRef<string | null>(null);
   const handledPaymongoReturnRef = useRef<string | null>(null);
 
-  // Voucher state
   const [voucherInput, setVoucherInput] = useState("");
   const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
 
-  // Customer Delivery Address Form
   const [address, setAddress] = useState<ShippingAddress>({
     fullName: profile?.name || authUser?.displayName || "Juan Dela Cruz",
     phone: "+63 917 882 4910",
@@ -206,7 +203,6 @@ export default function CheckoutPage() {
     notes: "Please call mobile number upon arrival. Keep PC box upright.",
   });
 
-  // Saved Address Book selection state
   const [selectedAddressId, setSelectedAddressId] = useState<string | "custom">("auto");
   const [saveAddressToBook, setSaveAddressToBook] = useState(false);
   const [newAddressLabel, setNewAddressLabel] = useState<string>("Home");
@@ -250,7 +246,6 @@ export default function CheckoutPage() {
     }
   }, []);
 
-  // Automatically initialize address from default or first address in the book
   useEffect(() => {
     if (savedAddresses.length > 0 && selectedAddressId === "auto") {
       const target = defaultAddress || savedAddresses[0];
@@ -303,7 +298,6 @@ export default function CheckoutPage() {
     });
   };
 
-  // Automatically verify PayMongo return redirects (?paymongoOrderId=...&paymongoResult=success|cancelled)
   useEffect(() => {
     if (typeof window === "undefined" || !authUser) return;
     const params = new URLSearchParams(window.location.search);
@@ -337,7 +331,6 @@ export default function CheckoutPage() {
           });
         }
       } catch {
-        // Ignore verification error on initial redirect mount
       }
     })();
   }, [authUser, toast]);
@@ -556,7 +549,6 @@ export default function CheckoutPage() {
         return;
       }
 
-      // If requested, save new delivery address to Address Book
       if (saveAddressToBook && shippingMethod !== "store_pickup") {
         addAddress({
           label: newAddressLabel || "Home",
@@ -620,7 +612,6 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Cash on Delivery (COD)
       placeMockOrder({
         id: result.orderId,
         firestoreOrderId: result.orderId,

@@ -139,13 +139,11 @@ function deterministicFallbackSolver(
             .sort((a, b) => a.price - b.price);
     }
 
-    // Require essential core parts
     const requiredCats = ['CPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler'];
     if (requiredCats.some(cat => !byCategory[cat] || byCategory[cat].length === 0)) {
         return null;
     }
 
-    // Greedy search: try best CPUs and GPUs first
     const cpus = [...byCategory.CPU].sort((a, b) => (b.performanceScore || 0) - (a.performanceScore || 0));
     const gpus = [...(byCategory.GPU || [])].sort((a, b) => (b.performanceScore || 0) - (a.performanceScore || 0));
 
@@ -153,7 +151,6 @@ function deterministicFallbackSolver(
         const cpuComp = buildPartToComponent(cpu);
         const hasIgpu = !!integratedGraphicsName(cpu);
 
-        // Find compatible motherboard
         const mobos = (byCategory.Motherboard || []).filter(mobo => {
             const moboComp = buildPartToComponent(mobo);
             return !checkFullBuildCompatibility({ CPU: cpuComp, Motherboard: moboComp }).some(i => i.severity === 'critical');
@@ -162,7 +159,6 @@ function deterministicFallbackSolver(
         const mobo = mobos[0];
         const moboComp = buildPartToComponent(mobo);
 
-        // Find compatible RAM
         const rams = (byCategory.RAM || []).filter(ram => {
             const ramComp = buildPartToComponent(ram);
             return !checkFullBuildCompatibility({ CPU: cpuComp, Motherboard: moboComp, RAM: [ramComp] }).some(i => i.severity === 'critical');
@@ -175,7 +171,6 @@ function deterministicFallbackSolver(
         const pcCase = byCategory.Case[0];
         const cooler = byCategory.Cooler[0];
 
-        // Evaluate with GPU or iGPU
         const gpuOptions: { id: string; price: number; isIgpu: boolean }[] = [];
         for (const gpu of gpus) {
             gpuOptions.push({ id: gpu.id, price: gpu.price, isIgpu: false });
@@ -215,15 +210,12 @@ export async function aiSmartBudgetAction(input: AiSmartBudgetInput): Promise<Ai
     const inventory = input.inventory.filter(item => typeof item.stock !== 'number' || item.stock > 0);
     const inventoryById = new Map(inventory.map(item => [item.id, item]));
 
-    // Compact inventory summary for each category to minimize token consumption
-    // Group into 3 tiers per category: Entry, Mid, and High within budget
     const compactMenu: Record<string, any[]> = {};
     for (const cat of ORDERED_CATEGORIES) {
         const parts = inventory
             .filter(item => item.category.toUpperCase() === cat.toUpperCase() && item.price <= budgetPhp)
             .sort((a, b) => a.price - b.price);
 
-        // Keep up to 6 representative choices per category (min, median, max/best)
         const shortlisted: typeof parts = [];
         if (parts.length <= 6) {
             shortlisted.push(...parts);
@@ -300,7 +292,6 @@ CRITICAL RULES:
         console.warn("[Smart Budget] AI generation failed or timed out, invoking deterministic engine fallback:", err);
     }
 
-    // Deterministic fallback ensures user never experiences a broken or failed response
     const fallback = deterministicFallbackSolver(inventory, budgetPhp);
     if (fallback) {
         return fallback;

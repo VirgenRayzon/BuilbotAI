@@ -72,7 +72,6 @@ export function AIProgressModal({
     const currentStepIndex = Math.max(0, PHASE_ORDER.indexOf(currentPhase));
     const percent = Math.round(((currentStepIndex + 1) / PHASE_ORDER.length) * 100);
 
-    // Reset when modal opens
     useEffect(() => {
         if (isOpen) {
             setLogs([]);
@@ -83,7 +82,6 @@ export function AIProgressModal({
         }
     }, [isOpen]);
 
-    // Elapsed timer
     useEffect(() => {
         if (!isOpen) return;
         const interval = setInterval(() => {
@@ -94,7 +92,6 @@ export function AIProgressModal({
         return () => clearInterval(interval);
     }, [isOpen, isFinished]);
 
-    // Add log entry when phase changes
     useEffect(() => {
         if (!isOpen || !currentPhase) return;
         if (processedPhasesRef.current.has(currentPhase)) return;
@@ -114,7 +111,6 @@ export function AIProgressModal({
         }
     }, [currentPhase, isOpen, isFinished]);
 
-    // Auto-scroll to bottom when logs update
     useEffect(() => {
         logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [logs]);

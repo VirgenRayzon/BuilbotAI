@@ -200,7 +200,6 @@ test("routes delivered Firestore reservations into Completed", () => {
 });
 
 test("requires staff cancellation when order is in To Build or To Receive", () => {
-  // Paid build in order_placed queue -> To Build
   assert.equal(
     requiresStaffCancellation({
       ...buildOrder,
@@ -210,7 +209,6 @@ test("requires staff cancellation when order is in To Build or To Receive", () =
     true
   );
 
-  // Active build in assembling_testing stage -> To Build
   assert.equal(
     requiresStaffCancellation({
       ...buildOrder,
@@ -220,7 +218,6 @@ test("requires staff cancellation when order is in To Build or To Receive", () =
     true
   );
 
-  // Shipped / out for delivery -> To Receive
   assert.equal(
     requiresStaffCancellation({
       ...individualOrder,
@@ -230,7 +227,6 @@ test("requires staff cancellation when order is in To Build or To Receive", () =
     true
   );
 
-  // Unpaid order in To Pay -> does NOT require staff cancellation (self-service cancel allowed)
   assert.equal(
     requiresStaffCancellation({
       ...buildOrder,
@@ -241,7 +237,6 @@ test("requires staff cancellation when order is in To Build or To Receive", () =
     false
   );
 
-  // Cancelled or Delivered orders -> do not require cancellation
   assert.equal(
     requiresStaffCancellation({
       ...buildOrder,

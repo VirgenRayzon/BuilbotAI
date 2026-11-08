@@ -31,17 +31,13 @@ export function isOrderPendingWithNoProgression(order: {
   const paymentStatus = (order.paymentStatus || "pending").toLowerCase();
   const paymentMethod = (order.paymentMethod || "").toLowerCase();
 
-  // Cash on Delivery and legacy store reservations without an online payment method do not auto-expire after 1 hour.
   if (!paymentMethod || paymentMethod === "cod") return false;
 
-  // If status is not 'pending' or fulfillmentStage progressed beyond 'order_placed', it has progressed or is cancelled.
   if (status !== "pending") return false;
   if (order.fulfillmentStage && order.fulfillmentStage !== "order_placed") return false;
 
-  // If paymentStatus is 'paid', it progressed and confirmed payment.
   if (paymentStatus === "paid") return false;
 
-  // Online/gateway order awaiting payment confirmation within the 1-hour hold window.
   return (
     paymentStatus === "pending" ||
     paymentStatus === "unpaid" ||

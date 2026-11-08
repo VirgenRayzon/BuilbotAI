@@ -353,7 +353,6 @@ export function AddPrebuiltDialog({
     const [aiDuration, setAiDuration] = useState<number | null>(null);
     const [tokensUsed, setTokensUsed] = useState<number | null>(null);
     const aiAbortRef = useRef(false);
-    // Track which PartSelector dropdown is open
     const [openSlot, setOpenSlot] = useState<string | null>(null);
     const [elapsedTime, setElapsedTime] = useState(0);
     const [justAutofilled, setJustAutofilled] = useState(false);
@@ -370,14 +369,12 @@ export function AddPrebuiltDialog({
     const { data: settings } = useDoc<any>(settingsDocRef);
     const isAiKillSwitch = settings?.isAiKillSwitch || false;
 
-    // Group parts by category, sorted alphabetically within each category
     const inventory = useMemo(() => {
         const grouped: Record<string, Part[]> = {};
         for (const part of parts || []) {
             if (!grouped[part.category]) grouped[part.category] = [];
             grouped[part.category].push(part);
         }
-        // Sort each category alphabetically
         for (const cat of Object.keys(grouped)) {
             grouped[cat].sort((a, b) => a.name.localeCompare(b.name));
         }
@@ -488,7 +485,6 @@ export function AddPrebuiltDialog({
         return checkCompatibility(part, build);
     };
 
-    // Re-reset form if initialData changes or dialog opens
     useEffect(() => {
         if (open && initialData) {
             form.reset({
@@ -711,7 +707,6 @@ export function AddPrebuiltDialog({
     const onFormError = (errors: any) => {
         console.error("Form Validation Errors:", errors);
         
-        // Handle nested errors (like arrays) or standard field errors
         const getErrorMessage = (err: any): string | null => {
             if (!err) return null;
             if (err.message) return err.message;

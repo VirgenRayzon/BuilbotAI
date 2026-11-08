@@ -44,9 +44,6 @@ export function PrebuiltImageView({
         setCurrentImageIndex(0);
     }, [imageUrl]);
 
-    // Fetch every gallery image as soon as the product page opens. The modal uses
-    // the same URLs, so previous/next navigation can swap from the browser cache
-    // instead of waiting for a full-size image request after the customer clicks.
     React.useEffect(() => {
         allImages.forEach((imageUrl) => {
             const image = new window.Image();

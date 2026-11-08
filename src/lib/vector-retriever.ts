@@ -68,7 +68,6 @@ function formatMetadataToSpec(docId: string, category: string, metadata: Record<
     const name = metadata.name || docId;
     let text = `[Hardware Spec: ${category.toUpperCase()}] ${name}\n`;
 
-    // Group cpu_sockets if present
     const sockets: string[] = [];
     Object.keys(metadata).forEach(key => {
         if (key.startsWith('cpu_sockets/')) {
@@ -80,12 +79,10 @@ function formatMetadataToSpec(docId: string, category: string, metadata: Record<
         text += `- Compatible Sockets: ${sockets.join(', ')}\n`;
     }
 
-    // Append other key specifications cleanly
     for (const [key, val] of Object.entries(metadata)) {
         if (key.startsWith('cpu_sockets/') || key === 'name' || val === '' || val === null || val === undefined) {
             continue;
         }
-        // Humanize key names
         const cleanKey = key
             .replace(/_/g, ' ')
             .replace(/\b\w/g, c => c.toUpperCase());
@@ -118,7 +115,6 @@ export async function retrieveHardwareVectorSpecs(
     const specifiedCategory = options.category?.toLowerCase();
     const inferred = specifiedCategory || inferCategoryFromQuery(cleanQuery);
 
-    // Determine target categories to search
     const categoriesToSearch: VectorCategory[] = inferred && VECTOR_CATEGORIES.includes(inferred as VectorCategory)
         ? [inferred as VectorCategory]
         : options.searchAllCategories

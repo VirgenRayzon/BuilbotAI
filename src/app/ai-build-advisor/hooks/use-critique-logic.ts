@@ -129,7 +129,6 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
         }
     }, [streamedObject]);
 
-    // Cleanup toast on unmount
     useEffect(() => {
         return () => {
             progressToastRef.current?.dismiss();
@@ -231,7 +230,6 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
         });
     }, [isAiKillSwitch, submit, toast]);
 
-    // Progressive representation: use streamed partial object during generation, fallback to cached
     const critiqueAnalysis = useMemo(() => {
         if (isStreaming && streamedObject) {
             return streamedObject;

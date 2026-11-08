@@ -130,7 +130,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true, eventType });
     }
 
-    // Pre-read order to validate expected session binding when event is payment.paid / payment.failed
     const preSnap = await orderDocRef.get();
     if (!preSnap.exists) {
       return NextResponse.json({ received: true, matched: false });
@@ -183,7 +182,6 @@ export async function POST(req: NextRequest) {
         return;
       }
 
-      // Require an expected Checkout Session ID on the order
       if (
         !orderData.paymongoCheckoutSessionId ||
         orderData.paymongoCheckoutSessionId.startsWith("cs_sim_")
@@ -191,7 +189,6 @@ export async function POST(req: NextRequest) {
         return;
       }
 
-      // 1. Direct Checkout Session event must match order's paymongoCheckoutSessionId
       if (
         eventType === "checkout_session.payment.paid" &&
         orderData.paymongoCheckoutSessionId !== resourceId
@@ -199,7 +196,6 @@ export async function POST(req: NextRequest) {
         return;
       }
 
-      // 2. Payment-level event must match checkout_session_id, verified session paymentId, or order's paymentReference
       if (eventType === "payment.paid" || eventType === "payment.failed") {
         const eventSessionId =
           typeof resourceAttrs?.checkout_session_id === "string"
@@ -227,7 +223,6 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 3. Verify payment amount in centavos when provided on the event
       const expectedCentavos = toPaymongoCentavos(orderData.totalPrice, true);
       const sessionPayments = Array.isArray(resourceAttrs?.payments)
         ? resourceAttrs.payments

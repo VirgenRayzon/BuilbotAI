@@ -18,7 +18,6 @@ export function useQRScanner(onScan: (result: DecodedQRResult) => void) {
   const onScanRef = useRef(onScan);
   onScanRef.current = onScan;
 
-  // Check available camera devices
   useEffect(() => {
     if (typeof navigator !== 'undefined' && navigator.mediaDevices?.enumerateDevices) {
       navigator.mediaDevices.enumerateDevices().then((devices) => {
@@ -64,7 +63,6 @@ export function useQRScanner(onScan: (result: DecodedQRResult) => void) {
         }
       }
     } catch {
-      // Ignore frame errors and continue next frame
     }
 
     if (session === cameraSessionRef.current && !detectedRef.current) {
@@ -75,7 +73,6 @@ export function useQRScanner(onScan: (result: DecodedQRResult) => void) {
   }, [stopCamera]);
 
   scanLoopRef.current = scanLoop;
-
 
   const startCamera = useCallback(async () => {
     stopCamera();
@@ -144,7 +141,6 @@ export function useQRScanner(onScan: (result: DecodedQRResult) => void) {
     setFacingMode((prev) => (prev === 'environment' ? 'user' : 'environment'));
   }, []);
 
-  // Clean up stream on unmount
   useEffect(() => {
     return () => {
       stopCamera();

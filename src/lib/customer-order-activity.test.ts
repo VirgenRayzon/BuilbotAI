@@ -134,7 +134,6 @@ test('customer-order-activity: verifies 4-stage assembly workflow structure matc
   const rigId = 'rig_custom_1';
   const rigItems = [mockCpu, mockGpu];
 
-  // 1. Initialize blank verification record
   let record = initializeRigVerification(orderId, rigId, 'My Custom Rig', rigItems);
   assert.equal(record.picking.completed, false);
   assert.equal(record.picking.items.length, 2);
@@ -145,7 +144,6 @@ test('customer-order-activity: verifies 4-stage assembly workflow structure matc
   const staff = { uid: 'staff_1', name: 'Technician Ray', role: 'Manager' as const };
   const now = new Date();
 
-  // 2. Stage 1: Component Picking (8 / 8 or 2 / 2)
   record = applyStepUpdateAndInvalidation(
     record,
     'picking',
@@ -156,7 +154,6 @@ test('customer-order-activity: verifies 4-stage assembly workflow structure matc
   assert.equal(record.picking.completed, true);
   assert.equal(record.picking.items.filter((i) => i.picked).length, 2);
 
-  // 3. Stage 2: Physical Assembly (COMPLETED)
   record = applyStepUpdateAndInvalidation(
     record,
     'assembly',
@@ -167,7 +164,6 @@ test('customer-order-activity: verifies 4-stage assembly workflow structure matc
   assert.equal(record.assembly.completed, true);
   assert.equal(record.assembly.notes, 'Cable routing clean, AIO mounted');
 
-  // 4. Stage 3: Hardware Bench Testing (POST, BIOS, MemTest, Stress) (PASSED)
   record = applyStepUpdateAndInvalidation(
     record,
     'testing',
@@ -179,11 +175,9 @@ test('customer-order-activity: verifies 4-stage assembly workflow structure matc
   assert.equal(record.testing.passed, true);
   assert.equal(record.testing.notes, '24h MemTest86 0 errors, BIOS updated to v1.40');
 
-  // 5. Stage 4: Final Quality Control (QC) (PENDING with QC notes)
   assert.equal(record.qc.completed, false);
   assert.equal(record.status, 'in_progress');
 
-  // Technician passes QC with notes
   record = applyStepUpdateAndInvalidation(
     record,
     'qc',
@@ -198,7 +192,6 @@ test('customer-order-activity: verifies 4-stage assembly workflow structure matc
 });
 
 test('customer-order-activity: orderHasBuildOrPrebuilt correctly identifies individual item orders vs custom/prebuilt builds', () => {
-  // 1. Single component order (e.g., individual Intel Core i3-10100)
   const singleComponentOrder: Order = {
     id: 'ord_cpu_only',
     userId: 'user_1',
@@ -222,7 +215,6 @@ test('customer-order-activity: orderHasBuildOrPrebuilt correctly identifies indi
 
   assert.equal(orderHasBuildOrPrebuilt(singleComponentOrder), false);
 
-  // 2. Multiple standalone components (no build configuration)
   const multiplePartsOrder: Order = {
     id: 'ord_parts_multi',
     userId: 'user_1',
@@ -253,7 +245,6 @@ test('customer-order-activity: orderHasBuildOrPrebuilt correctly identifies indi
 
   assert.equal(orderHasBuildOrPrebuilt(multiplePartsOrder), false);
 
-  // 3. Custom rig order
   const customRigOrder: Order = {
     id: 'ord_custom',
     userId: 'user_1',
@@ -267,7 +258,6 @@ test('customer-order-activity: orderHasBuildOrPrebuilt correctly identifies indi
 
   assert.equal(orderHasBuildOrPrebuilt(customRigOrder), true);
 
-  // 4. Prebuilt system order
   const prebuiltOrder: Order = {
     id: 'ord_prebuilt',
     userId: 'user_1',

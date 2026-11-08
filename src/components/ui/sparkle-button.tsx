@@ -34,7 +34,6 @@ export function SparkleButton({
   const [active, setActive] = useState(false);
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; delay: number; duration: number; size: number }[]>([]);
 
-  // Generate particles on client side
   useEffect(() => {
     const newParticles = Array.from({ length: 12 }).map((_, i) => ({
       id: i,

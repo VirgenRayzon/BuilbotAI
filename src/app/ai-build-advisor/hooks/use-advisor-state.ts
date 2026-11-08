@@ -32,7 +32,6 @@ export function useAdvisorState(allParts: Part[]) {
     const [resolution, setResolution] = useState<Resolution>('1440p');
     const [workload, setWorkload] = useState<WorkloadType>('Balanced');
 
-    // Persistence
     useEffect(() => {
         const saved = localStorage.getItem('pc_builder_state');
         if (saved) {

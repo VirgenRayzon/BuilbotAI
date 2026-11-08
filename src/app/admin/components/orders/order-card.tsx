@@ -65,7 +65,6 @@ export function OrderCard({
   const stageInfo = getOrderStageBadgeInfo(order);
   const displayOrderId = order.orderNumber || `#${order.id.slice(0, 10).toUpperCase()}`;
 
-  // Real-time synchronization of assembly verification status
   const [isAssemblyVerified, setIsAssemblyVerified] = useState<boolean | undefined>(
     order.assemblyVerificationPassed
   );

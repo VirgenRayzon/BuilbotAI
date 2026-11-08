@@ -77,7 +77,6 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
         const items = db.collection(inventoryItemsPath(collectionName));
         let query = items.where('isArchived', '==', false);
         
-        // Native Firestore query on searchKeywords using array-contains for the first search term
         if (searchTerm && searchTerm !== "undefined" && searchTerm.trim() !== "") {
             const terms = searchTerm.toLowerCase().split(/[\s\-_/,\(\)]+/).map(t => t.replace(/[^a-z0-9]/g, '').trim()).filter(t => t.length > 0);
             if (terms.length > 0) {
@@ -85,12 +84,10 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
             }
         }
         
-        // 2. Fetch the snapshot
         const snapshot = await query.limit(searchTerm ? limitCount * 2 : limitCount).get();
         
         let docs = snapshot.docs;
  
-        // 3. Manual filtering / refinement for multi-word matches
         if (searchTerm && searchTerm !== "undefined" && searchTerm.trim() !== "") {
             const terms = searchTerm.toLowerCase().split(/[\s\-_/,\(\)]+/).map(t => t.replace(/[^a-z0-9]/g, '').trim()).filter(t => t.length > 0);
             if (terms.length > 0) {
@@ -101,7 +98,6 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
                     const series = (data.series || '').toLowerCase();
                     const model = (data.model || '').toLowerCase();
                     
-                    // Verify that every search term word matches at least one field
                     return terms.every(term => 
                         name.includes(term) || 
                         brand.includes(term) || 
@@ -123,7 +119,6 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
             const model = data.model || '';
             
             let displayName = name;
-            // Ensure brand and model are part of the name if not already there
             if (brand && !displayName.toLowerCase().includes(brand.toLowerCase())) {
                 displayName = `${brand} ${displayName}`;
             }
@@ -243,4 +238,3 @@ export async function getStructuredInventory(category: string, searchTerm?: stri
         return [];
     }
 }
-

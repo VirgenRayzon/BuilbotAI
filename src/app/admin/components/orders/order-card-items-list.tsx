@@ -43,7 +43,6 @@ function OrderItemGroupAccordion({
   const isAdditional = group.name === 'Additional' || group.type === 'additional';
   const isPrebuilt = !isCustomBuild && !isAdditional;
 
-  // Custom rig accordion starts collapsed by default; additional items start expanded
   const [isOpen, setIsOpen] = useState(!isCustomBuild);
 
   const badgeColor = isCustomBuild ? 'cyan' : isPrebuilt ? 'grape' : 'amber';

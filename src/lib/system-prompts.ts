@@ -23,7 +23,6 @@ export interface SystemPromptsConfig {
 
 export type SystemPromptKey = 'chatbot' | 'buildAdvisor' | 'prebuiltAdvisor' | 'partExtractor';
 
-// In-memory cache to prevent excessive Firestore reads across rapid chat messages and advisor calls
 let cachedPrompts: SystemPromptsConfig | null = null;
 let lastCacheTime = 0;
 const CACHE_TTL_MS = 15000; // 15 seconds

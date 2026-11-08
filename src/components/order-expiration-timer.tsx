@@ -54,7 +54,6 @@ export function OrderExpirationBadge({
   useEffect(() => {
     if (!isPendingNoProgression) return;
 
-    // Check immediately on mount
     const initialRemaining = getOrderRemainingTimeMs(createdAt);
     setRemainingMs(initialRemaining);
 

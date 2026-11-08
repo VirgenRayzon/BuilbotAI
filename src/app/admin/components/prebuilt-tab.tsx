@@ -39,7 +39,6 @@ interface PrebuiltTabProps {
     onDeletePrebuilt: (id: string) => Promise<void>;
     onArchivePrebuilt: (id: string, isArchived?: boolean) => Promise<void>;
     
-    // Bulk state from useBulkActions
     isPrebuiltSelectionMode: boolean;
     setIsPrebuiltSelectionMode: (val: boolean) => void;
     selectedPrebuiltIds: string[];
@@ -48,7 +47,6 @@ interface PrebuiltTabProps {
     toggleAllPrebuiltsSelection: (systems: PrebuiltSystem[]) => void;
     setConfirmAction: (val: any) => void;
 
-    // Optional controlled search from AdminTopbar
     searchQuery?: string;
     onSearchQueryChange?: (val: string) => void;
 }

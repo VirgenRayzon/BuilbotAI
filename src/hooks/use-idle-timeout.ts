@@ -9,13 +9,11 @@ import { createAuditLog } from '@/firebase/audit';
 const ACTIVITY_STORAGE_KEY = 'buildbot_last_activity_timestamp';
 const AUTH_SYNC_CHANNEL = 'buildbot_auth_sync';
 
-// Role-based timeout configurations (in milliseconds)
 const STAFF_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 const STAFF_WARNING_MS = 2 * 60 * 1000;  // 2 minutes warning countdown
 const USER_TIMEOUT_MS = 30 * 60 * 1000;  // 30 minutes
 const USER_WARNING_MS = 5 * 60 * 1000;   // 5 minutes warning countdown
 
-// Activity throttle limit
 const ACTIVITY_THROTTLE_MS = 2500; // Record at most once every 2.5s
 
 export interface UseIdleTimeoutReturn {
@@ -47,7 +45,6 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
   const isLoggingOutRef = useRef<boolean>(false);
   const channelRef = useRef<BroadcastChannel | null>(null);
 
-  // Helper to read latest activity timestamp from localStorage
   const getStoredActivity = useCallback((): number => {
     if (typeof window === 'undefined') return Date.now();
     try {
@@ -59,12 +56,10 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
         }
       }
     } catch {
-      // Fallback to in-memory ref
     }
     return lastActivityRef.current;
   }, []);
 
-  // Record user activity
   const recordActivity = useCallback((broadcast = true) => {
     const now = Date.now();
     if (now - lastThrottleRef.current < ACTIVITY_THROTTLE_MS) {
@@ -76,34 +71,28 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
     try {
       localStorage.setItem(ACTIVITY_STORAGE_KEY, now.toString());
     } catch {
-      // Ignore localStorage write failure
     }
 
     if (broadcast && channelRef.current) {
       try {
         channelRef.current.postMessage({ type: 'ACTIVITY', timestamp: now });
       } catch {
-        // Channel might be closed
       }
     }
   }, []);
 
-  // Perform clean logout
   const performLogout = useCallback(
     async (reason: 'idle_timeout' | 'user_initiated') => {
       if (isLoggingOutRef.current) return;
       isLoggingOutRef.current = true;
 
-      // Broadcast logout to all tabs so other tabs also gracefully log out
       if (channelRef.current) {
         try {
           channelRef.current.postMessage({ type: 'LOGOUT', reason });
         } catch {
-          // Ignore
         }
       }
 
-      // Purge local states and draft builder caches
       try {
         localStorage.removeItem(ACTIVITY_STORAGE_KEY);
         localStorage.removeItem('pc_chat_history_v2');
@@ -111,10 +100,8 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
         localStorage.removeItem('admin_pc_builder_state');
         sessionStorage.removeItem('buildbot_admin_session_active');
       } catch {
-        // Ignore
       }
 
-      // Security audit logging for administrative timeouts
       if (firestore && user && isStaff && reason === 'idle_timeout') {
         try {
           await createAuditLog(firestore, {
@@ -151,7 +138,6 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
     [auth, user, firestore, isStaff, profile]
   );
 
-  // User explicitly clicks "Stay Signed In"
   const stayLoggedIn = useCallback(() => {
     const now = Date.now();
     lastActivityRef.current = now;
@@ -162,18 +148,15 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
     try {
       localStorage.setItem(ACTIVITY_STORAGE_KEY, now.toString());
     } catch {
-      // Ignore
     }
 
     if (channelRef.current) {
       try {
         channelRef.current.postMessage({ type: 'EXTEND', timestamp: now });
       } catch {
-        // Ignore
       }
     }
 
-    // Refresh token in background to keep auth credential fresh
     if (user && typeof user.getIdToken === 'function') {
       user.getIdToken(true).catch((tokenErr) => {
         console.warn('[useIdleTimeout] Token refresh failed on extend:', tokenErr);
@@ -181,12 +164,10 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
     }
   }, [user]);
 
-  // User clicks "Sign Out Now"
   const logout = useCallback(() => {
     performLogout('user_initiated');
   }, [performLogout]);
 
-  // Main evaluation logic
   const evaluateInactivity = useCallback(() => {
     if (!sessionReady || isLoggingOutRef.current) return;
 
@@ -207,7 +188,6 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
     }
   }, [sessionReady, totalTimeoutMs, warningDurationMs, getStoredActivity, performLogout]);
 
-  // Set up BroadcastChannel & storage synchronization across tabs
   useEffect(() => {
     if (typeof window === 'undefined' || !sessionReady) return;
 
@@ -235,7 +215,6 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
       }
     }
 
-    // Fallback storage event listener for cross-tab activity
     const handleStorage = (e: StorageEvent) => {
       if (e.key === ACTIVITY_STORAGE_KEY && e.newValue) {
         const parsed = parseInt(e.newValue, 10);
@@ -257,7 +236,6 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
     };
   }, [sessionReady, performLogout]);
 
-  // Set up periodic heartbeat and window event listeners
   useEffect(() => {
     if (!sessionReady) {
       setShowWarning(false);
@@ -265,7 +243,6 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
       return;
     }
 
-    // Initialize activity timestamp if unset
     const existing = getStoredActivity();
     if (!existing || Date.now() - existing > totalTimeoutMs) {
       recordActivity(false);
@@ -275,7 +252,6 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
 
     const events = ['mousedown', 'mousemove', 'keydown', 'keypress', 'scroll', 'touchstart', 'click'];
     const handleUserActivity = () => {
-      // Don't auto-reset if warning modal is active — user must explicitly click "Stay Signed In"
       if (!showWarning) {
         recordActivity(true);
       }
@@ -283,7 +259,6 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
 
     events.forEach((evt) => window.addEventListener(evt, handleUserActivity, { passive: true }));
 
-    // Instant check when waking up or switching tabs
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
         evaluateInactivity();
@@ -296,7 +271,6 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
     document.addEventListener('visibilitychange', handleVisibility);
     window.addEventListener('focus', handleFocus);
 
-    // Heartbeat ticker running every 1000ms
     const intervalId = setInterval(evaluateInactivity, 1000);
 
     return () => {

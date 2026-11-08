@@ -165,11 +165,9 @@ export function CheckoutModal() {
   } | null>(null);
   const operationIdRef = useRef<string | null>(null);
 
-  // Voucher state
   const [voucherInput, setVoucherInput] = useState("");
   const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
 
-  // Address Form
   const [address, setAddress] = useState<ShippingAddress>({
     fullName: profile?.name || authUser?.displayName || "Juan Dela Cruz",
     phone: "+63 917 882 4910",
@@ -182,12 +180,10 @@ export function CheckoutModal() {
     notes: "Please call mobile number upon arrival. Keep PC box upright.",
   });
 
-  // Saved Address Book selection state
   const [selectedAddressId, setSelectedAddressId] = useState<string | "custom">("auto");
   const [saveAddressToBook, setSaveAddressToBook] = useState(false);
   const [newAddressLabel, setNewAddressLabel] = useState<string>("Home");
 
-  // Automatically initialize address from default address in book
   useEffect(() => {
     if (savedAddresses.length > 0 && selectedAddressId === "auto") {
       const target = defaultAddress || savedAddresses[0];
@@ -373,7 +369,6 @@ export function CheckoutModal() {
         return;
       }
 
-      // If requested, save new address to Address Book
       if (saveAddressToBook && shippingMethod !== "store_pickup") {
         addAddress({
           label: newAddressLabel || "Home",

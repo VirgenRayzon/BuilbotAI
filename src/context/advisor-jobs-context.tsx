@@ -31,10 +31,7 @@ export function AdvisorJobsProvider({ children }: { children: ReactNode }) {
     if (onAdvisorPage) setActivated(true);
   }, [onAdvisorPage]);
 
-  // Load AI hooks on first use, then retain their scope across navigation so
-  // in-flight jobs and results continue to work away from the advisor page.
   if (!activated && !onAdvisorPage) return children;
-  // A new account starts with a separate set of in-flight jobs and results.
   return <AdvisorJobsScope key={authUser?.uid ?? 'signed-out'}>{children}</AdvisorJobsScope>;
 }
 

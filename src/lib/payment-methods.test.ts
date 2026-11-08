@@ -61,7 +61,6 @@ test('calculateAuthoritativeOrderTotals computes server-authoritative subtotals,
     voucherCode: 'buildbot1000',
   });
 
-  // Subtotal = 15000 + (4500 * 2) = 24000
   assert.equal(baseBreakdown.subtotal, 24000);
   assert.equal(baseBreakdown.shippingFee, 250);
   assert.equal(baseBreakdown.protectionFee, 350);
@@ -86,7 +85,6 @@ test('calculateAuthoritativeOrderTotals computes server-authoritative subtotals,
 
   assert.equal(prebuiltBreakdown.protectionFee, 350);
 
-  // Store pickup with no crate protection and ineligible voucher (below minSubtotal)
   const smallOrder = calculateAuthoritativeOrderTotals({
     items: [{ price: 1800, quantity: 1 }],
     shippingMethod: 'store_pickup',
@@ -122,7 +120,6 @@ test('generateOrderNumber and generateSimulatedPaymentReference produce clearly-
 });
 
 test('getPaymentStatusInfo and getPaymentMethodLabel handle COD, Simulated GCash, Simulated PayMongo, and legacy orders', () => {
-  // Legacy order with no payment fields
   const legacyInfo = getPaymentStatusInfo(undefined, undefined);
   assert.equal(legacyInfo.status, 'unpaid');
   assert.equal(legacyInfo.label, 'Cash Not Collected (COD)');
@@ -131,26 +128,22 @@ test('getPaymentStatusInfo and getPaymentMethodLabel handle COD, Simulated GCash
   assert.equal(getPaymentMethodLabel(undefined, true), 'Cash on Delivery');
   assert.equal(getPaymentMethodLabel(undefined, false), 'Cash on Delivery / Store Reservation');
 
-  // Simulated GCash pending -> can retry
   const pendingGcash = getPaymentStatusInfo('pending', 'gcash_simulated');
   assert.equal(pendingGcash.status, 'pending');
   assert.equal(pendingGcash.label, 'Payment Pending');
   assert.equal(pendingGcash.canRetrySimulatedPayment, true);
 
-  // Simulated GCash failed -> can retry
   const failedGcash = getPaymentStatusInfo('failed', 'gcash_simulated');
   assert.equal(failedGcash.status, 'failed');
   assert.equal(failedGcash.label, 'Payment Failed');
   assert.equal(failedGcash.canRetrySimulatedPayment, true);
 
-  // Simulated GCash paid -> cannot retry, clearly labeled as Simulated GCash
   const paidGcash = getPaymentStatusInfo('paid', 'gcash_simulated');
   assert.equal(paidGcash.status, 'paid');
   assert.equal(paidGcash.label, 'Paid (GCash)');
   assert.equal(paidGcash.shortLabel, 'Paid');
   assert.equal(paidGcash.canRetrySimulatedPayment, false);
 
-  // Simulated PayMongo pending & paid
   const pendingPaymongo = getPaymentStatusInfo('pending', 'paymongo_simulated');
   assert.equal(pendingPaymongo.status, 'pending');
   assert.equal(pendingPaymongo.canRetrySimulatedPayment, true);
@@ -171,7 +164,6 @@ test('PayMongo payload builder converts PHP to centavos and handles voucher disc
   assert.equal(toPaymongoCentavos(24500), 2450000);
   assert.equal(toPaymongoCentavos(250.5), 25050);
 
-  // Without discount: itemized line items + shipping + crate protection
   const itemizedPayload = buildPaymongoCheckoutPayload({
     orderId: 'ord-pm-1',
     orderNumber: 'BB-20261101-PM01',
@@ -195,7 +187,6 @@ test('PayMongo payload builder converts PHP to centavos and handles voucher disc
   );
   assert.equal(sumCentavos1, 2510000);
 
-  // With discount: single net summary line item so PayMongo never sees negative line items
   const discountedPayload = buildPaymongoCheckoutPayload({
     orderId: 'ord-pm-2',
     orderNumber: 'BB-20261101-PM02',
@@ -256,7 +247,6 @@ test('buildSalesAnalyticsWorkbook exports payment method, payment status, and re
       items: [{ id: 'gpu-1', name: 'RTX 4070 Super', category: 'GPU', price: 38900 }],
       totalPrice: 38900,
       status: 'building',
-      // Legacy order without paymentMethod/paymentStatus
       createdAt: { seconds: 1762000100 },
     },
     {

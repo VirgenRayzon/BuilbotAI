@@ -14,7 +14,6 @@ export async function GET(request: NextRequest) {
     const authorization = request.headers.get('authorization');
     if (!authorization) throw new QRRequestError('AUTH_EXPIRED', 'Please sign in again.', 401);
     if (!(await qrIdentity(authorization)).staff) throw new QRRequestError('FORBIDDEN', 'Staff access is required.', 403);
-    // Authorize every request before reusing a short-lived diagnostic snapshot.
     if (!cached || Date.now() - Date.parse(cached.completedAt) >= 60000) {
       pending ??= auditQRHealth(getAdminFirestore()).then(report => { cached = report; return report; }).finally(() => { pending = null; });
       await pending;

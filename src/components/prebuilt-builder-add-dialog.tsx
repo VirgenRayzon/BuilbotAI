@@ -20,7 +20,6 @@ import { ScrollArea } from "./ui/scroll-area";
 import { Sparkles, Cpu, Zap } from "lucide-react";
 import type { Part, PrebuiltSystem } from "@/lib/types";
 
-// Refactored Modules
 import { usePrebuiltForm, type PrebuiltBuilderAddFormSchema } from "./prebuilt-builder/use-prebuilt-form";
 export type { PrebuiltBuilderAddFormSchema };
 import { IdentityFields } from "./prebuilt-builder/identity-fields";

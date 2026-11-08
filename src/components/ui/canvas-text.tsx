@@ -75,7 +75,6 @@ export function CanvasText({
     const updateDimensions = () => {
       const rect = textEl.getBoundingClientRect();
       const computed = window.getComputedStyle(textEl);
-      // Add a small buffer for italics and canvas rendering
       const buffer = 30;
       setDimensions({
         width: Math.ceil(rect.width) + buffer,

@@ -16,17 +16,12 @@ import { saveCatalogProduct } from '@/lib/save-catalog-product';
 import { prebuiltProductSchema } from '@/lib/product-schemas';
 import { updateCatalogPart } from '@/app/product-actions';
 
-// Uploads an image to Firebase Storage.
-// Local file uploads (data:image) go directly from the client (which has auth context).
-// Remote URLs are fetched via a server action proxy first, then uploaded client-side.
 async function uploadToStorageClient(url: string, storagePath: string, fileNamePrefix?: string): Promise<string> {
     if (!url) return url;
 
     const sanitizedPrefix = fileNamePrefix ? fileNamePrefix.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'image';
-    // Use the part name as a subfolder: parts/cpu/amd_ryzen_5_9600x/image-123456.webp
     const fullPath = `${storagePath}/${sanitizedPrefix}`;
 
-    // 1. Direct File Upload (Base64 Data URL) — upload from client (user is authenticated here)
     if (url.startsWith("data:image")) {
         console.log(`[Storage] Processing local file upload for path: ${fullPath}`);
         try {
@@ -53,7 +48,6 @@ async function uploadToStorageClient(url: string, storagePath: string, fileNameP
         }
     }
 
-    // 2. Keep URLs already stored in this Firebase bucket.
     if (!/^https?:\/\//i.test(url)) throw new Error("Enter a valid image URL.");
     const parsedUrl = new URL(url);
     const bucket = getStorage().app.options.storageBucket;
@@ -62,7 +56,6 @@ async function uploadToStorageClient(url: string, storagePath: string, fileNameP
         (parsedUrl.hostname === "storage.googleapis.com" && parsedUrl.pathname.startsWith(`/${bucket}/`))
     )) return url;
 
-    // 3. Remote URL — fetch via server action, then upload client-side
     console.log(`[Storage] Processing remote image: ${url} for path: ${storagePath}`);
     try {
         const idToken = await getAuth().currentUser?.getIdToken();
@@ -86,7 +79,6 @@ async function uploadToStorageClient(url: string, storagePath: string, fileNameP
     }
 }
 
-// Maps each category to the spec key that carries its wattage value
 const WATTAGE_SPEC_KEY: Record<string, string> = {
     CPU: 'TDP / Peak Power',
     GPU: 'TGP / Power Draw (W)',
@@ -94,7 +86,6 @@ const WATTAGE_SPEC_KEY: Record<string, string> = {
     Cooler: 'TDP Rating',
 };
 
-// Helper to extract wattage from specifications
 function resolveWattage(category: string, wattage?: number, specifications?: Record<string, string | number>) {
     if (wattage !== undefined) return wattage;
     if (!specifications || !category) return undefined;
@@ -108,7 +99,6 @@ function resolveWattage(category: string, wattage?: number, specifications?: Rec
     return parseFloat(String(val) || '0') || undefined;
 }
 
-// Helper to clean undefined values recursively
 function cleanData(obj: any): any {
     if (Array.isArray(obj)) return obj.map(v => v);
     if (obj !== null && typeof obj === 'object') {
@@ -148,7 +138,6 @@ function generateSearchKeywords(name: string, brand: string, category: string, m
     return Array.from(keywordsSet);
 }
 
-// Parts
 export async function addPart(firestore: Firestore, part: AddPartFormSchema, operationId = crypto.randomUUID()) {
     const specificationsMap = part.specifications.reduce((acc: Record<string, string>, spec: { key: string; value: string }) => {
         acc[spec.key] = spec.value;
@@ -211,7 +200,6 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema, ope
     return saveCatalogProduct('part', cleanData(partData), part, operationId);
 }
 
-
 export async function updatePart(
     firestore: Firestore,
     category: Part['category'],
@@ -222,7 +210,6 @@ export async function updatePart(
     const isCategoryChanging = targetCategory !== category;
     const oldDocRef = doc(firestore, inventoryItemPath(category, partId));
 
-    // If specifications are being updated but not wattage, try to re-resolve wattage
     if (data.specifications && data.wattage === undefined) {
         data.wattage = resolveWattage(targetCategory, undefined, data.specifications);
     }
@@ -255,8 +242,6 @@ export async function updatePart(
 
     const cleanedData = cleanData(data);
 
-    // Specifications are the editable source of truth. Keep legacy shortcut
-    // fields synchronized so older consumers cannot retain stale compatibility data.
     if (data.specifications) {
         const socket = data.specifications['Socket'] ?? data.specifications['socket'];
         const ramType = data.specifications['Memory Type'] ?? data.specifications['RAM Type'];
@@ -264,7 +249,6 @@ export async function updatePart(
         if (ramType !== undefined) cleanedData.ramType = String(ramType).trim();
     }
 
-    // Regenerate search keywords if name, brand, or specifications are modified
     const docSnap = await getDoc(oldDocRef);
     const currentData = docSnap.exists() ? docSnap.data() : {};
 
@@ -316,7 +300,6 @@ export async function bulkDeleteParts(firestore: Firestore, items: { id: string,
     await batch.commit();
 }
 
-// Prebuilt Systems
 export async function addPrebuiltSystem(firestore: Firestore, system: AddPrebuiltFormSchema, operationId = crypto.randomUUID()) {
     const { name, tier, description, price, imageUrl, images, cpu, gpu, motherboard, ram, storage, psu, case: caseComponent, cooler } = system;
 
@@ -407,12 +390,10 @@ export async function bulkDeletePrebuilts(firestore: Firestore, systemIds: strin
     await batch.commit();
 }
 
-// Users
 export async function createUserProfile(firestore: Firestore, userId: string, data: Omit<UserProfile, 'id'>) {
     await setDoc(doc(firestore, 'users', userId), data);
 }
 
-// System Notifications
 export async function createSystemNotification(
     firestore: Firestore, 
     notification: Omit<SystemNotification, 'id' | 'createdAt' | 'readBy'>,

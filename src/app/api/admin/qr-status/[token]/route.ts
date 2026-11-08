@@ -25,7 +25,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const productId = String(data.productId || '');
     const enabled = data.enabled !== false;
 
-    // Fetch recent audits for this token
     const auditsSnap = await db.collection('qrAudits')
       .where('token', '==', token)
       .limit(5)

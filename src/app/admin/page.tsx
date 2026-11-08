@@ -9,7 +9,6 @@ import { Text, ThemeIcon, Modal, Group, Stack, Button } from '@mantine/core';
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/theme-provider";
 
-// Custom Hooks
 import { useAdminCore } from './hooks/use-admin-core';
 import { useInventory } from './hooks/use-inventory';
 import { useOrders } from './hooks/use-orders';
@@ -20,11 +19,9 @@ import { ProtectedPageLoading } from '@/components/auth/protected-page-loading';
 import { useAuditLogs } from '@/app/profile/hooks/use-audit-logs';
 import { useSiteSettings } from '@/context/site-settings-context';
 
-// Sidebar & Layout Components
 import { AdminSidebar, SidebarInset, SidebarProvider } from './components/admin-sidebar';
 import { AdminTopbar } from './components/admin-topbar';
 
-// Sub-components
 import { StockTab } from './components/stock-tab';
 import { AdminProductFocus } from '@/components/admin-product-focus';
 import { safeStaffProductReturn } from '@/lib/product-identity';
@@ -59,7 +56,6 @@ export default function AdminPage() {
     const requestedAction = searchParams.get('action') === 'stock' ? '&action=stock' : '';
     const itemReturn = safeStaffProductReturn(`/admin?tab=${searchParams.get('tab') || 'stock'}&product=${searchParams.get('product') || ''}${requestedAction}`);
 
-    // AI & Sales sub-view state synced with URL `?sub=` or legacy `?tab=prompts`
     const [aiSubTab, setAiSubTab] = useState<'intelligence' | 'prompts'>('intelligence');
     const [salesSubTab, setSalesSubTab] = useState<'overview' | 'popularity'>('overview');
 
@@ -77,7 +73,6 @@ export default function AdminPage() {
         }
     }, [searchParams]);
 
-    // Relocated data hooks
     const { auditLogs, auditLogsLoading } = useAuditLogs(currentTab === 'audit');
     const { featureModelRouting, aiModelProvider } = useSiteSettings();
     const routingValues = featureModelRouting ? Object.values(featureModelRouting) : [aiModelProvider];
@@ -124,7 +119,6 @@ export default function AdminPage() {
         togglePrebuiltSelection, toggleAllPrebuiltsSelection, executeBulkAction
     } = useBulkActions(profile);
 
-    // Persistent State for filters
     const [partCategories, setPartCategories] = usePersistentState('admin_part_categories', initialCategories);
     const [prebuiltCategories, setPrebuiltCategories] = usePersistentState('admin_prebuilt_categories', [
         { name: "Entry", selected: true },
@@ -142,7 +136,6 @@ export default function AdminPage() {
         [prebuiltSystems]
     );
 
-    // Tab-level search state connected to AdminTopbar
     const [tabSearchQueries, setTabSearchQueries] = useState<Record<string, string>>({
         stock: '',
         prebuilts: '',

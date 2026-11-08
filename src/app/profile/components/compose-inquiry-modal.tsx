@@ -38,7 +38,6 @@ export function ComposeInquiryModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  // Sync user info into form defaults when modal opens
   useEffect(() => {
     if (opened) {
       setFullName(profile?.name || authUser?.displayName || "");

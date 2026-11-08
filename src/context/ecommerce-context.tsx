@@ -289,7 +289,6 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Automatically backfill missing or broken placeholder imageUrls for cart items & their sub-components from Firestore
   useEffect(() => {
     if (!hydrated || !firestore || cart.length === 0 || backfillingRef.current) return;
 
@@ -326,7 +325,6 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
       const collectionName = collectionMap[cleanCat.toLowerCase()] || cleanCat;
 
       try {
-        // 1. Canonical query by name in inventory/{category}/items
         const canonicalQ = query(
           collection(firestore, inventoryItemsPath(collectionName)),
           where("name", "==", partName)
@@ -338,7 +336,6 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
           if (img) return img;
         }
 
-        // 2. Canonical direct doc lookup if partName happens to be a doc ID
         if (!partName.includes("/")) {
           const canonicalDoc = await getDoc(
             doc(firestore, inventoryItemPath(collectionName, partName))
@@ -350,7 +347,6 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // 3. Legacy root collection query by name
         const legacyQ = query(
           collection(firestore, collectionName),
           where("name", "==", partName)
@@ -362,7 +358,6 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
           if (img) return img;
         }
       } catch {
-        // Ignore lookup error and use fallback
       }
       return undefined;
     };

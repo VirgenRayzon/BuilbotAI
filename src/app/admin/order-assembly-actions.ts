@@ -105,7 +105,6 @@ export async function updateRigAssemblyStep(
         );
       }
 
-      // Apply the step update with strict downstream invalidation
       const updatedRecord = applyStepUpdateAndInvalidation(
         record,
         step as RigAssemblyStep,
@@ -116,7 +115,6 @@ export async function updateRigAssemblyStep(
 
       transaction.set(rigRef, toFirestoreDocument(updatedRecord));
 
-      // Check all custom rigs in this order to determine if all are passed
       let allPassed = updatedRecord.status === 'passed';
       if (allPassed && customRigs.length > 1) {
         for (const otherRig of customRigs) {
@@ -131,7 +129,6 @@ export async function updateRigAssemblyStep(
         }
       }
 
-      // Write order activity
       const eventDetails = `Custom Rig "${targetRig.rigName}" ${step.toUpperCase()}: ${
         step === 'picking'
           ? updatedRecord.picking.completed
@@ -164,7 +161,6 @@ export async function updateRigAssemblyStep(
         })
       );
 
-      // Advance order workflowRevision and update overall assembly verification state
       writeOrderChange(
         transaction,
         orderRef,

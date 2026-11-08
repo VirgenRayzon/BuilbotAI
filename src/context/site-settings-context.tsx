@@ -84,7 +84,6 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
         try {
             window.localStorage.removeItem("buildbot_ecommerce_mode_override");
         } catch {
-            // Ignore storage access errors in restricted iframe/browser environments
         }
     }, []);
 
@@ -97,7 +96,6 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
     
     const isMaintenanceMode = settings?.isMaintenanceMode || false;
     const isStorageKillSwitch = settings?.isStorageKillSwitch || false;
-    // Platform now defaults to e-commerce storefront mode across the entire platform.
     const isEcommerceMode = true;
     const isLiveBuilderRecommendationsEnabled = settings?.isLiveBuilderRecommendationsEnabled === true;
     const aiModelProvider = settings?.aiModelProvider || 'default';
@@ -120,7 +118,6 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
         prebuiltAdvisor: (aiModelProvider === 'finetuned' ? 'finetuned' : 'default'),
     };
     
-    // Corrupt images if Storage Kill Switch is ON and the user is NOT a Super Admin
     const shouldCorruptImages = isStorageKillSwitch && !profile?.isSuperAdmin;
 
     const value = useMemo(() => ({

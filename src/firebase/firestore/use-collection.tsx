@@ -8,7 +8,6 @@ import {
 import { useEffect, useState } from 'react';
 
 export interface UseCollectionOptions {
-  // Define any options here if needed in the future
 }
 
 export function useCollection<T>(

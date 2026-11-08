@@ -114,7 +114,6 @@ export default function PreBuiltsPage() {
       });
   }, [prebuiltSystems, categories, sortBy, sortDirection, searchQuery]);
 
-  // When showAllDetails changes, sync expandedIds for list view
   useEffect(() => {
     if (showAllDetails) {
       setExpandedIds(filteredAndSortedSystems.map((s) => s.id));

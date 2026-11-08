@@ -87,7 +87,6 @@ export function MantineProfileView({
     .slice(0, 2)
     .toUpperCase();
 
-  // Activity chart data derived from builds or fallback activity curve
   const chartData = useMemo(() => {
     return [
       { time: "00:00", series1: 25, series2: 15 },
@@ -125,7 +124,6 @@ export function MantineProfileView({
     "MANTINE UI",
   ];
 
-  // Combined recent projects/builds from favorites and reservations
   const recentItems = useMemo(() => {
     const items: Array<{
       name: string;
@@ -144,7 +142,6 @@ export function MantineProfileView({
         const d = new Date(val);
         if (!isNaN(d.getTime())) return d.toLocaleDateString();
       } catch {
-        // Fallback
       }
       return "Recent";
     };
@@ -202,7 +199,6 @@ export function MantineProfileView({
 
   return (
     <div className="space-y-6">
-
 
       {/* Profile Card */}
       <div className="w-full">

@@ -69,7 +69,6 @@ export function AiSystemPromptsSettings() {
   const activeIsDirty = isDirty(activeKey);
   const activeIsCustomized = isCustomized(activeKey);
 
-  // Segmented control data
   const segmentData = useMemo(() => {
     return SYSTEM_PROMPT_METAS.map((meta) => {
       const dirty = isDirty(meta.id);

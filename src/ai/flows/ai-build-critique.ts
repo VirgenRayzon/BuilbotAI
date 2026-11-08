@@ -120,7 +120,6 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput, deferCa
     const db = getAdminFirestore();
     let settingsData: FirebaseFirestore.DocumentData | undefined;
 
-    // 0. Check Maintenance Mode (Kill Switch)
     try {
         const settingsSnap = await db.collection('siteSettings').doc('main').get();
         settingsData = settingsSnap.data();
@@ -133,7 +132,6 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput, deferCa
     }
     timing.mark('settings');
 
-    // 1. Tier 1 Cache Check: Full Critique Cache
     const critiqueCacheKey = generateCritiqueCacheKey(input, {
         routing: settingsData?.featureModelRouting?.buildAdvisor || settingsData?.aiModelProvider,
         defaultModel: settingsData?.defaultGeminiModel,
@@ -159,11 +157,9 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput, deferCa
     }
     timing.mark('cache');
 
-    // 2. Perform deterministic local analysis
     const bottleneck = calculateBottleneck(build as any);
     const compatibilityIssues = checkFullBuildCompatibility(build as any);
 
-    // Deterministic FPS Baseline Calculation (Anchors for AI)
     const normRes: Resolution = (performanceLevel === '4K' || performanceLevel === '1080p' || performanceLevel === '1440p')
         ? performanceLevel
         : '1440p';
@@ -208,7 +204,6 @@ CRITICAL: Use these deterministic baseline numbers as reference anchors for your
         })
         .join('\n\n');
 
-    // 3. Deduplicated & Cleaned Local Knowledge Retrieval (Top 4 ranked sections)
     const uniqueCleanModels = Array.from(
         new Set(
             Object.values(build)
@@ -219,7 +214,6 @@ CRITICAL: Use these deterministic baseline numbers as reference anchors for your
         )
     );
     const cleanKnowledgeQuery = `bottleneck compatibility ${uniqueCleanModels.join(' ')}`;
-    // 4. Fetch knowledge, inventory, and model routing concurrently.
     const buildCategories = Object.keys(build);
     const [knowledgeResults, inventoryResults, dynamicModel] = await Promise.all([
         retrieveLocalKnowledge(cleanKnowledgeQuery, 4),
@@ -311,7 +305,6 @@ Output strictly the JSON object.`;
         }
         timing.mark('model_complete');
 
-        // Save to full critique cache (Tier 1)
         if (critiqueCacheKey.length > 5) {
             const saveCache = async () => {
                 try {
@@ -339,4 +332,3 @@ Output strictly the JSON object.`;
         throw error;
     }
 }
-

@@ -21,7 +21,6 @@ export function useProductQR(token?: string, sku?: string) {
     })();
     return () => { active = false; };
   }, [token, sku, key]);
-  // Match on render, before effect cleanup: never expose another product's image.
   const current = result?.key === key ? result : null;
   return { image: current?.image || '', url: current?.url || '', error: current?.error || '', retry: () => setAttempt(value => value + 1) };
 }

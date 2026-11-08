@@ -88,6 +88,5 @@ test('getCustomRigSummary constructs concise rig specs with CPU, GPU, and RAM', 
     'Custom Rig (AMD Ryzen 9 9900X3D, Asus ProArt GeForce RTX 5070 Ti OC 16GB GDDR7, Corsair Vengeance RGB 32GB (2×16GB) DDR5 6000MHz CL36)'
   );
 
-  // Fallback test
   assert.equal(getCustomRigSummary([]), 'Custom Rig');
 });

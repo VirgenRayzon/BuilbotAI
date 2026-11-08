@@ -9,8 +9,6 @@ export type BuildPdfPart = Pick<Part, 'name' | 'price' | 'specifications' | 'des
   wattage?: number;
 };
 
-// Standard North American Letter Paper Size in PostScript Points (72 points = 1 inch)
-// 8.5 in x 11.0 in = 612 pt x 792 pt
 const WIDTH = 612;
 const HEIGHT = 792;
 const MARGIN_X = 26;
@@ -283,7 +281,6 @@ function getFormattedSpecs(part: BuildPdfPart): string {
     }
   }
 
-  // Fallback: If no curated specs matched, take the first 4 non-empty specs
   if (items.length === 0) {
     for (const [k, v] of Object.entries(specs)) {
       if (k && v !== '' && v !== null && v !== undefined) {
@@ -316,10 +313,8 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
   pdf.setAuthor('Netcodex');
   pdf.setCreationDate(generatedAt);
 
-  // Exactly ONE single page with Letter dimensions (612 x 792 pt)
   const page = pdf.addPage([WIDTH, HEIGHT]);
 
-  // 1. Sleek Header Banner
   const HEADER_HEIGHT = 64;
   page.drawRectangle({
     x: 0,
@@ -329,7 +324,6 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
     color: INK,
   });
 
-  // Cyan accent strip at the bottom of header
   page.drawRectangle({
     x: MARGIN_X,
     y: HEIGHT - HEADER_HEIGHT,
@@ -338,7 +332,6 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
     color: CYAN,
   });
 
-  // Left header brand & title
   page.drawText('NETCODEX \u00b7 POWERED BY BUILDBOT AI', {
     x: MARGIN_X,
     y: HEIGHT - 22,
@@ -364,7 +357,6 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
     color: rgb(0.72, 0.79, 0.86),
   });
 
-  // Right header: Date & Total
   const dateStr = generatedAt.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
   const priceLabel = 'TOTAL BUILD PRICE';
   const priceValue = money(total);
@@ -397,7 +389,6 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
     color: rgb(1, 1, 1),
   });
 
-  // 2. Info Bar below Header
   const INFO_BAR_Y = HEIGHT - HEADER_HEIGHT - 16;
   const powerNote = totalWattage > 0 ? `  \u00b7  Est. Power Load: ${totalWattage}W` : '';
   page.drawText(`${parts.length} selected items  \u00b7  8 core categories complete${powerNote}`, {
@@ -418,7 +409,6 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
     color: MUTED,
   });
 
-  // 3. Dynamic Single-Page Parts Layout
   const listTop = INFO_BAR_Y - 10;
   const listBottom = 42; // Above footer divider
   const usableHeight = listTop - listBottom;
@@ -439,7 +429,6 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
   for (const [index, part] of parts.entries()) {
     const rowBottom = currentY - rowHeight;
 
-    // Card background with subtle alternating tint
     page.drawRectangle({
       x: MARGIN_X,
       y: rowBottom,
@@ -450,7 +439,6 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
       borderWidth: 0.75,
     });
 
-    // Left cyan accent strip
     page.drawRectangle({
       x: MARGIN_X,
       y: rowBottom,
@@ -459,7 +447,6 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
       color: CYAN,
     });
 
-    // Thumbnail image box
     const boxSize = Math.max(28, Math.min(42, rowHeight - 14));
     const imgX = MARGIN_X + 8;
     const imgY = rowBottom + (rowHeight - boxSize) / 2;
@@ -487,14 +474,12 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
           height: drawH,
         });
       } catch {
-        // Fallback gracefully if image parsing encounters unexpected bytes
       }
     }
 
     const textX = imgX + boxSize + 10;
     const maxTextWidth = (rightEdge - priceColWidth) - textX;
 
-    // 1. Category Tag + Index
     const catNum = String(index + 1).padStart(2, '0');
     const catText = `${catNum}  ${part.category.toUpperCase()}`;
     const catY = rowHeight >= 55 ? rowBottom + rowHeight - 14 : rowBottom + rowHeight - 12;
@@ -507,7 +492,6 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
       color: CYAN,
     });
 
-    // 2. Part Name with adaptive font sizing
     const nameY = rowHeight >= 55 ? catY - 14 : catY - 12;
     let nameSize = rowHeight >= 55 ? 9.5 : (rowHeight >= 48 ? 9 : 8);
     const safeName = safeText(part.name);
@@ -524,7 +508,6 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
       color: INK,
     });
 
-    // 3. Technical Specifications
     const specsText = getFormattedSpecs(part);
     const specSize = rowHeight >= 55 ? 7.5 : (rowHeight >= 48 ? 7 : 6.5);
     const fittedSpecs = fitText(specsText, regular, specSize, maxTextWidth);
@@ -538,7 +521,6 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
       color: MUTED,
     });
 
-    // 4. Price (Right Column)
     const priceText = money(part.price);
     const priceSize = rowHeight >= 55 ? 10.5 : (rowHeight >= 48 ? 10 : 9);
     const priceWidth = bold.widthOfTextAtSize(priceText, priceSize);
@@ -556,7 +538,6 @@ export async function createBuildPdf(parts: BuildPdfPart[], generatedAt = new Da
     currentY -= (rowHeight + gap);
   }
 
-  // 4. Footer
   page.drawLine({
     start: { x: MARGIN_X, y: 30 },
     end: { x: WIDTH - MARGIN_X, y: 30 },

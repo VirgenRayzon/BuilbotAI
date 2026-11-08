@@ -66,7 +66,6 @@ export default function ManagerSignupPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const isSubmittingRef = useRef(false);
   
-  // Modal for Google signup key prompt
   const [googleModalOpened, setGoogleModalOpened] = useState(false);
   const [googleUserCredential, setGoogleUserCredential] = useState<any>(null);
   const [googleManagerKey, setGoogleManagerKey] = useState('');
@@ -80,7 +79,6 @@ export default function ManagerSignupPage() {
   const { toast } = useToast();
   const { authUser, profile, loading: authLoading } = useUserProfile();
 
-  // Redirect if already logged in with an active administrator session
   useEffect(() => {
     if (isSubmittingRef.current || loading || googleLoading) return;
 
@@ -149,7 +147,6 @@ export default function ManagerSignupPage() {
         return;
       }
 
-      // Key verification SUCCEEDED! Register active admin session in sessionStorage
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('buildbot_admin_session_active', createdUser.uid);
       }
@@ -427,7 +424,6 @@ export default function ManagerSignupPage() {
                     <PasswordInput
                       label="Default Manager Access Key"
                       placeholder="Enter assigned manager key"
-                      // This validates authorization; it must never be treated as the account password.
                       autoComplete="one-time-code"
                       radius="md"
                       size="md"

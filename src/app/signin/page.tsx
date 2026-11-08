@@ -51,7 +51,6 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 const staffSignInError = 'This is a staff account. Sign in through System Access with your access key.';
-// Survives a temporary page remount while Firebase Auth/profile state changes.
 let customerSignInInProgress = false;
 
 function SignInContent() {
@@ -76,7 +75,6 @@ function SignInContent() {
   );
   const visibleError = error || (!loading && !googleLoading && reason === 'staff_account' ? staffSignInError : null);
 
-  // Customer sign-in must never route a staff session into the admin portal.
   useEffect(() => {
     if (customerSignInInProgress || loading || googleLoading || redirectingRef.current) return;
     if (authUser && (profileStatus === 'missing' || profileStatus === 'error')) {
@@ -132,7 +130,6 @@ function SignInContent() {
     let signedInUserId: string | null = null;
 
     try {
-      // Keep the provisional Auth session tab-scoped until the account is verified.
       sessionStorage.removeItem('buildbot_admin_session_active');
       await setPersistence(auth, browserSessionPersistence);
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
@@ -161,7 +158,6 @@ function SignInContent() {
           return;
         }
       } else {
-        // If profile is missing in Firestore, create standard customer profile
         const newProfile = {
           email: user.email,
           name: user.displayName || user.email?.split('@')[0] || 'User',
@@ -173,7 +169,6 @@ function SignInContent() {
         await setDoc(userDocRef, newProfile);
       }
 
-      // Synchronize claims and refresh client token
       const idToken = await user.getIdToken();
       const claimsResult = await syncUserClaimsAction(idToken);
       if ('error' in claimsResult) throw new Error('Unable to verify account permissions. Please try again.');
@@ -254,8 +249,6 @@ function SignInContent() {
     }
   };
 
-  // An existing session is being restored or redirected. Keep the sign-in form
-  // out of view without interrupting an active submission's loading state.
   if ((authUser || redirectingRef.current) && !loading && !googleLoading) {
     return null;
   }

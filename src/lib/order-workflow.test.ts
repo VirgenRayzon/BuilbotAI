@@ -47,7 +47,6 @@ test('legacy reservations map cleanly into unified fulfillment stages and progre
   ]);
   assert.equal(getNextOrderStage(legacyPending), 'assembling_testing');
 
-  // Legacy reservations without paymentMethod behave as COD/store pickup and can advance to assembling_testing
   assert.doesNotThrow(() => assertOrderStageTransition(legacyPending, 'assembling_testing'));
   assert.throws(
     () => assertOrderStageTransition(legacyPending, 'out_for_delivery'),
@@ -58,7 +57,6 @@ test('legacy reservations map cleanly into unified fulfillment stages and progre
   assert.equal(getOrderFulfillmentStage(legacyFinished), 'out_for_delivery');
   assert.equal(getOrderFulfillmentStageLabel(legacyFinished), 'Ready for Pickup');
 
-  // Cannot mark delivered until payment is confirmed paid
   assert.throws(
     () => assertOrderStageTransition(legacyFinished, 'delivered'),
     /Confirm payment before marking the order delivered/i
@@ -154,7 +152,6 @@ test('staff payment status transition policy enforces cancellation, delivery, re
     /Cash on Delivery orders only support/i
   );
 
-  // Online order manual confirmation requires reason >= 8 chars
   const paymongoOrder = makeOrder({
     paymentMethod: 'paymongo_simulated',
     paymentStatus: 'pending',
@@ -167,7 +164,6 @@ test('staff payment status transition policy enforces cancellation, delivery, re
     assertStaffPaymentStatusTransition(paymongoOrder, 'paid', 'Verified PayMongo dashboard receipt #123')
   );
 
-  // Reverting paid order before delivery requires reason >= 8 chars
   const paidCod = makeOrder({ paymentMethod: 'cod', paymentStatus: 'paid' });
   assert.throws(
     () => assertStaffPaymentStatusTransition(paidCod, 'unpaid'),
@@ -177,7 +173,6 @@ test('staff payment status transition policy enforces cancellation, delivery, re
     assertStaffPaymentStatusTransition(paidCod, 'unpaid', 'Marked paid on wrong order by mistake')
   );
 
-  // Cancelled, archived, delivered, and refunded orders lock payment reversal
   assert.throws(
     () => assertStaffPaymentStatusTransition({ ...codOrder, status: 'cancelled' }, 'paid'),
     /Cancelled orders cannot change payment status/i
@@ -222,9 +217,7 @@ test('stock state and payment history synthesize cleanly for legacy and modern o
 
 test('calculateOrderFinancialSummary distinguishes placed value, collected payments, refunds, and net sales', () => {
   const orders: Order[] = [
-    // Unpaid active COD order: counts toward placedOrderValue ONLY, not collectedPayments or netSales
     makeOrder({ id: 'o1', totalPrice: 30000, paymentMethod: 'cod', paymentStatus: 'unpaid' }),
-    // Paid active order with partial refund of 4000
     makeOrder({
       id: 'o2',
       totalPrice: 50000,
@@ -233,7 +226,6 @@ test('calculateOrderFinancialSummary distinguishes placed value, collected payme
       refundStatus: 'partial',
       refundedAmount: 4000,
     }),
-    // Paid order that was later cancelled and fully refunded (20000)
     makeOrder({
       id: 'o3',
       totalPrice: 20000,
@@ -243,7 +235,6 @@ test('calculateOrderFinancialSummary distinguishes placed value, collected payme
       refundStatus: 'refunded',
       refundedAmount: 20000,
     }),
-    // Unpaid cancelled order: contributes 0 everywhere
     makeOrder({
       id: 'o4',
       totalPrice: 15000,
@@ -258,21 +249,15 @@ test('calculateOrderFinancialSummary distinguishes placed value, collected payme
   assert.equal(getNetCollectedAmount(orders[1]), 46000);
 
   const summary = calculateOrderFinancialSummary(orders);
-  // Placed value = non-cancelled orders (o1: 30,000 + o2: 50,000 = 80,000)
   assert.equal(summary.placedOrderValue, 80000);
-  // Collected payments = all paid orders gross (o2: 50,000 + o3: 20,000 = 70,000)
   assert.equal(summary.collectedPayments, 70000);
-  // Refunds issued = o2: 4,000 + o3: 20,000 = 24,000
   assert.equal(summary.refundsIssued, 24000);
-  // Net sales = (50,000 - 4,000) + (20,000 - 20,000) = 46,000
   assert.equal(summary.netSales, 46000);
   assert.equal(summary.totalOrderCount, 4);
   assert.equal(summary.activeOrderCount, 2);
   assert.equal(summary.paidOrderCount, 2);
   assert.equal(summary.cancelledOrderCount, 2);
 });
-
-
 
 test('stage actions describe payment prerequisites and pickup while respecting terminal states', () => {
   assert.equal(getOrderStageAction(makeOrder({ type: 'custom' })).label, 'Start Assembly');

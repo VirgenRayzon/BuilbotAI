@@ -72,8 +72,6 @@ export function buildSalesAnalyticsWorkbook({
         }
     }
 
-    // 1. Sheet 1: Executive KPI Summary
-    // Note: Row 1 is Header (Metric | Value), so summaryData[idx] maps to Excel cell B{idx + 2}.
     const summaryData = [
         { Metric: 'Report Title', Value: 'Netcodex - Sales & Analytics Report' }, // B2
         { Metric: 'Generated At', Value: new Date().toLocaleString() }, // B3
@@ -101,7 +99,6 @@ export function buildSalesAnalyticsWorkbook({
     const wsSummary = XLSX.utils.json_to_sheet(summaryData);
     wsSummary['!cols'] = [{ wch: 36 }, { wch: 36 }];
 
-    // 2. Sheet 2: Revenue Trend Data (strictly Net Sales from paid orders)
     const revenueSheetData = revenueData.map((item) => ({
         Period: item.name,
         'Net Sales (PHP)': item.revenue,
@@ -111,7 +108,6 @@ export function buildSalesAnalyticsWorkbook({
     });
     wsRevenue['!cols'] = [{ wch: 22 }, { wch: 20 }];
 
-    // 3. Sheet 3: Component Popularity Matrix
     const popularityRows: Record<string, string | number>[] = [];
     getPopularityCategories(parts || []).forEach(({ category, parts: rankedParts, maxPopularity }) => {
         rankedParts.forEach((part, index) => {
@@ -153,7 +149,6 @@ export function buildSalesAnalyticsWorkbook({
         { wch: 12 },
     ];
 
-    // 4. Sheet 4: Customer Orders Log
     const orderRows = safeOrders.map((order) => {
         const dateStr = order.createdAt?.toDate
             ? order.createdAt.toDate().toLocaleDateString()
@@ -244,7 +239,6 @@ export function buildSalesAnalyticsWorkbook({
         { wch: 30 },
     ];
 
-    // 5. Sheet 5: Prebuilt Sales by Tier
     const prebuiltTierCounts: Record<string, number> = {
         Entry: 0,
         'Mid-Range': 0,
@@ -279,7 +273,6 @@ export function buildSalesAnalyticsWorkbook({
     const wsPrebuilts = XLSX.utils.json_to_sheet(prebuiltRows);
     wsPrebuilts['!cols'] = [{ wch: 20 }, { wch: 18 }, { wch: 26 }];
 
-    // 6. Sheet 6: Net Sales by Category (strictly from paid orders)
     const catMap = new Map<string, number>();
     paidOrders.forEach((order) => {
         const itemsTotal = (order.items || []).reduce((sum, item) => {
@@ -310,7 +303,6 @@ export function buildSalesAnalyticsWorkbook({
     });
     wsCategories['!cols'] = [{ wch: 22 }, { wch: 20 }, { wch: 20 }];
 
-    // Construct the workbook
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, wsSummary, 'KPI Summary');
     XLSX.utils.book_append_sheet(wb, wsRevenue, 'Revenue Trend');

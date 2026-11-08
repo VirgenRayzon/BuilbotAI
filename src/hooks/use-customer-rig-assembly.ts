@@ -47,7 +47,6 @@ export function useCustomerRigAssembly(order: Order, selectedRigId?: string) {
       order.fulfillmentStage === 'delivered' ||
       order.status === 'finished building';
 
-    // Baseline fallback initialized record
     const base = initializeRigVerification(
       order.id,
       activeRig.rigId,
@@ -76,7 +75,6 @@ export function useCustomerRigAssembly(order: Order, selectedRigId?: string) {
       return;
     }
 
-    // If no firestore client, return baseline
     if (!firestore || !order.id) {
       setVerification(base);
       return;
@@ -85,7 +83,6 @@ export function useCustomerRigAssembly(order: Order, selectedRigId?: string) {
     setLoading(true);
     setError(null);
 
-    // Subscribe in real-time to the assembly subcollection
     const rigDocRef = doc(firestore, 'orders', order.id, 'assembly', activeRig.rigId);
 
     const unsubscribe = onSnapshot(
@@ -96,13 +93,11 @@ export function useCustomerRigAssembly(order: Order, selectedRigId?: string) {
           const data = docSnap.data() as RigVerificationRecord;
           setVerification(data);
         } else {
-          // If no doc exists yet, check if order is complete or use baseline
           setVerification(base);
         }
       },
       (err) => {
         console.warn('Realtime assembly listener error, falling back to server action:', err);
-        // Fallback to server action
         const user = auth?.currentUser;
         if (user) {
           user

@@ -24,12 +24,10 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
     const { authUser, profile, loading: profileLoading } = useUserProfile();
     const { toast } = useToast();
 
-    // Measurement refs
     const requestStartRef = useRef<number>(0);
     const ttftRef = useRef<number>(0);
     const kbTimeRef = useRef<number>(0);
 
-    // AI Kill Switch check from Firestore
     const firestore = useFirestore();
     const settingsDocRef = useMemo(() => {
         if (firestore) return doc(firestore, 'siteSettings', 'main');
@@ -38,7 +36,6 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
     const { data: settings } = useDoc<any>(settingsDocRef);
     const isAiKillSwitch = settings?.isAiKillSwitch || false;
 
-    // Keep the serializable build details used by the server-side checks.
     const sanitizedBuild = useMemo(() => {
         if (!build) return null;
         const res: Record<string, any> = {};
@@ -77,12 +74,9 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
         return selected;
     }, [build]);
 
-    // useChat creates its Chat instance once. The transport must read these refs at
-    // request time so restored or newly selected parts reach every new message.
     const requestContextRef = useRef({ profile, sanitizedBuild });
     requestContextRef.current = { profile, sanitizedBuild };
 
-    // Close when other floating actions open
     useEffect(() => {
         const handleOpen = (e: any) => {
             if (e.detail?.type !== 'chat') {
@@ -93,9 +87,6 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
         return () => window.removeEventListener('floating-action-open', handleOpen);
     }, []);
 
-    // NOTE: Side effects (event dispatch) must stay OUTSIDE the setState updater.
-    // Updaters run during render, so dispatching there triggers setState in other
-    // floating components (e.g. BuilderFloatingAnalytics) mid-render.
     const toggleOpen = useCallback(() => {
         const next = !isOpen;
         setIsOpen(next);
@@ -146,7 +137,6 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
             }
             setTimerActive(false);
 
-            // Compute and record telemetry
             const tat = requestStartRef.current > 0 ? Date.now() - requestStartRef.current : elapsedTime * 1000;
             const ttft = ttftRef.current || Math.min(2000, tat * 0.3);
             const kbTime = kbTimeRef.current || 0;
@@ -207,7 +197,6 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
 
     const isLoading = status === 'streaming' || status === 'submitted';
 
-    // Timer logic
     useEffect(() => {
         let interval: NodeJS.Timeout;
         if (timerActive) {
@@ -219,7 +208,6 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
         return () => clearInterval(interval);
     }, [timerActive]);
 
-    // Restore cached history and telemetry on mount
     useEffect(() => {
         const savedTelemetry = localStorage.getItem('pc_chat_telemetry_v1');
         if (savedTelemetry) {
@@ -250,7 +238,6 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
         }
     }, [setMessages]);
 
-    // Render local welcome greeting when chat is first opened and empty
     useEffect(() => {
         if (isOpen && authUser && !profileLoading && messages.length === 0 && !isLoading && !isAiKillSwitch) {
             const name = profile?.firstName?.trim()
@@ -272,7 +259,6 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
         }
     }, [isOpen, authUser, profileLoading, profile?.firstName, profile?.name, messages.length, isLoading, setMessages, isAiKillSwitch]);
 
-    // Clear chat on logout
     useEffect(() => {
         if (!profileLoading && !authUser) {
             setMessages([]);
@@ -327,8 +313,6 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
 
         beginRequest();
         const latestUserMessage = [...messages].reverse().find(message => message.role === 'user');
-        // Regenerating an older message discards later chat history in the SDK.
-        // Re-send older prompts at the end so the rest of the conversation remains available.
         const retry = latestUserMessage?.id === messageId
             ? regenerate({ messageId })
             : sendMessage({ text });

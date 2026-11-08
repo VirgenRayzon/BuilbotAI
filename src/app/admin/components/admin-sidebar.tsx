@@ -586,7 +586,6 @@ export function AdminSidebar({
       },
     ];
 
-  // Track open/closed state for collapsible parent sections
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(
     () => ({
       Inventory: true,

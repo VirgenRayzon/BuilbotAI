@@ -76,7 +76,6 @@ export function ProfileSidebar({
   const isManager = Boolean(profile?.isManager && !profile?.isSuperAdmin);
   const isRegularUser = !isSuperAdmin && !isManager;
 
-  // Handle Logout
   const handleConfirmSignOut = async () => {
     if (auth) {
       setIsSigningOut(true);
@@ -108,7 +107,6 @@ export function ProfileSidebar({
     badgeColor?: string;
   };
 
-  // 1. Account Items: Profile, Address Book, Settings
   const accountItems: NavItem[] = [
     {
       id: "profile",
@@ -133,7 +131,6 @@ export function ProfileSidebar({
     },
   ];
 
-  // 2. Customer order workflow queues
   const ordersAndShipmentsItems: NavItem[] = [];
   if (isRegularUser) {
     ordersAndShipmentsItems.push(
@@ -188,7 +185,6 @@ export function ProfileSidebar({
     );
   }
 
-  // 3. Saved & Inbox Items
   const activityItems: NavItem[] = [];
   if (isRegularUser) {
     activityItems.push(
@@ -218,7 +214,6 @@ export function ProfileSidebar({
     );
   }
 
-  // 4. Administration Items (Super Admin Tools - System Safeguards retained in Profile)
   const adminItems: NavItem[] = [];
   if (isManager || isSuperAdmin) {
     adminItems.push({

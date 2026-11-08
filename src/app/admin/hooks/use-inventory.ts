@@ -48,7 +48,6 @@ export function useInventory(profile: any, loadAllParts = true) {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    // Data Fetching
     const { data: rawParts, loading: partsLoading } = useInventoryParts(firestore, loadAllParts);
 
     const prebuiltSystemsQuery = useMemo(() => firestore ? collection(firestore, 'prebuiltSystems') : null, [firestore]);
@@ -58,7 +57,6 @@ export function useInventory(profile: any, loadAllParts = true) {
         return rawParts || [];
     }, [rawParts]);
 
-    // Handlers
     const handleAddPart = async (newPartData: AddPartFormSchema, operationId?: string) => {
         if (!firestore) throw new Error('Inventory is not connected. Please retry.');
         const saved = await addPart(firestore, newPartData, operationId);
@@ -124,13 +122,11 @@ export function useInventory(profile: any, loadAllParts = true) {
         const partName = currentPart?.name || partId;
         const actorName = profile?.name || profile?.email || 'Admin';
 
-        // 1. Update stock in Firestore
         await updatePart(firestore, category, partId, { stock: newStock });
 
         const isReducing = actualDelta < 0;
         const absDelta = Math.abs(actualDelta);
 
-        // 2. Create Audit Log
         await createAuditLog(firestore, {
             actionName: 'updated',
             actorId: profile?.id || 'unknown',
@@ -144,7 +140,6 @@ export function useInventory(profile: any, loadAllParts = true) {
                 : `${actorName} added ${absDelta} stocks of ${partName} (Stock: ${currentStock} -> ${newStock})`
         });
 
-        // 3. Create System Notification for other admins/managers
         await createSystemNotification(
             firestore,
             {

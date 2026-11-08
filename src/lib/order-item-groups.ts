@@ -35,7 +35,6 @@ export function groupOrderItems(order: {
   const items = order.items || [];
   if (items.length === 0) return [];
 
-  // Check if items already have explicit groupName or buildType
   const hasExplicitGroups = items.some((it) => !!it.groupName || !!it.buildType);
 
   if (hasExplicitGroups) {
@@ -73,7 +72,6 @@ export function groupOrderItems(order: {
         }
       }
 
-      // Group key: if item has a rigInstanceId, separate by rigInstanceId to preserve multi-rig identity
       const groupKey =
         gType === "custom-build" && item.rigInstanceId
           ? `rig:${item.rigInstanceId}`
@@ -118,7 +116,6 @@ export function groupOrderItems(order: {
       });
     }
 
-    // Sort groups so "My Build" or Prebuilt comes first, followed by "Additional"
     groups.sort((a, b) => {
       if (a.type !== "additional" && b.type === "additional") return -1;
       if (a.type === "additional" && b.type !== "additional") return 1;
@@ -128,8 +125,6 @@ export function groupOrderItems(order: {
     return groups;
   }
 
-  // Fallback for legacy orders where groupName is not on item documents:
-  // 1) If the order is explicitly a prebuilt system:
   if (order.type === "prebuilt" || order.prebuiltName) {
     const prebuiltTitle = order.prebuiltName || "Prebuilt System";
     const totalPrice = items.reduce(
@@ -147,7 +142,6 @@ export function groupOrderItems(order: {
     ];
   }
 
-  // 2) If the order has items: detect if there's a custom build and/or additional items
   const hasMotherboard = items.some(
     (it) => it.category?.toUpperCase() === "MOTHERBOARD"
   );
@@ -208,7 +202,6 @@ export function groupOrderItems(order: {
     return groups;
   }
 
-  // If order is explicitly custom and has components:
   if (order.type === "custom" && items.length >= 4) {
     return [
       {
@@ -224,7 +217,6 @@ export function groupOrderItems(order: {
     ];
   }
 
-  // Otherwise, all items are standalone / additional parts
   return [
     {
       id: "legacy-additional-0",

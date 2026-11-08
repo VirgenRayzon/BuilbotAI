@@ -67,13 +67,10 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
     const { theme } = useTheme();
     const isDark = theme === 'dark';
 
-    // SSR safety for Recharts
     const mounted = useSyncExternalStore(subscribeToHydration, () => true, () => false);
 
-    // Revenue Range
     const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year'>('week');
 
-    // Process Revenue Data based on time range
     const revenueData = useMemo(() => {
         const now = new Date();
         let dataPoints: { name: string; date: Date }[] = [];
@@ -130,7 +127,6 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
         }));
     }, [orders, timeRange]);
 
-    // Process Unified Order Fulfillment Distribution
     const statusData = useMemo(() => {
         const counts = {
             order_placed: 0,
@@ -158,7 +154,6 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
         ].filter(d => d.value > 0);
     }, [orders]);
 
-    // Process Prebuilt Sales by Tier
     const prebuiltTierData = useMemo(() => {
         const counts = {
             'Entry': 0,
@@ -185,7 +180,6 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
         ].filter(d => d.value > 0);
     }, [orders, prebuilts]);
 
-    // Process Category Performance (allocated strictly from Net Sales of paid orders)
     const categoryData = useMemo(() => {
         const catMap = new Map<string, number>();
         (orders || []).filter(o => getNetCollectedAmount(o) > 0).forEach(order => {
@@ -208,7 +202,6 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
             .slice(0, 6);
     }, [orders]);
 
-    // High Level Financial & Operational KPI Metrics
     const metrics = useMemo(() => {
         const financials = calculateOrderFinancialSummary(orders || []);
         const aov = financials.paidOrderCount > 0
@@ -221,10 +214,8 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
         return { financials, aov, cancellationRate };
     }, [orders]);
 
-    // Popularity Matrix Data grouped by Category and sorted by Popularity
     const popularityCategories = useMemo(() => getPopularityCategories(parts || []), [parts]);
 
-    // Category icon helper
     const getCategoryIcon = (cat: string) => {
         const lower = cat.toLowerCase();
         if (lower.includes('cpu')) return <Cpu className="w-4 h-4 text-cyan-500" />;

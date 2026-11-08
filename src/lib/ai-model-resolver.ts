@@ -49,12 +49,10 @@ interface CachedSettingsData {
     location: string;
 }
 
-// In-memory cache to prevent excessive Firestore reads across rapid chat messages & flows
 let cachedSettings: CachedSettingsData | null = null;
 let lastCacheTime = 0;
 const CACHE_TTL_MS = 15000; // 15 seconds cache
 
-// Degradation circuit breaker for fine-tuned model
 let isTunedModelDegraded = false;
 let degradedUntil = 0;
 const DEGRADED_COOLDOWN_MS = 60000; // 60 seconds cooldown if permission/network error occurs
@@ -81,9 +79,7 @@ export function isCurrentlyDegraded(): boolean {
 export function normalizeModelId(rawId?: string): string {
     if (!rawId) return DEFAULT_TUNED_MODEL_ID;
     let normalized = rawId.trim();
-    // Normalize typo project 7817221357778 (4 sevens) -> 781722135778 (3 sevens)
     normalized = normalized.replace('7817221357778', '781722135778');
-    // If user configured the model registry ID '2614243376421142528', map to the active deployed endpoint '2302171190132736000'
     if (normalized.includes('2614243376421142528')) {
         normalized = TUNED_ENDPOINT_RESOURCE_ID;
     }
@@ -122,7 +118,6 @@ export async function getActiveAiModelConfig(feature?: AiFeatureKey): Promise<Ac
                         prebuiltAdvisor: data.featureModelRouting.prebuiltAdvisor === 'finetuned' ? 'finetuned' : 'default',
                     };
                 } else {
-                    // Fall back to global aiModelProvider if featureModelRouting hasn't been configured yet
                     featureRouting = {
                         chatbot: globalProvider,
                         buildAdvisor: globalProvider,
@@ -201,10 +196,8 @@ export async function getActiveAiModelConfig(feature?: AiFeatureKey): Promise<Ac
 export async function getGenkitModelName(feature?: AiFeatureKey): Promise<string> {
     const config = await getActiveAiModelConfig(feature);
     if (config.isFineTuned && !config.isDegraded) {
-        // If the path already has a provider prefix, return as is
         if (config.modelId.startsWith('vertexai/')) return config.modelId;
         if (config.modelId.startsWith('googleai/')) return config.modelId;
-        // Vertex AI Genkit plugin supports vertexai/modelName
         return `vertexai/${config.modelId}`;
     }
     return `googleai/${config.modelId || DEFAULT_MODEL}`;
@@ -259,7 +252,6 @@ export async function getVertexAccessToken(forceRefresh = false): Promise<string
         }
     }
 
-    // Fallback: Attempt Google Application Default Credentials (ADC)
     try {
         const auth = new GoogleAuth({
             scopes: ['https://www.googleapis.com/auth/cloud-platform']
@@ -272,7 +264,6 @@ export async function getVertexAccessToken(forceRefresh = false): Promise<string
             return cachedAccessToken;
         }
     } catch {
-        // No local ADC found
     }
 
     return null;
@@ -326,12 +317,9 @@ export async function getLanguageModelForChat(options?: { forceDefault?: boolean
             };
         }
 
-        // Custom fetch that injects Google Cloud OAuth2 Bearer token, rewrites endpoints path, and strips API key header
         const vertexFetch = async (url: string | URL | Request, init?: RequestInit) => {
             const currentToken = await getVertexAccessToken();
             let finalUrl = String(url);
-            // @ai-sdk/google automatically prepends /models/ to the model name.
-            // If targeting a Vertex AI Endpoint (/endpoints/...), rewrite /models/endpoints/ -> /endpoints/
             finalUrl = finalUrl.replace('/models/endpoints/', '/endpoints/');
 
             const headers = new Headers(init?.headers);
@@ -348,13 +336,11 @@ export async function getLanguageModelForChat(options?: { forceDefault?: boolean
             fetch: vertexFetch,
         });
 
-        // Determine clean model resource for Vertex AI
         let cleanModelName = config.modelId;
         const endpointsIdx = cleanModelName.indexOf('/endpoints/');
         const modelsIdx = cleanModelName.indexOf('/models/');
 
         if (endpointsIdx !== -1) {
-            // Target the deployed endpoint
             cleanModelName = `endpoints/${cleanModelName.slice(endpointsIdx + 11)}`;
         } else if (modelsIdx !== -1) {
             cleanModelName = `publishers/google/models/${cleanModelName.slice(modelsIdx + 8)}`;

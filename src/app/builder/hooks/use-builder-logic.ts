@@ -33,11 +33,7 @@ export function useBuilderLogic(allParts: Part[]) {
     const hasRestoredBuildRef = useRef(false);
     const hasProcessedPendingBuildRef = useRef(false);
 
-    // Persistence
     useEffect(() => {
-        // React Strict Mode replays mount effects in development. Restoring only
-        // once prevents that replay from replacing a freshly imported pre-built
-        // with the older persisted draft after the transfer payload is consumed.
         if (hasRestoredBuildRef.current) return;
         hasRestoredBuildRef.current = true;
 
@@ -135,12 +131,9 @@ export function useBuilderLogic(allParts: Part[]) {
         let nextBuild = { ...build };
         const toastsToShow: { title: string; description: string; variant?: "default" | "destructive" }[] = [];
 
-        // Determine if we are removing an existing part
         const isCurrentlySelected = (category === 'Storage' || category === 'RAM') 
             ? false 
             : (build[category] as ComponentData)?.model === part.name;
-
-        // Sequence Validation (Removed)
 
         const { compatible, message } = checkCompatibility(part, build);
 
@@ -248,8 +241,6 @@ export function useBuilderLogic(allParts: Part[]) {
                 const coolerModel = includedCpuCoolerName(part);
                 if (coolerModel) {
                     nextBuild['Cooler'] = {
-                        // Bundled coolers use a reserved identity so CPU removal and
-                        // boxed-to-tray CPU replacement can clean them up reliably.
                         id: 'included-stock-cooler',
                         model: coolerModel,
                         price: 0,
@@ -271,7 +262,6 @@ export function useBuilderLogic(allParts: Part[]) {
         toastsToShow.forEach(t => toast(t));
     }, [build, toast, getCountInBuild]);
 
-    // AI suggestion matching
     useEffect(() => {
         const findPartRobustly = (suggestion?: string, partId?: string) => {
             if (partId) {
@@ -307,7 +297,6 @@ export function useBuilderLogic(allParts: Part[]) {
         };
     }, [allParts, handlePartToggle, toast]);
 
-    // Favorite loading handler
     const loadFavoriteBuild = useCallback((favorite: FavoriteBuild) => {
         if (!allParts.length) return;
 
@@ -318,7 +307,6 @@ export function useBuilderLogic(allParts: Part[]) {
         const skipped: string[] = [];
         const outOfStock: string[] = [];
 
-        // Check if CPU exists in favorite to determine if a bundled cooler is supplied
         const cpuFav = favorite.parts.find(p => p.category === 'CPU');
         const liveCpu = cpuFav ? allParts.find(p => p.id === cpuFav.partId || (cpuFav.name && p.name.toLowerCase() === cpuFav.name.toLowerCase())) : null;
         const bundledCoolerName = liveCpu ? includedCpuCoolerName(liveCpu) : null;
@@ -377,7 +365,6 @@ export function useBuilderLogic(allParts: Part[]) {
             }
         }
 
-        // If CPU provides a bundled cooler and no cooler was configured, attach it
         const loadedCpu = newBuild['CPU'] as ComponentData | null;
         if (loadedCpu && !newBuild['Cooler']) {
             const hasAftermarketInFav = favorite.parts.some(p => p.category === 'Cooler' && !isIncludedStockCoolerPart(p));
@@ -439,7 +426,6 @@ export function useBuilderLogic(allParts: Part[]) {
         }
     }, [allParts, setBuild, toast]);
 
-    // Listen for load-favorite-build event
     useEffect(() => {
         const handleLoadFavorite = (e: any) => {
             loadFavoriteBuild(e.detail as FavoriteBuild);
@@ -447,7 +433,6 @@ export function useBuilderLogic(allParts: Part[]) {
 
         window.addEventListener('load-favorite-build', handleLoadFavorite);
 
-        // Also check if there's a pending favorite in localStorage (from profile page redirect)
         if (allParts.length > 0 && !hasProcessedPendingBuildRef.current) {
             const pending = localStorage.getItem('pc_builder_load_favorite');
             if (pending) {

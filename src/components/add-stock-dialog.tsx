@@ -37,7 +37,6 @@ export function AddStockDialog({ part, onAddStock, children, open: controlledOpe
     const currentStock = part.stock ?? 0;
     const validQuantity = Number.isFinite(quantity) && quantity > 0 ? Math.floor(quantity) : 0;
     
-    // Calculate new stock depending on add or reduce mode
     const effectiveDelta = mode === 'add' ? validQuantity : -Math.min(currentStock, validQuantity);
     const newStock = Math.max(0, currentStock + effectiveDelta);
     const isReducing = mode === 'reduce' && validQuantity > 0;

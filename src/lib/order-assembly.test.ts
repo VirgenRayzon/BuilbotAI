@@ -64,7 +64,6 @@ test('order-assembly: correctly identifies custom rigs and ignores prebuilts and
   assert.equal(rigs[0].rigId, 'rig_custom_1');
   assert.equal(rigs[0].items.length, 2);
 
-  // Prebuilt order
   const prebuiltOrder: Order = {
     id: 'ord_2',
     userId: 'u_1',
@@ -80,7 +79,6 @@ test('order-assembly: correctly identifies custom rigs and ignores prebuilts and
   };
   assert.equal(isOrderCustomRigAssemblyRequired(prebuiltOrder), false);
 
-  // Cancelled custom order
   assert.equal(
     isOrderCustomRigAssemblyRequired({ ...customOrder, status: 'cancelled' }),
     false
@@ -96,7 +94,6 @@ test('order-assembly: multi-rig orders separate duplicate parts and track each r
     status: 'building',
     createdAt: new Date(),
     items: [
-      // Rig 1
       {
         id: 'cpu_1',
         name: 'Intel Core i5-13600K',
@@ -115,7 +112,6 @@ test('order-assembly: multi-rig orders separate duplicate parts and track each r
         buildType: 'custom-build',
         rigInstanceId: 'rig_ws_1',
       },
-      // Rig 2
       {
         id: 'cpu_1', // same product ID
         name: 'Intel Core i5-13600K',
@@ -145,7 +141,6 @@ test('order-assembly: multi-rig orders separate duplicate parts and track each r
   const v1 = initializeRigVerification('ord_multi', rigs[0].rigId, rigs[0].rigName, rigs[0].items);
   const v2 = initializeRigVerification('ord_multi', rigs[1].rigId, rigs[1].rigName, rigs[1].items);
 
-  // Verify that duplicate part IDs have unique lineIds per rig
   assert.equal(v1.picking.items.length, 2);
   assert.equal(v2.picking.items.length, 2);
   assert.notEqual(v1.picking.items[0].lineId, v2.picking.items[0].lineId);
@@ -160,60 +155,49 @@ test('order-assembly: enforces strict step order: picking -> assembly -> testing
 
   assert.equal(v.status, 'unverified');
 
-  // Cannot assembly before picking is complete
   assert.throws(
     () => applyStepUpdateAndInvalidation(v, 'assembly', { completed: true }, staffVerifier, new Date()),
     /Component picking must be completed/
   );
 
-  // Pick partial
   v = applyStepUpdateAndInvalidation(v, 'picking', { pickedLineIds: ['l1'] }, staffVerifier, new Date());
   assert.equal(v.picking.completed, false);
   assert.equal(v.status, 'in_progress');
 
-  // Still cannot assemble
   assert.throws(
     () => applyStepUpdateAndInvalidation(v, 'assembly', { completed: true }, staffVerifier, new Date()),
     /Component picking must be completed/
   );
 
-  // Pick all
   v = applyStepUpdateAndInvalidation(v, 'picking', { pickedLineIds: ['l1', 'l2'] }, staffVerifier, new Date());
   assert.equal(v.picking.completed, true);
 
-  // Cannot test before assembly
   assert.throws(
     () => applyStepUpdateAndInvalidation(v, 'testing', { passed: true }, staffVerifier, new Date()),
     /Assembly must be completed/
   );
 
-  // Mark assembly complete
   v = applyStepUpdateAndInvalidation(v, 'assembly', { completed: true, notes: 'Built cleanly' }, staffVerifier, new Date());
   assert.equal(v.assembly.completed, true);
 
-  // Cannot QC before testing
   assert.throws(
     () => applyStepUpdateAndInvalidation(v, 'qc', { passed: true }, staffVerifier, new Date()),
     /Hardware testing must be completed/
   );
 
-  // Fail hardware testing
   v = applyStepUpdateAndInvalidation(v, 'testing', { passed: false, notes: 'Memory errors in MemTest' }, staffVerifier, new Date());
   assert.equal(v.testing.passed, false);
   assert.equal(v.status, 'failed');
 
-  // Cannot pass QC if testing failed
   assert.throws(
     () => applyStepUpdateAndInvalidation(v, 'qc', { passed: true }, staffVerifier, new Date()),
     /Hardware testing must be completed and passed/
   );
 
-  // Re-run testing and pass
   v = applyStepUpdateAndInvalidation(v, 'testing', { passed: true, notes: 'Re-seated RAM, passed 24h bench' }, staffVerifier, new Date());
   assert.equal(v.testing.passed, true);
   assert.equal(v.status, 'in_progress');
 
-  // Complete final QC
   v = applyStepUpdateAndInvalidation(v, 'qc', { passed: true, notes: 'All stickers, clean cables, passed inspection' }, staffVerifier, new Date());
   assert.equal(v.qc.passed, true);
   assert.equal(v.status, 'passed');
@@ -225,14 +209,12 @@ test('order-assembly: invalidates downstream steps when earlier verification is 
   ];
   let v = initializeRigVerification('ord_y', 'rig_1', 'My Build', items);
 
-  // Progress all the way to passed
   v = applyStepUpdateAndInvalidation(v, 'picking', { completed: true }, staffVerifier, new Date());
   v = applyStepUpdateAndInvalidation(v, 'assembly', { completed: true }, staffVerifier, new Date());
   v = applyStepUpdateAndInvalidation(v, 'testing', { passed: true }, staffVerifier, new Date());
   v = applyStepUpdateAndInvalidation(v, 'qc', { passed: true }, staffVerifier, new Date());
   assert.equal(v.status, 'passed');
 
-  // Now, staff notices picking issue and unpicks an item
   v = applyStepUpdateAndInvalidation(v, 'picking', { pickedLineIds: [] }, staffVerifier, new Date());
   assert.equal(v.picking.completed, false);
   assert.equal(v.assembly.completed, false);
@@ -242,7 +224,6 @@ test('order-assembly: invalidates downstream steps when earlier verification is 
   assert.equal(v.qc.passed, false);
   assert.equal(v.status, 'unverified');
 
-  // Complete picking and assembly again, then testing fails
   v = applyStepUpdateAndInvalidation(v, 'picking', { completed: true }, staffVerifier, new Date());
   v = applyStepUpdateAndInvalidation(v, 'assembly', { completed: true }, staffVerifier, new Date());
   v = applyStepUpdateAndInvalidation(v, 'testing', { passed: false }, staffVerifier, new Date());
@@ -287,25 +268,21 @@ test('order-assembly: assertCustomRigDispatchAllowed requires every custom rig i
     qc: { completed: false },
   };
 
-  // Missing rig_2 verification
   assert.throws(
     () => assertCustomRigDispatchAllowed(multiRigOrder, { rig_1: passedRecord }),
     /has not been verified/
   );
 
-  // rig_2 is in progress, not passed
   assert.throws(
     () => assertCustomRigDispatchAllowed(multiRigOrder, { rig_1: passedRecord, rig_2: inProgressRecord }),
     /verification is not passed/
   );
 
-  // Both rigs passed
   assertCustomRigDispatchAllowed(multiRigOrder, {
     rig_1: passedRecord,
     rig_2: { ...passedRecord, rigId: 'rig_2', rigName: 'Rig 2' },
   });
 
-  // Historical delivered orders are never blocked even without records
   const historicalOrder: Order = {
     ...multiRigOrder,
     status: 'finished building',
@@ -355,19 +332,16 @@ test('order-assembly: serializeRigVerificationRecord safely converts Firestore T
 
   const serialized = serializeRigVerificationRecord(recordWithFirestoreTimestamps);
 
-  // Verify timestamps are converted to ISO strings
   const expectedIso = new Date(1729000000 * 1000).toISOString();
   assert.equal(serialized.createdAt, expectedIso);
   assert.equal(serialized.updatedAt, expectedIso);
   assert.equal(serialized.picking.verifiedAt, expectedIso);
   assert.equal(serialized.assembly.verifiedAt, null);
 
-  // Verify it is a plain object with no hidden classes or null prototypes
   assert.equal(Object.getPrototypeOf(serialized), Object.prototype);
   assert.equal(typeof serialized.updatedAt, 'string');
   assert.notEqual(typeof serialized.updatedAt, 'object');
 
-  // Verify serializeTimestamp utility handles various formats
   assert.equal(serializeTimestamp(null), null);
   assert.equal(serializeTimestamp(undefined), null);
   assert.equal(serializeTimestamp('2026-11-02T05:00:00.000Z'), '2026-11-02T05:00:00.000Z');

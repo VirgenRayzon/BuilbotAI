@@ -44,7 +44,6 @@ export function useReservations() {
                 return new Date(dateB).getTime() - new Date(dateA).getTime();
             });
 
-            // Automatically sweep and cancel any pending orders that exceeded the 1-hour window
             for (const order of fetchedOrders) {
                 if (isOrderPendingWithNoProgression(order) && isOrderExpired(order.createdAt)) {
                     authUser.getIdToken().then((token) => {

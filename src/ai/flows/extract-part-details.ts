@@ -21,7 +21,6 @@ function logDebug(msg: string) {
   fs.appendFileSync(DEBUG_LOG, `[${new Date().toISOString()}] ${msg}\n`);
 }
 
-
 const SpecificationSchema = z.object({
   key: z.string().describe('The name of the specification (e.g., "Cores", "Socket"). Avoid vendor-specific keys like "CUDA Cores" for non-NVIDIA GPUs.'),
   value: z.string().describe('The value of the specification (e.g., "3584", "AM5").'),
@@ -61,7 +60,6 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
 
   let groundedContext = "";
 
-  // 1. Try Hardware Vector Storage (buildbot_hardware_vector in Firestore)
   try {
     const vectorResults = await retrieveHardwareVectorSpecs(input.partName, { limit: 1 });
 
@@ -77,7 +75,6 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
     logDebug(`Vector store search failed: ${error.message}`);
   }
 
-  // 2. Fallback notice if grounded context is empty
   if (!groundedContext) {
     logDebug("No grounded context found. Falling back to general AI knowledge.");
   }
@@ -87,7 +84,6 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
 
     const dynamicModel = await getGenkitModelName();
 
-    // Step 1: If no local database context, run a plain-text search to gather specs and pricing
     if (!groundedContext) {
       logDebug("Step 1: No local context found. Running web search pre-research...");
       console.log(`[Extract Part Details] Step 1: Running web search for: ${input.partName} using model ${dynamicModel}`);
@@ -100,7 +96,6 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
       console.log(`[Extract Part Details] Step 1 complete. Research context obtained.`);
     }
 
-    // Step 2: Structured output prompt WITHOUT googleSearchRetrieval
     logDebug("Step 2: Formatting part details into structured output...");
 
     const { getActiveSystemPrompt } = await import('@/lib/system-prompts');
@@ -154,7 +149,6 @@ Output strictly the JSON object matching the schema.`;
     logDebug(`Successfully extracted and formatted details for: ${input.partName}`);
     if (response.output.category === 'CPU' && response.output.brand.toLowerCase() === 'amd' &&
         /^(?:AMD\s+)?Ryzen(?:™)?\s+7\s+9850X3D\b/i.test(response.output.partName.trim())) {
-      // AMD's official product specification lists the in-box thermal solution as not included.
       return {
         ...response.output,
         specifications: [
@@ -174,4 +168,3 @@ Output strictly the JSON object matching the schema.`;
     throw error;
   }
 }
-

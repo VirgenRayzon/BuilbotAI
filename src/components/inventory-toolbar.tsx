@@ -155,7 +155,6 @@ export function InventoryToolbar({
   const incompatibleActive = Boolean(hideIncompatible);
   const detailsActive = Boolean(showDetails);
 
-  // Derive sort options
   const sortOptions = useMemo(() => {
     const list: { label: string; value: string }[] = [];
     supportedSorts.forEach((sortName) => {

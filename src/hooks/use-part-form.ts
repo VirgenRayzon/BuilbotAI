@@ -235,8 +235,6 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
         form.setValue("price", result.price, { shouldValidate: true });
         form.setValue("wattage", result.wattage, { shouldValidate: true });
 
-        // Photos are optional. AI Autofill must not inject remote placeholder URLs:
-        // those links can expire and should never prevent an otherwise valid part from saving.
         form.setValue(
           "performanceScore",
           result.performanceScore || (result.performanceTier ? result.performanceTier * 10 : 50),

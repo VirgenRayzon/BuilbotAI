@@ -33,7 +33,6 @@ export default function FAQPage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  // Handle URL hash on initial load (e.g. #shipping-amp-delivery)
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.hash) {
       const hash = window.location.hash.replace("#", "");

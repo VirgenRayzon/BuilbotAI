@@ -89,7 +89,6 @@ export function OrderAssemblyVerification({
     qcNotes,
   ]);
 
-  // Sync verification status changes to parent
   useEffect(() => {
     if (verification?.status) {
       onStatusChange?.(verification.status);

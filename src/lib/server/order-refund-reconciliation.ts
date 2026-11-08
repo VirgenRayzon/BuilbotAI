@@ -67,7 +67,6 @@ export async function reconcileProviderRefund(db: Firestore, orderId: string, ac
   if (!order) throw new Error('Order not found.');
   if (!order.pendingRefundOperationId) return { pending: false, status: 'cleared' as const };
   const id = order.pendingPaymongoRefundId || reference?.providerRefundId;
-  // No POST retry, timeout-based unlock, or inference that a lost response means failure.
   if (!id) return { pending: true, status: 'pending' as const, requiresReference: true };
   if (reference && order.pendingPaymongoRefundId && reference.providerRefundId !== order.pendingPaymongoRefundId) throw new Error('The pending provider refund ID has changed.');
   const provider = await retrievePaymongoRefund(id);

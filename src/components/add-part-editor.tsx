@@ -143,7 +143,6 @@ export function AddPartEditor({
     }
   };
 
-  // Live timer for AI generation
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isAiPending) {
@@ -158,7 +157,6 @@ export function AddPartEditor({
     };
   }, [isAiPending]);
 
-  // Trigger field highlight when AI generation finishes
   useEffect(() => {
     if (prevPendingRef.current && !isAiPending && aiDuration !== null) {
       setJustAutofilled(true);

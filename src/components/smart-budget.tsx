@@ -75,7 +75,6 @@ export function SmartBudget({ inventory, onApplyBuild, onClose }: SmartBudgetPro
     const handleApply = () => {
         if (!result || !result.build) return;
 
-        // Convert the returned part IDs back into actual part objects
         const newBuildData: Record<string, any> = {
             CPU: null, GPU: null, Motherboard: null, RAM: null, Storage: [], PSU: null, Case: null, Cooler: null,
         };

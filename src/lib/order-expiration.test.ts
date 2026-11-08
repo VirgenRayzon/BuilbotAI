@@ -11,13 +11,9 @@ import {
 
 test('getOrderCreatedDate parses multiple timestamp formats', () => {
   const now = new Date('2026-11-01T12:00:00Z');
-  // Date string
   assert.equal(getOrderCreatedDate(now.toISOString())?.getTime(), now.getTime());
-  // Milliseconds number
   assert.equal(getOrderCreatedDate(now.getTime())?.getTime(), now.getTime());
-  // Firestore-like object with toDate()
   assert.equal(getOrderCreatedDate({ toDate: () => now })?.getTime(), now.getTime());
-  // Firestore-like object with seconds
   assert.equal(
     getOrderCreatedDate({ seconds: Math.floor(now.getTime() / 1000) })?.getTime(),
     now.getTime()
@@ -59,7 +55,6 @@ test('isOrderPendingWithNoProgression expires unpaid online orders while exempti
     true
   );
 
-  // COD and legacy orders without an online paymentMethod are exempt from 1-hour auto-cancellation
   assert.equal(
     isOrderPendingWithNoProgression({
       status: 'pending',
@@ -73,7 +68,6 @@ test('isOrderPendingWithNoProgression expires unpaid online orders while exempti
     false
   );
 
-  // Paid orders progressed, should not be marked for auto-cancellation
   assert.equal(
     isOrderPendingWithNoProgression({
       status: 'pending',
@@ -82,7 +76,6 @@ test('isOrderPendingWithNoProgression expires unpaid online orders while exempti
     }),
     false
   );
-  // Building or fulfillment-progressed orders
   assert.equal(
     isOrderPendingWithNoProgression({
       status: 'building',
@@ -100,7 +93,6 @@ test('isOrderPendingWithNoProgression expires unpaid online orders while exempti
     }),
     false
   );
-  // Already cancelled
   assert.equal(
     isOrderPendingWithNoProgression({
       status: 'cancelled',
@@ -115,7 +107,6 @@ test('getOrderRemainingTimeMs and isOrderExpired calculate 1-hour window', () =>
   const baseTime = 10000000;
   const createdDate = new Date(baseTime);
 
-  // 10 minutes in (50 minutes remaining)
   const tenMinutesLater = baseTime + 10 * 60 * 1000;
   assert.equal(
     getOrderRemainingTimeMs(createdDate, tenMinutesLater),
@@ -123,12 +114,10 @@ test('getOrderRemainingTimeMs and isOrderExpired calculate 1-hour window', () =>
   );
   assert.equal(isOrderExpired(createdDate, tenMinutesLater), false);
 
-  // 60 minutes in (0 ms remaining)
   const oneHourLater = baseTime + ORDER_EXPIRATION_DURATION_MS;
   assert.equal(getOrderRemainingTimeMs(createdDate, oneHourLater), 0);
   assert.equal(isOrderExpired(createdDate, oneHourLater), true);
 
-  // 75 minutes in (0 ms remaining, expired)
   const seventyFiveMinutesLater = baseTime + 75 * 60 * 1000;
   assert.equal(getOrderRemainingTimeMs(createdDate, seventyFiveMinutesLater), 0);
   assert.equal(isOrderExpired(createdDate, seventyFiveMinutesLater), true);

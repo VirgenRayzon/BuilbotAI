@@ -35,7 +35,6 @@ export function ImageUpload({ value, onChange, className, variant = "default", a
                     let width = img.width;
                     let height = img.height;
 
-                    // Max dimensions for About page images to keep them small
                     const MAX_SIZE = 1200; 
                     if (width > height) {
                         if (width > MAX_SIZE) {
@@ -54,7 +53,6 @@ export function ImageUpload({ value, onChange, className, variant = "default", a
                     const ctx = canvas.getContext('2d');
                     ctx?.drawImage(img, 0, 0, width, height);
                     
-                    // Compress to 0.7 quality to save space
                     const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
                     onChange(compressedBase64);
                 };
@@ -92,19 +90,16 @@ export function ImageUpload({ value, onChange, className, variant = "default", a
         if (value.startsWith("data:")) return "Uploaded Image File";
         
         try {
-            // Check if it's a URL
             if (value.startsWith("http")) {
                 const url = new URL(value);
                 const pathParts = url.pathname.split('/');
                 const lastPart = decodeURIComponent(pathParts[pathParts.length - 1]);
                 
-                // Firebase storage format: .../o/folder%2Ffilename?alt=...
                 if (lastPart.includes('/')) {
                     const fileNameFromPath = lastPart.split('/').pop();
                     return fileNameFromPath || "Stored Image";
                 }
                 
-                // Decode possible %2F in filename
                 const decodedFileName = lastPart.split('%2F').pop();
                 return decodedFileName || "Stored Image";
             }

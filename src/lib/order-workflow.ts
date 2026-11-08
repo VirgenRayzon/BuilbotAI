@@ -103,8 +103,6 @@ export function assertOrderStageTransition(order: Order, next: OrderFulfillmentS
   const currentIndex = stages.indexOf(current);
   const nextIndex = stages.indexOf(next);
 
-  // If the order does not strictly require full assembly, allow moving directly from order_placed
-  // to out_for_delivery OR to assembling_testing if staff performs inspection/bench testing
   const isDirectOutForDelivery =
     current === 'order_placed' &&
     next === 'out_for_delivery' &&

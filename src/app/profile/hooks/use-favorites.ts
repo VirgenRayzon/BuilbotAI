@@ -19,7 +19,6 @@ export function useFavorites() {
     const [favorites, setFavorites] = useState<FavoriteBuild[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Real-time listener for favorites
     useEffect(() => {
         if (!authUser || !firestore) {
             if (!userLoading) setLoading(false);

@@ -2,8 +2,6 @@
 import { Button, Group, Paper, Stack, Text } from '@mantine/core';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// ReservationsList and FavoritesList use the same 12px card padding,
-// stacked mobile header, md stack gap, and item thumbnail row.
 export function ProfileListSkeleton({ favorite = false }: { favorite?: boolean }) {
   return <div className="grid grid-cols-1 gap-5" aria-label="Loading account items" aria-busy="true">
     <Paper withBorder radius="lg" p={12} className="bg-white dark:bg-[#121824] border-slate-200 dark:border-white/10 shadow-sm">

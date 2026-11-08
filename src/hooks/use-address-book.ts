@@ -34,21 +34,17 @@ export function useAddressBook() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Synchronize from Firestore Profile or LocalStorage
   useEffect(() => {
-    // 1. If profile has addressBook, use it
     if (profile?.addressBook && Array.isArray(profile.addressBook) && profile.addressBook.length > 0) {
       setAddresses(profile.addressBook);
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(profile.addressBook));
       } catch {
-        // ignore storage error
       }
       setLoading(false);
       return;
     }
 
-    // 2. Otherwise try local storage
     let cached: SavedAddress[] | null = null;
     try {
       const item = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -56,7 +52,6 @@ export function useAddressBook() {
         cached = JSON.parse(item);
       }
     } catch {
-      // ignore
     }
 
     if (cached && Array.isArray(cached) && cached.length > 0) {
@@ -65,7 +60,6 @@ export function useAddressBook() {
       return;
     }
 
-    // 3. Fallback: generate default from profile fields if present, else standard Netcodex default
     const fallbackFromProfile: SavedAddress = {
       id: `addr_${Date.now()}`,
       label: "Home",
@@ -86,26 +80,22 @@ export function useAddressBook() {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([fallbackFromProfile]));
     } catch {
-      // ignore
     }
     setLoading(false);
   }, [profile, authUser]);
 
-  // Persist address book updates to Firestore & LocalStorage
   const persistAddresses = useCallback(
     async (updated: SavedAddress[], toastMessage?: string) => {
       setAddresses(updated);
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
       } catch {
-        // ignore
       }
 
       if (authUser && firestore) {
         setSaving(true);
         try {
           const userRef = doc(firestore, "users", authUser.uid);
-          // Also sync default address to top-level profile fields for backward compatibility
           const def = updated.find((a) => a.isDefault) || updated[0];
           const payload: Record<string, any> = {
             addressBook: updated,
@@ -186,7 +176,6 @@ export function useAddressBook() {
       if (!target) return;
 
       let remaining = addresses.filter((a) => a.id !== id);
-      // If we deleted the default, make the first remaining address the default
       if (target.isDefault && remaining.length > 0) {
         remaining[0] = { ...remaining[0], isDefault: true };
       }

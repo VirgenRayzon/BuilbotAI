@@ -29,7 +29,6 @@ export const estimateFPS = (
     const gpuTier = getTier(gpu);
     const integrated = isIncludedIntegratedGpu(gpu);
 
-    // 1. Base GPU Performance
     let baseFps = 60;
     switch (gpuTier) {
         case 4: // Enthusiast (e.g., RTX 4090)
@@ -47,8 +46,6 @@ export const estimateFPS = (
     }
 
     if (integrated) {
-        // Conservative, workload-level estimate; integrated GPUs share system RAM.
-        // Keep this separate from discrete-GPU tier baselines.
         const gpuName = gpu.model || (gpu as ComponentData & { name?: string }).name || '';
         const strongerApu = /(?:780M|760M|740M|\b\d{4}G\b)/i.test(gpuName);
         baseFps = strongerApu
@@ -56,11 +53,9 @@ export const estimateFPS = (
             : resolution === '1080p' ? 28 : resolution === '1440p' ? 18 : 10;
     }
 
-    // Apply workload multipliers
     if (workload === 'AAA') baseFps *= integrated ? 0.55 : 0.7;
     if (workload === 'Esports') baseFps *= integrated ? 1.25 : 1.5;
 
-    // 2. CPU Bottleneck Penalty
     const delta = cpuTier - gpuTier;
     let penaltyPercent = 0;
 
@@ -74,17 +69,13 @@ export const estimateFPS = (
 
     const averageFps = Math.max(Math.round(baseFps * (1 - penaltyPercent)), 10);
 
-    // 3. Generate Chart Data based on "Resolution" steps matching mockup
     const chartData = [];
     
-    // Dynamic Resolution Steps based on selected target
-    // Dynamic Resolution Steps based on vertical height (standard for 1080p, 1440p, 2160p)
     let peakRes = 1080;
     if (resolution === '4K') peakRes = 2160; // 4K vertical height
     else if (resolution === '1440p') peakRes = 1440;
     else peakRes = 1080;
 
-    // Use standard vertical resolutions for cleaner steps
     const resolutionSteps = [];
     if (peakRes === 2160) {
         resolutionSteps.push("720", "1080", "1440", "1800", "2160");
@@ -94,17 +85,13 @@ export const estimateFPS = (
         resolutionSteps.push("360", "480", "720", "900", "1080");
     }
 
-    // We want the curve to go upwards as "Resolution" (x-axis) increases in the mockup. 
-    // This is purely visual to match the reference image.
     let currentAvg = Math.max(averageFps * 0.3, 10); // Start low for the curve
     let currentLows = Math.max(currentAvg * 0.7, 5); // Lows are beneath average
 
     for (let i = 0; i < resolutionSteps.length; i++) {
-        // Curve goes up, ending near the averageFps at the right side
         const progress = (i + 1) / resolutionSteps.length;
 
         let pointAvg = currentAvg + (averageFps - currentAvg) * progress;
-        // Add some random noise
         pointAvg += averageFps * (Math.random() * 0.1 - 0.05);
         
         let pointLows = pointAvg * (0.7 + Math.random() * 0.1); // ~70-80% of average
@@ -121,7 +108,6 @@ export const estimateFPS = (
         currentLows = pointLows;
     }
 
-    // Ensure the last point is closest to the actual estimated average
     const lowsFps = Math.round(averageFps * 0.75);
     const peakFps = Math.round(averageFps * 1.25);
 

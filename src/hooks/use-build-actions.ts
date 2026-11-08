@@ -45,7 +45,6 @@ export function useBuildActions({
   const router = useRouter();
   const { getOperation, resetOperation } = useProductSaveOperation();
 
-  // Cleanup abort controller on unmount
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
@@ -93,13 +92,11 @@ export function useBuildActions({
     setIsAiPending(true);
     setTokensUsed(null);
 
-    // Initialize new abort controller
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
     (async () => {
       try {
-        // Helper to check for abort
         const checkAbort = () => {
           if (controller.signal.aborted) {
             throw new Error("ABORTED");

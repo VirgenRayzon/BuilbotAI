@@ -7,12 +7,10 @@ import { useUserProfile } from "@/context/user-profile";
 import { useLoading } from "@/context/loading-context";
 import { cn } from "@/lib/utils";
 
-// Custom Hooks
 import { useInventoryQuery } from "./hooks/use-inventory-query";
 import { useBuilderLogic } from "./hooks/use-builder-logic";
 import { useFilteredInventory } from "./hooks/use-filtered-inventory";
 
-// Components
 import { BuilderHeader } from "./components/builder-header";
 import { InventoryView } from "./components/inventory-view";
 import { YourBuild } from "@/components/your-build";
@@ -40,16 +38,13 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
     const searchParams = useSearchParams();
     const { isLiveBuilderRecommendationsEnabled } = useSiteSettings();
 
-    // Data Layer
     const { allParts, loading: inventoryLoading } = useInventoryQuery(initialParts);
 
-    // Logic Layer
     const {
         build, handlePartToggle, handleRemovePart,
         handleClearBuild, getCountInBuild, isLoaded
     } = useBuilderLogic(allParts);
 
-    // Filter Layer
     const {
         searchQuery, setSearchQuery,
         sortBy, setSortBy,
@@ -100,14 +95,12 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
         setMounted(true);
     }, []);
 
-    // Handle initial category from URL
     useEffect(() => {
         const categoryParam = searchParams.get('category');
         if (categoryParam) {
             handleCategoryChange(categoryParam, true);
         }
     }, [searchParams]);
-
 
     const isSelected = (part: Part) => {
         if (part.category === 'Storage' || part.category === 'RAM') {

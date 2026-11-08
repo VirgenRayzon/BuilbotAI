@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-// Input Schema Definition
 export const AiBuildAdvisorRecommendationsInputSchema = z.object({
   intendedUse: z
     .string()
@@ -43,7 +42,6 @@ export type AiBuildAdvisorRecommendationsInput = z.infer<
   typeof AiBuildAdvisorRecommendationsInputSchema
 >;
 
-// Output Schema Definition
 export const AiBuildAdvisorRecommendationsOutputSchema = z.object({
   summary: z
     .string()

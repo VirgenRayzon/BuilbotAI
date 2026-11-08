@@ -87,7 +87,6 @@ test('buildSalesAnalyticsWorkbook separates placed value, collected payments, re
     assert.equal(byMetric.get('Orders - Delivered'), 1);
     assert.equal(byMetric.get('Orders - Cancelled / Void'), 1);
 
-    // Ensure styled workbook builds cleanly without cell coordinate errors
     const bytes = buildStyledWorkbook(wb, SALES_WORKBOOK_SHEET_STYLES);
     const reopened = XLSX.read(bytes, { type: 'array' });
     const orderRows = XLSX.utils.sheet_to_json<Record<string, string | number>>(
@@ -99,4 +98,3 @@ test('buildSalesAnalyticsWorkbook separates placed value, collected payments, re
     assert.equal(orderRows[1]['Payment Status'], 'Paid (GCash)');
     assert.equal(orderRows[1]['Net Sales (PHP)'], 30000);
 });
-

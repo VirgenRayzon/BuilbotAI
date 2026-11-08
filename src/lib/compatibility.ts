@@ -73,14 +73,11 @@ export const caseFFMatch = (caseSupport: string, moboFF: string, caseType: strin
     const targetSize = ffOrder[normalizedMobo] || 0;
     if (targetSize === 0) return true; // Unknown mobo format, skip
 
-    // 1. Check explicit list (split by comma first to preserve multi-word factors like "Micro ATX")
     const supported = (caseSupport || '').split(',').map(s => normalizeFF(s.trim())).filter(Boolean);
     let isSupported = supported.some(ff => (ffOrder[ff] || 0) >= targetSize);
 
-    // 2. Fallback to case type name (e.g. "ATX Mid Tower") if no explicit support list is found or if it's still false
     if (!isSupported && caseType) {
         const normalizedType = normalizeFF(caseType);
-        // Check if any known FF is in the type string and supports the target size
         Object.keys(ffOrder).forEach(ff => {
             if (normalizedType.includes(ff) && ffOrder[ff] >= targetSize) {
                 isSupported = true;
@@ -94,7 +91,6 @@ export const caseFFMatch = (caseSupport: string, moboFF: string, caseType: strin
 export const checkCompatibility = (part: Part, currentBuild: Record<string, ComponentData | ComponentData[] | null>): CompatibilityResult => {
   const category = part.category;
 
-  // Accessories are always compatible
   const accessoryCategories = ['Monitor', 'Keyboard', 'Mouse', 'Headset'];
   if (accessoryCategories.includes(category)) {
     return { compatible: true, message: '' };
@@ -108,7 +104,6 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
   const partSocket = resolveSocket(part);
   const partRamType = resolveRamType(part);
 
-  // CPU Validation
   if (category === 'CPU') {
     if (mobo) {
       const moboSocket = resolveSocket(mobo);
@@ -118,7 +113,6 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
     }
   }
 
-  // Motherboard Validation
   if (category === 'Motherboard') {
     if (cpu) {
       const cpuSocket = resolveSocket(cpu);
@@ -165,7 +159,6 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
     }
   }
 
-  // RAM Validation
   if (category === 'RAM') {
     if (!mobo) {
       return { compatible: false, message: 'Please add a Motherboard before selecting RAM.' };
@@ -178,7 +171,6 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
         }
       }
 
-      // RAM Slot Check
       const totalSlots = parseInt(mobo.specifications?.['Memory Slots']?.toString() || "4");
       const usedSlots = currentRams.reduce((sum, r) => sum + parseInt(r.specifications?.['Stick Count']?.toString() || "1"), 0);
       const partStickCount = parseInt(part.specifications?.['Stick Count']?.toString() || "1");
@@ -189,7 +181,6 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
     }
   }
 
-  // Storage Validation
   if (category === 'Storage') {
     if (!mobo) {
       return { compatible: false, message: 'Please add a Motherboard before selecting Storage.' };
@@ -215,7 +206,6 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
     }
   }
 
-  // Cooler Validation
   if (category === 'Cooler') {
     const case_ = (currentBuild['Case'] as ComponentData | null);
     if (case_) {
@@ -235,7 +225,6 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
     }
   }
 
-  // Case Validation
   if (category === 'Case') {
     const cooler = (currentBuild['Cooler'] as ComponentData | null);
     if (cooler) {
@@ -295,14 +284,12 @@ export const checkFullBuildCompatibility = (build: Record<string, ComponentData 
     }
 
     if (mobo) {
-        // RAM Slot Check
         const totalSlots = parseInt(mobo.specifications?.['Memory Slots']?.toString() || "4");
         const usedSlots = rams.reduce((sum, r) => sum + parseInt(r.specifications?.['Stick Count']?.toString() || "1"), 0);
         if (usedSlots > totalSlots) {
             issues.push({ severity: 'critical', message: `Too much RAM: This motherboard only has ${totalSlots} slots, but you're using ${usedSlots}.` });
         }
 
-        // Storage Slot Check
         const storageData = build['Storage'];
         const storagesList = Array.isArray(storageData) ? storageData : (storageData ? [storageData as ComponentData] : []);
         

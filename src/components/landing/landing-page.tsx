@@ -8,7 +8,6 @@ import { useLoading } from '@/context/loading-context';
 import { cn } from '@/lib/utils';
 import { UnifiedBackground } from '@/components/landing/unified-background';
 
-// Extracted Sections
 import { HeroSection } from '@/components/landing/hero-section';
 import { FeaturedProductsSection } from '@/components/landing/featured-products-section';
 import { DeferredPrebuiltShowcase } from '@/components/landing/deferred-prebuilt-showcase';
@@ -24,7 +23,6 @@ export default function StartPage() {
   const { setIsPageLoading } = useLoading();
 
   useEffect(() => {
-    // If loading is finished and we have a user, redirect them
     if (!loading && authUser && profile) {
       if (profile.isManager || profile.isSuperAdmin) {
         router.replace('/admin');
@@ -39,8 +37,6 @@ export default function StartPage() {
     return () => setIsPageLoading(false);
   }, [loading, setIsPageLoading]);
 
-  // If loading, or if we have a user (meaning we are about to redirect), show nothing
-  // The AppLayout will show the FullPageLoader during this time
   if (loading || authUser) {
     return null;
   }

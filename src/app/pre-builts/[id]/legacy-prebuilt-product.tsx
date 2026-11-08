@@ -54,12 +54,10 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
         }
     };
 
-    // 1. Loading State
     if (loadingSystem) {
         return <PrebuiltDetailSkeleton />;
     }
 
-    // 2. Not Found State
     if (!system) {
         return (
             <Container size="sm" py={80} className="text-center">

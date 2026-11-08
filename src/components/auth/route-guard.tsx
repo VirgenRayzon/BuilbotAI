@@ -72,6 +72,5 @@ export function RouteGuard({
         );
     }
 
-    // Denied and unresolved-error states never render protected children.
     return isAuthorized ? <>{children}</> : null;
 }

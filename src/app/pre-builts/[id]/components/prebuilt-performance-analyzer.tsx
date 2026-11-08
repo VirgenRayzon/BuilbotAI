@@ -25,7 +25,6 @@ export function PrebuiltPerformanceAnalyzer({
   const [resolution, setResolution] = useState<Resolution>("1080p");
   const [workload, setWorkload] = useState<WorkloadType>("Balanced");
 
-  // Determine CPU availability (must exist and not be marked missing or out-of-stock)
   const cpuStatus = componentStatuses.find((s) => s.category?.toLowerCase() === "cpu");
   const rawCpu = components.cpu || components.CPU || cpuStatus?.part || null;
   const isCpuMissing = !rawCpu || cpuStatus?.issue === "missing";
@@ -35,7 +34,6 @@ export function PrebuiltPerformanceAnalyzer({
   );
   const isCpuAvailable = !isCpuMissing && !isCpuOutOfStock;
 
-  // Determine GPU availability (must exist and not be marked missing or out-of-stock)
   const gpuStatus = componentStatuses.find((s) => s.category?.toLowerCase() === "gpu");
   const rawGpu = components.gpu || components.GPU || gpuStatus?.part || null;
   const isGpuMissing = !rawGpu || gpuStatus?.issue === "missing";
@@ -47,7 +45,6 @@ export function PrebuiltPerformanceAnalyzer({
 
   const isHardwareAvailable = isCpuAvailable && isGpuAvailable;
 
-  // Construct descriptive reason when unavailable
   const unavailableReason = useMemo(() => {
     if (!isCpuAvailable && !isGpuAvailable) {
       return "Both CPU and GPU are missing or out of stock. Both components are required to calculate frame rate benchmarks.";
@@ -67,7 +64,6 @@ export function PrebuiltPerformanceAnalyzer({
     return null;
   }, [isCpuAvailable, isGpuAvailable, isCpuOutOfStock, isGpuOutOfStock, rawCpu, rawGpu, cpuStatus, gpuStatus]);
 
-  // Normalize lowercase category keys from prebuilt components into uppercase standard keys for estimateFPS
   const buildData = useMemo(() => {
     const map: Record<string, ComponentData | null> = {
       CPU: isCpuAvailable ? ((rawCpu as unknown) as ComponentData) : null,

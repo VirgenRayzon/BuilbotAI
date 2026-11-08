@@ -41,7 +41,6 @@ import { ProtectedPageLoading } from "@/components/auth/protected-page-loading";
 import type { Order } from "@/lib/types";
 import { useSiteSettings } from "@/context/site-settings-context";
 
-// Custom Hooks
 import { useProfileState } from "./hooks/use-profile-state";
 import { useReservations } from "./hooks/use-reservations";
 import { useEmergencyControls } from "./hooks/use-emergency-controls";
@@ -49,7 +48,6 @@ import { useAdminKeys } from "./hooks/use-admin-keys";
 import { useUserAuditLogs } from "./hooks/use-user-audit-logs";
 import { useFavorites } from "./hooks/use-favorites";
 
-// Sub-components
 import { ProfileHero } from "./components/profile-hero";
 import { ProfileSidebar } from "./components/profile-sidebar";
 import { MantineProfileView } from "./components/mantine-profile-view";
@@ -87,7 +85,6 @@ export default function ProfilePage() {
   const searchParams = useSearchParams();
   const { isEcommerceMode } = useSiteSettings();
 
-  // Logic Layers
   const profileState = useProfileState();
   const reservations = useReservations();
   const { orders: ecommerceOrders } = useEcommerce();
@@ -144,12 +141,10 @@ export default function ProfilePage() {
     []
   );
 
-  // Role booleans
   const isSuperAdmin = Boolean(profile?.isSuperAdmin);
   const isManager = Boolean(profile?.isManager && !profile?.isSuperAdmin);
   const isRegularUser = !isSuperAdmin && !isManager;
 
-  // Define permitted tabs per role (Safeguards remains for Super Admin)
   const getAllowedTabs = useCallback(() => {
     if (isSuperAdmin) {
       return ["profile", "address-book", "settings", "account", "contact-inbox", "safeguards"];
@@ -180,13 +175,9 @@ export default function ProfilePage() {
   const defaultTab = "profile";
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
 
-  // Synchronize and sanitize URL query params with legacy redirections to /admin.
-  // App Router navigations do not emit `popstate`, so the search params must be
-  // observed directly for links that change tabs while this page stays mounted.
   useEffect(() => {
     const tab = searchParams.get("tab");
 
-    // Graceful automatic redirections for relocated tabs
     if (tab === "audit" || tab === "audit-logs") {
       router.replace("/admin?tab=audit");
       return;
@@ -220,7 +211,6 @@ export default function ProfilePage() {
     }
   }, [getAllowedTabs, router, searchParams]);
 
-  // Tab switch handler with URL synchronization
   const handleTabChange = (tabId: string) => {
     const allowed = getAllowedTabs();
     if (!allowed.includes(tabId)) return;

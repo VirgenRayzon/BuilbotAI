@@ -28,12 +28,9 @@ export function useAdminSessionGuard() {
     }
     if (!profile || pathname === '/system-access' || pathname === '/system-access/signup' || pathname === '/signin') return;
 
-    // Only applies to privileged staff roles (Managers & Super Admins)
     const isStaff = Boolean(profile.isSuperAdmin || profile.isManager);
     if (!isStaff) return;
 
-    // Only the access-key flow may create this marker. A password-only staff
-    // session must be ended rather than promoted when another route mounts.
     if (sessionStorage.getItem(ADMIN_SESSION_KEY) !== user.uid) {
       void signOut(auth).catch((error: unknown) => {
         console.error('Failed to end an unverified staff session:', error);

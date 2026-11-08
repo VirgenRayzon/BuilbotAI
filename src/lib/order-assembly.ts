@@ -180,7 +180,6 @@ export function applyStepUpdateAndInvalidation(
     record.picking.verifiedAt = timestamp;
     record.picking.verifiedBy = verifier;
 
-    // Downstream invalidation: if picking is not 100% complete, reset all downstream stages
     if (!allPicked) {
       record.assembly = { completed: false };
       record.testing = { completed: false, passed: false };
@@ -199,7 +198,6 @@ export function applyStepUpdateAndInvalidation(
       verifiedBy: verifier,
     };
 
-    // Downstream invalidation: if assembly is not complete, reset testing and QC
     if (!isAssemblyComplete) {
       record.testing = { completed: false, passed: false };
       record.qc = { completed: false, passed: false };
@@ -220,7 +218,6 @@ export function applyStepUpdateAndInvalidation(
       verifiedBy: verifier,
     };
 
-    // Downstream invalidation: if testing failed or incomplete, reset QC
     if (!isTestingComplete || !passed) {
       record.qc = { completed: false, passed: false };
     }
@@ -241,7 +238,6 @@ export function applyStepUpdateAndInvalidation(
     };
   }
 
-  // Recalculate overall status
   if (record.qc.completed && record.qc.passed) {
     record.status = 'passed';
   } else if (
@@ -272,7 +268,6 @@ export function assertCustomRigDispatchAllowed(
   order: Order,
   verifications: Record<string, RigVerificationRecord | null | undefined>
 ): void {
-  // Historical delivered orders are never retroactively blocked
   if (order.fulfillmentStage === 'delivered' || order.status === 'finished building') {
     return;
   }
@@ -323,14 +318,12 @@ export function serializeTimestamp(val: unknown): string | null {
       try {
         return (val as { toDate: () => Date }).toDate().toISOString();
       } catch {
-        // fallback
       }
     }
     if ('toMillis' in val && typeof (val as { toMillis?: () => number }).toMillis === 'function') {
       try {
         return new Date((val as { toMillis: () => number }).toMillis()).toISOString();
       } catch {
-        // fallback
       }
     }
     if ('_seconds' in val && typeof (val as { _seconds?: number })._seconds === 'number') {

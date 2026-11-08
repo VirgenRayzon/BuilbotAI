@@ -21,7 +21,6 @@ export function getAssemblyRigsFromOrder(order: Order): CustomRigInstance[] {
   const customRigs = getCustomRigsFromOrder(order);
   if (customRigs.length > 0) return customRigs;
 
-  // Fallback for prebuilt systems
   const groups = groupOrderItems(order);
   const prebuiltGroups = groups.filter((g) => g.type === 'prebuilt');
   if (prebuiltGroups.length > 0) {

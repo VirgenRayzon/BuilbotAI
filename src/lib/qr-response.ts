@@ -12,7 +12,6 @@ export class QRRequestError extends Error {
 
 export function qrFailure(error: unknown) {
   if (error instanceof QRRequestError) return Response.json({ code: error.code, error: error.message }, { status: error.status, headers: QR_RESPONSE_HEADERS });
-  // Never log bearer tokens, profiles or database document contents.
   console.error('[QR] Request failed', error instanceof Error ? error.name : 'UnknownError');
   return Response.json({ code: 'SERVICE_UNAVAILABLE', error: 'Could not reach the QR service. Please retry.' }, { status: 503, headers: QR_RESPONSE_HEADERS });
 }

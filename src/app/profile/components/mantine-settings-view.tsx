@@ -115,7 +115,6 @@ export function MantineSettingsView({
   const [photoInputUrl, setPhotoInputUrl] = useState("");
   const [showPhotoUrlPrompt, setShowPhotoUrlPrompt] = useState(false);
 
-  // Change Password state
   const [passwordModalOpened, setPasswordModalOpened] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -127,7 +126,6 @@ export function MantineSettingsView({
   const isSuperAdmin = Boolean(profile?.isSuperAdmin);
   const isManager = Boolean(profile?.isManager && !profile?.isSuperAdmin);
 
-  // Avatar initials fallback
   const initials = (name || authUser?.displayName || "User")
     .split(" ")
     .map((n: string) => n[0])

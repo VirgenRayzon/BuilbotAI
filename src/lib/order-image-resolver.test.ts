@@ -59,7 +59,6 @@ test('resolveOrderItemImageUrl matches from catalog parts by name or ID when ima
     'https://firebasestorage.googleapis.com/real-10100.webp'
   );
 
-  // Substring / containment match for bundled cooler name variation
   const coolerItem: OrderItemLike = {
     name: 'Intel Laminar RM1 CPU Cooler',
     category: 'Cooler',
