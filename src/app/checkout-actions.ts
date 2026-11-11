@@ -30,6 +30,7 @@ import {
   invalidatePublicPartsCatalog,
   productReference,
 } from "@/lib/server/public-products";
+import { bumpCatalogMetaVersion } from "@/lib/server/catalog-meta-store";
 import {
   INCLUDED_INTEGRATED_GPU_ID,
   integratedGraphicsName,
@@ -717,6 +718,9 @@ async function processCheckoutInternal(
     }
 
     invalidatePublicPartsCatalog();
+    bumpCatalogMetaVersion(firestore).catch(err => {
+      console.warn('[catalog-meta] Non-fatal bumpCatalogMetaVersion error in processCheckoutInternal:', err);
+    });
     pruneUserNotificationsServer(firestore, userId).catch(() => {});
 
     const { isDuplicate: _ignoredDuplicate, ...cleanResult } = result;
@@ -2080,7 +2084,12 @@ export async function updateReservationStatus(
       });
     });
 
-    if (newStatus === "cancelled") invalidatePublicPartsCatalog();
+    if (newStatus === "cancelled") {
+      invalidatePublicPartsCatalog();
+      bumpCatalogMetaVersion(firestore).catch(err => {
+        console.warn('[catalog-meta] Non-fatal bumpCatalogMetaVersion error in updateReservationStatus:', err);
+      });
+    }
     if (targetUserId) {
       pruneUserNotificationsServer(firestore, targetUserId).catch(() => {});
     }
@@ -2245,6 +2254,9 @@ export async function confirmOrderPhysicalStockReturn(
     });
 
     invalidatePublicPartsCatalog();
+    bumpCatalogMetaVersion(firestore).catch(err => {
+      console.warn('[catalog-meta] Non-fatal bumpCatalogMetaVersion error in confirmOrderPhysicalStockReturn:', err);
+    });
     return { success: true, stockState: res.stockState };
   } catch (error) {
     console.error("confirmOrderPhysicalStockReturn failed:", error);

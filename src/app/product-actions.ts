@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { createHash } from 'node:crypto';
 import { invalidatePublicPartsCatalog } from '@/lib/server/public-products';
 import { deriveInventoryQueryFields } from '@/lib/inventory-query-fields';
+import { bumpCatalogMetaVersion } from '@/lib/server/catalog-meta-store';
 
 async function requireStaff(idToken: string) {
   const decoded = await getAdminAuth().verifyIdToken(idToken, true);
@@ -34,7 +35,12 @@ export async function createCatalogProduct(input: unknown) {
   const result = await assignProductIdentity(db, db.collection(collection).doc(), parsed.kind, category, {
     payload, uid: decoded.uid, operationId: parsed.operationId, fingerprint,
   });
-  if (parsed.kind === 'part') invalidatePublicPartsCatalog();
+  if (parsed.kind === 'part') {
+    invalidatePublicPartsCatalog();
+    bumpCatalogMetaVersion(db).catch(err => {
+      console.warn('[catalog-meta] Non-fatal bumpCatalogMetaVersion error in createCatalogProduct:', err);
+    });
+  }
   return result;
 }
 
@@ -85,4 +91,7 @@ export async function updateCatalogPart(input: unknown) {
     tx.set(nameRef, { path: target.path });
   });
   invalidatePublicPartsCatalog();
+  bumpCatalogMetaVersion(db).catch(err => {
+    console.warn('[catalog-meta] Non-fatal bumpCatalogMetaVersion error in updateCatalogPart:', err);
+  });
 }
