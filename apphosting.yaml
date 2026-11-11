@@ -1,5 +1,6 @@
 runConfig:
-  maxInstances: 1
+  # Deployment prerequisite: Firestore composite indexes in firestore.indexes.json must be deployed and active before production scale-out.
+  maxInstances: 3
 
 env:
   - variable: NEXT_PUBLIC_INVENTORY_PAGINATION_ENABLED
