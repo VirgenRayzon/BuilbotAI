@@ -27,10 +27,6 @@ import {
   aiPrebuiltPerformanceAction,
   type AiPrebuiltPerformanceInput,
 } from "@/ai/flows/ai-prebuilt-performance";
-import {
-  aiSmartBudgetAction,
-  type AiSmartBudgetInput,
-} from "@/ai/flows/ai-smart-budget";
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 180000): Promise<T> {
   const timeoutPromise = new Promise<never>((_, reject) =>
@@ -147,33 +143,6 @@ export async function getAiBuildCritique(input: AiBuildCritiqueInput) {
     return result;
   } catch (error) {
     console.error("Error fetching AI build critique:", error);
-    if (error instanceof Error) {
-      if (error.message === "AI_TIMEOUT") {
-        return { error: TIMEOUT_MESSAGE };
-      }
-      if (error.message.includes("fetch failed")) {
-        return {
-          error:
-            "Could not connect to the AI service. Is 'npm run genkit:dev' running in another terminal?",
-        };
-      }
-      if (error.message.includes("GOOGLE_API_KEY") || error.message.includes("GEMINI_API_KEY") || error.message.includes("FAILED_PRECONDITION")) {
-        return {
-          error: "Missing API Key. Please set GOOGLE_API_KEY in your .env file to enable AI features.",
-        };
-      }
-      return { error: error.message };
-    }
-    return { error: "An unknown error occurred." };
-  }
-}
-
-export async function getAiSmartBudget(input: AiSmartBudgetInput) {
-  try {
-    const result = await withTimeout(aiSmartBudgetAction(input));
-    return result;
-  } catch (error) {
-    console.error("Error fetching AI smart budget:", error);
     if (error instanceof Error) {
       if (error.message === "AI_TIMEOUT") {
         return { error: TIMEOUT_MESSAGE };
