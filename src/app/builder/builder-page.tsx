@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useTheme } from "@/context/theme-provider";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useUserProfile } from "@/context/user-profile";
-import { useLoading } from "@/context/loading-context";
 import { cn } from "@/lib/utils";
 
 import { useInventoryQuery } from "./hooks/use-inventory-query";
@@ -29,8 +28,7 @@ import { PUBLIC_FEATURE_SIGN_IN_URL } from '@/lib/public-feature-auth';
 export default function BuilderPage({ initialParts }: { initialParts?: Part[] }) {
     const { theme } = useTheme();
     const isDark = theme === "dark";
-    const { authUser, profile, loading: authLoading } = useUserProfile();
-    const router = useRouter();
+    const { authUser } = useUserProfile();
     const searchParams = useSearchParams();
     const { isLiveBuilderRecommendationsEnabled } = useSiteSettings();
 
@@ -38,7 +36,7 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
 
     const {
         build, handlePartToggle, handleRemovePart,
-        handleClearBuild, getCountInBuild, isLoaded
+        handleClearBuild, getCountInBuild
     } = useBuilderLogic(allParts);
 
     const {
@@ -62,7 +60,6 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
     const [workload, setWorkload] = useState<WorkloadType>('AAA');
     const [autoRecommendationsEnabled, setAutoRecommendationsEnabled] = useState(true);
     const [analysis, setAnalysis] = useState<any>(null);
-    const [mounted, setMounted] = useState(false);
     const activeCategories = categories.filter(category => category.selected);
     const preferredCategory = activeCategories.length === 1 ? activeCategories[0].name : null;
     const recommendations = useLiveBuildRecommendations({
@@ -86,10 +83,6 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
         });
         window.dispatchEvent(event);
     };
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
 
     useEffect(() => {
         const categoryParam = searchParams.get('category');

@@ -13,7 +13,6 @@ import {
   Textarea,
   Modal,
   ThemeIcon,
-  Tooltip,
   Divider,
 } from "@mantine/core";
 import {
@@ -25,10 +24,7 @@ import {
   RotateCcw,
   Copy,
   Undo2,
-  AlertTriangle,
-  CheckCircle2,
   FileCode,
-  Shield,
   Lightbulb,
   Clock,
   User,

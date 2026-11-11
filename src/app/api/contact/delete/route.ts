@@ -1,4 +1,3 @@
-import * as admin from 'firebase-admin';
 import type { NextRequest } from 'next/server';
 import { getAdminFirestore } from '@/firebase/server-init';
 import { z } from 'zod';

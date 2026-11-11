@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { QR_TOKEN_PATTERN } from './product-identity';
 
 export interface QRAuditRecord {
   id?: string;

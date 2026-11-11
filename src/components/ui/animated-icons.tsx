@@ -1,21 +1,18 @@
 "use client";
 
 import React from "react";
-import { motion, Variants, AnimatePresence, HTMLMotionProps } from "framer-motion";
-import { 
-  BrainCircuit, 
-  Activity, 
-  Send, 
-  RotateCcw, 
-  PlusCircle, 
-  MessageSquare, 
+import { motion, AnimatePresence, HTMLMotionProps } from "framer-motion";
+import {
+  BrainCircuit,
+  Activity,
+  Send,
+  RotateCcw,
+  MessageSquare,
   X,
   Bot,
-  User,
-  Zap,
   ShieldCheck,
   Loader2,
-  RectangleVertical as CaseIcon
+  RectangleVertical as CaseIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 

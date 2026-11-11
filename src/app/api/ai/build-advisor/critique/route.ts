@@ -11,8 +11,8 @@ import { retrieveLocalKnowledge } from '@/lib/knowledge-retriever';
 import { getInventoryFromFirestore } from '@/lib/inventory-fetcher';
 import { getAdminFirestore } from '@/firebase/server-init';
 import { INCLUDED_INTEGRATED_GPU_ID } from '@/lib/integrated-graphics';
-import type { Resolution, WorkloadType } from '@/lib/types';
-import { aiBuildCritiqueOutputSchema, type AiBuildCritiqueOutput } from '@/ai/schemas/critique-schemas';
+import type { WorkloadType } from '@/lib/types';
+import { aiBuildCritiqueOutputSchema } from '@/ai/schemas/critique-schemas';
 
 export const maxDuration = 180;
 
@@ -138,9 +138,6 @@ export async function POST(req: Request) {
         const bottleneck = calculateBottleneck(build as any);
         const compatibilityIssues = checkFullBuildCompatibility(build as any);
 
-        const normRes: Resolution = (performanceLevel === '4K' || performanceLevel === '1080p' || performanceLevel === '1440p')
-            ? performanceLevel
-            : '1440p';
         const normWorkload: WorkloadType = (intendedUse === 'Esports' || intendedUse === 'AAA')
             ? intendedUse
             : 'Balanced';

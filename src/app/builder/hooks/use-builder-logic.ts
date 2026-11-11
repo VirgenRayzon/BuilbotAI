@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Part, ComponentData, Build, FavoriteBuild } from '@/lib/types';
+import type { Part, ComponentData, FavoriteBuild } from '@/lib/types';
 import { checkCompatibility } from "@/lib/compatibility";
 import { INCLUDED_INTEGRATED_GPU_ID, isIncludedIntegratedGpu, syncIntegratedGraphics } from '@/lib/integrated-graphics';
 import { includedCpuCoolerName, isIncludedStockCoolerPart } from '@/lib/included-cpu-cooler';
@@ -70,7 +70,7 @@ export function useBuilderLogic(allParts: Part[]) {
 
     const getCountInBuild = useCallback((partName: string) => {
         let count = 0;
-        Object.entries(build).forEach(([category, data]) => {
+        Object.values(build).forEach((data) => {
             if (Array.isArray(data)) {
                 count += data.filter(d => d.model === partName).length;
             } else if (data && data.model === partName) {

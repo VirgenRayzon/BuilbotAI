@@ -20,7 +20,6 @@ import {
   CheckCircle2,
   ServerCrash,
   ChevronRight,
-  CreditCard,
   XCircle,
 } from "lucide-react";
 import { formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";

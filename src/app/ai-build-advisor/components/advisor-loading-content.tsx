@@ -1,6 +1,6 @@
 'use client';
 
-import { Paper, Skeleton, Stack } from '@mantine/core';
+import { Paper, Skeleton } from '@mantine/core';
 
 export function AdvisorLoadingContent() {
   return (

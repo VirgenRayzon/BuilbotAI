@@ -5,7 +5,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useTheme } from "@/context/theme-provider";
-import { Button, Card, Stack, Group, Box, Paper, Text } from "@mantine/core";
+import { Button, Paper, Text } from "@mantine/core";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
 import { CategorySelectionEmpty } from "@/components/category-selection-empty";
 import { hasNoSelectedCategories } from "@/lib/category-selection";
@@ -16,10 +16,8 @@ import { useFirestore } from "@/firebase";
 import { collection, query } from "firebase/firestore";
 import { PrebuiltsTable } from "@/components/prebuilts-table";
 import { ArrowLeft, SearchX, MonitorOff } from "lucide-react";
-import { useUserProfile } from "@/context/user-profile";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { RouteGuard } from "@/components/auth/route-guard";
 import { getMissingParts } from "@/lib/prebuilt-utils";
 
 const prebuiltCategories = [
@@ -33,8 +31,6 @@ export default function PreBuiltsPage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const firestore = useFirestore();
-  const { authUser, profile, loading: authLoading } = useUserProfile();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const isAdminPreview = searchParams.get("preview") === "admin";
 
@@ -121,12 +117,6 @@ export default function PreBuiltsPage() {
       setExpandedIds([]);
     }
   }, [showAllDetails, filteredAndSortedSystems]);
-
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   return (
     <>

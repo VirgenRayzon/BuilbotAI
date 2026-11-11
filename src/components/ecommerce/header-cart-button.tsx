@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ActionIcon, Badge, Indicator, Tooltip } from "@mantine/core";
+import { ActionIcon, Indicator, Tooltip } from "@mantine/core";
 import { ShoppingCart } from "lucide-react";
 import { useSiteSettings } from "@/context/site-settings-context";
 import { useEcommerce } from "@/context/ecommerce-context";

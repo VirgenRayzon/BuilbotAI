@@ -2,9 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useTheme } from "@/context/theme-provider";
-import { useRouter } from "next/navigation";
-import { useUserProfile } from "@/context/user-profile";
-import { useLoading } from "@/context/loading-context";
 import { cn } from "@/lib/utils";
 import { Tabs } from "@mantine/core";
 import { CircuitBoard, Sparkles } from "lucide-react";
@@ -23,8 +20,6 @@ import { AdvisorLoadingContent } from "./components/advisor-loading-content";
 export default function AiBuildAdvisorPage() {
     const { theme } = useTheme();
     const isDark = theme === "dark";
-    const { authUser, profile, loading: userLoading } = useUserProfile();
-    const router = useRouter();
     const [activeTab, setActiveTab] = useState<string | null>('critique');
     const lastLoadedKeyRef = useRef<string>("");
 

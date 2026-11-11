@@ -10,9 +10,8 @@ import {
   TextInput,
   Button,
   ThemeIcon,
-  Alert,
 } from "@mantine/core";
-import { Key, Mail, Send, AlertCircle } from "lucide-react";
+import { Key, Mail, Send } from "lucide-react";
 
 interface RequestKeyModalProps {
   opened: boolean;

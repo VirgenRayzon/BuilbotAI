@@ -1,6 +1,5 @@
 'use client';
 import { CatalogCardSkeleton, catalogCardLayout } from '@/components/loading/catalog-card-skeleton';
-import { CarouselSkeleton } from '@/components/loading/carousel-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { useEffect, useState } from 'react';

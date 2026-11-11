@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useUserProfile } from "@/context/user-profile";
 import { useTheme } from "@/context/theme-provider";
 import { useRouter, useSearchParams } from "next/navigation";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import {
   Paper,
   Title,
@@ -21,9 +21,7 @@ import {
   User,
   Package,
   Settings,
-  Activity,
   Heart,
-  ShieldCheck,
   CheckCircle2,
   Cpu,
   History,
@@ -31,7 +29,6 @@ import {
   CreditCard,
   ArrowLeft,
   ArrowRight,
-  MapPin,
   XCircle,
   AlertCircle,
 } from "lucide-react";

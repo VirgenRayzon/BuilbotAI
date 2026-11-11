@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useFirestore } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useInventoryParts } from '@/firebase/firestore/use-inventory-parts';
@@ -8,19 +8,21 @@ import { collection, doc, getDoc } from 'firebase/firestore';
 import { inventoryItemPath } from '@/lib/inventory-paths';
 import type { Part, PrebuiltSystem } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
-import { 
-    addPart, updatePart, deletePart, archivePart, 
-    bulkArchiveParts, bulkDeleteParts,
-    addPrebuiltSystem, updatePrebuiltSystem, deletePrebuiltSystem, archivePrebuiltSystem,
-    bulkArchivePrebuilts, bulkDeletePrebuilts,
-    createSystemNotification
+import {
+    addPart,
+    updatePart,
+    deletePart,
+    archivePart,
+    addPrebuiltSystem,
+    updatePrebuiltSystem,
+    deletePrebuiltSystem,
+    archivePrebuiltSystem,
+    createSystemNotification,
 } from '@/firebase/database';
 import { createAuditLog } from '@/firebase/audit';
 import { AddPartFormSchema } from '@/hooks/use-part-form';
 import { AddPrebuiltFormSchema } from '@/components/add-prebuilt-dialog';
 import { logAdminAction, clearCatalogCache } from '@/app/actions';
-
-type PartWithoutCategory = Omit<Part, 'category'>;
 
 const componentCategories: { name: Part['category'], selected: boolean }[] = [
     { name: "CPU", selected: true },

@@ -3,10 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useAuth, useFirestore } from '@/firebase';
-import type { Order, OrderItem } from '@/lib/types';
+import type { Order } from '@/lib/types';
 import {
   initializeRigVerification,
-  type CustomRigInstance,
   type RigVerificationRecord,
 } from '@/lib/order-assembly';
 import {

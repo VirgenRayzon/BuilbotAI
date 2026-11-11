@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,7 +24,6 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
     Select,
     SelectContent,
@@ -43,21 +42,19 @@ import type { CreatedProduct } from '@/lib/product-identity';
 import { ToastAction } from './ui/toast';
 import { ScrollArea } from "./ui/scroll-area";
 import { MultiImageUpload } from "./parts/multi-image-upload";
-import { 
-    Loader2, 
-    Sparkles, 
-    Cpu, 
-    BrainCircuit, 
-    Search, 
-    Check, 
-    ChevronDown, 
-    Plus, 
-    X, 
-    Bold, 
-    Italic, 
-    Heading1, 
-    Heading2, 
-    List, 
+import {
+    Loader2,
+    Cpu,
+    BrainCircuit,
+    Search,
+    Check,
+    ChevronDown,
+    X,
+    Bold,
+    Italic,
+    Heading1,
+    Heading2,
+    List,
     Code,
     CircuitBoard,
     MemoryStick,
@@ -65,10 +62,9 @@ import {
     Box,
     Zap,
     Fan,
-    Thermometer,
     Layers,
     Monitor,
-    MousePointer2
+    MousePointer2,
 } from "lucide-react";
 import { getAiPrebuiltSuggestions } from "@/app/actions";
 import { useFirestore, useDoc } from "@/firebase";
@@ -324,17 +320,6 @@ function PartSelector({
     );
 }
 
-const PART_SLOTS = [
-    { key: "cpu", label: "CPU" },
-    { key: "gpu", label: "GPU" },
-    { key: "motherboard", label: "Motherboard" },
-    { key: "ram", label: "RAM" },
-    { key: "storage", label: "Storage" },
-    { key: "psu", label: "PSU" },
-    { key: "case", label: "Case" },
-    { key: "cooler", label: "Cooler" },
-] as const;
-
 export function AddPrebuiltDialog({
     children,
     onSave,
@@ -355,7 +340,6 @@ export function AddPrebuiltDialog({
     const [openSlot, setOpenSlot] = useState<string | null>(null);
     const [elapsedTime, setElapsedTime] = useState(0);
     const [justAutofilled, setJustAutofilled] = useState(false);
-    const [showTelemetry, setShowTelemetry] = useState(false);
     const startTimeRef = useRef<number>(0);
     const { toast } = useToast();
     const { getOperation, resetOperation } = useProductSaveOperation();
@@ -751,7 +735,6 @@ export function AddPrebuiltDialog({
         if (!isOpen) { 
             form.reset(); 
             setAiDuration(null);
-            setShowTelemetry(false);
         }
     };
 

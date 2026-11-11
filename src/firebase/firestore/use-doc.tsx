@@ -12,7 +12,7 @@ export interface UseDocOptions {
 
 export function useDoc<T>(
   docRef: DocumentReference | null,
-  options?: UseDocOptions
+  _options?: UseDocOptions
 ) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);

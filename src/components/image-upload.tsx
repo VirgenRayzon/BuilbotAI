@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useMemo } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Image as ImageIcon, Upload, X, FileText } from "lucide-react";
-import Image from "next/image";
 import { OptimizedImage } from "./ui/optimized-image";
 import { cn } from "@/lib/utils";
 import { Button as MantineButton, TextInput } from "@mantine/core";

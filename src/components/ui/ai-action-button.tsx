@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Button, Badge, Group, Text, Popover, Loader, ThemeIcon } from "@mantine/core";
-import { Sparkles, Zap, X, BrainCircuit, Activity } from "lucide-react";
+import { Button, Badge, Group, Popover, Loader } from "@mantine/core";
+import { Sparkles, Zap, X, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AiActionButtonProps {

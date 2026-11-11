@@ -30,8 +30,6 @@ import {
   Edit2,
   Phone,
   Mail,
-  FileText,
-  Sparkles,
 } from "lucide-react";
 import { useAddressBook } from "@/hooks/use-address-book";
 import type { SavedAddress } from "@/lib/types";

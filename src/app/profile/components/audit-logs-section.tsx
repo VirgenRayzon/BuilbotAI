@@ -4,13 +4,9 @@ import { TableLoadingRows } from "@/components/loading/table-loading-rows";
 import React, { useState, useMemo, useEffect } from "react";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import {
-  History,
   Calendar as CalendarIcon,
   Filter,
-  User as UserIcon,
-  Loader2,
   X,
-  Shield,
 } from "lucide-react";
 import {
   ActionIcon,
@@ -23,12 +19,9 @@ import {
   Paper,
   Popover as MantinePopover,
   Radio,
-  Select,
   Stack,
   Table,
   Text,
-  ThemeIcon,
-  Title,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

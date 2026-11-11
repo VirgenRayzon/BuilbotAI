@@ -311,7 +311,7 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                             )}
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                                {COMPONENT_SLOTS.map((slot, index) => {
+                                {COMPONENT_SLOTS.map((slot) => {
                                     const compData = build ? (build as any)[slot.key] : null;
                                     const isSlotLoaded = Boolean(compData && compData.model);
 

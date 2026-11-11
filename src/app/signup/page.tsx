@@ -11,9 +11,7 @@ import {
   createUserWithEmailAndPassword,
   setPersistence,
   browserLocalPersistence,
-  signOut,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
 import {
   Paper,
   Title,

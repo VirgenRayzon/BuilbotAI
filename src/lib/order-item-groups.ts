@@ -1,4 +1,4 @@
-import type { Order, OrderItem } from "./types";
+import type { OrderItem } from "./types";
 
 export interface OrderItemGroup {
   id?: string;

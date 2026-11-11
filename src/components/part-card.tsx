@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import { Card, Text, Badge, Button, Group, Box, Stack } from "@mantine/core";
 import { OptimizedImage } from "./ui/optimized-image";
 import { formatCurrency, formatToPHP, getOptimizedStorageUrl, cn } from "@/lib/utils";

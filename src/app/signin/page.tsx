@@ -24,14 +24,13 @@ import {
   PasswordInput,
   Button,
   Alert,
-  ThemeIcon,
   Stack,
   Group,
   Anchor,
   Divider,
   Checkbox,
 } from '@mantine/core';
-import { LogIn, Mail, Lock, AlertCircle, ArrowLeft, Clock } from 'lucide-react';
+import { Mail, Lock, AlertCircle, ArrowLeft, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AuthBackground } from '@/components/auth/auth-background';
 import { useTheme } from '@/context/theme-provider';

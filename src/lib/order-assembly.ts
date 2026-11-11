@@ -1,5 +1,5 @@
 import type { Order, OrderItem } from './types';
-import { groupOrderItems, type OrderItemGroup } from './order-item-groups';
+import { groupOrderItems } from './order-item-groups';
 
 export type RigAssemblyStep = 'picking' | 'assembly' | 'testing' | 'qc';
 

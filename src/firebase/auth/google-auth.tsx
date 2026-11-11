@@ -87,7 +87,7 @@ export interface CustomerGoogleAuthResult {
 export async function executeCustomerGoogleAuth(
   auth: Auth,
   firestore: Firestore,
-  options?: { isSignUp?: boolean }
+  _options?: { isSignUp?: boolean }
 ): Promise<CustomerGoogleAuthResult> {
   let signedInUserId: string | null = null;
   try {

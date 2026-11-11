@@ -2,15 +2,12 @@
 
 import React, { useState } from 'react';
 import {
-  Calendar,
   Check,
   ChevronDown,
-  Package,
-  Wrench,
 } from 'lucide-react';
-import { Badge, Collapse } from '@mantine/core';
-import type { Order, OrderItem, Part } from '@/lib/types';
-import { cn, formatCurrency, getOptimizedStorageUrl } from '@/lib/utils';
+import { Collapse } from '@mantine/core';
+import type { Order, Part } from '@/lib/types';
+import { cn, getOptimizedStorageUrl } from '@/lib/utils';
 import { formatFirestoreTimestamp, getStockBadgeInfo } from '@/app/admin/components/orders/order-status-config';
 import {
   getOrderPlacedSummary,
@@ -38,7 +35,7 @@ export function CustomerOrderActivity({
   const [showPickingDetails, setShowPickingDetails] = useState(false);
   const [selectedRigIndex, setSelectedRigIndex] = useState(0);
 
-  const { rigs, activeRig, verification, loading } = useCustomerRigAssembly(
+  const { rigs, activeRig, verification } = useCustomerRigAssembly(
     order,
     order ? undefined : undefined
   );

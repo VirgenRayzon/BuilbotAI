@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { SectionHeader } from './section-header';
 import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';
-import { Paper, ThemeIcon, Text, Badge, Group } from '@mantine/core';
+import { Paper, ThemeIcon, Badge } from '@mantine/core';
 import { Code, FileText, UserCheck, Palette, Sparkles, Building2 } from 'lucide-react';
 import devImage from '@/assets/team/rayzon.png';
 import docImage from '@/assets/team/documentation_m.png';

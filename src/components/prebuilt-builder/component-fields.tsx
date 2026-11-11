@@ -7,7 +7,6 @@ import { PartSelector } from "./part-selector";
 import { UseFormReturn } from "react-hook-form";
 import { PrebuiltBuilderAddFormSchema } from "./use-prebuilt-form";
 import type { Part } from "@/lib/types";
-import { useToast } from "@/hooks/use-toast";
 
 interface ComponentFieldsProps {
     form: UseFormReturn<PrebuiltBuilderAddFormSchema>;
@@ -17,15 +16,7 @@ interface ComponentFieldsProps {
 }
 
 export function ComponentFields({ form, inventory, openSlot, setOpenSlot }: ComponentFieldsProps) {
-    const { toast } = useToast();
-
-    const handleOpenSlot = (isOpen: boolean, slotName: string, category: string) => {
-        if (isOpen) {
-            const currentCase = form.getValues('case');
-            const currentMobo = form.getValues('motherboard');
-            const currentCpu = form.getValues('cpu');
-            
-        }
+    const handleOpenSlot = (isOpen: boolean, slotName: string) => {
         setOpenSlot(isOpen ? slotName : null);
     };
 
@@ -39,7 +30,7 @@ export function ComponentFields({ form, inventory, openSlot, setOpenSlot }: Comp
                     value={field.value as string || ""}
                     onChange={field.onChange}
                     isOpen={openSlot === name}
-                    onOpenChange={(o) => handleOpenSlot(o, name as string, category)}
+                    onOpenChange={(o) => handleOpenSlot(o, name as string)}
                 />
                 <FormMessage />
             </FormItem>

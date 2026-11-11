@@ -6,7 +6,6 @@ import { Clock, ClockAlert } from "lucide-react";
 import {
   getOrderRemainingTimeMs,
   formatRemainingTime,
-  isOrderExpired,
 } from "@/lib/order-expiration";
 import { autoCancelExpiredOrder } from "@/app/checkout-actions";
 import { useUserProfile } from "@/context/user-profile";

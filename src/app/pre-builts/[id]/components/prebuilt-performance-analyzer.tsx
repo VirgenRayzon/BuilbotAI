@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import dynamic from "next/dynamic";
-import { Text, Group, Select, Badge, Skeleton, Box, Button } from "@mantine/core";
+import { Text, Group, Select, Badge, Box, Button } from "@mantine/core";
 import { Gauge, Monitor, Zap, AlertTriangle, Wrench } from "lucide-react";
 import type { Part, Resolution, WorkloadType, ComponentData } from "@/lib/types";
 import type { PrebuiltPartStatus } from "@/lib/prebuilt-utils";

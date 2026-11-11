@@ -65,7 +65,6 @@ export function Header() {
   const [userMenuOpened, setUserMenuOpened] = useState(false);
   const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] = useDisclosure(false);
   const [signOutModalOpen, setSignOutModalOpen] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false);
   const { startSignOut, cancelSignOut } = useSignOutTransition();
 
   useEffect(() => {
@@ -82,7 +81,6 @@ export function Header() {
 
   const handleSignOut = async () => {
     if (auth) {
-      setIsSigningOut(true);
       setSignOutModalOpen(false);
       startSignOut();
       const isStaff = Boolean(profile?.isSuperAdmin || profile?.isManager);
@@ -101,7 +99,6 @@ export function Header() {
       } catch (error) {
         console.error("Sign out failed:", error);
         cancelSignOut();
-        setIsSigningOut(false);
       }
     }
   };

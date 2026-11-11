@@ -133,7 +133,7 @@ function generateSearchKeywords(name: string, brand: string, category: string, m
     return Array.from(keywordsSet);
 }
 
-export async function addPart(firestore: Firestore, part: AddPartFormSchema, operationId = crypto.randomUUID()) {
+export async function addPart(_firestore: Firestore, part: AddPartFormSchema, operationId = crypto.randomUUID()) {
     const specificationsMap = part.specifications.reduce((acc: Record<string, string>, spec: { key: string; value: string }) => {
         acc[spec.key] = spec.value;
         return acc;
@@ -295,7 +295,7 @@ export async function bulkDeleteParts(firestore: Firestore, items: { id: string,
     await batch.commit();
 }
 
-export async function addPrebuiltSystem(firestore: Firestore, system: AddPrebuiltFormSchema, operationId = crypto.randomUUID()) {
+export async function addPrebuiltSystem(_firestore: Firestore, system: AddPrebuiltFormSchema, operationId = crypto.randomUUID()) {
     const { name, tier, description, price, imageUrl, images, cpu, gpu, motherboard, ram, storage, psu, case: caseComponent, cooler } = system;
 
     const rawImages = images?.length ? images : (imageUrl ? [imageUrl] : []);

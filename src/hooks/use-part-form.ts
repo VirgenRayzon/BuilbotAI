@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useForm, UseFormReturn } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { getAiPartDetails } from "@/app/actions";
 import { Part } from "@/lib/types";
-import { CATEGORY_SPECS } from "@/lib/constants/category-specs";
 import { normalizeProductDescription } from "@/lib/normalize-product-description";
 
 const specificationSchema = z.object({

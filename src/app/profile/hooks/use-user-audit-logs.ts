@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { useFirestore } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, query, orderBy, where } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import type { UserAuditLog } from '@/lib/types';
 import { useUserProfile } from '@/context/user-profile';
 

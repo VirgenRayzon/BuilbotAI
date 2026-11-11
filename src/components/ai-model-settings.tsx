@@ -22,10 +22,8 @@ import {
     Zap,
     Brain,
     MessageSquare,
-    ChevronDown,
     ChevronUp,
     X,
-    SlidersHorizontal,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useUserProfile } from '@/context/user-profile';

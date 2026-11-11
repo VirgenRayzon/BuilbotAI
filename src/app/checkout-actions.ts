@@ -1854,7 +1854,7 @@ export async function updateReservationStatus(
   let targetUserId: string | null = null;
 
   try {
-    const { decoded, actorProfile, isSuperAdmin, isManager, isStaff } = await getOrderActor(idToken);
+    const { decoded, actorProfile, isSuperAdmin, isStaff } = await getOrderActor(idToken);
     const actor = isStaff
       ? {
           id: decoded.uid,

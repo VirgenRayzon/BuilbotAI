@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useId } from "react";
-import dynamic from 'next/dynamic';
 import { AnimatePresence, motion } from "framer-motion";
 import { Group, Select, Box, Tooltip } from "@mantine/core";
 import { Monitor, Zap, Gauge, Cpu, WalletCards } from "lucide-react";

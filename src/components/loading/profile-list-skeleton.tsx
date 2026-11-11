@@ -1,5 +1,5 @@
 'use client';
-import { Button, Group, Paper, Stack, Text } from '@mantine/core';
+import { Button, Paper, Stack, Text } from '@mantine/core';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function ProfileListSkeleton({ favorite = false }: { favorite?: boolean }) {

@@ -2,15 +2,13 @@
 
 import React, { createContext, useContext, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { 
+import {
     Clock,
-    Plus,
-    RefreshCcw,
     Sparkles,
     AlertTriangle,
     FileSpreadsheet,
     QrCode,
-    Scan
+    Scan,
 } from 'lucide-react';
 import { 
     ActionIcon,
@@ -117,8 +115,6 @@ export function AdminTabHeader({
     pendingOrdersCount = 0,
     intelligenceBadge = 'Ready',
     intelligenceBadgeColor = 'teal',
-    onOpenIngestDummy,
-    onOpenResetSales,
     onExportSales,
     isIngestingDummyData = false,
     isResettingSales = false,

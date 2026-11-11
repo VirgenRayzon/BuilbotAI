@@ -3,7 +3,7 @@
 import { use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Container, Grid, Title, Text, Paper, Button, Loader } from "@mantine/core";
+import { Container, Grid, Title, Text, Paper, Button } from "@mantine/core";
 import { ArrowLeft } from "lucide-react";
 import { usePrebuiltDetails } from "./hooks/use-prebuilt-details";
 import { PrebuiltImageView } from "./components/prebuilt-image-view";

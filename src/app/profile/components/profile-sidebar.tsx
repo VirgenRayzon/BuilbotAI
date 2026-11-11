@@ -53,7 +53,6 @@ interface ProfileSidebarProps {
 
 export function ProfileSidebar({
   profile,
-  authUser,
   activeTab,
   onTabChange,
   toPayCount = 0,
@@ -64,7 +63,6 @@ export function ProfileSidebar({
   cancelledCount = 0,
   favoritesCount = 0,
   userLogsCount = 0,
-  staffLogsCount = 0,
 }: ProfileSidebarProps) {
   const router = useRouter();
   const auth = useAuth();

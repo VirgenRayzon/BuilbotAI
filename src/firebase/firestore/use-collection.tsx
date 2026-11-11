@@ -12,7 +12,7 @@ export interface UseCollectionOptions {
 
 export function useCollection<T>(
   query: Query | null,
-  options?: UseCollectionOptions
+  _options?: UseCollectionOptions
 ) {
   const [data, setData] = useState<T[] | null>(null);
   const [loading, setLoading] = useState(true);

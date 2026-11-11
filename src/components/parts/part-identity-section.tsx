@@ -3,7 +3,7 @@
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge, Paper, ActionIcon, Group, Tooltip } from "@mantine/core";
+import { Badge, Paper, ActionIcon } from "@mantine/core";
 import { Bold, Italic, List, Heading1, Heading2, Code, Type, CircleAlert } from "lucide-react";
 import { MultiImageUpload } from "./multi-image-upload";
 import { componentCategories } from "@/lib/constants/category-specs";

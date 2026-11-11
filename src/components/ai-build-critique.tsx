@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { SparkleButton } from "./ui/sparkle-button";
 import { Badge } from "@/components/ui/badge";
 import { Paper, Text, Group, ThemeIcon, Box, Stack } from "@mantine/core";
 import { AnimatedIconButton, AnimatedRotateIcon, AnimatedBrainIcon, AnimatedBotIcon } from "./ui/animated-icons";
-import { BrainCircuit, ThumbsUp, ThumbsDown, AlertTriangle, MonitorPlay, Zap, Plus, Sparkles, Gamepad2, CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { ThumbsUp, AlertTriangle, MonitorPlay, Zap, Sparkles, Gamepad2 } from "lucide-react";
 import { getAiBuildCritique } from "@/app/actions";
 import { ComponentData } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";

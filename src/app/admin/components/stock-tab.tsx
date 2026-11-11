@@ -20,8 +20,6 @@ import { InventoryPartCard } from '@/components/inventory-part-card';
 import { InventoryTable } from '@/components/inventory-table';
 import { InventoryToolbar, AvailabilityFilter } from '@/components/inventory-toolbar';
 import { PaginationControls } from "@/components/pagination-controls";
-import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import type { Part, UserProfile } from '@/lib/types';
 import { AddPartFormSchema } from '@/hooks/use-part-form';
 import { useInventoryImageCount } from '@/hooks/use-inventory-image-count';

@@ -39,12 +39,12 @@ export function useSystemPrompts() {
   const [resetTarget, setResetTarget] = useState<SystemPromptKey | 'all'>('chatbot');
 
   useEffect(() => {
-    setDraftPrompts((prev) => ({
+    setDraftPrompts({
       chatbot: savedPrompts?.chatbot ?? DEFAULT_CHATBOT_PROMPT,
       buildAdvisor: savedPrompts?.buildAdvisor ?? DEFAULT_BUILD_ADVISOR_PROMPT,
       prebuiltAdvisor: savedPrompts?.prebuiltAdvisor ?? DEFAULT_PREBUILT_ADVISOR_PROMPT,
       partExtractor: savedPrompts?.partExtractor ?? DEFAULT_PART_EXTRACTOR_PROMPT,
-    }));
+    });
   }, [savedPrompts?.chatbot, savedPrompts?.buildAdvisor, savedPrompts?.prebuiltAdvisor, savedPrompts?.partExtractor]);
 
   const activeMeta = useMemo<SystemPromptMeta>(() => {

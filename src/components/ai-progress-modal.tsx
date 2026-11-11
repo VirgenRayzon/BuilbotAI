@@ -12,9 +12,6 @@ import {
     ThemeIcon,
     Progress,
     ScrollArea,
-    ActionIcon,
-    Tooltip,
-    Divider
 } from "@mantine/core";
 import {
     Bot,

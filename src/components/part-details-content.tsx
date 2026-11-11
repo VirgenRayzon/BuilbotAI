@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { SlidingImage } from "@/components/ui/sliding-image";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { Dialog, DialogClose, DialogContent, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";

@@ -27,7 +27,6 @@ import {
   Group,
   Stack,
   ThemeIcon,
-  ScrollArea,
   Paper,
   Divider,
 } from "@mantine/core";

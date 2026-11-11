@@ -16,13 +16,8 @@ import {
   Shield,
   Mail,
   Calendar,
-  Package,
-  Truck,
-  Cpu,
   LogOut,
   ShieldCheck,
-  CheckCircle2,
-  Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/firebase";

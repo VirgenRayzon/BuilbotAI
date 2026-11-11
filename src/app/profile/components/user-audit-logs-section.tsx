@@ -5,9 +5,7 @@ import React, { useState, useMemo } from "react";
 import { format } from "date-fns";
 import {
   Search,
-  History,
   Calendar as CalendarIcon,
-  Loader2,
   X,
   Package,
   Heart,
@@ -15,7 +13,6 @@ import {
   Shield,
 } from "lucide-react";
 import {
-  ActionIcon,
   Avatar,
   Badge,
   Button,
@@ -26,8 +23,6 @@ import {
   Table,
   Text,
   TextInput,
-  ThemeIcon,
-  Title,
 } from "@mantine/core";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";

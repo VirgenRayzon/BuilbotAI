@@ -65,7 +65,7 @@ const aiBuildCritiqueOutputSchema = z.object({
 });
 
 import { estimateFPS } from "@/lib/fps-estimator";
-import { Resolution, WorkloadType } from "@/lib/types";
+import { WorkloadType } from "@/lib/types";
 
 const CRITIQUE_CACHE_COLLECTION = 'ai_critique_cache_v1';
 
@@ -151,9 +151,6 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput, deferCa
     const bottleneck = calculateBottleneck(build as any);
     const compatibilityIssues = checkFullBuildCompatibility(build as any);
 
-    const normRes: Resolution = (performanceLevel === '4K' || performanceLevel === '1080p' || performanceLevel === '1440p')
-        ? performanceLevel
-        : '1440p';
     const normWorkload: WorkloadType = (intendedUse === 'Esports' || intendedUse === 'AAA')
         ? intendedUse
         : 'Balanced';

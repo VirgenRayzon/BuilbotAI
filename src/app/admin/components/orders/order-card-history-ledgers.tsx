@@ -21,7 +21,6 @@ export function OrderCardHistoryLedgers({
   order,
   archived = false,
   reconciling = false,
-  onOpenRefund,
   onReconcileRefund,
 }: OrderCardHistoryLedgersProps) {
   const [opened, setOpened] = useState(false);

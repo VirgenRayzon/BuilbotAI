@@ -25,12 +25,10 @@ import {
   ChevronUp,
   Archive,
   RotateCcw,
-  AlertCircle,
   QrCode,
 } from "lucide-react";
 import type { PrebuiltSystem, Part } from "@/lib/types";
 import { ConfirmationAlertDialog } from "@/components/ui/confirmation-alert-dialog";
-import { useToast } from "@/hooks/use-toast";
 import { getMissingParts, checkSystemStock } from "@/lib/prebuilt-utils";
 import { includedCpuCoolerName } from "@/lib/included-cpu-cooler";
 import { inventoryItemPath } from "@/lib/inventory-paths";
@@ -173,7 +171,6 @@ function PrebuiltTableRow({
   isAdminPreview: boolean;
 }) {
   const { shouldCorruptImages } = useSiteSettings();
-  const { toast } = useToast();
   const firestore = useFirestore();
   const [stockStatus, setStockStatus] = useState<"loading" | "in-stock" | "out-of-stock">("loading");
 

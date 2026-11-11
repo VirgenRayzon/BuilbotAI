@@ -23,7 +23,6 @@ interface RecommendationTabProps {
 }
 
 export function RecommendationTab({
-    isDark,
     isPending,
     handleGetRecommendations,
     handleCancelRecommendations,

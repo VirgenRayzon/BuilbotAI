@@ -579,7 +579,7 @@ export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overv
                                                 barSize={20}
                                                 animationDuration={1500}
                                             >
-                                                {categoryData.map((entry, index) => (
+                                                {categoryData.map((_, index) => (
                                                     <Cell
                                                         key={`cell-${index}`}
                                                         fill={COLORS.chart[index % COLORS.chart.length]}

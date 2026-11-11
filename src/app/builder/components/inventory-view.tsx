@@ -4,15 +4,11 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Database, Plus, Trash2, Sparkles } from "lucide-react";
 import {
-  Card,
   Paper,
   Table,
   Button,
   Badge,
   Text,
-  Group,
-  Stack,
-  Box,
 } from "@mantine/core";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { formatCurrency, cn, getOptimizedStorageUrl } from "@/lib/utils";

@@ -1,5 +1,5 @@
 import { ComponentData, Resolution, WorkloadType } from "./types";
-import { getTier, ComponentTier } from "./bottleneck";
+import { getTier } from "./bottleneck";
 import { isIncludedIntegratedGpu } from './integrated-graphics';
 
 export interface FpsEstimate {
@@ -81,7 +81,6 @@ export const estimateFPS = (
     }
 
     let currentAvg = Math.max(averageFps * 0.3, 10);
-    let currentLows = Math.max(currentAvg * 0.7, 5);
 
     for (let i = 0; i < resolutionSteps.length; i++) {
         const progress = (i + 1) / resolutionSteps.length;
@@ -100,7 +99,6 @@ export const estimateFPS = (
         });
 
         currentAvg = pointAvg;
-        currentLows = pointLows;
     }
 
     const lowsFps = Math.round(averageFps * 0.75);

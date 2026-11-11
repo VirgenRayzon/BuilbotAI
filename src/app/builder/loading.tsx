@@ -1,4 +1,4 @@
-import { Paper, Skeleton, Stack } from '@mantine/core';
+import { Paper, Skeleton } from '@mantine/core';
 import { InventoryLoading } from '@/components/loading/inventory-loading';
 
 export default function BuilderLoading() {

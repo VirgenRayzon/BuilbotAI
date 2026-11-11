@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useId } from "react";
 import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical as CaseIcon, Wind, Monitor, Keyboard, Mouse, Headphones, ChevronDown, HardDrive } from "lucide-react";
 import { Paper } from "@mantine/core";
-import { Separator } from "@/components/ui/separator";
 import { cn, formatCurrency } from "@/lib/utils";
 import { ComponentData } from "@/lib/types";
 import { BuildItem } from "./build-item";
@@ -49,8 +48,6 @@ export function BuildContent({
   onRemovePart,
   onCategorySelect,
   activeFilter,
-  categories,
-  showSystemBalance,
   totalWattage,
   psuWattage,
   totalPrice,

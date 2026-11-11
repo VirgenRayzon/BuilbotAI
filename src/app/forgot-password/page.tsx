@@ -16,9 +16,8 @@ import {
   Alert,
   Stack,
   Anchor,
-  ThemeIcon,
 } from '@mantine/core';
-import { Mail, AlertCircle, ArrowLeft, CheckCircle2, KeyRound } from 'lucide-react';
+import { Mail, AlertCircle, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { UnifiedBackground } from '@/components/landing/unified-background';
 import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';

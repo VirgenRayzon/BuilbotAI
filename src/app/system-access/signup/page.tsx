@@ -14,7 +14,6 @@ import {
   signInWithPopup,
   signOut,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
 import {
   Paper,
   Title,
@@ -29,7 +28,7 @@ import {
   Progress,
   Modal,
 } from '@mantine/core';
-import { Mail, Lock, Key, AlertCircle, ArrowLeft, Check, X, ShieldAlert } from 'lucide-react';
+import { Mail, Lock, Key, AlertCircle, ArrowLeft, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { registerManagerAction } from '@/app/actions';
 import { UnifiedBackground } from '@/components/landing/unified-background';

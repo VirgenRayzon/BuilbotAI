@@ -10,7 +10,7 @@ import {
   Text,
   ThemeIcon,
 } from '@mantine/core';
-import { AlertTriangle, ArrowRight, CheckCircle2, Cpu, Wrench } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCircle2, Wrench } from 'lucide-react';
 import type { PublicProduct } from '@/lib/public-product-types';
 import { usePartBuilderCompatibility } from '@/hooks/use-part-builder-compatibility';
 

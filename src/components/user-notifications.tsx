@@ -15,8 +15,6 @@ import {
   MessageCircle,
   CheckCheck,
   SlidersHorizontal,
-  Clock,
-  Sparkles,
 } from "lucide-react";
 import {
   Popover,

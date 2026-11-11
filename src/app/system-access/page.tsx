@@ -19,7 +19,6 @@ import {
   PasswordInput,
   Button,
   Alert,
-  ThemeIcon,
   Stack,
   Group,
   SegmentedControl,
@@ -28,7 +27,7 @@ import {
   Modal,
   Loader,
 } from '@mantine/core';
-import { Shield, Mail, Lock, Key, AlertCircle, ArrowLeft, Clock, ShieldAlert } from 'lucide-react';
+import { Mail, Lock, Key, AlertCircle, ArrowLeft, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { UnifiedBackground } from '@/components/landing/unified-background';
 import { useTheme } from '@/context/theme-provider';

@@ -29,7 +29,6 @@ import {
   BookMarked,
   CheckCircle2,
   CreditCard,
-  FlaskConical,
   Lock,
   MapPin,
   PackageCheck,
@@ -79,7 +78,6 @@ import {
   type SimulatedPaymongoModalOrderInfo,
 } from "@/components/ecommerce/paymongo-checkout-modal";
 import { useToast } from "@/hooks/use-toast";
-import { OrderExpirationNotice } from "@/components/order-expiration-timer";
 
 const NETCODEX_STORE_LOCATION = {
   storeName: "Netcodex Computer Center",

@@ -6,12 +6,6 @@ import { getVertexAccessToken, markTunedModelHealthy, DEFAULT_TUNED_MODEL_ID, ty
 import { resolveVertexTunedEndpoint } from '@/lib/vertex-tuned-endpoint';
 
 import {
-  aiBuildAdvisorRecommendations,
-} from "@/ai/flows/ai-build-advisor-recommendations";
-import type {
-  AiBuildAdvisorRecommendationsInput,
-} from "@/ai/schemas/build-advisor-schemas";
-import {
   extractPartDetails,
   type ExtractPartDetailsInput,
 } from "@/ai/flows/extract-part-details";
@@ -37,12 +31,15 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 180000): 
 
 const TIMEOUT_MESSAGE = "The AI service is taking too long to respond. Please try again in a few moments.";
 
-export async function getAiPrebuiltPerformance(input: AiPrebuiltPerformanceInput) {
+async function runAiAction<T>(
+  label: string,
+  fn: () => Promise<T>,
+  checkApiKey: boolean = false
+): Promise<T | { error: string }> {
   try {
-    const result = await withTimeout(aiPrebuiltPerformanceAction(input));
-    return result;
+    return await withTimeout(fn());
   } catch (error) {
-    console.error("Error fetching AI prebuilt performance:", error);
+    console.error(`Error fetching ${label}:`, error);
     if (error instanceof Error) {
       if (error.message === "AI_TIMEOUT") {
         return { error: TIMEOUT_MESSAGE };
@@ -53,7 +50,12 @@ export async function getAiPrebuiltPerformance(input: AiPrebuiltPerformanceInput
             "Could not connect to the AI service. Is 'npm run genkit:dev' running in another terminal?",
         };
       }
-      if (error.message.includes("GOOGLE_API_KEY") || error.message.includes("GEMINI_API_KEY") || error.message.includes("FAILED_PRECONDITION")) {
+      if (
+        checkApiKey &&
+        (error.message.includes("GOOGLE_API_KEY") ||
+          error.message.includes("GEMINI_API_KEY") ||
+          error.message.includes("FAILED_PRECONDITION"))
+      ) {
         return {
           error: "Missing API Key. Please set GOOGLE_API_KEY in your .env file to enable AI features.",
         };
@@ -64,104 +66,20 @@ export async function getAiPrebuiltPerformance(input: AiPrebuiltPerformanceInput
   }
 }
 
-export async function getAiRecommendations(
-  input: AiBuildAdvisorRecommendationsInput
-) {
-  try {
-    const result = await withTimeout(aiBuildAdvisorRecommendations(input));
-    return result;
-  } catch (error) {
-    console.error("Error fetching AI recommendations:", error);
-    if (error instanceof Error) {
-      if (error.message === "AI_TIMEOUT") {
-        return { error: TIMEOUT_MESSAGE };
-      }
-      if (error.message.includes("fetch failed")) {
-        return {
-          error:
-            "Could not connect to the AI service. Is 'npm run genkit:dev' running in another terminal?",
-        };
-      }
-      if (error.message.includes("GOOGLE_API_KEY") || error.message.includes("GEMINI_API_KEY") || error.message.includes("FAILED_PRECONDITION")) {
-        return {
-          error: "Missing API Key. Please set GOOGLE_API_KEY in your .env file to enable AI features.",
-        };
-      }
-      return { error: error.message };
-    }
-    return { error: "An unknown error occurred." };
-  }
+export async function getAiPrebuiltPerformance(input: AiPrebuiltPerformanceInput) {
+  return runAiAction("AI prebuilt performance", () => aiPrebuiltPerformanceAction(input), true);
 }
 
 export async function getAiPartDetails(input: ExtractPartDetailsInput) {
-  try {
-    const result = await withTimeout(extractPartDetails(input));
-    return result;
-  } catch (error) {
-    console.error("Error fetching AI part details:", error);
-    if (error instanceof Error) {
-      if (error.message === "AI_TIMEOUT") {
-        return { error: TIMEOUT_MESSAGE };
-      }
-      if (error.message.includes("fetch failed")) {
-        return {
-          error:
-            "Could not connect to the AI service. Is 'npm run genkit:dev' running in another terminal?",
-        };
-      }
-      return { error: error.message };
-    }
-    return { error: "An unknown error occurred." };
-  }
+  return runAiAction("AI part details", () => extractPartDetails(input));
 }
 
 export async function getAiPrebuiltSuggestions(input: AiPrebuiltAdvisorInput) {
-  try {
-    const result = await withTimeout(aiPrebuiltAdvisor(input));
-    return result;
-  } catch (error) {
-    console.error("Error fetching AI prebuilt suggestions:", error);
-    if (error instanceof Error) {
-      if (error.message === "AI_TIMEOUT") {
-        return { error: TIMEOUT_MESSAGE };
-      }
-      if (error.message.includes("fetch failed")) {
-        return {
-          error:
-            "Could not connect to the AI service. Is 'npm run genkit:dev' running in another terminal?",
-        };
-      }
-      return { error: error.message };
-    }
-    return { error: "An unknown error occurred." };
-  }
+  return runAiAction("AI prebuilt suggestions", () => aiPrebuiltAdvisor(input));
 }
 
 export async function getAiBuildCritique(input: AiBuildCritiqueInput) {
-  try {
-    const result = await withTimeout(aiBuildCritiqueAction(input, task => after(task)));
-    return result;
-  } catch (error) {
-    console.error("Error fetching AI build critique:", error);
-    if (error instanceof Error) {
-      if (error.message === "AI_TIMEOUT") {
-        return { error: TIMEOUT_MESSAGE };
-      }
-      if (error.message.includes("fetch failed")) {
-        return {
-          error:
-            "Could not connect to the AI service. Is 'npm run genkit:dev' running in another terminal?",
-        };
-      }
-      if (error.message.includes("GOOGLE_API_KEY") || error.message.includes("GEMINI_API_KEY") || error.message.includes("FAILED_PRECONDITION")) {
-        return {
-          error: "Missing API Key. Please set GOOGLE_API_KEY in your .env file to enable AI features.",
-        };
-      }
-      return { error: error.message };
-    }
-    return { error: "An unknown error occurred." };
-  }
+  return runAiAction("AI build critique", () => aiBuildCritiqueAction(input, task => after(task)), true);
 }
 
 export async function logAdminAction(action: string, details: string, data?: any) {
@@ -227,118 +145,6 @@ export async function syncUserClaimsAction(idToken: string) {
   } catch (error: any) {
     console.error(`[syncUserClaimsAction] Failed to sync custom claims:`, error);
     return { error: error.message };
-  }
-}
-
-export async function authenticateSystemAccessAction(
-  idToken: string,
-  roleKey: string,
-  requestedRole: 'manager' | 'superadmin'
-) {
-  try {
-    const adminAuth = getAdminAuth();
-    const db = getAdminFirestore();
-
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
-    const userId = decodedToken.uid;
-
-    console.log(`[authenticateSystemAccessAction] Authenticating system access for user ${userId} for role ${requestedRole}...`);
-
-    const userDocRef = db.collection('users').doc(userId);
-    const userDoc = await userDocRef.get();
-
-    let effectiveProfile: any = null;
-
-    if (userDoc.exists) {
-      const userData = userDoc.data();
-      if (!userData) return { error: 'No user data found.' };
-      effectiveProfile = userData;
-
-      if (requestedRole === 'manager') {
-        const hasManagerAccess = userData.isManager || userData.isAdmin;
-        if (!hasManagerAccess) {
-          return { error: 'This account does not have manager privileges.' };
-        }
-
-        let isKeyValid = false;
-        if (userData.activeManagerKey && userData.activeManagerKey === roleKey) {
-          isKeyValid = true;
-        } else {
-          const keyDocSnap = await db.collection('authKeys').doc(roleKey).get();
-          const isLegacyKey = (keyDocSnap.exists && keyDocSnap.data()?.role === 'manager') || roleKey === '00216764';
-          isKeyValid = isLegacyKey;
-        }
-
-        if (!isKeyValid) {
-          return { error: 'Incorrect manager key. Please verify your manager key and try again.' };
-        }
-
-        const updates: any = { isManager: true };
-        if (userData.isAdmin && !userData.isManager) {
-          updates.isManager = true;
-        }
-        if (!userData.activeManagerKey || userData.activeManagerKey !== roleKey) {
-          updates.activeManagerKey = roleKey;
-        }
-        await userDocRef.update(updates);
-        effectiveProfile.isManager = true;
-
-      } else if (requestedRole === 'superadmin') {
-        if (!userData.isSuperAdmin) {
-          return { error: 'This account does not have super admin privileges.' };
-        }
-
-        const keyDocSnap = await db.collection('authKeys').doc(roleKey).get();
-        const isDbKey = keyDocSnap.exists && keyDocSnap.data()?.role === 'superadmin';
-        const isHardcodedKey = roleKey === 'SUPER_ADMIN_123';
-
-        if (!isDbKey && !isHardcodedKey) {
-          return { error: 'Incorrect super admin key. Please verify your master key and try again.' };
-        }
-
-        await userDocRef.update({ isSuperAdmin: true, isManager: true });
-        effectiveProfile.isSuperAdmin = true;
-        effectiveProfile.isManager = true;
-      }
-    } else {
-      
-      let isKeyValid = false;
-      if (requestedRole === 'manager') {
-        const keyDocSnap = await db.collection('authKeys').doc(roleKey).get();
-        isKeyValid = (keyDocSnap.exists && keyDocSnap.data()?.role === 'manager') || roleKey === '00216764';
-      } else if (requestedRole === 'superadmin') {
-        const keyDocSnap = await db.collection('authKeys').doc(roleKey).get();
-        isKeyValid = (keyDocSnap.exists && keyDocSnap.data()?.role === 'superadmin') || roleKey === 'SUPER_ADMIN_123';
-      }
-
-      if (!isKeyValid) {
-        return { error: `Incorrect key for ${requestedRole} access.` };
-      }
-
-      const newProfile = {
-        email: decodedToken.email || '',
-        isManager: true,
-        isSuperAdmin: requestedRole === 'superadmin',
-        createdAt: new Date().toISOString(),
-        activeManagerKey: requestedRole === 'manager' ? roleKey : undefined
-      };
-      await userDocRef.set(newProfile);
-      effectiveProfile = newProfile;
-    }
-
-    try {
-      await adminAuth.setCustomUserClaims(userId, {
-        isManager: true,
-        isSuperAdmin: !!effectiveProfile.isSuperAdmin,
-      });
-      console.log(`[authenticateSystemAccessAction] Successfully promoted user ${userId}: isManager=true, isSuperAdmin=${!!effectiveProfile.isSuperAdmin}`);
-    } catch (claimErr) {
-      console.warn(`[authenticateSystemAccessAction] setCustomUserClaims warning (Firestore profile updated successfully):`, claimErr);
-    }
-    return { success: true };
-  } catch (error: any) {
-    console.error(`[authenticateSystemAccessAction] Failed to authenticate system access:`, error);
-    return { error: error.message || 'Server error occurred during authentication.' };
   }
 }
 
@@ -463,36 +269,6 @@ export async function listManagerAccountsAction(idToken: string) {
   } catch (error: any) {
     console.error('[listManagerAccountsAction] Failed to list managers:', error);
     return { error: error.message || 'Unable to load manager accounts.', managers: [] };
-  }
-}
-
-export async function migrateAllUsersClaimsAction() {
-  try {
-    console.log("[migrateAllUsersClaimsAction] Starting bulk custom claims migration for all users...");
-    const db = getAdminFirestore();
-    const adminAuth = getAdminAuth();
-    const usersSnapshot = await db.collection('users').get();
-    
-    let count = 0;
-    for (const doc of usersSnapshot.docs) {
-      const data = doc.data();
-      const userId = doc.id;
-      const isManager = !!data.isManager;
-      const isSuperAdmin = !!data.isSuperAdmin;
-      
-      await adminAuth.setCustomUserClaims(userId, {
-        isManager,
-        isSuperAdmin,
-      });
-      count++;
-      console.log(`[migrateAllUsersClaimsAction] Migrated user ${userId} (${data.email}): isManager=${isManager}, isSuperAdmin=${isSuperAdmin}`);
-    }
-    
-    console.log(`[migrateAllUsersClaimsAction] Completed. Successfully migrated custom claims for ${count} users.`);
-    return { success: true, count };
-  } catch (error: any) {
-    console.error("[migrateAllUsersClaimsAction] Migration failed:", error);
-    return { error: error.message };
   }
 }
 

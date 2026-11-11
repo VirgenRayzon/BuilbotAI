@@ -2,10 +2,8 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { LayoutPanelLeft, CircuitBoard } from 'lucide-react';
 import { AIBuildCritique } from "@/components/ai-build-critique";
 import { YourBuild } from "@/components/your-build";
-import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 interface CritiqueTabProps {
@@ -26,7 +24,6 @@ interface CritiqueTabProps {
 }
 
 export function CritiqueTab({
-    isDark,
     builderState,
     critiqueAnalysis,
     critiqueDuration,

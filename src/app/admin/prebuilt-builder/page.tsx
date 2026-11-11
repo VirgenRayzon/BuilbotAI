@@ -37,7 +37,6 @@ import { PaginationControls } from "@/components/pagination-controls";
 import { useUserProfile } from "@/context/user-profile";
 import { useTheme } from "@/context/theme-provider";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
-import { motion } from "framer-motion";
 
 import { addPrebuiltSystem, updatePrebuiltSystem } from "@/firebase/database";
 import type { PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
@@ -255,7 +254,7 @@ export default function PrebuiltBuilderPage() {
 
     const getCountInBuild = (partName: string) => {
         let count = 0;
-        Object.entries(build).forEach(([category, data]) => {
+        Object.values(build).forEach((data) => {
             if (Array.isArray(data)) {
                 count += data.filter(d => d.model === partName).length;
             } else if (data && data.model === partName) {
@@ -265,7 +264,7 @@ export default function PrebuiltBuilderPage() {
         return count;
     };
 
-    const handleCategoryChange = (categoryName: string, selected: boolean) => {
+    const handleCategoryChange = (categoryName: string, _selected: boolean) => {
         setCurrentPage(1);
         setSelectedBrands([]);
         setCategories(prev => {

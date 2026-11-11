@@ -12,7 +12,6 @@ import {
   ThemeIcon,
   Button as MantineButton,
   Group,
-  Stack,
 } from '@mantine/core';
 import {
   FileText,
@@ -27,7 +26,6 @@ import {
   CheckCircle2,
   Headphones,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { AuthBackground } from '@/components/auth/auth-background';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/theme-provider';

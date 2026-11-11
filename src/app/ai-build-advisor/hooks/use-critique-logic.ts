@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { experimental_useObject as useObject } from '@ai-sdk/react';
 import { useToast } from "@/hooks/use-toast";
 import { showAdvisorProgressToast, showAdvisorReadyToast } from '@/components/advisor-job-toast';
-import { aiBuildCritiqueOutputSchema, type AiBuildCritiqueOutput } from '@/ai/schemas/critique-schemas';
+import { aiBuildCritiqueOutputSchema } from '@/ai/schemas/critique-schemas';
 
 export function getBuildKey(state: any) {
     if (!state) return "";

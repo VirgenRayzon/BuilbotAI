@@ -111,7 +111,6 @@ export function OrderCardFulfillmentStepper({
             const isCompleted = idx < currentStageIdx;
             const isCurrent = idx === currentStageIdx;
             const isNext = idx === currentStageIdx + 1;
-            const isFuture = idx > currentStageIdx + 1;
 
             const label = getOrderFulfillmentStageLabel({
               ...order,
