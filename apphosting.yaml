@@ -1,17 +1,9 @@
-# Settings to manage and configure a Firebase App Hosting backend.
-# https://firebase.google.com/docs/app-hosting/configure
-
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
   maxInstances: 1
 
 env:
-  # Enable only after inventory query indexes are ready and the dry-run/backfill
-  # confirms every inventory item has inventoryQueryVersion: 1.
   - variable: NEXT_PUBLIC_INVENTORY_PAGINATION_ENABLED
     value: "true"
-  # Enable after inventory query-field backfill and index readiness are verified.
   - variable: NEXT_PUBLIC_PUBLIC_CATALOG_INDEXED_ENABLED
     value: "true"
   - variable: GOOGLE_API_KEY

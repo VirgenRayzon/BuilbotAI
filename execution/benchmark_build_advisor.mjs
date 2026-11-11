@@ -20,7 +20,7 @@ let webResearch = null;
 try {
   const encoded = response.headers.get('x-build-advisor-web-research');
   if (encoded) webResearch = JSON.parse(decodeURIComponent(encoded));
-} catch { /* Invalid metadata is reflected by a zero source count below. */ }
+} catch {}
 let firstByteMs = null;
 let bytes = 0;
 const chunks = [];
@@ -37,7 +37,7 @@ if (reader) {
 
 const raw = Buffer.concat(chunks).toString('utf8');
 let parsed = null;
-try { parsed = JSON.parse(raw); } catch { /* A partial or invalid stream is reported below. */ }
+try { parsed = JSON.parse(raw); } catch {}
 const categories = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'];
 const totalPrice = parsed ? categories.reduce((sum, category) => sum + (parsed[category]?.estimatedPrice || 0), 0) : null;
 const budgetNumber = Number(body.budget.replace(/[^\d]/g, ''));

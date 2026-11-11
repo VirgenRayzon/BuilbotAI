@@ -15,7 +15,7 @@ function generateChangelog() {
       
       const hash = parts[0];
       const date = parts[1];
-      const subject = parts.slice(2).join('|'); // Rejoin in case subject contains '|'
+      const subject = parts.slice(2).join('|');
 
       const lowerSubject = subject.toLowerCase();
       if (

@@ -131,7 +131,7 @@ try {
             };
           });
           const record = { route: account.route, mobile, run, mode, errors, ...metrics };
-          if (mode === 'soft-warm') record.lcp = []; // standard hard-navigation LCP does not reset on a Next Link transition
+          if (mode === 'soft-warm') record.lcp = [];
           results.push(record);
           await saveResults();
           console.log(JSON.stringify({ route: account.route, mobile, run, mode,

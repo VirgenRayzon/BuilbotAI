@@ -91,7 +91,7 @@ async function runMigration() {
             
             batch.set(partRef, {
                 ...data,
-                category: category, // Ensure category is stored in the consolidated document
+                category: category,
                 searchKeywords: keywords,
                 isArchived: data.isArchived || false
             });
