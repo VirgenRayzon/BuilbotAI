@@ -506,7 +506,32 @@ BuilbotAI
 │       │   └── SKILL.md
 │       └── nextjs-best-practices
 │           └── SKILL.md
+├── .firebase
+│   └── studio-3150054754-c7d0b
+│       └── functions
+│           └── .env
+├── .github
+│   └── workflows
+│       └── ci.yml
 ├── .husky
+│   ├── _
+│   │   ├── .gitignore
+│   │   ├── applypatch-msg
+│   │   ├── commit-msg
+│   │   ├── h
+│   │   ├── husky.sh
+│   │   ├── post-applypatch
+│   │   ├── post-checkout
+│   │   ├── post-commit
+│   │   ├── post-merge
+│   │   ├── post-rewrite
+│   │   ├── pre-applypatch
+│   │   ├── pre-auto-gc
+│   │   ├── pre-commit
+│   │   ├── pre-merge-commit
+│   │   ├── pre-push
+│   │   ├── pre-rebase
+│   │   └── prepare-commit-msg
 │   ├── pre-commit
 │   └── pre-push
 ├── .idx
@@ -514,13 +539,6 @@ BuilbotAI
 │   └── icon.png
 ├── .vscode
 │   └── settings.json
-├── design_mocks
-│   ├── ai_companion_layout_1772284543518.png
-│   ├── analytics_dashboard_layout_1772284568273.png
-│   ├── command_center_layout_1772284510920.png
-│   ├── immersive_aesthetic_layout_1772284607227.png
-│   ├── media__1772284001327.png
-│   └── neon_analytics_bot_layout_1772285192674.png
 ├── directives
 │   ├── admin_inventory_dialog_saving.md
 │   ├── admin_prebuilt_ai_assist.md
@@ -548,6 +566,7 @@ BuilbotAI
 │   ├── live_builder_recommendations.md
 │   ├── password_reset.md
 │   ├── prebuilt_product_availability.md
+│   ├── public_feature_authentication.md
 │   ├── public_parts_performance.md
 │   ├── qr_inventory.md
 │   ├── sales_analytics_export.md
@@ -636,11 +655,16 @@ BuilbotAI
 │   │   │   ├── 2026-11-04-admin-verification-loader.md
 │   │   │   ├── 2026-11-04-loading-layouts.md
 │   │   │   ├── 2026-11-04-public-auth-flicker.md
-│   │   │   └── 2026-11-06-inventory-catalog-scaling.md
+│   │   │   ├── 2026-11-06-inventory-catalog-scaling.md
+│   │   │   ├── 2026-11-07-public-feature-sign-in.md
+│   │   │   ├── 2026-11-08-deployment-handover-and-cleanup.md
+│   │   │   ├── 2026-11-11-codebase-cleanup.md
+│   │   │   └── 2026-11-11-database-scalability.md
 │   │   └── specs
 │   │       ├── 2026-11-02-customer-order-activity-payment-gate-design.md
 │   │       ├── 2026-11-02-order-receipt-design.md
-│   │       └── 2026-11-04-admin-verification-loader-design.md
+│   │       ├── 2026-11-04-admin-verification-loader-design.md
+│   │       └── 2026-11-07-public-feature-sign-in-design.md
 │   ├── test-cases
 │   │   └── all-pages-manual-test-cases.md
 │   ├── admin-order-phase-5.md
@@ -648,6 +672,7 @@ BuilbotAI
 │   ├── admin-order-phases-3-4.md
 │   ├── api-and-integrations.md
 │   ├── architecture.md
+│   ├── audit-log-scopes.md
 │   ├── backend.json
 │   ├── blueprint.md
 │   ├── build_advisor_performance_plan.md
@@ -655,6 +680,7 @@ BuilbotAI
 │   ├── contact-inquiries-setup.md
 │   ├── data-flow-diagram.md
 │   ├── database_scalability_plan.md
+│   ├── finetuned-gemini-system-report.md
 │   ├── firebase-and-data.md
 │   ├── firestore-data-map.md
 │   ├── implementation-plan-and-results.md
@@ -666,6 +692,7 @@ BuilbotAI
 │   ├── project_structure.md
 │   ├── qr_inventory_feature_plan.md
 │   ├── qr_system_improvement_plan.md
+│   ├── turnover-readiness-plan.md
 │   ├── ui-pages-and-overlays-audit.md
 │   └── user-guide.md
 ├── execution
@@ -676,24 +703,14 @@ BuilbotAI
 │   ├── benchmark_build_advisor.mjs
 │   ├── benchmark_build_critique.ts
 │   ├── consolidate_collections.ts
-│   ├── delete-test-builders.js
-│   ├── generate_favicon.js
 │   ├── generate_project_structure.js
 │   ├── ingest_website.py
-│   ├── migrate_audit_logs.ts
 │   ├── migrate_inventory_hierarchy.ts
 │   ├── migrate_product_identities.ts
 │   ├── update_changelog.js
 │   ├── verify_inventory_hierarchy.ts
-│   ├── verify_loading_layouts.mjs
 │   ├── verify_product_identities.ts
-│   ├── verify_public_firestore_reads.ts
-│   └── verify_qr_feature.mjs
-├── output
-│   └── pdf
-│       ├── buildbotai-all-pages-test-cases-printable.pdf
-│       ├── buildbotai-ui-pages-and-overlays-audit.pdf
-│       └── netcodex-order-receipt-preview.pdf
+│   └── verify_public_firestore_reads.ts
 ├── public
 │   ├── placeholders
 │   │   └── components
@@ -706,40 +723,10 @@ BuilbotAI
 │   │       ├── psu.jpg
 │   │       ├── ram.jpg
 │   │       └── storage.jpg
-│   ├── team
-│   │   ├── developer_m.png
-│   │   ├── developer.png
-│   │   ├── documentation_m.png
-│   │   ├── documentation.png
-│   │   ├── pm_m.png
-│   │   ├── pm.png
-│   │   ├── ui_m.png
-│   │   └── ui.png
 │   ├── videos
 │   │   ├── king45.mp4
 │   │   └── prism5.mp4
-│   ├── cosmic-bg.png
-│   ├── hero-pc.png
-│   ├── landing-hero.png
-│   ├── netcodex_cc_2026_white.png.webp
-│   ├── netcodex-emblem.png
-│   ├── netcodex-logo-white.png
-│   └── netcodex-storefront.png
-├── scratch
-│   ├── app.spec.ts
-│   ├── build_summary_diff.txt
-│   ├── check-firestore-schema.js
-│   ├── check-inventory.ts
-│   ├── check-models.js
-│   ├── find-bad-data.js
-│   ├── list-models.js
-│   ├── print-raw-response.js
-│   ├── screenshot-home.png
-│   ├── screenshot-system-access.png
-│   ├── test-chat.js
-│   ├── test-fetch.ts
-│   ├── verify-rbac.ts
-│   └── verify-server-actions.ts
+│   └── hero-pc.png
 ├── src
 │   ├── ai
 │   │   ├── flows
@@ -747,7 +734,6 @@ BuilbotAI
 │   │   │   ├── ai-build-critique.ts
 │   │   │   ├── ai-prebuilt-advisor.ts
 │   │   │   ├── ai-prebuilt-performance.ts
-│   │   │   ├── ai-smart-budget.ts
 │   │   │   └── extract-part-details.ts
 │   │   ├── schemas
 │   │   │   ├── build-advisor-schemas.ts
@@ -768,23 +754,18 @@ BuilbotAI
 │   │   │   │   │   ├── order-card-customer-finance.tsx
 │   │   │   │   │   ├── order-card-fulfillment-stepper.tsx
 │   │   │   │   │   ├── order-card-history-ledgers.tsx
-│   │   │   │   │   ├── order-card-items-layout.test.ts
 │   │   │   │   │   ├── order-card-items-list.tsx
 │   │   │   │   │   ├── order-card.tsx
 │   │   │   │   │   ├── order-history-ledgers.tsx
 │   │   │   │   │   ├── order-history-modal.tsx
 │   │   │   │   │   ├── order-payment-control.tsx
 │   │   │   │   │   ├── order-payment-dialogs.tsx
-│   │   │   │   │   ├── order-stage-control.tsx
 │   │   │   │   │   ├── order-stage-dialog.tsx
 │   │   │   │   │   ├── order-status-config.ts
-│   │   │   │   │   ├── orders-card-layout.test.ts
 │   │   │   │   │   ├── orders-filter-panel.tsx
 │   │   │   │   │   ├── orders-header-bar.tsx
 │   │   │   │   │   ├── orders-tab.tsx
-│   │   │   │   │   ├── orders-table.tsx
 │   │   │   │   │   └── refund-reconcile-control.tsx
-│   │   │   │   ├── admin-sidebar-order-counts.test.ts
 │   │   │   │   ├── admin-sidebar.tsx
 │   │   │   │   ├── admin-tab-header.tsx
 │   │   │   │   ├── admin-topbar.tsx
@@ -805,7 +786,6 @@ BuilbotAI
 │   │   │   │   ├── use-order-actions.ts
 │   │   │   │   ├── use-order-activity.ts
 │   │   │   │   ├── use-order-assembly.ts
-│   │   │   │   ├── use-orders-listener.test.ts
 │   │   │   │   ├── use-orders-view.ts
 │   │   │   │   ├── use-orders.ts
 │   │   │   │   ├── use-payment-status-dialog.ts
@@ -842,11 +822,12 @@ BuilbotAI
 │   │   │   │       └── [token]
 │   │   │   │           └── route.ts
 │   │   │   ├── ai
-│   │   │   │   └── build-advisor
-│   │   │   │       ├── critique
-│   │   │   │       │   └── route.ts
-│   │   │   │       └── recommendations
-│   │   │   │           └── route.ts
+│   │   │   │   ├── build-advisor
+│   │   │   │   │   ├── critique
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   └── recommendations
+│   │   │   │   │       └── route.ts
+│   │   │   │   └── live-build-recommendations
 │   │   │   ├── builder
 │   │   │   │   ├── download
 │   │   │   │   │   └── route.ts
@@ -883,6 +864,8 @@ BuilbotAI
 │   │   │   │   └── route.ts
 │   │   │   ├── featured-parts
 │   │   │   │   └── route.ts
+│   │   │   ├── health
+│   │   │   │   └── route.ts
 │   │   │   ├── qr
 │   │   │   │   └── [token]
 │   │   │   │       └── route.ts
@@ -917,6 +900,7 @@ BuilbotAI
 │   │   ├── landing-video
 │   │   │   └── [name]
 │   │   │       └── route.ts
+│   │   ├── loading-audit-preview
 │   │   ├── parts
 │   │   │   ├── [productId]
 │   │   │   │   ├── loading.tsx
@@ -929,11 +913,8 @@ BuilbotAI
 │   │   │   │   ├── components
 │   │   │   │   │   ├── prebuilt-action-card.tsx
 │   │   │   │   │   ├── prebuilt-ai-highlights.tsx
-│   │   │   │   │   ├── prebuilt-ai-review.tsx
-│   │   │   │   │   ├── prebuilt-component-carousel.tsx
 │   │   │   │   │   ├── prebuilt-header-card.tsx
 │   │   │   │   │   ├── prebuilt-image-view.tsx
-│   │   │   │   │   ├── prebuilt-parts-accordion.tsx
 │   │   │   │   │   ├── prebuilt-parts-list.tsx
 │   │   │   │   │   └── prebuilt-performance-analyzer.tsx
 │   │   │   │   ├── hooks
@@ -944,7 +925,6 @@ BuilbotAI
 │   │   │   └── page.tsx
 │   │   ├── profile
 │   │   │   ├── components
-│   │   │   │   ├── account-details.tsx
 │   │   │   │   ├── address-book-section.tsx
 │   │   │   │   ├── audit-logs-section.tsx
 │   │   │   │   ├── compose-inquiry-modal.tsx
@@ -973,6 +953,7 @@ BuilbotAI
 │   │   ├── q
 │   │   │   └── [token]
 │   │   │       └── page.tsx
+│   │   ├── settings
 │   │   ├── signin
 │   │   │   └── page.tsx
 │   │   ├── signup
@@ -999,35 +980,29 @@ BuilbotAI
 │   │   ├── page.tsx
 │   │   ├── prebuilt-reservation-actions.ts
 │   │   ├── product-actions.ts
-│   │   └── public-product-actions.ts
+│   │   ├── public-product-actions.ts
+│   │   ├── robots.ts
+│   │   └── sitemap.ts
 │   ├── assets
 │   │   ├── about
 │   │   │   └── netcodex-storefront.png
 │   │   ├── branding
 │   │   │   ├── netcodex_cc_2026_white.png.webp
-│   │   │   ├── netcodex-emblem.png
-│   │   │   └── netcodex-logo-white.png
+│   │   │   └── netcodex-emblem.png
 │   │   ├── landing
 │   │   │   ├── custom-builder-parts.png
 │   │   │   ├── feature-1.webp
 │   │   │   ├── feature-2.webp
 │   │   │   ├── feature-3.webp
 │   │   │   ├── hero-custom-v2.webp
-│   │   │   ├── hero-custom.webp
 │   │   │   ├── king45-poster.webp
 │   │   │   ├── prebuilt-pcs.png
 │   │   │   └── prism5-poster.webp
 │   │   └── team
-│   │       ├── developer_m.png
-│   │       ├── developer.png
 │   │       ├── documentation_m.png
-│   │       ├── documentation.png
 │   │       ├── pm_m.png
-│   │       ├── pm.png
-│   │       ├── rayzon.jpg
 │   │       ├── rayzon.png
-│   │       ├── ui_m.png
-│   │       └── ui.png
+│   │       └── ui_m.png
 │   ├── components
 │   │   ├── auth
 │   │   │   ├── auth-background.module.css
@@ -1038,16 +1013,11 @@ BuilbotAI
 │   │   │   ├── sign-out-loader.tsx
 │   │   │   └── terms-of-agreement-modal.tsx
 │   │   ├── bottleneck
-│   │   │   ├── bottleneck-prototype-controller.tsx
 │   │   │   ├── bottleneck-status-card.tsx
 │   │   │   ├── dual-sidebar-analyzer.tsx
 │   │   │   ├── fps-chart-plot.tsx
 │   │   │   ├── fps-performance-chart.tsx
 │   │   │   ├── optimization-swaps-card.tsx
-│   │   │   ├── prototype-bottom-dock.tsx
-│   │   │   ├── prototype-dual-sidebar.tsx
-│   │   │   ├── prototype-slide-drawer.tsx
-│   │   │   ├── prototype-top-hud.tsx
 │   │   │   └── synergy-gauge-card.tsx
 │   │   ├── chat
 │   │   │   ├── hooks
@@ -1066,7 +1036,6 @@ BuilbotAI
 │   │   │   └── contact-thread.tsx
 │   │   ├── ecommerce
 │   │   │   ├── cart-drawer.tsx
-│   │   │   ├── checkout-modal.tsx
 │   │   │   ├── header-cart-button.tsx
 │   │   │   ├── mock-orders-section.tsx
 │   │   │   ├── paymongo-checkout-modal.tsx
@@ -1074,9 +1043,7 @@ BuilbotAI
 │   │   ├── landing
 │   │   │   ├── accessories-section.tsx
 │   │   │   ├── deferred-prebuilt-showcase.tsx
-│   │   │   ├── feature-showcase.tsx
 │   │   │   ├── featured-products-section.tsx
-│   │   │   ├── features-section.tsx
 │   │   │   ├── hero-section.tsx
 │   │   │   ├── landing-page.tsx
 │   │   │   ├── prebuilt-showcase.tsx
@@ -1113,53 +1080,37 @@ BuilbotAI
 │   │   ├── providers
 │   │   │   └── mantine-app-provider.tsx
 │   │   ├── ui
-│   │   │   ├── accordion.tsx
 │   │   │   ├── ai-action-button.tsx
 │   │   │   ├── alert-dialog.tsx
 │   │   │   ├── alert.tsx
 │   │   │   ├── animated-icons.tsx
-│   │   │   ├── avatar.tsx
 │   │   │   ├── badge.tsx
-│   │   │   ├── breadcrumb.tsx
 │   │   │   ├── button.tsx
 │   │   │   ├── calendar.tsx
-│   │   │   ├── canvas-text.tsx
 │   │   │   ├── card.tsx
 │   │   │   ├── carousel.tsx
-│   │   │   ├── chart.tsx
 │   │   │   ├── checkbox.tsx
-│   │   │   ├── collapsible.tsx
 │   │   │   ├── compact-info.tsx
 │   │   │   ├── confirmation-alert-dialog.tsx
 │   │   │   ├── deferred-dialog.tsx
 │   │   │   ├── dialog.tsx
-│   │   │   ├── dropdown-menu.tsx
 │   │   │   ├── form.tsx
 │   │   │   ├── input.tsx
 │   │   │   ├── label.tsx
-│   │   │   ├── menubar.tsx
 │   │   │   ├── optimized-image.tsx
 │   │   │   ├── popover.tsx
 │   │   │   ├── power-meter.tsx
-│   │   │   ├── progress.tsx
-│   │   │   ├── radio-group.tsx
 │   │   │   ├── scroll-area.tsx
 │   │   │   ├── select.tsx
 │   │   │   ├── separator.tsx
 │   │   │   ├── sheet.tsx
-│   │   │   ├── sidebar.tsx
 │   │   │   ├── skeleton.tsx
-│   │   │   ├── slider.tsx
 │   │   │   ├── sliding-image.tsx
 │   │   │   ├── sparkle-button.tsx
-│   │   │   ├── switch.tsx
 │   │   │   ├── table.tsx
-│   │   │   ├── tabs.tsx
 │   │   │   ├── textarea.tsx
 │   │   │   ├── toast.tsx
 │   │   │   ├── toaster.tsx
-│   │   │   ├── toggle-group.tsx
-│   │   │   ├── toggle.tsx
 │   │   │   └── tooltip.tsx
 │   │   ├── add-part-dialog.tsx
 │   │   ├── add-part-editor.tsx
@@ -1177,14 +1128,13 @@ BuilbotAI
 │   │   ├── budget-slider.tsx
 │   │   ├── build-recommendation-notes.tsx
 │   │   ├── build-summary.tsx
-│   │   ├── builder-floating-analytics.tsx
 │   │   ├── builder-floating-chat.tsx
 │   │   ├── catalog-qr-button.tsx
+│   │   ├── category-selection-empty.tsx
 │   │   ├── chat-form.tsx
 │   │   ├── component-card.tsx
 │   │   ├── deferred-builder-chat.tsx
 │   │   ├── footer.tsx
-│   │   ├── full-page-loader.tsx
 │   │   ├── header-mega-menu.tsx
 │   │   ├── header.module.css
 │   │   ├── header.tsx
@@ -1210,20 +1160,17 @@ BuilbotAI
 │   │   ├── prebuilt-system-card.tsx
 │   │   ├── prebuilts-table.tsx
 │   │   ├── product-identification.tsx
-│   │   ├── product-identity-link.tsx
 │   │   ├── product-qr.tsx
 │   │   ├── public-part-card.tsx
 │   │   ├── public-part-list-item.tsx
 │   │   ├── public-part-page.tsx
 │   │   ├── public-parts-catalog.tsx
 │   │   ├── public-parts-toolbar.tsx
-│   │   ├── public-product-page.tsx
 │   │   ├── qr-health-dialog.tsx
 │   │   ├── qr-scanner-dialog.tsx
 │   │   ├── sales-analytics.tsx
 │   │   ├── sales-financial-kpis.tsx
 │   │   ├── search-no-results.tsx
-│   │   ├── smart-budget.tsx
 │   │   ├── stock-editor.tsx
 │   │   ├── super-admin-settings.tsx
 │   │   ├── theme-toggle.tsx
@@ -1274,6 +1221,7 @@ BuilbotAI
 │   │   ├── use-persistent-state.ts
 │   │   ├── use-product-qr.ts
 │   │   ├── use-product-save-operation.ts
+│   │   ├── use-public-feature-auth.ts
 │   │   ├── use-public-parts-compatibility.ts
 │   │   ├── use-public-product-actions.ts
 │   │   ├── use-qr-health.ts
@@ -1322,165 +1270,104 @@ BuilbotAI
 │       │   ├── qr-auth.ts
 │       │   ├── qr-health-analysis.ts
 │       │   └── qr-health.ts
-│       ├── admin-inventory-query.test.ts
 │       ├── admin-inventory-query.ts
 │       ├── advisor-inventory.ts
 │       ├── advisor-timing.ts
 │       ├── advisor-web-research.ts
 │       ├── ai-model-resolver.ts
+│       ├── audit-scopes.ts
 │       ├── auth-utils.ts
 │       ├── bottleneck.ts
 │       ├── build-advisor-goals.ts
 │       ├── build-pdf-categories.ts
 │       ├── build-pdf.ts
-│       ├── catalog-name-validation.test.ts
 │       ├── catalog-name-validation.ts
-│       ├── chat-conversation.test.ts
+│       ├── category-selection.ts
 │       ├── chat-conversation.ts
-│       ├── chat-message-parts.test.ts
 │       ├── chat-message-parts.ts
 │       ├── chat-part-specifications.ts
-│       ├── chat-recommendation-facts.test.ts
 │       ├── chat-recommendation-facts.ts
-│       ├── chat-recommendations.test.ts
 │       ├── chat-recommendations.ts
-│       ├── chat-stream-fallback.test.ts
 │       ├── chat-stream-fallback.ts
-│       ├── compatibility.test.ts
 │       ├── compatibility.ts
 │       ├── contact-config.ts
 │       ├── contact-schemas.ts
 │       ├── contact-types.ts
-│       ├── customer-order-activity.test.ts
 │       ├── customer-order-activity.ts
-│       ├── customer-order-workflow.test.ts
 │       ├── customer-order-workflow.ts
-│       ├── export-excel.test.ts
 │       ├── export-excel.ts
-│       ├── firestore-document.test.ts
 │       ├── firestore-document.ts
 │       ├── fps-estimator.ts
-│       ├── included-cpu-cooler.test.ts
+│       ├── hardware-model-identity.ts
 │       ├── included-cpu-cooler.ts
-│       ├── integrated-graphics.test.ts
 │       ├── integrated-graphics.ts
 │       ├── inventory-fetcher.ts
 │       ├── inventory-image-sizes.ts
-│       ├── inventory-paths.test.ts
 │       ├── inventory-paths.ts
-│       ├── inventory-query-fields.test.ts
 │       ├── inventory-query-fields.ts
 │       ├── knowledge-retriever.ts
 │       ├── live-build-recommendation-schema.ts
-│       ├── live-build-recommendations.test.ts
 │       ├── live-build-recommendations.ts
 │       ├── normalize-product-description.ts
-│       ├── order-activity.test.ts
 │       ├── order-activity.ts
-│       ├── order-assembly.test.ts
 │       ├── order-assembly.ts
-│       ├── order-classification.test.ts
 │       ├── order-classification.ts
-│       ├── order-expiration.test.ts
 │       ├── order-expiration.ts
-│       ├── order-fulfillment.test.ts
 │       ├── order-fulfillment.ts
-│       ├── order-image-resolver.test.ts
 │       ├── order-image-resolver.ts
-│       ├── order-item-groups.test.ts
 │       ├── order-item-groups.ts
-│       ├── order-operation-cache.test.ts
 │       ├── order-operation-cache.ts
-│       ├── order-payment.test.ts
 │       ├── order-payment.ts
-│       ├── order-permissions.test.ts
 │       ├── order-permissions.ts
-│       ├── order-receipt-pdf.test.ts
 │       ├── order-receipt-pdf.ts
-│       ├── order-workflow.test.ts
 │       ├── order-workflow.ts
 │       ├── parse-peso-budget.ts
-│       ├── payment-methods.test.ts
 │       ├── payment-methods.ts
 │       ├── placeholder-images.ts
 │       ├── popularity.ts
-│       ├── prebuilt-utils.test.ts
 │       ├── prebuilt-utils.ts
 │       ├── product-identity.ts
 │       ├── product-schemas.ts
+│       ├── public-feature-auth.ts
 │       ├── public-product-types.ts
 │       ├── qr-decoder.ts
 │       ├── qr-health.ts
 │       ├── qr-lifecycle.ts
 │       ├── qr-response.ts
-│       ├── rule-based-advisor.test.ts
 │       ├── rule-based-advisor.ts
 │       ├── save-catalog-product.ts
-│       ├── search-empty-state.test.ts
 │       ├── search-empty-state.ts
 │       ├── styled-excel.ts
 │       ├── system-prompts.ts
 │       ├── types.ts
 │       ├── utils.ts
-│       ├── validate-advisor-build.test.ts
 │       ├── validate-advisor-build.ts
 │       ├── vector-retriever.ts
 │       └── vertex-tuned-endpoint.ts
-├── test-results
-│   └── .last-run.json
-├── tests
-│   ├── fixtures
-│   │   └── loading-layout-page.tsx
-│   ├── admin-inventory-queries.integration.ts
-│   ├── auth-role-navigation.spec.ts
-│   ├── chat-part-specifications.spec.ts
-│   ├── inventory-catalog-pagination.spec.ts
-│   ├── landing-featured-products.spec.ts
-│   ├── landing-hero-guest-builder.spec.ts
-│   ├── landing-loading-layouts.spec.ts
-│   ├── landing-performance.spec.ts
-│   ├── live-build-recommendations.spec.ts
-│   ├── loading-layouts.spec.ts
-│   ├── order-management.integration.ts
-│   ├── order-phase2.test.ts
-│   ├── prebuilt-toolbar.spec.ts
-│   ├── public-auth-header.spec.ts
-│   ├── public-parts-toolbar.spec.ts
-│   ├── qr-inventory.integration.ts
-│   ├── qr-inventory.spec.ts
-│   ├── qr-phase2.test.ts
-│   └── sales-export.spec.ts
+├── .env
+├── .env.example
 ├── .firebaserc
 ├── .gitignore
-├── .modified
 ├── agents.md
 ├── apphosting.yaml
 ├── CHANGELOG.md
 ├── CLAUDE.md
 ├── components.json
-├── debug-response.json
 ├── DESIGN.md
 ├── eslint.config.mjs
 ├── firebase.json
-├── firebase.qr-test.json
 ├── firestore.indexes.json
 ├── firestore.rules
 ├── GEMINI.md
-├── models.json
 ├── next-env.d.ts
 ├── next.config.ts
 ├── package-lock.json
 ├── package.json
-├── playwright.config.ts
 ├── postcss.config.mjs
 ├── README.md
 ├── skills-lock.json
 ├── storage.rules
 ├── tailwind.config.ts
-├── temp_build.json
-├── test-ai.ts
-├── test-genkit.ts
-├── test-nv.ts
 ├── tsconfig.json
 └── tsconfig.tsbuildinfo
 ```

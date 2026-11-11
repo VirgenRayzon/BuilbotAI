@@ -33,16 +33,11 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  distDir: process.env.QR_INVENTORY_TEST === 'true' ? '.next-qr-test' : '.next',
   async headers() {
-    const headersList = [...securityHeaders];
-    if (process.env.QR_INVENTORY_TEST === 'true') {
-      headersList.push({ key: 'X-Buildbot-QR-Test', value: 'demo-buildbot-qr' });
-    }
     return [
       {
         source: '/:path*',
-        headers: headersList,
+        headers: securityHeaders,
       },
     ];
   },
