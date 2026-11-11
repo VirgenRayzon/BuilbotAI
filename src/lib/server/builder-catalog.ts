@@ -2,10 +2,10 @@ import 'server-only';
 import { getAdminFirestore } from '@/firebase/server-init';
 import type { Part } from '@/lib/types';
 import { INVENTORY_CATEGORY_SLUGS, inventoryItemsPath } from '@/lib/inventory-paths';
+import { VersionedServerCache } from './catalog-cache';
+import { getCatalogMeta } from './catalog-meta-store';
 
-let catalogCache: Part[] | null = null;
-let catalogCacheTime = 0;
-const CATALOG_CACHE_TTL = 10 * 60 * 1000;
+const builderCatalogCache = new VersionedServerCache<Part[]>();
 
 function serializeDate(value: unknown): string | undefined {
   if (!value) return undefined;
@@ -18,14 +18,7 @@ function serializeDate(value: unknown): string | undefined {
   return undefined;
 }
 
-export async function getBuilderCatalog(): Promise<Part[]> {
-  const now = Date.now();
-  const hasGalleryShape = catalogCache?.every(part => Array.isArray(part.images));
-  const hasIdentityShape = catalogCache?.every(part =>
-    Object.hasOwn(part, 'productId') && Object.hasOwn(part, 'sku') && Object.hasOwn(part, 'qrToken')
-  );
-  if (catalogCache && hasGalleryShape && hasIdentityShape && now - catalogCacheTime < CATALOG_CACHE_TTL) return catalogCache;
-
+async function fetchBuilderCatalog(): Promise<Part[]> {
   const db = getAdminFirestore();
   const snapshots = await Promise.all(INVENTORY_CATEGORY_SLUGS.map(slug =>
     db.collection(inventoryItemsPath(slug)).where('isArchived', '==', false).get()
@@ -59,12 +52,19 @@ export async function getBuilderCatalog(): Promise<Part[]> {
       isArchived: data.isArchived || false,
     });
   });
-  catalogCache = fetchedParts;
-  catalogCacheTime = now;
   return fetchedParts;
 }
 
+export async function getBuilderCatalog(): Promise<Part[]> {
+  return builderCatalogCache.getOrLoad(
+    fetchBuilderCatalog,
+    async () => {
+      const meta = await getCatalogMeta();
+      return meta.catalogVersion;
+    }
+  );
+}
+
 export function clearBuilderCatalogCache() {
-  catalogCache = null;
-  catalogCacheTime = 0;
+  builderCatalogCache.invalidateLocal();
 }

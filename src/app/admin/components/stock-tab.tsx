@@ -115,9 +115,13 @@ export function StockTab({
 
     const pageOptions = useMemo<AdminInventoryQuery>(() => ({
         categories: partCategories.filter(category => category.selected).map(category => category.name),
-        brands: [], availability: 'all', search: '', sortBy: 'Date Added',
-        sortDirection: 'desc', pageSize: partItemsPerPage,
-    }), [partCategories, partItemsPerPage]);
+        brands: selectedBrands,
+        availability,
+        search: partSearchQuery,
+        sortBy: (partSortBy as AdminInventoryQuery['sortBy']) || 'Date Added',
+        sortDirection: partSortDirection,
+        pageSize: partItemsPerPage,
+    }), [partCategories, selectedBrands, availability, partSearchQuery, partSortBy, partSortDirection, partItemsPerPage]);
     const page = useInventoryPage(pageOptions, paged);
     const displayParts = paged ? page.parts : parts;
     const displayLoading = paged ? page.loading : partsLoading;
@@ -127,14 +131,13 @@ export function StockTab({
     }, [paged, page.count, onCountChange]);
 
     useEffect(() => {
-        if (paged && partSearchQuery.trim()) onRequestLegacy?.();
-    }, [paged, partSearchQuery, onRequestLegacy]);
-
-    useEffect(() => {
         setPartCurrentPage(1);
     }, [partSearchQuery]);
 
     const filteredAndSortedParts = useMemo(() => {
+        if (paged) {
+            return displayParts || [];
+        }
         const selectedCategories = partCategories.filter(c => c.selected).map(c => c.name);
         const searchLower = partSearchQuery.toLowerCase();
 
@@ -168,9 +171,12 @@ export function StockTab({
                 }
                 return partSortDirection === 'asc' ? compare : -compare;
             });
-    }, [displayParts, partCategories, selectedBrands, partSearchQuery, availability, partSortBy, partSortDirection]);
+    }, [paged, displayParts, partCategories, selectedBrands, partSearchQuery, availability, partSortBy, partSortDirection]);
 
     const availableBrands = useMemo(() => {
+        if (paged && page.brandFacets && page.brandFacets.length > 0) {
+            return page.brandFacets;
+        }
         const selectedCategories = partCategories.filter(c => c.selected).map(c => c.name);
         const searchLower = partSearchQuery.toLowerCase();
 
@@ -235,25 +241,21 @@ export function StockTab({
                 availableBrands={availableBrands}
                 selectedBrands={selectedBrands}
                 onBrandChange={(brands) => {
-                    onRequestLegacy?.();
                     setSelectedBrands(brands);
                     setPartCurrentPage(1);
                 }}
                 availability={availability}
                 onAvailabilityChange={(val) => {
-                    onRequestLegacy?.();
                     setAvailability(val);
                     setPartCurrentPage(1);
                 }}
                 sortBy={partSortBy}
                 onSortByChange={(val) => {
-                    onRequestLegacy?.();
                     setPartSortBy(val);
                     setPartCurrentPage(1);
                 }}
                 sortDirection={partSortDirection}
                 onSortDirectionChange={(val) => {
-                    onRequestLegacy?.();
                     setPartSortDirection(val);
                     setPartCurrentPage(1);
                 }}
@@ -263,7 +265,6 @@ export function StockTab({
                 onViewChange={setActiveView}
                 showViewToggle={true}
                 supportedViews={['grid', 'table']}
-                onFiltersOpen={onRequestLegacy}
                 leadingActions={
                     <Tooltip label={isPartSelectionMode ? "Exit Selection Mode" : "Bulk Select Mode"} withArrow position="top">
                         <ActionIcon

@@ -1,15 +1,46 @@
 import { getAdminFirestore } from "@/firebase/server-init";
 import { inventoryCategorySlug, inventoryItemsPath } from "@/lib/inventory-paths";
+import { getCatalogMeta } from "@/lib/server/catalog-meta-store";
 
 interface CacheEntry {
     data: string[];
     timestamp: number;
+    version: number;
 }
 
 const inventoryCache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
-const structuredCache = new Map<string, { data: StructuredPart[], timestamp: number }>();
+interface StructuredCacheEntry {
+    data: StructuredPart[];
+    timestamp: number;
+    version: number;
+}
+
+const structuredCache = new Map<string, StructuredCacheEntry>();
+
+let currentCatalogVersion = -1;
+let lastVersionCheck = 0;
+const VERSION_CHECK_WINDOW_MS = 3000;
+
+async function syncCatalogVersion(): Promise<number> {
+    const now = Date.now();
+    if (currentCatalogVersion !== -1 && now - lastVersionCheck < VERSION_CHECK_WINDOW_MS) {
+        return currentCatalogVersion;
+    }
+    try {
+        const meta = await getCatalogMeta();
+        lastVersionCheck = Date.now();
+        if (currentCatalogVersion !== -1 && meta.catalogVersion !== currentCatalogVersion) {
+            inventoryCache.clear();
+            structuredCache.clear();
+        }
+        currentCatalogVersion = meta.catalogVersion;
+        return meta.catalogVersion;
+    } catch {
+        return currentCatalogVersion !== -1 ? currentCatalogVersion : 0;
+    }
+}
 
 export interface StructuredPart {
     id: string;
@@ -33,6 +64,8 @@ export function clearInventoryCache() {
     console.log("[Inventory Cache] Invalidation triggered.");
     inventoryCache.clear();
     structuredCache.clear();
+    currentCatalogVersion = -1;
+    lastVersionCheck = 0;
 }
 
 const CATEGORY_MAP: Record<string, string> = {
@@ -59,8 +92,9 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
     const cacheKey = `${normalizedCat}:${searchTerm || ''}:${limitCount}:${includeImage}`;
 
     try {
+        const version = await syncCatalogVersion();
         const cached = inventoryCache.get(cacheKey);
-        if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        if (cached && cached.version === version && Date.now() - cached.timestamp < CACHE_TTL_MS) {
             console.log(`[Inventory Cache Hit] Key: ${cacheKey}`);
             return cached.data;
         }
@@ -127,7 +161,8 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
 
         inventoryCache.set(cacheKey, {
             data: results,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            version
         });
 
         return results;
@@ -142,8 +177,9 @@ export async function getStructuredInventory(category: string, searchTerm?: stri
     const cacheKey = `${normalizedCat}:${searchTerm || ''}:${limitCount}`;
 
     try {
+        const version = await syncCatalogVersion();
         const cached = structuredCache.get(cacheKey);
-        if (!fresh && cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        if (!fresh && cached && cached.version === version && Date.now() - cached.timestamp < CACHE_TTL_MS) {
             console.log(`[Structured Inventory Cache Hit] Key: ${cacheKey}`);
             return cached.data;
         }
@@ -220,7 +256,8 @@ export async function getStructuredInventory(category: string, searchTerm?: stri
 
         structuredCache.set(cacheKey, {
             data: results,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            version
         });
 
         return results;

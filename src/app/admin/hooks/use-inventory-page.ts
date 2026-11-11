@@ -13,6 +13,7 @@ export function useInventoryPage(options: AdminInventoryQuery, enabled: boolean)
   const firestore = useFirestore();
   const [parts, setParts] = useState<Part[]>([]);
   const [count, setCount] = useState(0);
+  const [brandFacets, setBrandFacets] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -76,6 +77,7 @@ export function useInventoryPage(options: AdminInventoryQuery, enabled: boolean)
       if (cancelled || id !== requestId.current) return;
       setParts(result.parts);
       setCount(result.count);
+      if (result.brandFacets) setBrandFacets(result.brandFacets);
       cursors.current[page] = result.nextCursor;
       setLoading(false);
     }).catch(failure => {
@@ -96,5 +98,5 @@ export function useInventoryPage(options: AdminInventoryQuery, enabled: boolean)
     setPage(target);
   }, [page]);
 
-  return { parts, count, loading, error, page, navigate, refresh: () => setRefresh(value => value + 1) };
+  return { parts, count, brandFacets, loading, error, page, navigate, refresh: () => setRefresh(value => value + 1) };
 }

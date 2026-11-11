@@ -8,7 +8,9 @@ import type { PublicCatalogPart } from '../public-product-types';
 import type { Transaction } from 'firebase-admin/firestore';
 import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '../integrated-graphics';
 import { includedCpuCoolerName } from '../included-cpu-cooler';
-import { revalidateTag, unstable_cache } from 'next/cache';
+import { revalidateTag } from 'next/cache';
+import { VersionedServerCache } from './catalog-cache';
+import { getCatalogMeta } from './catalog-meta-store';
 
 export const PUBLIC_PARTS_CACHE_TAG = 'public-parts-catalog';
 export const COMPATIBILITY_SPEC_KEYS = [
@@ -159,16 +161,23 @@ export async function listRelatedPublicParts(category: string, excludeProductId:
     .map(document => toPublicCatalogPart(document.data() as Part));
 }
 
-export const listPublicPartsCatalog = unstable_cache(
-  readPublicPartsCatalog,
-  ['public-parts-catalog-v1'],
-  { tags: [PUBLIC_PARTS_CACHE_TAG], revalidate: 10 * 60 }
-);
+const publicPartsCatalogCache = new VersionedServerCache<PublicCatalogPart[]>();
+
+export async function listPublicPartsCatalog(): Promise<PublicCatalogPart[]> {
+  return publicPartsCatalogCache.getOrLoad(
+    readPublicPartsCatalog,
+    async () => {
+      const meta = await getCatalogMeta();
+      return meta.catalogVersion;
+    }
+  );
+}
 
 export function invalidatePublicPartsCatalog() {
+  publicPartsCatalogCache.invalidateLocal();
   try {
     revalidateTag(PUBLIC_PARTS_CACHE_TAG);
-  } catch (error) {
-    console.error('[public-parts-catalog] Cache invalidation failed:', error);
+  } catch {
+    // Safely ignore missing Next.js request context outside server requests
   }
 }

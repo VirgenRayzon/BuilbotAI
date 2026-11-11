@@ -240,7 +240,6 @@ export default function AdminPage() {
                                     parts={parts}
                                     partsLoading={partsLoading}
                                     paged={pagedStockView}
-                                    onRequestLegacy={() => setLegacyStockView(true)}
                                     onCountChange={setPagedStockCount}
                                     profile={profile}
                                     partCategories={partCategories}

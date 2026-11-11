@@ -101,12 +101,19 @@ export async function getCachedInventory(): Promise<Part[]> {
 }
 
 import { clearInventoryCache } from "@/lib/inventory-fetcher";
+import { bumpCatalogMetaVersion } from "@/lib/server/catalog-meta-store";
 
 export async function clearCatalogCache() {
   console.log("[clearCatalogCache] Invalidating catalog cache...");
   clearBuilderCatalogCache();
   invalidatePublicPartsCatalog();
   clearInventoryCache();
+  try {
+    const db = getAdminFirestore();
+    await bumpCatalogMetaVersion(db, { refreshFacets: true });
+  } catch (error) {
+    console.error("[clearCatalogCache] Failed to bump catalog meta version:", error);
+  }
   return { success: true };
 }
 
