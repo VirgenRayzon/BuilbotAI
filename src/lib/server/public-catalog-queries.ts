@@ -1,10 +1,11 @@
 import { z } from 'zod';
-import { FieldPath, type Query } from 'firebase-admin/firestore';
+import { FieldPath, type Query, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAdminFirestore } from '@/firebase/server-init';
 import type { PublicCatalogPart } from '@/lib/public-product-types';
 import type { Part } from '@/lib/types';
 import { toPublicCatalogPart } from './public-products';
 import { getCatalogMeta } from './catalog-meta-store';
+import { parseSearchQueryTokens, findLongestSearchToken } from '@/lib/catalog-meta';
 
 export interface PublicCatalogPage {
   products: PublicCatalogPart[];
@@ -38,6 +39,10 @@ export async function listPublicCatalogPage(rawInput: unknown = null): Promise<P
     ? (meta.brandsByCategory[options.category] || [])
     : Array.from(new Set(Object.values(meta.brandsByCategory).flat())).sort();
 
+  const searchTokens = parseSearchQueryTokens(options.search);
+  const longestToken = findLongestSearchToken(searchTokens);
+  const isSearchMode = searchTokens.length > 0;
+
   let base: Query = db.collectionGroup('items')
     .where('inventoryQueryVersion', '==', 1)
     .where('isArchived', '==', false)
@@ -53,21 +58,11 @@ export async function listPublicCatalogPage(rawInput: unknown = null): Promise<P
     base = base.where('inStock', '==', true);
   }
 
-  const searchTrimmed = (options.search || '').trim().toLowerCase();
-  const searchTokens = searchTrimmed
-    ? searchTrimmed.split(/[^a-z0-9]+/).filter(Boolean)
-    : [];
-
-  let longestToken = '';
-  if (searchTokens.length > 0) {
-    for (const token of searchTokens) {
-      if (token.length > longestToken.length) longestToken = token;
-    }
-    base = base.where('searchKeywords', 'array-contains', longestToken);
-  }
-
   let query = base;
-  if (searchTokens.length === 0) {
+  if (isSearchMode) {
+    query = query.where('searchKeywords', 'array-contains', longestToken);
+    query = query.orderBy(FieldPath.documentId(), 'asc');
+  } else {
     if (options.sortBy === 'Price') {
       query = query.orderBy('inStock', 'desc')
         .orderBy('price', options.sortDirection || 'asc')
@@ -81,8 +76,6 @@ export async function listPublicCatalogPage(rawInput: unknown = null): Promise<P
         .orderBy('createdAtSort', 'desc')
         .orderBy('productId', 'desc');
     }
-  } else {
-    query = query.orderBy(FieldPath.documentId(), 'desc');
   }
 
   if (options.cursor) {
@@ -97,45 +90,45 @@ export async function listPublicCatalogPage(rawInput: unknown = null): Promise<P
     query = query.startAfter(cursorDoc);
   }
 
-  const batchCap = searchTokens.length > 1 ? options.pageSize * 3 : options.pageSize;
+  let countQuery: Query = base;
+  if (isSearchMode) {
+    countQuery = countQuery.where('searchKeywords', 'array-contains', longestToken);
+  }
+
+  const batchCap = isSearchMode ? options.pageSize * 4 : options.pageSize;
   const [countSnapshot, snapshot] = await Promise.all([
-    base.count().get(),
+    countQuery.count().get(),
     query.limit(batchCap + 1).get(),
   ]);
 
-  let matchingDocs = snapshot.docs;
-  if (searchTokens.length > 1) {
-    matchingDocs = matchingDocs.filter(doc => {
-      const data = doc.data();
+  const pageDocs: QueryDocumentSnapshot[] = [];
+  let boundaryDoc: QueryDocumentSnapshot | null = null;
+  let hasMore = false;
+
+  for (let i = 0; i < snapshot.docs.length; i++) {
+    const doc = snapshot.docs[i];
+    const data = doc.data();
+
+    if (isSearchMode && searchTokens.length > 1) {
       const keywords = Array.isArray(data.searchKeywords) ? (data.searchKeywords as string[]) : [];
       const text = `${data.name || ''} ${data.brand || ''} ${data.sku || ''} ${data.productId || ''}`.toLowerCase();
-      return searchTokens.every(t => keywords.includes(t) || text.includes(t));
-    });
-  }
+      const allMatch = searchTokens.every(t => keywords.includes(t) || text.includes(t));
+      if (!allMatch) continue;
+    }
 
-  if (searchTokens.length > 0 && options.sortBy) {
-    matchingDocs.sort((a, b) => {
-      const dataA = a.data();
-      const dataB = b.data();
-      let comp = 0;
-      if (options.sortBy === 'Price') {
-        comp = (Number(dataA.price) || 0) - (Number(dataB.price) || 0);
-      } else if (options.sortBy === 'Name') {
-        comp = String(dataA.nameSort || dataA.name || '').localeCompare(String(dataB.nameSort || dataB.name || ''));
-      } else {
-        comp = (Number(dataA.createdAtSort) || 0) - (Number(dataB.createdAtSort) || 0);
-      }
-      return options.sortDirection === 'asc' ? comp : -comp;
-    });
+    if (pageDocs.length < options.pageSize) {
+      pageDocs.push(doc);
+      boundaryDoc = doc;
+    } else {
+      hasMore = true;
+      break;
+    }
   }
-
-  const hasMore = matchingDocs.length > options.pageSize || snapshot.docs.length > batchCap;
-  const page = matchingDocs.slice(0, options.pageSize);
 
   return {
-    products: page.map(document => toPublicCatalogPart(document.data() as Part)),
+    products: pageDocs.map(document => toPublicCatalogPart(document.data() as Part)),
     count: countSnapshot.data().count,
-    nextCursor: hasMore && page.length ? Buffer.from(page[page.length - 1].ref.path).toString('base64url') : null,
+    nextCursor: hasMore && boundaryDoc ? Buffer.from(boundaryDoc.ref.path).toString('base64url') : null,
     brandFacets,
   };
 }

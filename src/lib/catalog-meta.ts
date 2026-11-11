@@ -82,3 +82,20 @@ export function deriveSearchTokens(source: SearchTokenSource): string[] {
 
   return result;
 }
+
+export function parseSearchQueryTokens(query: unknown): string[] {
+  if (typeof query !== 'string') return [];
+  const lower = query.trim().toLowerCase();
+  if (!lower) return [];
+  return lower.split(/[^a-z0-9]+/).filter(Boolean);
+}
+
+export function findLongestSearchToken(tokens: readonly string[]): string {
+  let longest = '';
+  for (const token of tokens) {
+    if (token.length > longest.length) {
+      longest = token;
+    }
+  }
+  return longest;
+}

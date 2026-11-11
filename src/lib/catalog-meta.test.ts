@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { Firestore, Transaction } from 'firebase-admin/firestore';
-import { CatalogMetaSchema, deriveSearchTokens } from './catalog-meta';
+import { CatalogMetaSchema, deriveSearchTokens, parseSearchQueryTokens, findLongestSearchToken } from './catalog-meta';
 import { getCatalogMeta, bumpCatalogMetaVersion } from './server/catalog-meta-store';
 
 test('deriveSearchTokens produces expected tokens and prefixes bounded under 40', () => {
@@ -230,4 +230,17 @@ test('bumpCatalogMetaVersion with refreshFacets collects categories and brands',
   assert.ok(state.savedMeta);
   const brands = state.savedMeta.brandsByCategory as Record<string, string[]>;
   assert.ok(brands.CPU.includes('AMD'));
+});
+
+test('parseSearchQueryTokens normalizes and splits words', () => {
+  assert.deepEqual(parseSearchQueryTokens('  NVIDIA RTX 4070  Super! '), ['nvidia', 'rtx', '4070', 'super']);
+  assert.deepEqual(parseSearchQueryTokens(''), []);
+  assert.deepEqual(parseSearchQueryTokens(null), []);
+  assert.deepEqual(parseSearchQueryTokens(undefined), []);
+});
+
+test('findLongestSearchToken returns the longest token', () => {
+  assert.equal(findLongestSearchToken(['rtx', '4070', 'super']), 'super');
+  assert.equal(findLongestSearchToken(['a', 'bbb', 'cc']), 'bbb');
+  assert.equal(findLongestSearchToken([]), '');
 });
