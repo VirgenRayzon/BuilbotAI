@@ -6,15 +6,15 @@ import { checkCompatibility } from "@/lib/compatibility";
 import { INCLUDED_INTEGRATED_GPU_ID, isIncludedIntegratedGpu, syncIntegratedGraphics } from '@/lib/integrated-graphics';
 import { includedCpuCoolerName, isIncludedStockCoolerPart } from '@/lib/included-cpu-cooler';
 import { useToast } from "@/hooks/use-toast";
-import { 
-    Cpu, Server, CircuitBoard, MemoryStick, Database, Power, 
-    RectangleVertical, Wind, Monitor, Keyboard, Mouse, Headphones 
+import {
+    Cpu, Server, CircuitBoard, MemoryStick, Database, Power,
+    RectangleVertical, Wind, Monitor, Keyboard, Mouse, Headphones
 } from "lucide-react";
 
 const componentIcons: Record<string, any> = {
-  CPU: Cpu, GPU: Server, Motherboard: CircuitBoard, RAM: MemoryStick, 
-  Storage: Database, PSU: Power, Case: RectangleVertical, Cooler: Wind, 
-  Monitor: Monitor, Keyboard: Keyboard, Mouse: Mouse, Headset: Headphones
+    CPU: Cpu, GPU: Server, Motherboard: CircuitBoard, RAM: MemoryStick,
+    Storage: Database, PSU: Power, Case: RectangleVertical, Cooler: Wind,
+    Monitor: Monitor, Keyboard: Keyboard, Mouse: Mouse, Headset: Headphones
 };
 
 const isIncludedStockCooler = (component: ComponentData | null | undefined) =>
@@ -128,8 +128,8 @@ export function useBuilderLogic(allParts: Part[]) {
         let nextBuild = { ...build };
         const toastsToShow: { title: string; description: string; variant?: "default" | "destructive" }[] = [];
 
-        const isCurrentlySelected = (category === 'Storage' || category === 'RAM') 
-            ? false 
+        const isCurrentlySelected = (category === 'Storage' || category === 'RAM')
+            ? false
             : (build[category] as ComponentData)?.model === part.name;
 
         const { compatible, message } = checkCompatibility(part, build);
@@ -431,7 +431,10 @@ export function useBuilderLogic(allParts: Part[]) {
     }, [loadFavoriteBuild]);
 
     useEffect(() => {
-        window.addEventListener('load-favorite-build', handleLoadFavorite);
+        const controller = new AbortController();
+        window.addEventListener('load-favorite-build', handleLoadFavorite, {
+            signal: controller.signal,
+        });
 
         if (allParts.length > 0 && !hasProcessedPendingBuildRef.current) {
             const pending = localStorage.getItem('pc_builder_load_favorite');
@@ -441,12 +444,12 @@ export function useBuilderLogic(allParts: Part[]) {
                     hasProcessedPendingBuildRef.current = true;
                     loadFavoriteBuild(pendingBuild);
                     localStorage.removeItem('pc_builder_load_favorite');
-                } catch (e) {}
+                } catch (e) { }
             }
         }
 
         return () => {
-            window.removeEventListener('load-favorite-build', handleLoadFavorite);
+            controller.abort();
         };
     }, [allParts, handleLoadFavorite, loadFavoriteBuild]);
 
@@ -456,6 +459,7 @@ export function useBuilderLogic(allParts: Part[]) {
         handlePartToggle,
         handleRemovePart,
         handleClearBuild,
+        handleLoadFavorite,
         getCountInBuild,
         isLoaded
     };
