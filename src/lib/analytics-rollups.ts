@@ -67,6 +67,14 @@ export function formatMonthKey(date: Date): string {
   return `${y}-${m}`;
 }
 
+export function formatDailyBucketLabel(date: Date): string {
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+
+export function formatMonthlyBucketLabel(date: Date): string {
+  return `${date.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' })} '${date.getUTCFullYear().toString().slice(-2)}`;
+}
+
 export function isPrebuiltOrder(order: Order): boolean {
   return order.type === 'prebuilt' || Boolean(order.prebuiltName) || Boolean(order.prebuiltId);
 }

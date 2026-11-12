@@ -59,7 +59,7 @@ export async function fetchSalesDashboardSummary(
 
     snaps.forEach((snap, idx) => {
       const d = datePoints[idx];
-      const name = d.toLocaleDateString('en-US', { month: 'short' }) + " '" + d.getFullYear().toString().slice(-2);
+      const name = d.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' }) + " '" + d.getUTCFullYear().toString().slice(-2);
       const data = snap.exists ? (snap.data() as AnalyticsBucket) : null;
       const bucket: AnalyticsBucket = {
         bucketKey: monthKeys[idx],
@@ -98,7 +98,7 @@ export async function fetchSalesDashboardSummary(
 
     snaps.forEach((snap, idx) => {
       const d = datePoints[idx];
-      const name = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const name = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
       const data = snap.exists ? (snap.data() as AnalyticsBucket) : null;
       const bucket: AnalyticsBucket = {
         bucketKey: dayKeys[idx],

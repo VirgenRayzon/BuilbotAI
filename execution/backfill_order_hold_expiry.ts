@@ -25,7 +25,6 @@ const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 const expectedProject = value('--project=');
 const backupPath = value('--backup=');
 const after = value('--after=');
-const db = getAdminFirestore();
 
 export function computeExpectedHoldExpiresAt(
   data: Partial<Order>
@@ -77,6 +76,8 @@ async function main(): Promise<void> {
   if (!projectId || expectedProject !== projectId) {
     throw new Error('Pass --project=<configured project> to identify the target.');
   }
+
+  const db = getAdminFirestore();
 
   if (apply) {
     if (!backupPath) {

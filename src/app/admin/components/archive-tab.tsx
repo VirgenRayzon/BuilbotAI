@@ -59,10 +59,6 @@ export function ArchiveTab({
   partsLoading,
   prebuiltSystems,
   prebuiltsLoading,
-  orders,
-  ordersLoading,
-  hasMoreOrders,
-  onLoadMoreOrders,
   onReservationAction,
   onUpdateOrder,
   onClearAllOrders,
@@ -241,12 +237,10 @@ export function ArchiveTab({
           orders={archivedOrders}
           ordersLoading={archivedLoading}
           catalogParts={parts}
-          hasMoreOrders={Boolean(archivedNextCursor) || hasMoreOrders}
+          hasMoreOrders={Boolean(archivedNextCursor)}
           onLoadMoreOrders={() => {
             if (archivedNextCursor) {
-              fetchArchivedPage(archivedNextCursor, true);
-            } else if (onLoadMoreOrders) {
-              onLoadMoreOrders();
+              void fetchArchivedPage(archivedNextCursor, true);
             }
           }}
           isSuperAdmin={profile?.isSuperAdmin === true}

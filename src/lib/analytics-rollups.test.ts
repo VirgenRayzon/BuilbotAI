@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import type { Order, OrderItem, PaymentMethod } from './types';
 import {
   applyOrderAnalyticsDeltaInTx,
+  formatDailyBucketLabel,
+  formatMonthlyBucketLabel,
   type AnalyticsBucket,
 } from './analytics-rollups';
 
@@ -420,4 +422,16 @@ test('analytics-rollups: all reads occur before writes in Firestore transaction 
       );
     });
   });
+});
+
+test('analytics-rollups: formatDailyBucketLabel and formatMonthlyBucketLabel render deterministically in UTC', () => {
+  // Midnight UTC boundary: in non-UTC negative offset timezones (e.g. UTC-5 EST),
+  // local time is 7 PM on Dec 31, 2025. UTC formatting must strictly evaluate to Jan 1, 2026.
+  const jan1 = new Date(Date.UTC(2026, 0, 1, 0, 0, 0));
+  assert.equal(formatDailyBucketLabel(jan1), 'Jan 1');
+  assert.equal(formatMonthlyBucketLabel(jan1), "Jan '26");
+
+  const midYear = new Date(Date.UTC(2026, 10, 12, 15, 30, 0));
+  assert.equal(formatDailyBucketLabel(midYear), 'Nov 12');
+  assert.equal(formatMonthlyBucketLabel(midYear), "Nov '26");
 });
