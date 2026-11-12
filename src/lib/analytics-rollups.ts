@@ -133,10 +133,12 @@ export function calculateOrderDelta(beforeOrder: Order | null, afterOrder: Order
   } else if (beforePaid && !afterPaid) {
     // Reversal from paid to unpaid
     const prevMethod = beforeOrder?.paymentMethod || orderMethod;
+    const beforeGross = beforeOrder?.totalPrice || afterOrder.totalPrice || 0;
+    const beforeNet = beforeGross - beforeRefunded;
     paidOrderCount = -1;
-    grossCollectedPhp = -(beforeOrder?.totalPrice || afterOrder.totalPrice || 0);
+    grossCollectedPhp = -beforeGross;
     refundedPhp = -beforeRefunded;
-    netCollectedPhp = -(grossCollectedPhp - beforeRefunded);
+    netCollectedPhp = -beforeNet;
     byPaymentMethod[prevMethod] = grossCollectedPhp;
 
     if (beforeOrder && isPrebuiltOrder(beforeOrder)) {

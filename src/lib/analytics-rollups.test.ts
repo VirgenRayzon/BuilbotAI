@@ -266,6 +266,108 @@ test('analytics-rollups: partial refund subtracts delta from netCollectedPhp and
   assert.equal(monthly.netCollectedPhp, 25000);
 });
 
+test('analytics-rollups: reversal from paid to unpaid correctly subtracts net revenue (zero prior refund)', async () => {
+  const db = new MockFirestoreDb();
+  const order = createSampleOrder();
+  const paidOrder: Order = {
+    ...order,
+    paymentStatus: 'paid',
+    paidAt: new Date('2026-11-12T04:30:00.000Z'),
+  };
+
+  // 1. Mark paid
+  await db.runTransaction(async (tx) => {
+    await applyOrderAnalyticsDeltaInTx(
+      tx as unknown as Parameters<typeof applyOrderAnalyticsDeltaInTx>[0],
+      db as unknown as Parameters<typeof applyOrderAnalyticsDeltaInTx>[1],
+      'evt_paid_for_reversal_1',
+      order,
+      paidOrder
+    );
+  });
+
+  const unpaidReversedOrder: Order = {
+    ...paidOrder,
+    paymentStatus: 'pending',
+  };
+
+  // 2. Reverse to unpaid
+  await db.runTransaction(async (tx) => {
+    await applyOrderAnalyticsDeltaInTx(
+      tx as unknown as Parameters<typeof applyOrderAnalyticsDeltaInTx>[0],
+      db as unknown as Parameters<typeof applyOrderAnalyticsDeltaInTx>[1],
+      'evt_reverse_to_unpaid_1',
+      paidOrder,
+      unpaidReversedOrder
+    );
+  });
+
+  const daily = db.getDocData('analyticsDaily', '2026-11-12') as unknown as AnalyticsBucket;
+  assert.equal(daily.paidOrderCount, 0, 'Paid count reverses to 0');
+  assert.equal(daily.grossCollectedPhp, 0, 'Gross collected reverses to 0');
+  assert.equal(daily.netCollectedPhp, 0, 'Net collected reverses to 0 (NOT +30000)');
+});
+
+test('analytics-rollups: reversal from paid to unpaid with prior refund subtracts remaining net revenue', async () => {
+  const db = new MockFirestoreDb();
+  const order = createSampleOrder();
+  const paidOrder: Order = {
+    ...order,
+    paymentStatus: 'paid',
+    paidAt: new Date('2026-11-12T04:30:00.000Z'),
+  };
+
+  // 1. Initial payment
+  await db.runTransaction(async (tx) => {
+    await applyOrderAnalyticsDeltaInTx(
+      tx as unknown as Parameters<typeof applyOrderAnalyticsDeltaInTx>[0],
+      db as unknown as Parameters<typeof applyOrderAnalyticsDeltaInTx>[1],
+      'evt_paid_with_refund_base',
+      order,
+      paidOrder
+    );
+  });
+
+  // 2. Partial refund of 5000 (net = 25000)
+  const refundedOrder: Order = {
+    ...paidOrder,
+    refundStatus: 'partial',
+    refundedAmount: 5000,
+  };
+
+  await db.runTransaction(async (tx) => {
+    await applyOrderAnalyticsDeltaInTx(
+      tx as unknown as Parameters<typeof applyOrderAnalyticsDeltaInTx>[0],
+      db as unknown as Parameters<typeof applyOrderAnalyticsDeltaInTx>[1],
+      'evt_refund_step_2',
+      paidOrder,
+      refundedOrder
+    );
+  });
+
+  // 3. Reversal to unpaid
+  const reversedUnpaidOrder: Order = {
+    ...refundedOrder,
+    paymentStatus: 'pending',
+  };
+
+  await db.runTransaction(async (tx) => {
+    await applyOrderAnalyticsDeltaInTx(
+      tx as unknown as Parameters<typeof applyOrderAnalyticsDeltaInTx>[0],
+      db as unknown as Parameters<typeof applyOrderAnalyticsDeltaInTx>[1],
+      'evt_reverse_with_refund_step_3',
+      refundedOrder,
+      reversedUnpaidOrder
+    );
+  });
+
+  const daily = db.getDocData('analyticsDaily', '2026-11-12') as unknown as AnalyticsBucket;
+  assert.equal(daily.paidOrderCount, 0, 'Paid count reverses to 0');
+  assert.equal(daily.grossCollectedPhp, 0, 'Gross collected reverses to 0');
+  assert.equal(daily.refundedPhp, 0, 'Refunded amount reverses to 0');
+  assert.equal(daily.netCollectedPhp, 0, 'Net collected reverses to 0 (NOT +35000)');
+});
+
 test('analytics-rollups: cancelling an unpaid order updates cancelledOrderCount without changing netCollectedPhp', async () => {
   const db = new MockFirestoreDb();
   const unpaidOrder = createSampleOrder({

@@ -48,7 +48,6 @@ export async function completeProviderRefund(db: Firestore, orderId: string, ope
         patch.refunds = [...(order.refunds || []), refund];
         patch.refundedAmount = Math.round((getRefundedAmount(order) + amount) * 100) / 100;
         patch.refundStatus = Number(patch.refundedAmount) >= order.totalPrice ? 'refunded' : 'partial';
-        writeRefundNotifications(tx, db, order, refund, now);
 
         const afterOrder: Order = {
           ...order,
@@ -57,6 +56,7 @@ export async function completeProviderRefund(db: Firestore, orderId: string, ope
           refundStatus: patch.refundStatus as Order['refundStatus'],
           updatedAt: now,
         };
+        // MUST execute transaction reads before ANY transaction writes (including notifications)
         await applyOrderAnalyticsDeltaInTx(
           tx,
           db,
@@ -64,6 +64,7 @@ export async function completeProviderRefund(db: Firestore, orderId: string, ope
           order,
           afterOrder
         );
+        writeRefundNotifications(tx, db, order, refund, now);
       } else patch.refundStatus = getRefundedAmount(order) > 0 ? 'partial' : order.status === 'cancelled' ? 'due' : 'none';
     }
     writeOrderChange(tx, orderRef, order, patch, actor, operationId);

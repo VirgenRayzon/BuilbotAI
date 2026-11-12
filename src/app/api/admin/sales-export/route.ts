@@ -4,6 +4,7 @@ import { getOrderActor } from '@/lib/server/order-auth';
 import {
   validateSalesExportParams,
   traverseOrdersInPages,
+  aggregateExportRevenueData,
   type SalesExportQueryOptions,
 } from '@/lib/server/sales-export-helpers';
 import { buildSalesAnalyticsWorkbook } from '@/lib/export-excel';
@@ -81,7 +82,7 @@ async function executeExport(options: SalesExportQueryOptions, idToken: string) 
     id: d.id,
   }));
 
-  const revenueData: Array<{ name: string; revenue: number }> = [];
+  const revenueData = aggregateExportRevenueData(allOrders, options.timeRange, startDate, endDate);
   const timeRangeLabel = options.timeRange === 'all' ? 'week' : options.timeRange;
 
   const wb = buildSalesAnalyticsWorkbook({

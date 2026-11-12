@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   validateSalesExportParams,
   traverseOrdersInPages,
+  aggregateExportRevenueData,
   type SalesExportQueryOptions,
 } from '../src/lib/server/sales-export-helpers';
 import type { Order } from '../src/lib/types';
@@ -120,4 +121,65 @@ test('sales-export: bounds total orders to maxOrders safety limit', async () => 
   });
 
   assert.ok(results.length <= 500, 'Stops when maxOrders is exceeded');
+});
+
+test('sales-export: aggregateExportRevenueData calculates revenue over periods', () => {
+  const orders: Order[] = [
+    {
+      id: 'ord_1',
+      orderNumber: 'ORD-1',
+      userId: 'u1',
+      userEmail: 'u1@example.com',
+      items: [],
+      subtotal: 10000,
+      totalPrice: 10000,
+      paymentStatus: 'paid',
+      paymentMethod: 'gcash_simulated',
+      refundStatus: 'none',
+      status: 'pending',
+      paidAt: new Date('2026-11-10T10:00:00Z'),
+      createdAt: new Date('2026-11-10T09:00:00Z'),
+    },
+    {
+      id: 'ord_2',
+      orderNumber: 'ORD-2',
+      userId: 'u2',
+      userEmail: 'u2@example.com',
+      items: [],
+      subtotal: 15000,
+      totalPrice: 15000,
+      paymentStatus: 'paid',
+      paymentMethod: 'cod',
+      refundStatus: 'partial',
+      refundedAmount: 2000,
+      status: 'pending',
+      paidAt: new Date('2026-11-10T12:00:00Z'),
+      createdAt: new Date('2026-11-10T11:00:00Z'),
+    },
+    {
+      id: 'ord_3',
+      orderNumber: 'ORD-3',
+      userId: 'u3',
+      userEmail: 'u3@example.com',
+      items: [],
+      subtotal: 20000,
+      totalPrice: 20000,
+      paymentStatus: 'paid',
+      paymentMethod: 'cod',
+      refundStatus: 'none',
+      status: 'pending',
+      paidAt: new Date('2026-11-11T10:00:00Z'),
+      createdAt: new Date('2026-11-11T09:00:00Z'),
+    },
+  ];
+
+  const revenueData = aggregateExportRevenueData(orders, 'week');
+  assert.ok(revenueData.length > 0, 'Revenue data must not be empty');
+  const nov10 = revenueData.find((d) => d.name.includes('Nov 10') || d.name.includes('11/10'));
+  assert.ok(nov10, 'Nov 10 data point must exist');
+  assert.equal(nov10.revenue, 23000, 'Nov 10 net revenue is 10000 + (15000 - 2000) = 23000');
+
+  const nov11 = revenueData.find((d) => d.name.includes('Nov 11') || d.name.includes('11/11'));
+  assert.ok(nov11, 'Nov 11 data point must exist');
+  assert.equal(nov11.revenue, 20000, 'Nov 11 net revenue is 20000');
 });
