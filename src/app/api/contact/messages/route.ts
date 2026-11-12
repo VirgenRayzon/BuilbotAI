@@ -5,6 +5,7 @@ import { contactReplySchema } from '@/lib/contact-schemas';
 import { CONTACT_EMAIL_ENABLED } from '@/lib/contact-config';
 import { contactErrorResponse, getBearerToken, getOptionalCustomerIdentity, requireContactStaff } from '@/lib/server/contact-auth';
 import { sendInquiryReply } from '@/lib/server/gmail';
+import { computeExpiresAt } from '@/lib/ttl-policies';
 
 export const runtime = 'nodejs';
 
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
           targetId: inquiryRef.id,
           readBy: [],
           createdAt: now,
+          expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
         });
       }
       if (staff && customerNotificationRef) {
@@ -86,6 +88,7 @@ export async function POST(request: NextRequest) {
           type: 'support_reply',
           read: false,
           createdAt: now,
+          expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
         });
       }
     });

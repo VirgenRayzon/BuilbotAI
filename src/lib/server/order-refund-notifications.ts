@@ -1,6 +1,7 @@
 import * as admin from 'firebase-admin';
 import type { Order, OrderRefund } from '@/lib/types';
 import { ORDER_REFUND_DESTINATION_LABELS } from '@/lib/order-workflow';
+import { computeExpiresAt } from '@/lib/ttl-policies';
 export function writeRefundNotifications(
   transaction: admin.firestore.Transaction,
   firestore: admin.firestore.Firestore,
@@ -28,6 +29,7 @@ export function writeRefundNotifications(
     resourceId: order.id,
     details: `${roleLabel} ${refund.actorName} refunded ₱${refund.amount.toFixed(2)} to ${destinationLabel} (${refund.method}); ref: ${refund.reference}; reason: ${refund.reason}`,
     createdAt: now,
+    expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
   });
 
   if (refund.actorRole === 'Manager') {
@@ -42,6 +44,7 @@ export function writeRefundNotifications(
       targetId: order.id,
       readBy: [],
       createdAt: now,
+      expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
     });
   }
 
@@ -59,5 +62,6 @@ export function writeRefundNotifications(
     status: order.status,
     read: false,
     createdAt: now,
+    expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
   });
 }

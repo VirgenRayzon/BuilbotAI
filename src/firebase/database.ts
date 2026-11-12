@@ -15,6 +15,7 @@ import {
     buildPrebuiltComponentSummaries,
     calculatePrebuiltDerivedPrice,
 } from '@/lib/prebuilt-summaries';
+import { computeExpiresAt } from '@/lib/ttl-policies';
 
 async function uploadToStorageClient(url: string, storagePath: string, fileNamePrefix?: string): Promise<string> {
     if (!url) return url;
@@ -442,6 +443,7 @@ export async function createSystemNotification(
         ...notification,
         id: notificationRef.id,
         readBy,
-        createdAt: new Date()
+        createdAt: new Date(),
+        expiresAt: computeExpiresAt('notifications'),
     });
 }

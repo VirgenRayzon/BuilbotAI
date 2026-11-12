@@ -1,5 +1,4 @@
 import { generateText, Output } from 'ai';
-import { createHash } from 'node:crypto';
 import { after } from 'next/server';
 import { getLanguageModelForChat } from '@/lib/ai-model-resolver';
 import { DEFAULT_BUILD_ADVISOR_PROMPT } from '@/lib/constants/default-system-prompts';
@@ -12,6 +11,9 @@ import { parsePesoBudget } from '@/lib/parse-peso-budget';
 import { validateAdvisorBuild } from '@/lib/validate-advisor-build';
 import { getAdminFirestore } from '@/firebase/server-init';
 import { AdvisorWebSearchError, researchAdvisorHardware } from '@/lib/advisor-web-research';
+import { buildAdvisorRecommendationCacheKey } from '@/lib/server/ai-cache-keys';
+import { getCatalogMeta } from '@/lib/server/catalog-meta-store';
+import { computeExpiresAt, isExpiredAt } from '@/lib/ttl-policies';
 import {
   AiBuildAdvisorRecommendationsInputSchema,
   AiBuildAdvisorRecommendationsOutputSchema,
@@ -21,20 +23,6 @@ import {
 export const maxDuration = 180;
 
 const CACHE_COLLECTION = 'ai_recommendation_cache_v3';
-
-const generateCacheKey = (input: AiBuildAdvisorRecommendationsInput, prompt: string, modelSettings: unknown) =>
-  createHash('sha256').update(JSON.stringify({
-    version: 13,
-    intendedUse: input.intendedUse.trim().toLowerCase(),
-    budget: input.budget.trim().toLowerCase(),
-    performanceLevel: input.performanceLevel.trim().toLowerCase(),
-    additionalNotes: (input.additionalNotes || '').trim().toLowerCase(),
-    allowFlexibleBudget: !!input.allowFlexibleBudget,
-    allowAiSearch: !!input.allowAiSearch,
-    allowWebSearch: !!input.allowWebSearch,
-    prompt,
-    modelSettings,
-  })).digest('hex');
 
 export async function POST(req: Request) {
   const timing = new AdvisorTiming('recommendation');
@@ -92,11 +80,17 @@ export async function POST(req: Request) {
     const customSystemPrompt = typeof storedPrompt === 'string' && storedPrompt.trim()
       ? storedPrompt.trim()
       : DEFAULT_BUILD_ADVISOR_PROMPT;
-    const cacheKey = generateCacheKey(input, customSystemPrompt, {
-      routing: settingsData?.featureModelRouting?.buildAdvisor || settingsData?.aiModelProvider,
-      defaultModel: settingsData?.defaultGeminiModel,
-      tunedModel: settingsData?.fineTunedModelId,
-      inventoryRevision: settingsData?.advisorInventoryRevision,
+    const { catalogVersion } = await getCatalogMeta(db);
+    const cacheKey = buildAdvisorRecommendationCacheKey({
+      input,
+      prompt: customSystemPrompt,
+      catalogVersion,
+      modelSettings: {
+        routing: settingsData?.featureModelRouting?.buildAdvisor || settingsData?.aiModelProvider,
+        defaultModel: settingsData?.defaultGeminiModel,
+        tunedModel: settingsData?.fineTunedModelId,
+        inventoryRevision: settingsData?.advisorInventoryRevision,
+      },
     });
 
     if (!input.allowWebSearch) try {
@@ -105,9 +99,10 @@ export async function POST(req: Request) {
 
       if (cacheSnap.exists) {
         const cacheData = cacheSnap.data();
+        const isExpired = isExpiredAt(cacheData?.expiresAt);
         const ageMs = Date.now() - (cacheData?.timestamp || 0);
         const maxAgeMs = input.allowAiSearch ? 60 * 60 * 1000 : 5 * 60 * 1000;
-        if (ageMs < maxAgeMs && cacheData?.output) {
+        if (!isExpired && ageMs < maxAgeMs && cacheData?.output) {
           console.log(`[Build Advisor API] Cache Hit for key: ${cacheKey}`);
           timing.mark('cache');
           timing.finish('cache_hit');
@@ -238,7 +233,12 @@ Please generate the recommendations strictly matching the schema with realistic 
         });
         if (!input.allowWebSearch) after(async () => {
           try {
-            await db.collection(CACHE_COLLECTION).doc(cacheKey).set({ input, output, timestamp: Date.now() });
+            await db.collection(CACHE_COLLECTION).doc(cacheKey).set({
+              input,
+              output,
+              timestamp: Date.now(),
+              expiresAt: computeExpiresAt('aiRecommendationCache'),
+            });
           } catch (err) {
             console.warn('[Build Advisor API] Failed to cache validated build:', err);
           }

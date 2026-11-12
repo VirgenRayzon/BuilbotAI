@@ -3,6 +3,7 @@ import * as admin from "firebase-admin";
 import { getAdminFirestore } from "@/firebase/server-init";
 import { inventoryItemPath } from "@/lib/inventory-paths";
 import { INCLUDED_INTEGRATED_GPU_ID } from "@/lib/integrated-graphics";
+import { computeExpiresAt } from "@/lib/ttl-policies";
 import {
   isOrderExpired,
   isOrderPendingWithNoProgression,
@@ -112,11 +113,14 @@ export async function pruneUserNotificationsServer(
       .collection("users")
       .doc(userId)
       .collection("notifications");
-    const snapshot = await notifsRef.orderBy("createdAt", "desc").get();
-    if (snapshot.size > maxKeep) {
+    const snapshot = await notifsRef
+      .orderBy("createdAt", "desc")
+      .offset(maxKeep)
+      .limit(50)
+      .get();
+    if (!snapshot.empty) {
       const batch = firestore.batch();
-      const docsToDelete = snapshot.docs.slice(maxKeep);
-      docsToDelete.forEach((docSnap) => batch.delete(docSnap.ref));
+      snapshot.docs.forEach((docSnap) => batch.delete(docSnap.ref));
       await batch.commit();
     }
   } catch (err) {
@@ -220,6 +224,7 @@ export async function autoCancelExpiredOrderInternal(options: {
         status: "cancelled",
         read: false,
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
       });
 
       const sysNotificationRef = firestore
@@ -235,6 +240,7 @@ export async function autoCancelExpiredOrderInternal(options: {
         targetId: orderId,
         readBy: [],
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
       });
 
       const userAuditRef = firestore.collection("user_auditLogs").doc();
@@ -252,6 +258,7 @@ export async function autoCancelExpiredOrderInternal(options: {
         details:
           "Automatically cancelled after 1-hour online payment hold expired.",
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
       });
 
       const adminAuditRef = firestore.collection("auditLogs").doc();
@@ -267,6 +274,7 @@ export async function autoCancelExpiredOrderInternal(options: {
         details:
           "Automatically cancelled expired unpaid online order and restored reserved inventory stock.",
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
       });
 
       didCancel = true;

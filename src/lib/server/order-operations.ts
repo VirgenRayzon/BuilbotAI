@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { Firestore, Transaction } from 'firebase-admin/firestore';
 import { Timestamp } from 'firebase-admin/firestore';
+import { computeExpiresAt } from '@/lib/ttl-policies';
 
 export interface OrderOperation { operationId: string; expectedRevision: number }
 
@@ -20,7 +21,16 @@ export async function runOrderOperation<T>(db: Firestore, orderId: string, actor
       if (operation?.expectedRevision !== undefined && (order.get('workflowRevision') || 0) !== operation.expectedRevision) throw new Error('This order changed. Refresh and review it before confirming again.');
     }
     const result = await work(tx);
-    if (ref) tx.create(ref, { fingerprint, result: result ?? null, createdAt: Timestamp.now(), actorId, orderId });
+    if (ref) {
+      tx.create(ref, {
+        fingerprint,
+        result: result ?? null,
+        createdAt: Timestamp.now(),
+        expiresAt: Timestamp.fromDate(computeExpiresAt('orderWorkflowOperations')),
+        actorId,
+        orderId,
+      });
+    }
     return result;
   });
 }

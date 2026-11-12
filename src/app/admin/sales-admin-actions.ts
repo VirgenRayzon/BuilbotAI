@@ -31,6 +31,7 @@ import {
   formatMonthKey,
   type AnalyticsBucket,
 } from "@/lib/analytics-rollups";
+import { computeExpiresAt } from "@/lib/ttl-policies";
 
 const adminTokenSchema = z.object({
   idToken: z.string().min(1),
@@ -118,6 +119,7 @@ export async function resetSalesMetricsByAdmin(
         resourceName: "Sales & Order Metrics",
         details: `Reset ${ordersSnap.size} order record(s), ${dailySnap.size} daily rollups, ${monthlySnap.size} monthly rollups, and cleared component popularity counters.`,
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
       })
     );
 
@@ -472,6 +474,7 @@ export async function ingestDummySalesDataByAdmin(
         resourceName: "Sample Sales Dataset",
         details: `Generated ${orderCount} sample orders with payment, fulfillment, and refund states.`,
         createdAt: admin.firestore.Timestamp.now(),
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
       })
     );
 

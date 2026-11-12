@@ -36,6 +36,7 @@ import {
 } from "@/lib/server/public-products";
 import { bumpCatalogMetaVersion } from "@/lib/server/catalog-meta-store";
 import { applyOrderAnalyticsDeltaInTx } from "@/lib/analytics-rollups";
+import { computeExpiresAt } from '@/lib/ttl-policies';
 import {
   INCLUDED_INTEGRATED_GPU_ID,
   integratedGraphicsName,
@@ -639,6 +640,7 @@ async function processCheckoutInternal(
           vatIncludedAmount: pricing.vatIncludedAmount,
           totalPrice: pricing.totalPrice,
           createdAt: now,
+          expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('reservationOperations')),
         });
       }
 
@@ -669,6 +671,7 @@ async function processCheckoutInternal(
         status: "pending",
         read: false,
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
       });
 
       const systemNotificationRef = firestore
@@ -684,6 +687,7 @@ async function processCheckoutInternal(
         targetId: orderRef.id,
         readBy: [],
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
       });
 
       const userAuditRef = firestore.collection("user_auditLogs").doc();
@@ -698,6 +702,7 @@ async function processCheckoutInternal(
         resourceId: orderRef.id,
         details: `Placed order with ${authoritativeOrderItems.length} item(s) totaling ₱${pricing.totalPrice.toLocaleString()} via ${methodDef.shortLabel} (Ref: ${paymentReference})`,
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
       });
 
       return {
@@ -1230,6 +1235,7 @@ async function resolvePaymentOutcome(
         status: orderData.status,
         read: false,
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
       });
 
       const userAuditRef = firestore.collection("user_auditLogs").doc();
@@ -1244,6 +1250,7 @@ async function resolvePaymentOutcome(
         resourceId: input.orderId,
         details: auditDetails,
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
       });
 
       return {
@@ -1609,6 +1616,7 @@ export async function switchOrderPaymentToCod(
         resourceId: orderId,
         details: `Switched payment method to Cash on Delivery (Ref: ${newRef})`,
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
       });
 
       return {
@@ -1768,6 +1776,7 @@ export async function updateOrderPaymentStatusByStaff(
           status: orderData.status,
           read: false,
           createdAt: now,
+          expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
         });
       }
 
@@ -1784,6 +1793,7 @@ export async function updateOrderPaymentStatusByStaff(
         resourceId: orderId,
         details: `${actorRole} ${actorName} updated payment status to "${newPaymentStatus}" (${getPaymentMethodLabel(paymentMethod)}, Ref: ${paymentReference}). Reason: ${cleanReason}`,
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
       });
 
       if (isManager && !isSuperAdmin) {
@@ -1798,6 +1808,7 @@ export async function updateOrderPaymentStatusByStaff(
           targetId: orderId,
           readBy: [],
           createdAt: now,
+          expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
         });
       }
     });
@@ -1891,6 +1902,7 @@ export async function updateOrderFulfillmentStageByStaff(
         resourceId: parsed.data.orderId,
         details: `Fulfillment advanced to ${stageLabel} (${nextStage})`,
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
       });
 
       if (isManager && !isSuperAdmin) {
@@ -1905,6 +1917,7 @@ export async function updateOrderFulfillmentStageByStaff(
           targetId: parsed.data.orderId,
           readBy: [],
           createdAt: now,
+          expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
         });
       }
 
@@ -1923,6 +1936,7 @@ export async function updateOrderFulfillmentStageByStaff(
           status: legacyStatus,
           read: false,
           createdAt: now,
+          expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
         });
       }
     });
@@ -2130,6 +2144,7 @@ export async function updateReservationStatus(
           status: newStatus,
           read: false,
           createdAt: now,
+          expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
         });
       }
 
@@ -2151,6 +2166,7 @@ export async function updateReservationStatus(
               : " and restored reserved stock"
           }.`,
           createdAt: now,
+          expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
         });
 
         if (actor.isManager && !actor.isSuperAdmin) {
@@ -2167,6 +2183,7 @@ export async function updateReservationStatus(
             targetId: orderId,
             readBy: [],
             createdAt: now,
+            expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
           });
         }
       } else {
@@ -2183,6 +2200,7 @@ export async function updateReservationStatus(
           targetId: orderId,
           readBy: [],
           createdAt: now,
+          expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
         });
       }
 
@@ -2202,6 +2220,7 @@ export async function updateReservationStatus(
           ? `Order cancelled by ${actor.role} ${actor.name}`
           : "Order cancelled by customer",
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
       });
     });
 

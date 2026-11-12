@@ -282,6 +282,12 @@ export type Notification = {
   type?: 'support_reply' | 'support_status';
   read: boolean;
   createdAt: any;
+  expiresAt?:
+    | { toDate?: () => Date; toMillis?: () => number; seconds?: number; nanoseconds?: number }
+    | Date
+    | string
+    | number
+    | null;
 };
 
 export type SystemNotification = {
@@ -294,6 +300,12 @@ export type SystemNotification = {
   targetId: string;
   readBy: string[];
   createdAt: any;
+  expiresAt?:
+    | { toDate?: () => Date; toMillis?: () => number; seconds?: number; nanoseconds?: number }
+    | Date
+    | string
+    | number
+    | null;
 };
 
 export type AuditLog = {
@@ -318,6 +330,12 @@ export type AuditLog = {
   resourceId?: string;
   details?: string;
   createdAt: any;
+  expiresAt?:
+    | { toDate?: () => Date; toMillis?: () => number; seconds?: number; nanoseconds?: number }
+    | Date
+    | string
+    | number
+    | null;
 };
 
 export type UserAuditLog = {
@@ -330,6 +348,12 @@ export type UserAuditLog = {
   resourceId?: string;
   details?: string;
   createdAt: any;
+  expiresAt?:
+    | { toDate?: () => Date; toMillis?: () => number; seconds?: number; nanoseconds?: number }
+    | Date
+    | string
+    | number
+    | null;
 };
 
 export type FavoriteBuildPart = {

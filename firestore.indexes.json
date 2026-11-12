@@ -3268,5 +3268,51 @@
       ]
     }
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "ai_critique_cache_v1",
+      "fieldPath": "expiresAt",
+      "ttlConfig": {}
+    },
+    {
+      "collectionGroup": "ai_recommendation_cache_v3",
+      "fieldPath": "expiresAt",
+      "ttlConfig": {}
+    },
+    {
+      "collectionGroup": "orderWorkflowOperations",
+      "fieldPath": "expiresAt",
+      "ttlConfig": {}
+    },
+    {
+      "collectionGroup": "reservationOperations",
+      "fieldPath": "expiresAt",
+      "ttlConfig": {}
+    },
+    {
+      "collectionGroup": "system_notifications",
+      "fieldPath": "expiresAt",
+      "ttlConfig": {}
+    },
+    {
+      "collectionGroup": "notifications",
+      "fieldPath": "expiresAt",
+      "ttlConfig": {}
+    },
+    {
+      "collectionGroup": "auditLogs",
+      "fieldPath": "expiresAt",
+      "ttlConfig": {}
+    },
+    {
+      "collectionGroup": "user_auditLogs",
+      "fieldPath": "expiresAt",
+      "ttlConfig": {}
+    },
+    {
+      "collectionGroup": "analyticsAppliedEvents",
+      "fieldPath": "expiresAt",
+      "ttlConfig": {}
+    }
+  ]
 }

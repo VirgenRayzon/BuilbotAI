@@ -5,6 +5,7 @@ import { CONTACT_EMAIL_ENABLED } from '@/lib/contact-config';
 import { contactErrorResponse, getBearerToken, getOptionalCustomerIdentity } from '@/lib/server/contact-auth';
 import type { NextRequest } from 'next/server';
 import * as admin from 'firebase-admin';
+import { computeExpiresAt } from '@/lib/ttl-policies';
 
 export const runtime = 'nodejs';
 
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
       targetId: inquiryRef.id,
       readBy: [],
       createdAt: now,
+      expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
     });
     await batch.commit();
 

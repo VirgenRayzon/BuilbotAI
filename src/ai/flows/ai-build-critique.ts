@@ -2,8 +2,9 @@
 
 import { ai } from "@/ai/genkit";
 import { z } from "genkit";
-import { createHash } from 'node:crypto';
 import { AdvisorTiming } from '@/lib/advisor-timing';
+import { buildCritiqueCacheKey } from '@/lib/server/ai-cache-keys';
+import { computeExpiresAt, isExpiredAt } from '@/lib/ttl-policies';
 
 import { calculateBottleneck } from "@/lib/bottleneck";
 import { checkFullBuildCompatibility } from "@/lib/compatibility";
@@ -69,18 +70,6 @@ import { WorkloadType } from "@/lib/types";
 
 const CRITIQUE_CACHE_COLLECTION = 'ai_critique_cache_v1';
 
-function generateCritiqueCacheKey(input: AiBuildCritiqueInput, modelSettings: unknown): string {
-    const parts = Object.entries(input.build || {}).sort(([a], [b]) => a.localeCompare(b));
-    return createHash('sha256').update(JSON.stringify({
-        version: 3,
-        parts,
-        intendedUse: (input.intendedUse || '').trim().toLowerCase(),
-        performanceLevel: (input.performanceLevel || '').trim().toLowerCase(),
-        additionalNotes: (input.additionalNotes || '').trim().toLowerCase(),
-        modelSettings,
-    })).digest('hex');
-}
-
 function cleanPartName(name: string): string {
     return name
         .replace(/\b(80\s*Plus\s*(Bronze|Gold|Platinum|Silver|Titanium))\b/gi, '')
@@ -123,7 +112,7 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput, deferCa
     }
     timing.mark('settings');
 
-    const critiqueCacheKey = generateCritiqueCacheKey(input, {
+    const critiqueCacheKey = buildCritiqueCacheKey(input, {
         routing: settingsData?.featureModelRouting?.buildAdvisor || settingsData?.aiModelProvider,
         defaultModel: settingsData?.defaultGeminiModel,
         tunedModel: settingsData?.fineTunedModelId,
@@ -134,8 +123,9 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput, deferCa
             const critiqueSnap = await db.collection(CRITIQUE_CACHE_COLLECTION).doc(critiqueCacheKey).get();
             if (critiqueSnap.exists) {
                 const cacheData = critiqueSnap.data();
+                const isExpired = isExpiredAt(cacheData?.expiresAt);
                 const ageInDays = (Date.now() - (cacheData?.timestamp || 0)) / (1000 * 60 * 60 * 24);
-                if (ageInDays < 1 / 24 && cacheData?.output) {
+                if (!isExpired && ageInDays < 1 / 24 && cacheData?.output) {
                     console.log(`[AI Critique Cache] Hit for key: ${critiqueCacheKey}`);
                     timing.mark('cache');
                     timing.finish('cache_hit');
@@ -300,6 +290,7 @@ Output strictly the JSON object.`;
                         input,
                         output: response.output,
                         timestamp: Date.now(),
+                        expiresAt: computeExpiresAt('aiCritiqueCache'),
                     });
                     console.log(`[AI Critique Cache] Saved new entry for: ${critiqueCacheKey}`);
                 } catch (e) {

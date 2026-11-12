@@ -8,6 +8,7 @@ import { getOrderActor } from '@/lib/server/order-auth';
 import type { Order } from '@/lib/types';
 import { assertOrderTestEnvironment } from '@/lib/order-permissions';
 import { getRefundedAmount } from '@/lib/order-workflow';
+import { computeExpiresAt } from '@/lib/ttl-policies';
 
 const requestSchema = z.object({
     operation: z.object({ operationId: z.string().uuid(), expectedRevision: z.number().int().nonnegative() }).optional(),
@@ -79,6 +80,7 @@ export async function manageReservation(input: z.infer<typeof requestSchema>) {
                 resourceId: orderId,
                 details: `${action} order; fulfillment status unchanged: ${order.status}`,
                 createdAt: now,
+                expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
             });
         });
         return { success: true };
@@ -136,6 +138,7 @@ export async function clearAllOrders(input: z.infer<typeof clearAllOrdersSchema>
             resourceName: 'Orders & Reservations',
             details: `Purged all ${totalCount} order(s) and historical reservation(s) from the system.`,
             createdAt: now,
+            expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
         });
 
         return { success: true, count: totalCount };
