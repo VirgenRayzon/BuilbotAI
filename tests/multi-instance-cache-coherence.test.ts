@@ -1,7 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { VersionedServerCache } from '../src/lib/server/catalog-cache';
-import { toPublicCatalogPart } from '../src/lib/server/public-products';
+import {
+  createBuilderCatalogReader,
+  type BuilderCatalogReader,
+} from '../src/lib/server/builder-catalog-reader';
+import {
+  createPublicPartsCatalogReader,
+  toPublicCatalogPart,
+  type PublicPartsCatalogReader,
+} from '../src/lib/server/public-products';
+import {
+  VersionedInventoryStore,
+} from '../src/lib/inventory-fetcher';
 import type { Part } from '../src/lib/types';
 import type { PublicCatalogPart } from '../src/lib/public-product-types';
 
@@ -53,8 +63,9 @@ function createSharedStore(initialParts: Part[]) {
 
 interface ServerInstanceContext {
   id: string;
-  builderCache: VersionedServerCache<Part[]>;
-  publicCache: VersionedServerCache<PublicCatalogPart[]>;
+  builderReader: BuilderCatalogReader;
+  publicReader: PublicPartsCatalogReader;
+  inventoryStore: VersionedInventoryStore;
   getBuilderCatalog: () => Promise<Part[]>;
   clearBuilderCatalogCache: () => void;
   listPublicPartsCatalog: () => Promise<PublicCatalogPart[]>;
@@ -66,27 +77,33 @@ function createServerContext(
   store: ReturnType<typeof createSharedStore>,
   options?: { maxCheckStalenessMs?: number }
 ): ServerInstanceContext {
-  const builderCache = new VersionedServerCache<Part[]>(options);
-  const publicCache = new VersionedServerCache<PublicCatalogPart[]>(options);
+  // Use real production factories directly
+  const builderReader = createBuilderCatalogReader({
+    loader: store.fetchBuilderParts,
+    readVersion: store.getCatalogVersion,
+    maxCheckStalenessMs: options?.maxCheckStalenessMs,
+  });
+
+  const publicReader = createPublicPartsCatalogReader({
+    loader: store.fetchPublicParts,
+    readVersion: store.getCatalogVersion,
+    maxCheckStalenessMs: options?.maxCheckStalenessMs,
+  });
+
+  const inventoryStore = new VersionedInventoryStore({
+    versionReader: store.getCatalogVersion,
+    versionCheckWindowMs: options?.maxCheckStalenessMs ?? 0,
+  });
 
   return {
     id,
-    builderCache,
-    publicCache,
-    getBuilderCatalog: async () => builderCache.getOrLoad(
-      store.fetchBuilderParts,
-      store.getCatalogVersion
-    ),
-    clearBuilderCatalogCache: () => {
-      builderCache.invalidateLocal();
-    },
-    listPublicPartsCatalog: async () => publicCache.getOrLoad(
-      store.fetchPublicParts,
-      store.getCatalogVersion
-    ),
-    invalidatePublicPartsCatalog: () => {
-      publicCache.invalidateLocal();
-    },
+    builderReader,
+    publicReader,
+    inventoryStore,
+    getBuilderCatalog: () => builderReader.getBuilderCatalog(),
+    clearBuilderCatalogCache: () => builderReader.clearBuilderCatalogCache(),
+    listPublicPartsCatalog: () => publicReader.listPublicPartsCatalog(),
+    invalidatePublicPartsCatalog: () => publicReader.invalidatePublicPartsCatalog(),
   };
 }
 
@@ -112,7 +129,7 @@ test('multi-instance cache contexts warm independently and hit local cache witho
   const contextA = createServerContext('instance-a', store, { maxCheckStalenessMs: 0 });
   const contextB = createServerContext('instance-b', store, { maxCheckStalenessMs: 0 });
 
-  // Initial warm on both contexts
+  // Initial warm on both contexts via real production reader factories
   const partsA = await contextA.getBuilderCatalog();
   const partsB = await contextB.getBuilderCatalog();
   const publicA = await contextA.listPublicPartsCatalog();
@@ -270,76 +287,43 @@ test('multi-instance cache coherence: concurrent requests during version bump co
   assert.equal(store.getState().builderCatalogLoads, 2);
 });
 
-test('multi-instance inventory fetcher synchronization purges local cache on remote version bump', async () => {
-  let catalogVersion = 1;
-  const store = {
-    getCatalogVersion: async () => catalogVersion,
-    bumpCatalogVersion: async () => {
-      catalogVersion++;
-      return catalogVersion;
-    },
-  };
-
-  // Simulate two instances of inventory-fetcher's syncCatalogVersion logic
-  function createInventoryContext(name: string) {
-    let currentVersion = -1;
-    let lastCheck = 0;
-    const windowMs = 0; // immediate check for deterministic testing
-    const cache = new Map<string, string[]>();
-
-    async function syncVersion(): Promise<number> {
-      const now = Date.now();
-      if (currentVersion !== -1 && now - lastCheck < windowMs) {
-        return currentVersion;
-      }
-      const remote = await store.getCatalogVersion();
-      lastCheck = Date.now();
-      if (currentVersion !== -1 && remote !== currentVersion) {
-        cache.clear();
-      }
-      currentVersion = remote;
-      return remote;
-    }
-
-    async function getCachedInventory(key: string, loader: () => string[]): Promise<string[]> {
-      await syncVersion();
-      const existing = cache.get(key);
-      if (existing) return existing;
-      const data = loader();
-      cache.set(key, data);
-      return data;
-    }
-
-    return {
-      name,
-      getCachedInventory,
-      getCacheSize: () => cache.size,
-    };
-  }
-
-  const invA = createInventoryContext('inv-instance-a');
-  const invB = createInventoryContext('inv-instance-b');
+test('multi-instance inventory fetcher synchronization purges local cache on remote version bump using production VersionedInventoryStore', async () => {
+  const store = createSharedStore([sampleGpu]);
+  // Use real VersionedInventoryStore instances initialized from production module
+  const contextA = createServerContext('inv-instance-a', store, { maxCheckStalenessMs: 0 });
+  const contextB = createServerContext('inv-instance-b', store, { maxCheckStalenessMs: 0 });
 
   let currentPrice = 36000;
   const loader = () => [`[ID: gpu-1] ASUS RTX 4070 - Price: ₱${currentPrice}`];
 
-  // Warm both
-  const resA1 = await invA.getCachedInventory('gpu', loader);
-  const resB1 = await invB.getCachedInventory('gpu', loader);
+  // Helper using the real VersionedInventoryStore instance methods from production module
+  async function fetchInventory(context: typeof contextA, key: string): Promise<string[]> {
+    const version = await context.inventoryStore.syncCatalogVersion();
+    const cached = context.inventoryStore.getCachedInventory(key, version);
+    if (cached) return cached;
+    const fresh = loader();
+    context.inventoryStore.setCachedInventory(key, fresh, version);
+    return fresh;
+  }
+
+  // Warm both instances
+  const resA1 = await fetchInventory(contextA, 'gpu');
+  const resB1 = await fetchInventory(contextB, 'gpu');
   assert.equal(resA1[0], '[ID: gpu-1] ASUS RTX 4070 - Price: ₱36000');
   assert.equal(resB1[0], '[ID: gpu-1] ASUS RTX 4070 - Price: ₱36000');
-  assert.equal(invA.getCacheSize(), 1);
-  assert.equal(invB.getCacheSize(), 1);
+  assert.equal(contextA.inventoryStore.getInventoryCacheSize(), 1);
+  assert.equal(contextB.inventoryStore.getInventoryCacheSize(), 1);
 
-  // Price changed and remote version bumped
+  // Price changed and remote catalogVersion bumped
   currentPrice = 33000;
   await store.bumpCatalogVersion(); // v2
 
-  // invA invalidates or reads fresh
-  const resA2 = await invA.getCachedInventory('gpu', loader);
+  // Instance A invalidates or reads fresh
+  const resA2 = await fetchInventory(contextA, 'gpu');
   assert.equal(resA2[0], '[ID: gpu-1] ASUS RTX 4070 - Price: ₱33000');
 
-  // invB (separate instance) receives no message, but next sync detects remote version change and clears cache
-  const resB2 = await invB.getCachedInventory('gpu', loader);
+  // Instance B (separate instance) receives no message, but its production VersionedInventoryStore
+  // detects remote version change and clears local cache upon syncCatalogVersion()
+  const resB2 = await fetchInventory(contextB, 'gpu');
   assert.equal(resB2[0], '[ID: gpu-1] ASUS RTX 4070 - Price: ₱33000');
 });

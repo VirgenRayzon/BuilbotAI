@@ -161,23 +161,52 @@ export async function listRelatedPublicParts(category: string, excludeProductId:
     .map(document => toPublicCatalogPart(document.data() as Part));
 }
 
-const publicPartsCatalogCache = new VersionedServerCache<PublicCatalogPart[]>();
+export interface PublicPartsCatalogReaderOptions {
+  loader?: () => Promise<PublicCatalogPart[]>;
+  readVersion?: () => Promise<number>;
+  maxCheckStalenessMs?: number;
+  onInvalidate?: () => void;
+}
+
+export interface PublicPartsCatalogReader {
+  listPublicPartsCatalog: () => Promise<PublicCatalogPart[]>;
+  invalidatePublicPartsCatalog: () => void;
+  getCache: () => VersionedServerCache<PublicCatalogPart[]>;
+}
+
+export function createPublicPartsCatalogReader(
+  options?: PublicPartsCatalogReaderOptions
+): PublicPartsCatalogReader {
+  const cache = new VersionedServerCache<PublicCatalogPart[]>({
+    maxCheckStalenessMs: options?.maxCheckStalenessMs,
+  });
+  const loader = options?.loader ?? readPublicPartsCatalog;
+  const readVersion = options?.readVersion ?? (async () => (await getCatalogMeta()).catalogVersion);
+
+  return {
+    listPublicPartsCatalog: async () => cache.getOrLoad(loader, readVersion),
+    invalidatePublicPartsCatalog: () => {
+      cache.invalidateLocal();
+      if (options?.onInvalidate) {
+        options.onInvalidate();
+      } else {
+        try {
+          revalidateTag(PUBLIC_PARTS_CACHE_TAG);
+        } catch {
+          // Safely ignore missing Next.js request context outside server requests
+        }
+      }
+    },
+    getCache: () => cache,
+  };
+}
+
+const defaultPublicPartsCatalogReader = createPublicPartsCatalogReader();
 
 export async function listPublicPartsCatalog(): Promise<PublicCatalogPart[]> {
-  return publicPartsCatalogCache.getOrLoad(
-    readPublicPartsCatalog,
-    async () => {
-      const meta = await getCatalogMeta();
-      return meta.catalogVersion;
-    }
-  );
+  return defaultPublicPartsCatalogReader.listPublicPartsCatalog();
 }
 
 export function invalidatePublicPartsCatalog() {
-  publicPartsCatalogCache.invalidateLocal();
-  try {
-    revalidateTag(PUBLIC_PARTS_CACHE_TAG);
-  } catch {
-    // Safely ignore missing Next.js request context outside server requests
-  }
+  defaultPublicPartsCatalogReader.invalidatePublicPartsCatalog();
 }

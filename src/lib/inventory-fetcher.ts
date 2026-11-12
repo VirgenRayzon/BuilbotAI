@@ -2,46 +2,6 @@ import { getAdminFirestore } from "@/firebase/server-init";
 import { inventoryCategorySlug, inventoryItemsPath } from "@/lib/inventory-paths";
 import { getCatalogMeta } from "@/lib/server/catalog-meta-store";
 
-interface CacheEntry {
-    data: string[];
-    timestamp: number;
-    version: number;
-}
-
-const inventoryCache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 5 * 60 * 1000;
-
-interface StructuredCacheEntry {
-    data: StructuredPart[];
-    timestamp: number;
-    version: number;
-}
-
-const structuredCache = new Map<string, StructuredCacheEntry>();
-
-let currentCatalogVersion = -1;
-let lastVersionCheck = 0;
-const VERSION_CHECK_WINDOW_MS = 3000;
-
-async function syncCatalogVersion(): Promise<number> {
-    const now = Date.now();
-    if (currentCatalogVersion !== -1 && now - lastVersionCheck < VERSION_CHECK_WINDOW_MS) {
-        return currentCatalogVersion;
-    }
-    try {
-        const meta = await getCatalogMeta();
-        lastVersionCheck = Date.now();
-        if (currentCatalogVersion !== -1 && meta.catalogVersion !== currentCatalogVersion) {
-            inventoryCache.clear();
-            structuredCache.clear();
-        }
-        currentCatalogVersion = meta.catalogVersion;
-        return meta.catalogVersion;
-    } catch {
-        return currentCatalogVersion !== -1 ? currentCatalogVersion : 0;
-    }
-}
-
 export interface StructuredPart {
     id: string;
     name: string;
@@ -60,12 +20,112 @@ export interface StructuredPart {
     specifications?: Record<string, unknown>;
 }
 
+export interface InventoryCacheEntry<T> {
+    data: T;
+    timestamp: number;
+    version: number;
+}
+
+export interface VersionedInventoryStoreOptions {
+    versionReader?: () => Promise<number>;
+    versionCheckWindowMs?: number;
+    cacheTtlMs?: number;
+}
+
+export class VersionedInventoryStore {
+    private inventoryCache = new Map<string, InventoryCacheEntry<string[]>>();
+    private structuredCache = new Map<string, InventoryCacheEntry<StructuredPart[]>>();
+    private currentCatalogVersion = -1;
+    private lastVersionCheck = 0;
+    private readonly versionCheckWindowMs: number;
+    private readonly cacheTtlMs: number;
+    private readonly versionReader: () => Promise<number>;
+
+    constructor(options?: VersionedInventoryStoreOptions) {
+        this.versionCheckWindowMs = options?.versionCheckWindowMs ?? 3000;
+        this.cacheTtlMs = options?.cacheTtlMs ?? 5 * 60 * 1000;
+        this.versionReader = options?.versionReader ?? (async () => {
+            const meta = await getCatalogMeta();
+            return meta.catalogVersion;
+        });
+    }
+
+    public async syncCatalogVersion(): Promise<number> {
+        const now = Date.now();
+        if (this.currentCatalogVersion !== -1 && now - this.lastVersionCheck < this.versionCheckWindowMs) {
+            return this.currentCatalogVersion;
+        }
+        try {
+            const version = await this.versionReader();
+            this.lastVersionCheck = Date.now();
+            if (this.currentCatalogVersion !== -1 && version !== this.currentCatalogVersion) {
+                this.inventoryCache.clear();
+                this.structuredCache.clear();
+            }
+            this.currentCatalogVersion = version;
+            return version;
+        } catch {
+            return this.currentCatalogVersion !== -1 ? this.currentCatalogVersion : 0;
+        }
+    }
+
+    public getCachedInventory(key: string, version: number): string[] | null {
+        const cached = this.inventoryCache.get(key);
+        if (cached && cached.version === version && Date.now() - cached.timestamp < this.cacheTtlMs) {
+            return cached.data;
+        }
+        return null;
+    }
+
+    public setCachedInventory(key: string, data: string[], version: number): void {
+        this.inventoryCache.set(key, {
+            data,
+            timestamp: Date.now(),
+            version,
+        });
+    }
+
+    public getCachedStructured(key: string, version: number): StructuredPart[] | null {
+        const cached = this.structuredCache.get(key);
+        if (cached && cached.version === version && Date.now() - cached.timestamp < this.cacheTtlMs) {
+            return cached.data;
+        }
+        return null;
+    }
+
+    public setCachedStructured(key: string, data: StructuredPart[], version: number): void {
+        this.structuredCache.set(key, {
+            data,
+            timestamp: Date.now(),
+            version,
+        });
+    }
+
+    public clear(): void {
+        this.inventoryCache.clear();
+        this.structuredCache.clear();
+        this.currentCatalogVersion = -1;
+        this.lastVersionCheck = 0;
+    }
+
+    public getInventoryCacheSize(): number {
+        return this.inventoryCache.size;
+    }
+
+    public getStructuredCacheSize(): number {
+        return this.structuredCache.size;
+    }
+
+    public getCurrentVersion(): number {
+        return this.currentCatalogVersion;
+    }
+}
+
+export const defaultInventoryStore = new VersionedInventoryStore();
+
 export function clearInventoryCache() {
     console.log("[Inventory Cache] Invalidation triggered.");
-    inventoryCache.clear();
-    structuredCache.clear();
-    currentCatalogVersion = -1;
-    lastVersionCheck = 0;
+    defaultInventoryStore.clear();
 }
 
 const CATEGORY_MAP: Record<string, string> = {
@@ -92,11 +152,11 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
     const cacheKey = `${normalizedCat}:${searchTerm || ''}:${limitCount}:${includeImage}`;
 
     try {
-        const version = await syncCatalogVersion();
-        const cached = inventoryCache.get(cacheKey);
-        if (cached && cached.version === version && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        const version = await defaultInventoryStore.syncCatalogVersion();
+        const cached = defaultInventoryStore.getCachedInventory(cacheKey, version);
+        if (cached) {
             console.log(`[Inventory Cache Hit] Key: ${cacheKey}`);
-            return cached.data;
+            return cached;
         }
 
         const db = getAdminFirestore();
@@ -159,11 +219,7 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
             return `[ID: ${doc.id}] [${category.toUpperCase()}] Name: "${displayName}"${price}${imageUrl}`;
         });
 
-        inventoryCache.set(cacheKey, {
-            data: results,
-            timestamp: Date.now(),
-            version
-        });
+        defaultInventoryStore.setCachedInventory(cacheKey, results, version);
 
         return results;
     } catch (error) {
@@ -177,11 +233,11 @@ export async function getStructuredInventory(category: string, searchTerm?: stri
     const cacheKey = `${normalizedCat}:${searchTerm || ''}:${limitCount}`;
 
     try {
-        const version = await syncCatalogVersion();
-        const cached = structuredCache.get(cacheKey);
-        if (!fresh && cached && cached.version === version && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        const version = await defaultInventoryStore.syncCatalogVersion();
+        const cached = !fresh ? defaultInventoryStore.getCachedStructured(cacheKey, version) : null;
+        if (cached) {
             console.log(`[Structured Inventory Cache Hit] Key: ${cacheKey}`);
-            return cached.data;
+            return cached;
         }
 
         const db = getAdminFirestore();
@@ -254,11 +310,7 @@ export async function getStructuredInventory(category: string, searchTerm?: stri
             };
         });
 
-        structuredCache.set(cacheKey, {
-            data: results,
-            timestamp: Date.now(),
-            version
-        });
+        defaultInventoryStore.setCachedStructured(cacheKey, results, version);
 
         return results;
     } catch (error) {

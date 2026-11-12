@@ -2,10 +2,16 @@ import 'server-only';
 import { getAdminFirestore } from '@/firebase/server-init';
 import type { Part } from '@/lib/types';
 import { INVENTORY_CATEGORY_SLUGS, inventoryItemsPath } from '@/lib/inventory-paths';
-import { VersionedServerCache } from './catalog-cache';
 import { getCatalogMeta } from './catalog-meta-store';
+import { createBuilderCatalogReader } from './builder-catalog-reader';
 
-const builderCatalogCache = new VersionedServerCache<Part[]>();
+const defaultBuilderCatalogReader = createBuilderCatalogReader({
+  loader: fetchBuilderCatalog,
+  readVersion: async () => {
+    const meta = await getCatalogMeta();
+    return meta.catalogVersion;
+  },
+});
 
 function serializeDate(value: unknown): string | undefined {
   if (!value) return undefined;
@@ -56,15 +62,9 @@ async function fetchBuilderCatalog(): Promise<Part[]> {
 }
 
 export async function getBuilderCatalog(): Promise<Part[]> {
-  return builderCatalogCache.getOrLoad(
-    fetchBuilderCatalog,
-    async () => {
-      const meta = await getCatalogMeta();
-      return meta.catalogVersion;
-    }
-  );
+  return defaultBuilderCatalogReader.getBuilderCatalog();
 }
 
 export function clearBuilderCatalogCache() {
-  builderCatalogCache.invalidateLocal();
+  defaultBuilderCatalogReader.clearBuilderCatalogCache();
 }
