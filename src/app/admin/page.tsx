@@ -296,6 +296,8 @@ export default function AdminPage() {
                                         catalogParts={parts}
                                         hasMoreOrders={hasMoreOrders}
                                         onLoadMoreOrders={loadMoreOrders}
+                                        stageCounts={stats.stageCounts}
+                                        totalCount={stats.totalOrdersCount}
                                         isSuperAdmin={profile?.isSuperAdmin === true}
                                         isSweepingExpired={isSweepingExpired}
                                         onReservationAction={handleReservationAction}

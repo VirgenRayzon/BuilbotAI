@@ -31,6 +31,8 @@ export interface OrdersTabProps {
   catalogParts?: Part[] | null;
   hasMoreOrders?: boolean;
   onLoadMoreOrders?: () => void;
+  stageCounts?: Record<string, number>;
+  totalCount?: number;
   archived?: boolean;
   isSuperAdmin: boolean;
   isSweepingExpired?: boolean;
@@ -58,6 +60,8 @@ export function OrdersTab({
   catalogParts,
   hasMoreOrders = false,
   onLoadMoreOrders,
+  stageCounts,
+  totalCount,
   archived = false,
   isSuperAdmin,
   isSweepingExpired = false,
@@ -109,6 +113,8 @@ export function OrdersTab({
     controlledSearchQuery,
     onSearchQueryChange,
     initialStageFilter: initialStage,
+    serverStageCounts: stageCounts,
+    serverTotalCount: totalCount,
     onStageChange: stage => {
       const params = new URLSearchParams(searchParams.toString());
       params.set('stage', stage);

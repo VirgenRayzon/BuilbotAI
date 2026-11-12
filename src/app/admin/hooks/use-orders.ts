@@ -3,10 +3,11 @@
 import { operationStorageKey, storedOrderOperation, clearStoredOrderOperation, sessionOperationStorage } from '@/lib/order-operation-cache';
 import type { StaffPaymentRequest, ReconcileRefund } from '@/lib/order-payment';
 import type { OrderOperation } from '@/lib/server/order-operations';
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth, useFirestore } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { fetchAdminOrdersPageAction } from '../order-query-actions';
 import type {
     Order,
     OrderFulfillmentStage,
@@ -50,21 +51,76 @@ export function useOrders(_profile?: UserProfile | null) {
         const key = operationStorageKey(auth?.currentUser?.uid || 'signed-out', orderId, payload);
         retries.current.delete(key); clearStoredOrderOperation(sessionOperationStorage(), key);
     };
-    const [orderLimit, setOrderLimit] = useState(100);
     const [isSweepingExpired, setIsSweepingExpired] = useState(false);
+    const [pagedOrders, setPagedOrders] = useState<Order[]>([]);
+    const [ordersLoading, setOrdersLoading] = useState(true);
+    const [totalCount, setTotalCount] = useState(0);
+    const [stageCounts, setStageCounts] = useState<Record<string, number>>({});
+    const [nextCursor, setNextCursor] = useState<string | null>(null);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-    const ordersQuery = useMemo(() => {
+    // Maintain a small limit(25) live onSnapshot head listener ONLY on page 1 with default unfiltered view
+    const headQuery = useMemo(() => {
         if (!firestore) return null;
         return query(
             collection(firestore, 'orders'),
             orderBy('createdAt', 'desc'),
-            limit(orderLimit)
+            limit(25)
         );
-    }, [firestore, orderLimit]);
+    }, [firestore]);
 
-    const { data: recentOrders, loading: recentOrdersLoading } = useCollection<Order>(ordersQuery);
-    const orders = recentOrders || [];
-    const ordersLoading = recentOrdersLoading;
+    const { data: headOrders } = useCollection<Order>(headQuery);
+    const headIdsRef = useRef<string>('');
+
+    // Trigger page refresh when a new order arrives at the head
+    useEffect(() => {
+        if (!headOrders) return;
+        const currentHeadIds = headOrders.map(o => o.id).join(',');
+        if (headIdsRef.current && headIdsRef.current !== currentHeadIds) {
+            setRefreshTrigger(v => v + 1);
+        }
+        headIdsRef.current = currentHeadIds;
+    }, [headOrders]);
+
+    const fetchPage = useCallback(async (options: { cursor?: string | null; append?: boolean } = {}) => {
+        const user = auth?.currentUser;
+        if (!user) return;
+        setOrdersLoading(true);
+        try {
+            const idToken = await user.getIdToken();
+            const result = await fetchAdminOrdersPageAction({
+                idToken,
+                options: {
+                    pageSize: 25,
+                    cursor: options.cursor || null,
+                    archived: false,
+                    stage: 'all',
+                },
+            });
+            if (options.append) {
+                setPagedOrders(prev => {
+                    const existingIds = new Set(prev.map(o => o.id));
+                    const newOrders = result.orders.filter(o => !existingIds.has(o.id));
+                    return [...prev, ...newOrders];
+                });
+            } else {
+                setPagedOrders(result.orders);
+            }
+            setTotalCount(result.totalCount);
+            setStageCounts(result.stageCounts);
+            setNextCursor(result.nextCursor);
+        } catch (err) {
+            console.error('Failed to fetch admin orders page:', err);
+        } finally {
+            setOrdersLoading(false);
+        }
+    }, [auth]);
+
+    useEffect(() => {
+        fetchPage();
+    }, [fetchPage, refreshTrigger]);
+
+    const orders = pagedOrders.length > 0 ? pagedOrders : (headOrders || []);
 
     const handleReservationAction = async (
         orderId: string,
@@ -355,44 +411,38 @@ export function useOrders(_profile?: UserProfile | null) {
     };
 
     const stats = useMemo(() => {
-        let orderPlaced = 0;
-        let assembling = 0;
-        let outForDelivery = 0;
-        let delivered = 0;
-        let cancelled = 0;
-
-        for (const o of orders || []) {
-            if (o.isArchived) continue;
-            if (o.status === 'cancelled') {
-                cancelled += 1;
-                continue;
-            }
-            const stage = getOrderFulfillmentStage(o);
-            if (stage === 'order_placed') orderPlaced += 1;
-            else if (stage === 'assembling_testing') assembling += 1;
-            else if (stage === 'out_for_delivery') outForDelivery += 1;
-            else if (stage === 'delivered') delivered += 1;
-        }
+        const orderPlaced = stageCounts['order_placed'] ?? stageCounts['orderPlaced'] ?? 0;
+        const assembling = stageCounts['assembling_testing'] ?? stageCounts['assembling'] ?? stageCounts['assemblingTesting'] ?? 0;
+        const outForDelivery = stageCounts['out_for_delivery'] ?? stageCounts['outForDelivery'] ?? 0;
+        const delivered = stageCounts['delivered'] ?? 0;
+        const cancelled = stageCounts['cancelled'] ?? 0;
 
         return {
             pendingOrdersCount: orderPlaced,
             completedOrdersCount: delivered,
             cancelledOrdersCount: cancelled,
+            totalOrdersCount: totalCount,
             stageCounts: {
                 orderPlaced,
                 assembling,
                 outForDelivery,
                 delivered,
                 cancelled,
+                ...stageCounts,
             },
         };
-    }, [orders]);
+    }, [stageCounts, totalCount]);
+
+    const loadMoreOrders = useCallback(() => {
+        if (!nextCursor) return;
+        fetchPage({ cursor: nextCursor, append: true });
+    }, [nextCursor, fetchPage]);
 
     return {
         orders,
         ordersLoading,
-        hasMoreOrders: (recentOrders?.length || 0) >= orderLimit,
-        loadMoreOrders: () => setOrderLimit((current) => current + 100),
+        hasMoreOrders: Boolean(nextCursor),
+        loadMoreOrders,
         isSweepingExpired,
         handleReservationAction,
         handleUpdateOrder,

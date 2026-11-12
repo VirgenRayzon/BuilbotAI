@@ -158,6 +158,7 @@ export type Order = {
   status: 'pending' | 'building' | 'finished building' | 'cancelled';
   workflowRevision?: number;
   fulfillmentStage?: OrderFulfillmentStage;
+  queueStage?: OrderFulfillmentStage | 'cancelled';
   paymentMethod?: PaymentMethod;
   paymentStatus?: PaymentStatus;
   paymentReference?: string;
