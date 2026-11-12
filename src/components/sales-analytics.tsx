@@ -1,738 +1,131 @@
 "use client";
 
-import React, { useMemo, useState, useSyncExternalStore } from 'react';
-import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, BarChart, Bar
-} from 'recharts';
-import {
-    TrendingUp,
-    Package,
-    Activity,
-    PieChart as PieIcon,
-    BarChart3,
-    Cpu,
-    HardDrive,
-    Zap,
-    Wind,
-    Monitor,
-    Keyboard,
-    Headphones,
-    Box,
-    Grid,
-    Layers,
-} from 'lucide-react';
-import {
-    Paper,
-    Title,
-    Text,
-    Stack,
-    Badge,
-    ThemeIcon,
-    SegmentedControl,
-} from '@mantine/core';
-import { motion } from 'framer-motion';
-import { Order, Part, PrebuiltSystem } from '@/lib/types';
-import { formatCurrency, cn } from '@/lib/utils';
+import React, { useState, useEffect, useSyncExternalStore } from 'react';
 import { useTheme } from '@/context/theme-provider';
-import { getPopularityCategories } from '@/lib/popularity';
+import { Skeleton, Stack } from '@mantine/core';
+import type { Order, Part, PrebuiltSystem } from '@/lib/types';
+import { useUserProfile } from '@/context/user-profile';
 import {
-    calculateOrderFinancialSummary,
-    getNetCollectedAmount,
-    getOrderFulfillmentStage,
-} from '@/lib/order-workflow';
+  getSalesDashboardSummaryAction,
+  type SalesDashboardSummary,
+} from '@/lib/server/sales-analytics-queries';
 import { SalesFinancialKpis } from './sales-financial-kpis';
+import { SalesOverviewCharts } from './sales-overview-charts';
+import { SalesPopularityView } from './sales-popularity-view';
 
 interface SalesAnalyticsProps {
-    orders: Order[];
-    parts: Part[];
-    prebuilts: PrebuiltSystem[];
-    activeSubTab?: 'overview' | 'popularity';
+  orders?: Order[];
+  parts: Part[];
+  prebuilts: PrebuiltSystem[];
+  activeSubTab?: 'overview' | 'popularity';
 }
-
-const COLORS = {
-    primary: '#22d3ee',
-    secondary: '#818cf8',
-    accent: '#fbbf24',
-    success: '#10b981',
-    destructive: '#ef4444',
-    chart: [
-        '#22d3ee', '#818cf8', '#10b981', '#fbbf24', '#f472b6', '#a78bfa'
-    ]
-};
 
 const subscribeToHydration = () => () => {};
 
-export function SalesAnalytics({ orders, parts, prebuilts, activeSubTab = 'overview' }: SalesAnalyticsProps) {
-    const { theme } = useTheme();
-    const isDark = theme === 'dark';
+export function SalesAnalytics({
+  orders: _orders,
+  parts,
+  prebuilts: _prebuilts,
+  activeSubTab = 'overview',
+}: SalesAnalyticsProps) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  const mounted = useSyncExternalStore(subscribeToHydration, () => true, () => false);
 
-    const mounted = useSyncExternalStore(subscribeToHydration, () => true, () => false);
+  const { authUser, profile } = useUserProfile();
+  const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year'>('week');
+  const [summary, setSummary] = useState<SalesDashboardSummary | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
-    const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year'>('week');
+  useEffect(() => {
+    let cancelled = false;
 
-    const revenueData = useMemo(() => {
-        const now = new Date();
-        let dataPoints: { name: string; date: Date }[] = [];
-
-        if (timeRange === 'week') {
-            dataPoints = Array.from({ length: 7 }, (_, i) => {
-                const d = new Date(now);
-                d.setDate(d.getDate() - (6 - i));
-                return {
-                    name: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-                    date: d
-                };
-            });
-        } else if (timeRange === 'month') {
-            dataPoints = Array.from({ length: 30 }, (_, i) => {
-                const d = new Date(now);
-                d.setDate(d.getDate() - (29 - i));
-                return {
-                    name: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-                    date: d
-                };
-            });
-        } else if (timeRange === 'year') {
-            dataPoints = Array.from({ length: 12 }, (_, i) => {
-                const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
-                return {
-                    name: d.toLocaleDateString(undefined, { month: 'short' }) + " '" + d.getFullYear().toString().slice(-2),
-                    date: d
-                };
-            });
+    async function loadSummary() {
+      // Cold-start handling: wait for auth resolution, don't hang if unauthenticated
+      if (!authUser) {
+        if (!profile) {
+          setLoading(false);
         }
+        return;
+      }
 
-        const dataMap = new Map<string, number>();
-        dataPoints.forEach(p => dataMap.set(p.name, 0));
+      setLoading(true);
+      try {
+        const idToken = await authUser.getIdToken();
+        const data = await getSalesDashboardSummaryAction({ idToken, range: timeRange });
+        if (!cancelled) {
+          setSummary(data);
+        }
+      } catch (err) {
+        console.error('Failed to load pre-aggregated sales dashboard summary:', err);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
 
-        (orders || []).filter(o => getNetCollectedAmount(o) > 0).forEach(order => {
-            const paymentDate = order.paidAt || order.createdAt;
-            const date = paymentDate?.toDate?.() || (paymentDate?.seconds ? new Date(paymentDate.seconds * 1000) : new Date(paymentDate));
-            let key = "";
-            if (timeRange === 'year') {
-                key = date.toLocaleDateString(undefined, { month: 'short' }) + " '" + date.getFullYear().toString().slice(-2);
-            } else {
-                key = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-            }
-
-            if (dataMap.has(key)) {
-                dataMap.set(key, (dataMap.get(key) || 0) + getNetCollectedAmount(order));
-            }
-        });
-
-        return dataPoints.map(p => ({
-            name: p.name,
-            revenue: dataMap.get(p.name) || 0
-        }));
-    }, [orders, timeRange]);
-
-    const statusData = useMemo(() => {
-        const counts = {
-            order_placed: 0,
-            assembling_testing: 0,
-            out_for_delivery: 0,
-            delivered: 0,
-            cancelled: 0,
-        };
-
-        (orders || []).forEach(o => {
-            if (o.status === 'cancelled') {
-                counts.cancelled++;
-                return;
-            }
-            const stage = getOrderFulfillmentStage(o);
-            counts[stage]++;
-        });
-
-        return [
-            { name: 'Order Placed', value: counts.order_placed, color: '#eab308' },
-            { name: 'Assembling', value: counts.assembling_testing, color: '#3b82f6' },
-            { name: 'Out for Delivery', value: counts.out_for_delivery, color: '#06b6d4' },
-            { name: 'Delivered', value: counts.delivered, color: '#10b981' },
-            { name: 'Cancelled', value: counts.cancelled, color: '#ef4444' },
-        ].filter(d => d.value > 0);
-    }, [orders]);
-
-    const prebuiltTierData = useMemo(() => {
-        const counts = {
-            'Entry': 0,
-            'Mid-Range': 0,
-            'High-End': 0,
-            'Workstation': 0
-        };
-
-        (orders || []).filter(o => o.status !== 'cancelled' && o.type === 'prebuilt').forEach(order => {
-            const prebuiltId = order.prebuiltId;
-            const system = (prebuilts || []).find(s => s.id === prebuiltId);
-            const tier = system?.tier || order.prebuiltTier || 'Mid-Range';
-
-            if (tier && tier in counts) {
-                counts[tier as keyof typeof counts]++;
-            }
-        });
-
-        return [
-            { name: 'Entry Level', value: counts['Entry'], color: COLORS.chart[2] },
-            { name: 'Mid-Range', value: counts['Mid-Range'], color: COLORS.chart[0] },
-            { name: 'High-End', value: counts['High-End'], color: COLORS.chart[1] },
-            { name: 'Workstation', value: counts['Workstation'], color: COLORS.chart[3] }
-        ].filter(d => d.value > 0);
-    }, [orders, prebuilts]);
-
-    const categoryData = useMemo(() => {
-        const catMap = new Map<string, number>();
-        (orders || []).filter(o => getNetCollectedAmount(o) > 0).forEach(order => {
-            const itemsTotal = (order.items || []).reduce((sum, item) => {
-                const qty = item.quantity && item.quantity > 0 ? item.quantity : 1;
-                return sum + (item.lineTotal ?? item.price * qty);
-            }, 0);
-            const subtotal = order.subtotal || itemsTotal;
-            order.items?.forEach(item => {
-                const qty = item.quantity && item.quantity > 0 ? item.quantity : 1;
-                const lineVal = item.lineTotal ?? item.price * qty;
-                const allocation = subtotal > 0 ? (lineVal / subtotal) * getNetCollectedAmount(order) : 0;
-                catMap.set(item.category, (catMap.get(item.category) || 0) + allocation);
-            });
-        });
-
-        return Array.from(catMap.entries())
-            .map(([name, value]) => ({ name, value }))
-            .sort((a, b) => b.value - a.value)
-            .slice(0, 6);
-    }, [orders]);
-
-    const metrics = useMemo(() => {
-        const financials = calculateOrderFinancialSummary(orders || []);
-        const aov = financials.paidOrderCount > 0
-            ? financials.netSales / financials.paidOrderCount
-            : 0;
-        const cancellationRate = financials.totalOrderCount > 0
-            ? (financials.cancelledOrderCount / financials.totalOrderCount) * 100
-            : 0;
-
-        return { financials, aov, cancellationRate };
-    }, [orders]);
-
-    const popularityCategories = useMemo(() => getPopularityCategories(parts || []), [parts]);
-
-    const getCategoryIcon = (cat: string) => {
-        const lower = cat.toLowerCase();
-        if (lower.includes('cpu')) return <Cpu className="w-4 h-4 text-cyan-500" />;
-        if (lower.includes('gpu')) return <Cpu className="w-4 h-4 text-purple-500" />;
-        if (lower.includes('ram') || lower.includes('memory')) return <Layers className="w-4 h-4 text-emerald-500" />;
-        if (lower.includes('motherboard')) return <Grid className="w-4 h-4 text-pink-500" />;
-        if (lower.includes('psu') || lower.includes('power')) return <Zap className="w-4 h-4 text-amber-500" />;
-        if (lower.includes('storage') || lower.includes('ssd') || lower.includes('hdd')) return <HardDrive className="w-4 h-4 text-blue-500" />;
-        if (lower.includes('case')) return <Box className="w-4 h-4 text-indigo-500" />;
-        if (lower.includes('cooler') || lower.includes('fan')) return <Wind className="w-4 h-4 text-teal-500" />;
-        if (lower.includes('monitor')) return <Monitor className="w-4 h-4 text-rose-500" />;
-        if (lower.includes('keyboard')) return <Keyboard className="w-4 h-4 text-orange-500" />;
-        if (lower.includes('mouse')) return <Zap className="w-4 h-4 text-violet-500" />;
-        if (lower.includes('headset') || lower.includes('headphones')) return <Headphones className="w-4 h-4 text-green-500" />;
-        return <Package className="w-4 h-4 text-slate-400" />;
+    loadSummary();
+    return () => {
+      cancelled = true;
     };
+  }, [authUser, profile, timeRange]);
 
-    return (
+  const defaultFinancials = {
+    placedOrderValue: 0,
+    collectedPayments: 0,
+    refundsIssued: 0,
+    netSales: 0,
+    totalOrderCount: 0,
+    activeOrderCount: 0,
+    paidOrderCount: 0,
+    cancelledOrderCount: 0,
+  };
+
+  const financials = summary?.financials || defaultFinancials;
+  const aov = summary?.aov || 0;
+  const cancellationRate = summary?.cancellationRate || 0;
+  const revenueData = summary?.revenueData || [];
+  const statusData = summary?.statusData || [];
+  const prebuiltTierData = summary?.prebuiltTierData || [];
+  const categoryData = summary?.categoryData || [];
+
+  return (
+    <div className="space-y-6">
+      {activeSubTab === 'overview' && (
         <div className="space-y-6">
-            {activeSubTab === 'overview' && (
-                <div className="space-y-6">
-                    <SalesFinancialKpis
-                        financials={metrics.financials}
-                        aov={metrics.aov}
-                        cancellationRate={metrics.cancellationRate}
-                    />
+          <SalesFinancialKpis
+            financials={financials}
+            aov={aov}
+            cancellationRate={cancellationRate}
+          />
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <Paper
-                            withBorder
-                            radius="lg"
-                            p={12}
-                            className="lg:col-span-2 bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm overflow-hidden flex flex-col justify-between"
-                        >
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-white/10">
-                                <div>
-                                    <Title order={3} className="text-xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                                        <TrendingUp className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
-                                        Revenue Performance
-                                    </Title>
-                                    <Text size="xs" className="text-slate-500 dark:text-slate-400 uppercase tracking-widest font-mono mt-0.5">
-                                        {timeRange === 'week' ? 'Daily revenue tracking (Last 7 Days)' :
-                                         timeRange === 'month' ? 'Daily revenue tracking (Last 30 Days)' :
-                                         'Monthly revenue tracking (Last 12 Months)'}
-                                    </Text>
-                                </div>
-
-                                <SegmentedControl
-                                    value={timeRange}
-                                    onChange={(v) => {
-                                        if (v === 'week' || v === 'month' || v === 'year') setTimeRange(v);
-                                    }}
-                                    data={[
-                                        { label: '7 Days', value: 'week' },
-                                        { label: '30 Days', value: 'month' },
-                                        { label: '12 Months', value: 'year' },
-                                    ]}
-                                    size="xs"
-                                    radius="md"
-                                    color="cyan"
-                                    classNames={{
-                                        root: "bg-slate-100 dark:bg-[#141a23] border border-slate-200 dark:border-white/10 p-0.5",
-                                        label: "font-headline font-bold text-[10px] uppercase tracking-wider text-slate-600 dark:text-slate-400 data-[active=true]:text-slate-900 dark:data-[active=true]:text-white",
-                                        indicator: "bg-white dark:bg-[#1e2634] shadow-sm"
-                                    }}
-                                />
-                            </div>
-
-                            <div className="h-[280px] pt-4">
-                                {mounted ? (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={revenueData}>
-                                            <defs>
-                                                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.35} />
-                                                    <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"} />
-                                            <XAxis
-                                                dataKey="name"
-                                                axisLine={false}
-                                                tickLine={false}
-                                                tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10, fontWeight: 600 }}
-                                                dy={10}
-                                            />
-                                            <YAxis
-                                                axisLine={false}
-                                                tickLine={false}
-                                                tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10, fontWeight: 600 }}
-                                                tickFormatter={(val) => `₱${val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val}`}
-                                            />
-                                            <RechartsTooltip
-                                                content={({ active, payload, label }) => {
-                                                    if (active && payload && payload.length) {
-                                                        return (
-                                                            <div className="p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-xl shadow-xl">
-                                                                <p className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 mb-1">{label}</p>
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-2.5 h-2.5 rounded-full bg-cyan-500" />
-                                                                    <span className="font-bold text-sm text-slate-900 dark:text-white">Revenue:</span>
-                                                                    <span className="font-mono font-bold text-sm text-cyan-600 dark:text-cyan-400">{formatCurrency(payload[0].value as number)}</span>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    }
-                                                    return null;
-                                                }}
-                                            />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="revenue"
-                                                stroke={COLORS.primary}
-                                                strokeWidth={3}
-                                                fillOpacity={1}
-                                                fill="url(#colorRevenue)"
-                                                animationDuration={2000}
-                                            />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                ) : (
-                                    <div className="h-full flex items-center justify-center text-xs text-muted-foreground">Loading chart...</div>
-                                )}
-                            </div>
-                        </Paper>
-
-                        <Paper
-                            withBorder
-                            radius="lg"
-                            p={12}
-                            className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm flex flex-col justify-between"
-                        >
-                            <div className="pb-3 border-b border-slate-200 dark:border-white/10">
-                                <Title order={3} className="text-xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                                    <PieIcon className="w-5 h-5 text-indigo-500" />
-                                    Order Status
-                                </Title>
-                                <Text size="xs" className="text-slate-500 dark:text-slate-400 uppercase tracking-widest font-mono mt-0.5">
-                                    Inventory lifecycle distribution
-                                </Text>
-                            </div>
-
-                            <div className="flex flex-col gap-3 pt-3 sm:flex-row sm:items-center">
-                            <div className="h-[230px] min-w-0 flex-1 flex items-center justify-center relative">
-                                {mounted ? (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={statusData}
-                                                cx="50%"
-                                                cy="50%"
-                                                innerRadius={70}
-                                                outerRadius={110}
-                                                paddingAngle={4}
-                                                dataKey="value"
-                                                strokeWidth={2}
-                                                stroke={isDark ? '#111722' : '#ffffff'}
-                                                animationDuration={1500}
-                                            >
-                                                {statusData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                                ))}
-                                            </Pie>
-                                            <RechartsTooltip
-                                                content={({ active, payload }) => {
-                                                    if (active && payload && payload.length) {
-                                                        const p = payload[0];
-                                                        return (
-                                                            <div className="p-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-xl shadow-xl text-xs">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.payload?.color }} />
-                                                                    <span className="font-bold text-slate-900 dark:text-white">{p.name}:</span>
-                                                                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{p.value} orders</span>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    }
-                                                    return null;
-                                                }}
-                                            />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                ) : (
-                                    <div className="h-full flex items-center justify-center text-xs text-muted-foreground">Loading chart...</div>
-                                )}
-
-                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                    <span className="text-2xl font-bold font-headline text-slate-900 dark:text-white">
-                                        {(orders || []).length}
-                                    </span>
-                                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
-                                        Total
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:min-w-[168px]">
-                                {statusData.map((d, i) => (
-                                    <div key={i} className="flex items-center justify-between gap-3 p-2 rounded-md bg-slate-50 dark:bg-black/20 border border-slate-200/50 dark:border-white/5">
-                                        <div className="flex items-center gap-2 min-w-0">
-                                            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                                            <span className="text-[11px] leading-none uppercase font-semibold tracking-wide text-slate-600 dark:text-slate-400 truncate">
-                                                {d.name}
-                                            </span>
-                                        </div>
-                                        <span className="text-xs font-mono font-bold text-slate-900 dark:text-white ml-2">
-                                            {d.value}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                            </div>
-                        </Paper>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <Paper
-                            withBorder
-                            radius="lg"
-                            p={12}
-                            className="lg:order-2 bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm flex flex-col justify-between"
-                        >
-                            <div className="pb-3 border-b border-slate-200 dark:border-white/10">
-                                <Title order={3} className="text-xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                                    <Package className="w-5 h-5 text-emerald-500" />
-                                    Prebuilt Sales
-                                </Title>
-                                <Text size="xs" className="text-slate-500 dark:text-slate-400 uppercase tracking-widest font-mono mt-0.5">
-                                    Performance tier distribution
-                                </Text>
-                            </div>
-
-                            <div className="flex flex-col gap-3 pt-3 sm:flex-row sm:items-center">
-                            <div className="h-[230px] min-w-0 flex-1 flex items-center justify-center relative">
-                                {mounted ? (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={prebuiltTierData}
-                                                cx="50%"
-                                                cy="50%"
-                                                innerRadius={70}
-                                                outerRadius={110}
-                                                paddingAngle={4}
-                                                dataKey="value"
-                                                strokeWidth={2}
-                                                stroke={isDark ? '#111722' : '#ffffff'}
-                                                animationDuration={1500}
-                                            >
-                                                {prebuiltTierData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                                ))}
-                                            </Pie>
-                                            <RechartsTooltip
-                                                content={({ active, payload }) => {
-                                                    if (active && payload && payload.length) {
-                                                        const p = payload[0];
-                                                        return (
-                                                            <div className="p-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-xl shadow-xl text-xs">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.payload?.color }} />
-                                                                    <span className="font-bold text-slate-900 dark:text-white">{p.name}:</span>
-                                                                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{p.value} units</span>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    }
-                                                    return null;
-                                                }}
-                                            />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                ) : (
-                                    <div className="h-full flex items-center justify-center text-xs text-muted-foreground">Loading chart...</div>
-                                )}
-
-                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                    <span className="text-2xl font-bold font-headline text-slate-900 dark:text-white">
-                                        {prebuiltTierData.reduce((total, tier) => total + tier.value, 0)}
-                                    </span>
-                                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
-                                        Total
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:min-w-[168px]">
-                                {prebuiltTierData.length > 0 ? prebuiltTierData.map((d, i) => (
-                                    <div key={i} className="flex items-center justify-between gap-3 p-2 rounded-md bg-slate-50 dark:bg-black/20 border border-slate-200/50 dark:border-white/5">
-                                        <div className="flex items-center gap-2 min-w-0">
-                                            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                                            <span className="text-[11px] leading-none uppercase font-semibold tracking-wide text-slate-600 dark:text-slate-400 truncate">
-                                                {d.name}
-                                            </span>
-                                        </div>
-                                        <span className="text-xs font-mono font-bold text-slate-900 dark:text-white ml-2">
-                                            {d.value}
-                                        </span>
-                                    </div>
-                                )) : (
-                                    <div className="col-span-2 text-center text-xs text-slate-400 py-2 font-mono">
-                                        No prebuilt sales data recorded
-                                    </div>
-                                )}
-                            </div>
-                            </div>
-                        </Paper>
-
-                        <Paper
-                            withBorder
-                            radius="lg"
-                            p={12}
-                            className="lg:order-1 lg:col-span-2 bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm flex flex-col justify-between"
-                        >
-                            <div className="pb-3 border-b border-slate-200 dark:border-white/10">
-                                <Title order={3} className="text-xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                                    <BarChart3 className="w-5 h-5 text-cyan-500" />
-                                    Revenue by Category
-                                </Title>
-                                <Text size="xs" className="text-slate-500 dark:text-slate-400 uppercase tracking-widest font-mono mt-0.5">
-                                    Top performing component segments
-                                </Text>
-                            </div>
-
-                            <div className="h-[280px] pt-4">
-                                {mounted ? (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={categoryData} layout="vertical" margin={{ left: 20, right: 30 }}>
-                                            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"} />
-                                            <XAxis type="number" hide />
-                                            <YAxis
-                                                dataKey="name"
-                                                type="category"
-                                                axisLine={false}
-                                                tickLine={false}
-                                                tick={{ fill: isDark ? '#e2e8f0' : '#1e293b', fontSize: 11, fontWeight: 700 }}
-                                                width={90}
-                                            />
-                                            <RechartsTooltip
-                                                cursor={{ fill: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }}
-                                                content={({ active, payload, label }) => {
-                                                    if (active && payload && payload.length) {
-                                                        return (
-                                                            <div className="p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-xl shadow-xl text-xs">
-                                                                <p className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 mb-1">{label}</p>
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: payload[0].color || COLORS.primary }} />
-                                                                    <span className="font-bold text-slate-900 dark:text-white">Revenue:</span>
-                                                                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(payload[0].value as number)}</span>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    }
-                                                    return null;
-                                                }}
-                                            />
-                                            <Bar
-                                                dataKey="value"
-                                                fill={COLORS.primary}
-                                                radius={[0, 6, 6, 0]}
-                                                barSize={20}
-                                                animationDuration={1500}
-                                            >
-                                                {categoryData.map((_, index) => (
-                                                    <Cell
-                                                        key={`cell-${index}`}
-                                                        fill={COLORS.chart[index % COLORS.chart.length]}
-                                                        fillOpacity={0.85}
-                                                    />
-                                                ))}
-                                            </Bar>
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                ) : (
-                                    <div className="h-full flex items-center justify-center text-xs text-muted-foreground">Loading chart...</div>
-                                )}
-                            </div>
-                        </Paper>
-                    </div>
-                </div>
-            )}
-
-            {activeSubTab === 'popularity' && (
-                <div className="space-y-6">
-                    {popularityCategories.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                            {popularityCategories.map(({ category, parts: topParts, maxPopularity }) => (
-                                <motion.div
-                                    key={category}
-                                    initial={{ opacity: 0, scale: 0.96 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.4 }}
-                                >
-                                    <Paper
-                                        withBorder
-                                        radius="lg"
-                                        className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm overflow-hidden h-full flex flex-col justify-between hover:border-cyan-500/40 transition-colors"
-                                    >
-                                        <div>
-                                            <div className="p-3 border-b border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-black/20 flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    {getCategoryIcon(category)}
-                                                    <span className="font-headline font-bold text-sm uppercase tracking-wider text-slate-900 dark:text-white">
-                                                        {category}
-                                                    </span>
-                                                </div>
-                                                <Badge size="xs" variant="light" color="cyan" className="font-bold uppercase tracking-wider">
-                                                    {topParts.length} Tracked
-                                                </Badge>
-                                            </div>
-
-                                            <div className="divide-y divide-slate-200 dark:divide-white/5">
-                                                {topParts.map((item, index) => {
-                                                    const pop = item.popularity ?? 0;
-                                                    const relativeStrength = maxPopularity > 0 ? (pop / maxPopularity) * 100 : 0;
-
-                                                    return (
-                                                        <div
-                                                            key={item.id}
-                                                            className="p-3 flex flex-col hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group/item"
-                                                        >
-                                                            <div className="flex items-center gap-3">
-                                                                <div className={cn(
-                                                                    "w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border transition-all duration-300 group-hover/item:scale-105",
-                                                                    index === 0
-                                                                        ? "bg-amber-500/15 text-amber-500 border-amber-500/40 font-extrabold shadow-[0_0_10px_rgba(245,158,11,0.2)]"
-                                                                        : index === 1
-                                                                            ? "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600 font-bold"
-                                                                            : index === 2
-                                                                                ? "bg-orange-500/15 text-orange-500 border-orange-500/30 font-bold"
-                                                                                : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/5"
-                                                                )}>
-                                                                    #{index + 1}
-                                                                </div>
-
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className="font-bold text-xs truncate leading-tight text-slate-900 dark:text-white group-hover/item:text-cyan-600 dark:group-hover/item:text-cyan-400 transition-colors">
-                                                                        {item.name}
-                                                                    </p>
-                                                                    <div className="flex items-center gap-2 mt-0.5">
-                                                                        <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-medium">
-                                                                            {item.brand || 'Standard'}
-                                                                        </span>
-                                                                        <span className="text-slate-300 dark:text-slate-700">•</span>
-                                                                        <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                                                                            {formatCurrency(item.price)}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="text-right shrink-0">
-                                                                    <div className="flex items-center gap-1.5 justify-end">
-                                                                        <span className="font-mono font-bold text-sm text-slate-900 dark:text-white">
-                                                                            {pop}
-                                                                        </span>
-                                                                        <Activity className="w-3.5 h-3.5 text-cyan-500" />
-                                                                    </div>
-                                                                    <p className="text-[8px] text-slate-500 uppercase tracking-tighter">Orders</p>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="mt-2 flex items-center gap-2">
-                                                                <span className="text-[8px] text-slate-400 uppercase font-mono tracking-tighter">Relative Demand</span>
-                                                                <div className="flex-1 h-1.5 bg-slate-100 dark:bg-black/40 rounded-full overflow-hidden relative">
-                                                                    <motion.div
-                                                                        className={cn(
-                                                                            "h-full rounded-full",
-                                                                            index === 0
-                                                                                ? "bg-gradient-to-r from-amber-500 to-amber-300"
-                                                                                : index === 1
-                                                                                    ? "bg-gradient-to-r from-slate-400 to-slate-200"
-                                                                                    : index === 2
-                                                                                        ? "bg-gradient-to-r from-orange-500 to-orange-300"
-                                                                                        : "bg-gradient-to-r from-cyan-500 to-blue-500"
-                                                                        )}
-                                                                        initial={{ width: 0 }}
-                                                                        animate={{ width: `${relativeStrength}%` }}
-                                                                        transition={{ duration: 0.8, delay: index * 0.08 }}
-                                                                    />
-                                                                </div>
-                                                                <span className="text-[8px] font-mono text-slate-500 dark:text-slate-400 font-bold shrink-0">
-                                                                    {Math.round(relativeStrength)}%
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    </Paper>
-                                </motion.div>
-                            ))}
-                        </div>
-                    ) : (
-                        <Paper
-                            withBorder
-                            radius="lg"
-                            p={12}
-                            className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 text-center py-16"
-                        >
-                            <Stack align="center" gap="md" className="max-w-md mx-auto">
-                                <ThemeIcon size={56} radius="xl" color="gray" variant="light">
-                                    <Activity className="h-7 w-7 text-slate-400" />
-                                </ThemeIcon>
-                                <div className="space-y-1">
-                                    <Title order={3} className="text-lg font-headline font-bold text-slate-900 dark:text-white">
-                                        No Popularity Data
-                                    </Title>
-                                    <Text size="xs" className="text-slate-600 dark:text-slate-400">
-                                        No component parts have been registered yet.
-                                    </Text>
-                                </div>
-                            </Stack>
-                        </Paper>
-                    )}
-                </div>
-            )}
+          {loading && !summary ? (
+            <Stack gap="md">
+              <Skeleton height={280} radius="lg" />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Skeleton height={260} radius="lg" />
+                <Skeleton height={260} radius="lg" className="lg:col-span-2" />
+              </div>
+            </Stack>
+          ) : (
+            <SalesOverviewCharts
+              revenueData={revenueData}
+              statusData={statusData}
+              prebuiltTierData={prebuiltTierData}
+              categoryData={categoryData}
+              timeRange={timeRange}
+              onTimeRangeChange={setTimeRange}
+              mounted={mounted}
+              isDark={isDark}
+            />
+          )}
         </div>
-    );
+      )}
+
+      {activeSubTab === 'popularity' && (
+        <SalesPopularityView parts={parts || []} />
+      )}
+    </div>
+  );
 }

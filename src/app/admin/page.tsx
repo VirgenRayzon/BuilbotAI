@@ -104,7 +104,6 @@ export default function AdminPage() {
     } = useOrders(profile);
 
     const salesActions = useSalesActions({
-        orders: orders || [],
         parts: parts || [],
         prebuiltSystems: prebuiltSystems || []
     });
@@ -318,7 +317,6 @@ export default function AdminPage() {
                             {currentTab === "sales" && profile?.isSuperAdmin && (
                                 <div className="mt-4">
                                     <SalesTab
-                                        orders={orders || []}
                                         parts={parts}
                                         prebuiltSystems={prebuiltSystems || []}
                                         activeSubTab={salesSubTab}

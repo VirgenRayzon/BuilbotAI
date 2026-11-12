@@ -31,6 +31,7 @@ import {
   productReference,
 } from "@/lib/server/public-products";
 import { bumpCatalogMetaVersion } from "@/lib/server/catalog-meta-store";
+import { applyOrderAnalyticsDeltaInTx } from "@/lib/analytics-rollups";
 import {
   INCLUDED_INTEGRATED_GPU_ID,
   integratedGraphicsName,
@@ -500,14 +501,6 @@ async function processCheckoutInternal(
         }
       }
 
-      for (const [, group] of groupedRequirements) {
-        transaction.update(group.ref, {
-          stock: admin.firestore.FieldValue.increment(-group.quantity),
-          inStock: Number(group.snap.get('stock')) - group.quantity > 0,
-          popularity: admin.firestore.FieldValue.increment(group.quantity),
-        });
-      }
-
       const pricing = calculateAuthoritativeOrderTotals({
         items: authoritativeOrderItems,
         shippingMethod: options?.shippingMethod ?? "store_pickup",
@@ -573,6 +566,23 @@ async function processCheckoutInternal(
         createdAt: now,
         updatedAt: now,
       };
+
+      // Perform all transaction reads (including analytics bucket checks) before ANY writes
+      await applyOrderAnalyticsDeltaInTx(
+        transaction,
+        firestore,
+        `checkout_${orderRef.id}`,
+        null,
+        toFirestoreDocument(orderData) as unknown as Order
+      );
+
+      for (const [, group] of groupedRequirements) {
+        transaction.update(group.ref, {
+          stock: admin.firestore.FieldValue.increment(-group.quantity),
+          inStock: Number(group.snap.get('stock')) - group.quantity > 0,
+          popularity: admin.firestore.FieldValue.increment(group.quantity),
+        });
+      }
 
       writeOrderChange(transaction, orderRef, null, toFirestoreDocument(orderData));
 
@@ -1114,6 +1124,28 @@ async function resolvePaymentOutcome(
         createdAt: now,
       };
 
+      const resolvedAfterOrder: Order = {
+        ...orderData,
+        paymentMethod,
+        paymentStatus: nextPaymentStatus,
+        paymentReference,
+        paymentAttempts: nextAttempts,
+        ...(paidAt ? { paidAt } : {}),
+        updatedAt: now,
+      };
+
+      const eventKey = input.operationId
+        ? `payment_${input.orderId}_${input.operationId}`
+        : `payment_${input.orderId}_attempt_${nextAttempts}`;
+
+      await applyOrderAnalyticsDeltaInTx(
+        transaction,
+        firestore,
+        eventKey,
+        orderData,
+        resolvedAfterOrder
+      );
+
       writeOrderChange(transaction, orderRef, orderData, {
         paymentMethod,
         paymentStatus: nextPaymentStatus,
@@ -1639,6 +1671,24 @@ export async function updateOrderPaymentStatusByStaff(
         createdAt: now,
       };
 
+      const staffUpdatedOrder: Order = {
+        ...orderData,
+        paymentMethod,
+        paymentStatus: newPaymentStatus,
+        paymentReference,
+        paidAt: newPaymentStatus === "paid" ? now : null,
+        updatedAt: now,
+      };
+
+      const staffOpKey = parsed.data.operation?.operationId || randomUUID();
+      await applyOrderAnalyticsDeltaInTx(
+        transaction,
+        firestore,
+        `staff_payment_${orderId}_${staffOpKey}`,
+        orderData,
+        staffUpdatedOrder
+      );
+
       writeOrderChange(transaction, orderRef, orderData, {
         paymentMethod,
         paymentStatus: newPaymentStatus,
@@ -1923,16 +1973,34 @@ export async function updateReservationStatus(
         ? await prepareOrderStockRestore(firestore, transaction, orderData)
         : { alreadyRestored: true, entries: [] };
 
-      let restoreResult = { restored: false, missingItems: [] as Array<{ path: string; quantity: number }> };
-      if (shouldAutoRestoreStock) {
-        restoreResult = applyOrderStockRestore(transaction, preparedStock);
-      }
-
       const now = admin.firestore.Timestamp.now();
       const shouldCancelUnpaidPayment =
         newStatus === "cancelled" &&
         orderData.paymentStatus !== "paid" &&
         orderData.paymentStatus !== "cancelled";
+
+      if (newStatus === "cancelled") {
+        const afterCancelOrder: Order = {
+          ...orderData,
+          status: "cancelled",
+          cancelledAt: now,
+          ...(shouldCancelUnpaidPayment ? { paymentStatus: "cancelled" } : {}),
+        };
+        const cancelOpKey = operation?.operationId || randomUUID();
+        await applyOrderAnalyticsDeltaInTx(
+          transaction,
+          firestore,
+          `cancel_${orderId}_${cancelOpKey}`,
+          orderData,
+          afterCancelOrder
+        );
+      }
+
+      let restoreResult = { restored: false, missingItems: [] as Array<{ path: string; quantity: number }> };
+      if (shouldAutoRestoreStock) {
+        restoreResult = applyOrderStockRestore(transaction, preparedStock);
+      }
+
       const displayOrderNum =
         orderData.orderNumber || `#${orderId.substring(0, 8)}`;
 
