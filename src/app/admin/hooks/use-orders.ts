@@ -5,6 +5,7 @@ import type { StaffPaymentRequest, ReconcileRefund } from '@/lib/order-payment';
 import type { OrderOperation } from '@/lib/server/order-operations';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth, useFirestore } from '@/firebase';
+import { onIdTokenChanged } from 'firebase/auth';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { fetchAdminOrdersPageAction } from '../order-query-actions';
@@ -35,6 +36,29 @@ export interface StaffRefundSubmission {
     proofUrl?: string;
 }
 
+export {
+    HEAD_ORDERS_LIMIT,
+    createOrdersHeadQueryConfig,
+    mergePagedOrders,
+    deriveOrdersStats,
+    shouldTriggerHeadRefresh,
+    shouldTriggerAuthFetch,
+} from './use-orders-helpers';
+import {
+    HEAD_ORDERS_LIMIT,
+    mergePagedOrders,
+    deriveOrdersStats,
+    shouldTriggerHeadRefresh,
+} from './use-orders-helpers';
+
+export function createOrdersHeadQuery(firestore: any, limitCount = HEAD_ORDERS_LIMIT) {
+    return query(
+        collection(firestore, 'orders'),
+        orderBy('createdAt', 'desc'),
+        limit(limitCount)
+    );
+}
+
 export function useOrders(_profile?: UserProfile | null) {
     const firestore = useFirestore();
     const auth = useAuth();
@@ -62,11 +86,7 @@ export function useOrders(_profile?: UserProfile | null) {
     // Maintain a small limit(25) live onSnapshot head listener ONLY on page 1 with default unfiltered view
     const headQuery = useMemo(() => {
         if (!firestore) return null;
-        return query(
-            collection(firestore, 'orders'),
-            orderBy('createdAt', 'desc'),
-            limit(25)
-        );
+        return createOrdersHeadQuery(firestore, HEAD_ORDERS_LIMIT);
     }, [firestore]);
 
     const { data: headOrders } = useCollection<Order>(headQuery);
@@ -76,15 +96,39 @@ export function useOrders(_profile?: UserProfile | null) {
     useEffect(() => {
         if (!headOrders) return;
         const currentHeadIds = headOrders.map(o => o.id).join(',');
-        if (headIdsRef.current && headIdsRef.current !== currentHeadIds) {
+        if (shouldTriggerHeadRefresh(headIdsRef.current, currentHeadIds)) {
             setRefreshTrigger(v => v + 1);
         }
         headIdsRef.current = currentHeadIds;
     }, [headOrders]);
 
+    // Cold-start auth race condition fix: subscribe to onIdTokenChanged and watch profile?.uid
+    useEffect(() => {
+        if (!auth) return;
+        const unsubscribe = onIdTokenChanged(auth, (user) => {
+            if (user) {
+                setRefreshTrigger(v => v + 1);
+            } else if (!user && !_profile) {
+                setOrdersLoading(false);
+            }
+        });
+        return () => unsubscribe();
+    }, [auth, _profile]);
+
+    useEffect(() => {
+        if (_profile?.id) {
+            setRefreshTrigger(v => v + 1);
+        }
+    }, [_profile?.id]);
+
     const fetchPage = useCallback(async (options: { cursor?: string | null; append?: boolean } = {}) => {
         const user = auth?.currentUser;
-        if (!user) return;
+        if (!user) {
+            if (!_profile) {
+                setOrdersLoading(false);
+            }
+            return;
+        }
         setOrdersLoading(true);
         try {
             const idToken = await user.getIdToken();
@@ -98,11 +142,7 @@ export function useOrders(_profile?: UserProfile | null) {
                 },
             });
             if (options.append) {
-                setPagedOrders(prev => {
-                    const existingIds = new Set(prev.map(o => o.id));
-                    const newOrders = result.orders.filter(o => !existingIds.has(o.id));
-                    return [...prev, ...newOrders];
-                });
+                setPagedOrders(prev => mergePagedOrders(prev, result.orders));
             } else {
                 setPagedOrders(result.orders);
             }
@@ -114,7 +154,7 @@ export function useOrders(_profile?: UserProfile | null) {
         } finally {
             setOrdersLoading(false);
         }
-    }, [auth]);
+    }, [auth, _profile]);
 
     useEffect(() => {
         fetchPage();
@@ -411,26 +451,7 @@ export function useOrders(_profile?: UserProfile | null) {
     };
 
     const stats = useMemo(() => {
-        const orderPlaced = stageCounts['order_placed'] ?? stageCounts['orderPlaced'] ?? 0;
-        const assembling = stageCounts['assembling_testing'] ?? stageCounts['assembling'] ?? stageCounts['assemblingTesting'] ?? 0;
-        const outForDelivery = stageCounts['out_for_delivery'] ?? stageCounts['outForDelivery'] ?? 0;
-        const delivered = stageCounts['delivered'] ?? 0;
-        const cancelled = stageCounts['cancelled'] ?? 0;
-
-        return {
-            pendingOrdersCount: orderPlaced,
-            completedOrdersCount: delivered,
-            cancelledOrdersCount: cancelled,
-            totalOrdersCount: totalCount,
-            stageCounts: {
-                orderPlaced,
-                assembling,
-                outForDelivery,
-                delivered,
-                cancelled,
-                ...stageCounts,
-            },
-        };
+        return deriveOrdersStats(stageCounts, totalCount);
     }, [stageCounts, totalCount]);
 
     const loadMoreOrders = useCallback(() => {

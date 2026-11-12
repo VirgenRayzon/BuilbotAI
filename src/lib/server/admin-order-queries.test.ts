@@ -28,6 +28,7 @@ function createMockOrder(overrides: Partial<Order> = {}): Order {
     queueStage: overrides.queueStage || 'order_placed',
     paymentMethod: overrides.paymentMethod || 'cod',
     paymentStatus: overrides.paymentStatus || 'unpaid',
+    refundStatus: overrides.refundStatus || 'none',
     shippingMethod: 'standard_courier',
     shippingAddress: {
       fullName: 'Juan Dela Cruz',
@@ -346,4 +347,67 @@ test('listAdminOrdersPage pre-backfill safe mode handles legacy orders without d
   assert.equal(result.stageCounts.order_placed, 1);
   assert.equal(result.stageCounts.assembling_testing, 1);
   assert.equal(result.stageCounts.cancelled, 1);
+});
+
+test('listAdminOrdersPage applies paymentMethod and refundStatus in indexed mode', async () => {
+  const mockDataset: Order[] = [
+    createMockOrder({
+      id: 'order-gcash-due',
+      paymentMethod: 'gcash_simulated',
+      refundStatus: 'due',
+      isArchived: true,
+      queueStage: 'order_placed',
+    }),
+    createMockOrder({
+      id: 'order-cod-none',
+      paymentMethod: 'cod',
+      refundStatus: 'none',
+      isArchived: true,
+      queueStage: 'order_placed',
+    }),
+  ];
+
+  const mockDb = {
+    collection: (_name: string) => {
+      const q = {
+        where: () => q,
+        orderBy: () => q,
+        limit: () => q,
+        count: () => ({
+          get: async () => ({ data: () => ({ count: mockDataset.length }) }),
+        }),
+        get: async () => ({
+          docs: mockDataset.map(order => ({
+            id: order.id,
+            data: () => order,
+          })),
+        }),
+      };
+      return q;
+    },
+  };
+
+  const mockDeps = {
+    getOrderActor: async () => ({
+      decoded: { uid: 'staff-1' },
+      isStaff: true,
+      isManager: true,
+      isSuperAdmin: false,
+    }),
+    firestore: mockDb as any,
+    isIndexedEnabled: true,
+  };
+
+  const result = await listAdminOrdersPage(
+    'token-staff',
+    {
+      archived: true,
+      paymentMethod: 'gcash_simulated',
+      refundStatus: 'due',
+    },
+    mockDeps
+  );
+
+  assert.equal(result.orders.length, 1);
+  assert.equal(result.orders[0].id, 'order-gcash-due');
 });

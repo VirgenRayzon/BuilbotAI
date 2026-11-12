@@ -3,6 +3,7 @@ import { AdminPartSkeleton, AdminPrebuiltSkeleton } from "@/components/loading/a
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/firebase';
+import { onIdTokenChanged } from 'firebase/auth';
 import { fetchAdminOrdersPageAction } from '../order-query-actions';
 import { useSearchParams } from 'next/navigation';
 import { PackageCheck, Trash2 } from 'lucide-react';
@@ -99,7 +100,10 @@ export function ArchiveTab({
 
   const fetchArchivedPage = useCallback(async (cursor?: string | null, append = false) => {
     const user = auth?.currentUser;
-    if (!user) return;
+    if (!user) {
+      if (!profile) setArchivedLoading(false);
+      return;
+    }
     setArchivedLoading(true);
     try {
       const idToken = await user.getIdToken();
@@ -126,13 +130,31 @@ export function ArchiveTab({
     } finally {
       setArchivedLoading(false);
     }
-  }, [auth]);
+  }, [auth, profile]);
 
   useEffect(() => {
     if (archiveSubTab === 'orders') {
       fetchArchivedPage();
     }
   }, [archiveSubTab, fetchArchivedPage]);
+
+  useEffect(() => {
+    if (!auth) return;
+    const unsubscribe = onIdTokenChanged(auth, (user) => {
+      if (user && archiveSubTab === 'orders') {
+        fetchArchivedPage();
+      } else if (!user && !profile) {
+        setArchivedLoading(false);
+      }
+    });
+    return () => unsubscribe();
+  }, [auth, archiveSubTab, profile, fetchArchivedPage]);
+
+  useEffect(() => {
+    if (archiveSubTab === 'orders' && profile?.id) {
+      fetchArchivedPage();
+    }
+  }, [archiveSubTab, profile?.id, fetchArchivedPage]);
 
   useEffect(() => {
     const requestedSubTab = searchParams.get('sub');
@@ -216,8 +238,8 @@ export function ArchiveTab({
       {archiveSubTab === 'orders' && (
         <ReservationsTab
           archived
-          orders={archivedOrders.length > 0 ? archivedOrders : orders}
-          ordersLoading={archivedLoading || ordersLoading}
+          orders={archivedOrders}
+          ordersLoading={archivedLoading}
           catalogParts={parts}
           hasMoreOrders={Boolean(archivedNextCursor) || hasMoreOrders}
           onLoadMoreOrders={() => {

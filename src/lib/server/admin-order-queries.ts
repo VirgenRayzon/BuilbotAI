@@ -186,13 +186,20 @@ export async function listAdminOrdersPage(
     stageCounts.outForDelivery = stageCounts.out_for_delivery || 0;
     stageCounts.total = totalCount;
 
+    const hasPostFilter = Boolean(
+      (options.paymentMethod && options.paymentMethod !== 'all') ||
+      (options.refundStatus && options.refundStatus !== 'all') ||
+      options.search
+    );
+
     let docs = snapshot.docs;
     let orders = docs.map(d => ({ id: d.id, ...d.data() }) as Order);
 
-    // Apply any search filter if present
-    if (options.search) {
-      orders = orders.filter(o => matchesOrderSearch(o, options.search));
+    if (hasPostFilter) {
+      orders = orders.filter(o => matchesOrderFilters(o, options));
     }
+
+    const effectiveTotalCount = hasPostFilter ? orders.length : totalCount;
 
     const hasMore = orders.length > options.pageSize;
     const pagedOrders = hasMore ? orders.slice(0, options.pageSize) : orders;
@@ -200,7 +207,7 @@ export async function listAdminOrdersPage(
 
     return {
       orders: pagedOrders,
-      totalCount,
+      totalCount: effectiveTotalCount,
       stageCounts,
       nextCursor,
     };
