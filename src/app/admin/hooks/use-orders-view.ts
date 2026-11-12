@@ -23,6 +23,8 @@ interface UseOrdersViewOptions {
   onSearchQueryChange?: (value: string) => void;
   initialStageFilter?: OrderUnifiedFilterStage;
   onStageChange?: (stage: OrderUnifiedFilterStage) => void;
+  serverStageCounts?: Record<string, number>;
+  serverTotalCount?: number;
 }
 
 export function useOrdersView({
@@ -32,6 +34,8 @@ export function useOrdersView({
   onSearchQueryChange,
   initialStageFilter = 'all',
   onStageChange,
+  serverStageCounts,
+  serverTotalCount,
 }: UseOrdersViewOptions) {
   const [localStage, setLocalStage] = useState<OrderUnifiedFilterStage>(initialStageFilter);
   const stageFilter = onStageChange ? initialStageFilter : localStage;
@@ -53,25 +57,10 @@ export function useOrdersView({
   );
 
   const summary = useMemo(() => {
-    let orderPlaced = 0;
-    let assemblingTesting = 0;
-    let outForDelivery = 0;
-    let delivered = 0;
-    let cancelled = 0;
     let refundAttention = 0;
     let expiredOnlineHolds = 0;
 
     for (const order of scopedOrders) {
-      const displayStage = getEffectiveOrderDisplayStage(order);
-      if (
-        displayStage === 'order_placed' &&
-        isOrderReadyForFulfillmentQueue(order)
-      ) orderPlaced += 1;
-      else if (displayStage === 'assembling_testing') assemblingTesting += 1;
-      else if (displayStage === 'out_for_delivery') outForDelivery += 1;
-      else if (displayStage === 'delivered') delivered += 1;
-      else if (displayStage === 'cancelled') cancelled += 1;
-
       if (
         order.refundStatus === 'due' ||
         order.refundStatus === 'pending' ||
@@ -89,6 +78,44 @@ export function useOrdersView({
       }
     }
 
+    if (serverStageCounts && Object.keys(serverStageCounts).length > 0) {
+      const orderPlaced = serverStageCounts.order_placed ?? serverStageCounts.orderPlaced ?? 0;
+      const assemblingTesting = serverStageCounts.assembling_testing ?? serverStageCounts.assemblingTesting ?? serverStageCounts.assembling ?? 0;
+      const outForDelivery = serverStageCounts.out_for_delivery ?? serverStageCounts.outForDelivery ?? 0;
+      const delivered = serverStageCounts.delivered ?? 0;
+      const cancelled = serverStageCounts.cancelled ?? 0;
+      const total = serverTotalCount ?? serverStageCounts.total ?? (orderPlaced + assemblingTesting + outForDelivery + delivered + cancelled);
+
+      return {
+        total,
+        orderPlaced,
+        assemblingTesting,
+        outForDelivery,
+        delivered,
+        cancelled,
+        refundAttention,
+        expiredOnlineHolds,
+      };
+    }
+
+    let orderPlaced = 0;
+    let assemblingTesting = 0;
+    let outForDelivery = 0;
+    let delivered = 0;
+    let cancelled = 0;
+
+    for (const order of scopedOrders) {
+      const displayStage = getEffectiveOrderDisplayStage(order);
+      if (
+        displayStage === 'order_placed' &&
+        isOrderReadyForFulfillmentQueue(order)
+      ) orderPlaced += 1;
+      else if (displayStage === 'assembling_testing') assemblingTesting += 1;
+      else if (displayStage === 'out_for_delivery') outForDelivery += 1;
+      else if (displayStage === 'delivered') delivered += 1;
+      else if (displayStage === 'cancelled') cancelled += 1;
+    }
+
     return {
       total: scopedOrders.length,
       orderPlaced,
@@ -99,7 +126,7 @@ export function useOrdersView({
       refundAttention,
       expiredOnlineHolds,
     };
-  }, [scopedOrders, archived]);
+  }, [scopedOrders, archived, serverStageCounts, serverTotalCount]);
 
   const filteredOrders = useMemo(() => {
     const queryText = searchQuery.trim().toLowerCase();

@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { doc, getDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useFirestore } from "@/firebase";
 import { useUserProfile } from "@/context/user-profile";
 import { useToast } from "@/hooks/use-toast";
 import { reservePrebuiltSystem } from "@/app/prebuilt-reservation-actions";
 import { getAiPrebuiltPerformance } from "@/app/actions";
 import { getIncludedStockCooler, getMissingParts, getPrebuiltPartStatuses, type ResolvedPrebuiltPart } from "@/lib/prebuilt-utils";
-import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
+import { inventoryItemPath } from "@/lib/inventory-paths";
 import type { PrebuiltSystem, Part, FavoriteBuild, FavoriteBuildPart } from "@/lib/types";
 import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '@/lib/integrated-graphics';
 import { includedCpuCoolerName } from '@/lib/included-cpu-cooler';
@@ -160,6 +160,34 @@ export function usePrebuiltDetails(systemId: string) {
             const partsRecord: Record<string, Part | null> = {};
 
             try {
+                if (system.componentSummaries && system.componentSummaries.length > 0) {
+                    const resolved: ResolvedPrebuiltPart[] = system.componentSummaries.map(s => ({
+                        key: s.key,
+                        category: s.category.toLowerCase(),
+                        partId: s.partId,
+                        part: s.isArchived ? null : ({
+                            id: s.partId,
+                            productId: s.productId || undefined,
+                            name: s.name,
+                            category: s.category,
+                            brand: 'BuildbotAI',
+                            price: s.price,
+                            stock: s.inStock ? 999 : 0,
+                            imageUrl: s.imageUrl,
+                            specifications: {},
+                            isArchived: false,
+                        } as Part),
+                    }));
+
+                    for (const { category, part } of resolved) {
+                        if (!(category in partsRecord)) partsRecord[category] = part;
+                    }
+                    setComponents(partsRecord);
+                    setResolvedParts(resolved);
+                    setResolvedSystemId(system.id);
+                    return;
+                }
+
                 const collectionMap: Record<string, string> = {
                     cpu: "CPU",
                     gpu: "GPU",
@@ -205,29 +233,6 @@ export function usePrebuiltDetails(systemId: string) {
                         const canonicalSnap = await getDoc(canonicalRef);
                         if (canonicalSnap.exists()) {
                             return entry({ id: canonicalSnap.id, ...canonicalSnap.data() } as Part);
-                        }
-
-                        const canonicalQuery = query(
-                            collection(firestore, inventoryItemsPath(collectionName)),
-                            where("name", "==", partId)
-                        );
-                        const canonicalQuerySnap = await getDocs(canonicalQuery);
-                        if (!canonicalQuerySnap.empty) {
-                            const docSnap = canonicalQuerySnap.docs[0];
-                            return entry({ id: docSnap.id, ...docSnap.data() } as Part);
-                        }
-
-                        const partRef = doc(firestore, collectionName, partId as string);
-                        const snap = await getDoc(partRef);
-                        if (snap.exists()) {
-                            return entry({ id: snap.id, ...snap.data() } as Part);
-                        }
-
-                        const q = query(collection(firestore, collectionName), where("name", "==", partId));
-                        const querySnap = await getDocs(q);
-                        if (!querySnap.empty) {
-                            const docSnap = querySnap.docs[0];
-                            return entry({ id: docSnap.id, ...docSnap.data() } as Part);
                         }
 
                         return entry(null);

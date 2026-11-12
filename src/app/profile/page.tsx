@@ -616,7 +616,7 @@ export default function ProfilePage() {
                               </Title>
                             </div>
                             <Badge size="md" variant="light" color="indigo" className="font-mono font-bold">
-                              {userAudit.logs.length} Logged Events
+                              {userAudit.totalCount} Logged Events
                             </Badge>
                           </div>
                         </Paper>
@@ -624,6 +624,12 @@ export default function ProfilePage() {
                         <UserAuditLogsSection
                           logs={userAudit.logs}
                           loading={userAudit.loading}
+                          totalCount={userAudit.totalCount}
+                          hasMore={userAudit.hasMore}
+                          loadMore={userAudit.loadMore}
+                          isLoadingMore={userAudit.isLoadingMore}
+                          filters={userAudit.filters}
+                          onFiltersChange={userAudit.setFilters}
                         />
                       </div>
                     )}

@@ -3,13 +3,14 @@
 import { useMemo } from 'react';
 import { collection } from 'firebase/firestore';
 import { useCollection, useFirestore } from '@/firebase';
+import { inventoryItemsPath } from '@/lib/inventory-paths';
 import type { Part } from '@/lib/types';
 
 const categories = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler', 'Monitor', 'Keyboard', 'Mouse', 'Headset'] as const;
 
 export function useFavoriteInventory() {
   const firestore = useFirestore();
-  const refs = useMemo(() => categories.map(category => firestore ? collection(firestore, category) : null), [firestore]);
+  const refs = useMemo(() => categories.map(category => firestore ? collection(firestore, inventoryItemsPath(category)) : null), [firestore]);
   const results = [
     useCollection<Part>(refs[0]),
     useCollection<Part>(refs[1]),

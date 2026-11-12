@@ -1,24 +1,371 @@
-
 rules_version = '2';
+
+// =============================================================================
+// Assumed Data Model
+// =============================================================================
+//
+// Collection: siteSettings
+// Document ID: 'main' | 'catalogMeta'
+// Fields: Emergency kill switches, AI model routing, system prompts, catalog
+//         facet metadata. Publicly readable via get(); writes restricted to
+//         Super Admin.
+//
+// Collection: users/{userId}
+// Document ID: Firebase Auth UID
+// Fields: email, name, firstName, lastName, bio, photoURL, address, apartment,
+//         city, state, zip, addressBook (list <= 20), isManager (bool),
+//         isSuperAdmin (bool), isAdmin (bool), activeManagerKey, deprecatedKeys,
+//         createdAt, updatedAt.
+// Subcollections:
+//   - favorites/{favoriteId}: name, parts (list <= 30), totalPrice, source,
+//                             createdAt, loadContext (optional map)
+//   - notifications/{notifId}: userId, title, message, orderId, targetId,
+//                              type, read (bool), createdAt, expiresAt
+//
+// Collection: authKeys/{keyId}
+// Document ID: Secret role access key string (1..128 chars)
+// Fields:
+//   - role: string ('manager' | 'superadmin', required)
+//
+// Collection: keyRequests/{requestId}
+// Document ID: Auto-generated ID
+// Fields:
+//   - userId: string (required on create, == request.auth.uid, immutable)
+//   - email: string (required, valid email <= 254 chars, immutable)
+//   - role: string (required, == 'manager', immutable)
+//   - status: string (required, 'pending' -> 'approved' | 'rejected')
+//   - requestedAt: timestamp (required, recent on create, immutable)
+//   - newKey: string (optional, <= 64 chars, only when approved)
+//   - processedAt: timestamp (required on update)
+//
+// Collection: orders/{orderId}
+// Document ID: Auto-generated ID (Server Admin SDK create only)
+// Fields: orderNumber, userId (immutable), userEmail, items (list <= 100),
+//         totalPrice (>= 0), status, fulfillmentStage, paymentStatus,
+//         createdAt (immutable), updatedAt, etc.
+// Subcollections:
+//   - activity/{eventId}: order activity ledger (owner/staff read, staff write)
+//   - assembly/{rigId}: per-rig assembly verification (owner/staff read, staff write)
+//
+// Collection: system_notifications/{notifId}
+// Fields: id, type, actorId, actorName, title, message, targetId,
+//         readBy (list <= 100), createdAt, expiresAt
+//
+// Collection: auditLogs/{logId}
+// Fields: id, actionName, actorId (== request.auth.uid on create, immutable),
+//         actorName, actorEmail, scope ('Part'|'Prebuilt'|'Order'|'User'|'System'),
+//         resourceName, resourceId, details, createdAt (immutable), expiresAt
+//
+// Collection: user_auditLogs/{logId}
+// Fields: id, userId (== request.auth.uid on create, immutable), userEmail,
+//         actionName, scope ('Order'|'Favorite'|'Profile'|'System'),
+//         resourceName, resourceId, details, createdAt (immutable), expiresAt
+//
+// Collection: contactInquiries/{inquiryId} & messages/{messageId}
+// Server-created/updated via Admin SDK; readable by staff or inquiry owner.
+//
+// Collection: inventory/{categorySlug}/items/{partId} & prebuiltSystems/{systemId}
+// Publicly readable catalog; server-created via Admin SDK; manager updates
+// with immutable product identity fields; Super Admin deletes.
+//
+// Server-only operational / rate-limit / cache / rollup / registry collections:
+// catalogCounters, catalogOperations, catalogNames, productIds, productSkus,
+// qrLinks, qrAudits, reservationOperations, orderWorkflowOperations,
+// orderRefundOperations, orderRefundReceipts, aiRateLimits,
+// ai_critique_cache_v1, ai_recommendation_cache_v3, analyticsDaily,
+// analyticsMonthly, analyticsAppliedEvents, buildbot_hardware_vector,
+// contactRateLimits, contactMailAliases, contactOAuthStates, contactSecrets,
+// contactMailboxes.
+//
+// =============================================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
+    // =========================================================================
+    // Helper Functions
+    // =========================================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
     function isManager() {
-      return request.auth != null && (request.auth.token.get('isManager', false) == true || request.auth.token.get('isSuperAdmin', false) == true);
+      return isAuthenticated() && (
+        request.auth.token.get('isManager', false) == true ||
+        request.auth.token.get('isSuperAdmin', false) == true
+      );
     }
 
     function isSuperAdmin() {
-      return request.auth != null && request.auth.token.isSuperAdmin == true;
+      return isAuthenticated() && request.auth.token.get('isSuperAdmin', false) == true;
     }
 
     function isInventoryCategory(category) {
-      return category in ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu',
-                          'case', 'cooler', 'monitor', 'keyboard', 'mouse', 'headset'];
+      return category in [
+        'cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu',
+        'case', 'cooler', 'monitor', 'keyboard', 'mouse', 'headset'
+      ];
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string &&
+        email.size() >= 3 &&
+        email.size() <= 254 &&
+        email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    }
+
+    function isValidOptionalString(field, minLen, maxLen) {
+      return !(field in request.resource.data) || (
+        request.resource.data[field] is string &&
+        request.resource.data[field].size() >= minLen &&
+        request.resource.data[field].size() <= maxLen
+      );
+    }
+
+    function isRecent(time) {
+      return time is timestamp &&
+        time > request.time - duration.value(5, 'm') &&
+        time <= request.time;
     }
 
     function identityUnchanged() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['productId', 'sku', 'qrToken', 'schemaVersion']);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        'productId', 'sku', 'qrToken', 'schemaVersion'
+      ]);
     }
+
+    // =========================================================================
+    // Domain Validators
+    // =========================================================================
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields([
+          'email', 'name', 'firstName', 'lastName', 'bio', 'photoURL',
+          'address', 'apartment', 'city', 'state', 'zip', 'addressBook',
+          'isManager', 'isSuperAdmin', 'isAdmin', 'activeManagerKey',
+          'deprecatedKeys', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidOptionalString('email', 0, 254) &&
+        isValidOptionalString('name', 0, 120) &&
+        isValidOptionalString('firstName', 0, 80) &&
+        isValidOptionalString('lastName', 0, 80) &&
+        isValidOptionalString('bio', 0, 1000) &&
+        isValidOptionalString('photoURL', 0, 2048) &&
+        isValidOptionalString('address', 0, 300) &&
+        isValidOptionalString('apartment', 0, 120) &&
+        isValidOptionalString('city', 0, 100) &&
+        isValidOptionalString('state', 0, 100) &&
+        isValidOptionalString('zip', 0, 20) &&
+        (!('addressBook' in data) || (data.addressBook is list && data.addressBook.size() <= 20)) &&
+        (!('isManager' in data) || data.isManager is bool) &&
+        (!('isSuperAdmin' in data) || data.isSuperAdmin is bool) &&
+        (!('isAdmin' in data) || data.isAdmin is bool) &&
+        isValidOptionalString('activeManagerKey', 0, 128) &&
+        (!('deprecatedKeys' in data) || (data.deprecatedKeys is list && data.deprecatedKeys.size() <= 50));
+    }
+
+    function isValidFavorite(data) {
+      return hasOnlyAllowedFields([
+          'name', 'parts', 'totalPrice', 'source', 'createdAt', 'loadContext'
+        ]) &&
+        hasRequiredFields(['name', 'parts', 'totalPrice', 'source', 'createdAt']) &&
+        data.name is string &&
+        data.name.size() >= 1 &&
+        data.name.size() <= 150 &&
+        data.parts is list &&
+        data.parts.size() <= 30 &&
+        data.totalPrice is number &&
+        data.totalPrice >= 0 &&
+        data.source in ['builder', 'advisor'] &&
+        (!('loadContext' in data) || data.loadContext is map);
+    }
+
+    function isValidAuthKey(keyId, data) {
+      return keyId.size() >= 1 &&
+        keyId.size() <= 128 &&
+        hasOnlyAllowedFields(['role']) &&
+        hasRequiredFields(['role']) &&
+        data.role in ['manager', 'superadmin'];
+    }
+
+    function isValidKeyRequestCreate(data) {
+      return hasOnlyAllowedFields(['userId', 'email', 'role', 'status', 'requestedAt']) &&
+        hasRequiredFields(['userId', 'email', 'role', 'status', 'requestedAt']) &&
+        data.userId is string &&
+        data.userId == request.auth.uid &&
+        isValidEmail(data.email) &&
+        data.role == 'manager' &&
+        data.status == 'pending' &&
+        isRecent(data.requestedAt);
+    }
+
+    function isValidKeyRequestUpdate(data) {
+      return hasOnlyAllowedFields([
+          'userId', 'email', 'role', 'status', 'requestedAt', 'newKey', 'processedAt'
+        ]) &&
+        hasRequiredFields(['email', 'role', 'status', 'requestedAt', 'processedAt']) &&
+        areImmutableFieldsUnchanged(['userId', 'email', 'role', 'requestedAt']) &&
+        resource.data.status == 'pending' &&
+        data.status in ['approved', 'rejected'] &&
+        data.processedAt is timestamp &&
+        (data.status == 'rejected'
+          ? !('newKey' in data)
+          : ('newKey' in data && data.newKey is string && data.newKey.size() >= 1 && data.newKey.size() <= 64));
+    }
+
+    function isValidOrderUpdate(data) {
+      return data.userId is string &&
+        data.userId.size() >= 1 &&
+        data.userId.size() <= 128 &&
+        data.status in ['pending', 'building', 'finished building', 'cancelled'] &&
+        data.totalPrice is number &&
+        data.totalPrice >= 0 &&
+        data.items is list &&
+        data.items.size() <= 100 &&
+        (!('fulfillmentStage' in data) || data.fulfillmentStage in [
+          'order_placed', 'assembling_testing', 'out_for_delivery', 'delivered'
+        ]) &&
+        (!('paymentStatus' in data) || data.paymentStatus in [
+          'unpaid', 'pending', 'paid', 'failed', 'cancelled'
+        ]) &&
+        isValidOptionalString('cancellationReason', 0, 1000) &&
+        data.keys().size() <= 60;
+    }
+
+    function isValidOrderActivity(data) {
+      return data.keys().size() <= 20 &&
+        isValidOptionalString('details', 0, 2000) &&
+        isValidOptionalString('type', 1, 80);
+    }
+
+    function isValidSystemNotificationCreate(data) {
+      return hasOnlyAllowedFields([
+          'id', 'type', 'actorId', 'actorName', 'title', 'message',
+          'targetId', 'readBy', 'createdAt', 'expiresAt'
+        ]) &&
+        hasRequiredFields(['type', 'actorId', 'actorName', 'title', 'message', 'readBy', 'createdAt']) &&
+        data.type in [
+          'reservation_received', 'item_archived', 'status_changed', 'user_cancelled',
+          'order_auto_cancelled', 'stock_added', 'contact_inquiry', 'contact_reply_received'
+        ] &&
+        data.actorId is string && data.actorId.size() >= 1 && data.actorId.size() <= 128 &&
+        data.actorName is string && data.actorName.size() >= 1 && data.actorName.size() <= 120 &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+        data.message is string && data.message.size() >= 1 && data.message.size() <= 2000 &&
+        isValidOptionalString('targetId', 0, 200) &&
+        data.readBy is list && data.readBy.size() <= 100 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidSystemNotificationUpdate(data) {
+      return hasOnlyAllowedFields([
+          'id', 'type', 'actorId', 'actorName', 'title', 'message',
+          'targetId', 'readBy', 'createdAt', 'expiresAt'
+        ]) &&
+        areImmutableFieldsUnchanged([
+          'id', 'type', 'actorId', 'actorName', 'title', 'message',
+          'targetId', 'createdAt', 'expiresAt'
+        ]) &&
+        data.readBy is list &&
+        data.readBy.size() <= 100;
+    }
+
+    function isValidAuditLog(data) {
+      return hasOnlyAllowedFields([
+          'id', 'actionName', 'actorId', 'actorName', 'actorEmail',
+          'scope', 'resourceName', 'resourceId', 'details', 'createdAt', 'expiresAt'
+        ]) &&
+        hasRequiredFields(['id', 'actionName', 'actorId', 'actorName', 'scope', 'resourceName', 'createdAt']) &&
+        data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.actionName in [
+          'created', 'updated', 'deleted', 'archived', 'restored', 'status_changed',
+          'payment_updated', 'refunded', 'auth_update', 'auto_cancelled', 'other'
+        ] &&
+        data.actorId is string && data.actorId.size() >= 1 && data.actorId.size() <= 128 &&
+        data.actorName is string && data.actorName.size() >= 1 && data.actorName.size() <= 150 &&
+        isValidOptionalString('actorEmail', 0, 254) &&
+        data.scope in ['Part', 'Prebuilt', 'Order', 'User', 'System'] &&
+        data.resourceName is string && data.resourceName.size() >= 1 && data.resourceName.size() <= 250 &&
+        isValidOptionalString('resourceId', 0, 200) &&
+        isValidOptionalString('details', 0, 2000) &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidUserAuditLog(data) {
+      return hasOnlyAllowedFields([
+          'id', 'userId', 'userEmail', 'actionName', 'scope',
+          'resourceName', 'resourceId', 'details', 'createdAt', 'expiresAt'
+        ]) &&
+        hasRequiredFields(['id', 'userId', 'actionName', 'scope', 'resourceName', 'createdAt']) &&
+        data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        isValidOptionalString('userEmail', 0, 254) &&
+        data.actionName in [
+          'created', 'updated', 'deleted', 'restored', 'status_changed',
+          'auth_update', 'auto_cancelled', 'other'
+        ] &&
+        data.scope in ['Order', 'Favorite', 'Profile', 'System'] &&
+        data.resourceName is string && data.resourceName.size() >= 1 && data.resourceName.size() <= 250 &&
+        isValidOptionalString('resourceId', 0, 200) &&
+        isValidOptionalString('details', 0, 2000) &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidInventoryPartUpdate(data) {
+      return data.name is string &&
+        data.name.size() >= 1 &&
+        data.name.size() <= 200 &&
+        data.price is number &&
+        data.price >= 0 &&
+        data.stock is number &&
+        data.stock >= 0 &&
+        isValidOptionalString('brand', 0, 120) &&
+        isValidOptionalString('description', 0, 5000) &&
+        isValidOptionalString('imageUrl', 0, 2048) &&
+        (!('images' in data) || (data.images is list && data.images.size() <= 20)) &&
+        (!('searchKeywords' in data) || (data.searchKeywords is list && data.searchKeywords.size() <= 80)) &&
+        (!('isArchived' in data) || data.isArchived is bool) &&
+        (!('popularity' in data) || data.popularity is number) &&
+        (!('createdAt' in resource.data) || data.createdAt == resource.data.createdAt) &&
+        data.keys().size() <= 45;
+    }
+
+    function isValidPrebuiltSystemUpdate(data) {
+      return data.name is string &&
+        data.name.size() >= 1 &&
+        data.name.size() <= 200 &&
+        data.price is number &&
+        data.price >= 0 &&
+        isValidOptionalString('description', 0, 5000) &&
+        isValidOptionalString('imageUrl', 0, 2048) &&
+        (!('images' in data) || (data.images is list && data.images.size() <= 20)) &&
+        (!('componentPartIds' in data) || (data.componentPartIds is list && data.componentPartIds.size() <= 30)) &&
+        (!('componentSummaries' in data) || (data.componentSummaries is list && data.componentSummaries.size() <= 30)) &&
+        (!('isArchived' in data) || data.isArchived is bool) &&
+        (!('createdAt' in resource.data) || data.createdAt == resource.data.createdAt) &&
+        data.keys().size() <= 35;
+    }
+
+    // =========================================================================
+    // Server-Only Operational, Registry, Cache, Rate-Limit, & Rollup Collections
+    // =========================================================================
 
     match /catalogCounters/{id} { allow read, write: if false; }
     match /catalogOperations/{id} { allow read, write: if false; }
@@ -26,158 +373,217 @@ service cloud.firestore {
     match /productIds/{id} { allow read, write: if false; }
     match /productSkus/{id} { allow read, write: if false; }
     match /qrLinks/{id} { allow read, write: if false; }
+    match /qrAudits/{id} { allow read, write: if false; }
     match /reservationOperations/{id} { allow read, write: if false; }
+    match /orderWorkflowOperations/{id} { allow read, write: if false; }
+    match /orderRefundOperations/{id} { allow read, write: if false; }
+    match /orderRefundReceipts/{id} { allow read, write: if false; }
+    match /aiRateLimits/{limitId} { allow read, write: if false; }
+    match /ai_critique_cache_v1/{cacheId} { allow read, write: if false; }
+    match /ai_recommendation_cache_v3/{cacheId} { allow read, write: if false; }
+    match /analyticsDaily/{dayId} { allow read, write: if false; }
+    match /analyticsMonthly/{monthId} { allow read, write: if false; }
+    match /analyticsAppliedEvents/{eventId} { allow read, write: if false; }
+    match /contactRateLimits/{limitId} { allow read, write: if false; }
+    match /contactMailAliases/{aliasId} { allow read, write: if false; }
+    match /contactOAuthStates/{stateId} { allow read, write: if false; }
+    match /contactSecrets/{secretId} { allow read, write: if false; }
+    match /contactMailboxes/{mailboxId} { allow read, write: if false; }
+
+    match /buildbot_hardware_vector/{categorySlug} {
+      allow read, write: if false;
+      match /items/{itemId} { allow read, write: if false; }
+    }
+
+    // =========================================================================
+    // Application Collections
+    // =========================================================================
 
     match /siteSettings/{settingId} {
-      allow read: if true;
-      allow write: if isSuperAdmin();
+      allow get: if settingId in ['main', 'catalogMeta'] || isSuperAdmin();
+      allow list: if isSuperAdmin();
+      allow create, update: if isSuperAdmin() && request.resource.data.keys().size() <= 30;
+      allow delete: if false;
     }
 
     match /users/{userId} {
-      allow read, delete: if request.auth.uid == userId || isManager();
-      allow create: if request.auth.uid == userId 
-                    && request.resource.data.get('isManager', false) == false
-                    && request.resource.data.get('isSuperAdmin', false) == false;
-      allow update: if (request.auth.uid == userId && (
-                      !request.resource.data.diff(resource.data).affectedKeys()
-                        .hasAny(['isManager', 'isSuperAdmin', 'activeManagerKey', 'deprecatedKeys'])
-                    )) || isSuperAdmin();
+      allow read: if isOwner(userId) || isManager();
+      allow delete: if isOwner(userId) || isSuperAdmin();
+      allow create: if isAuthenticated() &&
+        isValidUser(request.resource.data) && (
+          (
+            isOwner(userId) &&
+            request.resource.data.get('isManager', false) == false &&
+            request.resource.data.get('isSuperAdmin', false) == false &&
+            request.resource.data.get('isAdmin', false) == false &&
+            !('activeManagerKey' in request.resource.data) &&
+            !('deprecatedKeys' in request.resource.data)
+          ) ||
+          isSuperAdmin()
+        );
+      allow update: if isAuthenticated() &&
+        isValidUser(request.resource.data) && (
+          (
+            isOwner(userId) &&
+            areImmutableFieldsUnchanged([
+              'isManager', 'isSuperAdmin', 'isAdmin',
+              'activeManagerKey', 'deprecatedKeys', 'createdAt'
+            ])
+          ) ||
+          isSuperAdmin()
+        );
 
       match /favorites/{favoriteId} {
-        allow read, write: if request.auth.uid == userId;
+        allow read, delete: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidFavorite(request.resource.data);
+        allow update: if isOwner(userId) &&
+          isValidFavorite(request.resource.data) &&
+          areImmutableFieldsUnchanged(['createdAt']);
       }
 
       match /notifications/{notifId} {
-        allow read, write: if request.auth.uid == userId;
+        allow read, delete: if isOwner(userId);
+        allow create: if false;
+        allow update: if isOwner(userId) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']) &&
+          request.resource.data.read is bool;
       }
     }
 
     match /authKeys/{keyId} {
-      allow get: if true;
-      allow list, write: if request.auth != null && isSuperAdmin();
+      allow read, delete: if isSuperAdmin();
+      allow create, update: if isSuperAdmin() && isValidAuthKey(keyId, request.resource.data);
     }
 
     match /keyRequests/{requestId} {
-      allow create: if true;
-      allow read, write: if isSuperAdmin();
+      allow create: if isAuthenticated() && isValidKeyRequestCreate(request.resource.data);
+      allow read, delete: if isSuperAdmin();
+      allow update: if isSuperAdmin() && isValidKeyRequestUpdate(request.resource.data);
     }
 
     match /orders/{orderId} {
-      allow create: if request.auth != null;
-      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isManager());
-      allow update: if request.auth != null && (
-        (request.auth.uid == resource.data.userId && request.resource.data.status == 'cancelled'
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])) ||
-        isManager()
+      allow create: if false;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isManager());
+      allow update: if isAuthenticated() && (
+        (
+          resource.data.userId == request.auth.uid &&
+          resource.data.status == 'pending' &&
+          request.resource.data.status == 'cancelled' &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+        ) ||
+        (
+          isManager() &&
+          isValidOrderUpdate(request.resource.data) &&
+          areImmutableFieldsUnchanged(['userId', 'createdAt'])
+        )
       );
       allow delete: if isSuperAdmin();
 
       match /activity/{eventId} {
-        allow read: if request.auth != null && (get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid || isManager());
-        allow write: if isManager();
+        allow read: if isAuthenticated() &&
+          exists(/databases/$(database)/documents/orders/$(orderId)) &&
+          (get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid || isManager());
+        allow create, update: if isManager() &&
+          exists(/databases/$(database)/documents/orders/$(orderId)) &&
+          isValidOrderActivity(request.resource.data);
+        allow delete: if false;
       }
 
       match /assembly/{rigId} {
-        allow read: if request.auth != null && (get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid || isManager());
-        allow write: if isManager();
+        allow read: if isAuthenticated() &&
+          exists(/databases/$(database)/documents/orders/$(orderId)) &&
+          (get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid || isManager());
+        allow create, update: if isManager() &&
+          exists(/databases/$(database)/documents/orders/$(orderId)) &&
+          request.resource.data.keys().size() <= 30;
+        allow delete: if false;
       }
     }
 
     match /notifications/{notifId} {
-      allow create: if request.auth != null;
-      allow read, update: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
     }
 
     match /system_notifications/{notifId} {
-      allow read, write: if isManager();
+      allow read: if isManager();
+      allow create: if isManager() && isValidSystemNotificationCreate(request.resource.data);
+      allow update: if isManager() && isValidSystemNotificationUpdate(request.resource.data);
+      allow delete: if isSuperAdmin();
     }
 
     match /contactInquiries/{inquiryId} {
-      allow read: if isManager() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow read: if isManager() || (isAuthenticated() && resource.data.userId == request.auth.uid);
       allow create, update, delete: if false;
 
       match /messages/{messageId} {
         allow read: if isManager() || (
-          request.auth != null &&
+          isAuthenticated() &&
+          exists(/databases/$(database)/documents/contactInquiries/$(inquiryId)) &&
           get(/databases/$(database)/documents/contactInquiries/$(inquiryId)).data.userId == request.auth.uid
         );
         allow create, update, delete: if false;
       }
     }
 
-    match /contactRateLimits/{limitId} {
-      allow read, write: if false;
-    }
-
-    match /contactMailAliases/{aliasId} {
-      allow read, write: if false;
-    }
-
-    match /contactOAuthStates/{stateId} {
-      allow read, write: if false;
-    }
-
-    match /contactSecrets/{secretId} {
-      allow read, write: if false;
-    }
-
-    match /contactMailboxes/{mailboxId} {
-      allow read, write: if false;
-    }
-
     match /auditLogs/{logId} {
       allow read: if isManager();
-      allow create: if isManager()
-        && request.resource.data.actorId == request.auth.uid
-        && request.resource.data.scope in ['Part', 'Prebuilt', 'Order', 'User', 'System'];
-      allow update, delete: if isSuperAdmin();
+      allow create: if isManager() &&
+        isValidAuditLog(request.resource.data) &&
+        request.resource.data.actorId == request.auth.uid;
+      allow update: if isSuperAdmin() &&
+        isValidAuditLog(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id', 'actorId', 'createdAt']);
+      allow delete: if isSuperAdmin();
     }
 
     match /user_auditLogs/{logId} {
-      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isManager());
-      allow create: if request.auth != null
-        && request.auth.uid == request.resource.data.userId
-        && request.resource.data.scope in ['Order', 'Favorite', 'Profile', 'System'];
-      allow update, delete: if isSuperAdmin();
-    }
-
-    match /parts/{partId} {
-      allow read: if true;
-      allow update: if request.auth != null && 
-                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock', 'popularity']);
-      allow write: if isManager();
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isManager());
+      allow create: if isAuthenticated() &&
+        isValidUserAuditLog(request.resource.data) &&
+        request.resource.data.userId == request.auth.uid;
+      allow update: if isSuperAdmin() &&
+        isValidUserAuditLog(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id', 'userId', 'createdAt']);
+      allow delete: if isSuperAdmin();
     }
 
     match /prebuiltSystems/{systemId} {
       allow read: if true;
       allow create: if false;
-      allow update: if isManager() && identityUnchanged();
+      allow update: if isManager() &&
+        identityUnchanged() &&
+        isValidPrebuiltSystemUpdate(request.resource.data);
       allow delete: if isSuperAdmin();
     }
 
     match /siteContent/{contentId} {
       allow read: if true;
-      allow write: if isManager();
+      allow create, update: if isManager() && request.resource.data.keys().size() <= 40;
+      allow delete: if isSuperAdmin();
     }
 
     match /inventory/{categorySlug} {
       allow read: if isInventoryCategory(categorySlug);
-      allow write: if isInventoryCategory(categorySlug) && isManager();
+      allow create, update: if isInventoryCategory(categorySlug) &&
+        isManager() &&
+        request.resource.data.keys().size() <= 20;
+      allow delete: if isInventoryCategory(categorySlug) && isSuperAdmin();
 
       match /items/{partId} {
         allow read: if isInventoryCategory(categorySlug);
         allow create: if false;
-        allow update: if isInventoryCategory(categorySlug) && isManager() && identityUnchanged();
+        allow update: if isInventoryCategory(categorySlug) &&
+          isManager() &&
+          identityUnchanged() &&
+          isValidInventoryPartUpdate(request.resource.data);
         allow delete: if isInventoryCategory(categorySlug) && isSuperAdmin();
       }
     }
 
-    match /{category}/{partId} {
-      allow read: if category in ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler', 'Monitor', 'Keyboard', 'Mouse', 'Headset'];
-      allow update: if request.auth != null &&
-                    category in ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler', 'Monitor', 'Keyboard', 'Mouse', 'Headset'] &&
-                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock', 'popularity']);
-      allow write: if category in ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler', 'Monitor', 'Keyboard', 'Mouse', 'Headset'] && isManager();
+    // Default deny catch-all (legacy /parts and /{category}/{partId} wildcard retired)
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

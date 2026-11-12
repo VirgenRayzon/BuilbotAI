@@ -506,10 +506,6 @@ BuilbotAI
 │       │   └── SKILL.md
 │       └── nextjs-best-practices
 │           └── SKILL.md
-├── .firebase
-│   └── studio-3150054754-c7d0b
-│       └── functions
-│           └── .env
 ├── .github
 │   └── workflows
 │       └── ci.yml
@@ -537,6 +533,11 @@ BuilbotAI
 ├── .idx
 │   ├── dev.nix
 │   └── icon.png
+├── .superpowers
+│   └── sdd
+│       ├── 2026-11-11-database-scalability
+│       │   └── progress.md
+│       └── .gitignore
 ├── .vscode
 │   └── settings.json
 ├── .worktrees
@@ -2124,6 +2125,10 @@ BuilbotAI
 │   ├── audit_inventory_performance.mjs
 │   ├── audit_landing_performance.mjs
 │   ├── backfill_inventory_query_fields.ts
+│   ├── backfill_order_hold_expiry.ts
+│   ├── backfill_order_query_fields.ts
+│   ├── backfill_prebuilt_summaries.ts
+│   ├── backfill_sales_analytics.ts
 │   ├── backup_qr_catalog.ts
 │   ├── benchmark_build_advisor.mjs
 │   ├── benchmark_build_critique.ts
@@ -2134,6 +2139,7 @@ BuilbotAI
 │   ├── migrate_product_identities.ts
 │   ├── update_changelog.js
 │   ├── verify_inventory_hierarchy.ts
+│   ├── verify_legacy_path_retirement.ts
 │   ├── verify_product_identities.ts
 │   └── verify_public_firestore_reads.ts
 ├── public
@@ -2211,6 +2217,8 @@ BuilbotAI
 │   │   │   │   ├── use-order-actions.ts
 │   │   │   │   ├── use-order-activity.ts
 │   │   │   │   ├── use-order-assembly.ts
+│   │   │   │   ├── use-orders-helpers.ts
+│   │   │   │   ├── use-orders-listener.test.ts
 │   │   │   │   ├── use-orders-view.ts
 │   │   │   │   ├── use-orders.ts
 │   │   │   │   ├── use-payment-status-dialog.ts
@@ -2222,6 +2230,7 @@ BuilbotAI
 │   │   │   ├── inventory-query-actions.ts
 │   │   │   ├── order-activity-actions.ts
 │   │   │   ├── order-assembly-actions.ts
+│   │   │   ├── order-query-actions.ts
 │   │   │   ├── order-refund-actions.ts
 │   │   │   ├── page.tsx
 │   │   │   ├── reservation-actions.ts
@@ -2243,16 +2252,17 @@ BuilbotAI
 │   │   │   ├── admin
 │   │   │   │   ├── qr-health
 │   │   │   │   │   └── route.ts
-│   │   │   │   └── qr-status
-│   │   │   │       └── [token]
-│   │   │   │           └── route.ts
-│   │   │   ├── ai
-│   │   │   │   ├── build-advisor
-│   │   │   │   │   ├── critique
-│   │   │   │   │   │   └── route.ts
-│   │   │   │   │   └── recommendations
+│   │   │   │   ├── qr-status
+│   │   │   │   │   └── [token]
 │   │   │   │   │       └── route.ts
-│   │   │   │   └── live-build-recommendations
+│   │   │   │   └── sales-export
+│   │   │   │       └── route.ts
+│   │   │   ├── ai
+│   │   │   │   └── build-advisor
+│   │   │   │       ├── critique
+│   │   │   │       │   └── route.ts
+│   │   │   │       └── recommendations
+│   │   │   │           └── route.ts
 │   │   │   ├── builder
 │   │   │   │   ├── download
 │   │   │   │   │   └── route.ts
@@ -2334,7 +2344,6 @@ BuilbotAI
 │   │   ├── landing-video
 │   │   │   └── [name]
 │   │   │       └── route.ts
-│   │   ├── loading-audit-preview
 │   │   ├── parts
 │   │   │   ├── [productId]
 │   │   │   │   ├── loading.tsx
@@ -2356,11 +2365,18 @@ BuilbotAI
 │   │   │   │   ├── legacy-prebuilt-product.tsx
 │   │   │   │   ├── loading.tsx
 │   │   │   │   └── page.tsx
-│   │   │   └── page.tsx
+│   │   │   ├── components
+│   │   │   │   └── prebuilt-empty-state.tsx
+│   │   │   ├── hooks
+│   │   │   │   └── use-prebuilt-catalog.ts
+│   │   │   ├── page.tsx
+│   │   │   └── prebuilt-catalog-actions.ts
 │   │   ├── profile
 │   │   │   ├── components
 │   │   │   │   ├── address-book-section.tsx
+│   │   │   │   ├── audit-logs-filters.tsx
 │   │   │   │   ├── audit-logs-section.tsx
+│   │   │   │   ├── audit-logs-table.tsx
 │   │   │   │   ├── compose-inquiry-modal.tsx
 │   │   │   │   ├── contact-inbox-tab.tsx
 │   │   │   │   ├── customer-support-tab.tsx
@@ -2371,7 +2387,8 @@ BuilbotAI
 │   │   │   │   ├── profile-hero.tsx
 │   │   │   │   ├── profile-sidebar.tsx
 │   │   │   │   ├── reservations-list.tsx
-│   │   │   │   └── user-audit-logs-section.tsx
+│   │   │   │   ├── user-audit-logs-section.tsx
+│   │   │   │   └── user-audit-logs-table.tsx
 │   │   │   ├── hooks
 │   │   │   │   ├── use-admin-keys.ts
 │   │   │   │   ├── use-audit-logs.ts
@@ -2383,11 +2400,11 @@ BuilbotAI
 │   │   │   │   ├── use-profile-state.ts
 │   │   │   │   ├── use-reservations.ts
 │   │   │   │   └── use-user-audit-logs.ts
+│   │   │   ├── audit-log-actions.ts
 │   │   │   └── page.tsx
 │   │   ├── q
 │   │   │   └── [token]
 │   │   │       └── page.tsx
-│   │   ├── settings
 │   │   ├── signin
 │   │   │   └── page.tsx
 │   │   ├── signup
@@ -2399,6 +2416,7 @@ BuilbotAI
 │   │   │   │   └── request-key-modal.tsx
 │   │   │   ├── signup
 │   │   │   │   └── page.tsx
+│   │   │   ├── key-request-actions.ts
 │   │   │   └── page.tsx
 │   │   ├── team
 │   │   │   └── page.tsx
@@ -2605,6 +2623,11 @@ BuilbotAI
 │   │   ├── qr-scanner-dialog.tsx
 │   │   ├── sales-analytics.tsx
 │   │   ├── sales-financial-kpis.tsx
+│   │   ├── sales-order-status-chart.tsx
+│   │   ├── sales-overview-charts.tsx
+│   │   ├── sales-popularity-view.tsx
+│   │   ├── sales-revenue-chart.tsx
+│   │   ├── sales-tier-category-charts.tsx
 │   │   ├── search-no-results.tsx
 │   │   ├── stock-editor.tsx
 │   │   ├── super-admin-settings.tsx
@@ -2688,7 +2711,19 @@ BuilbotAI
 │       │   └── default-system-prompts.ts
 │       ├── server
 │       │   ├── admin-inventory-queries.ts
+│       │   ├── admin-order-queries.test.ts
+│       │   ├── admin-order-queries.ts
+│       │   ├── ai-cache-keys.ts
+│       │   ├── ai-route-auth.test.ts
+│       │   ├── ai-route-auth.ts
+│       │   ├── audit-log-queries.test.ts
+│       │   ├── audit-log-queries.ts
+│       │   ├── builder-catalog-reader.ts
 │       │   ├── builder-catalog.ts
+│       │   ├── catalog-cache.test.ts
+│       │   ├── catalog-cache.ts
+│       │   ├── catalog-meta-store.ts
+│       │   ├── catalog-queries.test.ts
 │       │   ├── contact-auth.ts
 │       │   ├── gmail.ts
 │       │   ├── order-activity.ts
@@ -2699,23 +2734,33 @@ BuilbotAI
 │       │   ├── order-refund-notifications.ts
 │       │   ├── order-refund-reconciliation.ts
 │       │   ├── paymongo.ts
+│       │   ├── popularity-writer.test.ts
+│       │   ├── popularity-writer.ts
+│       │   ├── prebuilt-queries.ts
 │       │   ├── product-identities.ts
 │       │   ├── public-catalog-queries.ts
 │       │   ├── public-products.ts
 │       │   ├── qr-auth.ts
 │       │   ├── qr-health-analysis.ts
-│       │   └── qr-health.ts
+│       │   ├── qr-health.ts
+│       │   ├── sales-analytics-queries.ts
+│       │   └── sales-export-helpers.ts
+│       ├── admin-inventory-query.test.ts
 │       ├── admin-inventory-query.ts
 │       ├── advisor-inventory.ts
 │       ├── advisor-timing.ts
 │       ├── advisor-web-research.ts
 │       ├── ai-model-resolver.ts
+│       ├── analytics-rollups.test.ts
+│       ├── analytics-rollups.ts
 │       ├── audit-scopes.ts
 │       ├── auth-utils.ts
 │       ├── bottleneck.ts
 │       ├── build-advisor-goals.ts
 │       ├── build-pdf-categories.ts
 │       ├── build-pdf.ts
+│       ├── catalog-meta.test.ts
+│       ├── catalog-meta.ts
 │       ├── catalog-name-validation.ts
 │       ├── category-selection.ts
 │       ├── chat-conversation.ts
@@ -2739,6 +2784,7 @@ BuilbotAI
 │       ├── inventory-fetcher.ts
 │       ├── inventory-image-sizes.ts
 │       ├── inventory-paths.ts
+│       ├── inventory-query-fields.test.ts
 │       ├── inventory-query-fields.ts
 │       ├── knowledge-retriever.ts
 │       ├── live-build-recommendation-schema.ts
@@ -2747,6 +2793,7 @@ BuilbotAI
 │       ├── order-activity.ts
 │       ├── order-assembly.ts
 │       ├── order-classification.ts
+│       ├── order-expiration.test.ts
 │       ├── order-expiration.ts
 │       ├── order-fulfillment.ts
 │       ├── order-image-resolver.ts
@@ -2760,6 +2807,8 @@ BuilbotAI
 │       ├── payment-methods.ts
 │       ├── placeholder-images.ts
 │       ├── popularity.ts
+│       ├── prebuilt-summaries.test.ts
+│       ├── prebuilt-summaries.ts
 │       ├── prebuilt-utils.ts
 │       ├── product-identity.ts
 │       ├── product-schemas.ts
@@ -2774,11 +2823,16 @@ BuilbotAI
 │       ├── search-empty-state.ts
 │       ├── styled-excel.ts
 │       ├── system-prompts.ts
+│       ├── ttl-policies.test.ts
+│       ├── ttl-policies.ts
 │       ├── types.ts
 │       ├── utils.ts
 │       ├── validate-advisor-build.ts
 │       ├── vector-retriever.ts
 │       └── vertex-tuned-endpoint.ts
+├── tests
+│   ├── multi-instance-cache-coherence.test.ts
+│   └── sales-export.spec.ts
 ├── .env
 ├── .env.example
 ├── .firebaserc
@@ -2790,6 +2844,7 @@ BuilbotAI
 ├── components.json
 ├── DESIGN.md
 ├── eslint.config.mjs
+├── firebase-debug.log
 ├── firebase.json
 ├── firestore.indexes.json
 ├── firestore.rules

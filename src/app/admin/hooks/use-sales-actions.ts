@@ -6,18 +6,16 @@ import {
     ingestDummySalesDataByAdmin,
     resetSalesMetricsByAdmin,
 } from '@/app/admin/sales-admin-actions';
-import { exportSalesAnalyticsToExcel } from '@/lib/export-excel';
 import { useToast } from "@/hooks/use-toast";
 import type { Part, PrebuiltSystem, Order } from '@/lib/types';
-import { getNetCollectedAmount } from '@/lib/order-workflow';
 
 interface UseSalesActionsProps {
-    orders: Order[];
-    parts: Part[];
-    prebuiltSystems: PrebuiltSystem[];
+    orders?: Order[];
+    parts?: Part[];
+    prebuiltSystems?: PrebuiltSystem[];
 }
 
-export function useSalesActions({ orders, parts, prebuiltSystems }: UseSalesActionsProps) {
+export function useSalesActions({ orders: _orders, parts: _parts, prebuiltSystems: _prebuilts }: UseSalesActionsProps = {}) {
     const { authUser } = useUserProfile();
     const { toast } = useToast();
     const [isResettingSales, setIsResettingSales] = useState(false);
@@ -78,41 +76,48 @@ export function useSalesActions({ orders, parts, prebuiltSystems }: UseSalesActi
         }
     };
 
-    const handleExportSales = () => {
+    const handleExportSales = async () => {
+        if (!authUser) {
+            toast({
+                title: "Authentication Required",
+                description: "You must be signed in as staff to export sales data.",
+                variant: "destructive",
+            });
+            return;
+        }
+
         setIsExportingSales(true);
         try {
-            const now = new Date();
-            const dataPoints = Array.from({ length: 7 }, (_, i) => {
-                const d = new Date(now);
-                d.setDate(d.getDate() - (6 - i));
-                return {
-                    name: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-                };
-            });
-            const dataMap = new Map<string, number>();
-            dataPoints.forEach(p => dataMap.set(p.name, 0));
-
-            (orders || []).filter(o => getNetCollectedAmount(o) > 0).forEach(order => {
-                const paymentDate = order.paidAt || order.createdAt;
-                const date = paymentDate?.toDate?.() || (paymentDate?.seconds ? new Date(paymentDate.seconds * 1000) : new Date(paymentDate));
-                const key = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                if (dataMap.has(key)) {
-                    dataMap.set(key, (dataMap.get(key) || 0) + getNetCollectedAmount(order));
-                }
+            const idToken = await authUser.getIdToken();
+            const response = await fetch('/api/admin/sales-export', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${idToken}`,
+                },
+                body: JSON.stringify({
+                    idToken,
+                    timeRange: 'all',
+                    format: 'xlsx',
+                }),
             });
 
-            const revenueData = dataPoints.map(p => ({
-                name: p.name,
-                revenue: dataMap.get(p.name) || 0,
-            }));
+            if (!response.ok) {
+                const errorData = (await response.json().catch(() => ({}))) as { error?: string };
+                throw new Error(errorData.error || `Export failed with status ${response.status}`);
+            }
 
-            exportSalesAnalyticsToExcel({
-                orders: orders || [],
-                parts: parts || [],
-                prebuilts: prebuiltSystems || [],
-                revenueData,
-                timeRange: 'week',
-            });
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const downloadLink = document.createElement('a');
+            const dateFormatted = new Date().toISOString().split('T')[0];
+            downloadLink.href = blobUrl;
+            downloadLink.download = `Netcodex_Sales_Analytics_${dateFormatted}.xlsx`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            window.URL.revokeObjectURL(blobUrl);
+            document.body.removeChild(downloadLink);
+
             toast({
                 title: "Excel Export Complete",
                 description: "Your multi-sheet Sales & Analytics workbook has been downloaded.",
@@ -121,7 +126,7 @@ export function useSalesActions({ orders, parts, prebuiltSystems }: UseSalesActi
             console.error("Export error:", error);
             toast({
                 title: "Export Failed",
-                description: "Failed to generate Excel file. Please try again.",
+                description: error instanceof Error ? error.message : "Failed to generate Excel file. Please try again.",
                 variant: "destructive",
             });
         } finally {

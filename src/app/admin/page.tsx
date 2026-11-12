@@ -70,7 +70,16 @@ export default function AdminPage() {
         }
     }, [searchParams]);
 
-    const { auditLogs, auditLogsLoading } = useAuditLogs(currentTab === 'audit');
+    const {
+        auditLogs,
+        auditLogsLoading,
+        auditLogsCount,
+        hasMore: hasMoreAuditLogs,
+        loadMore: loadMoreAuditLogs,
+        isLoadingMore: isLoadingMoreAuditLogs,
+        filters: auditFilters,
+        setFilters: setAuditFilters,
+    } = useAuditLogs(currentTab === 'audit');
     const { featureModelRouting, aiModelProvider } = useSiteSettings();
     const routingValues = featureModelRouting ? Object.values(featureModelRouting) : [aiModelProvider];
     const allVertex = routingValues.every((v) => v === 'finetuned');
@@ -78,12 +87,18 @@ export default function AdminPage() {
     const intelligenceBadge = allVertex ? 'Vertex' : allGemini ? 'Gemini' : 'Hybrid';
     const intelligenceBadgeColor = allVertex ? 'indigo' : allGemini ? 'cyan' : 'violet';
 
+    const shouldLoadPrebuilts =
+        currentTab === 'prebuilts' ||
+        currentTab === 'archive' ||
+        currentTab === 'sales' ||
+        Boolean(searchParams.get('product'));
+
     const {
         parts, partsLoading, prebuiltSystems, prebuiltsLoading,
         handleAddPart, handleUpdatePart, handleUpdatePartStock, handleAddPartStock, handleDeletePart, handleArchivePart,
         handleAddPrebuilt, handleUpdatePrebuilt, handleDeletePrebuilt, handleArchivePrebuilt,
         componentCategories: initialCategories
-    } = useInventory(profile, !pagedStockView);
+    } = useInventory(profile, !pagedStockView, shouldLoadPrebuilts);
 
     const {
         orders,
@@ -104,7 +119,6 @@ export default function AdminPage() {
     } = useOrders(profile);
 
     const salesActions = useSalesActions({
-        orders: orders || [],
         parts: parts || [],
         prebuiltSystems: prebuiltSystems || []
     });
@@ -171,7 +185,7 @@ export default function AdminPage() {
                     prebuiltsCount={activePrebuiltsCount}
                     pendingOrdersCount={stats.pendingOrdersCount}
                     orderStageCounts={stats.stageCounts}
-                    auditLogsCount={auditLogs.length}
+                    auditLogsCount={auditLogsCount}
                     intelligenceBadge={intelligenceBadge}
                     intelligenceBadgeColor={intelligenceBadgeColor}
                 />
@@ -211,7 +225,7 @@ export default function AdminPage() {
                                 currentTab={currentTab}
                                 isSuperAdmin={profile?.isSuperAdmin}
                                 pendingOrdersCount={stats.pendingOrdersCount}
-                                auditLogsCount={auditLogs.length}
+                                auditLogsCount={auditLogsCount}
                                 intelligenceBadge={intelligenceBadge}
                                 intelligenceBadgeColor={intelligenceBadgeColor}
                                 onOpenIngestDummy={() => salesActions.setShowIngestDummyConfirm(true)}
@@ -240,7 +254,6 @@ export default function AdminPage() {
                                     parts={parts}
                                     partsLoading={partsLoading}
                                     paged={pagedStockView}
-                                    onRequestLegacy={() => setLegacyStockView(true)}
                                     onCountChange={setPagedStockCount}
                                     profile={profile}
                                     partCategories={partCategories}
@@ -297,6 +310,8 @@ export default function AdminPage() {
                                         catalogParts={parts}
                                         hasMoreOrders={hasMoreOrders}
                                         onLoadMoreOrders={loadMoreOrders}
+                                        stageCounts={stats.stageCounts}
+                                        totalCount={stats.totalOrdersCount}
                                         isSuperAdmin={profile?.isSuperAdmin === true}
                                         isSweepingExpired={isSweepingExpired}
                                         onReservationAction={handleReservationAction}
@@ -317,7 +332,6 @@ export default function AdminPage() {
                             {currentTab === "sales" && profile?.isSuperAdmin && (
                                 <div className="mt-4">
                                     <SalesTab
-                                        orders={orders || []}
                                         parts={parts}
                                         prebuiltSystems={prebuiltSystems || []}
                                         activeSubTab={salesSubTab}
@@ -368,6 +382,12 @@ export default function AdminPage() {
                                         loading={auditLogsLoading}
                                         searchQuery={tabSearchQueries.audit}
                                         onSearchQueryChange={(val) => setTabSearchQueries(prev => ({ ...prev, audit: val }))}
+                                        totalCount={auditLogsCount}
+                                        hasMore={hasMoreAuditLogs}
+                                        loadMore={loadMoreAuditLogs}
+                                        isLoadingMore={isLoadingMoreAuditLogs}
+                                        filters={auditFilters}
+                                        onFiltersChange={setAuditFilters}
                                     />
                                 </div>
                             )}

@@ -14,6 +14,7 @@ import {
   generateSimulatedPaymentReference,
 } from "@/lib/payment-methods";
 import type {
+  Order,
   OrderFulfillmentStage,
   OrderItem,
   OrderPaymentEvent,
@@ -24,6 +25,13 @@ import type {
   PrebuiltSystem,
 } from "@/lib/types";
 import { getLegacyStatusFromStage } from "@/lib/order-workflow";
+import {
+  calculateOrderDelta,
+  formatDayKey,
+  formatMonthKey,
+  type AnalyticsBucket,
+} from "@/lib/analytics-rollups";
+import { computeExpiresAt } from "@/lib/ttl-policies";
 
 const adminTokenSchema = z.object({
   idToken: z.string().min(1),
@@ -69,8 +77,11 @@ export async function resetSalesMetricsByAdmin(
       parsed.data.idToken
     );
 
-    const [ordersSnap, ...categorySnaps] = await Promise.all([
+    const [ordersSnap, dailySnap, monthlySnap, eventsSnap, ...categorySnaps] = await Promise.all([
       firestore.collection("orders").get(),
+      firestore.collection("analyticsDaily").get(),
+      firestore.collection("analyticsMonthly").get(),
+      firestore.collection("analyticsAppliedEvents").get(),
       ...INVENTORY_CATEGORY_SLUGS.map((slug) =>
         firestore.collection(inventoryItemsPath(slug)).get()
       ),
@@ -79,6 +90,15 @@ export async function resetSalesMetricsByAdmin(
     const writers: Array<(batch: admin.firestore.WriteBatch) => void> = [];
     for (const orderDoc of ordersSnap.docs) {
       writers.push((batch) => batch.delete(orderDoc.ref));
+    }
+    for (const doc of dailySnap.docs) {
+      writers.push((batch) => batch.delete(doc.ref));
+    }
+    for (const doc of monthlySnap.docs) {
+      writers.push((batch) => batch.delete(doc.ref));
+    }
+    for (const doc of eventsSnap.docs) {
+      writers.push((batch) => batch.delete(doc.ref));
     }
     for (const catSnap of categorySnaps) {
       for (const partDoc of catSnap.docs) {
@@ -97,8 +117,9 @@ export async function resetSalesMetricsByAdmin(
         actorEmail: email,
         scope: "System",
         resourceName: "Sales & Order Metrics",
-        details: `Reset ${ordersSnap.size} order record(s) and cleared component popularity counters.`,
+        details: `Reset ${ordersSnap.size} order record(s), ${dailySnap.size} daily rollups, ${monthlySnap.size} monthly rollups, and cleared component popularity counters.`,
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
       })
     );
 
@@ -155,6 +176,25 @@ export async function ingestDummySalesDataByAdmin(
     const orderCount = 60;
     const nowMs = Date.now();
     const popularityMap = new Map<string, number>();
+    const dailyBuckets = new Map<string, AnalyticsBucket>();
+    const monthlyBuckets = new Map<string, AnalyticsBucket>();
+
+    function mergeIntoSeededBucket(bucket: AnalyticsBucket, delta: ReturnType<typeof calculateOrderDelta>) {
+      bucket.grossCollectedPhp = Math.round((bucket.grossCollectedPhp + delta.grossCollectedPhp) * 100) / 100;
+      bucket.refundedPhp = Math.round((bucket.refundedPhp + delta.refundedPhp) * 100) / 100;
+      bucket.netCollectedPhp = Math.round((bucket.netCollectedPhp + delta.netCollectedPhp) * 100) / 100;
+      bucket.paidOrderCount = Math.max(0, bucket.paidOrderCount + delta.paidOrderCount);
+      bucket.cancelledOrderCount = Math.max(0, bucket.cancelledOrderCount + delta.cancelledOrderCount);
+      bucket.customOrderCount = Math.max(0, bucket.customOrderCount + delta.customOrderCount);
+      bucket.prebuiltOrderCount = Math.max(0, bucket.prebuiltOrderCount + delta.prebuiltOrderCount);
+      for (const [k, v] of Object.entries(delta.byPaymentMethod)) {
+        bucket.byPaymentMethod[k] = (bucket.byPaymentMethod[k] || 0) + v;
+      }
+      for (const [k, v] of Object.entries(delta.partUnitsSold)) {
+        bucket.partUnitsSold[k] = (bucket.partUnitsSold[k] || 0) + v;
+      }
+      bucket.updatedAt = Date.now();
+    }
     const writers: Array<(batch: admin.firestore.WriteBatch) => void> = [];
     const methods: PaymentMethod[] = [
       "cod",
@@ -330,6 +370,87 @@ export async function ingestDummySalesDataByAdmin(
           updatedAt: createdTs,
         })
       );
+
+      const seededOrder: Order = {
+        id: orderRef.id,
+        orderNumber,
+        userId: "sample-customer",
+        userEmail: customerEmail,
+        items,
+        subtotal: totalPrice,
+        shippingFee: 0,
+        protectionFee: 0,
+        discountAmount: 0,
+        totalPrice,
+        status,
+        fulfillmentStage: stage,
+        paymentMethod,
+        paymentStatus,
+        paymentReference,
+        paymentHistory: history,
+        paidAt: isPaid ? (createdDate as unknown as admin.firestore.Timestamp) : undefined,
+        refundStatus: hasPartialRefund ? "partial" : "none",
+        refundedAmount: refundAmount,
+        refunds,
+        stockState: isCancelled ? "restored" : "reserved",
+        cancelledAt: isCancelled ? (createdDate as unknown as admin.firestore.Timestamp) : undefined,
+        cancellationReason: isCancelled ? "Sample cancelled order" : undefined,
+        shippingMethod: "store_pickup",
+        type: orderType,
+        ...(prebuiltId ? { prebuiltId } : {}),
+        ...(prebuiltName ? { prebuiltName } : {}),
+        ...(prebuiltTier ? { prebuiltTier } : {}),
+        createdAt: createdDate as unknown as admin.firestore.Timestamp,
+        updatedAt: createdDate as unknown as admin.firestore.Timestamp,
+      };
+
+      const delta = calculateOrderDelta(null, seededOrder);
+      const dayKey = formatDayKey(createdDate);
+      const monthKey = formatMonthKey(createdDate);
+
+      if (!dailyBuckets.has(dayKey)) {
+        dailyBuckets.set(dayKey, {
+          bucketKey: dayKey,
+          grossCollectedPhp: 0,
+          refundedPhp: 0,
+          netCollectedPhp: 0,
+          paidOrderCount: 0,
+          cancelledOrderCount: 0,
+          customOrderCount: 0,
+          prebuiltOrderCount: 0,
+          byPaymentMethod: {},
+          partUnitsSold: {},
+          updatedAt: Date.now(),
+        });
+      }
+      if (!monthlyBuckets.has(monthKey)) {
+        monthlyBuckets.set(monthKey, {
+          bucketKey: monthKey,
+          grossCollectedPhp: 0,
+          refundedPhp: 0,
+          netCollectedPhp: 0,
+          paidOrderCount: 0,
+          cancelledOrderCount: 0,
+          customOrderCount: 0,
+          prebuiltOrderCount: 0,
+          byPaymentMethod: {},
+          partUnitsSold: {},
+          updatedAt: Date.now(),
+        });
+      }
+
+      mergeIntoSeededBucket(dailyBuckets.get(dayKey)!, delta);
+      mergeIntoSeededBucket(monthlyBuckets.get(monthKey)!, delta);
+    }
+
+    for (const [dayKey, bucket] of dailyBuckets.entries()) {
+      const dailyRef = firestore.collection("analyticsDaily").doc(dayKey);
+      writers.push((batch) => batch.set(dailyRef, bucket, { merge: true }));
+    }
+
+    for (const [monthKey, bucket] of monthlyBuckets.entries()) {
+      const monthlyRef = firestore.collection("analyticsMonthly").doc(monthKey);
+      writers.push((batch) => batch.set(monthlyRef, bucket, { merge: true }));
     }
 
     for (const [partPath, popCount] of popularityMap.entries()) {
@@ -353,6 +474,7 @@ export async function ingestDummySalesDataByAdmin(
         resourceName: "Sample Sales Dataset",
         details: `Generated ${orderCount} sample orders with payment, fulfillment, and refund states.`,
         createdAt: admin.firestore.Timestamp.now(),
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
       })
     );
 

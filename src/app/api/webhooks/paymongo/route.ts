@@ -12,6 +12,7 @@ import {
   verifyPaymongoWebhookSignature,
 } from "@/lib/server/paymongo";
 import type { Order, OrderPaymentEvent, PaymentStatus } from "@/lib/types";
+import { computeExpiresAt } from "@/lib/ttl-policies";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -308,6 +309,7 @@ export async function POST(req: NextRequest) {
         status: orderData.status,
         read: false,
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
       });
 
       didUpdate = true;

@@ -10,6 +10,12 @@ import { inventoryItemPath } from "@/lib/inventory-paths";
 import { saveCatalogProduct } from '@/lib/save-catalog-product';
 import { prebuiltProductSchema } from '@/lib/product-schemas';
 import { updateCatalogPart } from '@/app/product-actions';
+import {
+    extractPrebuiltComponentPartIds,
+    buildPrebuiltComponentSummaries,
+    calculatePrebuiltDerivedPrice,
+} from '@/lib/prebuilt-summaries';
+import { computeExpiresAt } from '@/lib/ttl-policies';
 
 async function uploadToStorageClient(url: string, storagePath: string, fileNamePrefix?: string): Promise<string> {
     if (!url) return url;
@@ -322,10 +328,29 @@ export async function addPrebuiltSystem(_firestore: Firestore, system: AddPrebui
             case: caseComponent,
             cooler
         },
-        createdAt: new Date()
+        createdAt: new Date(),
+        isArchived: false,
     };
 
-    return saveCatalogProduct('prebuilt', cleanData(systemData), system, operationId);
+    const componentPartIds = extractPrebuiltComponentPartIds(systemData as PrebuiltSystem);
+    const componentSummaries = await buildPrebuiltComponentSummaries(systemData as PrebuiltSystem, async (cat, partId) => {
+        try {
+            const snap = await getDoc(doc(_firestore, inventoryItemPath(cat, partId)));
+            return snap.exists() ? ({ ...snap.data(), id: snap.id } as Part) : null;
+        } catch {
+            return null;
+        }
+    });
+    const derivedPrice = calculatePrebuiltDerivedPrice(componentSummaries, price);
+
+    const fullSystemData = {
+        ...systemData,
+        componentPartIds,
+        componentSummaries,
+        price: derivedPrice,
+    };
+
+    return saveCatalogProduct('prebuilt', cleanData(fullSystemData), system, operationId);
 }
 
 export async function deletePrebuiltSystem(firestore: Firestore, systemId: string) {
@@ -359,8 +384,27 @@ export async function updatePrebuiltSystem(firestore: Firestore, systemId: strin
             cooler
         }
     };
-    prebuiltProductSchema.parse(systemData);
-    await updateDoc(doc(firestore, 'prebuiltSystems', systemId), cleanData(systemData));
+
+    const componentPartIds = extractPrebuiltComponentPartIds(systemData as PrebuiltSystem);
+    const componentSummaries = await buildPrebuiltComponentSummaries(systemData as PrebuiltSystem, async (cat, partId) => {
+        try {
+            const snap = await getDoc(doc(firestore, inventoryItemPath(cat, partId)));
+            return snap.exists() ? ({ ...snap.data(), id: snap.id } as Part) : null;
+        } catch {
+            return null;
+        }
+    });
+    const derivedPrice = calculatePrebuiltDerivedPrice(componentSummaries, price);
+
+    const fullSystemData: Partial<PrebuiltSystem> = {
+        ...systemData,
+        componentPartIds,
+        componentSummaries,
+        price: derivedPrice,
+    };
+
+    prebuiltProductSchema.parse(fullSystemData);
+    await updateDoc(doc(firestore, 'prebuiltSystems', systemId), cleanData(fullSystemData));
 }
 
 export async function archivePrebuiltSystem(firestore: Firestore, systemId: string, isArchived: boolean = true) {
@@ -399,6 +443,7 @@ export async function createSystemNotification(
         ...notification,
         id: notificationRef.id,
         readBy,
-        createdAt: new Date()
+        createdAt: new Date(),
+        expiresAt: computeExpiresAt('notifications'),
     });
 }

@@ -41,8 +41,10 @@ export function PublicPartsCatalog({ products, initialPage, isAdminPreview = fal
     ? Object.values(INVENTORY_CATEGORY_LABELS).sort()
     : [...new Set(catalogProducts.map((product) => product.category))].sort(), [catalogProducts, completeProducts, initialPage]);
   const availableBrands = useMemo(
-    () => [...new Set(catalogProducts.map((product) => product.brand).filter(Boolean))].sort(),
-    [catalogProducts]
+    () => (initialPage?.brandFacets && initialPage.brandFacets.length > 0 && !completeProducts)
+      ? initialPage.brandFacets
+      : [...new Set(catalogProducts.map((product) => product.brand).filter(Boolean))].sort(),
+    [catalogProducts, completeProducts, initialPage]
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState(categoryNames);

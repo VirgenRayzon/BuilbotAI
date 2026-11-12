@@ -5,6 +5,7 @@ import { getRefundedAmount } from '@/lib/order-workflow';
 import { retrievePaymongoRefund, type PaymongoRefund } from './paymongo';
 import { writeOrderChange, type ActivityActor } from './order-activity';
 import { writeRefundNotifications } from './order-refund-notifications';
+import { applyOrderAnalyticsDeltaInTx } from '@/lib/analytics-rollups';
 
 export async function completeProviderRefund(db: Firestore, orderId: string, operationId: string,
   provider: PaymongoRefund, actor: ActivityActor, reason?: string) {
@@ -47,6 +48,22 @@ export async function completeProviderRefund(db: Firestore, orderId: string, ope
         patch.refunds = [...(order.refunds || []), refund];
         patch.refundedAmount = Math.round((getRefundedAmount(order) + amount) * 100) / 100;
         patch.refundStatus = Number(patch.refundedAmount) >= order.totalPrice ? 'refunded' : 'partial';
+
+        const afterOrder: Order = {
+          ...order,
+          refunds: patch.refunds as OrderRefund[],
+          refundedAmount: Number(patch.refundedAmount),
+          refundStatus: patch.refundStatus as Order['refundStatus'],
+          updatedAt: now,
+        };
+        // MUST execute transaction reads before ANY transaction writes (including notifications)
+        await applyOrderAnalyticsDeltaInTx(
+          tx,
+          db,
+          `provider_refund_${orderId}_${operationId}`,
+          order,
+          afterOrder
+        );
         writeRefundNotifications(tx, db, order, refund, now);
       } else patch.refundStatus = getRefundedAmount(order) > 0 ? 'partial' : order.status === 'cancelled' ? 'due' : 'none';
     }

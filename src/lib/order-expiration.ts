@@ -1,5 +1,29 @@
 
+import type { PaymentMethod } from "./types";
+
 export const ORDER_EXPIRATION_DURATION_MS = 60 * 60 * 1000;
+
+export function computeOrderHoldExpiresAt(
+  paymentMethod: PaymentMethod | string | null | undefined,
+  createdAt: unknown
+): Date | null {
+  if (!paymentMethod) return null;
+  const normalized = String(paymentMethod).toLowerCase();
+  if (normalized === "cod") return null;
+
+  if (
+    normalized !== "gcash_simulated" &&
+    normalized !== "paymongo_simulated" &&
+    normalized !== "card_simulated"
+  ) {
+    return null;
+  }
+
+  const createdDate = getOrderCreatedDate(createdAt);
+  if (!createdDate) return null;
+
+  return new Date(createdDate.getTime() + ORDER_EXPIRATION_DURATION_MS);
+}
 
 export function getOrderCreatedDate(createdAt: unknown): Date | null {
   if (!createdAt) return null;

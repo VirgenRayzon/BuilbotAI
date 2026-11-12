@@ -2,11 +2,12 @@
 import { writeOrderChange } from '@/lib/server/order-activity';
 import { z } from 'zod';
 import { toFirestoreDocument } from '@/lib/firestore-document';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { getAdminAuth, getAdminFirestore } from '@/firebase/server-init';
 import { invalidatePublicPartsCatalog, productReference, resolveSystemParts } from '@/lib/server/public-products';
 import { getMissingParts } from '@/lib/prebuilt-utils';
 import { inventoryItemPath, inventoryCategoryLabel } from '@/lib/inventory-paths';
+import { computeExpiresAt } from '@/lib/ttl-policies';
 import type { FavoriteBuild, OrderItem, Part, PaymentMethod, PrebuiltSystem } from '@/lib/types';
 import { INCLUDED_INTEGRATED_GPU_ID } from '@/lib/integrated-graphics';
 import {
@@ -193,6 +194,7 @@ export async function reservePublicProduct(input: unknown) {
       paymentStatus,
       paymentReference,
       createdAt,
+      expiresAt: Timestamp.fromDate(computeExpiresAt('reservationOperations')),
     });
 
     tx.create(db.collection(`users/${user.uid}/notifications`).doc(), {
@@ -202,6 +204,7 @@ export async function reservePublicProduct(input: unknown) {
       message: `Your order for ${data.name} (${orderNumber}) has been placed.`,
       read: false,
       createdAt,
+      expiresAt: Timestamp.fromDate(computeExpiresAt('notifications')),
     });
     tx.create(db.collection('system_notifications').doc(), {
       type: 'reservation_received',
@@ -212,6 +215,7 @@ export async function reservePublicProduct(input: unknown) {
       targetId: orderRef.id,
       readBy: [],
       createdAt,
+      expiresAt: Timestamp.fromDate(computeExpiresAt('notifications')),
     });
     tx.create(db.collection('user_auditLogs').doc(), {
       userId: user.uid,
@@ -223,6 +227,7 @@ export async function reservePublicProduct(input: unknown) {
       resourceName: data.name,
       details: `Reserved from product page (${methodDef.shortLabel}, Ref: ${paymentReference})`,
       createdAt,
+      expiresAt: Timestamp.fromDate(computeExpiresAt('auditLogs')),
     });
 
     return {

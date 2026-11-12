@@ -1,5 +1,6 @@
 import { INVENTORY_CATEGORY_LABELS } from './inventory-paths';
 import { PRODUCT_ID_PATTERN } from './product-identity';
+import { deriveSearchTokens } from './catalog-meta';
 
 const CATEGORY_LABELS = Object.values(INVENTORY_CATEGORY_LABELS);
 
@@ -29,6 +30,8 @@ export function deriveInventoryQueryFields(source: InventoryQuerySource) {
     inStock: typeof source.stock === 'number' && source.stock > 0,
     publicCatalogEligible: typeof source.productId === 'string' && PRODUCT_ID_PATTERN.test(source.productId),
     inventoryQueryVersion: 1,
+    searchKeywordsVersion: 2,
+    searchKeywords: deriveSearchTokens(source),
     nameSort: typeof source.name === 'string' ? source.name.trim().toLowerCase() : '',
     brandSort: typeof source.brand === 'string' ? source.brand.trim().toLowerCase() : '',
     createdAtSort: createdAtMillis(source.createdAt),

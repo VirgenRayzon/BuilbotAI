@@ -8,7 +8,9 @@ import type { PublicCatalogPart } from '../public-product-types';
 import type { Transaction } from 'firebase-admin/firestore';
 import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '../integrated-graphics';
 import { includedCpuCoolerName } from '../included-cpu-cooler';
-import { revalidateTag, unstable_cache } from 'next/cache';
+import { revalidateTag } from 'next/cache';
+import { VersionedServerCache } from './catalog-cache';
+import { getCatalogMeta } from './catalog-meta-store';
 
 export const PUBLIC_PARTS_CACHE_TAG = 'public-parts-catalog';
 export const COMPATIBILITY_SPEC_KEYS = [
@@ -52,12 +54,7 @@ export async function resolveSystemParts(system: PrebuiltSystem, transaction?: T
     }
     try {
       const ref = !entry.partId.includes('/') ? db.doc(inventoryItemPath(entry.category, entry.partId)) : null;
-      let snap = ref ? (transaction ? await transaction.get(ref) : await ref.get()) : null;
-      if (!snap?.exists) {
-        const query = db.collection(inventoryItemsPath(entry.category)).where('name', '==', entry.partId).limit(2);
-        const matches = transaction ? await transaction.get(query) : await query.get();
-        snap = matches.size === 1 ? matches.docs[0] : null;
-      }
+      const snap = ref ? (transaction ? await transaction.get(ref) : await ref.get()) : null;
       return { ...entry, partId: snap?.exists ? snap.id : entry.partId, part: snap?.exists ? { ...snap.data(), id: snap.id } as Part : null };
     } catch { return { ...entry, part: null }; }
   }));
@@ -78,7 +75,31 @@ async function serializeProduct(data: Part & PrebuiltSystem, kind: ProductKind):
   for (const [key, value] of Object.entries(data.specifications || {})) {
     if (typeof value === 'string' || typeof value === 'number') specs[key] = value;
   }
-  const statuses = kind === 'prebuilt' ? getPrebuiltPartStatuses(data, await resolveSystemParts(data)) : [];
+  const resolvedParts: ResolvedPrebuiltPart[] =
+    kind === 'prebuilt'
+      ? data.componentSummaries && data.componentSummaries.length > 0
+        ? data.componentSummaries.map(s => ({
+            key: s.key,
+            category: s.category.toLowerCase(),
+            partId: s.partId,
+            part: s.isArchived
+              ? null
+              : ({
+                  id: s.partId,
+                  productId: s.productId || undefined,
+                  name: s.name,
+                  category: s.category,
+                  brand: 'BuildbotAI',
+                  price: s.price,
+                  stock: s.inStock ? 999 : 0,
+                  imageUrl: s.imageUrl,
+                  specifications: {},
+                  isArchived: false,
+                } as Part),
+          }))
+        : await resolveSystemParts(data)
+      : [];
+  const statuses = kind === 'prebuilt' ? getPrebuiltPartStatuses(data, resolvedParts) : [];
   const report: unknown = data.aiReport;
   const highlights = report && typeof report === 'object' && 'pros' in report && Array.isArray(report.pros)
     ? report.pros.filter((value): value is string => typeof value === 'string') : [];
@@ -122,7 +143,7 @@ export function toPublicCatalogPart(data: Part): PublicCatalogPart {
 
 export async function listPublicProducts(kind: ProductKind): Promise<PublicProduct[]> {
   const db = getAdminFirestore();
-  const snapshots = kind === 'part' ? await Promise.all(INVENTORY_CATEGORY_SLUGS.map(c => db.collection(inventoryItemsPath(c)).get())) : [await db.collection('prebuiltSystems').get()];
+  const snapshots = kind === 'part' ? await Promise.all(INVENTORY_CATEGORY_SLUGS.map(c => db.collection(inventoryItemsPath(c)).get())) : [await db.collection('prebuiltSystems').where('isArchived', '==', false).get()];
   const records = snapshots.flatMap(s => s.docs).filter(d => !d.get('isArchived') && PRODUCT_ID_PATTERN.test(String(d.get('productId'))));
   return Promise.all(records.map(d => serializeProduct(d.data() as Part & PrebuiltSystem, kind)));
 }
@@ -159,16 +180,52 @@ export async function listRelatedPublicParts(category: string, excludeProductId:
     .map(document => toPublicCatalogPart(document.data() as Part));
 }
 
-export const listPublicPartsCatalog = unstable_cache(
-  readPublicPartsCatalog,
-  ['public-parts-catalog-v1'],
-  { tags: [PUBLIC_PARTS_CACHE_TAG], revalidate: 10 * 60 }
-);
+export interface PublicPartsCatalogReaderOptions {
+  loader?: () => Promise<PublicCatalogPart[]>;
+  readVersion?: () => Promise<number>;
+  maxCheckStalenessMs?: number;
+  onInvalidate?: () => void;
+}
+
+export interface PublicPartsCatalogReader {
+  listPublicPartsCatalog: () => Promise<PublicCatalogPart[]>;
+  invalidatePublicPartsCatalog: () => void;
+  getCache: () => VersionedServerCache<PublicCatalogPart[]>;
+}
+
+export function createPublicPartsCatalogReader(
+  options?: PublicPartsCatalogReaderOptions
+): PublicPartsCatalogReader {
+  const cache = new VersionedServerCache<PublicCatalogPart[]>({
+    maxCheckStalenessMs: options?.maxCheckStalenessMs,
+  });
+  const loader = options?.loader ?? readPublicPartsCatalog;
+  const readVersion = options?.readVersion ?? (async () => (await getCatalogMeta()).catalogVersion);
+
+  return {
+    listPublicPartsCatalog: async () => cache.getOrLoad(loader, readVersion),
+    invalidatePublicPartsCatalog: () => {
+      cache.invalidateLocal();
+      if (options?.onInvalidate) {
+        options.onInvalidate();
+      } else {
+        try {
+          revalidateTag(PUBLIC_PARTS_CACHE_TAG);
+        } catch {
+          // Safely ignore missing Next.js request context outside server requests
+        }
+      }
+    },
+    getCache: () => cache,
+  };
+}
+
+const defaultPublicPartsCatalogReader = createPublicPartsCatalogReader();
+
+export async function listPublicPartsCatalog(): Promise<PublicCatalogPart[]> {
+  return defaultPublicPartsCatalogReader.listPublicPartsCatalog();
+}
 
 export function invalidatePublicPartsCatalog() {
-  try {
-    revalidateTag(PUBLIC_PARTS_CACHE_TAG);
-  } catch (error) {
-    console.error('[public-parts-catalog] Cache invalidation failed:', error);
-  }
+  defaultPublicPartsCatalogReader.invalidatePublicPartsCatalog();
 }

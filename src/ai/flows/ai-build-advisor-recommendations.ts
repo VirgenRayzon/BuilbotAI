@@ -6,6 +6,9 @@ import { getGenkitModelName } from '@/lib/ai-model-resolver';
 import { retrieveLocalKnowledge } from '@/lib/knowledge-retriever';
 import { getAdminFirestore } from '@/firebase/server-init';
 import { getInventoryFromFirestore } from '@/lib/inventory-fetcher';
+import { buildAdvisorRecommendationCacheKey } from '@/lib/server/ai-cache-keys';
+import { getCatalogMeta } from '@/lib/server/catalog-meta-store';
+import { computeExpiresAt, isExpiredAt } from '@/lib/ttl-policies';
 
 import {
   AiBuildAdvisorRecommendationsInputSchema,
@@ -98,19 +101,6 @@ Please format your response as a JSON object strictly following the output schem
 
 const CACHE_COLLECTION = 'ai_recommendation_cache_v3';
 
-const generateCacheKey = (input: AiBuildAdvisorRecommendationsInput, promptSig: string = '') => {
-  const parts = [
-    input.intendedUse.toLowerCase().trim(),
-    input.budget.toLowerCase().trim().replace(/[^\d]/g, ''),
-    input.performanceLevel.toLowerCase().trim(),
-    (input.additionalNotes || '').toLowerCase().trim(),
-    input.allowFlexibleBudget ? 'flexible' : 'strict',
-    input.allowAiSearch ? 'aisearch' : 'local',
-    promptSig ? promptSig.substring(0, 32) : 'default'
-  ];
-  return parts.join('|').replace(/[\/.]/g, '_').substring(0, 1000);
-};
-
 const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
   {
     name: 'aiBuildAdvisorRecommendationsFlow',
@@ -121,18 +111,34 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
     const { getActiveSystemPrompt } = await import('@/lib/system-prompts');
     const customSystemPrompt = await getActiveSystemPrompt('buildAdvisor');
 
-    const cacheKey = generateCacheKey(input, customSystemPrompt);
     const db = getAdminFirestore();
 
+    let settingsData: Record<string, any> | undefined;
     try {
       const settingsSnap = await db.collection('siteSettings').doc('main').get();
-      if (settingsSnap.exists && settingsSnap.data()?.isMaintenanceMode) {
-        throw new Error("MAINTENANCE_MODE_ACTIVE: AI services are temporarily restricted for system updates.");
+      if (settingsSnap.exists) {
+        settingsData = settingsSnap.data();
+        if (settingsData?.isMaintenanceMode) {
+          throw new Error("MAINTENANCE_MODE_ACTIVE: AI services are temporarily restricted for system updates.");
+        }
       }
     } catch (e: any) {
       if (e.message.includes("MAINTENANCE_MODE_ACTIVE")) throw e;
       console.warn("Failed to check maintenance mode:", e);
     }
+
+    const { catalogVersion } = await getCatalogMeta(db);
+    const cacheKey = buildAdvisorRecommendationCacheKey({
+      input,
+      prompt: customSystemPrompt,
+      catalogVersion,
+      modelSettings: {
+        routing: settingsData?.featureModelRouting?.buildAdvisor || settingsData?.aiModelProvider,
+        defaultModel: settingsData?.defaultGeminiModel,
+        tunedModel: settingsData?.fineTunedModelId,
+        inventoryRevision: settingsData?.advisorInventoryRevision,
+      },
+    });
 
     try {
       const cacheRef = db.collection(CACHE_COLLECTION).doc(cacheKey);
@@ -140,8 +146,9 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
       
       if (cacheSnap.exists) {
         const cacheData = cacheSnap.data();
-        const ageInDays = (Date.now() - cacheData?.timestamp) / (1000 * 60 * 60 * 24);
-        if (ageInDays < 7) {
+        const isExpired = isExpiredAt(cacheData?.expiresAt);
+        const ageInDays = (Date.now() - (cacheData?.timestamp || 0)) / (1000 * 60 * 60 * 24);
+        if (!isExpired && ageInDays < 7 && cacheData?.output) {
           console.log(`[AI Cache] Hit for key: ${cacheKey}`);
           return cacheData?.output as AiBuildAdvisorRecommendationsOutput;
         }
@@ -182,7 +189,8 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
       await db.collection(CACHE_COLLECTION).doc(cacheKey).set({
         input,
         output,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        expiresAt: computeExpiresAt('aiRecommendationCache'),
       });
       console.log(`[AI Cache] Saved new entry for key: ${cacheKey}`);
     } catch (e) {

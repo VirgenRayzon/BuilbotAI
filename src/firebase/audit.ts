@@ -1,12 +1,14 @@
 import { collection, doc, Firestore, setDoc, getDocs, writeBatch } from "firebase/firestore";
 import type { AuditLog, UserAuditLog, SystemNotification } from "@/lib/types";
+import { computeExpiresAt } from "@/lib/ttl-policies";
 
 export async function createAuditLog(firestore: Firestore, data: Omit<AuditLog, 'id' | 'createdAt'>) {
     const auditRef = doc(collection(firestore, 'auditLogs'));
     const auditLog: AuditLog = {
         ...data,
         id: auditRef.id,
-        createdAt: new Date()
+        createdAt: new Date(),
+        expiresAt: computeExpiresAt('auditLogs'),
     };
     await setDoc(auditRef, auditLog);
 }
@@ -16,7 +18,8 @@ export async function createUserAuditLog(firestore: Firestore, data: Omit<UserAu
     const userLog: UserAuditLog = {
         ...data,
         id: logRef.id,
-        createdAt: new Date()
+        createdAt: new Date(),
+        expiresAt: computeExpiresAt('auditLogs'),
     };
     await setDoc(logRef, userLog);
 }
@@ -66,7 +69,8 @@ export async function migrateNotificationsToAuditLogs(firestore: Firestore) {
             resourceName,
             resourceId: notif.targetId,
             details: notif.message,
-            createdAt: notif.createdAt
+            createdAt: notif.createdAt,
+            expiresAt: computeExpiresAt('auditLogs'),
         };
 
         batch.set(auditRef, auditData);

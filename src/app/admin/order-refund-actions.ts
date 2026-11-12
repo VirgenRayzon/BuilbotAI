@@ -13,6 +13,7 @@ import {
   createPaymongoRefund,
   isPaymongoTestApiConfigured,
 } from '@/lib/server/paymongo';
+import { applyOrderAnalyticsDeltaInTx } from '@/lib/analytics-rollups';
 import type { Order, OrderRefund, OrderRefundDestination } from '@/lib/types';
 
 const refundDestinationSchema = z.enum([
@@ -169,6 +170,22 @@ export async function refundOrderByStaff(input: RefundOrderByStaffInput): Promis
         createdAt: now,
       };
       const refundedAmount = Math.round((getRefundedAmount(order) + amount) * 100) / 100;
+      const afterRefundOrder: Order = {
+        ...order,
+        refunds: [...(order.refunds || []), refund],
+        refundedAmount,
+        refundStatus: refundedAmount >= order.totalPrice ? 'refunded' : 'partial',
+        updatedAt: now,
+      };
+
+      await applyOrderAnalyticsDeltaInTx(
+        transaction,
+        firestore,
+        `refund_${data.orderId}_${data.operationId}`,
+        order,
+        afterRefundOrder
+      );
+
       writeOrderChange(transaction, orderRef, order, {
         refunds: [...(order.refunds || []), refund],
         refundedAmount,

@@ -118,7 +118,18 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
                 };
             },
             fetch: async (api, options) => {
-                const response = await fetch(api, options);
+                let headers = new Headers(options?.headers);
+                if (authUser) {
+                    try {
+                        const token = await authUser.getIdToken();
+                        if (token) {
+                            headers.set('Authorization', `Bearer ${token}`);
+                        }
+                    } catch {
+                        // proceed without token on retrieval error
+                    }
+                }
+                const response = await fetch(api, { ...options, headers });
                 if (requestStartRef.current > 0 && !ttftRef.current) {
                     ttftRef.current = Date.now() - requestStartRef.current;
                 }

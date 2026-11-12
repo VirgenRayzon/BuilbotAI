@@ -82,6 +82,18 @@ export type Part = {
   isArchived?: boolean;
 };
 
+export interface PrebuiltComponentSummary {
+  key: string;
+  category: Part['category'];
+  partId: string;
+  productId: string | null;
+  name: string;
+  price: number;
+  imageUrl: string;
+  inStock: boolean;
+  isArchived: boolean;
+}
+
 export type PrebuiltSystem = {
   productId?: string;
   sku?: string;
@@ -103,6 +115,8 @@ export type PrebuiltSystem = {
     case?: string;
     cooler?: string;
   };
+  componentSummaries?: PrebuiltComponentSummary[];
+  componentPartIds?: string[];
   aiReport?: any;
   createdAt?: any;
   isArchived?: boolean;
@@ -158,11 +172,17 @@ export type Order = {
   status: 'pending' | 'building' | 'finished building' | 'cancelled';
   workflowRevision?: number;
   fulfillmentStage?: OrderFulfillmentStage;
+  queueStage?: OrderFulfillmentStage | 'cancelled';
   paymentMethod?: PaymentMethod;
   paymentStatus?: PaymentStatus;
   paymentReference?: string;
   paidAt?: any;
   paymentAttempts?: number;
+  holdExpiresAt?:
+    | { toDate?: () => Date; seconds?: number; nanoseconds?: number }
+    | Date
+    | string
+    | null;
   paymongoCheckoutSessionId?: string;
   paymongoCheckoutUrl?: string;
   paymongoMode?: "live_test_api" | "local_sandbox_fallback";
@@ -262,6 +282,12 @@ export type Notification = {
   type?: 'support_reply' | 'support_status';
   read: boolean;
   createdAt: any;
+  expiresAt?:
+    | { toDate?: () => Date; toMillis?: () => number; seconds?: number; nanoseconds?: number }
+    | Date
+    | string
+    | number
+    | null;
 };
 
 export type SystemNotification = {
@@ -274,6 +300,12 @@ export type SystemNotification = {
   targetId: string;
   readBy: string[];
   createdAt: any;
+  expiresAt?:
+    | { toDate?: () => Date; toMillis?: () => number; seconds?: number; nanoseconds?: number }
+    | Date
+    | string
+    | number
+    | null;
 };
 
 export type AuditLog = {
@@ -298,6 +330,12 @@ export type AuditLog = {
   resourceId?: string;
   details?: string;
   createdAt: any;
+  expiresAt?:
+    | { toDate?: () => Date; toMillis?: () => number; seconds?: number; nanoseconds?: number }
+    | Date
+    | string
+    | number
+    | null;
 };
 
 export type UserAuditLog = {
@@ -310,6 +348,12 @@ export type UserAuditLog = {
   resourceId?: string;
   details?: string;
   createdAt: any;
+  expiresAt?:
+    | { toDate?: () => Date; toMillis?: () => number; seconds?: number; nanoseconds?: number }
+    | Date
+    | string
+    | number
+    | null;
 };
 
 export type FavoriteBuildPart = {

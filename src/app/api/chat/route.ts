@@ -9,6 +9,7 @@ import { calculateBottleneck } from "@/lib/bottleneck";
 import { INCLUDED_INTEGRATED_GPU_ID } from '@/lib/integrated-graphics';
 import { getLanguageModelForChat, markTunedModelDegraded } from "@/lib/ai-model-resolver";
 import { getChatModelHistory, getChatRecommendationContext } from '@/lib/chat-conversation';
+import { authorizeAiRequest, isAiRouteAuthError } from '@/lib/server/ai-route-auth';
 import { z } from 'zod';
 
 export const maxDuration = 120;
@@ -16,6 +17,11 @@ export const maxDuration = 120;
 export async function POST(req: Request) {
     const startTime = Date.now();
     try {
+        await authorizeAiRequest(req, {
+            allowGuestWithRateLimit: true,
+            maxPerMinute: 20,
+        });
+
         const { messages, userProfile, currentBuild } = await req.json();
 
         if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -331,6 +337,9 @@ USER PROFILE:
         });
 
     } catch (error) {
+        if (isAiRouteAuthError(error)) {
+            return error.toResponse();
+        }
         console.error("Error in chat route:", error);
         return new Response(JSON.stringify({ error: "Failed to process chat request" }), { status: 500 });
     }

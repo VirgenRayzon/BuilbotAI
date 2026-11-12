@@ -35,7 +35,7 @@ import { inventoryItemPath } from "@/lib/inventory-paths";
 import { PrebuiltCardSpecs } from "./prebuilt-card-specs";
 import { AddPrebuiltDialog, type AddPrebuiltFormSchema } from "./add-prebuilt-dialog";
 import { useFirestore } from "@/firebase";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { useSiteSettings } from "@/context/site-settings-context";
 
 interface PrebuiltsTableProps {
@@ -211,16 +211,10 @@ function PrebuiltTableRow({
             return;
           }
 
-          const partRef = doc(firestore, collectionName, partId as string);
+          const partRef = doc(firestore, inventoryItemPath(collectionName, partId as string));
           const snap = await getDoc(partRef);
           if (snap.exists()) {
-            components[category] = { stock: (snap.data() as any).stock || 0 };
-          } else {
-            const q = query(collection(firestore, collectionName), where("name", "==", partId));
-            const querySnap = await getDocs(q);
-            if (!querySnap.empty) {
-              components[category] = { stock: (querySnap.docs[0].data() as any).stock || 0 };
-            }
+            components[category] = { stock: (snap.data() as Part).stock || 0 };
           }
         });
         await Promise.all(promises);

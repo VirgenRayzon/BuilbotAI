@@ -3,9 +3,11 @@ import * as admin from "firebase-admin";
 import { getAdminFirestore } from "@/firebase/server-init";
 import { inventoryItemPath } from "@/lib/inventory-paths";
 import { INCLUDED_INTEGRATED_GPU_ID } from "@/lib/integrated-graphics";
+import { computeExpiresAt } from "@/lib/ttl-policies";
 import {
   isOrderExpired,
   isOrderPendingWithNoProgression,
+  getOrderCreatedDate,
 } from "@/lib/order-expiration";
 import { invalidatePublicPartsCatalog } from "@/lib/server/public-products";
 import type { Order, OrderPaymentEvent } from "@/lib/types";
@@ -111,11 +113,14 @@ export async function pruneUserNotificationsServer(
       .collection("users")
       .doc(userId)
       .collection("notifications");
-    const snapshot = await notifsRef.orderBy("createdAt", "desc").get();
-    if (snapshot.size > maxKeep) {
+    const snapshot = await notifsRef
+      .orderBy("createdAt", "desc")
+      .offset(maxKeep)
+      .limit(50)
+      .get();
+    if (!snapshot.empty) {
       const batch = firestore.batch();
-      const docsToDelete = snapshot.docs.slice(maxKeep);
-      docsToDelete.forEach((docSnap) => batch.delete(docSnap.ref));
+      snapshot.docs.forEach((docSnap) => batch.delete(docSnap.ref));
       await batch.commit();
     }
   } catch (err) {
@@ -157,7 +162,12 @@ export async function autoCancelExpiredOrderInternal(options: {
         return;
       }
 
-      if (!isOrderExpired(orderData.createdAt)) {
+      const holdExpiresDate = getOrderCreatedDate(orderData.holdExpiresAt);
+      const isExpired = holdExpiresDate
+        ? Date.now() >= holdExpiresDate.getTime()
+        : isOrderExpired(orderData.createdAt);
+
+      if (!isExpired) {
         return;
       }
 
@@ -187,6 +197,7 @@ export async function autoCancelExpiredOrderInternal(options: {
         paymentStatus: "cancelled",
         paymentUpdatedAt: now,
         stockState: "restored",
+        holdExpiresAt: null,
         ...(orderData.stockRestoredAt ? {} : { stockRestoredAt: now }),
         paymentHistory: [...(orderData.paymentHistory || []), expireEvent],
         cancellationReason:
@@ -213,6 +224,7 @@ export async function autoCancelExpiredOrderInternal(options: {
         status: "cancelled",
         read: false,
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
       });
 
       const sysNotificationRef = firestore
@@ -228,6 +240,7 @@ export async function autoCancelExpiredOrderInternal(options: {
         targetId: orderId,
         readBy: [],
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
       });
 
       const userAuditRef = firestore.collection("user_auditLogs").doc();
@@ -245,6 +258,7 @@ export async function autoCancelExpiredOrderInternal(options: {
         details:
           "Automatically cancelled after 1-hour online payment hold expired.",
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
       });
 
       const adminAuditRef = firestore.collection("auditLogs").doc();
@@ -260,6 +274,7 @@ export async function autoCancelExpiredOrderInternal(options: {
         details:
           "Automatically cancelled expired unpaid online order and restored reserved inventory stock.",
         createdAt: now,
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('auditLogs')),
       });
 
       didCancel = true;
@@ -299,32 +314,93 @@ export async function runExpiredOrdersSweep(
   const firestore = getAdminFirestore();
   let scannedCount = 0;
   let cancelledCount = 0;
-  let lastDocId: string | null = null;
+  const processedOrderIds = new Set<string>();
 
   try {
+    const now = admin.firestore.Timestamp.now();
+
+    // 1. Primary indexed sweep: status == 'pending', paymentStatus == 'pending', holdExpiresAt <= now
+    let lastIndexedDoc: admin.firestore.QueryDocumentSnapshot | null = null;
     for (let page = 0; page < maxBatches; page++) {
       let queryRef = firestore
         .collection("orders")
         .where("status", "==", "pending")
-        .orderBy(admin.firestore.FieldPath.documentId())
+        .where("paymentStatus", "==", "pending")
+        .where("holdExpiresAt", "<=", now)
+        .orderBy("holdExpiresAt", "asc")
         .limit(batchSize);
 
-      if (lastDocId) {
-        queryRef = queryRef.startAfter(lastDocId);
+      if (lastIndexedDoc) {
+        queryRef = queryRef.startAfter(lastIndexedDoc);
       }
 
       const snap = await queryRef.get();
       if (snap.empty) break;
 
       scannedCount += snap.size;
-      lastDocId = snap.docs[snap.docs.length - 1].id;
+      lastIndexedDoc = snap.docs[snap.docs.length - 1];
 
       for (const docSnap of snap.docs) {
+        processedOrderIds.add(docSnap.id);
         const data = docSnap.data() as Order;
+
+        // Strictly exclude COD orders
+        if (data.paymentMethod === "cod") continue;
+
+        if (isOrderPendingWithNoProgression(data)) {
+          const res = await autoCancelExpiredOrderInternal({
+            orderId: docSnap.id,
+            callerUid: actorUid,
+            isTrustedSystemOrStaff: true,
+          });
+          if (res.success && res.cancelled) {
+            cancelledCount += 1;
+          }
+        }
+      }
+
+      if (snap.size < batchSize) break;
+    }
+
+    // 2. Bounded legacy fallback: sweep pre-backfill pending online orders missing holdExpiresAt
+    const legacyMaxPages = Math.min(5, maxBatches);
+    let legacyLastDocId: string | null = null;
+
+    for (let page = 0; page < legacyMaxPages; page++) {
+      let legacyQueryRef = firestore
+        .collection("orders")
+        .where("status", "==", "pending")
+        .where("paymentStatus", "==", "pending")
+        .orderBy(admin.firestore.FieldPath.documentId())
+        .limit(batchSize);
+
+      if (legacyLastDocId) {
+        legacyQueryRef = legacyQueryRef.startAfter(legacyLastDocId);
+      }
+
+      const snap = await legacyQueryRef.get();
+      if (snap.empty) break;
+
+      legacyLastDocId = snap.docs[snap.docs.length - 1].id;
+
+      for (const docSnap of snap.docs) {
+        if (processedOrderIds.has(docSnap.id)) continue;
+
+        const data = docSnap.data() as Order;
+        // If order already has holdExpiresAt, the indexed sweep handles or has handled it
+        if (data.holdExpiresAt !== undefined && data.holdExpiresAt !== null) {
+          continue;
+        }
+
+        // Strictly exclude COD orders
+        if (data.paymentMethod === "cod") continue;
+
         if (
           isOrderPendingWithNoProgression(data) &&
           isOrderExpired(data.createdAt)
         ) {
+          scannedCount += 1;
+          processedOrderIds.add(docSnap.id);
           const res = await autoCancelExpiredOrderInternal({
             orderId: docSnap.id,
             callerUid: actorUid,

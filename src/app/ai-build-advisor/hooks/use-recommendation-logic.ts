@@ -15,6 +15,7 @@ import { getComponentPlaceholderImage } from "@/lib/placeholder-images";
 import { parsePesoBudget } from '@/lib/parse-peso-budget';
 import { checkFullBuildCompatibility } from '@/lib/compatibility';
 import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuComponent } from '@/lib/integrated-graphics';
+import { useUserProfile } from '@/context/user-profile';
 
 const componentIcons: Record<string, any> = {
   cpu: Cpu, gpu: Server, motherboard: CircuitBoard, ram: MemoryStick, 
@@ -40,6 +41,7 @@ function summarizeCatalogDescription(value: string): string {
 }
 
 export function useRecommendationLogic(isAiKillSwitch: boolean, allParts: Part[]) {
+    const { authUser } = useUserProfile();
     const { toast } = useToast();
     const router = useRouter();
     const [savedBuild, setSavedBuild] = useState<Build | null>(null);
@@ -183,7 +185,18 @@ function getSmartDescription(type: string, modelName: string): string {
     }, [allParts]);
 
     const fetchRecommendations: typeof fetch = useCallback(async (input, init) => {
-        const response = await fetch(input, init);
+        let headers = new Headers(init?.headers);
+        if (authUser) {
+            try {
+                const token = await authUser.getIdToken();
+                if (token) {
+                    headers.set('Authorization', `Bearer ${token}`);
+                }
+            } catch {
+                // proceed without token on retrieval error
+            }
+        }
+        const response = await fetch(input, { ...init, headers });
         const encodedResearch = response.headers.get('x-build-advisor-web-research');
         if (response.ok && encodedResearch) {
             try {
@@ -196,7 +209,7 @@ function getSmartDescription(type: string, modelName: string): string {
             }
         }
         return response;
-    }, []);
+    }, [authUser]);
 
     const { object, submit, isLoading, stop, error: streamError } = useObject({
         api: '/api/ai/build-advisor/recommendations',

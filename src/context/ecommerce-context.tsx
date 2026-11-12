@@ -346,17 +346,6 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
             if (img) return img;
           }
         }
-
-        const legacyQ = query(
-          collection(firestore, collectionName),
-          where("name", "==", partName)
-        );
-        const legacySnap = await getDocs(legacyQ);
-        if (!legacySnap.empty) {
-          const data = legacySnap.docs[0].data();
-          const img = data.imageUrl || data.images?.[0];
-          if (img) return img;
-        }
       } catch {
       }
       return undefined;

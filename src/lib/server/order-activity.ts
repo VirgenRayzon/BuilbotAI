@@ -50,6 +50,13 @@ export function writeOrderChange(tx: Transaction, ref: DocumentReference, before
     add('inventory', `${patch.stockState === 'reserved' ? 'Inventory reserved' : 'Stock release processed'}: ${items.filter(item => !['included-stock-cooler', 'included-integrated-gpu'].includes(item.id)).map(item => `${item.name} ×${item.quantity || 1}`).join(', ')}.`,
       { before: before?.stockState || 'unknown', after: patch.stockState });
   }
-  const data = toFirestoreDocument({ ...patch, workflowRevision: (before?.workflowRevision || 0) + 1 });
+  const isArchived = Boolean(next.isArchived);
+  const queueStage = next.status === 'cancelled' ? 'cancelled' : getOrderFulfillmentStage(next);
+  const data = toFirestoreDocument({
+    ...patch,
+    isArchived,
+    queueStage,
+    workflowRevision: (before?.workflowRevision || 0) + 1,
+  });
   if (before) tx.update(ref, data); else tx.create(ref, data);
 }

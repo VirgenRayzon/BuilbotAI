@@ -3,7 +3,7 @@ import { PrebuiltSpecsSkeleton, prebuiltCardLayout } from "./loading/prebuilt-ca
 
 import { useEffect, useState } from "react";
 import { useFirestore } from "@/firebase";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import type { Part } from "@/lib/types";
 import { 
     Cpu, 
@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { Collapse } from "@mantine/core";
 import { cn } from "@/lib/utils";
-import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
+import { inventoryItemPath } from "@/lib/inventory-paths";
 import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '@/lib/integrated-graphics';
 
 interface PrebuiltCardSpecsProps {
@@ -80,26 +80,6 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
                             const snap = await getDoc(canonicalRef);
                             if (snap.exists()) {
                                 return (snap.data() as Part).name;
-                            }
-
-                            const canonicalQuery = query(
-                                collection(firestore, inventoryItemsPath(collectionName)),
-                                where("name", "==", val)
-                            );
-                            const querySnap = await getDocs(canonicalQuery);
-                            if (!querySnap.empty) {
-                                return (querySnap.docs[0].data() as Part).name;
-                            }
-
-                            const legacyRef = doc(firestore, collectionName, val);
-                            const legacySnap = await getDoc(legacyRef);
-                            if (legacySnap.exists()) {
-                                return (legacySnap.data() as Part).name;
-                            }
-                            const legacyQuery = query(collection(firestore, collectionName), where("name", "==", val));
-                            const legacyQuerySnap = await getDocs(legacyQuery);
-                            if (!legacyQuerySnap.empty) {
-                                return (legacyQuerySnap.docs[0].data() as Part).name;
                             }
                             return val;
                         } catch (e) {

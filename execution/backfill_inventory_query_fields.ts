@@ -4,6 +4,15 @@ import { FieldPath } from 'firebase-admin/firestore';
 import { getAdminFirestore } from '../src/firebase/server-init';
 import { INVENTORY_CATEGORY_SLUGS, inventoryItemsPath } from '../src/lib/inventory-paths';
 import { deriveInventoryQueryFields } from '../src/lib/inventory-query-fields';
+import { bumpCatalogMetaVersion } from '../src/lib/server/catalog-meta-store';
+
+function fieldEquals(actual: unknown, expected: unknown): boolean {
+  if (actual === expected) return true;
+  if (Array.isArray(actual) && Array.isArray(expected)) {
+    return actual.length === expected.length && actual.every((val, idx) => val === expected[idx]);
+  }
+  return false;
+}
 
 const args = process.argv.slice(2);
 const apply = args.includes('--apply');
@@ -54,7 +63,7 @@ async function main() {
         const expected = deriveInventoryQueryFields(data);
         if (!expected.isArchived && expected.publicCatalogEligible) publicEligible++;
         if (!expected.isArchived && expected.publicCatalogEligible && expected.inStock) inStock++;
-        if (Object.entries(expected).every(([key, field]) => data[key] === field)) continue;
+        if (Object.entries(expected).every(([key, field]) => fieldEquals(data[key], field))) continue;
         pending++;
         if (apply) {
           await db.runTransaction(async transaction => {
@@ -68,6 +77,10 @@ async function main() {
       console.log(JSON.stringify({ checkpoint: `${category}/${cursor}`, scanned, active, archived, publicEligible, inStock, pending, updated }));
       if (page.size < 100) break;
     }
+  }
+  if (apply) {
+    const newVersion = await bumpCatalogMetaVersion(db, { refreshFacets: true });
+    console.log(JSON.stringify({ catalogMeta: 'refreshed', catalogVersion: newVersion, mode: 'apply' }));
   }
   console.log(JSON.stringify({ complete: true, scanned, active, archived, publicEligible, inStock, pending, updated, mode: apply ? 'apply' : 'dry-run' }));
 }

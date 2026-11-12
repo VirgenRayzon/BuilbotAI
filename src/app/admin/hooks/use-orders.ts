@@ -3,10 +3,12 @@
 import { operationStorageKey, storedOrderOperation, clearStoredOrderOperation, sessionOperationStorage } from '@/lib/order-operation-cache';
 import type { StaffPaymentRequest, ReconcileRefund } from '@/lib/order-payment';
 import type { OrderOperation } from '@/lib/server/order-operations';
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth, useFirestore } from '@/firebase';
+import { onIdTokenChanged } from 'firebase/auth';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { fetchAdminOrdersPageAction } from '../order-query-actions';
 import type {
     Order,
     OrderFulfillmentStage,
@@ -34,6 +36,29 @@ export interface StaffRefundSubmission {
     proofUrl?: string;
 }
 
+export {
+    HEAD_ORDERS_LIMIT,
+    createOrdersHeadQueryConfig,
+    mergePagedOrders,
+    deriveOrdersStats,
+    shouldTriggerHeadRefresh,
+    shouldTriggerAuthFetch,
+} from './use-orders-helpers';
+import {
+    HEAD_ORDERS_LIMIT,
+    mergePagedOrders,
+    deriveOrdersStats,
+    shouldTriggerHeadRefresh,
+} from './use-orders-helpers';
+
+export function createOrdersHeadQuery(firestore: any, limitCount = HEAD_ORDERS_LIMIT) {
+    return query(
+        collection(firestore, 'orders'),
+        orderBy('createdAt', 'desc'),
+        limit(limitCount)
+    );
+}
+
 export function useOrders(_profile?: UserProfile | null) {
     const firestore = useFirestore();
     const auth = useAuth();
@@ -50,21 +75,92 @@ export function useOrders(_profile?: UserProfile | null) {
         const key = operationStorageKey(auth?.currentUser?.uid || 'signed-out', orderId, payload);
         retries.current.delete(key); clearStoredOrderOperation(sessionOperationStorage(), key);
     };
-    const [orderLimit, setOrderLimit] = useState(100);
     const [isSweepingExpired, setIsSweepingExpired] = useState(false);
+    const [pagedOrders, setPagedOrders] = useState<Order[]>([]);
+    const [ordersLoading, setOrdersLoading] = useState(true);
+    const [totalCount, setTotalCount] = useState(0);
+    const [stageCounts, setStageCounts] = useState<Record<string, number>>({});
+    const [nextCursor, setNextCursor] = useState<string | null>(null);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-    const ordersQuery = useMemo(() => {
+    // Maintain a small limit(25) live onSnapshot head listener ONLY on page 1 with default unfiltered view
+    const headQuery = useMemo(() => {
         if (!firestore) return null;
-        return query(
-            collection(firestore, 'orders'),
-            orderBy('createdAt', 'desc'),
-            limit(orderLimit)
-        );
-    }, [firestore, orderLimit]);
+        return createOrdersHeadQuery(firestore, HEAD_ORDERS_LIMIT);
+    }, [firestore]);
 
-    const { data: recentOrders, loading: recentOrdersLoading } = useCollection<Order>(ordersQuery);
-    const orders = recentOrders || [];
-    const ordersLoading = recentOrdersLoading;
+    const { data: headOrders } = useCollection<Order>(headQuery);
+    const headIdsRef = useRef<string>('');
+
+    // Trigger page refresh when a new order arrives at the head
+    useEffect(() => {
+        if (!headOrders) return;
+        const currentHeadIds = headOrders.map(o => o.id).join(',');
+        if (shouldTriggerHeadRefresh(headIdsRef.current, currentHeadIds)) {
+            setRefreshTrigger(v => v + 1);
+        }
+        headIdsRef.current = currentHeadIds;
+    }, [headOrders]);
+
+    // Cold-start auth race condition fix: subscribe to onIdTokenChanged and watch profile?.uid
+    useEffect(() => {
+        if (!auth) return;
+        const unsubscribe = onIdTokenChanged(auth, (user) => {
+            if (user) {
+                setRefreshTrigger(v => v + 1);
+            } else if (!user && !_profile) {
+                setOrdersLoading(false);
+            }
+        });
+        return () => unsubscribe();
+    }, [auth, _profile]);
+
+    useEffect(() => {
+        if (_profile?.id) {
+            setRefreshTrigger(v => v + 1);
+        }
+    }, [_profile?.id]);
+
+    const fetchPage = useCallback(async (options: { cursor?: string | null; append?: boolean } = {}) => {
+        const user = auth?.currentUser;
+        if (!user) {
+            if (!_profile) {
+                setOrdersLoading(false);
+            }
+            return;
+        }
+        setOrdersLoading(true);
+        try {
+            const idToken = await user.getIdToken();
+            const result = await fetchAdminOrdersPageAction({
+                idToken,
+                options: {
+                    pageSize: 25,
+                    cursor: options.cursor || null,
+                    archived: false,
+                    stage: 'all',
+                },
+            });
+            if (options.append) {
+                setPagedOrders(prev => mergePagedOrders(prev, result.orders));
+            } else {
+                setPagedOrders(result.orders);
+            }
+            setTotalCount(result.totalCount);
+            setStageCounts(result.stageCounts);
+            setNextCursor(result.nextCursor);
+        } catch (err) {
+            console.error('Failed to fetch admin orders page:', err);
+        } finally {
+            setOrdersLoading(false);
+        }
+    }, [auth, _profile]);
+
+    useEffect(() => {
+        fetchPage();
+    }, [fetchPage, refreshTrigger]);
+
+    const orders = pagedOrders.length > 0 ? pagedOrders : (headOrders || []);
 
     const handleReservationAction = async (
         orderId: string,
@@ -355,44 +451,19 @@ export function useOrders(_profile?: UserProfile | null) {
     };
 
     const stats = useMemo(() => {
-        let orderPlaced = 0;
-        let assembling = 0;
-        let outForDelivery = 0;
-        let delivered = 0;
-        let cancelled = 0;
+        return deriveOrdersStats(stageCounts, totalCount);
+    }, [stageCounts, totalCount]);
 
-        for (const o of orders || []) {
-            if (o.isArchived) continue;
-            if (o.status === 'cancelled') {
-                cancelled += 1;
-                continue;
-            }
-            const stage = getOrderFulfillmentStage(o);
-            if (stage === 'order_placed') orderPlaced += 1;
-            else if (stage === 'assembling_testing') assembling += 1;
-            else if (stage === 'out_for_delivery') outForDelivery += 1;
-            else if (stage === 'delivered') delivered += 1;
-        }
-
-        return {
-            pendingOrdersCount: orderPlaced,
-            completedOrdersCount: delivered,
-            cancelledOrdersCount: cancelled,
-            stageCounts: {
-                orderPlaced,
-                assembling,
-                outForDelivery,
-                delivered,
-                cancelled,
-            },
-        };
-    }, [orders]);
+    const loadMoreOrders = useCallback(() => {
+        if (!nextCursor) return;
+        fetchPage({ cursor: nextCursor, append: true });
+    }, [nextCursor, fetchPage]);
 
     return {
         orders,
         ordersLoading,
-        hasMoreOrders: (recentOrders?.length || 0) >= orderLimit,
-        loadMoreOrders: () => setOrderLimit((current) => current + 100),
+        hasMoreOrders: Boolean(nextCursor),
+        loadMoreOrders,
         isSweepingExpired,
         handleReservationAction,
         handleUpdateOrder,

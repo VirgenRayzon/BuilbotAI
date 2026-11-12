@@ -43,13 +43,16 @@ function refreshInventoryPage() {
     window.dispatchEvent(new Event('inventory-page-refresh'));
 }
 
-export function useInventory(profile: any, loadAllParts = true) {
+export function useInventory(profile: any, loadAllParts = true, loadPrebuiltSystems = true) {
     const firestore = useFirestore();
     const { toast } = useToast();
 
     const { data: rawParts, loading: partsLoading } = useInventoryParts(firestore, loadAllParts);
 
-    const prebuiltSystemsQuery = useMemo(() => firestore ? collection(firestore, 'prebuiltSystems') : null, [firestore]);
+    const prebuiltSystemsQuery = useMemo(
+        () => (firestore && loadPrebuiltSystems ? collection(firestore, 'prebuiltSystems') : null),
+        [firestore, loadPrebuiltSystems]
+    );
     const { data: prebuiltSystems, loading: prebuiltsLoading } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);
 
     const parts = useMemo(() => {

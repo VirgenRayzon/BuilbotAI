@@ -1,7 +1,10 @@
 "use client";
 import { AdminPartSkeleton, AdminPrebuiltSkeleton } from "@/components/loading/admin-inventory-skeleton";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useAuth } from '@/firebase';
+import { onIdTokenChanged } from 'firebase/auth';
+import { fetchAdminOrdersPageAction } from '../order-query-actions';
 import { useSearchParams } from 'next/navigation';
 import { PackageCheck, Trash2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -56,10 +59,6 @@ export function ArchiveTab({
   partsLoading,
   prebuiltSystems,
   prebuiltsLoading,
-  orders,
-  ordersLoading,
-  hasMoreOrders,
-  onLoadMoreOrders,
   onReservationAction,
   onUpdateOrder,
   onClearAllOrders,
@@ -90,6 +89,68 @@ export function ArchiveTab({
   const [partSortDirection, setPartSortDirection] = useState<'asc' | 'desc'>('asc');
   const [prebuiltSortBy, setPrebuiltSortBy] = useState('Name');
   const [prebuiltSortDirection, setPrebuiltSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [archivedOrders, setArchivedOrders] = useState<Order[]>([]);
+  const [archivedLoading, setArchivedLoading] = useState(false);
+  const [archivedNextCursor, setArchivedNextCursor] = useState<string | null>(null);
+  const auth = useAuth();
+
+  const fetchArchivedPage = useCallback(async (cursor?: string | null, append = false) => {
+    const user = auth?.currentUser;
+    if (!user) {
+      if (!profile) setArchivedLoading(false);
+      return;
+    }
+    setArchivedLoading(true);
+    try {
+      const idToken = await user.getIdToken();
+      const result = await fetchAdminOrdersPageAction({
+        idToken,
+        options: {
+          archived: true,
+          stage: 'all',
+          pageSize: 25,
+          cursor: cursor || null,
+        },
+      });
+      if (append) {
+        setArchivedOrders(prev => {
+          const existing = new Set(prev.map(o => o.id));
+          return [...prev, ...result.orders.filter(o => !existing.has(o.id))];
+        });
+      } else {
+        setArchivedOrders(result.orders);
+      }
+      setArchivedNextCursor(result.nextCursor);
+    } catch (err) {
+      console.error('Failed to load archived orders:', err);
+    } finally {
+      setArchivedLoading(false);
+    }
+  }, [auth, profile]);
+
+  useEffect(() => {
+    if (archiveSubTab === 'orders') {
+      fetchArchivedPage();
+    }
+  }, [archiveSubTab, fetchArchivedPage]);
+
+  useEffect(() => {
+    if (!auth) return;
+    const unsubscribe = onIdTokenChanged(auth, (user) => {
+      if (user && archiveSubTab === 'orders') {
+        fetchArchivedPage();
+      } else if (!user && !profile) {
+        setArchivedLoading(false);
+      }
+    });
+    return () => unsubscribe();
+  }, [auth, archiveSubTab, profile, fetchArchivedPage]);
+
+  useEffect(() => {
+    if (archiveSubTab === 'orders' && profile?.id) {
+      fetchArchivedPage();
+    }
+  }, [archiveSubTab, profile?.id, fetchArchivedPage]);
 
   useEffect(() => {
     const requestedSubTab = searchParams.get('sub');
@@ -173,14 +234,26 @@ export function ArchiveTab({
       {archiveSubTab === 'orders' && (
         <ReservationsTab
           archived
-          orders={orders}
-          ordersLoading={ordersLoading}
+          orders={archivedOrders}
+          ordersLoading={archivedLoading}
           catalogParts={parts}
-          hasMoreOrders={hasMoreOrders}
-          onLoadMoreOrders={onLoadMoreOrders}
+          hasMoreOrders={Boolean(archivedNextCursor)}
+          onLoadMoreOrders={() => {
+            if (archivedNextCursor) {
+              void fetchArchivedPage(archivedNextCursor, true);
+            }
+          }}
           isSuperAdmin={profile?.isSuperAdmin === true}
-          onReservationAction={onReservationAction}
-          onUpdateOrder={onUpdateOrder}
+          onReservationAction={async (id, action) => {
+            const ok = await onReservationAction(id, action);
+            if (ok) fetchArchivedPage();
+            return ok;
+          }}
+          onUpdateOrder={async (id, status) => {
+            const ok = await onUpdateOrder(id, status);
+            if (ok) fetchArchivedPage();
+            return ok;
+          }}
           onClearAllOrders={onClearAllOrders}
           searchQuery={searchQuery}
           onSearchQueryChange={onSearchQueryChange}

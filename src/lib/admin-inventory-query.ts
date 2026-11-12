@@ -16,6 +16,6 @@ export const adminInventoryQuerySchema = z.object({
 
 export type AdminInventoryQuery = z.infer<typeof adminInventoryQuerySchema>;
 
-export function usesLegacyInventorySearch(query: AdminInventoryQuery): boolean {
-  return query.search.length > 0;
+export function usesLegacyInventorySearch(_query: AdminInventoryQuery): boolean {
+  return false;
 }
