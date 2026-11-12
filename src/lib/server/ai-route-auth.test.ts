@@ -74,26 +74,54 @@ function createMockAuth(validTokens: Record<string, { uid: string; email?: strin
   };
 }
 
-test('getAiClientFingerprint computes deterministic hash from headers', () => {
-  const req1 = new Request('http://localhost:9002/api/chat', {
+test('getAiClientFingerprint uses proxy-appended rightmost IP from x-forwarded-for to prevent spoofing', () => {
+  const reqSpoofedA = new Request('http://localhost:9002/api/chat', {
     headers: {
-      'x-forwarded-for': '203.0.113.195, 10.0.0.1',
+      'x-forwarded-for': 'spoofed-a, 203.0.113.5',
       'user-agent': 'Mozilla/5.0 TestBrowser',
     },
   });
-  const fp1 = getAiClientFingerprint(req1);
+  const fpA = getAiClientFingerprint(reqSpoofedA);
 
-  const req2 = new Request('http://localhost:9002/api/chat', {
+  const reqSpoofedB = new Request('http://localhost:9002/api/chat', {
     headers: {
-      'x-forwarded-for': '203.0.113.195',
+      'x-forwarded-for': 'spoofed-b, 203.0.113.5',
       'user-agent': 'Mozilla/5.0 TestBrowser',
     },
   });
-  const fp2 = getAiClientFingerprint(req2);
+  const fpB = getAiClientFingerprint(reqSpoofedB);
 
-  assert.equal(fp1, fp2, 'Fingerprint must use first client IP from x-forwarded-for');
-  assert.equal(typeof fp1, 'string');
-  assert.ok(fp1.length > 10);
+  const reqDirect = new Request('http://localhost:9002/api/chat', {
+    headers: {
+      'x-forwarded-for': '203.0.113.5',
+      'user-agent': 'Mozilla/5.0 TestBrowser',
+    },
+  });
+  const fpDirect = getAiClientFingerprint(reqDirect);
+
+  assert.equal(fpA, fpB, 'Fingerprint must be invariant to attacker-controlled prefix in x-forwarded-for');
+  assert.equal(fpA, fpDirect, 'Fingerprint must match direct proxy-appended IP');
+});
+
+test('getAiClientFingerprint prioritizes trusted x-real-ip header over x-forwarded-for', () => {
+  const reqWithRealIp = new Request('http://localhost:9002/api/chat', {
+    headers: {
+      'x-real-ip': '198.51.100.77',
+      'x-forwarded-for': 'spoofed-ip, 203.0.113.5',
+      'user-agent': 'Mozilla/5.0 TestBrowser',
+    },
+  });
+  const fpRealIp = getAiClientFingerprint(reqWithRealIp);
+
+  const reqDirectRealIp = new Request('http://localhost:9002/api/chat', {
+    headers: {
+      'x-real-ip': '198.51.100.77',
+      'user-agent': 'Mozilla/5.0 TestBrowser',
+    },
+  });
+  const fpDirectRealIp = getAiClientFingerprint(reqDirectRealIp);
+
+  assert.equal(fpRealIp, fpDirectRealIp, 'x-real-ip must take precedence over x-forwarded-for');
 });
 
 test('invalid Bearer ID tokens return 401', async () => {

@@ -54,11 +54,31 @@ export interface AuthorizedAiSession {
 
 /**
  * Extracts client IP and header fingerprint to identify guest clients for rate limiting.
+ * Prioritizes trusted proxy headers (x-real-ip, x-envoy-external-address) and rightmost
+ * proxy-appended IP from x-forwarded-for to prevent spoofed header rotation bypass.
  */
 export function getAiClientFingerprint(req: Request): string {
-  const forwarded = req.headers.get('x-forwarded-for');
-  const realIp = req.headers.get('x-real-ip');
-  const clientIp = forwarded?.split(',')[0]?.trim() || realIp || 'unknown-ip';
+  const realIp = req.headers.get('x-real-ip')?.trim();
+  const envoyIp = req.headers.get('x-envoy-external-address')?.trim();
+
+  let clientIp: string;
+  if (realIp) {
+    clientIp = realIp;
+  } else if (envoyIp) {
+    clientIp = envoyIp;
+  } else {
+    const forwarded = req.headers.get('x-forwarded-for');
+    if (forwarded) {
+      const parts = forwarded
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+      clientIp = parts.length > 0 ? parts[parts.length - 1] : 'unknown-ip';
+    } else {
+      clientIp = 'unknown-ip';
+    }
+  }
+
   const userAgent = req.headers.get('user-agent') || 'unknown-ua';
   const host = req.headers.get('host') || 'unknown-host';
 

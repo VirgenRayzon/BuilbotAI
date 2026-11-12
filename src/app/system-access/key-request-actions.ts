@@ -100,7 +100,6 @@ export async function requestManagerKeyAction(
 
     const requestRef = db.collection('keyRequests').doc();
     await requestRef.set({
-      id: requestRef.id,
       userId,
       email: cleanEmail,
       role: 'manager',
