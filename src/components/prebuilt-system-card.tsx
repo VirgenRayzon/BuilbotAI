@@ -27,13 +27,13 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { getIncludedStockCooler, getMissingParts } from "@/lib/prebuilt-utils";
 import { includedCpuCoolerName } from "@/lib/included-cpu-cooler";
-import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
+import { inventoryItemPath } from "@/lib/inventory-paths";
 import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '@/lib/integrated-graphics';
 import { PrebuiltCardSpecs } from "./prebuilt-card-specs";
 import { prebuiltCardLayout } from './loading/prebuilt-card-skeleton';
 import { OptimizedImage } from "./ui/optimized-image";
 import { useFirestore } from "@/firebase";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { reservePrebuiltSystem } from "@/app/prebuilt-reservation-actions";
 import { useUserProfile } from "@/context/user-profile";
 import { useRouter } from "next/navigation";
@@ -149,36 +149,6 @@ export function PrebuiltSystemCard({
             const canonicalSnap = await getDoc(canonicalRef);
             if (canonicalSnap.exists()) {
               const partData = { id: canonicalSnap.id, ...canonicalSnap.data() } as Part;
-              stockMap[category] = partData.stock || 0;
-              partsMap[category] = partData;
-              return;
-            }
-
-            const canonicalQuery = query(
-              collection(firestore, inventoryItemsPath(collectionName)),
-              where("name", "==", partId)
-            );
-            const canonicalQuerySnap = await getDocs(canonicalQuery);
-            if (!canonicalQuerySnap.empty) {
-              const partData = { id: canonicalQuerySnap.docs[0].id, ...canonicalQuerySnap.docs[0].data() } as Part;
-              stockMap[category] = partData.stock || 0;
-              partsMap[category] = partData;
-              return;
-            }
-
-            const partRef = doc(firestore, collectionName, partId as string);
-            const snap = await getDoc(partRef);
-            if (snap.exists()) {
-              const partData = { id: snap.id, ...snap.data() } as Part;
-              stockMap[category] = partData.stock || 0;
-              partsMap[category] = partData;
-              return;
-            }
-
-            const q = query(collection(firestore, collectionName), where("name", "==", partId));
-            const querySnap = await getDocs(q);
-            if (!querySnap.empty) {
-              const partData = { id: querySnap.docs[0].id, ...querySnap.docs[0].data() } as Part;
               stockMap[category] = partData.stock || 0;
               partsMap[category] = partData;
               return;

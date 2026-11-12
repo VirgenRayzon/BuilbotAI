@@ -54,12 +54,7 @@ export async function resolveSystemParts(system: PrebuiltSystem, transaction?: T
     }
     try {
       const ref = !entry.partId.includes('/') ? db.doc(inventoryItemPath(entry.category, entry.partId)) : null;
-      let snap = ref ? (transaction ? await transaction.get(ref) : await ref.get()) : null;
-      if (!snap?.exists) {
-        const query = db.collection(inventoryItemsPath(entry.category)).where('name', '==', entry.partId).limit(2);
-        const matches = transaction ? await transaction.get(query) : await query.get();
-        snap = matches.size === 1 ? matches.docs[0] : null;
-      }
+      const snap = ref ? (transaction ? await transaction.get(ref) : await ref.get()) : null;
       return { ...entry, partId: snap?.exists ? snap.id : entry.partId, part: snap?.exists ? { ...snap.data(), id: snap.id } as Part : null };
     } catch { return { ...entry, part: null }; }
   }));

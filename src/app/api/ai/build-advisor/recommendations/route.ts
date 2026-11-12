@@ -14,6 +14,7 @@ import { AdvisorWebSearchError, researchAdvisorHardware } from '@/lib/advisor-we
 import { buildAdvisorRecommendationCacheKey } from '@/lib/server/ai-cache-keys';
 import { getCatalogMeta } from '@/lib/server/catalog-meta-store';
 import { computeExpiresAt, isExpiredAt } from '@/lib/ttl-policies';
+import { authorizeAiRequest, isAiRouteAuthError } from '@/lib/server/ai-route-auth';
 import {
   AiBuildAdvisorRecommendationsInputSchema,
   AiBuildAdvisorRecommendationsOutputSchema,
@@ -27,6 +28,10 @@ const CACHE_COLLECTION = 'ai_recommendation_cache_v3';
 export async function POST(req: Request) {
   const timing = new AdvisorTiming('recommendation');
   try {
+    await authorizeAiRequest(req, {
+      allowGuestWithRateLimit: true,
+      maxPerMinute: 15,
+    });
     const rawBody = await req.json();
     const parseResult = AiBuildAdvisorRecommendationsInputSchema.safeParse(rawBody);
 
@@ -259,6 +264,9 @@ Please generate the recommendations strictly matching the schema with realistic 
     }, { status: 422 });
   } catch (error: any) {
     timing.finish('error');
+    if (isAiRouteAuthError(error)) {
+      return error.toResponse();
+    }
     console.error("[Build Advisor API] Error generating recommendations stream:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Failed to process AI recommendations stream." }),

@@ -7,6 +7,7 @@
  */
 
 export const TTL_DAYS = {
+  aiRateLimits: 1,
   aiCritiqueCache: 1,
   aiRecommendationCache: 7,
   orderWorkflowOperations: 30,

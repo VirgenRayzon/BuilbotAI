@@ -3386,6 +3386,11 @@
   ],
   "fieldOverrides": [
     {
+      "collectionGroup": "aiRateLimits",
+      "fieldPath": "expiresAt",
+      "ttlConfig": {}
+    },
+    {
       "collectionGroup": "ai_critique_cache_v1",
       "fieldPath": "expiresAt",
       "ttlConfig": {}

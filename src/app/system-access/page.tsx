@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth, useFirestore, executeStaffGoogleAuthInitiate, GoogleIcon } from '@/firebase';
 import { signInWithEmailAndPassword, signOut, setPersistence, browserSessionPersistence } from 'firebase/auth';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { requestManagerKeyAction } from './key-request-actions';
 import {
   Paper,
   Title,
@@ -299,7 +299,7 @@ function SystemAccessContent() {
   };
 
   const handleRequestKey = async () => {
-    if (!firestore || !requestEmail) return;
+    if (!requestEmail) return;
     if (!requestEmail.includes('@')) {
       toast({
         title: 'Invalid Email',
@@ -311,18 +311,22 @@ function SystemAccessContent() {
 
     setRequestLoading(true);
     try {
-      await addDoc(collection(firestore, 'keyRequests'), {
-        email: requestEmail,
-        role: 'manager',
-        status: 'pending',
-        requestedAt: serverTimestamp(),
-      });
-      toast({
-        title: 'Request Sent',
-        description: 'Your request for a manager key has been recorded for Super Admin review.',
-      });
-      setIsRequestDialogOpen(false);
-      setRequestEmail('');
+      const idToken = authUser ? await authUser.getIdToken() : undefined;
+      const res = await requestManagerKeyAction(requestEmail, idToken);
+      if (res.success) {
+        toast({
+          title: 'Request Sent',
+          description: 'Your request for a manager key has been recorded for Super Admin review.',
+        });
+        setIsRequestDialogOpen(false);
+        setRequestEmail('');
+      } else {
+        toast({
+          title: 'Request Failed',
+          description: res.error || 'Failed to send request. Please try again later.',
+          variant: 'destructive',
+        });
+      }
     } catch (err) {
       console.error(err);
       toast({

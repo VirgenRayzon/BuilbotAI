@@ -14,6 +14,7 @@ import {
 } from './server/ai-cache-keys';
 
 test('TTL_DAYS defines exact expected retention windows in days', () => {
+  assert.equal(TTL_DAYS.aiRateLimits, 1, 'aiRateLimits must be 1 day (24h)');
   assert.equal(TTL_DAYS.aiCritiqueCache, 1, 'aiCritiqueCache must be 1 day (24h)');
   assert.equal(TTL_DAYS.aiRecommendationCache, 7, 'aiRecommendationCache must be 7 days');
   assert.equal(TTL_DAYS.orderWorkflowOperations, 30, 'orderWorkflowOperations must be 30 days');
@@ -204,6 +205,7 @@ test('firestore.indexes.json configures exact fieldOverrides with ttlConfig: {}'
   }>;
 
   const expectedCollections = [
+    'aiRateLimits',
     'ai_critique_cache_v1',
     'ai_recommendation_cache_v3',
     'orderWorkflowOperations',
