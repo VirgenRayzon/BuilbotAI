@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [2026-11-13]
 
 ### Refactoring
+- **ui**: Extract reusable LoaderCard component for loading states ([62f7e16](https://github.com/VirgenRayzon/BuilbotAI/commit/62f7e16))
 - **checkout**: Modularize page into focused sub-components and custom hook ([3a1b6ca](https://github.com/VirgenRayzon/BuilbotAI/commit/3a1b6ca))
 
 ## [2026-11-11]

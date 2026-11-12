@@ -2493,6 +2493,7 @@ BuilbotAI
 │   │   │   ├── catalog-card-skeleton.tsx
 │   │   │   ├── dashboard-card-skeleton.tsx
 │   │   │   ├── inventory-loading.tsx
+│   │   │   ├── loader-card.tsx
 │   │   │   ├── order-card-skeleton.tsx
 │   │   │   ├── prebuilt-card-skeleton.tsx
 │   │   │   ├── prebuilt-detail-skeleton.tsx
