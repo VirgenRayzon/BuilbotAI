@@ -119,7 +119,11 @@ async function main() {
           );
         });
 
-      if (partIdsMatch && summariesMatch) {
+      const expectedIsArchived = system.isArchived ?? false;
+      const rawData = document.data() as Record<string, unknown>;
+      const hasIsArchivedField = typeof rawData.isArchived === 'boolean';
+
+      if (partIdsMatch && summariesMatch && hasIsArchivedField) {
         continue;
       }
 
@@ -129,6 +133,7 @@ async function main() {
           componentPartIds: expectedPartIds,
           componentSummaries: expectedSummaries,
           price: derivedPrice,
+          isArchived: expectedIsArchived,
         });
         updated++;
       }

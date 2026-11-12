@@ -96,7 +96,7 @@ async function serializeProduct(data: Part & PrebuiltSystem, kind: ProductKind):
                   category: s.category,
                   brand: 'BuildbotAI',
                   price: s.price,
-                  stock: s.inStock ? 1 : 0,
+                  stock: s.inStock ? 999 : 0,
                   imageUrl: s.imageUrl,
                   specifications: {},
                   isArchived: false,

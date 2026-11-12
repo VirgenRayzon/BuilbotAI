@@ -37,6 +37,7 @@ export async function createCatalogProduct(input: unknown) {
   const payload: Record<string, unknown> = JSON.parse(JSON.stringify(parsed.payload));
   if (parsed.kind === 'part') Object.assign(payload, deriveInventoryQueryFields({ ...payload, createdAt: new Date() }));
   if (parsed.kind === 'prebuilt') {
+    payload.isArchived = payload.isArchived ?? false;
     const system = payload as unknown as PrebuiltSystem;
     payload.componentPartIds = extractPrebuiltComponentPartIds(system);
     payload.componentSummaries = await buildPrebuiltComponentSummaries(system, async (cat, partId) => {

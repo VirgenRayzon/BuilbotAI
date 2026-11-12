@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { PrebuiltSystem } from '@/lib/types';
-import { fetchPrebuiltSystemsPageAction } from '@/lib/server/prebuilt-queries';
+import { fetchPrebuiltSystemsPageAction } from '@/app/pre-builts/prebuilt-catalog-actions';
 
 interface UsePrebuiltCatalogOptions {
   tiers: string[];

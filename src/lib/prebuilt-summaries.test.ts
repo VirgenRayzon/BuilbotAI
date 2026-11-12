@@ -12,6 +12,7 @@ import {
 } from './server/prebuilt-queries';
 import type { Part, PrebuiltSystem } from './types';
 import { INCLUDED_INTEGRATED_GPU_ID } from './integrated-graphics';
+import { getPrebuiltPartStatuses, type ResolvedPrebuiltPart } from './prebuilt-utils';
 
 function createMockPart(overrides: Partial<Part> = {}): Part {
   return {
@@ -374,4 +375,110 @@ test('listPrebuiltSystemsPage applies public filter (isArchived == false), tier 
 
   assert.equal(page2.items.length, 1, 'Page 2 should return the remaining 1 unarchived entry/mid-range prebuilt');
   assert.equal(page2.hasMore, false);
+});
+
+test('getPrebuiltPartStatuses does not mark dual-channel RAM out of stock when synthesized from inStock: true summaries', () => {
+  const system = createMockPrebuilt({
+    components: {
+      cpu: 'cpu-1',
+      gpu: 'gpu-1',
+      motherboard: 'mobo-1',
+      ram: ['ram-1', 'ram-1'],
+      storage: ['ssd-1'],
+      psu: 'psu-1',
+      case: 'case-1',
+      cooler: 'cooler-1',
+    },
+  });
+
+  const summaries: PrebuiltComponentSummary[] = [
+    { key: 'ram-0', category: 'RAM', partId: 'ram-1', productId: null, name: 'DDR5 16GB', price: 3000, imageUrl: '', inStock: true, isArchived: false },
+    { key: 'ram-1', category: 'RAM', partId: 'ram-1', productId: null, name: 'DDR5 16GB', price: 3000, imageUrl: '', inStock: true, isArchived: false },
+  ];
+
+  const resolvedParts: ResolvedPrebuiltPart[] = summaries.map(s => ({
+    key: s.key,
+    category: s.category.toLowerCase(),
+    partId: s.partId,
+    part: s.isArchived ? null : {
+      id: s.partId,
+      name: s.name,
+      category: s.category,
+      brand: 'BuildbotAI',
+      price: s.price,
+      stock: s.inStock ? 999 : 0,
+      imageUrl: s.imageUrl,
+      specifications: {},
+      isArchived: false,
+    },
+  }));
+
+  const statuses = getPrebuiltPartStatuses(system, resolvedParts);
+  const ramStatuses = statuses.filter(s => s.category === 'ram');
+  assert.equal(ramStatuses.length, 2);
+  assert.equal(ramStatuses[0].issue, null, 'Slot 0 RAM should not have issue');
+  assert.equal(ramStatuses[1].issue, null, 'Slot 1 RAM should not have out-of-stock issue');
+});
+
+test('syncPrebuiltSummariesForPart performs zero Firestore writes when stock change leaves inStock unchanged', async () => {
+  const initialSummaries: PrebuiltComponentSummary[] = [
+    {
+      key: 'gpu-0',
+      category: 'GPU',
+      partId: 'gpu-target',
+      productId: 'PRD-GPU-TARGET',
+      name: 'RTX 4060 8GB',
+      price: 18000,
+      imageUrl: 'https://example.com/gpu.png',
+      inStock: true,
+      isArchived: false,
+    },
+  ];
+
+  let updateCalled = false;
+  const mockPrebuiltDoc = {
+    id: 'prebuilt-sys-1',
+    ref: {
+      update: async () => {
+        updateCalled = true;
+      },
+    },
+    data: () => ({
+      id: 'prebuilt-sys-1',
+      price: 18000,
+      componentSummaries: initialSummaries,
+      componentPartIds: ['gpu-target'],
+    }),
+  };
+
+  const mockDb = {
+    collection: () => ({
+      where: () => ({
+        get: async () => ({
+          docs: [mockPrebuiltDoc],
+          empty: false,
+          size: 1,
+        }),
+      }),
+    }),
+  };
+
+  // Part stock drops from 10 to 9, but inStock remains true, price and other fields identical
+  const updatedPart = createMockPart({
+    id: 'gpu-target',
+    productId: 'PRD-GPU-TARGET',
+    name: 'RTX 4060 8GB',
+    price: 18000,
+    stock: 9,
+    imageUrl: 'https://example.com/gpu.png',
+    isArchived: false,
+  });
+
+  await syncPrebuiltSummariesForPart(
+    mockDb as any,
+    'inventory/gpu/items/gpu-target',
+    updatedPart
+  );
+
+  assert.equal(updateCalled, false, 'No update should be performed when inStock, price, name, etc. did not change');
 });

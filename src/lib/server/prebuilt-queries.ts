@@ -108,14 +108,3 @@ export async function listPrebuiltSystemsPage(
     hasMore,
   };
 }
-
-export async function fetchPrebuiltSystemsPageAction(rawOptions: unknown) {
-  'use server';
-  try {
-    const result = await listPrebuiltSystemsPage(rawOptions);
-    return { success: true as const, ...result };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not fetch prebuilt systems.';
-    return { success: false as const, error: message, items: [], nextCursor: null, hasMore: false };
-  }
-}

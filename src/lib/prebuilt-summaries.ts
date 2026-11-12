@@ -130,43 +130,76 @@ export async function syncPrebuiltSummariesForPart(
     const updatedSummaries = existingSummaries.map((summary: PrebuiltComponentSummary) => {
       const isTargetPart = summary.partId === partId || (summary.productId && summary.productId === partData.productId);
       if (isTargetPart) {
-        hasChanged = true;
-        const isArchived = Boolean(partData.isArchived);
-        const inStock = !isArchived && (partData.stock ?? 0) > 0;
+        const nextIsArchived = Boolean(partData.isArchived);
+        const nextInStock = !nextIsArchived && (partData.stock ?? 0) > 0;
+        const nextPrice = partData.price ?? summary.price;
+        const nextName = partData.name ?? summary.name;
+        const nextImageUrl = partData.imageUrl || partData.images?.[0] || summary.imageUrl;
+        const nextProductId = partData.productId ?? summary.productId;
+
+        if (
+          nextPrice !== summary.price ||
+          nextInStock !== summary.inStock ||
+          nextIsArchived !== summary.isArchived ||
+          nextName !== summary.name ||
+          nextImageUrl !== summary.imageUrl ||
+          nextProductId !== summary.productId
+        ) {
+          hasChanged = true;
+        }
+
         return {
           ...summary,
-          price: partData.price ?? summary.price,
-          name: partData.name ?? summary.name,
-          imageUrl: partData.imageUrl || partData.images?.[0] || summary.imageUrl,
-          inStock,
-          isArchived,
-          productId: partData.productId ?? summary.productId,
+          price: nextPrice,
+          name: nextName,
+          imageUrl: nextImageUrl,
+          inStock: nextInStock,
+          isArchived: nextIsArchived,
+          productId: nextProductId,
         };
       }
 
       if (partData.category === 'CPU') {
         if (summary.partId === 'included-stock-cooler') {
-          hasChanged = true;
-          const isArchived = Boolean(partData.isArchived);
-          const inStock = !isArchived && (partData.stock ?? 0) > 0;
-          const coolerName = !isArchived ? includedCpuCoolerName(partData) : null;
+          const nextIsArchived = Boolean(partData.isArchived);
+          const nextInStock = !nextIsArchived && (partData.stock ?? 0) > 0;
+          const coolerName = !nextIsArchived ? includedCpuCoolerName(partData) : null;
+          const nextName = coolerName || summary.name;
+
+          if (
+            nextInStock !== summary.inStock ||
+            nextIsArchived !== summary.isArchived ||
+            nextName !== summary.name
+          ) {
+            hasChanged = true;
+          }
+
           return {
             ...summary,
-            name: coolerName || summary.name,
-            inStock,
-            isArchived,
+            name: nextName,
+            inStock: nextInStock,
+            isArchived: nextIsArchived,
           };
         }
         if (summary.partId === INCLUDED_INTEGRATED_GPU_ID) {
-          hasChanged = true;
-          const isArchived = Boolean(partData.isArchived);
-          const inStock = !isArchived && (partData.stock ?? 0) > 0;
-          const igpu = !isArchived ? createIntegratedGpuPart(partData) : null;
+          const nextIsArchived = Boolean(partData.isArchived);
+          const nextInStock = !nextIsArchived && (partData.stock ?? 0) > 0;
+          const igpu = !nextIsArchived ? createIntegratedGpuPart(partData) : null;
+          const nextName = igpu?.name || summary.name;
+
+          if (
+            nextInStock !== summary.inStock ||
+            nextIsArchived !== summary.isArchived ||
+            nextName !== summary.name
+          ) {
+            hasChanged = true;
+          }
+
           return {
             ...summary,
-            name: igpu?.name || summary.name,
-            inStock,
-            isArchived,
+            name: nextName,
+            inStock: nextInStock,
+            isArchived: nextIsArchived,
           };
         }
       }

@@ -327,7 +327,8 @@ export async function addPrebuiltSystem(_firestore: Firestore, system: AddPrebui
             case: caseComponent,
             cooler
         },
-        createdAt: new Date()
+        createdAt: new Date(),
+        isArchived: false,
     };
 
     const componentPartIds = extractPrebuiltComponentPartIds(systemData as PrebuiltSystem);
