@@ -2,6 +2,68 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-11-13]
+
+### Refactoring
+- **checkout**: Modularize page into focused sub-components and custom hook ([3a1b6ca](https://github.com/VirgenRayzon/BuilbotAI/commit/3a1b6ca))
+
+## [2026-11-11]
+
+### Bug Fixes
+- **builder**: Abort load-favorite-build listener on cleanup ([da8006f](https://github.com/VirgenRayzon/BuilbotAI/commit/da8006f))
+
+### Refactoring
+- Remove unused imports, local variables, and dead server actions ([9c45060](https://github.com/VirgenRayzon/BuilbotAI/commit/9c45060))
+- Remove unreachable components, unused UI primitives, and unused assets ([e2efdaa](https://github.com/VirgenRayzon/BuilbotAI/commit/e2efdaa))
+
+### Miscellaneous
+- Ignore .worktrees directory ([1ae16d5](https://github.com/VirgenRayzon/BuilbotAI/commit/1ae16d5))
+- Strip remaining inline and block comments ([8cf6a9d](https://github.com/VirgenRayzon/BuilbotAI/commit/8cf6a9d))
+- Remove scratch files, test suites, mockups, and unused scripts ([d495d00](https://github.com/VirgenRayzon/BuilbotAI/commit/d495d00))
+
+## [2026-11-08]
+
+### Features
+- **production**: Add /api/health endpoint, dynamic robots.ts, and sitemap.ts ([0c6712a](https://github.com/VirgenRayzon/BuilbotAI/commit/0c6712a))
+
+### Bug Fixes
+- **builder**: Extract handleLoadFavorite to top-level useCallback for stable scope ([542c560](https://github.com/VirgenRayzon/BuilbotAI/commit/542c560))
+- **ai**: Enforce exact hardware model matching during part detail extraction ([663816f](https://github.com/VirgenRayzon/BuilbotAI/commit/663816f))
+
+### Refactoring
+- **assets**: Deduplicate static images and remove unused team image copies ([a9acc45](https://github.com/VirgenRayzon/BuilbotAI/commit/a9acc45))
+
+### Documentation
+- **plans**: Record deployment readiness plan and execution plan ([b2fdeda](https://github.com/VirgenRayzon/BuilbotAI/commit/b2fdeda))
+
+### Miscellaneous
+- Clean all trailing inline comments and reorganize imports in ai flows ([9bf0028](https://github.com/VirgenRayzon/BuilbotAI/commit/9bf0028))
+- Clean comments across scratch, tests, and execution directories ([a67eb54](https://github.com/VirgenRayzon/BuilbotAI/commit/a67eb54))
+- Deep clean all JSDoc, block, and JSX comments across src ([bf9d8c5](https://github.com/VirgenRayzon/BuilbotAI/commit/bf9d8c5))
+- Add GitHub Actions continuous integration quality gate workflow ([b5462bb](https://github.com/VirgenRayzon/BuilbotAI/commit/b5462bb))
+- Link storage.rules in firebase.json and add .env.example ([8d604e8](https://github.com/VirgenRayzon/BuilbotAI/commit/8d604e8))
+- Add production security headers and enforce strict build gates in next.config.ts ([3bf18ea](https://github.com/VirgenRayzon/BuilbotAI/commit/3bf18ea))
+- Clean obsolete developer comments and dead commented-out code across src ([aae2e1d](https://github.com/VirgenRayzon/BuilbotAI/commit/aae2e1d))
+- Ignore playwright and test artifacts in gitignore ([882f556](https://github.com/VirgenRayzon/BuilbotAI/commit/882f556))
+- Remove redundant root scratch files, mock designs, and untrack test results ([5fbb78b](https://github.com/VirgenRayzon/BuilbotAI/commit/5fbb78b))
+
+## [2026-11-07]
+
+### Features
+- Enhance catalog category selection and public auth handling ([403ae51](https://github.com/VirgenRayzon/BuilbotAI/commit/403ae51))
+- **builder**: Add live catalog recommendations with budget reservations ([f0933ff](https://github.com/VirgenRayzon/BuilbotAI/commit/f0933ff))
+- Require sign-in for public feature actions ([402cd03](https://github.com/VirgenRayzon/BuilbotAI/commit/402cd03))
+- Explain public feature sign-in redirects ([34da1c7](https://github.com/VirgenRayzon/BuilbotAI/commit/34da1c7))
+- Add public feature sign-in policy ([8bdb062](https://github.com/VirgenRayzon/BuilbotAI/commit/8bdb062))
+
+### Documentation
+- Add finetuned gemini system report ([196c6c6](https://github.com/VirgenRayzon/BuilbotAI/commit/196c6c6))
+- Document public feature authentication ([827ac8e](https://github.com/VirgenRayzon/BuilbotAI/commit/827ac8e))
+
+### Miscellaneous
+- Normalize test result metadata ([6006032](https://github.com/VirgenRayzon/BuilbotAI/commit/6006032))
+- Checkpoint current workspace changes ([5e31fbf](https://github.com/VirgenRayzon/BuilbotAI/commit/5e31fbf))
+
 ## [2026-11-06]
 
 ### Features
