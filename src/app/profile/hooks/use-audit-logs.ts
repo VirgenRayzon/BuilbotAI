@@ -7,13 +7,16 @@ import { useUserProfile } from '@/context/user-profile';
 import { fetchStaffAuditLogsPageAction } from '@/app/profile/audit-log-actions';
 import type { AuditLog } from '@/lib/types';
 
-export interface UseAuditLogsOptions {
-  enabled?: boolean;
+export interface AuditLogFilters {
   scope?: string;
   fromDate?: string;
   toDate?: string;
   pageSize?: number;
   sortBy?: 'newest' | 'oldest';
+}
+
+export interface UseAuditLogsOptions extends AuditLogFilters {
+  enabled?: boolean;
 }
 
 export function useAuditLogs(enabledOrOptions: boolean | UseAuditLogsOptions = true) {
@@ -22,11 +25,14 @@ export function useAuditLogs(enabledOrOptions: boolean | UseAuditLogsOptions = t
     : enabledOrOptions;
 
   const enabled = options.enabled ?? true;
-  const scope = options.scope;
-  const fromDate = options.fromDate;
-  const toDate = options.toDate;
-  const pageSize = options.pageSize ?? 25;
-  const sortBy = options.sortBy ?? 'newest';
+
+  const [filters, setFilters] = useState<AuditLogFilters>({
+    scope: options.scope,
+    fromDate: options.fromDate,
+    toDate: options.toDate,
+    pageSize: options.pageSize ?? 25,
+    sortBy: options.sortBy ?? 'newest',
+  });
 
   const auth = useAuth();
   const { profile } = useUserProfile();
@@ -82,11 +88,11 @@ export function useAuditLogs(enabledOrOptions: boolean | UseAuditLogsOptions = t
     try {
       const idToken = await user.getIdToken();
       const res = await fetchStaffAuditLogsPageAction(idToken, {
-        scope,
-        fromDate,
-        toDate,
-        pageSize,
-        sortBy,
+        scope: filters.scope,
+        fromDate: filters.fromDate,
+        toDate: filters.toDate,
+        pageSize: filters.pageSize ?? 25,
+        sortBy: filters.sortBy ?? 'newest',
         cursor: null,
       });
 
@@ -108,7 +114,7 @@ export function useAuditLogs(enabledOrOptions: boolean | UseAuditLogsOptions = t
         setLoading(false);
       }
     }
-  }, [enabled, auth, profile, scope, fromDate, toDate, pageSize, sortBy]);
+  }, [enabled, auth, profile, filters]);
 
   useEffect(() => {
     void fetchInitial();
@@ -123,11 +129,11 @@ export function useAuditLogs(enabledOrOptions: boolean | UseAuditLogsOptions = t
     try {
       const idToken = await user.getIdToken();
       const res = await fetchStaffAuditLogsPageAction(idToken, {
-        scope,
-        fromDate,
-        toDate,
-        pageSize,
-        sortBy,
+        scope: filters.scope,
+        fromDate: filters.fromDate,
+        toDate: filters.toDate,
+        pageSize: filters.pageSize ?? 25,
+        sortBy: filters.sortBy ?? 'newest',
         cursor: nextCursor,
       });
 
@@ -145,7 +151,7 @@ export function useAuditLogs(enabledOrOptions: boolean | UseAuditLogsOptions = t
     } finally {
       setLoadingMore(false);
     }
-  }, [hasMore, nextCursor, loadingMore, enabled, auth, scope, fromDate, toDate, pageSize, sortBy]);
+  }, [hasMore, nextCursor, loadingMore, enabled, auth, filters]);
 
   const refresh = useCallback(async () => {
     await fetchInitial();
@@ -161,5 +167,7 @@ export function useAuditLogs(enabledOrOptions: boolean | UseAuditLogsOptions = t
     refresh,
     isLoadingMore: loadingMore,
     error,
+    filters,
+    setFilters,
   };
 }

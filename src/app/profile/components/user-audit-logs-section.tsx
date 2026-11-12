@@ -7,6 +7,7 @@ import {
   Calendar as CalendarIcon,
   X,
   Loader2,
+  Info,
 } from "lucide-react";
 import {
   Badge,
@@ -23,8 +24,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
 import { PaginationControls } from "@/components/pagination-controls";
 import type { UserAuditLog } from "@/lib/types";
+import type { UserAuditLogFilters } from "../hooks/use-user-audit-logs";
 import { CUSTOMER_AUDIT_SCOPES } from "@/lib/audit-scopes";
-import { UserAuditLogsTable, parseUserAuditDate } from "./user-audit-logs-table";
+import { UserAuditLogsTable } from "./user-audit-logs-table";
 
 export interface UserAuditLogsSectionProps {
   logs: UserAuditLog[];
@@ -33,6 +35,8 @@ export interface UserAuditLogsSectionProps {
   hasMore?: boolean;
   loadMore?: () => Promise<void>;
   isLoadingMore?: boolean;
+  filters?: UserAuditLogFilters;
+  onFiltersChange?: (filters: UserAuditLogFilters) => void;
 }
 
 export function UserAuditLogsSection({
@@ -42,38 +46,51 @@ export function UserAuditLogsSection({
   hasMore,
   loadMore,
   isLoadingMore,
+  filters: controlledFilters,
+  onFiltersChange,
 }: UserAuditLogsSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterScope, setFilterScope] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+
+  // Local filter fallback if caller does not control filters
+  const [localFilters, setLocalFilters] = useState<UserAuditLogFilters>({
+    scope: undefined,
+    fromDate: undefined,
+    toDate: undefined,
+    sortBy: "newest",
+  });
+
+  const activeFilters = controlledFilters ?? localFilters;
+  const updateActiveFilters = (next: UserAuditLogFilters) => {
+    if (onFiltersChange) {
+      onFiltersChange(next);
+    } else {
+      setLocalFilters(next);
+    }
+  };
+
+  const filterScope = activeFilters.scope || "all";
+  const dateRange = useMemo<DateRange | undefined>(() => {
+    if (!activeFilters.fromDate) return undefined;
+    return {
+      from: new Date(activeFilters.fromDate),
+      to: activeFilters.toDate ? new Date(activeFilters.toDate) : undefined,
+    };
+  }, [activeFilters.fromDate, activeFilters.toDate]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
 
+  // Server handles scope, fromDate, toDate, and sortBy; client search applies in-memory
   const filteredLogs = useMemo(() => {
+    if (!searchQuery?.trim()) return logs;
+    const q = searchQuery.toLowerCase().trim();
     return logs.filter((log) => {
-      const matchesSearch =
-        !searchQuery ||
-        log.resourceName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.details?.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesScope = filterScope === "all" || log.scope === filterScope;
-
-      let matchesDate = true;
-      if (dateRange?.from) {
-        const logDate = parseUserAuditDate(log.createdAt);
-        if (logDate) {
-          if (dateRange.to) {
-            matchesDate = logDate >= dateRange.from && logDate <= dateRange.to;
-          } else {
-            matchesDate = logDate >= dateRange.from;
-          }
-        }
-      }
-
-      return matchesSearch && matchesScope && matchesDate;
+      return (
+        log.resourceName?.toLowerCase().includes(q) ||
+        log.details?.toLowerCase().includes(q)
+      );
     });
-  }, [logs, searchQuery, filterScope, dateRange]);
+  }, [logs, searchQuery]);
 
   const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
   const currentLogs = useMemo(() => {
@@ -81,7 +98,38 @@ export function UserAuditLogsSection({
     return filteredLogs.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredLogs, currentPage, itemsPerPage]);
 
-  const displayCount = totalCount !== undefined ? totalCount : filteredLogs.length;
+  const handleScopeChange = (scope: string) => {
+    setCurrentPage(1);
+    updateActiveFilters({
+      ...activeFilters,
+      scope: scope === "all" ? undefined : scope,
+    });
+  };
+
+  const handleDateRangeChange = (range?: DateRange) => {
+    setCurrentPage(1);
+    updateActiveFilters({
+      ...activeFilters,
+      fromDate: range?.from ? range.from.toISOString() : undefined,
+      toDate: range?.to ? range.to.toISOString() : undefined,
+    });
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setCurrentPage(1);
+    updateActiveFilters({
+      ...activeFilters,
+      scope: undefined,
+      fromDate: undefined,
+      toDate: undefined,
+      sortBy: "newest",
+    });
+  };
+
+  const hasSearch = Boolean(searchQuery?.trim());
+  const hasActiveFilters = Boolean(searchQuery || filterScope !== "all" || dateRange);
+  const displayCount = hasSearch ? filteredLogs.length : (totalCount ?? filteredLogs.length);
 
   return (
     <Stack gap="md">
@@ -110,10 +158,7 @@ export function UserAuditLogsSection({
 
           <Select
             value={filterScope}
-            onChange={(val) => {
-              setFilterScope(val || "all");
-              setCurrentPage(1);
-            }}
+            onChange={(val) => handleScopeChange(val || "all")}
             data={[{ value: "all", label: "All Categories" }, ...CUSTOMER_AUDIT_SCOPES]}
             radius="md"
             className="w-full md:w-44"
@@ -151,26 +196,18 @@ export function UserAuditLogsSection({
                 mode="range"
                 defaultMonth={dateRange?.from}
                 selected={dateRange}
-                onSelect={(range) => {
-                  setDateRange(range);
-                  setCurrentPage(1);
-                }}
+                onSelect={handleDateRangeChange}
                 numberOfMonths={2}
               />
             </PopoverContent>
           </Popover>
 
-          {(searchQuery || filterScope !== "all" || dateRange) && (
+          {hasActiveFilters && (
             <Button
               variant="subtle"
               color="red"
               size="xs"
-              onClick={() => {
-                setSearchQuery("");
-                setFilterScope("all");
-                setDateRange(undefined);
-                setCurrentPage(1);
-              }}
+              onClick={handleResetFilters}
               leftSection={<X size={14} />}
               className="font-bold text-xs"
             >
@@ -179,6 +216,30 @@ export function UserAuditLogsSection({
           )}
         </div>
       </Paper>
+
+      {hasSearch && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 px-3.5 py-2.5 rounded-lg border border-indigo-200/80 bg-indigo-50/50 text-indigo-900 dark:border-indigo-500/20 dark:bg-indigo-500/[0.06] dark:text-indigo-200 text-xs">
+          <div className="flex items-center gap-2">
+            <Info size={14} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
+            <span>
+              Search matches loaded records ({filteredLogs.length} found).
+              {hasMore ? " Older activity records can be retrieved from the server." : ""}
+            </span>
+          </div>
+          {hasMore && loadMore && (
+            <Button
+              variant="subtle"
+              color="indigo"
+              size="compact-xs"
+              loading={isLoadingMore}
+              onClick={loadMore}
+              className="shrink-0"
+            >
+              Load more logs
+            </Button>
+          )}
+        </div>
+      )}
 
       <Paper
         withBorder

@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2, Info } from "lucide-react";
 import { Badge, Button, Group, Paper, Stack, Text } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -11,9 +11,10 @@ import { DateRange } from "react-day-picker";
 import { PaginationControls } from "@/components/pagination-controls";
 import { CompactInfo } from "@/components/ui/compact-info";
 import type { AuditLog } from "@/lib/types";
+import type { AuditLogFilters } from "../hooks/use-audit-logs";
 import { AdminHeaderSlot } from "@/app/admin/components/admin-tab-header";
 import { AuditLogsFilters } from "./audit-logs-filters";
-import { AuditLogsTable, parseAuditDate } from "./audit-logs-table";
+import { AuditLogsTable } from "./audit-logs-table";
 
 export interface AuditLogsSectionProps {
   logs: AuditLog[];
@@ -24,6 +25,8 @@ export interface AuditLogsSectionProps {
   hasMore?: boolean;
   loadMore?: () => Promise<void>;
   isLoadingMore?: boolean;
+  filters?: AuditLogFilters;
+  onFiltersChange?: (filters: AuditLogFilters) => void;
 }
 
 export function AuditLogsSection({
@@ -35,13 +38,39 @@ export function AuditLogsSection({
   hasMore,
   loadMore,
   isLoadingMore,
+  filters: controlledFilters,
+  onFiltersChange,
 }: AuditLogsSectionProps) {
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const searchQuery = controlledSearchQuery ?? localSearchQuery;
   const setSearchQuery = onSearchQueryChange ?? setLocalSearchQuery;
-  const [filterScope, setFilterScope] = useState("all");
-  const [sortBy, setSortBy] = useState<"newest" | "oldest">("newest");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+
+  // Local filter fallback if caller does not control filters
+  const [localFilters, setLocalFilters] = useState<AuditLogFilters>({
+    scope: undefined,
+    fromDate: undefined,
+    toDate: undefined,
+    sortBy: "newest",
+  });
+
+  const activeFilters = controlledFilters ?? localFilters;
+  const updateActiveFilters = (next: AuditLogFilters) => {
+    if (onFiltersChange) {
+      onFiltersChange(next);
+    } else {
+      setLocalFilters(next);
+    }
+  };
+
+  const filterScope = activeFilters.scope || "all";
+  const sortBy = activeFilters.sortBy || "newest";
+  const dateRange = useMemo<DateRange | undefined>(() => {
+    if (!activeFilters.fromDate) return undefined;
+    return {
+      from: new Date(activeFilters.fromDate),
+      to: activeFilters.toDate ? new Date(activeFilters.toDate) : undefined,
+    };
+  }, [activeFilters.fromDate, activeFilters.toDate]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
@@ -55,40 +84,17 @@ export function AuditLogsSection({
     setMobileOpened(false);
   }, [isMobile]);
 
+  // Server handles scope, fromDate, toDate, and sortBy; client search applies in-memory
   const filteredLogs = useMemo(() => {
-    const list = logs.filter((log) => {
-      const matchesSearch =
-        !searchQuery ||
-        log.resourceName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.details?.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesType = filterScope === "all" || log.scope === filterScope;
-
-      let matchesDate = true;
-      if (dateRange?.from) {
-        const logDate = parseAuditDate(log.createdAt);
-        if (logDate) {
-          if (dateRange.to) {
-            matchesDate = logDate >= dateRange.from && logDate <= dateRange.to;
-          } else {
-            matchesDate = logDate >= dateRange.from;
-          }
-        }
-      }
-
-      return matchesSearch && matchesType && matchesDate;
+    if (!searchQuery?.trim()) return logs;
+    const q = searchQuery.toLowerCase().trim();
+    return logs.filter((log) => {
+      return (
+        log.resourceName?.toLowerCase().includes(q) ||
+        log.details?.toLowerCase().includes(q)
+      );
     });
-
-    list.sort((a, b) => {
-      const dateA = parseAuditDate(a.createdAt);
-      const dateB = parseAuditDate(b.createdAt);
-      const timeA = dateA ? dateA.getTime() : 0;
-      const timeB = dateB ? dateB.getTime() : 0;
-      return sortBy === "oldest" ? timeA - timeB : timeB - timeA;
-    });
-
-    return list;
-  }, [logs, searchQuery, filterScope, dateRange, sortBy]);
+  }, [logs, searchQuery]);
 
   const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
   const currentLogs = useMemo(() => {
@@ -96,15 +102,45 @@ export function AuditLogsSection({
     return filteredLogs.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredLogs, currentPage, itemsPerPage]);
 
-  const handleResetAll = () => {
-    setSearchQuery("");
-    setFilterScope("all");
-    setDateRange(undefined);
-    setSortBy("newest");
+  const handleScopeChange = (scope: string) => {
     setCurrentPage(1);
+    updateActiveFilters({
+      ...activeFilters,
+      scope: scope === "all" ? undefined : scope,
+    });
   };
 
-  const displayCount = totalCount !== undefined ? totalCount : filteredLogs.length;
+  const handleDateRangeChange = (range?: DateRange) => {
+    setCurrentPage(1);
+    updateActiveFilters({
+      ...activeFilters,
+      fromDate: range?.from ? range.from.toISOString() : undefined,
+      toDate: range?.to ? range.to.toISOString() : undefined,
+    });
+  };
+
+  const handleSortByChange = (sort: "newest" | "oldest") => {
+    setCurrentPage(1);
+    updateActiveFilters({
+      ...activeFilters,
+      sortBy: sort,
+    });
+  };
+
+  const handleResetAll = () => {
+    setSearchQuery("");
+    setCurrentPage(1);
+    updateActiveFilters({
+      ...activeFilters,
+      scope: undefined,
+      fromDate: undefined,
+      toDate: undefined,
+      sortBy: "newest",
+    });
+  };
+
+  const hasSearch = Boolean(searchQuery?.trim());
+  const displayCount = hasSearch ? filteredLogs.length : (totalCount ?? filteredLogs.length);
 
   return (
     <Stack gap="md">
@@ -119,22 +155,13 @@ export function AuditLogsSection({
             <div className="flex shrink-0 items-center gap-2">
               <AuditLogsFilters
                 filterScope={filterScope}
-                onFilterScopeChange={(scope) => {
-                  setFilterScope(scope);
-                  setCurrentPage(1);
-                }}
+                onFilterScopeChange={handleScopeChange}
                 sortBy={sortBy}
-                onSortByChange={(sort) => {
-                  setSortBy(sort);
-                  setCurrentPage(1);
-                }}
+                onSortByChange={handleSortByChange}
                 dateRange={dateRange}
-                onDateRangeChange={(range) => {
-                  setDateRange(range);
-                  setCurrentPage(1);
-                }}
+                onDateRangeChange={handleDateRangeChange}
                 onResetAll={handleResetAll}
-                filteredCount={filteredLogs.length}
+                filteredCount={displayCount}
                 desktopOpened={desktopOpened}
                 onDesktopOpenedChange={setDesktopOpened}
                 mobileOpened={mobileOpened}
@@ -165,10 +192,7 @@ export function AuditLogsSection({
                     mode="range"
                     defaultMonth={dateRange?.from}
                     selected={dateRange}
-                    onSelect={(range) => {
-                      setDateRange(range);
-                      setCurrentPage(1);
-                    }}
+                    onSelect={handleDateRangeChange}
                     numberOfMonths={2}
                   />
                 </PopoverContent>
@@ -176,6 +200,30 @@ export function AuditLogsSection({
             </div>
           }
         />
+
+        {hasSearch && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 px-3.5 py-2.5 rounded-lg border border-cyan-200/80 bg-cyan-50/50 text-cyan-900 dark:border-cyan-500/20 dark:bg-cyan-500/[0.06] dark:text-cyan-200 text-xs">
+            <div className="flex items-center gap-2">
+              <Info size={14} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
+              <span>
+                Search matches loaded records ({filteredLogs.length} found).
+                {hasMore ? " Older records can be retrieved from the server." : ""}
+              </span>
+            </div>
+            {hasMore && loadMore && (
+              <Button
+                variant="subtle"
+                color="cyan"
+                size="compact-xs"
+                loading={isLoadingMore}
+                onClick={loadMore}
+                className="shrink-0"
+              >
+                Load more logs
+              </Button>
+            )}
+          </div>
+        )}
 
         <Paper
           withBorder

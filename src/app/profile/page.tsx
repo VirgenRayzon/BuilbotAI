@@ -628,6 +628,8 @@ export default function ProfilePage() {
                           hasMore={userAudit.hasMore}
                           loadMore={userAudit.loadMore}
                           isLoadingMore={userAudit.isLoadingMore}
+                          filters={userAudit.filters}
+                          onFiltersChange={userAudit.setFilters}
                         />
                       </div>
                     )}

@@ -155,6 +155,110 @@ test('listUserAuditLogsPage rejects invalid or missing user token', async () => 
   );
 });
 
+test('listUserAuditLogsPage applies fromDate, toDate, scope, and matches tie-breaker direction for sortBy', async () => {
+  const whereClauses: { field: string; op: string; val: unknown }[] = [];
+  const orderClauses: { field: string; dir: string }[] = [];
+
+  const mockDb = {
+    collection: (name: string) => {
+      assert.equal(name, 'user_auditLogs');
+      const q = {
+        where: (field: string, op: string, val: unknown) => {
+          whereClauses.push({ field, op, val });
+          return q;
+        },
+        orderBy: (field: any, dir: string) => {
+          const fieldName = typeof field === 'object' && field._toFieldPath ? field._toFieldPath() : String(field);
+          orderClauses.push({ field: fieldName, dir });
+          return q;
+        },
+        limit: () => q,
+        count: () => ({
+          get: async () => ({
+            data: () => ({ count: 5 }),
+          }),
+        }),
+        get: async () => ({
+          docs: [
+            {
+              id: 'user-log-01',
+              data: () =>
+                createMockUserAuditLog({
+                  id: 'user-log-01',
+                  userId: 'user-abc',
+                  scope: 'Favorite',
+                  createdAt: '2026-11-05T00:00:00.000Z',
+                }),
+            },
+          ],
+        }),
+      };
+      return q;
+    },
+    doc: () => ({
+      get: async () => ({ exists: true }),
+    }),
+  };
+
+  const mockDeps = {
+    verifyUserToken: async () => ({
+      uid: 'user-abc',
+      email: 'user-abc@example.com',
+    }),
+    firestore: mockDb,
+  };
+
+  // Test oldest sort: createdAt asc + __name__ asc
+  const resultOldest = await listUserAuditLogsPage(
+    'token-user',
+    {
+      scope: 'Favorite',
+      fromDate: '2026-11-01T00:00:00.000Z',
+      toDate: '2026-11-10T23:59:59.999Z',
+      sortBy: 'oldest',
+      pageSize: 25,
+    },
+    mockDeps as any
+  );
+
+  assert.equal(resultOldest.logs.length, 1);
+  assert.equal(resultOldest.totalCount, 5);
+
+  const userWhere = whereClauses.find((w) => w.field === 'userId');
+  assert.equal(userWhere?.val, 'user-abc');
+
+  const scopeWhere = whereClauses.find((w) => w.field === 'scope');
+  assert.equal(scopeWhere?.val, 'Favorite');
+
+  const fromWhere = whereClauses.find((w) => w.field === 'createdAt' && w.op === '>=');
+  assert.ok(fromWhere?.val instanceof Date);
+
+  const toWhere = whereClauses.find((w) => w.field === 'createdAt' && w.op === '<=');
+  assert.ok(toWhere?.val instanceof Date);
+
+  // Assert order clauses match tie-breaker direction
+  assert.equal(orderClauses.length, 2);
+  assert.equal(orderClauses[0].field, 'createdAt');
+  assert.equal(orderClauses[0].dir, 'asc');
+  assert.equal(orderClauses[1].dir, 'asc'); // Tie-breaker __name__ matches createdAt asc
+
+  // Now test newest sort: createdAt desc + __name__ desc
+  orderClauses.length = 0;
+  await listUserAuditLogsPage(
+    'token-user',
+    {
+      scope: 'Favorite',
+      sortBy: 'newest',
+    },
+    mockDeps as any
+  );
+
+  assert.equal(orderClauses.length, 2);
+  assert.equal(orderClauses[0].field, 'createdAt');
+  assert.equal(orderClauses[0].dir, 'desc');
+  assert.equal(orderClauses[1].dir, 'desc'); // Tie-breaker __name__ matches createdAt desc
+});
+
 test('listStaffAuditLogsPage rejects non-staff tokens', async () => {
   const mockDeps = {
     verifyStaffToken: async () => ({

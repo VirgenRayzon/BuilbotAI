@@ -77,6 +77,8 @@ export default function AdminPage() {
         hasMore: hasMoreAuditLogs,
         loadMore: loadMoreAuditLogs,
         isLoadingMore: isLoadingMoreAuditLogs,
+        filters: auditFilters,
+        setFilters: setAuditFilters,
     } = useAuditLogs(currentTab === 'audit');
     const { featureModelRouting, aiModelProvider } = useSiteSettings();
     const routingValues = featureModelRouting ? Object.values(featureModelRouting) : [aiModelProvider];
@@ -384,6 +386,8 @@ export default function AdminPage() {
                                         hasMore={hasMoreAuditLogs}
                                         loadMore={loadMoreAuditLogs}
                                         isLoadingMore={isLoadingMoreAuditLogs}
+                                        filters={auditFilters}
+                                        onFiltersChange={setAuditFilters}
                                     />
                                 </div>
                             )}
