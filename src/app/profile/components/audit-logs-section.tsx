@@ -1,28 +1,9 @@
 "use client";
-import { TableLoadingRows } from "@/components/loading/table-loading-rows";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { format, subDays, startOfDay, endOfDay } from "date-fns";
-import {
-  Calendar as CalendarIcon,
-  Filter,
-  X,
-} from "lucide-react";
-import {
-  ActionIcon,
-  Avatar,
-  Badge,
-  Button,
-  Divider,
-  Drawer,
-  Group,
-  Paper,
-  Popover as MantinePopover,
-  Radio,
-  Stack,
-  Table,
-  Text,
-} from "@mantine/core";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { Badge, Button, Group, Paper, Stack, Text } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -30,40 +11,30 @@ import { DateRange } from "react-day-picker";
 import { PaginationControls } from "@/components/pagination-controls";
 import { CompactInfo } from "@/components/ui/compact-info";
 import type { AuditLog } from "@/lib/types";
-import { STAFF_AUDIT_SCOPES } from "@/lib/audit-scopes";
 import { AdminHeaderSlot } from "@/app/admin/components/admin-tab-header";
+import { AuditLogsFilters } from "./audit-logs-filters";
+import { AuditLogsTable, parseAuditDate } from "./audit-logs-table";
 
-interface AuditLogsSectionProps {
+export interface AuditLogsSectionProps {
   logs: AuditLog[];
   loading: boolean;
   searchQuery?: string;
   onSearchQueryChange?: (value: string) => void;
+  totalCount?: number;
+  hasMore?: boolean;
+  loadMore?: () => Promise<void>;
+  isLoadingMore?: boolean;
 }
-
-const actionColors: Record<string, string> = {
-  created: "teal",
-  restored: "teal",
-  updated: "yellow",
-  status_changed: "yellow",
-  deleted: "red",
-  archived: "red",
-  auth_update: "cyan",
-  other: "gray",
-};
-
-const scopeColors: Record<string, string> = {
-  Part: "blue",
-  Prebuilt: "cyan",
-  Order: "teal",
-  User: "indigo",
-  System: "violet",
-};
 
 export function AuditLogsSection({
   logs,
   loading,
   searchQuery: controlledSearchQuery,
   onSearchQueryChange,
+  totalCount,
+  hasMore,
+  loadMore,
+  isLoadingMore,
 }: AuditLogsSectionProps) {
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const searchQuery = controlledSearchQuery ?? localSearchQuery;
@@ -95,13 +66,12 @@ export function AuditLogsSection({
 
       let matchesDate = true;
       if (dateRange?.from) {
-        const logDate = log.createdAt?.toDate?.() || log.createdAt;
+        const logDate = parseAuditDate(log.createdAt);
         if (logDate) {
-          const date = new Date(logDate);
           if (dateRange.to) {
-            matchesDate = date >= dateRange.from && date <= dateRange.to;
+            matchesDate = logDate >= dateRange.from && logDate <= dateRange.to;
           } else {
-            matchesDate = date >= dateRange.from;
+            matchesDate = logDate >= dateRange.from;
           }
         }
       }
@@ -110,20 +80,10 @@ export function AuditLogsSection({
     });
 
     list.sort((a, b) => {
-      const timeA = a.createdAt?.toDate?.()
-        ? a.createdAt.toDate().getTime()
-        : a.createdAt?.seconds
-          ? a.createdAt.seconds * 1000
-          : a.createdAt
-            ? new Date(a.createdAt).getTime()
-            : 0;
-      const timeB = b.createdAt?.toDate?.()
-        ? b.createdAt.toDate().getTime()
-        : b.createdAt?.seconds
-          ? b.createdAt.seconds * 1000
-          : b.createdAt
-            ? new Date(b.createdAt).getTime()
-            : 0;
+      const dateA = parseAuditDate(a.createdAt);
+      const dateB = parseAuditDate(b.createdAt);
+      const timeA = dateA ? dateA.getTime() : 0;
+      const timeB = dateB ? dateB.getTime() : 0;
       return sortBy === "oldest" ? timeA - timeB : timeB - timeA;
     });
 
@@ -136,96 +96,6 @@ export function AuditLogsSection({
     return filteredLogs.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredLogs, currentPage, itemsPerPage]);
 
-  const rows = currentLogs.map((log) => {
-    const actionColor = actionColors[log.actionName] || "gray";
-    const scopeColor = scopeColors[log.scope] || "gray";
-    const logDate = log.createdAt?.toDate ? log.createdAt.toDate() : null;
-    const actorInitials =
-      log.actorName
-        ?.split(" ")
-        .map((p) => p[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2) || "ST";
-
-    return (
-      <Table.Tr
-        key={log.id}
-        className="transition-colors hover:bg-cyan-50/60 dark:hover:bg-cyan-500/[0.035] [&>td]:border-slate-100 dark:[&>td]:border-white/[0.06]"
-      >
-        <Table.Td>
-          <Group gap="sm" wrap="nowrap">
-            <Avatar
-              size={34}
-              radius={34}
-              color="cyan"
-              variant="light"
-              className="border border-slate-200 dark:border-white/10 shrink-0 font-bold text-xs"
-            >
-              {actorInitials}
-            </Avatar>
-            <div className="flex flex-col min-w-0">
-              <Text fz="sm" fw={600} className="text-slate-900 dark:text-slate-100 truncate max-w-[160px] sm:max-w-xs">
-                {log.actorName}
-              </Text>
-              <Text fz="xs" className="text-slate-500 dark:text-slate-400 truncate max-w-[160px]">
-                {log.actorEmail || "System Actor"}
-              </Text>
-            </div>
-          </Group>
-        </Table.Td>
-
-        <Table.Td>
-          <Badge
-            color={actionColor}
-            variant="light"
-            size="sm"
-            className="font-bold uppercase tracking-wider text-[10px]"
-          >
-            {log.actionName.replace("_", " ")}
-          </Badge>
-        </Table.Td>
-
-        <Table.Td>
-          <Text fz="sm" fw={500} className="text-slate-900 dark:text-slate-100 truncate max-w-[200px]">
-            {log.resourceName}
-          </Text>
-        </Table.Td>
-
-        <Table.Td>
-          <Badge color={scopeColor} variant="outline" size="sm" className="font-semibold text-[11px]">
-            {log.scope}
-          </Badge>
-        </Table.Td>
-
-        <Table.Td>
-          <Text fz="sm" className="text-slate-700 dark:text-slate-300 line-clamp-1 max-w-[260px]">
-            {log.details || "—"}
-          </Text>
-        </Table.Td>
-
-        <Table.Td>
-          <Text fz="xs" className="text-slate-600 dark:text-slate-400 font-mono whitespace-nowrap">
-            {logDate ? format(logDate, "MMM dd, yyyy • p") : "Unknown date"}
-          </Text>
-        </Table.Td>
-
-      </Table.Tr>
-    );
-  });
-
-  const scopeOptions = [{ value: "all", label: "All Resources" }, ...STAFF_AUDIT_SCOPES];
-
-  const sortOptions = [
-    { value: "newest", label: "Newest first" },
-    { value: "oldest", label: "Oldest first" },
-  ];
-
-  const scopeActive = filterScope !== "all";
-  const dateActive = Boolean(dateRange?.from);
-  const sortActive = sortBy !== "newest";
-  const activeCount = Number(scopeActive) + Number(dateActive) + Number(sortActive);
-
   const handleResetAll = () => {
     setSearchQuery("");
     setFilterScope("all");
@@ -234,174 +104,7 @@ export function AuditLogsSection({
     setCurrentPage(1);
   };
 
-  const filterButton = (mobile: boolean) => (
-    <Button
-      size="sm"
-      h={36}
-      variant={activeCount ? "light" : "default"}
-      color={activeCount ? "cyan" : undefined}
-      radius="md"
-      leftSection={<Filter size={17} />}
-      rightSection={activeCount ? <Badge color="cyan" circle size="sm">{activeCount}</Badge> : undefined}
-      className="flex-1 whitespace-nowrap sm:flex-none"
-      onClick={mobile ? () => setMobileOpened(true) : undefined}
-      aria-expanded={mobile ? mobileOpened : desktopOpened}
-      aria-label={`Filters and sort${activeCount ? `, ${activeCount} active` : ""}`}
-    >
-      Filters & sort
-    </Button>
-  );
-
-  const filterContent = (close: () => void, maxHeight: string) => (
-    <div className="flex flex-col" style={{ maxHeight }}>
-      <Stack gap="sm" className="min-h-0 overflow-y-auto p-3">
-        <div>
-          <Group justify="space-between" mb="xs">
-            <Text fw={700} size="sm">Resource Scope</Text>
-            {scopeActive && (
-              <Button
-                variant="subtle"
-                size="compact-sm"
-                className="min-h-11 px-1 sm:min-h-7"
-                onClick={() => {
-                  setFilterScope("all");
-                  setCurrentPage(1);
-                }}
-              >
-                Reset
-              </Button>
-            )}
-          </Group>
-          <Radio.Group
-            value={filterScope}
-            onChange={(val) => {
-              setFilterScope(val || "all");
-              setCurrentPage(1);
-            }}
-          >
-            <Stack gap={0}>
-              {scopeOptions.map((opt) => (
-                <Radio
-                  key={opt.value}
-                  value={opt.value}
-                  label={opt.label}
-                  color="cyan"
-                  size="sm"
-                  classNames={{ root: "flex min-h-11 items-center sm:min-h-7" }}
-                />
-              ))}
-            </Stack>
-          </Radio.Group>
-        </div>
-
-        <Divider />
-
-        <div>
-          <Group justify="space-between" mb="xs">
-            <Text fw={700} size="sm">Date Presets</Text>
-            {dateActive && (
-              <Button
-                variant="subtle"
-                size="compact-sm"
-                className="min-h-11 px-1 sm:min-h-7"
-                onClick={() => {
-                  setDateRange(undefined);
-                  setCurrentPage(1);
-                }}
-              >
-                Clear
-              </Button>
-            )}
-          </Group>
-          <div className="grid grid-cols-2 gap-1.5">
-            <Button
-              variant="default"
-              size="xs"
-              radius="md"
-              className="min-h-11 sm:min-h-8"
-              onClick={() => {
-                setDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) });
-                setCurrentPage(1);
-              }}
-            >
-              Today
-            </Button>
-            <Button
-              variant="default"
-              size="xs"
-              radius="md"
-              className="min-h-11 sm:min-h-8"
-              onClick={() => {
-                setDateRange({ from: startOfDay(subDays(new Date(), 7)), to: endOfDay(new Date()) });
-                setCurrentPage(1);
-              }}
-            >
-              Last 7 days
-            </Button>
-            <Button
-              variant="default"
-              size="xs"
-              radius="md"
-              className="min-h-11 sm:min-h-8"
-              onClick={() => {
-                setDateRange({ from: startOfDay(subDays(new Date(), 30)), to: endOfDay(new Date()) });
-                setCurrentPage(1);
-              }}
-            >
-              Last 30 days
-            </Button>
-            <Button
-              variant="default"
-              size="xs"
-              radius="md"
-              className="min-h-11 sm:min-h-8"
-              onClick={() => {
-                setDateRange(undefined);
-                setCurrentPage(1);
-              }}
-            >
-              All time
-            </Button>
-          </div>
-        </div>
-
-        <Divider />
-
-        <div>
-          <Text fw={700} size="sm" mb="xs">Sort by</Text>
-          <Radio.Group
-            value={sortBy}
-            onChange={(val) => {
-              setSortBy(val as any);
-              setCurrentPage(1);
-            }}
-          >
-            <Stack gap={0}>
-              {sortOptions.map((opt) => (
-                <Radio
-                  key={opt.value}
-                  value={opt.value}
-                  label={opt.label}
-                  color="cyan"
-                  size="sm"
-                  classNames={{ root: "flex min-h-11 items-center sm:min-h-7" }}
-                />
-              ))}
-            </Stack>
-          </Radio.Group>
-        </div>
-      </Stack>
-
-      <Group grow className="border-t border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-[#111722]">
-        <Button variant="default" radius="md" className="h-11" onClick={handleResetAll}>
-          Reset all
-        </Button>
-        <Button color="cyan" radius="md" className="h-11" onClick={close}>
-          Show {filteredLogs.length} {filteredLogs.length === 1 ? "event" : "events"}
-        </Button>
-      </Group>
-    </div>
-  );
+  const displayCount = totalCount !== undefined ? totalCount : filteredLogs.length;
 
   return (
     <Stack gap="md">
@@ -409,29 +112,35 @@ export function AuditLogsSection({
         <AdminHeaderSlot
           countBadge={
             <Badge size="md" variant="light" color="cyan" radius="md">
-              {filteredLogs.length} {filteredLogs.length === 1 ? "event" : "events"}
+              {displayCount} {displayCount === 1 ? "event" : "events"}
             </Badge>
           }
           actions={
             <div className="flex shrink-0 items-center gap-2">
-              <div className="flex sm:hidden">{filterButton(true)}</div>
-              <div className="hidden sm:block">
-                <MantinePopover
-                  opened={desktopOpened}
-                  onChange={setDesktopOpened}
-                  width={360}
-                  position="bottom-end"
-                  shadow="lg"
-                  withinPortal
-                >
-                  <MantinePopover.Target>
-                    <div onClick={() => setDesktopOpened((opened) => !opened)}>{filterButton(false)}</div>
-                  </MantinePopover.Target>
-                  <MantinePopover.Dropdown p={0} className="border-slate-200 bg-white shadow-lg dark:border-white/10 dark:bg-[#111722]">
-                    {filterContent(() => setDesktopOpened(false), "min(78vh, 760px)")}
-                  </MantinePopover.Dropdown>
-                </MantinePopover>
-              </div>
+              <AuditLogsFilters
+                filterScope={filterScope}
+                onFilterScopeChange={(scope) => {
+                  setFilterScope(scope);
+                  setCurrentPage(1);
+                }}
+                sortBy={sortBy}
+                onSortByChange={(sort) => {
+                  setSortBy(sort);
+                  setCurrentPage(1);
+                }}
+                dateRange={dateRange}
+                onDateRangeChange={(range) => {
+                  setDateRange(range);
+                  setCurrentPage(1);
+                }}
+                onResetAll={handleResetAll}
+                filteredCount={filteredLogs.length}
+                desktopOpened={desktopOpened}
+                onDesktopOpenedChange={setDesktopOpened}
+                mobileOpened={mobileOpened}
+                onMobileOpenedChange={setMobileOpened}
+              />
+
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -468,33 +177,6 @@ export function AuditLogsSection({
           }
         />
 
-        <div>
-          <Drawer
-            opened={mobileOpened}
-            onClose={() => setMobileOpened(false)}
-            position="bottom"
-            size="85dvh"
-            withCloseButton={false}
-            padding={0}
-            classNames={{
-              content: "flex flex-col bg-white dark:bg-[#111722] rounded-t-2xl overflow-hidden",
-              body: "flex flex-col flex-1 min-h-0 p-0",
-            }}
-          >
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-white/10">
-              <div className="mx-auto -mt-1 mb-1 h-1.5 w-12 rounded-full bg-slate-300 dark:bg-white/20 sm:hidden" />
-              <Text fw={700} size="md">Filters & sort</Text>
-              <ActionIcon variant="subtle" color="gray" size={44} onClick={() => setMobileOpened(false)} aria-label="Close filters">
-                <X size={18} />
-              </ActionIcon>
-            </div>
-            <div className="flex-1 min-h-0">
-              {filterContent(() => setMobileOpened(false), "calc(85dvh - 57px)")}
-            </div>
-          </Drawer>
-
-        </div>
-
         <Paper
           withBorder
           radius="md"
@@ -505,57 +187,20 @@ export function AuditLogsSection({
               <Text fw={700} size="sm" className="text-slate-900 dark:text-slate-100">
                 Activity log
               </Text>
-                <CompactInfo
-                  label="About the activity log"
-                  message="Review recent staff and system events, including account, inventory, and system changes."
-                />
+              <CompactInfo
+                label="About the activity log"
+                message="Review recent staff and system events, including account, inventory, and system changes."
+              />
             </Group>
             <Badge variant="light" color="cyan" size="sm" radius="sm">
-              {filteredLogs.length} {filteredLogs.length === 1 ? "event" : "events"}
+              {displayCount} {displayCount === 1 ? "event" : "events"}
             </Badge>
           </Group>
 
-          <Table.ScrollContainer minWidth={800}>
-          <Table verticalSpacing="sm" highlightOnHover className="bg-transparent">
-            <Table.Thead className="bg-slate-50/80 dark:bg-white/[0.025] border-b border-slate-200 dark:border-white/10">
-              <Table.Tr>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3">
-                  Staff / Actor
-                </Table.Th>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3">
-                  Action
-                </Table.Th>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3">
-                  Resource
-                </Table.Th>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3">
-                  Scope
-                </Table.Th>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3">
-                  Details
-                </Table.Th>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3">
-                  Timestamp
-                </Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-
-            <Table.Tbody>
-              {loading && rows.length === 0 ? <TableLoadingRows count={itemsPerPage} /> : rows.length === 0 ? (
-                <Table.Tr>
-                  <Table.Td colSpan={6} className="h-32 text-center text-slate-600 dark:text-slate-400 font-medium">
-                    No audit logs found matching your criteria.
-                  </Table.Td>
-                </Table.Tr>
-              ) : (
-                rows
-              )}
-            </Table.Tbody>
-          </Table>
-          </Table.ScrollContainer>
+          <AuditLogsTable logs={currentLogs} loading={loading} pageSize={itemsPerPage} />
         </Paper>
 
-        <div className="pt-1">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
           <PaginationControls
             currentPage={currentPage}
             totalPages={totalPages}
@@ -566,6 +211,20 @@ export function AuditLogsSection({
               setCurrentPage(1);
             }}
           />
+
+          {hasMore && loadMore && (
+            <Button
+              variant="light"
+              color="cyan"
+              size="sm"
+              loading={isLoadingMore}
+              leftSection={isLoadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              onClick={loadMore}
+              className="w-full sm:w-auto"
+            >
+              Load more logs from server
+            </Button>
+          )}
         </div>
       </div>
     </Stack>

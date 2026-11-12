@@ -70,7 +70,14 @@ export default function AdminPage() {
         }
     }, [searchParams]);
 
-    const { auditLogs, auditLogsLoading } = useAuditLogs(currentTab === 'audit');
+    const {
+        auditLogs,
+        auditLogsLoading,
+        auditLogsCount,
+        hasMore: hasMoreAuditLogs,
+        loadMore: loadMoreAuditLogs,
+        isLoadingMore: isLoadingMoreAuditLogs,
+    } = useAuditLogs(currentTab === 'audit');
     const { featureModelRouting, aiModelProvider } = useSiteSettings();
     const routingValues = featureModelRouting ? Object.values(featureModelRouting) : [aiModelProvider];
     const allVertex = routingValues.every((v) => v === 'finetuned');
@@ -176,7 +183,7 @@ export default function AdminPage() {
                     prebuiltsCount={activePrebuiltsCount}
                     pendingOrdersCount={stats.pendingOrdersCount}
                     orderStageCounts={stats.stageCounts}
-                    auditLogsCount={auditLogs.length}
+                    auditLogsCount={auditLogsCount}
                     intelligenceBadge={intelligenceBadge}
                     intelligenceBadgeColor={intelligenceBadgeColor}
                 />
@@ -216,7 +223,7 @@ export default function AdminPage() {
                                 currentTab={currentTab}
                                 isSuperAdmin={profile?.isSuperAdmin}
                                 pendingOrdersCount={stats.pendingOrdersCount}
-                                auditLogsCount={auditLogs.length}
+                                auditLogsCount={auditLogsCount}
                                 intelligenceBadge={intelligenceBadge}
                                 intelligenceBadgeColor={intelligenceBadgeColor}
                                 onOpenIngestDummy={() => salesActions.setShowIngestDummyConfirm(true)}
@@ -373,6 +380,10 @@ export default function AdminPage() {
                                         loading={auditLogsLoading}
                                         searchQuery={tabSearchQueries.audit}
                                         onSearchQueryChange={(val) => setTabSearchQueries(prev => ({ ...prev, audit: val }))}
+                                        totalCount={auditLogsCount}
+                                        hasMore={hasMoreAuditLogs}
+                                        loadMore={loadMoreAuditLogs}
+                                        isLoadingMore={isLoadingMoreAuditLogs}
                                     />
                                 </div>
                             )}

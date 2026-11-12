@@ -1,5 +1,4 @@
 "use client";
-import { TableLoadingRows } from "@/components/loading/table-loading-rows";
 
 import React, { useState, useMemo } from "react";
 import { format } from "date-fns";
@@ -7,20 +6,15 @@ import {
   Search,
   Calendar as CalendarIcon,
   X,
-  Package,
-  Heart,
-  User as UserIcon,
-  Shield,
+  Loader2,
 } from "lucide-react";
 import {
-  Avatar,
   Badge,
   Button,
   Group,
   Paper,
   Select,
   Stack,
-  Table,
   Text,
   TextInput,
 } from "@mantine/core";
@@ -30,31 +24,25 @@ import { DateRange } from "react-day-picker";
 import { PaginationControls } from "@/components/pagination-controls";
 import type { UserAuditLog } from "@/lib/types";
 import { CUSTOMER_AUDIT_SCOPES } from "@/lib/audit-scopes";
+import { UserAuditLogsTable, parseUserAuditDate } from "./user-audit-logs-table";
 
-interface UserAuditLogsSectionProps {
+export interface UserAuditLogsSectionProps {
   logs: UserAuditLog[];
   loading: boolean;
+  totalCount?: number;
+  hasMore?: boolean;
+  loadMore?: () => Promise<void>;
+  isLoadingMore?: boolean;
 }
 
-const actionColors: Record<string, string> = {
-  created: "teal",
-  restored: "teal",
-  updated: "yellow",
-  status_changed: "yellow",
-  deleted: "red",
-  archived: "red",
-  auth_update: "cyan",
-  other: "gray",
-};
-
-const scopeColors: Record<string, string> = {
-  Order: "cyan",
-  Favorite: "pink",
-  Profile: "indigo",
-  System: "violet",
-};
-
-export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProps) {
+export function UserAuditLogsSection({
+  logs,
+  loading,
+  totalCount,
+  hasMore,
+  loadMore,
+  isLoadingMore,
+}: UserAuditLogsSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterScope, setFilterScope] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -73,13 +61,12 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
 
       let matchesDate = true;
       if (dateRange?.from) {
-        const logDate = log.createdAt?.toDate?.() || log.createdAt;
+        const logDate = parseUserAuditDate(log.createdAt);
         if (logDate) {
-          const date = new Date(logDate);
           if (dateRange.to) {
-            matchesDate = date >= dateRange.from && date <= dateRange.to;
+            matchesDate = logDate >= dateRange.from && logDate <= dateRange.to;
           } else {
-            matchesDate = date >= dateRange.from;
+            matchesDate = logDate >= dateRange.from;
           }
         }
       }
@@ -94,77 +81,7 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
     return filteredLogs.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredLogs, currentPage, itemsPerPage]);
 
-  const getScopeIcon = (scope: string) => {
-    switch (scope) {
-      case "Order":
-        return <Package size={15} />;
-      case "Favorite":
-        return <Heart size={15} />;
-      case "Profile":
-        return <UserIcon size={15} />;
-      default:
-        return <Shield size={15} />;
-    }
-  };
-
-  const rows = currentLogs.map((log) => {
-    const actionColor = actionColors[log.actionName] || "gray";
-    const scopeColor = scopeColors[log.scope] || "gray";
-    const logDate = log.createdAt?.toDate ? log.createdAt.toDate() : null;
-
-    return (
-      <Table.Tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
-        <Table.Td>
-          <Group gap="sm" wrap="nowrap">
-            <Avatar
-              size={34}
-              radius={34}
-              color={scopeColor}
-              variant="light"
-              className="border border-slate-200 dark:border-white/10 shrink-0"
-            >
-              {getScopeIcon(log.scope)}
-            </Avatar>
-            <div className="min-w-0">
-              <Text fz="sm" fw={600} className="text-slate-900 dark:text-slate-100 truncate max-w-[200px] sm:max-w-xs">
-                {log.resourceName}
-              </Text>
-            </div>
-          </Group>
-        </Table.Td>
-
-        <Table.Td>
-          <Badge
-            color={actionColor}
-            variant="light"
-            size="sm"
-            className="font-bold uppercase tracking-wider text-[10px]"
-          >
-            {log.actionName.replace("_", " ")}
-          </Badge>
-        </Table.Td>
-
-        <Table.Td>
-          <Badge color={scopeColor} variant="outline" size="sm" className="font-semibold text-[11px]">
-            {log.scope === "Order" ? "Reservation" : log.scope}
-          </Badge>
-        </Table.Td>
-
-        <Table.Td>
-          <Text fz="sm" className="text-slate-700 dark:text-slate-300 line-clamp-1 max-w-[260px]">
-            {log.details || "Action recorded successfully"}
-          </Text>
-        </Table.Td>
-
-        <Table.Td>
-          <Text fz="xs" className="text-slate-600 dark:text-slate-400 font-mono whitespace-nowrap">
-            {logDate ? format(logDate, "MMM dd, yyyy • p") : "Unknown date"}
-          </Text>
-        </Table.Td>
-
-      </Table.Tr>
-    );
-  });
+  const displayCount = totalCount !== undefined ? totalCount : filteredLogs.length;
 
   return (
     <Stack gap="md">
@@ -273,48 +190,14 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
             Activity history
           </Text>
           <Badge variant="light" color="cyan" size="sm" radius="sm">
-            {filteredLogs.length} {filteredLogs.length === 1 ? "event" : "events"}
+            {displayCount} {displayCount === 1 ? "event" : "events"}
           </Badge>
         </Group>
 
-        <Table.ScrollContainer minWidth={800}>
-          <Table verticalSpacing="sm" highlightOnHover className="bg-transparent">
-            <Table.Thead className="bg-slate-50/80 dark:bg-white/[0.025] border-b border-slate-200 dark:border-white/10">
-              <Table.Tr>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
-                  Resource
-                </Table.Th>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
-                  Action
-                </Table.Th>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
-                  Scope
-                </Table.Th>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
-                  Details
-                </Table.Th>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
-                  Timestamp
-                </Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-
-              <Table.Tbody>
-                {loading && rows.length === 0 ? <TableLoadingRows count={itemsPerPage} /> : rows.length === 0 ? (
-                  <Table.Tr>
-                    <Table.Td colSpan={5} className="h-32 text-center text-slate-600 dark:text-slate-400 font-medium">
-                      No activity logs match your selected filter criteria.
-                    </Table.Td>
-                  </Table.Tr>
-                ) : (
-                  rows
-                )}
-              </Table.Tbody>
-            </Table>
-        </Table.ScrollContainer>
+        <UserAuditLogsTable logs={currentLogs} loading={loading} pageSize={itemsPerPage} />
       </Paper>
 
-      <div className="pt-1">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
         <PaginationControls
           currentPage={currentPage}
           totalPages={totalPages}
@@ -325,6 +208,20 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
             setCurrentPage(1);
           }}
         />
+
+        {hasMore && loadMore && (
+          <Button
+            variant="light"
+            color="indigo"
+            size="sm"
+            loading={isLoadingMore}
+            leftSection={isLoadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            onClick={loadMore}
+            className="w-full sm:w-auto"
+          >
+            Load more history from server
+          </Button>
+        )}
       </div>
     </Stack>
   );
