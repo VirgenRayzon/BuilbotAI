@@ -178,6 +178,7 @@ export type Order = {
   paymentReference?: string;
   paidAt?: any;
   paymentAttempts?: number;
+  holdExpiresAt?: any;
   paymongoCheckoutSessionId?: string;
   paymongoCheckoutUrl?: string;
   paymongoMode?: "live_test_api" | "local_sandbox_fallback";

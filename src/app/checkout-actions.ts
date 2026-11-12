@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from 'next/server';
 import { assertCashConfirmation, getPaymentEventLink, type CashConfirmation } from '@/lib/order-payment';
 import { randomUUID } from 'node:crypto';
 import { saveOrderPaymentSession } from '@/lib/server/order-payment-session';
@@ -28,7 +29,6 @@ import {
 import {
   inventoryCategoryLabel,
   inventoryItemPath,
-  inventoryItemsPath,
 } from "@/lib/inventory-paths";
 import {
   invalidatePublicPartsCatalog,
@@ -54,6 +54,8 @@ import {
 } from "@/lib/server/paymongo";
 import { PRODUCT_ID_PATTERN } from "@/lib/product-identity";
 import { toFirestoreDocument } from "@/lib/firestore-document";
+import { computeOrderHoldExpiresAt } from "@/lib/order-expiration";
+import { recordPartPopularityIncrements } from "@/lib/server/popularity-writer";
 import { requiresStaffCancellation } from "@/lib/customer-order-workflow";
 import {
   assertOrderStageTransition,
@@ -236,6 +238,22 @@ export interface CheckoutOrderResult {
   error?: string;
 }
 
+function schedulePostCommit(task: () => Promise<void> | void): void {
+  try {
+    after(async () => {
+      try {
+        await task();
+      } catch (err) {
+        console.warn("[schedulePostCommit] Background task error:", err);
+      }
+    });
+  } catch {
+    Promise.resolve().then(task).catch((err) => {
+      console.warn("[schedulePostCommit] Standalone task error:", err);
+    });
+  }
+}
+
 async function resolveInventoryDocInTransaction(
   firestore: admin.firestore.Firestore,
   transaction: admin.firestore.Transaction,
@@ -293,23 +311,15 @@ async function resolveInventoryDocInTransaction(
     }
   }
 
-  if (candidate.name) {
-    const nameQuery = firestore
-      .collection(inventoryItemsPath(canonicalCategory))
-      .where("name", "==", candidate.name)
-      .limit(2);
-    const matches = await transaction.get(nameQuery);
-    if (!matches.empty) {
-      const matchedDoc = matches.docs[0];
-      return {
-        ref: matchedDoc.ref,
-        snap: matchedDoc,
-        canonicalCategory,
-      };
+  if (candidate.id && candidate.id.startsWith("inventory/")) {
+    const directRef = firestore.doc(candidate.id);
+    const directSnap = await transaction.get(directRef);
+    if (directSnap.exists) {
+      return { ref: directRef, snap: directSnap, canonicalCategory };
     }
   }
 
-  throw new Error(`Item "${candidate.name}" (${canonicalCategory}) not found.`);
+  throw new Error(`Item "${candidate.name || candidate.id}" (${canonicalCategory}) could not be resolved deterministically.`);
 }
 
 async function processCheckoutInternal(
@@ -336,6 +346,7 @@ async function processCheckoutInternal(
     }
     let authoritativeItemsSnapshot: OrderItem[] = [];
     let updatedInventoryPartsSnapshot: Array<{ path: string; part: Part }> = [];
+    let popularityIncrementsSnapshot: Array<{ path: string; delta: number }> = [];
 
     const result = await firestore.runTransaction(async (transaction) => {
       const operationRef = options?.operationId
@@ -516,6 +527,10 @@ async function processCheckoutInternal(
       authoritativeItemsSnapshot = authoritativeOrderItems;
 
       const now = admin.firestore.Timestamp.now();
+      const holdExpiresDate = computeOrderHoldExpiresAt(paymentMethod, now.toDate());
+      const holdExpiresAt = holdExpiresDate
+        ? admin.firestore.Timestamp.fromDate(holdExpiresDate)
+        : null;
       const orderRef = firestore.collection("orders").doc();
       const orderNumber = generateOrderNumber();
       const paymentReference = generateSimulatedPaymentReference(paymentMethod);
@@ -558,6 +573,7 @@ async function processCheckoutInternal(
         paidAt: null,
         paymentAttempts: 0,
         lastPaymentError: null,
+        holdExpiresAt,
         isSimulatedPayment: methodDef.isSimulated,
         shippingMethod: options?.shippingMethod ?? "store_pickup",
         ...(options?.shippingAddress
@@ -585,9 +601,13 @@ async function processCheckoutInternal(
         transaction.update(group.ref, {
           stock: admin.firestore.FieldValue.increment(-group.quantity),
           inStock: Number(group.snap.get('stock')) - group.quantity > 0,
-          popularity: admin.firestore.FieldValue.increment(group.quantity),
         });
       }
+
+      popularityIncrementsSnapshot = Array.from(groupedRequirements.entries()).map(([path, group]) => ({
+        path,
+        delta: group.quantity,
+      }));
 
       updatedInventoryPartsSnapshot = Array.from(groupedRequirements.entries()).map(([path, group]) => {
         const snap = group.snap;
@@ -754,6 +774,11 @@ async function processCheckoutInternal(
       syncPrebuiltSummariesForPart(firestore, path, part).catch(err => {
         console.warn('[prebuilt-summaries] Non-fatal syncPrebuiltSummariesForPart error in checkout:', err);
       });
+    }
+    if (popularityIncrementsSnapshot.length > 0) {
+      schedulePostCommit(() =>
+        recordPartPopularityIncrements(firestore, popularityIncrementsSnapshot)
+      );
     }
     pruneUserNotificationsServer(firestore, userId).catch(() => {});
 
@@ -1155,6 +1180,7 @@ async function resolvePaymentOutcome(
         paymentReference,
         paymentAttempts: nextAttempts,
         ...(paidAt ? { paidAt } : {}),
+        ...(nextPaymentStatus === "paid" ? { holdExpiresAt: null } : {}),
         updatedAt: now,
       };
 
@@ -1177,6 +1203,7 @@ async function resolvePaymentOutcome(
         paymentHistory: [...(orderData.paymentHistory || []), historyEvent],
         paymentUpdatedAt: now,
         ...(paidAt ? { paidAt } : {}),
+        ...(nextPaymentStatus === "paid" ? { holdExpiresAt: null } : {}),
         ...(input.paymentChannel
           ? { paymongoPaymentChannel: input.paymentChannel }
           : {}),
@@ -1566,6 +1593,7 @@ export async function switchOrderPaymentToCod(
         paymentUpdatedAt: now,
         lastPaymentError: null,
         isSimulatedPayment: false,
+        holdExpiresAt: null,
         updatedAt: now,
       });
 
@@ -1701,6 +1729,7 @@ export async function updateOrderPaymentStatusByStaff(
         paymentStatus: newPaymentStatus,
         paymentReference,
         paidAt: newPaymentStatus === "paid" ? now : null,
+        ...(newPaymentStatus === "paid" ? { holdExpiresAt: null } : {}),
         updatedAt: now,
       };
 
@@ -1720,7 +1749,7 @@ export async function updateOrderPaymentStatusByStaff(
         paymentHistory: [...priorHistory, staffPaymentEvent],
         paymentUpdatedAt: now,
         paidAt: newPaymentStatus === "paid" ? now : null,
-        ...(newPaymentStatus === "paid" ? { lastPaymentError: null } : {}),
+        ...(newPaymentStatus === "paid" ? { lastPaymentError: null, holdExpiresAt: null } : {}),
         updatedAt: now,
       });
 
