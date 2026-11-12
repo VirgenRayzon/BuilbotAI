@@ -80,7 +80,31 @@ async function serializeProduct(data: Part & PrebuiltSystem, kind: ProductKind):
   for (const [key, value] of Object.entries(data.specifications || {})) {
     if (typeof value === 'string' || typeof value === 'number') specs[key] = value;
   }
-  const statuses = kind === 'prebuilt' ? getPrebuiltPartStatuses(data, await resolveSystemParts(data)) : [];
+  const resolvedParts: ResolvedPrebuiltPart[] =
+    kind === 'prebuilt'
+      ? data.componentSummaries && data.componentSummaries.length > 0
+        ? data.componentSummaries.map(s => ({
+            key: s.key,
+            category: s.category.toLowerCase(),
+            partId: s.partId,
+            part: s.isArchived
+              ? null
+              : ({
+                  id: s.partId,
+                  productId: s.productId || undefined,
+                  name: s.name,
+                  category: s.category,
+                  brand: 'BuildbotAI',
+                  price: s.price,
+                  stock: s.inStock ? 1 : 0,
+                  imageUrl: s.imageUrl,
+                  specifications: {},
+                  isArchived: false,
+                } as Part),
+          }))
+        : await resolveSystemParts(data)
+      : [];
+  const statuses = kind === 'prebuilt' ? getPrebuiltPartStatuses(data, resolvedParts) : [];
   const report: unknown = data.aiReport;
   const highlights = report && typeof report === 'object' && 'pros' in report && Array.isArray(report.pros)
     ? report.pros.filter((value): value is string => typeof value === 'string') : [];
@@ -124,7 +148,7 @@ export function toPublicCatalogPart(data: Part): PublicCatalogPart {
 
 export async function listPublicProducts(kind: ProductKind): Promise<PublicProduct[]> {
   const db = getAdminFirestore();
-  const snapshots = kind === 'part' ? await Promise.all(INVENTORY_CATEGORY_SLUGS.map(c => db.collection(inventoryItemsPath(c)).get())) : [await db.collection('prebuiltSystems').get()];
+  const snapshots = kind === 'part' ? await Promise.all(INVENTORY_CATEGORY_SLUGS.map(c => db.collection(inventoryItemsPath(c)).get())) : [await db.collection('prebuiltSystems').where('isArchived', '==', false).get()];
   const records = snapshots.flatMap(s => s.docs).filter(d => !d.get('isArchived') && PRODUCT_ID_PATTERN.test(String(d.get('productId'))));
   return Promise.all(records.map(d => serializeProduct(d.data() as Part & PrebuiltSystem, kind)));
 }

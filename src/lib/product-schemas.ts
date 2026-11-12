@@ -27,6 +27,19 @@ export const prebuiltProductSchema = z.object({
     ram: z.array(requiredRef).min(1).max(16),
     storage: z.array(requiredRef).min(1).max(32),
   }),
+  componentSummaries: z.array(z.object({
+    key: z.string(),
+    category: z.string(),
+    partId: z.string(),
+    productId: z.string().nullable().optional(),
+    name: z.string(),
+    price: z.number(),
+    imageUrl: z.string(),
+    inStock: z.boolean(),
+    isArchived: z.boolean(),
+  })).optional(),
+  componentPartIds: z.array(z.string()).optional(),
+  isArchived: z.boolean().optional(),
 });
 export const createProductSchema = z.object({
   idToken: z.string().min(1), operationId: z.string().uuid(),

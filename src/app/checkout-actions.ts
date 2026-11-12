@@ -20,7 +20,11 @@ import {
   ShippingMethod,
   SimulatedPaymentOutcome,
   OrderStockState,
+  Part,
 } from "@/lib/types";
+import {
+  syncPrebuiltSummariesForPart,
+} from "@/lib/prebuilt-summaries";
 import {
   inventoryCategoryLabel,
   inventoryItemPath,
@@ -331,6 +335,7 @@ async function processCheckoutInternal(
       throw new Error("Your order must contain at least one item.");
     }
     let authoritativeItemsSnapshot: OrderItem[] = [];
+    let updatedInventoryPartsSnapshot: Array<{ path: string; part: Part }> = [];
 
     const result = await firestore.runTransaction(async (transaction) => {
       const operationRef = options?.operationId
@@ -584,6 +589,20 @@ async function processCheckoutInternal(
         });
       }
 
+      updatedInventoryPartsSnapshot = Array.from(groupedRequirements.entries()).map(([path, group]) => {
+        const snap = group.snap;
+        const currentStock = Math.max(0, Number(snap.get('stock') ?? 0) - group.quantity);
+        return {
+          path,
+          part: {
+            ...(snap.data() || {}),
+            id: group.ref.id,
+            stock: currentStock,
+            inStock: currentStock > 0,
+          } as unknown as Part,
+        };
+      });
+
       writeOrderChange(transaction, orderRef, null, toFirestoreDocument(orderData));
 
       if (operationRef) {
@@ -731,6 +750,11 @@ async function processCheckoutInternal(
     bumpCatalogMetaVersion(firestore).catch(err => {
       console.warn('[catalog-meta] Non-fatal bumpCatalogMetaVersion error in processCheckoutInternal:', err);
     });
+    for (const { path, part } of updatedInventoryPartsSnapshot) {
+      syncPrebuiltSummariesForPart(firestore, path, part).catch(err => {
+        console.warn('[prebuilt-summaries] Non-fatal syncPrebuiltSummariesForPart error in checkout:', err);
+      });
+    }
     pruneUserNotificationsServer(firestore, userId).catch(() => {});
 
     const { isDuplicate: _ignoredDuplicate, ...cleanResult } = result;

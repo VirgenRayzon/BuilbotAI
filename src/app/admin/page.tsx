@@ -78,12 +78,18 @@ export default function AdminPage() {
     const intelligenceBadge = allVertex ? 'Vertex' : allGemini ? 'Gemini' : 'Hybrid';
     const intelligenceBadgeColor = allVertex ? 'indigo' : allGemini ? 'cyan' : 'violet';
 
+    const shouldLoadPrebuilts =
+        currentTab === 'prebuilts' ||
+        currentTab === 'archive' ||
+        currentTab === 'sales' ||
+        Boolean(searchParams.get('product'));
+
     const {
         parts, partsLoading, prebuiltSystems, prebuiltsLoading,
         handleAddPart, handleUpdatePart, handleUpdatePartStock, handleAddPartStock, handleDeletePart, handleArchivePart,
         handleAddPrebuilt, handleUpdatePrebuilt, handleDeletePrebuilt, handleArchivePrebuilt,
         componentCategories: initialCategories
-    } = useInventory(profile, !pagedStockView);
+    } = useInventory(profile, !pagedStockView, shouldLoadPrebuilts);
 
     const {
         orders,

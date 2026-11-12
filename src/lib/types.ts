@@ -82,6 +82,18 @@ export type Part = {
   isArchived?: boolean;
 };
 
+export interface PrebuiltComponentSummary {
+  key: string;
+  category: Part['category'];
+  partId: string;
+  productId: string | null;
+  name: string;
+  price: number;
+  imageUrl: string;
+  inStock: boolean;
+  isArchived: boolean;
+}
+
 export type PrebuiltSystem = {
   productId?: string;
   sku?: string;
@@ -103,6 +115,8 @@ export type PrebuiltSystem = {
     case?: string;
     cooler?: string;
   };
+  componentSummaries?: PrebuiltComponentSummary[];
+  componentPartIds?: string[];
   aiReport?: any;
   createdAt?: any;
   isArchived?: boolean;

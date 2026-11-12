@@ -10,15 +10,13 @@ import { InventoryToolbar } from "@/components/inventory-toolbar";
 import { CategorySelectionEmpty } from "@/components/category-selection-empty";
 import { hasNoSelectedCategories } from "@/lib/category-selection";
 import { PrebuiltSystemCard } from "@/components/prebuilt-system-card";
-import type { PrebuiltSystem } from "@/lib/types";
-import { useCollection } from "@/firebase/firestore/use-collection";
-import { useFirestore } from "@/firebase";
-import { collection, query } from "firebase/firestore";
 import { PrebuiltsTable } from "@/components/prebuilts-table";
-import { ArrowLeft, SearchX, MonitorOff } from "lucide-react";
+import { PrebuiltEmptyState } from "./components/prebuilt-empty-state";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { getMissingParts } from "@/lib/prebuilt-utils";
+import { usePrebuiltCatalog } from "./hooks/use-prebuilt-catalog";
 
 const prebuiltCategories = [
   { name: "Entry", selected: true },
@@ -30,15 +28,8 @@ const prebuiltCategories = [
 export default function PreBuiltsPage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const firestore = useFirestore();
   const searchParams = useSearchParams();
   const isAdminPreview = searchParams.get("preview") === "admin";
-
-  const prebuiltSystemsQuery = useMemo(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, "prebuiltSystems"));
-  }, [firestore]);
-  const { data: prebuiltSystems, loading } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);
 
   const [categories, setCategories] = useState(prebuiltCategories);
   const [sortBy, setSortBy] = useState("Date Added");
@@ -47,6 +38,24 @@ export default function PreBuiltsPage() {
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [showAllDetails, setShowAllDetails] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const selectedTiers = useMemo(
+    () => categories.filter((c) => c.selected).map((c) => c.name),
+    [categories]
+  );
+
+  const {
+    systems: prebuiltSystems,
+    loading,
+    loadingMore,
+    hasMore,
+    loadMore,
+  } = usePrebuiltCatalog({
+    tiers: selectedTiers,
+    sortBy,
+    sortDirection,
+    pageSize: 24,
+  });
 
   const toggleExpand = (id: string) => {
     setExpandedIds((prev) =>
@@ -79,13 +88,12 @@ export default function PreBuiltsPage() {
 
   const filteredAndSortedSystems = useMemo(() => {
     if (!prebuiltSystems) return [];
-    const selectedCategories = categories.filter((c) => c.selected).map((c) => c.name);
     const searchLower = searchQuery.toLowerCase().trim();
 
     return prebuiltSystems
       .filter((system) => {
         const isNotArchived = !system.isArchived;
-        const matchesCategory = selectedCategories.includes(system.tier);
+        const matchesCategory = selectedTiers.includes(system.tier);
         const matchesSearch = !searchLower ||
           system.name.toLowerCase().includes(searchLower) ||
           (system.description?.toLowerCase() || "").includes(searchLower) ||
@@ -108,7 +116,7 @@ export default function PreBuiltsPage() {
         }
         return sortDirection === "asc" ? compare : -compare;
       });
-  }, [prebuiltSystems, categories, sortBy, sortDirection, searchQuery]);
+  }, [prebuiltSystems, selectedTiers, sortBy, sortDirection, searchQuery]);
 
   useEffect(() => {
     if (showAllDetails) {
@@ -205,57 +213,55 @@ export default function PreBuiltsPage() {
                   <PrebuiltsTable systems={[]} showActions={false} loading />
                 </Paper>
               ) : filteredAndSortedSystems.length > 0 ? (
-                view === "grid" ? (
-                  <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-                    {filteredAndSortedSystems.map((system, index) => (
-                      <PrebuiltSystemCard
-                        key={system.id}
-                        system={system}
+                <>
+                  {view === "grid" ? (
+                    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+                      {filteredAndSortedSystems.map((system, index) => (
+                        <PrebuiltSystemCard
+                          key={system.id}
+                          system={system}
+                          isAdminPreview={isAdminPreview}
+                          priority={index < 4}
+                          expanded={showAllDetails}
+                          onToggle={() => setShowAllDetails(!showAllDetails)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <Paper
+                      withBorder
+                      radius="lg"
+                      className="overflow-hidden bg-white/70 dark:bg-[#141a23]/90 border-slate-200/80 dark:border-white/10"
+                    >
+                      <PrebuiltsTable
+                        systems={filteredAndSortedSystems}
                         isAdminPreview={isAdminPreview}
-                        priority={index < 4}
-                        expanded={showAllDetails}
-                        onToggle={() => setShowAllDetails(!showAllDetails)}
+                        showActions={false}
+                        expandedIds={expandedIds}
+                        onToggleExpand={toggleExpand}
                       />
-                    ))}
-                  </div>
-                ) : (
-                  <Paper
-                    withBorder
-                    radius="lg"
-                    className="overflow-hidden bg-white/70 dark:bg-[#141a23]/90 border-slate-200/80 dark:border-white/10"
-                  >
-                    <PrebuiltsTable
-                      systems={filteredAndSortedSystems}
-                      isAdminPreview={isAdminPreview}
-                      showActions={false}
-                      expandedIds={expandedIds}
-                      onToggleExpand={toggleExpand}
-                    />
-                  </Paper>
-                )
+                    </Paper>
+                  )}
+
+                  {hasMore && (
+                    <div className="flex justify-center mt-6 mb-2">
+                      <Button
+                        onClick={loadMore}
+                        loading={loadingMore}
+                        variant="light"
+                        color="cyan"
+                        radius="md"
+                        size="sm"
+                        leftSection={<ChevronDown className="h-4 w-4" />}
+                        className="px-6 font-medium"
+                      >
+                        Load More Systems
+                      </Button>
+                    </div>
+                  )}
+                </>
               ) : (
-                <Paper
-                  withBorder
-                  radius="lg"
-                  p="xl"
-                  className="min-h-[360px] flex flex-col items-center justify-center text-center bg-white/40 dark:bg-[#141a23]/60 border-slate-200/70 dark:border-white/10"
-                >
-                  <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3 text-slate-400">
-                    {searchQuery ? (
-                      <SearchX className="h-6 w-6 opacity-60" />
-                    ) : (
-                      <MonitorOff className="h-6 w-6 opacity-60" />
-                    )}
-                  </div>
-                  <Text fw={600} size="md" mb={4}>
-                    No pre-built systems found
-                  </Text>
-                  <Text c="dimmed" size="xs" maw={320}>
-                    {searchQuery
-                      ? `No systems match "${searchQuery}". Try adjusting your search query or tier filters.`
-                      : "No pre-built systems match the currently selected criteria."}
-                  </Text>
-                </Paper>
+                <PrebuiltEmptyState searchQuery={searchQuery} />
               )}
             </>
           </motion.div>

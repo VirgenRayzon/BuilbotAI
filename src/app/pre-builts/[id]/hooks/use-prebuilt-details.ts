@@ -160,6 +160,34 @@ export function usePrebuiltDetails(systemId: string) {
             const partsRecord: Record<string, Part | null> = {};
 
             try {
+                if (system.componentSummaries && system.componentSummaries.length > 0) {
+                    const resolved: ResolvedPrebuiltPart[] = system.componentSummaries.map(s => ({
+                        key: s.key,
+                        category: s.category.toLowerCase(),
+                        partId: s.partId,
+                        part: s.isArchived ? null : ({
+                            id: s.partId,
+                            productId: s.productId || undefined,
+                            name: s.name,
+                            category: s.category,
+                            brand: 'BuildbotAI',
+                            price: s.price,
+                            stock: s.inStock ? 1 : 0,
+                            imageUrl: s.imageUrl,
+                            specifications: {},
+                            isArchived: false,
+                        } as Part),
+                    }));
+
+                    for (const { category, part } of resolved) {
+                        if (!(category in partsRecord)) partsRecord[category] = part;
+                    }
+                    setComponents(partsRecord);
+                    setResolvedParts(resolved);
+                    setResolvedSystemId(system.id);
+                    return;
+                }
+
                 const collectionMap: Record<string, string> = {
                     cpu: "CPU",
                     gpu: "GPU",
@@ -214,19 +242,6 @@ export function usePrebuiltDetails(systemId: string) {
                         const canonicalQuerySnap = await getDocs(canonicalQuery);
                         if (!canonicalQuerySnap.empty) {
                             const docSnap = canonicalQuerySnap.docs[0];
-                            return entry({ id: docSnap.id, ...docSnap.data() } as Part);
-                        }
-
-                        const partRef = doc(firestore, collectionName, partId as string);
-                        const snap = await getDoc(partRef);
-                        if (snap.exists()) {
-                            return entry({ id: snap.id, ...snap.data() } as Part);
-                        }
-
-                        const q = query(collection(firestore, collectionName), where("name", "==", partId));
-                        const querySnap = await getDocs(q);
-                        if (!querySnap.empty) {
-                            const docSnap = querySnap.docs[0];
                             return entry({ id: docSnap.id, ...docSnap.data() } as Part);
                         }
 
