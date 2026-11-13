@@ -4,13 +4,48 @@ All notable changes to this project will be documented in this file.
 
 ## [2026-11-13]
 
+### Features
+- **admin**: Enhance order card controls, admin queries, and prebuilt pagination ([eb3814e](https://github.com/VirgenRayzon/BuilbotAI/commit/eb3814e))
+
 ### Refactoring
 - **ui**: Extract reusable LoaderCard component for loading states ([62f7e16](https://github.com/VirgenRayzon/BuilbotAI/commit/62f7e16))
 - **checkout**: Modularize page into focused sub-components and custom hook ([3a1b6ca](https://github.com/VirgenRayzon/BuilbotAI/commit/3a1b6ca))
 
-## [2026-11-11]
+## [2026-11-12]
+
+### Features
+- **db**: Configure Firestore native TTL policies and version-pin AI recommendation cache ([75b1073](https://github.com/VirgenRayzon/BuilbotAI/commit/75b1073))
+- **prebuilts**: Paginate prebuiltSystems and embed denormalized componentSummaries ([07221a9](https://github.com/VirgenRayzon/BuilbotAI/commit/07221a9))
+- **analytics**: Decouple SalesAnalytics onto daily/monthly rollups and bounded server export ([2bc2bbe](https://github.com/VirgenRayzon/BuilbotAI/commit/2bc2bbe))
+- **orders**: Replace expanding admin orders listener with cursor pagination and count badges ([1296998](https://github.com/VirgenRayzon/BuilbotAI/commit/1296998))
 
 ### Bug Fixes
+- **db**: Resolve final review polish items for archive cursor, backfill lazy db, and UTC chart formatting ([d6f72d0](https://github.com/VirgenRayzon/BuilbotAI/commit/d6f72d0))
+- **security**: Strip id from keyRequests document payload and harden guest client IP extraction against spoofing ([c35cfea](https://github.com/VirgenRayzon/BuilbotAI/commit/c35cfea))
+- **audit**: Wire UI filters through server queries, accurately compute displayCount, and add tie-breaker direction tests ([f7f7434](https://github.com/VirgenRayzon/BuilbotAI/commit/f7f7434))
+- **types**: Replace any on holdExpiresAt with browser-safe strict timestamp type ([1e5ce65](https://github.com/VirgenRayzon/BuilbotAI/commit/1e5ce65))
+- **prebuilts**: Address review findings for dedicated catalog action, synthetic stock sentinel, price/name indexes, zero-write drift sync, and isArchived stamping ([a3719dc](https://github.com/VirgenRayzon/BuilbotAI/commit/a3719dc))
+- **analytics**: Address review findings for provider refund transaction, reversal sign, component bounds, and export revenue data ([c824ce6](https://github.com/VirgenRayzon/BuilbotAI/commit/c824ce6))
+- **orders**: Address Task 4 review findings for auth race condition, filter drop, and archive leakage ([2559b08](https://github.com/VirgenRayzon/BuilbotAI/commit/2559b08))
+
+### Refactoring
+- **cache**: Wire multi-instance reader factories and eliminate duplicate test algorithms ([d386219](https://github.com/VirgenRayzon/BuilbotAI/commit/d386219))
+
+### Performance Improvements
+- **audit**: Convert staff and user audit logs to cursor-paginated queries ([08e5bf9](https://github.com/VirgenRayzon/BuilbotAI/commit/08e5bf9))
+- **checkout**: Index holdExpiresAt sweeps and decouple popularity writes from stock transactions ([1bbb26d](https://github.com/VirgenRayzon/BuilbotAI/commit/1bbb26d))
+
+### Miscellaneous
+- Retire legacy catalog fallbacks, tighten firestore.rules, and rate-limit AI endpoints ([46d4e44](https://github.com/VirgenRayzon/BuilbotAI/commit/46d4e44))
+
+## [2026-11-11]
+
+### Features
+- **db**: Add version-keyed multi-instance caches and bounded catalog search ([fcefe3e](https://github.com/VirgenRayzon/BuilbotAI/commit/fcefe3e))
+- **db**: Add catalogMeta version counter and normalized searchKeywords v2 ([e61048d](https://github.com/VirgenRayzon/BuilbotAI/commit/e61048d))
+
+### Bug Fixes
+- **db**: Resolve search cursor drift and index all catalog query combinations ([4767a70](https://github.com/VirgenRayzon/BuilbotAI/commit/4767a70))
 - **builder**: Abort load-favorite-build listener on cleanup ([da8006f](https://github.com/VirgenRayzon/BuilbotAI/commit/da8006f))
 
 ### Refactoring
@@ -18,6 +53,7 @@ All notable changes to this project will be documented in this file.
 - Remove unreachable components, unused UI primitives, and unused assets ([e2efdaa](https://github.com/VirgenRayzon/BuilbotAI/commit/e2efdaa))
 
 ### Miscellaneous
+- Enable multi-instance App Hosting scaling after cache coherence verification ([a0b6e67](https://github.com/VirgenRayzon/BuilbotAI/commit/a0b6e67))
 - Ignore .worktrees directory ([1ae16d5](https://github.com/VirgenRayzon/BuilbotAI/commit/1ae16d5))
 - Strip remaining inline and block comments ([8cf6a9d](https://github.com/VirgenRayzon/BuilbotAI/commit/8cf6a9d))
 - Remove scratch files, test suites, mockups, and unused scripts ([d495d00](https://github.com/VirgenRayzon/BuilbotAI/commit/d495d00))
