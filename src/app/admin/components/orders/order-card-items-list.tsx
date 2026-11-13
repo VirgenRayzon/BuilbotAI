@@ -9,6 +9,7 @@ import {
   groupOrderItems,
   type OrderItemGroup,
 } from '@/lib/order-item-groups';
+import { getOrderFulfillmentStage } from '@/lib/order-workflow';
 import { resolveOrderItemImageUrl } from '@/lib/order-image-resolver';
 import type { Order, OrderItem, Part } from '@/lib/types';
 import { cn, formatCurrency, getOptimizedStorageUrl } from '@/lib/utils';
@@ -43,7 +44,12 @@ function OrderItemGroupAccordion({
   const isAdditional = group.name === 'Additional' || group.type === 'additional';
   const isPrebuilt = !isCustomBuild && !isAdditional;
 
-  const [isOpen, setIsOpen] = useState(!isCustomBuild);
+  const currentStage = getOrderFulfillmentStage(order);
+  const isAssemblingStage = currentStage === 'assembling_testing';
+
+  // In the assembling phase, retain the custom rig component picking accordion open.
+  // In other phases (delivered, out_for_delivery, order_placed), start collapsed to keep the card compact.
+  const [isOpen, setIsOpen] = useState(isAssemblingStage && isCustomBuild);
 
   const badgeColor = isCustomBuild ? 'cyan' : isPrebuilt ? 'grape' : 'amber';
   const badgeLabel = isCustomBuild
@@ -52,15 +58,17 @@ function OrderItemGroupAccordion({
       ? 'Prebuilt System'
       : 'Additional Items';
 
-  const closedCustomRigName = useMemo(() => {
-    return getCustomRigSummary(group.items);
-  }, [group.items]);
+  const itemsPreview = useMemo(() => {
+    if (isCustomBuild) {
+      return getCustomRigSummary(group.items);
+    }
+    const names = group.items.map((it) => it.name).filter(Boolean);
+    if (names.length === 0) return group.name;
+    if (names.length <= 2) return `${group.name}: ${names.join(', ')}`;
+    return `${group.name}: ${names.slice(0, 2).join(', ')} +${names.length - 2} more`;
+  }, [group.items, group.name, isCustomBuild]);
 
-  const groupTitle = isCustomBuild
-    ? isOpen
-      ? group.name
-      : closedCustomRigName
-    : group.name;
+  const groupTitle = isOpen ? group.name : itemsPreview;
 
   return (
     <div

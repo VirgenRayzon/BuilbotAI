@@ -411,3 +411,89 @@ test('listAdminOrdersPage applies paymentMethod and refundStatus in indexed mode
   assert.equal(result.orders.length, 1);
   assert.equal(result.orders[0].id, 'order-gcash-due');
 });
+
+test('listAdminOrdersPage serializes Firestore Timestamp instances in orders, paymentHistory, and refunds', async () => {
+  // Simulate Firestore Timestamp with toDate()
+  const mockTimestamp = {
+    toDate: () => new Date('2026-11-12T15:30:00.000Z'),
+    _seconds: 1794507000,
+    _nanoseconds: 0,
+  };
+
+  const mockOrderWithTimestamps: any = {
+    id: 'order-with-timestamps',
+    totalPrice: 50000,
+    status: 'pending',
+    fulfillmentStage: 'order_placed',
+    queueStage: 'order_placed',
+    createdAt: mockTimestamp,
+    updatedAt: mockTimestamp,
+    paymentHistory: [
+      {
+        id: 'evt-1',
+        status: 'paid',
+        method: 'gcash',
+        reference: 'GCASH-123',
+        amount: 50000,
+        actorId: 'customer-1',
+        actorName: 'Juan',
+        actorRole: 'Customer',
+        note: 'Payment received',
+        createdAt: mockTimestamp,
+      },
+    ],
+    refunds: [
+      {
+        id: 'ref-1',
+        amount: 5000,
+        method: 'manual',
+        reason: 'Damaged packaging',
+        reference: 'REF-123',
+        actorId: 'manager-1',
+        actorName: 'Manager',
+        status: 'succeeded',
+        createdAt: mockTimestamp,
+      },
+    ],
+  };
+
+  const mockDb = {
+    collection: (_name: string) => ({
+      where: () => mockDb.collection(_name),
+      orderBy: () => mockDb.collection(_name),
+      limit: () => mockDb.collection(_name),
+      count: () => ({
+        get: async () => ({ data: () => ({ count: 1 }) }),
+      }),
+      get: async () => ({
+        docs: [
+          {
+            id: mockOrderWithTimestamps.id,
+            data: () => mockOrderWithTimestamps,
+          },
+        ],
+      }),
+    }),
+  };
+
+  const mockDeps = {
+    getOrderActor: async () => ({
+      decoded: { uid: 'staff-1' },
+      isStaff: true,
+      isManager: true,
+      isSuperAdmin: false,
+    }),
+    firestore: mockDb as any,
+    isIndexedEnabled: false,
+  };
+
+  const result = await listAdminOrdersPage('token-staff', { archived: false }, mockDeps);
+  assert.equal(result.orders.length, 1);
+  const order = result.orders[0];
+
+  assert.equal(typeof order.createdAt, 'string', 'order.createdAt must be serialized to string');
+  assert.equal(order.createdAt, '2026-11-12T15:30:00.000Z');
+  assert.equal(order.paymentHistory?.[0]?.createdAt, '2026-11-12T15:30:00.000Z', 'paymentHistory.createdAt must be serialized to string');
+  assert.equal(order.refunds?.[0]?.createdAt, '2026-11-12T15:30:00.000Z', 'refunds.createdAt must be serialized to string');
+});
+

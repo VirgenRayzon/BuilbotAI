@@ -3,33 +3,32 @@
 import type { ReconcileRefund } from '@/lib/order-payment';
 import React, { useEffect, useState } from 'react';
 import {
-  Archive,
   Calendar,
-  RotateCcw,
-  Trash2,
 } from 'lucide-react';
 import {
-  ActionIcon,
   Avatar,
-  Group,
+  Badge,
   Paper,
   Stack,
   Text,
   Tooltip,
 } from '@mantine/core';
 import type { Order, OrderFulfillmentStage, Part, PaymentStatus } from '@/lib/types';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import type { OrderAdminActionType } from './order-action-modals';
 import { CopyableOrderId } from './copyable-order-id';
 import { OrderCardControls } from './order-card-controls';
 import { OrderCardCustomerFinance } from './order-card-customer-finance';
 import { OrderCardFulfillmentStepper } from './order-card-fulfillment-stepper';
-import { OrderCardHistoryLedgers } from './order-card-history-ledgers';
 import { OrderCardItemsList } from './order-card-items-list';
 import {
   formatFirestoreTimestamp,
   getOrderStageBadgeInfo,
+  getRefundBadgeInfo,
+  getStockBadgeInfo,
 } from './order-status-config';
+import { getPaymentStatusInfo } from '@/lib/payment-methods';
+import { getNetCollectedAmount, getRefundedAmount } from '@/lib/order-workflow';
 
 export interface OrderCardProps {
   order: Order;
@@ -37,6 +36,7 @@ export interface OrderCardProps {
   archived: boolean;
   isSuperAdmin: boolean;
   reconcilingId: string | null;
+  onOpenHistory?: (orderId: string) => void;
   onRequestAdminAction: (order: Order, action: OrderAdminActionType) => void;
   onRequestCancel: (order: Order) => void;
   onRequestPaymentStatus: (order: Order, nextStatus: PaymentStatus) => void;
@@ -52,6 +52,7 @@ export function OrderCard({
   archived,
   isSuperAdmin,
   reconcilingId,
+  onOpenHistory,
   onRequestAdminAction,
   onRequestCancel,
   onRequestPaymentStatus,
@@ -63,6 +64,12 @@ export function OrderCard({
   const isPrebuilt = order.type === 'prebuilt' || Boolean(order.prebuiltName);
   const isCancelled = order.status === 'cancelled';
   const stageInfo = getOrderStageBadgeInfo(order);
+  const stockBadge = getStockBadgeInfo(order);
+  const paymentStatusInfo = getPaymentStatusInfo(order.paymentStatus, order.paymentMethod);
+  const refundBadge = getRefundBadgeInfo(order);
+  const refundedTotal = getRefundedAmount(order);
+  const netCollected = getNetCollectedAmount(order);
+
   const displayOrderId = order.orderNumber || `#${order.id.slice(0, 10).toUpperCase()}`;
 
   const [isAssemblyVerified, setIsAssemblyVerified] = useState<boolean | undefined>(
@@ -91,37 +98,51 @@ export function OrderCard({
     <Paper
       withBorder
       radius="lg"
-      p={{ base: 'md', sm: 'lg' }}
+      p={{ base: 'sm', sm: 'md' }}
       className={cn(
-        'w-full transition-all duration-200 shadow-sm space-y-4',
-        'bg-white/85 dark:bg-[#111722] border-slate-200 dark:border-white/10 hover:border-cyan-500/40',
+        'w-full transition-all duration-200 shadow-xs space-y-3',
+        'bg-white/90 dark:bg-[#111722] border-slate-200 dark:border-white/10 hover:border-cyan-500/40',
         isCancelled && 'opacity-85'
       )}
     >
-      <Stack gap="md" className="w-full">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-3 border-b border-slate-200 dark:border-white/10">
+      <Stack gap="sm" className="w-full">
+        {/* Header: Customer info + Badges + Total + Actions */}
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-2.5 border-b border-slate-200 dark:border-white/10">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <Avatar
-              size={44}
-              radius={44}
+              size={40}
+              radius={40}
               color={isPrebuilt ? 'cyan' : stageInfo.color}
               variant="light"
-              className="border border-slate-200 dark:border-white/10 shrink-0 font-bold text-sm"
+              className="border border-slate-200 dark:border-white/10 shrink-0 font-bold text-xs"
             >
               {customerInitials}
             </Avatar>
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <Text fw={700} size="md" className="font-headline text-slate-900 dark:text-slate-100 truncate">
+                <Text fw={700} size="sm" className="font-headline text-slate-900 dark:text-slate-100 truncate">
                   {customerName}
                 </Text>
                 <CopyableOrderId orderId={order.orderNumber || order.id} displayId={displayOrderId} />
+
+                {/* Primary status badges in header */}
+                <Badge size="xs" color={stockBadge.color} variant="light">
+                  {stockBadge.label}
+                </Badge>
+                <Badge size="xs" color={paymentStatusInfo.color} variant="light">
+                  {paymentStatusInfo.label}
+                </Badge>
+                {refundBadge && (
+                  <Badge size="xs" color={refundBadge.color} variant="light">
+                    {refundBadge.label}
+                  </Badge>
+                )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 <Tooltip label={order.userEmail} withArrow position="top">
-                  <span className="truncate max-w-[200px] sm:max-w-[260px]">{order.userEmail}</span>
+                  <span className="truncate max-w-[180px] sm:max-w-[240px]">{order.userEmail}</span>
                 </Tooltip>
                 <span>•</span>
                 <span className="flex items-center gap-1 font-mono text-[11px]">
@@ -138,51 +159,35 @@ export function OrderCard({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
+          <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-200/60 dark:border-white/5">
+            <div className="text-left sm:text-right">
+              <div className="font-mono font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100">
+                {formatCurrency(order.totalPrice)}
+              </div>
+              {refundedTotal > 0 && (
+                <div className="text-[10px] sm:text-[11px] font-mono text-emerald-600 dark:text-emerald-400">
+                  Net: {formatCurrency(netCollected)}
+                </div>
+              )}
+            </div>
+
             <OrderCardControls
               order={order}
               archived={archived}
+              isSuperAdmin={isSuperAdmin}
               reconcilingId={reconcilingId}
+              onOpenHistory={onOpenHistory}
+              onRequestAdminAction={onRequestAdminAction}
               onRequestCancel={onRequestCancel}
               onRequestPaymentStatus={onRequestPaymentStatus}
               onRequestRefund={onRequestRefund}
               onReconcileRefund={onReconcileRefund}
               onConfirmStockReturn={onConfirmStockReturn}
             />
-            <Group gap={4} wrap="nowrap">
-              <Tooltip label={archived ? 'Restore order' : 'Archive order'} withArrow position="top">
-                <ActionIcon
-                  size="lg"
-                  color="cyan"
-                  variant="subtle"
-                  radius="md"
-                  onClick={() => onRequestAdminAction(order, archived ? 'restore' : 'archive')}
-                  className="min-h-11 min-w-11"
-                  aria-label={archived ? 'Restore order' : 'Archive order'}
-                >
-                  {archived ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
-                </ActionIcon>
-              </Tooltip>
-
-              {isSuperAdmin && (
-                <Tooltip label="Delete order" withArrow position="top">
-                  <ActionIcon
-                    size="lg"
-                    color="red"
-                    variant="subtle"
-                    radius="md"
-                    onClick={() => onRequestAdminAction(order, 'delete')}
-                    className="min-h-11 min-w-11"
-                    aria-label="Delete order"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </ActionIcon>
-                </Tooltip>
-              )}
-            </Group>
           </div>
         </div>
 
+        {/* Stepper */}
         <OrderCardFulfillmentStepper
           order={order}
           onUpdateFulfillmentStage={onUpdateFulfillmentStage}
@@ -190,22 +195,15 @@ export function OrderCard({
           isAssemblyVerified={isAssemblyVerified}
         />
 
+        {/* Hardware Items List (Component picking retained open in assembling stage) */}
         <OrderCardItemsList
           order={order}
           catalogParts={catalogParts}
           onAssemblyVerificationChange={setIsAssemblyVerified}
         />
 
+        {/* Compact Delivery & Finance Strip */}
         <OrderCardCustomerFinance order={order} />
-
-        <OrderCardHistoryLedgers
-          order={order}
-          archived={archived}
-          reconciling={reconcilingId === order.id}
-          onOpenRefund={onRequestRefund}
-          onReconcileRefund={onReconcileRefund}
-        />
-
       </Stack>
     </Paper>
   );

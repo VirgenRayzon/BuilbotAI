@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import {
     Clock,
@@ -126,6 +127,7 @@ export function AdminTabHeader({
     onCloseResetSalesConfirm,
     onConfirmResetSales,
 }: AdminTabHeaderProps) {
+    const router = useRouter();
     const ctx = useContext(AdminTabHeaderContext);
     const [qrScannerOpened, setQrScannerOpened] = useState(false);
     const [qrHealthOpened, setQrHealthOpened] = useState(false);
@@ -172,16 +174,19 @@ export function AdminTabHeader({
                     />
 
                     {currentTab === 'orders' && pendingOrdersCount > 0 && (
-                        <Badge
-                            size="lg"
-                            color="yellow"
-                            variant="filled"
-                            radius="md"
-                            leftSection={<Clock className="h-3.5 w-3.5" />}
-                            className="h-9 font-headline font-bold uppercase tracking-wider text-slate-950 bg-yellow-400 px-3"
-                        >
-                            {pendingOrdersCount} Pending Review
-                        </Badge>
+                        <Tooltip label="View orders awaiting review" withArrow position="top">
+                            <Badge
+                                size="lg"
+                                color="yellow"
+                                variant="filled"
+                                radius="md"
+                                leftSection={<Clock className="h-3.5 w-3.5" />}
+                                className="h-9 font-headline font-bold uppercase tracking-wider text-slate-950 bg-yellow-400 px-3 cursor-pointer hover:bg-yellow-300 transition-colors select-none"
+                                onClick={() => router.push('/admin?tab=orders&stage=order_placed')}
+                            >
+                                {pendingOrdersCount} Pending Review
+                            </Badge>
+                        </Tooltip>
                     )}
 
                     <div ref={ctx?.setActionsSlot} className="contents" />

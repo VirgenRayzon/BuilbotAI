@@ -178,6 +178,7 @@ export function OrdersTab({
                 archived={archived}
                 isSuperAdmin={isSuperAdmin}
                 reconcilingId={reconcilingId}
+                onOpenHistory={(targetId) => setDetailsOrderId(targetId)}
                 onRequestAdminAction={(target, action) => setPendingAction({ order: target, action })}
                 onRequestCancel={setCancelTarget}
                 onRequestPaymentStatus={(target, status) => setPaymentChange({ order: target, status })}

@@ -29,6 +29,33 @@ export const adminOrderQuerySchema = z.object({
 export type AdminOrderQuery = z.infer<typeof adminOrderQuerySchema>;
 export { adminOrderQuerySchema as AdminOrderQuerySchema };
 
+export function serializeFirestoreData<T>(val: T): T {
+  if (val === null || val === undefined) {
+    return val;
+  }
+  if (typeof (val as unknown as { toDate?: () => Date }).toDate === 'function') {
+    return (val as unknown as { toDate: () => Date }).toDate().toISOString() as unknown as T;
+  }
+  if (val instanceof Date) {
+    return val.toISOString() as unknown as T;
+  }
+  if (Array.isArray(val)) {
+    return val.map(item => serializeFirestoreData(item)) as unknown as T;
+  }
+  if (typeof val === 'object') {
+    const obj = val as Record<string, unknown>;
+    if (typeof obj._seconds === 'number' && typeof obj._nanoseconds === 'number') {
+      return new Date(obj._seconds * 1000 + obj._nanoseconds / 1000000).toISOString() as unknown as T;
+    }
+    const res: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      res[key] = serializeFirestoreData(value);
+    }
+    return res as T;
+  }
+  return val;
+}
+
 export interface AdminOrdersPageResult {
   orders: Order[];
   totalCount: number;
@@ -205,8 +232,10 @@ export async function listAdminOrdersPage(
     const pagedOrders = hasMore ? orders.slice(0, options.pageSize) : orders;
     const nextCursor = hasMore && pagedOrders.length > 0 ? pagedOrders[pagedOrders.length - 1].id : null;
 
+    const serializedOrders = pagedOrders.map(o => serializeFirestoreData(o));
+
     return {
-      orders: pagedOrders,
+      orders: serializedOrders,
       totalCount: effectiveTotalCount,
       stageCounts,
       nextCursor,
@@ -270,8 +299,10 @@ export async function listAdminOrdersPage(
   counts.outForDelivery = counts.out_for_delivery;
   counts.total = matchingOrders.length;
 
+  const serializedOrders = pagedOrders.map(o => serializeFirestoreData(o));
+
   return {
-    orders: pagedOrders,
+    orders: serializedOrders,
     totalCount: matchingOrders.length,
     stageCounts: counts,
     nextCursor,

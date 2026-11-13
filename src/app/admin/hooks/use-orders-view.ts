@@ -242,7 +242,6 @@ export function useOrdersView({
   }, [filteredOrders, effectivePage, itemsPerPage]);
 
   const activeFilterCount =
-    Number(stageFilter !== 'all') +
     Number(paymentStatusFilter !== 'all') +
     Number(paymentMethodFilter !== 'all') +
     Number(refundFilter !== 'all') +

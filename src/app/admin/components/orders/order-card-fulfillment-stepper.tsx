@@ -61,29 +61,13 @@ export function OrderCardFulfillmentStepper({
     isOnlinePaymentPaid;
 
   return (
-    <div className="w-full space-y-2.5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Text
-            fw={700}
-            size="xs"
-            className="uppercase tracking-wider text-slate-500 dark:text-slate-400 text-[10px]"
-          >
-            Fulfillment Progress
-          </Text>
-          <span className="text-[10px] text-slate-400 dark:text-slate-500">•</span>
-          <span className="text-[10px] text-cyan-700 dark:text-cyan-400 font-semibold">
-            Step Advancer
-          </span>
+    <div className="w-full space-y-2">
+      {isOutForDeliveryReady && (
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-cyan-700 dark:text-cyan-300">
+          <Sparkles className="h-3.5 w-3.5 shrink-0 text-cyan-600 dark:text-cyan-400" />
+          <span>Ready for delivery: click &ldquo;Out for Delivery&rdquo;</span>
         </div>
-
-        {isOutForDeliveryReady && (
-          <span className="text-[11px] font-semibold text-cyan-700 dark:text-cyan-300 flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 shrink-0 text-cyan-600 dark:text-cyan-400" />
-            Ready for delivery: click &ldquo;Out for Delivery&rdquo;
-          </span>
-        )}
-      </div>
+      )}
 
       {order.status === 'cancelled' ? (
         <div className="flex items-start gap-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-800 dark:text-rose-300">
@@ -168,7 +152,7 @@ export function OrderCardFulfillmentStepper({
                     : undefined
                 }
                 className={cn(
-                  'flex items-center justify-between gap-2 rounded-lg border p-2 text-xs transition-colors select-none',
+                  'flex items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition-colors select-none',
                   isBreathing
                     ? 'animate-breathe border-cyan-500/60 bg-cyan-500/10 text-slate-900 dark:text-cyan-100 font-semibold cursor-pointer hover:bg-cyan-500/20 active:scale-[0.99]'
                     : isCurrent

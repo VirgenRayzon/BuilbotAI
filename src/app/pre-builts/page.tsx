@@ -49,6 +49,8 @@ export default function PreBuiltsPage() {
     loading,
     loadingMore,
     hasMore,
+    error,
+    refresh,
     loadMore,
   } = usePrebuiltCatalog({
     tiers: selectedTiers,
@@ -211,6 +213,18 @@ export default function PreBuiltsPage() {
                   {Array.from({length:8}, (_, index) => <PrebuiltCardSkeleton key={index} expanded={showAllDetails} />)}
                 </div> : <Paper withBorder radius="lg" className="overflow-hidden bg-white/70 dark:bg-[#141a23]/90 border-slate-200/80 dark:border-white/10">
                   <PrebuiltsTable systems={[]} showActions={false} loading />
+                </Paper>
+              ) : error ? (
+                <Paper withBorder radius="lg" p="xl" className="min-h-[260px] flex flex-col items-center justify-center text-center bg-red-50/50 dark:bg-red-950/20 border-red-200 dark:border-red-900/40">
+                  <Text fw={600} size="md" className="text-red-700 dark:text-red-400 mb-2">
+                    Failed to load systems
+                  </Text>
+                  <Text c="dimmed" size="xs" maw={400} mb={4}>
+                    {error}
+                  </Text>
+                  <Button variant="outline" color="red" size="xs" onClick={() => refresh()}>
+                    Retry
+                  </Button>
                 </Paper>
               ) : filteredAndSortedSystems.length > 0 ? (
                 <>

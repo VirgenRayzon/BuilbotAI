@@ -44,24 +44,21 @@ export function OrdersHeaderBar({
         }
         actions={
           <div className="flex w-full flex-wrap min-w-0 items-center gap-1.5 sm:w-auto sm:gap-2">
-            {!archived && onSweepExpiredOrders && (
+            {!archived && onSweepExpiredOrders && view.summary.expiredOnlineHolds > 0 && (
               <Button
-                variant={view.summary.expiredOnlineHolds > 0 ? 'light' : 'default'}
-                color={view.summary.expiredOnlineHolds > 0 ? 'orange' : 'gray'}
+                variant="light"
+                color="orange"
                 size="xs"
                 radius="md"
                 loading={isSweepingExpired}
                 onClick={() => onSweepExpiredOrders()}
                 leftSection={<Clock size={14} />}
-                className="min-h-11 shrink-0 whitespace-nowrap"
+                className="min-h-11 shrink-0 whitespace-nowrap text-xs"
               >
                 <span className="hidden sm:inline">
-                  Sweep Expired
-                  {view.summary.expiredOnlineHolds > 0
-                    ? ` (${view.summary.expiredOnlineHolds})`
-                    : ''}
+                  Sweep Expired ({view.summary.expiredOnlineHolds})
                 </span>
-                <span className="sm:hidden">Sweep</span>
+                <span className="sm:hidden">Sweep ({view.summary.expiredOnlineHolds})</span>
               </Button>
             )}
 

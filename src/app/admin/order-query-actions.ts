@@ -1,10 +1,11 @@
 'use server';
 
-import { listAdminOrdersPage } from '@/lib/server/admin-order-queries';
+import { listAdminOrdersPage, serializeFirestoreData } from '@/lib/server/admin-order-queries';
 
 export async function fetchAdminOrdersPageAction(input: {
   idToken: string;
   options: unknown;
 }) {
-  return listAdminOrdersPage(input.idToken, input.options);
+  const result = await listAdminOrdersPage(input.idToken, input.options);
+  return serializeFirestoreData(result);
 }
