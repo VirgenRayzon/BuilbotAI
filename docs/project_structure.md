@@ -772,6 +772,8 @@ BuilbotAI
 │   │   │   │   │   ├── orders-header-bar.tsx
 │   │   │   │   │   ├── orders-tab.tsx
 │   │   │   │   │   └── refund-reconcile-control.tsx
+│   │   │   │   ├── add-part-tab.tsx
+│   │   │   │   ├── add-system-tab.tsx
 │   │   │   │   ├── admin-sidebar.tsx
 │   │   │   │   ├── admin-tab-header.tsx
 │   │   │   │   ├── admin-topbar.tsx
@@ -1007,6 +1009,7 @@ BuilbotAI
 │   │   ├── image-actions.ts
 │   │   ├── layout.tsx
 │   │   ├── loading.tsx
+│   │   ├── management-actions.ts
 │   │   ├── page.tsx
 │   │   ├── prebuilt-reservation-actions.ts
 │   │   ├── product-actions.ts
@@ -1096,11 +1099,17 @@ BuilbotAI
 │   │   │   ├── prebuilt-showcase-skeleton.tsx
 │   │   │   ├── profile-list-skeleton.tsx
 │   │   │   └── table-loading-rows.tsx
+│   │   ├── management-portal
+│   │   │   ├── account-directory-list.tsx
+│   │   │   ├── account-inspector-modal.tsx
+│   │   │   ├── account-purge-modal.tsx
+│   │   │   └── portal-top-controls-bar.tsx
 │   │   ├── orders
 │   │   │   ├── customer-order-activity.tsx
 │   │   │   └── download-receipt-button.tsx
 │   │   ├── parts
 │   │   │   ├── multi-image-upload.tsx
+│   │   │   ├── part-editor-form.tsx
 │   │   │   ├── part-identity-section.tsx
 │   │   │   └── part-specifications-section.tsx
 │   │   ├── prebuilt-builder
@@ -1108,6 +1117,11 @@ BuilbotAI
 │   │   │   ├── identity-fields.tsx
 │   │   │   ├── part-selector.tsx
 │   │   │   └── use-prebuilt-form.ts
+│   │   ├── prebuilts
+│   │   │   ├── prebuilt-components-section.tsx
+│   │   │   ├── prebuilt-editor-shell.tsx
+│   │   │   ├── prebuilt-identity-section.tsx
+│   │   │   └── prebuilt-part-selector.tsx
 │   │   ├── providers
 │   │   │   └── mantine-app-provider.tsx
 │   │   ├── ui
@@ -1120,6 +1134,7 @@ BuilbotAI
 │   │   │   ├── calendar.tsx
 │   │   │   ├── card.tsx
 │   │   │   ├── carousel.tsx
+│   │   │   ├── catalog-editor-header-actions.tsx
 │   │   │   ├── checkbox.tsx
 │   │   │   ├── compact-info.tsx
 │   │   │   ├── confirmation-alert-dialog.tsx
@@ -1248,6 +1263,7 @@ BuilbotAI
 │   │   ├── use-idle-timeout.ts
 │   │   ├── use-inventory-image-count.ts
 │   │   ├── use-live-build-recommendations.ts
+│   │   ├── use-management-portal.ts
 │   │   ├── use-mobile.tsx
 │   │   ├── use-near-viewport.ts
 │   │   ├── use-order-details-modal.ts
@@ -1255,6 +1271,7 @@ BuilbotAI
 │   │   ├── use-part-form.ts
 │   │   ├── use-paymongo-checkout-modal.ts
 │   │   ├── use-persistent-state.ts
+│   │   ├── use-prebuilt-form.ts
 │   │   ├── use-product-qr.ts
 │   │   ├── use-product-save-operation.ts
 │   │   ├── use-public-feature-auth.ts
@@ -1288,6 +1305,7 @@ BuilbotAI
 │       │   ├── category-specs.ts
 │       │   └── default-system-prompts.ts
 │       ├── server
+│       │   ├── account-management.ts
 │       │   ├── admin-inventory-queries.ts
 │       │   ├── admin-order-queries.test.ts
 │       │   ├── admin-order-queries.ts
@@ -1367,6 +1385,7 @@ BuilbotAI
 │       ├── knowledge-retriever.ts
 │       ├── live-build-recommendation-schema.ts
 │       ├── live-build-recommendations.ts
+│       ├── management-portal-types.ts
 │       ├── normalize-product-description.ts
 │       ├── order-activity.ts
 │       ├── order-assembly.ts

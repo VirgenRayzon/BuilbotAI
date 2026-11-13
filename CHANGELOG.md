@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-11-14]
+
+### Refactoring
+- **admin**: Modularize prebuilt/part editors and account management portal ([3da4fa5](https://github.com/VirgenRayzon/BuilbotAI/commit/3da4fa5))
+
 ## [2026-11-13]
 
 ### Features
