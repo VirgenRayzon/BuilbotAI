@@ -332,6 +332,45 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
     });
   };
 
+  const resetPartForm = () => {
+    setAiDuration(null);
+    setTokensUsed(null);
+    setAiComponentWarning(null);
+    form.reset(
+      initialData
+        ? {
+            partName: initialData.name,
+            category: initialData.category,
+            brand: initialData.brand,
+            price: initialData.price,
+            stockCount: initialData.stock,
+            imageUrl: initialData.imageUrl,
+            images: initialData.images || (initialData.imageUrl ? [initialData.imageUrl] : []),
+            wattage: initialData.wattage,
+            performanceScore: initialData.performanceScore,
+            dimensions: initialData.dimensions || { width: 0, height: 0, depth: 0 },
+            specifications: Object.entries(initialData.specifications || {}).map(([key, value]) => ({ key, value: String(value) })),
+            description: normalizeProductDescription(initialData.description),
+            packageType: initialData.packageType || "",
+          }
+        : {
+            partName: "",
+            category: "",
+            brand: "",
+            price: 0,
+            stockCount: 0,
+            imageUrl: "",
+            images: [],
+            wattage: undefined,
+            performanceScore: 50,
+            dimensions: { width: 0, height: 0, depth: 0 },
+            specifications: [],
+            description: "",
+            packageType: "",
+          }
+    );
+  };
+
   return {
     form,
     isAiPending,
@@ -341,6 +380,7 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
     handleGetAiDetails,
     handleCancelAiDetails,
     setSpecValue,
+    resetPartForm,
     selectedCategory,
   };
 }

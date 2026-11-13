@@ -76,7 +76,7 @@ export function Header() {
     : loading
       ? "#"
       : authUser
-        ? (profile?.isManager || profile?.isSuperAdmin ? "/admin" : "/builder")
+        ? (profile?.isManager || profile?.isSuperAdmin ? "/admin" : "/parts")
         : "/";
 
   const handleSignOut = async () => {
@@ -104,10 +104,10 @@ export function Header() {
   };
 
   const mainTabs: NavTab[] = [
+    { href: "/parts", label: "Catalog" },
+    { href: "/pre-builts", label: "Prebuilts" },
     { href: "/builder", label: "Builder" },
     { href: "/ai-build-advisor", label: "Build Advisor" },
-    { href: "/pre-builts", label: "Prebuilts" },
-    { href: "/parts", label: "Catalog" },
   ];
 
   const adminTabs: NavTab[] = [

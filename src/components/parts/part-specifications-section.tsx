@@ -22,9 +22,10 @@ interface PartSpecificationsSectionProps {
   form: UseFormReturn<AddPartFormSchema>;
   setSpecValue: (key: string, value: string) => void;
   justAutofilled?: boolean;
+  flat?: boolean;
 }
 
-export function PartSpecificationsSection({ form, setSpecValue, justAutofilled }: PartSpecificationsSectionProps) {
+export function PartSpecificationsSection({ form, setSpecValue, justAutofilled, flat = false }: PartSpecificationsSectionProps) {
   const [customSpecKey, setCustomSpecKey] = useState("");
   const [customSpecValue, setCustomSpecValue] = useState("");
   
@@ -67,65 +68,77 @@ export function PartSpecificationsSection({ form, setSpecValue, justAutofilled }
         </Badge>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {(CATEGORY_SPECS[selectedCategory] || []).map((spec) => (
-          <Paper
-            key={spec.key}
-            withBorder
-            radius="xl"
-            p="md"
-            className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 space-y-2 group shadow-sm transition-all hover:border-cyan-500/30"
-          >
-            <div className="flex items-center justify-between">
-              <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 group-focus-within:text-cyan-600 dark:group-focus-within:text-cyan-400 transition-colors truncate">
-                {spec.key}
-              </Label>
-              {spec.options ? (
-                <Badge size="xs" variant="light" color="cyan" className="font-mono text-[9px] uppercase">
-                  Select
-                </Badge>
-              ) : (
-                <Badge size="xs" variant="subtle" color="gray" className="font-mono text-[9px] uppercase">
-                  Value
-                </Badge>
-              )}
-            </div>
-            {spec.options ? (
-              <Select
-                value={getSpecValue(spec.key)}
-                onValueChange={(val) => setSpecValue(spec.key, val)}
-              >
-                <SelectTrigger className={cn(
-                  "bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white transition-all shadow-sm",
-                  highlightClass
-                )}>
-                  <SelectValue placeholder={spec.placeholder} />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#141a23] text-slate-900 dark:text-white shadow-xl">
-                  {spec.options.map((opt) => (
-                    <SelectItem 
-                      key={opt} 
-                      value={opt}
-                      className="text-xs font-semibold hover:bg-slate-100 dark:hover:bg-white/5"
-                    >
-                      {opt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Input
-                value={getSpecValue(spec.key)}
-                onChange={(e) => setSpecValue(spec.key, e.target.value)}
-                placeholder={spec.placeholder}
-                className={cn(
-                  "bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 transition-all shadow-sm",
-                  highlightClass
+      <div className={cn("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3", flat ? "gap-x-6 gap-y-5" : "gap-4")}>
+        {(CATEGORY_SPECS[selectedCategory] || []).map((spec) => {
+          const fieldBody = (
+            <>
+              <div className="flex items-center justify-between">
+                <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 group-focus-within:text-cyan-600 dark:group-focus-within:text-cyan-400 transition-colors truncate">
+                  {spec.key}
+                </Label>
+                {spec.options ? (
+                  <Badge size="xs" variant="light" color="cyan" className="font-mono text-[9px] uppercase">
+                    Select
+                  </Badge>
+                ) : (
+                  <Badge size="xs" variant="subtle" color="gray" className="font-mono text-[9px] uppercase">
+                    Value
+                  </Badge>
                 )}
-              />
-            )}
-          </Paper>
-        ))}
+              </div>
+              {spec.options ? (
+                <Select
+                  value={getSpecValue(spec.key)}
+                  onValueChange={(val) => setSpecValue(spec.key, val)}
+                >
+                  <SelectTrigger className={cn(
+                    "bg-white dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white transition-all shadow-sm",
+                    highlightClass
+                  )}>
+                    <SelectValue placeholder={spec.placeholder} />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-[#141a23] text-slate-900 dark:text-white shadow-xl">
+                    {spec.options.map((opt) => (
+                      <SelectItem
+                        key={opt}
+                        value={opt}
+                        className="text-xs font-semibold hover:bg-slate-100 dark:hover:bg-white/5"
+                      >
+                        {opt}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  value={getSpecValue(spec.key)}
+                  onChange={(e) => setSpecValue(spec.key, e.target.value)}
+                  placeholder={spec.placeholder}
+                  className={cn(
+                    "bg-white dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 transition-all shadow-sm",
+                    highlightClass
+                  )}
+                />
+              )}
+            </>
+          );
+
+          return flat ? (
+            <div key={spec.key} className="space-y-2 group">
+              {fieldBody}
+            </div>
+          ) : (
+            <Paper
+              key={spec.key}
+              withBorder
+              radius="xl"
+              p="md"
+              className="bg-slate-50/70 dark:bg-[#141a23]/70 border-slate-200 dark:border-white/10 space-y-2 group shadow-sm transition-all hover:border-cyan-500/30"
+            >
+              {fieldBody}
+            </Paper>
+          );
+        })}
       </div>
 
       <div className="pt-6 border-t border-dashed border-slate-200 dark:border-white/10">
@@ -160,44 +173,55 @@ export function PartSpecificationsSection({ form, setSpecValue, justAutofilled }
           </div>
         )}
 
-        <Paper 
-          withBorder 
-          radius="xl" 
-          p="md" 
-          className="flex flex-col sm:flex-row gap-4 bg-slate-50/70 dark:bg-[#111722]/60 border-slate-200 dark:border-white/10"
-        >
-          <div className="flex-1 space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-              Field Name
-            </Label>
-            <Input
-              value={customSpecKey}
-              onChange={(e) => setCustomSpecKey(e.target.value)}
-              placeholder="e.g., Warranty"
-              className="bg-white dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white"
-            />
-          </div>
-          <div className="flex-1 space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-              Field Value
-            </Label>
-            <Input
-              value={customSpecValue}
-              onChange={(e) => setCustomSpecValue(e.target.value)}
-              placeholder="e.g., 3 Years"
-              className="bg-white dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white"
-            />
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            className="sm:self-end h-10 px-6 rounded-xl border-cyan-500/30 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10 font-bold text-xs uppercase tracking-wider"
-            onClick={addCustomSpec}
-            disabled={!customSpecKey || !customSpecValue}
-          >
-            <Plus className="h-4 w-4 mr-1.5" /> Add Field
-          </Button>
-        </Paper>
+        {(() => {
+          const customFieldsContent = (
+            <>
+              <div className="flex-1 space-y-1.5">
+                <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                  Field Name
+                </Label>
+                <Input
+                  value={customSpecKey}
+                  onChange={(e) => setCustomSpecKey(e.target.value)}
+                  placeholder="e.g., Warranty"
+                  className="bg-white dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white"
+                />
+              </div>
+              <div className="flex-1 space-y-1.5">
+                <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                  Field Value
+                </Label>
+                <Input
+                  value={customSpecValue}
+                  onChange={(e) => setCustomSpecValue(e.target.value)}
+                  placeholder="e.g., 3 Years"
+                  className="bg-white dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="sm:self-end h-10 px-6 rounded-xl border-cyan-500/30 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10 font-bold text-xs uppercase tracking-wider"
+                onClick={addCustomSpec}
+                disabled={!customSpecKey || !customSpecValue}
+              >
+                <Plus className="h-4 w-4 mr-1.5" /> Add Field
+              </Button>
+            </>
+          );
+          return flat ? (
+            <div className="flex flex-col sm:flex-row gap-4">{customFieldsContent}</div>
+          ) : (
+            <Paper
+              withBorder
+              radius="xl"
+              p="md"
+              className="flex flex-col sm:flex-row gap-4 bg-slate-50/70 dark:bg-[#111722]/60 border-slate-200 dark:border-white/10"
+            >
+              {customFieldsContent}
+            </Paper>
+          );
+        })()}
       </div>
     </div>
   );

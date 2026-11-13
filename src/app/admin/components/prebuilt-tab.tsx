@@ -13,15 +13,13 @@ import {
     PackageCheck,
     Archive,
     Trash2,
-    Plus,
 } from 'lucide-react';
-import { AddPrebuiltDialog } from '@/components/add-prebuilt-dialog';
 import { InventoryPrebuiltCard } from '@/components/inventory-prebuilt-card';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
 import { InventoryToolbar } from '@/components/inventory-toolbar';
 import { PaginationControls } from "@/components/pagination-controls";
 import type { Part, PrebuiltSystem } from '@/lib/types';
-import { AddPrebuiltFormSchema } from '@/components/add-prebuilt-dialog';
+import type { AddPrebuiltFormSchema } from '@/hooks/use-prebuilt-form';
 import { SearchNoResults } from '@/components/search-no-results';
 import { CategorySelectionEmpty } from '@/components/category-selection-empty';
 import { hasNoSelectedCategories } from '@/lib/category-selection';
@@ -34,7 +32,6 @@ interface PrebuiltTabProps {
     profile: any;
     prebuiltCategories: { name: string, selected: boolean }[];
     onSetCategories: (cats: any) => void;
-    onAddPrebuilt: (data: AddPrebuiltFormSchema, operationId?: string) => Promise<import('@/lib/product-identity').CreatedProduct | void>;
     onUpdatePrebuilt: (id: string, data: AddPrebuiltFormSchema) => Promise<void>;
     onDeletePrebuilt: (id: string) => Promise<void>;
     onArchivePrebuilt: (id: string, isArchived?: boolean) => Promise<void>;
@@ -58,7 +55,6 @@ export function PrebuiltTab({
     profile,
     prebuiltCategories,
     onSetCategories,
-    onAddPrebuilt,
     onUpdatePrebuilt,
     onDeletePrebuilt,
     onArchivePrebuilt,
@@ -179,24 +175,6 @@ export function PrebuiltTab({
                             <CheckSquare size={16} />
                         </ActionIcon>
                     </Tooltip>
-                }
-                actions={
-                    <AddPrebuiltDialog
-                        parts={parts || []}
-                        onSave={onAddPrebuilt}
-                    >
-                        <Button
-                            size="sm"
-                            radius="md"
-                            color="cyan"
-                            variant="filled"
-                            aria-label="Add System"
-                            className="!size-11 !p-0 font-semibold shadow-xs sm:!h-9 sm:!w-auto sm:!px-3"
-                        >
-                            <Plus size={16} />
-                            <span className="hidden sm:inline">Add System</span>
-                        </Button>
-                    </AddPrebuiltDialog>
                 }
                 onResetAll={() => {
                     onSetCategories(prebuiltCategories.map(c => ({ ...c, selected: true })));

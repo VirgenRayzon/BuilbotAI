@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -7,7 +7,7 @@ import {
   type FulfillmentStage,
 } from "@/lib/order-fulfillment";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
-import { useFirestore } from "@/firebase";
+import { useFirestore, useUser } from "@/firebase";
 import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
 import { useToast } from "@/hooks/use-toast";
 
@@ -169,6 +169,36 @@ interface EcommerceContextType {
 const CART_STORAGE_KEY = "buildbot_ecommerce_cart_v1";
 const ORDERS_STORAGE_KEY = "buildbot_ecommerce_orders_v2";
 
+type EcommerceStorageScope = "guest" | `user:${string}`;
+
+function getCartStorageKey(scope: EcommerceStorageScope): string {
+  return `${CART_STORAGE_KEY}:${scope}`;
+}
+
+function getOrdersStorageKey(scope: EcommerceStorageScope): string {
+  return `${ORDERS_STORAGE_KEY}:${scope}`;
+}
+
+function sanitizeStoredOrders(parsedOrders: MockEcommerceOrder[]): MockEcommerceOrder[] {
+  return parsedOrders.map((o) => ({
+    ...o,
+    courierName: o.courierName
+      ? o.courierName
+          .replace(/[\u7ab6\uff62\u30fb\u9244]+/g, " — ")
+          .replace(/Center\s*\?\s*Cubao/g, "Center — Cubao")
+      : o.courierName,
+    estimatedDelivery: o.estimatedDelivery
+      ? o.estimatedDelivery
+          .replace(/[\u7ab6\uff62\u30fb\u9244]+/g, "–")
+          .replace(/Ready in 2\?4 Hours/g, "Ready in 2–4 Hours")
+          .replace(/3\?5 Business Days/g, "3–5 Business Days")
+      : o.estimatedDelivery,
+    paymentLabel: o.paymentLabel
+      ? o.paymentLabel.replace(/\s*\(Simulated[^)]*\)/gi, "")
+      : o.paymentLabel,
+  }));
+}
+
 const DEFAULT_DEMO_ORDERS: MockEcommerceOrder[] = [
   {
     id: "demo-order-1",
@@ -231,13 +261,21 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const router = useRouter();
   const firestore = useFirestore();
+  const user = useUser();
+  const storageScope = useMemo<EcommerceStorageScope | null>(() => {
+    if (user === undefined) return null;
+    return user?.uid ? (`user:${user.uid}` as const) : "guest";
+  }, [user]);
   const [cart, setCart] = useState<EcommerceCartItem[]>([]);
   const [orders, setOrders] = useState<MockEcommerceOrder[]>(DEFAULT_DEMO_ORDERS);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpenState] = useState(false);
   const [activeReceiptOrder, setActiveReceiptOrder] = useState<MockEcommerceOrder | null>(null);
-  const [hydrated, setHydrated] = useState(false);
+  const [loadedScope, setLoadedScope] = useState<EcommerceStorageScope | null>(null);
+  const hydrated = storageScope !== null && loadedScope === storageScope;
   const backfillingRef = useRef(false);
+  const previousScopeRef = useRef<EcommerceStorageScope | null>(null);
+  const lastPersistedCartRef = useRef<{ scope: EcommerceStorageScope; raw: string } | null>(null);
 
   const setIsCheckoutOpen = useCallback(
     (open: boolean) => {
@@ -251,43 +289,54 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!storageScope || typeof window === "undefined") return;
+
+    const didSwitchUsers =
+      previousScopeRef.current !== null && previousScopeRef.current !== storageScope;
+    previousScopeRef.current = storageScope;
+    backfillingRef.current = false;
+
+    if (didSwitchUsers) {
+      setIsCartOpen(false);
+      setIsCheckoutOpenState(false);
+      setActiveReceiptOrder(null);
+    }
+
+    let nextCart: EcommerceCartItem[] = [];
+    let nextOrders: MockEcommerceOrder[] = DEFAULT_DEMO_ORDERS;
+
     try {
-      const savedCart = window.localStorage.getItem(CART_STORAGE_KEY);
+      // Remove legacy unscoped keys so carts/orders never leak across accounts.
+      window.localStorage.removeItem(CART_STORAGE_KEY);
+      window.localStorage.removeItem(ORDERS_STORAGE_KEY);
+
+      const savedCart = window.localStorage.getItem(getCartStorageKey(storageScope));
       if (savedCart) {
         const parsed = JSON.parse(savedCart);
-        if (Array.isArray(parsed)) setCart(parsed);
+        if (Array.isArray(parsed)) {
+          nextCart = parsed;
+        }
       }
-      const savedOrders = window.localStorage.getItem(ORDERS_STORAGE_KEY);
+
+      const savedOrders = window.localStorage.getItem(getOrdersStorageKey(storageScope));
       if (savedOrders) {
         const parsedOrders = JSON.parse(savedOrders);
         if (Array.isArray(parsedOrders) && parsedOrders.length > 0) {
-          const sanitizedOrders = parsedOrders.map((o) => ({
-            ...o,
-            courierName: o.courierName
-              ? o.courierName
-                  .replace(/[\u7ab6\uff62\u30fb\u9244]+/g, " — ")
-                  .replace(/Center\s*\?\s*Cubao/g, "Center — Cubao")
-              : o.courierName,
-            estimatedDelivery: o.estimatedDelivery
-              ? o.estimatedDelivery
-                  .replace(/[\u7ab6\uff62\u30fb\u9244]+/g, "–")
-                  .replace(/Ready in 2\?4 Hours/g, "Ready in 2–4 Hours")
-                  .replace(/3\?5 Business Days/g, "3–5 Business Days")
-              : o.estimatedDelivery,
-            paymentLabel: o.paymentLabel
-              ? o.paymentLabel.replace(/\s*\(Simulated[^)]*\)/gi, "")
-              : o.paymentLabel,
-          }));
-          setOrders(sanitizedOrders);
+          nextOrders = sanitizeStoredOrders(parsedOrders);
         }
       }
     } catch (error) {
       console.warn("Could not load e-commerce state from localStorage:", error);
-    } finally {
-      setHydrated(true);
     }
-  }, []);
+
+    lastPersistedCartRef.current = {
+      scope: storageScope,
+      raw: JSON.stringify(nextCart),
+    };
+    setCart(nextCart);
+    setOrders(nextOrders);
+    setLoadedScope(storageScope);
+  }, [storageScope]);
 
   useEffect(() => {
     if (!hydrated || !firestore || cart.length === 0 || backfillingRef.current) return;
@@ -416,22 +465,51 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
   }, [cart, firestore, hydrated]);
 
   useEffect(() => {
-    if (!hydrated || typeof window === "undefined") return;
+    if (!hydrated || !storageScope || typeof window === "undefined") return;
+    const cartKey = getCartStorageKey(storageScope);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.storageArea !== window.localStorage || event.key !== cartKey) return;
+      try {
+        const nextCart = event.newValue ? JSON.parse(event.newValue) : [];
+        if (Array.isArray(nextCart)) {
+          lastPersistedCartRef.current = {
+            scope: storageScope,
+            raw: JSON.stringify(nextCart),
+          };
+          setCart(nextCart);
+        }
+      } catch {
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [hydrated, storageScope]);
+
+  useEffect(() => {
+    if (!hydrated || !storageScope || typeof window === "undefined") return;
     try {
-      window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      const serialized = JSON.stringify(cart);
+      if (
+        lastPersistedCartRef.current?.scope === storageScope &&
+        lastPersistedCartRef.current.raw === serialized
+      ) {
+        return;
+      }
+      window.localStorage.setItem(getCartStorageKey(storageScope), serialized);
+      lastPersistedCartRef.current = { scope: storageScope, raw: serialized };
     } catch (error) {
       console.warn("Failed to persist cart:", error);
     }
-  }, [cart, hydrated]);
+  }, [cart, hydrated, storageScope]);
 
   useEffect(() => {
-    if (!hydrated || typeof window === "undefined") return;
+    if (!hydrated || !storageScope || typeof window === "undefined") return;
     try {
-      window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+      window.localStorage.setItem(getOrdersStorageKey(storageScope), JSON.stringify(orders));
     } catch (error) {
       console.warn("Failed to persist orders:", error);
     }
-  }, [orders, hydrated]);
+  }, [orders, hydrated, storageScope]);
 
   const addToCart = useCallback(
     (item: Omit<EcommerceCartItem, "quantity"> & { quantity?: number }, openDrawer = true) => {

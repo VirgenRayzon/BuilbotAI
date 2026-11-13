@@ -1,18 +1,20 @@
-import { AdminPanelSkeleton } from '@/components/loading/admin-panel-skeleton';
+import { LoaderCard } from '@/components/loading/loader-card';
 import BuilderLoading from '@/app/builder/loading';
 import { Paper, Skeleton } from '@mantine/core';
 
-export function ProtectedPageLoading({ variant }: { variant: 'admin' | 'profile' | 'builder' }) {
+export function ProtectedPageLoading({
+  variant,
+}: {
+  variant: 'admin' | 'profile' | 'builder';
+}) {
   if (variant === 'admin') {
     return (
-      <div className="min-h-[calc(100svh-4rem)] w-full p-4 sm:p-6 md:p-8 bg-slate-50 dark:bg-[#0c0f14]">
-        <div className="max-w-[1600px] mx-auto space-y-4">
-          <div className="space-y-1">
-            <Skeleton h={28} w={200} radius="sm" />
-            <Skeleton h={14} w={320} radius="sm" />
-          </div>
-          <AdminPanelSkeleton variant="cards" />
-        </div>
+      <div
+        className="min-h-[calc(100svh-4rem)] w-full flex items-center justify-center overflow-x-hidden bg-slate-50 px-4 text-slate-900 transition-colors dark:bg-[#0c0f14] dark:text-slate-50"
+        aria-label="Loading admin workspace"
+        aria-busy="true"
+      >
+        <LoaderCard message="Loading admin workspace..." />
       </div>
     );
   }

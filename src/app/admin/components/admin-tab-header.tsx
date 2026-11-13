@@ -210,12 +210,6 @@ export function AdminTabHeader({
                         </Group>
                     )}
 
-                    {currentTab === 'management' && (
-                        <Badge size="md" color="cyan" variant="light" radius="md" className="font-bold">
-                            Admin Portal
-                        </Badge>
-                    )}
-
                     {currentTab === 'ai' && (
                         <Badge size="md" color={intelligenceBadgeColor} variant="light" radius="md" className="font-bold">
                             {intelligenceBadge}

@@ -11,12 +11,12 @@ import {
   ChevronRight,
   ChevronsUpDown,
   LogOut,
+  PackagePlus,
   PanelLeft,
   PieChart,
   Settings2,
   Shield,
   ShoppingBag,
-  Store,
   SquareTerminal,
   type LucideIcon,
 } from "lucide-react";
@@ -235,6 +235,8 @@ export const SidebarTrigger = AdminSidebarTrigger;
 export type AdminTabKey =
   | "stock"
   | "prebuilts"
+  | "add-part"
+  | "add-system"
   | "orders"
   | "sales"
   | "archive"
@@ -389,10 +391,8 @@ export function AdminSidebar({
         title: "Inventory",
         icon: SquareTerminal,
         isActive:
-          (!isPrebuiltBuilderRoute &&
-            (currentTab === "stock" ||
-              currentTab === "prebuilts")) ||
-          isPrebuiltBuilderRoute,
+          !isPrebuiltBuilderRoute &&
+          (currentTab === "stock" || currentTab === "prebuilts"),
         defaultTab: "stock",
         items: [
           {
@@ -406,6 +406,27 @@ export function AdminSidebar({
             isActive: !isPrebuiltBuilderRoute && currentTab === "prebuilts",
             badge: prebuiltsCount > 0 ? prebuiltsCount : undefined,
             onClick: () => handleNavigateTab("prebuilts"),
+          },
+        ],
+      },
+      {
+        title: "Catalog Builder",
+        icon: PackagePlus,
+        isActive:
+          isPrebuiltBuilderRoute ||
+          currentTab === "add-part" ||
+          currentTab === "add-system",
+        defaultTab: "add-part",
+        items: [
+          {
+            title: "Add Part",
+            isActive: !isPrebuiltBuilderRoute && currentTab === "add-part",
+            onClick: () => handleNavigateTab("add-part"),
+          },
+          {
+            title: "Add System",
+            isActive: !isPrebuiltBuilderRoute && currentTab === "add-system",
+            onClick: () => handleNavigateTab("add-system"),
           },
           {
             title: "Prebuilt Builder",
@@ -565,30 +586,15 @@ export function AdminSidebar({
           },
         ],
       },
-      {
-        title: "Storefront",
-        icon: Store,
-        badge: "Preview",
-        isActive: false,
-        defaultTab: "stock",
-        items: [
-          {
-            title: "Catalog",
-            isActive: false,
-            onClick: () => router.push("/parts?preview=admin"),
-          },
-          {
-            title: "Prebuilts",
-            isActive: false,
-            onClick: () => router.push("/pre-builts?preview=admin"),
-          },
-        ],
-      },
     ];
 
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(
     () => ({
       Inventory: true,
+      "Catalog Builder":
+        isPrebuiltBuilderRoute ||
+        currentTab === "add-part" ||
+        currentTab === "add-system",
       Orders: !isPrebuiltBuilderRoute && currentTab === "orders",
       Archive: !isPrebuiltBuilderRoute && currentTab === "archive",
       "Sales & Analytics":
@@ -597,9 +603,24 @@ export function AdminSidebar({
       Management:
         !isPrebuiltBuilderRoute &&
         (currentTab === "management" || currentTab === "audit"),
-      Storefront: false,
     })
   );
+
+  React.useEffect(() => {
+    if (
+      isPrebuiltBuilderRoute ||
+      currentTab === "add-part" ||
+      currentTab === "add-system"
+    ) {
+      setOpenGroups((prev) =>
+        prev["Catalog Builder"] ? prev : { ...prev, "Catalog Builder": true }
+      );
+    } else if (currentTab === "stock" || currentTab === "prebuilts") {
+      setOpenGroups((prev) =>
+        prev.Inventory ? prev : { ...prev, Inventory: true }
+      );
+    }
+  }, [currentTab, isPrebuiltBuilderRoute]);
 
   const toggleGroup = (title: string) => {
     setOpenGroups((prev) => ({

@@ -35,10 +35,45 @@ import {
   type PendingReceiptSnapshot,
 } from "../checkout-constants";
 
+function createFallbackShippingAddress(
+  profile?: { name?: string | null; email?: string | null } | null,
+  authUser?: { displayName?: string | null; email?: string | null } | null
+): ShippingAddress {
+  if (!authUser) {
+    return {
+      fullName: "",
+      phone: "",
+      email: "",
+      region: PH_REGIONS[0],
+      city: "",
+      barangay: "",
+      streetAddress: "",
+      postalCode: "",
+      notes: "",
+    };
+  }
+  return {
+    fullName: profile?.name || authUser.displayName || "",
+    phone: "",
+    email: profile?.email || authUser.email || "",
+    region: PH_REGIONS[0],
+    city: "",
+    barangay: "",
+    streetAddress: "",
+    postalCode: "",
+    notes: "",
+  };
+}
+
 export function useCheckoutController() {
   const { shouldCorruptImages } = useSiteSettings();
   const { profile, authUser } = useUserProfile();
-  const { addresses: savedAddresses, defaultAddress, addAddress } = useAddressBook();
+  const {
+    addresses: savedAddresses,
+    defaultAddress,
+    loading: addressBookLoading,
+    addAddress,
+  } = useAddressBook();
   const { toast } = useToast();
   const router = useRouter();
   const {
@@ -68,20 +103,39 @@ export function useCheckoutController() {
   const [voucherInput, setVoucherInput] = useState("");
   const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
 
-  const [address, setAddress] = useState<ShippingAddress>({
-    fullName: profile?.name || authUser?.displayName || "Juan Dela Cruz",
-    phone: "+63 917 882 4910",
-    email: profile?.email || authUser?.email || "customer@netcodex.ph",
-    region: "Metro Manila (NCR)",
-    city: "Quezon City",
-    barangay: "Socorro, Cubao",
-    streetAddress: "35G Liberty Avenue, corner 9th Ave",
-    postalCode: "1109",
-    notes: "Please call mobile number upon arrival. Keep PC box upright.",
-  });
+  const [address, setAddress] = useState<ShippingAddress>(() =>
+    createFallbackShippingAddress(profile, authUser)
+  );
 
   const [selectedAddressId, setSelectedAddressId] = useState<string | "custom">("auto");
   const [saveAddressToBook, setSaveAddressToBook] = useState(false);
+  const lastAddressUidRef = useRef<string | undefined>(authUser?.uid);
+
+  useEffect(() => {
+    const previousUid = lastAddressUidRef.current;
+    const nextUid = authUser?.uid;
+    if (previousUid === nextUid) return;
+
+    lastAddressUidRef.current = nextUid;
+    operationIdRef.current = null;
+
+    if (previousUid && retryOrder) {
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("buildbot_checkout_retry_order");
+      }
+      setRetryOrder(null);
+      setSelectedAddressId("auto");
+      setSaveAddressToBook(false);
+      setAddress(createFallbackShippingAddress(profile, authUser));
+      return;
+    }
+
+    if (!retryOrder) {
+      setSelectedAddressId("auto");
+      setSaveAddressToBook(false);
+      setAddress(createFallbackShippingAddress(profile, authUser));
+    }
+  }, [authUser, profile, retryOrder]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -122,31 +176,37 @@ export function useCheckoutController() {
   }, []);
 
   useEffect(() => {
+    if (addressBookLoading) return;
     if (savedAddresses.length > 0 && selectedAddressId === "auto") {
       const target = defaultAddress || savedAddresses[0];
       if (target) {
         setSelectedAddressId(target.id);
         setAddress({
-          fullName: target.fullName || profile?.name || authUser?.displayName || "Juan Dela Cruz",
-          phone: target.phone || "+63 917 882 4910",
-          email: target.email || profile?.email || authUser?.email || "customer@netcodex.ph",
-          region: target.region || "Metro Manila (NCR)",
-          city: target.city || "Quezon City",
-          barangay: target.barangay || "Socorro, Cubao",
+          fullName:
+            target.fullName ||
+            profile?.name ||
+            authUser?.displayName ||
+            authUser?.email?.split("@")[0] ||
+            "",
+          phone: target.phone || "",
+          email: target.email || profile?.email || authUser?.email || "",
+          region: target.region || PH_REGIONS[0],
+          city: target.city || "",
+          barangay: target.barangay || "",
           streetAddress: target.streetAddress || "",
-          postalCode: target.postalCode || "1109",
+          postalCode: target.postalCode || "",
           notes: target.notes || "",
         });
       }
     }
-  }, [savedAddresses, defaultAddress, selectedAddressId, profile, authUser]);
+  }, [addressBookLoading, savedAddresses, defaultAddress, selectedAddressId, profile, authUser]);
 
   const handleSelectSavedAddress = (saved: SavedAddress) => {
     setSelectedAddressId(saved.id);
     setAddress({
       fullName: saved.fullName,
       phone: saved.phone,
-      email: saved.email || profile?.email || authUser?.email || "customer@netcodex.ph",
+      email: saved.email || profile?.email || authUser?.email || "",
       region: saved.region,
       city: saved.city,
       barangay: saved.barangay,
@@ -160,17 +220,7 @@ export function useCheckoutController() {
   const handleSelectCustomAddress = () => {
     setSelectedAddressId("custom");
     setSaveAddressToBook(true);
-    setAddress({
-      fullName: profile?.name || authUser?.displayName || "",
-      phone: "",
-      email: profile?.email || authUser?.email || "customer@netcodex.ph",
-      region: PH_REGIONS[0],
-      city: "",
-      barangay: "",
-      streetAddress: "",
-      postalCode: "",
-      notes: "",
-    });
+    setAddress(createFallbackShippingAddress(profile, authUser));
   };
 
   const handleCancelCustomAddress = () => {

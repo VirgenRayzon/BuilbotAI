@@ -82,6 +82,8 @@ export interface InventoryToolbarProps {
   onResetAll?: () => void;
   leadingActions?: React.ReactNode;
   actions?: React.ReactNode;
+  extraFilterContent?: React.ReactNode;
+  extraActiveCount?: number;
   variant?: 'default' | 'admin-header';
 }
 
@@ -92,6 +94,9 @@ const sortOptionLabelMap: Record<string, { desc: string; asc: string }> = {
   'Tier': { asc: 'Tier: Entry to Workstation', desc: 'Tier: Workstation to Entry' },
   'Stock': { desc: 'Stock: high to low', asc: 'Stock: low to high' },
   'Brand': { asc: 'Brand: A to Z', desc: 'Brand: Z to A' },
+  'Orders': { desc: 'Orders: high to low', asc: 'Orders: low to high' },
+  'Total Spend': { desc: 'Spend: high to low', asc: 'Spend: low to high' },
+  'Email': { asc: 'Email: A to Z', desc: 'Email: Z to A' },
 };
 
 export function InventoryToolbar({
@@ -127,6 +132,8 @@ export function InventoryToolbar({
   onResetAll,
   leadingActions,
   actions,
+  extraFilterContent,
+  extraActiveCount = 0,
   variant = 'default',
 }: InventoryToolbarProps) {
   const [desktopOpened, setDesktopOpened] = useState(false);
@@ -160,7 +167,7 @@ export function InventoryToolbar({
     supportedSorts.forEach((sortName) => {
       const mapping = sortOptionLabelMap[sortName];
       if (mapping) {
-        if (sortName === 'Date Added' || sortName === 'Stock') {
+        if (sortName === 'Date Added' || sortName === 'Stock' || sortName === 'Orders' || sortName === 'Total Spend') {
           list.push({ label: mapping.desc, value: `${sortName}:desc` });
           list.push({ label: mapping.asc, value: `${sortName}:asc` });
         } else {
@@ -185,7 +192,8 @@ export function InventoryToolbar({
     + Number(availabilityActive)
     + Number(incompatibleActive)
     + Number(detailsActive)
-    + Number(sortActive);
+    + Number(sortActive)
+    + extraActiveCount;
 
   const hasActiveChips = activeCount > 0 || Boolean(searchQuery);
 
@@ -369,6 +377,13 @@ export function InventoryToolbar({
                 />
               )}
             </Stack>
+          </>
+        )}
+
+        {extraFilterContent && (
+          <>
+            {categories.length > 0 && <Divider />}
+            {extraFilterContent}
           </>
         )}
 

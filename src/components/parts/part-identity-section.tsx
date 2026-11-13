@@ -16,9 +16,10 @@ interface PartIdentitySectionProps {
   onCategoryChange: (category: string) => void;
   justAutofilled?: boolean;
   duplicatePartName?: string | null;
+  flat?: boolean;
 }
 
-export function PartIdentitySection({ form, onCategoryChange, justAutofilled, duplicatePartName }: PartIdentitySectionProps) {
+export function PartIdentitySection({ form, onCategoryChange, justAutofilled, duplicatePartName, flat = false }: PartIdentitySectionProps) {
   const selectedCategory = form.watch("category");
   const watchedImages = form.watch("images");
   const watchedImageUrl = form.watch("imageUrl");
@@ -33,32 +34,41 @@ export function PartIdentitySection({ form, onCategoryChange, justAutofilled, du
 
   return (
     <div className="grid grid-cols-12 gap-8 items-start">
-      <div className="col-span-12 md:col-span-4 md:sticky md:top-0">
+      <div className={cn("col-span-12 md:col-span-4 md:sticky", flat ? "md:top-16" : "md:top-0")}>
         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-400 mb-4 flex items-center gap-2.5">
           <span className="inline-block w-3.5 h-0.5 bg-cyan-500/60 rounded-full" />
           Visual Identity
         </p>
-        <Paper
-          withBorder
-          radius="xl"
-          p="xs"
-          className="bg-slate-50/70 dark:bg-[#111722]/60 border-slate-200 dark:border-white/10 shadow-sm"
-        >
-          <MultiImageUpload
-            images={images}
-            coverImage={coverImage}
-            onImagesChange={(imgs) => {
-              form.setValue("images", imgs, { shouldValidate: true });
-              const currentCover = form.getValues("imageUrl");
-              if (!currentCover || !imgs.includes(currentCover)) {
-                form.setValue("imageUrl", imgs[0] || "", { shouldValidate: true });
-              }
-            }}
-            onCoverImageChange={(cover) => {
-              form.setValue("imageUrl", cover, { shouldValidate: true });
-            }}
-          />
-        </Paper>
+        {(() => {
+          const uploadControl = (
+            <MultiImageUpload
+              images={images}
+              coverImage={coverImage}
+              onImagesChange={(imgs) => {
+                form.setValue("images", imgs, { shouldValidate: true });
+                const currentCover = form.getValues("imageUrl");
+                if (!currentCover || !imgs.includes(currentCover)) {
+                  form.setValue("imageUrl", imgs[0] || "", { shouldValidate: true });
+                }
+              }}
+              onCoverImageChange={(cover) => {
+                form.setValue("imageUrl", cover, { shouldValidate: true });
+              }}
+            />
+          );
+          return flat ? (
+            uploadControl
+          ) : (
+            <Paper
+              withBorder
+              radius="xl"
+              p="xs"
+              className="bg-slate-50/70 dark:bg-[#111722]/60 border-slate-200 dark:border-white/10 shadow-sm"
+            >
+              {uploadControl}
+            </Paper>
+          );
+        })()}
       </div>
 
       <div className="col-span-12 md:col-span-8 space-y-6">

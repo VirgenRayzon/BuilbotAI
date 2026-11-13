@@ -1,5 +1,5 @@
 "use client";
-import { AdminPartSkeleton, AdminPrebuiltSkeleton } from "@/components/loading/admin-inventory-skeleton";
+import { TableLoadingRows } from "@/components/loading/table-loading-rows";
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/firebase';
@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { InventoryTable } from '@/components/inventory-table';
 import { PrebuiltsTable } from '@/components/prebuilts-table';
 import { InventoryToolbar } from '@/components/inventory-toolbar';
-import { Paper } from '@mantine/core';
+import { Paper, Table } from '@mantine/core';
 import type { Order, Part, PrebuiltSystem } from '@/lib/types';
 import { ReservationsTab } from './reservations-tab';
 import { SearchNoResults } from '@/components/search-no-results';
@@ -322,7 +322,13 @@ export function ArchiveTab({
             radius="md"
             className="overflow-hidden border-slate-200 bg-white/80 shadow-sm dark:border-white/10 dark:bg-[#141a23]/80"
           >
-            {partsLoading ? Array.from({length:8}, (_, index) => <AdminPartSkeleton key={index} />) : (
+            {partsLoading ? (
+              <Table>
+                <Table.Tbody>
+                  <TableLoadingRows count={6} columns={5} />
+                </Table.Tbody>
+              </Table>
+            ) : (
               <InventoryTable
                 parts={archivedParts}
                 onDelete={onDeletePart}
@@ -398,7 +404,13 @@ export function ArchiveTab({
             radius="md"
             className="overflow-hidden border-slate-200 bg-white/80 shadow-sm dark:border-white/10 dark:bg-[#141a23]/80"
           >
-            {prebuiltsLoading ? Array.from({length:8}, (_, index) => <AdminPrebuiltSkeleton key={index} />) : (
+            {prebuiltsLoading ? (
+              <Table>
+                <Table.Tbody>
+                  <TableLoadingRows count={6} columns={5} />
+                </Table.Tbody>
+              </Table>
+            ) : (
               <PrebuiltsTable
                 systems={archivedPrebuilts}
                 onDelete={onDeletePrebuilt}

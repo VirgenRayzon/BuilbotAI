@@ -48,7 +48,9 @@ interface AdminTopbarProps {
 const TAB_BREADCRUMBS: Record<string, { group: string; page: string }> = {
   stock: { group: "Inventory", page: "Manage Stock" },
   prebuilts: { group: "Inventory", page: "Manage Prebuilts" },
-  "prebuilt-builder": { group: "Inventory", page: "Prebuilt Builder" },
+  "add-part": { group: "Catalog Builder", page: "Add Part" },
+  "add-system": { group: "Catalog Builder", page: "Add System" },
+  "prebuilt-builder": { group: "Catalog Builder", page: "Prebuilt Builder" },
   archive: { group: "Inventory", page: "Archive" },
   orders: { group: "Platform", page: "Orders" },
   sales: { group: "Sales & Analytics", page: "Performance & Revenue" },

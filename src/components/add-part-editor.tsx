@@ -1,63 +1,53 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-  DialogClose,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
-import { ScrollArea } from "./ui/scroll-area";
-import { ThemeIcon, Text, Badge, Paper } from "@mantine/core";
-import { Plus, BrainCircuit, Loader2, ShieldAlert } from "lucide-react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { usePartForm, AddPartFormSchema } from "@/hooks/use-part-form";
 import { CATEGORY_SPECS } from "@/lib/constants/category-specs";
-import { PartIdentitySection } from "./parts/part-identity-section";
-import { PartSpecificationsSection } from "./parts/part-specifications-section";
-import { AiActionButton } from "./ui/ai-action-button";
+import { PartEditorForm } from "./parts/part-editor-form";
 import type { Part } from "@/lib/types";
 import { normalizeProductDescription } from "@/lib/normalize-product-description";
-import { useProductSaveOperation } from '@/hooks/use-product-save-operation';
-import type { CreatedProduct } from '@/lib/product-identity';
-import { ToastAction } from './ui/toast';
-import { InventorySaveSuccessDialog } from './inventory-save-success-dialog';
-import { findDuplicateCatalogName } from '@/lib/catalog-name-validation';
+import { useProductSaveOperation } from "@/hooks/use-product-save-operation";
+import type { CreatedProduct } from "@/lib/product-identity";
+import { ToastAction } from "./ui/toast";
+import { InventorySaveSuccessDialog } from "./inventory-save-success-dialog";
+import { findDuplicateCatalogName } from "@/lib/catalog-name-validation";
 
 export interface AddPartEditorProps {
   children?: React.ReactNode;
   onSave: (data: AddPartFormSchema, operationId?: string) => Promise<CreatedProduct | void>;
+  onSaveAndView?: () => void;
   initialData?: Part;
   title?: string;
   initiallyOpen?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   existingPartNames?: readonly string[];
+  variant?: "dialog" | "inline";
 }
 
 export function AddPartEditor({
   children,
   onSave,
+  onSaveAndView,
   initialData,
   title,
   initiallyOpen = false,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   existingPartNames = [],
+  variant = "dialog",
 }: AddPartEditorProps) {
+  const isInline = variant === "inline";
   const isControlled = controlledOpen !== undefined;
   const [internalOpen, setInternalOpen] = useState(initiallyOpen);
-  const open = isControlled ? controlledOpen : internalOpen;
+  const open = isInline ? true : isControlled ? controlledOpen : internalOpen;
 
   const handleOpenChange = (isOpen: boolean) => {
+    if (isInline) return;
     if (!isOpen && (isAiPending || isSubmitting)) return;
     if (!isControlled) {
       setInternalOpen(isOpen);
@@ -71,6 +61,7 @@ export function AddPartEditor({
   const [justAutofilled, setJustAutofilled] = useState(false);
   const [savedPart, setSavedPart] = useState<{ name: string; seconds: number; url?: string } | null>(null);
   const saveStartRef = useRef<number | null>(null);
+  const saveModeRef = useRef<"save" | "save-and-view">("save");
   const startTimeRef = useRef<number>(0);
   const prevPendingRef = useRef(false);
   const { toast } = useToast();
@@ -92,7 +83,9 @@ export function AddPartEditor({
     handleGetAiDetails,
     handleCancelAiDetails,
     setSpecValue,
+    resetPartForm,
   } = usePartForm({ initialData, open, isAiKillSwitch });
+
   const watchedPartName = form.watch("partName");
   const duplicatePartName = useMemo(
     () => findDuplicateCatalogName(watchedPartName, existingPartNames, initialData?.name),
@@ -108,6 +101,8 @@ export function AddPartEditor({
 
   const onSubmit = async (values: AddPartFormSchema) => {
     if (isSubmitting) return;
+    const mode = saveModeRef.current;
+    saveModeRef.current = "save";
     const saveStartedAt = saveStartRef.current ?? performance.now();
     setIsSubmitting(true);
     try {
@@ -124,23 +119,40 @@ export function AddPartEditor({
           description: `${values.partName} has been updated in the inventory.`,
           action: saved ? <ToastAction altText="View item" onClick={() => window.location.assign(saved.adminUrl)}>View item</ToastAction> : undefined,
         });
+      } else if (mode === "save-and-view") {
+        toast({
+          title: "Part Added!",
+          description: `${values.partName} has been added to the inventory.`,
+        });
       } else {
         setSavedPart({ name: values.partName, seconds, url: saved?.adminUrl });
       }
-      if (!initialData) form.reset();
-      if (!isControlled) setInternalOpen(false);
-      controlledOnOpenChange?.(false);
+      if (!initialData) {
+        resetPartForm();
+      }
+      if (!isInline) {
+        if (!isControlled) setInternalOpen(false);
+        controlledOnOpenChange?.(false);
+      }
       resetOperation();
+      if (mode === "save-and-view") {
+        onSaveAndView?.();
+      }
     } catch (error: any) {
-      toast({ 
-        variant: "destructive", 
-        title: initialData ? "Error updating part" : "Error adding part", 
-        description: error.message || "An unexpected error occurred." 
+      toast({
+        variant: "destructive",
+        title: initialData ? "Error updating part" : "Error adding part",
+        description: error.message || "An unexpected error occurred.",
       });
     } finally {
       saveStartRef.current = null;
       setIsSubmitting(false);
     }
+  };
+
+  const handleSaveAndView = () => {
+    saveModeRef.current = "save-and-view";
+    void form.handleSubmit(onSubmit)();
   };
 
   useEffect(() => {
@@ -166,170 +178,65 @@ export function AddPartEditor({
     prevPendingRef.current = isAiPending;
   }, [isAiPending, aiDuration]);
 
-  return <>
-    <Dialog
-      open={open}
-      onOpenChange={handleOpenChange}
-    >
-      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-      <DialogContent
-        onEscapeKeyDown={(event) => { if (isSubmitting) event.preventDefault(); }}
-        onPointerDownOutside={(event) => { if (isSubmitting) event.preventDefault(); }}
-        className="w-[90vw] max-w-[90vw] max-h-[calc(100vh-24px)] p-0 gap-0 overflow-hidden border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#111722] shadow-lg rounded-xl [&>button.absolute]:hidden"
-      >
-        
-        <DialogHeader className="p-3 border-b border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02] flex flex-row items-center justify-between gap-3 space-y-0">
-          <div className="flex items-center gap-3">
-            <ThemeIcon size={46} radius="xl" variant="light" color="cyan" className="shadow-sm">
-              <Plus className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
-            </ThemeIcon>
-            <div>
-              <DialogTitle className="text-xl font-headline font-extrabold tracking-tight text-slate-900 dark:text-white">
-                {title || (initialData ? "Edit Component" : "Add New Component")}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                {initialData ? "Refine component details and performance metrics." : "Configure new inventory with AI-assisted specification pre-filling."}
-              </DialogDescription>
-            </div>
-          </div>
+  const editorBody = (
+    <PartEditorForm
+      variant={variant}
+      form={form}
+      initialData={initialData}
+      title={title}
+      isAiPending={isAiPending}
+      isSubmitting={isSubmitting}
+      elapsedTime={elapsedTime}
+      aiDuration={aiDuration}
+      tokensUsed={tokensUsed}
+      aiComponentWarning={aiComponentWarning}
+      justAutofilled={justAutofilled}
+      duplicatePartName={duplicatePartName}
+      onCategoryChange={handleCategoryChange}
+      setSpecValue={setSpecValue}
+      onGetAiDetails={handleGetAiDetails}
+      onCancelAiDetails={handleCancelAiDetails}
+      onSubmit={onSubmit}
+      onSubmitAndView={onSaveAndView ? handleSaveAndView : undefined}
+      onReset={() => {
+        resetPartForm();
+        resetOperation();
+      }}
+      onStartSave={() => {
+        saveStartRef.current = performance.now();
+      }}
+    />
+  );
 
-          <div className="ml-auto">
-            <AiActionButton
-              label="AI AUTOFILL"
-              isPending={isAiPending}
-              onTrigger={handleGetAiDetails}
-              onCancel={handleCancelAiDetails}
-              elapsedTime={elapsedTime}
-              aiDuration={aiDuration}
-              tokensUsed={tokensUsed}
-              mode="part"
-              disabled={isSubmitting}
-            />
-          </div>
-        </DialogHeader>
-
-        {isAiPending && (
-          <div className="relative overflow-hidden bg-cyan-500/10 dark:bg-cyan-500/10 border-b border-cyan-500/20">
-            <div className="absolute inset-x-0 bottom-0 h-0.5 bg-cyan-500/20">
-              <div className="h-full bg-cyan-500 animate-progress-glow w-[35%]" />
-            </div>
-            <div className="p-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <ThemeIcon size={32} radius="lg" variant="light" color="cyan">
-                  <BrainCircuit className="h-4 w-4 animate-pulse text-cyan-600 dark:text-cyan-400" />
-                </ThemeIcon>
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-cyan-800 dark:text-cyan-300 uppercase tracking-wider">
-                    Buildbot Intelligence Active
-                  </span>
-                  <span className="text-[11px] text-slate-600 dark:text-slate-400">
-                    Researching real-world specs, pricing benchmarks, and verified compatibility...
-                  </span>
-                </div>
-              </div>
-              <Badge variant="filled" color="cyan" size="sm" className="font-mono font-bold animate-pulse">
-                Processing
-              </Badge>
-            </div>
-          </div>
-        )}
-
-        {aiComponentWarning && !isAiPending && (
-          <Paper
-            role="alert"
-            radius={0}
-            className="border-x-0 border-t-0 border-b border-red-300 bg-red-50 px-3 py-3 dark:border-red-500/30 dark:bg-red-500/10"
+  return (
+    <>
+      {isInline ? (
+        editorBody
+      ) : (
+        <Dialog open={open} onOpenChange={handleOpenChange}>
+          {children && <DialogTrigger asChild>{children}</DialogTrigger>}
+          <DialogContent
+            onEscapeKeyDown={(event) => {
+              if (isSubmitting) event.preventDefault();
+            }}
+            onPointerDownOutside={(event) => {
+              if (isSubmitting) event.preventDefault();
+            }}
+            className="w-[90vw] max-w-[90vw] max-h-[calc(100vh-24px)] p-0 gap-0 overflow-hidden border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#111722] shadow-lg rounded-xl [&>button.absolute]:hidden"
           >
-            <div className="flex items-start gap-3">
-              <ThemeIcon size={38} radius="xl" color="red" variant="light" className="mt-0.5 shrink-0">
-                <ShieldAlert className="h-5 w-5" aria-hidden="true" />
-              </ThemeIcon>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Text fw={800} size="sm" c="red" className="tracking-tight">
-                    Component could not be verified
-                  </Text>
-                  <Badge color="red" variant="filled" size="xs">
-                    Do not add to inventory
-                  </Badge>
-                </div>
-                <Text size="xs" mt={3} className="text-red-800 dark:text-red-200">
-                  {aiComponentWarning.message}
-                </Text>
-                <Text size="xs" mt={5} fw={700} className="break-words text-slate-700 dark:text-slate-200">
-                  Searched model: {aiComponentWarning.partName}
-                </Text>
-              </div>
-            </div>
-          </Paper>
-        )}
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col">
-            <ScrollArea className="h-[70vh]">
-              <div className="p-3 space-y-3">
-                <PartIdentitySection 
-                  form={form} 
-                  onCategoryChange={handleCategoryChange} 
-                  justAutofilled={justAutofilled}
-                  duplicatePartName={duplicatePartName}
-                />
-                <PartSpecificationsSection 
-                  form={form} 
-                  setSpecValue={setSpecValue} 
-                  justAutofilled={justAutofilled}
-                />
-              </div>
-            </ScrollArea>
-
-            <DialogFooter className="p-3 border-t border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02]">
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-3">
-                  <Badge variant="light" color="cyan" size="lg" className="font-bold uppercase tracking-wider">
-                    {form.watch("specifications").length} metrics defined
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-3">
-                  <DialogClose asChild>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      disabled={isSubmitting}
-                      className="h-10 px-6 rounded-xl font-bold uppercase tracking-wider text-xs border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
-                    >
-                      Cancel
-                    </Button>
-                  </DialogClose>
-                  <Button
-                    type="submit"
-                    onClick={() => { saveStartRef.current = performance.now(); }}
-                    disabled={isSubmitting || isAiPending || Boolean(aiComponentWarning) || Boolean(duplicatePartName)}
-                    className="h-10 px-8 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold uppercase tracking-wider text-xs shadow-md shadow-cyan-500/20 transition-all duration-200"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {initialData ? "Updating, please wait" : "Saving, please wait"}
-                      </>
-                    ) : (
-                      initialData ? "Update Component" : "Save Component"
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-    {savedPart && (
-      <InventorySaveSuccessDialog
-        itemType="component"
-        name={savedPart.name}
-        seconds={savedPart.seconds}
-        url={savedPart.url}
-        onClose={() => setSavedPart(null)}
-      />
-    )}
-  </>;
+            {editorBody}
+          </DialogContent>
+        </Dialog>
+      )}
+      {savedPart && (
+        <InventorySaveSuccessDialog
+          itemType="component"
+          name={savedPart.name}
+          seconds={savedPart.seconds}
+          url={savedPart.url}
+          onClose={() => setSavedPart(null)}
+        />
+      )}
+    </>
+  );
 }

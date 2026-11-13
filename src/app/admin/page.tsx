@@ -27,20 +27,17 @@ import { AdminProductFocus } from '@/components/admin-product-focus';
 import { safeStaffProductReturn } from '@/lib/product-identity';
 import { AdminTabHeader, AdminTabHeaderProvider } from './components/admin-tab-header';
 import { useSalesActions } from './hooks/use-sales-actions';
-import { AdminPanelSkeleton } from '@/components/loading/admin-panel-skeleton';
 
-const CardsPanelLoading = () => <AdminPanelSkeleton variant="cards" />;
-const OrdersPanelLoading = () => <AdminPanelSkeleton variant="orders" />;
-const AnalyticsPanelLoading = () => <AdminPanelSkeleton variant="analytics" />;
-
-const PrebuiltTab = dynamic(() => import('./components/prebuilt-tab').then(module => module.PrebuiltTab), { loading: CardsPanelLoading });
-const ReservationsTab = dynamic(() => import('./components/reservations-tab').then(module => module.ReservationsTab), { loading: OrdersPanelLoading });
-const SalesTab = dynamic(() => import('./components/sales-tab').then(module => module.SalesTab), { loading: AnalyticsPanelLoading });
-const ArchiveTab = dynamic(() => import('./components/archive-tab').then(module => module.ArchiveTab), { loading: CardsPanelLoading });
-const SuperAdminSettings = dynamic(() => import('@/components/super-admin-settings').then(module => module.SuperAdminSettings), { loading: CardsPanelLoading });
-const AuditLogsSection = dynamic(() => import('@/app/profile/components/audit-logs-section').then(module => module.AuditLogsSection), { loading: OrdersPanelLoading });
-const AiModelSettings = dynamic(() => import('@/components/ai-model-settings').then(module => module.AiModelSettings), { loading: CardsPanelLoading });
-const AiSystemPromptsSettings = dynamic(() => import('@/components/ai-system-prompts-settings').then(module => module.AiSystemPromptsSettings), { loading: CardsPanelLoading });
+const PrebuiltTab = dynamic(() => import('./components/prebuilt-tab').then(module => module.PrebuiltTab));
+const AddPartTab = dynamic(() => import('./components/add-part-tab').then(module => module.AddPartTab));
+const AddSystemTab = dynamic(() => import('./components/add-system-tab').then(module => module.AddSystemTab));
+const ReservationsTab = dynamic(() => import('./components/reservations-tab').then(module => module.ReservationsTab));
+const SalesTab = dynamic(() => import('./components/sales-tab').then(module => module.SalesTab));
+const ArchiveTab = dynamic(() => import('./components/archive-tab').then(module => module.ArchiveTab));
+const SuperAdminSettings = dynamic(() => import('@/components/super-admin-settings').then(module => module.SuperAdminSettings));
+const AuditLogsSection = dynamic(() => import('@/app/profile/components/audit-logs-section').then(module => module.AuditLogsSection));
+const AiModelSettings = dynamic(() => import('@/components/ai-model-settings').then(module => module.AiModelSettings));
+const AiSystemPromptsSettings = dynamic(() => import('@/components/ai-system-prompts-settings').then(module => module.AiSystemPromptsSettings));
 
 export default function AdminPage() {
     const { theme } = useTheme();
@@ -153,6 +150,7 @@ export default function AdminPage() {
         orders: '',
         archive: '',
         audit: '',
+        management: '',
     });
 
     const searchPlaceholders: Record<string, string> = {
@@ -161,6 +159,7 @@ export default function AdminPage() {
         orders: 'Search by email, rig, order ID, or payment ref...',
         archive: 'Search archived assets...',
         audit: 'Search audit logs...',
+        management: 'Search accounts by name, email, UID, or key...',
     };
 
     const hasSearch = currentTab in searchPlaceholders;
@@ -258,7 +257,6 @@ export default function AdminPage() {
                                     profile={profile}
                                     partCategories={partCategories}
                                     onSetCategories={setPartCategories}
-                                    onAddPart={handleAddPart}
                                     onUpdatePart={handleUpdatePart}
                                     onDeletePart={handleDeletePart}
                                     onArchivePart={handleArchivePart}
@@ -285,7 +283,6 @@ export default function AdminPage() {
                                         profile={profile}
                                         prebuiltCategories={prebuiltCategories}
                                         onSetCategories={setPrebuiltCategories}
-                                        onAddPrebuilt={handleAddPrebuilt}
                                         onUpdatePrebuilt={handleUpdatePrebuilt}
                                         onDeletePrebuilt={handleDeletePrebuilt}
                                         onArchivePrebuilt={handleArchivePrebuilt}
@@ -300,6 +297,22 @@ export default function AdminPage() {
                                         onSearchQueryChange={(val) => setTabSearchQueries(prev => ({ ...prev, prebuilts: val }))}
                                     />
                                 </div>
+                            )}
+
+                            {currentTab === "add-part" && (
+                                <AddPartTab
+                                    parts={parts || []}
+                                    onAddPart={handleAddPart}
+                                    onViewInventory={() => handleTabAccess("stock")}
+                                />
+                            )}
+
+                            {currentTab === "add-system" && (
+                                <AddSystemTab
+                                    parts={parts || []}
+                                    onAddPrebuilt={handleAddPrebuilt}
+                                    onViewPrebuilts={() => handleTabAccess("prebuilts")}
+                                />
                             )}
 
                             {currentTab === "orders" && (
@@ -394,7 +407,10 @@ export default function AdminPage() {
 
                             {currentTab === "management" && profile?.isSuperAdmin && (
                                 <div className="mt-4 flex flex-col gap-6">
-                                    <SuperAdminSettings />
+                                    <SuperAdminSettings
+                                        searchQuery={tabSearchQueries.management}
+                                        onSearchQueryChange={(val) => setTabSearchQueries(prev => ({ ...prev, management: val }))}
+                                    />
                                 </div>
                             )}
 

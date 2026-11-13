@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { z } from "zod";
 import {
   Paper,
   Title,
@@ -49,6 +50,70 @@ export const PH_REGIONS = [
 
 const PRESET_LABELS = ["Home", "Office", "Condo", "Warehouse"];
 
+const PH_MOBILE_REGEX = /^(?:\+?63|0)(9\d{9})$/;
+
+function normalizePhPhone(raw: string): string {
+  const digitsOnly = raw.trim().replace(/[\s()-]/g, "");
+  const match = PH_MOBILE_REGEX.exec(digitsOnly);
+  if (!match) return raw.trim();
+  const localTen = match[1];
+  return `+63 ${localTen.slice(0, 3)} ${localTen.slice(3, 6)} ${localTen.slice(6)}`;
+}
+
+const addressFormSchema = z.object({
+  label: z
+    .string()
+    .trim()
+    .min(1, "Address label is required.")
+    .max(40, "Address label must be 40 characters or less."),
+  fullName: z
+    .string()
+    .trim()
+    .min(2, "Enter recipient full name (at least 2 characters).")
+    .max(100, "Recipient full name must be 100 characters or less."),
+  phone: z
+    .string()
+    .trim()
+    .refine(
+      (val) => PH_MOBILE_REGEX.test(val.replace(/[\s()-]/g, "")),
+      "Enter a valid PH mobile number (e.g. +63 917 123 4567 or 0917 123 4567)."
+    ),
+  email: z
+    .string()
+    .trim()
+    .refine(
+      (val) => val === "" || z.string().email().safeParse(val).success,
+      "Enter a valid email address."
+    ),
+  region: z.string().trim().min(1, "Select a region or province."),
+  city: z
+    .string()
+    .trim()
+    .min(2, "Enter a city or municipality.")
+    .max(80, "City / municipality must be 80 characters or less."),
+  barangay: z
+    .string()
+    .trim()
+    .min(2, "Enter a barangay.")
+    .max(80, "Barangay must be 80 characters or less."),
+  postalCode: z
+    .string()
+    .trim()
+    .regex(/^\d{4}$/, "Enter a valid 4-digit PH postal code (e.g. 1109)."),
+  streetAddress: z
+    .string()
+    .trim()
+    .min(5, "Enter house/unit number and street name (at least 5 characters).")
+    .max(200, "Street address must be 200 characters or less."),
+  notes: z
+    .string()
+    .trim()
+    .max(300, "Delivery instructions must be 300 characters or less."),
+});
+
+type AddressFormField = keyof z.infer<typeof addressFormSchema>;
+type AddressFormErrors = Partial<Record<AddressFormField, string>>;
+
 export function AddressBookSection() {
   const {
     addresses,
@@ -65,7 +130,7 @@ export function AddressBookSection() {
 
   const [label, setLabel] = useState("Home");
   const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("+63 ");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [region, setRegion] = useState(PH_REGIONS[0]);
   const [city, setCity] = useState("");
@@ -74,12 +139,22 @@ export function AddressBookSection() {
   const [postalCode, setPostalCode] = useState("");
   const [notes, setNotes] = useState("");
   const [isDefault, setIsDefault] = useState(false);
+  const [errors, setErrors] = useState<AddressFormErrors>({});
+
+  const clearError = (field: AddressFormField) => {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
 
   const resetForm = () => {
     setEditingId(null);
     setLabel("Home");
     setFullName("");
-    setPhone("+63 9");
+    setPhone("");
     setEmail("");
     setRegion(PH_REGIONS[0]);
     setCity("");
@@ -88,6 +163,7 @@ export function AddressBookSection() {
     setPostalCode("");
     setNotes("");
     setIsDefault(addresses.length === 0);
+    setErrors({});
   };
 
   const handleOpenAdd = () => {
@@ -97,36 +173,53 @@ export function AddressBookSection() {
 
   const handleOpenEdit = (addr: SavedAddress) => {
     setEditingId(addr.id);
-    setLabel(addr.label);
-    setFullName(addr.fullName);
-    setPhone(addr.phone);
-    setEmail(addr.email);
-    setRegion(addr.region);
-    setCity(addr.city);
-    setBarangay(addr.barangay);
-    setStreetAddress(addr.streetAddress);
-    setPostalCode(addr.postalCode);
+    setLabel(addr.label || "Home");
+    setFullName(addr.fullName || "");
+    setPhone(addr.phone || "");
+    setEmail(addr.email || "");
+    setRegion(addr.region || PH_REGIONS[0]);
+    setCity(addr.city || "");
+    setBarangay(addr.barangay || "");
+    setStreetAddress(addr.streetAddress || "");
+    setPostalCode(addr.postalCode || "");
     setNotes(addr.notes || "");
     setIsDefault(Boolean(addr.isDefault));
+    setErrors({});
     setModalOpened(true);
   };
 
-  const handleSave = async () => {
-    if (!fullName.trim() || !phone.trim() || !city.trim() || !streetAddress.trim()) {
+  const handleSave = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+
+    const parsed = addressFormSchema.safeParse({
+      label,
+      fullName,
+      phone,
+      email,
+      region,
+      city,
+      barangay,
+      postalCode,
+      streetAddress,
+      notes,
+    });
+
+    if (!parsed.success) {
+      const nextErrors: AddressFormErrors = {};
+      for (const issue of parsed.error.issues) {
+        const field = issue.path[0] as AddressFormField | undefined;
+        if (field && !nextErrors[field]) {
+          nextErrors[field] = issue.message;
+        }
+      }
+      setErrors(nextErrors);
       return;
     }
 
+    setErrors({});
     const payload = {
-      label: label.trim() || "Address",
-      fullName: fullName.trim(),
-      phone: phone.trim(),
-      email: email.trim(),
-      region,
-      city: city.trim(),
-      barangay: barangay.trim(),
-      streetAddress: streetAddress.trim(),
-      postalCode: postalCode.trim(),
-      notes: notes.trim(),
+      ...parsed.data,
+      phone: normalizePhPhone(parsed.data.phone),
       isDefault,
     };
 
@@ -388,7 +481,10 @@ export function AddressBookSection() {
 
       <Modal
         opened={modalOpened}
-        onClose={() => setModalOpened(false)}
+        onClose={() => {
+          setModalOpened(false);
+          setErrors({});
+        }}
         title={
           <Group gap="xs">
             <ThemeIcon color="cyan" variant="light" radius="md" size="md">
@@ -411,158 +507,212 @@ export function AddressBookSection() {
             "text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors",
         }}
       >
-        <Stack gap="sm">
-          <div>
-            <Text size="xs" fw={700} c="dimmed" tt="uppercase" className="tracking-wider mb-1.5">
-              Address Label
-            </Text>
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              {PRESET_LABELS.map((p) => (
-                <Button
-                  key={p}
-                  size="compact-xs"
-                  variant={label === p ? "filled" : "light"}
-                  color="cyan"
-                  radius="md"
-                  onClick={() => setLabel(p)}
-                  className="text-xs font-semibold"
-                >
-                  {p}
-                </Button>
-              ))}
+        <form onSubmit={handleSave} noValidate>
+          <Stack gap="sm">
+            <div>
+              <Text size="xs" fw={700} c="dimmed" tt="uppercase" className="tracking-wider mb-1.5">
+                Address Label
+              </Text>
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                {PRESET_LABELS.map((p) => (
+                  <Button
+                    key={p}
+                    type="button"
+                    size="compact-xs"
+                    variant={label === p ? "filled" : "light"}
+                    color="cyan"
+                    radius="md"
+                    onClick={() => {
+                      setLabel(p);
+                      clearError("label");
+                    }}
+                    className="text-xs font-semibold"
+                  >
+                    {p}
+                  </Button>
+                ))}
+              </div>
+              <TextInput
+                placeholder="e.g. Home, Office, Studio, QC Apartment"
+                value={label}
+                onChange={(e) => {
+                  setLabel(e.currentTarget.value);
+                  clearError("label");
+                }}
+                error={errors.label}
+                size="xs"
+                radius="md"
+                required
+              />
             </div>
+
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+              <TextInput
+                label="Recipient Full Name"
+                placeholder="Juan Dela Cruz"
+                value={fullName}
+                onChange={(e) => {
+                  setFullName(e.currentTarget.value);
+                  clearError("fullName");
+                }}
+                error={errors.fullName}
+                size="xs"
+                radius="md"
+                required
+              />
+              <TextInput
+                label="Mobile Number (PH)"
+                placeholder="+63 9XX XXX XXXX"
+                value={phone}
+                onChange={(e) => {
+                  setPhone(e.currentTarget.value);
+                  clearError("phone");
+                }}
+                error={errors.phone}
+                inputMode="tel"
+                size="xs"
+                radius="md"
+                required
+              />
+            </SimpleGrid>
+
             <TextInput
-              placeholder="e.g. Home, Office, Studio, QC Apartment"
-              value={label}
-              onChange={(e) => setLabel(e.currentTarget.value)}
+              label="Email Address (for courier updates)"
+              placeholder="customer@domain.ph"
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.currentTarget.value);
+                clearError("email");
+              }}
+              error={errors.email}
               size="xs"
               radius="md"
             />
-          </div>
 
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+              <Select
+                label="Region / Province"
+                data={PH_REGIONS}
+                value={region}
+                onChange={(val) => {
+                  setRegion(val || PH_REGIONS[0]);
+                  clearError("region");
+                }}
+                error={errors.region}
+                size="xs"
+                radius="md"
+                required
+              />
+              <TextInput
+                label="City / Municipality"
+                placeholder="Quezon City, Manila, Makati, etc."
+                value={city}
+                onChange={(e) => {
+                  setCity(e.currentTarget.value);
+                  clearError("city");
+                }}
+                error={errors.city}
+                size="xs"
+                radius="md"
+                required
+              />
+            </SimpleGrid>
+
+            <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+              <TextInput
+                label="Barangay"
+                placeholder="Socorro, Cubao"
+                value={barangay}
+                onChange={(e) => {
+                  setBarangay(e.currentTarget.value);
+                  clearError("barangay");
+                }}
+                error={errors.barangay}
+                size="xs"
+                radius="md"
+                className="sm:col-span-2"
+                required
+              />
+              <TextInput
+                label="Postal Code"
+                placeholder="1109"
+                value={postalCode}
+                onChange={(e) => {
+                  setPostalCode(e.currentTarget.value);
+                  clearError("postalCode");
+                }}
+                error={errors.postalCode}
+                inputMode="numeric"
+                size="xs"
+                radius="md"
+                required
+              />
+            </SimpleGrid>
+
             <TextInput
-              label="Recipient Full Name"
-              placeholder="Juan Dela Cruz"
-              value={fullName}
-              onChange={(e) => setFullName(e.currentTarget.value)}
+              label="House / Unit No., Building, Street Name"
+              placeholder="35G Liberty Avenue, corner 9th Ave"
+              value={streetAddress}
+              onChange={(e) => {
+                setStreetAddress(e.currentTarget.value);
+                clearError("streetAddress");
+              }}
+              error={errors.streetAddress}
               size="xs"
               radius="md"
               required
             />
-            <TextInput
-              label="Mobile Number (PH)"
-              placeholder="+63 9XX XXX XXXX"
-              value={phone}
-              onChange={(e) => setPhone(e.currentTarget.value)}
+
+            <Textarea
+              label="Delivery Instructions / Rider Landmark (Optional)"
+              placeholder="e.g. Near 9th Ave entrance, leave with lobby security. Keep box upright."
+              value={notes}
+              onChange={(e) => {
+                setNotes(e.currentTarget.value);
+                clearError("notes");
+              }}
+              error={errors.notes}
               size="xs"
               radius="md"
-              required
+              rows={2}
             />
-          </SimpleGrid>
 
-          <TextInput
-            label="Email Address (for courier updates)"
-            placeholder="customer@domain.ph"
-            value={email}
-            onChange={(e) => setEmail(e.currentTarget.value)}
-            size="xs"
-            radius="md"
-          />
-
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-            <Select
-              label="Region / Province"
-              data={PH_REGIONS}
-              value={region}
-              onChange={(val) => setRegion(val || PH_REGIONS[0])}
-              size="xs"
-              radius="md"
-              required
-            />
-            <TextInput
-              label="City / Municipality"
-              placeholder="Quezon City, Manila, Makati, etc."
-              value={city}
-              onChange={(e) => setCity(e.currentTarget.value)}
-              size="xs"
-              radius="md"
-              required
-            />
-          </SimpleGrid>
-
-          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-            <TextInput
-              label="Barangay"
-              placeholder="Socorro, Cubao"
-              value={barangay}
-              onChange={(e) => setBarangay(e.currentTarget.value)}
-              size="xs"
-              radius="md"
-              className="sm:col-span-2"
-              required
-            />
-            <TextInput
-              label="Postal Code"
-              placeholder="1109"
-              value={postalCode}
-              onChange={(e) => setPostalCode(e.currentTarget.value)}
-              size="xs"
-              radius="md"
-              required
-            />
-          </SimpleGrid>
-
-          <TextInput
-            label="House / Unit No., Building, Street Name"
-            placeholder="35G Liberty Avenue, corner 9th Ave"
-            value={streetAddress}
-            onChange={(e) => setStreetAddress(e.currentTarget.value)}
-            size="xs"
-            radius="md"
-            required
-          />
-
-          <Textarea
-            label="Delivery Instructions / Rider Landmark (Optional)"
-            placeholder="e.g. Near 9th Ave entrance, leave with lobby security. Keep box upright."
-            value={notes}
-            onChange={(e) => setNotes(e.currentTarget.value)}
-            size="xs"
-            radius="md"
-            rows={2}
-          />
-
-          <Checkbox
-            label="Set as default shipping address for checkout"
-            checked={isDefault}
-            onChange={(e) => setIsDefault(e.currentTarget.checked)}
-            color="cyan"
-            size="xs"
-            className="pt-1"
-          />
-
-          <Group justify="flex-end" gap="xs" pt="sm">
-            <Button
-              variant="default"
-              size="xs"
-              radius="md"
-              onClick={() => setModalOpened(false)}
-            >
-              Cancel
-            </Button>
-            <Button
+            <Checkbox
+              label="Set as default shipping address for checkout"
+              checked={isDefault}
+              onChange={(e) => setIsDefault(e.currentTarget.checked)}
               color="cyan"
               size="xs"
-              radius="md"
-              loading={saving}
-              onClick={handleSave}
-              className="font-bold uppercase tracking-wider text-xs"
-            >
-              {editingId ? "Save Changes" : "Add Address"}
-            </Button>
-          </Group>
-        </Stack>
+              className="pt-1"
+            />
+
+            <Group justify="flex-end" gap="xs" pt="sm">
+              <Button
+                type="button"
+                variant="default"
+                size="xs"
+                radius="md"
+                onClick={() => {
+                  setModalOpened(false);
+                  setErrors({});
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                color="cyan"
+                size="xs"
+                radius="md"
+                loading={saving}
+                className="font-bold uppercase tracking-wider text-xs"
+              >
+                {editingId ? "Save Changes" : "Add Address"}
+              </Button>
+            </Group>
+          </Stack>
+        </form>
       </Modal>
     </div>
   );

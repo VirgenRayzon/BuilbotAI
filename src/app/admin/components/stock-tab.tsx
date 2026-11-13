@@ -13,9 +13,7 @@ import {
     PackageCheck,
     Archive,
     Trash2,
-    Plus,
 } from 'lucide-react';
-import { AddPartDialog } from '@/components/add-part-dialog';
 import { InventoryPartCard } from '@/components/inventory-part-card';
 import { InventoryTable } from '@/components/inventory-table';
 import { InventoryToolbar, AvailabilityFilter } from '@/components/inventory-toolbar';
@@ -56,7 +54,6 @@ interface StockTabProps {
     profile: Pick<UserProfile, 'isSuperAdmin'> | null;
     partCategories: PartCategorySelection[];
     onSetCategories: (categories: PartCategorySelection[]) => void;
-    onAddPart: (data: AddPartFormSchema, operationId?: string) => Promise<import('@/lib/product-identity').CreatedProduct | void>;
     onUpdatePart: (id: string, category: Part['category'], data: AddPartFormSchema) => Promise<void>;
     onDeletePart: (id: string, category: Part['category']) => Promise<void>;
     onArchivePart: (id: string, category: Part['category'], isArchived?: boolean) => Promise<void>;
@@ -84,7 +81,6 @@ export function StockTab({
     profile,
     partCategories,
     onSetCategories,
-    onAddPart,
     onUpdatePart,
     onDeletePart,
     onArchivePart,
@@ -282,21 +278,6 @@ export function StockTab({
                             <CheckSquare size={16} />
                         </ActionIcon>
                     </Tooltip>
-                }
-                actions={
-                    <AddPartDialog onSave={onAddPart} existingPartNames={displayParts.map(part => part.name)}>
-                        <Button
-                            size="sm"
-                            radius="md"
-                            color="cyan"
-                            variant="filled"
-                            aria-label="Add Part"
-                            className="!size-11 !p-0 font-semibold shadow-xs sm:!h-9 sm:!w-auto sm:!px-3"
-                        >
-                            <Plus size={16} />
-                            <span className="hidden sm:inline">Add Part</span>
-                        </Button>
-                    </AddPartDialog>
                 }
                 onResetAll={() => {
                     onSetCategories(partCategories.map(c => ({ ...c, selected: true })));

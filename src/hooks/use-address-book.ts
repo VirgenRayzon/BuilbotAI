@@ -7,26 +7,26 @@ import { doc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import type { SavedAddress } from "@/lib/types";
 
-const LOCAL_STORAGE_KEY = "buildbot_address_book_v1";
+const LEGACY_LOCAL_STORAGE_KEY = "buildbot_address_book_v1";
 
-const DEFAULT_INITIAL_ADDRESS: SavedAddress = {
-  id: "addr_default_netcodex",
-  label: "Home",
-  fullName: "Juan Dela Cruz",
-  phone: "+63 917 882 4910",
-  email: "customer@netcodex.ph",
-  region: "Metro Manila (NCR)",
-  city: "Quezon City",
-  barangay: "Socorro, Cubao",
-  streetAddress: "35G Liberty Avenue, corner 9th Ave",
-  postalCode: "1109",
-  notes: "Please call mobile number upon arrival. Keep PC box upright.",
-  isDefault: true,
-  createdAt: new Date().toISOString(),
-};
+function getAddressStorageKey(uid?: string | null): string | null {
+  return uid ? `${LEGACY_LOCAL_STORAGE_KEY}:${uid}` : null;
+}
+
+function isLegacyDefaultSeedAddress(entry: SavedAddress): boolean {
+  return (
+    entry.streetAddress === "35G Liberty Avenue, corner 9th Ave" &&
+    entry.barangay === "Socorro, Cubao" &&
+    entry.city === "Quezon City" &&
+    entry.region === "Metro Manila (NCR)" &&
+    entry.postalCode === "1109" &&
+    entry.phone === "+63 917 882 4910" &&
+    entry.notes === "Please call mobile number upon arrival. Keep PC box upright."
+  );
+}
 
 export function useAddressBook() {
-  const { authUser, profile } = useUserProfile();
+  const { authUser, profile, status } = useUserProfile();
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -35,10 +35,33 @@ export function useAddressBook() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (profile?.addressBook && Array.isArray(profile.addressBook) && profile.addressBook.length > 0) {
+    try {
+      // Purge the legacy unscoped key so cached addresses never leak across accounts.
+      localStorage.removeItem(LEGACY_LOCAL_STORAGE_KEY);
+    } catch {
+    }
+
+    if (status === "loading") {
+      setAddresses([]);
+      setLoading(true);
+      return;
+    }
+
+    const storageKey = getAddressStorageKey(authUser?.uid);
+    if (!authUser?.uid || !storageKey) {
+      setAddresses([]);
+      setLoading(false);
+      return;
+    }
+
+    if (Array.isArray(profile?.addressBook)) {
       setAddresses(profile.addressBook);
       try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(profile.addressBook));
+        if (profile.addressBook.length > 0) {
+          localStorage.setItem(storageKey, JSON.stringify(profile.addressBook));
+        } else {
+          localStorage.removeItem(storageKey);
+        }
       } catch {
       }
       setLoading(false);
@@ -47,49 +70,46 @@ export function useAddressBook() {
 
     let cached: SavedAddress[] | null = null;
     try {
-      const item = localStorage.getItem(LOCAL_STORAGE_KEY);
+      const item = localStorage.getItem(storageKey);
       if (item) {
         cached = JSON.parse(item);
       }
     } catch {
     }
 
-    if (cached && Array.isArray(cached) && cached.length > 0) {
-      setAddresses(cached);
+    const cleanedCached = Array.isArray(cached)
+      ? cached.filter((entry) => !isLegacyDefaultSeedAddress(entry))
+      : [];
+
+    if (cleanedCached.length > 0) {
+      setAddresses(cleanedCached);
+      if (Array.isArray(cached) && cleanedCached.length !== cached.length) {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(cleanedCached));
+        } catch {
+        }
+      }
       setLoading(false);
       return;
     }
 
-    const fallbackFromProfile: SavedAddress = {
-      id: `addr_${Date.now()}`,
-      label: "Home",
-      fullName: profile?.name || authUser?.displayName || DEFAULT_INITIAL_ADDRESS.fullName,
-      phone: DEFAULT_INITIAL_ADDRESS.phone,
-      email: profile?.email || authUser?.email || DEFAULT_INITIAL_ADDRESS.email,
-      region: profile?.state || DEFAULT_INITIAL_ADDRESS.region,
-      city: profile?.city || DEFAULT_INITIAL_ADDRESS.city,
-      barangay: DEFAULT_INITIAL_ADDRESS.barangay,
-      streetAddress: profile?.address || DEFAULT_INITIAL_ADDRESS.streetAddress,
-      postalCode: profile?.zip || DEFAULT_INITIAL_ADDRESS.postalCode,
-      notes: DEFAULT_INITIAL_ADDRESS.notes,
-      isDefault: true,
-      createdAt: new Date().toISOString(),
-    };
-
-    setAddresses([fallbackFromProfile]);
     try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([fallbackFromProfile]));
+      localStorage.removeItem(storageKey);
     } catch {
     }
+    setAddresses([]);
     setLoading(false);
-  }, [profile, authUser]);
+  }, [profile, authUser, status]);
 
   const persistAddresses = useCallback(
     async (updated: SavedAddress[], toastMessage?: string) => {
       setAddresses(updated);
-      try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
-      } catch {
+      const storageKey = getAddressStorageKey(authUser?.uid);
+      if (storageKey) {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(updated));
+        } catch {
+        }
       }
 
       if (authUser && firestore) {

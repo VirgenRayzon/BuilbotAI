@@ -84,7 +84,7 @@ export default function SignUpPage() {
       if (profile.isManager || profile.isSuperAdmin) {
         router.replace('/admin');
       } else {
-        router.replace('/builder');
+        router.replace('/parts');
       }
     }
   }, [authUser, profile, authLoading, router, loading, googleLoading]);
@@ -143,7 +143,7 @@ export default function SignUpPage() {
       });
 
       redirectingRef.current = true;
-      router.replace('/builder');
+      router.replace('/parts');
     } catch (err: any) {
       redirectingRef.current = false;
       if (err.code === 'auth/email-already-in-use') {
@@ -183,7 +183,7 @@ export default function SignUpPage() {
         description: 'Signed up with Google successfully! Welcome to Netcodex.',
       });
       redirectingRef.current = true;
-      router.replace('/builder');
+      router.replace('/parts');
     } catch (err: any) {
       redirectingRef.current = false;
       setError(err.message || 'Failed to sign up with Google. Please try again.');

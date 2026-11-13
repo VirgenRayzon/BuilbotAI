@@ -98,6 +98,7 @@ export function useIdleTimeout(): UseIdleTimeoutReturn {
         localStorage.removeItem('pc_chat_history_v2');
         localStorage.removeItem('pc_builder_state');
         localStorage.removeItem('admin_pc_builder_state');
+        localStorage.removeItem('buildbot_address_book_v1');
         sessionStorage.removeItem('buildbot_admin_session_active');
       } catch {
       }
