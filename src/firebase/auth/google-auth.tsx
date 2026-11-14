@@ -12,6 +12,7 @@ import {
 } from 'firebase/auth';
 import { Firestore, doc, getDocFromServer, setDoc } from 'firebase/firestore';
 import { syncUserClaimsAction } from '@/app/actions';
+import { splitDisplayName } from '@/lib/user-name';
 
 export function GoogleIcon({ className = 'w-4 h-4' }: { className?: string }) {
   return (
@@ -123,8 +124,15 @@ export async function executeCustomerGoogleAuth(
       }
 
       const updates: Record<string, any> = {};
-      if (!userData.name && user.displayName) {
-        updates.name = user.displayName;
+      const parsedName = splitDisplayName(user.displayName);
+      if (!userData.name && parsedName.name) {
+        updates.name = parsedName.name.slice(0, 120);
+      }
+      if (!userData.firstName && parsedName.firstName) {
+        updates.firstName = parsedName.firstName.slice(0, 80);
+      }
+      if (!userData.lastName && parsedName.lastName) {
+        updates.lastName = parsedName.lastName.slice(0, 80);
       }
       if (!userData.photoURL && user.photoURL) {
         updates.photoURL = user.photoURL;
@@ -133,9 +141,13 @@ export async function executeCustomerGoogleAuth(
         await setDoc(userDocRef, updates, { merge: true });
       }
     } else {
+      const parsedName = splitDisplayName(user.displayName);
+      const resolvedName = parsedName.name || user.email?.split('@')[0] || 'User';
       const newProfile = {
         email: user.email || '',
-        name: user.displayName || user.email?.split('@')[0] || 'User',
+        name: resolvedName.slice(0, 120),
+        ...(parsedName.firstName ? { firstName: parsedName.firstName.slice(0, 80) } : {}),
+        ...(parsedName.lastName ? { lastName: parsedName.lastName.slice(0, 80) } : {}),
         photoURL: user.photoURL || '',
         isManager: false,
         isSuperAdmin: false,

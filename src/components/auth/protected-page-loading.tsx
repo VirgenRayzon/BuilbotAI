@@ -1,11 +1,12 @@
 import { LoaderCard } from '@/components/loading/loader-card';
 import BuilderLoading from '@/app/builder/loading';
+import PrebuiltBuilderLoading from '@/app/admin/prebuilt-builder/loading';
 import { Paper, Skeleton } from '@mantine/core';
 
 export function ProtectedPageLoading({
   variant,
 }: {
-  variant: 'admin' | 'profile' | 'builder';
+  variant: 'admin' | 'profile' | 'builder' | 'prebuilt-builder';
 }) {
   if (variant === 'admin') {
     return (
@@ -21,6 +22,10 @@ export function ProtectedPageLoading({
 
   if (variant === 'builder') {
     return <BuilderLoading />;
+  }
+
+  if (variant === 'prebuilt-builder') {
+    return <PrebuiltBuilderLoading />;
   }
 
   return (

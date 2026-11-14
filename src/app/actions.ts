@@ -1,9 +1,11 @@
 "use server";
 import { after } from 'next/server';
+import { z } from 'zod';
 import { generateText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { getVertexAccessToken, markTunedModelHealthy, DEFAULT_TUNED_MODEL_ID, type FeatureModelRouting } from '@/lib/ai-model-resolver';
 import { resolveVertexTunedEndpoint } from '@/lib/vertex-tuned-endpoint';
+import { formatFullName, normalizeName, splitDisplayName } from '@/lib/user-name';
 
 import {
   extractPartDetails,
@@ -155,9 +157,18 @@ export async function syncUserClaimsAction(idToken: string) {
   }
 }
 
+const managerProfileSchema = z
+  .object({
+    firstName: z.string().trim().min(1).max(80).optional(),
+    lastName: z.string().trim().min(1).max(80).optional(),
+    name: z.string().trim().min(1).max(120).optional(),
+  })
+  .optional();
+
 export async function registerManagerAction(
   idToken: string,
-  managerKey: string
+  managerKey: string,
+  profileInput?: { firstName?: string; lastName?: string; name?: string }
 ) {
   try {
     const adminAuth = getAdminAuth();
@@ -167,6 +178,16 @@ export async function registerManagerAction(
     const userId = decodedToken.uid;
 
     console.log(`[registerManagerAction] Registering manager account for user ${userId}...`);
+
+    const parsedProfileInput = managerProfileSchema.parse(profileInput);
+    const tokenNameParts = splitDisplayName(
+      typeof decodedToken.name === 'string' ? decodedToken.name : undefined
+    );
+    const firstName = normalizeName(parsedProfileInput?.firstName || tokenNameParts.firstName).slice(0, 80);
+    const lastName = normalizeName(parsedProfileInput?.lastName || tokenNameParts.lastName).slice(0, 80);
+    const fullName = normalizeName(
+      parsedProfileInput?.name || formatFullName(firstName, lastName) || tokenNameParts.name
+    ).slice(0, 120);
 
     const keyDocSnap = await db.collection('authKeys').doc(managerKey).get();
     const isDbKey = keyDocSnap.exists && keyDocSnap.data()?.role === 'manager';
@@ -180,15 +201,21 @@ export async function registerManagerAction(
     const userDoc = await userDocRef.get();
 
     if (userDoc.exists) {
+      const existingData = userDoc.data() || {};
       await userDocRef.update({
         isManager: true,
         activeManagerKey: managerKey,
         updatedAt: new Date().toISOString(),
+        ...(!existingData.name && fullName ? { name: fullName } : {}),
+        ...(!existingData.firstName && firstName ? { firstName } : {}),
+        ...(!existingData.lastName && lastName ? { lastName } : {}),
       });
     } else {
       await userDocRef.set({
         email: decodedToken.email || '',
-        name: decodedToken.name || '',
+        name: fullName,
+        ...(firstName ? { firstName } : {}),
+        ...(lastName ? { lastName } : {}),
         isManager: true,
         isSuperAdmin: false,
         activeManagerKey: managerKey,

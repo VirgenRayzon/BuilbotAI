@@ -1,19 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import React from 'react';
 import Link from 'next/link';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useAuth, useFirestore, getGoogleProvider, formatGoogleAuthError, GoogleIcon } from '@/firebase';
-import {
-  createUserWithEmailAndPassword,
-  setPersistence,
-  browserSessionPersistence,
-  signInWithPopup,
-  signOut,
-} from 'firebase/auth';
+import { Controller } from 'react-hook-form';
 import {
   Paper,
   Title,
@@ -25,238 +14,48 @@ import {
   Stack,
   Anchor,
   Divider,
-  Progress,
-  Modal,
+  SimpleGrid,
 } from '@mantine/core';
-import { Mail, Lock, Key, AlertCircle, ArrowLeft, Check, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { registerManagerAction } from '@/app/actions';
+import { Mail, Lock, Key, AlertCircle, ArrowLeft, User } from 'lucide-react';
+import { GoogleIcon } from '@/firebase';
 import { UnifiedBackground } from '@/components/landing/unified-background';
-import { useTheme } from '@/context/theme-provider';
-import { cn } from '@/lib/utils';
-import { useUserProfile } from '@/context/user-profile';
+import { PasswordStrengthMeter } from '@/components/auth/password-strength-meter';
+import { VerifyManagerKeyModal } from '@/components/auth/verify-manager-key-modal';
 import { Logo } from '@/components/logo';
+import { useTheme } from '@/context/theme-provider';
+import { useManagerSignUpForm } from '@/hooks/use-manager-signup-form';
+import { cn } from '@/lib/utils';
 
-const formSchema = z.object({
-  email: z.string().email('Please enter a valid email address.'),
-  password: z
-    .string()
-    .min(6, 'Password must be at least 6 characters.')
-    .regex(/[0-9]/, 'Password must include at least one number')
-    .regex(/[a-z]/, 'Password must include at least one lowercase letter')
-    .regex(/[A-Z]/, 'Password must include at least one uppercase letter'),
-  managerKey: z.string().min(1, 'Default manager access key is required.'),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-function getPasswordStrength(password: string) {
-  let score = 0;
-  if (password.length >= 6) score += 25;
-  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 25;
-  if (/\d/.test(password)) score += 25;
-  if (/[^A-Za-z0-9]/.test(password)) score += 25;
-  return score;
-}
+const inputClassNames = {
+  label: 'text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5',
+  input:
+    'min-h-[44px] bg-slate-50 dark:bg-slate-900/50 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium focus:border-red-500 transition-colors',
+};
 
 export default function ManagerSignupPage() {
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const isSubmittingRef = useRef(false);
-  
-  const [googleModalOpened, setGoogleModalOpened] = useState(false);
-  const [googleUserCredential, setGoogleUserCredential] = useState<any>(null);
-  const [googleManagerKey, setGoogleManagerKey] = useState('');
-  const [googleKeyError, setGoogleKeyError] = useState<string | null>(null);
-
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const router = useRouter();
-  const auth = useAuth();
-  const firestore = useFirestore();
-  const { toast } = useToast();
-  const { authUser, profile, loading: authLoading } = useUserProfile();
-
-  useEffect(() => {
-    if (isSubmittingRef.current || loading || googleLoading) return;
-
-    if (!authLoading && authUser && profile) {
-      const isStaff = Boolean(profile.isManager || profile.isSuperAdmin);
-      const activeAdminMarker =
-        typeof window !== 'undefined'
-          ? sessionStorage.getItem('buildbot_admin_session_active')
-          : null;
-
-      if (isStaff && activeAdminMarker === authUser.uid) {
-        router.push('/admin');
-      } else if (!isStaff) {
-        router.push('/builder');
-      }
-    }
-  }, [authUser, profile, authLoading, router, loading, googleLoading]);
 
   const {
-    control,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-      managerKey: '',
+    form: {
+      control,
+      handleSubmit,
+      formState: { errors },
     },
-  });
-
-  const passwordValue = watch('password') || '';
-  const strength = getPasswordStrength(passwordValue);
-
-  const onSubmit = async (values: FormValues) => {
-    isSubmittingRef.current = true;
-    setLoading(true);
-    setError(null);
-    if (!auth || !firestore) {
-      isSubmittingRef.current = false;
-      setLoading(false);
-      return;
-    }
-
-    let createdUser: any = null;
-
-    try {
-      await setPersistence(auth, browserSessionPersistence);
-      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      createdUser = userCredential.user;
-
-      const idToken = await createdUser.getIdToken();
-      const result = await registerManagerAction(idToken, values.managerKey);
-
-      if (result.error) {
-        if (typeof window !== 'undefined') {
-          sessionStorage.removeItem('buildbot_admin_session_active');
-        }
-        try {
-          await createdUser.delete();
-        } catch {
-          await signOut(auth);
-        }
-        setError(result.error);
-        return;
-      }
-
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('buildbot_admin_session_active', createdUser.uid);
-      }
-
-      await createdUser.getIdToken(true);
-
-      toast({
-        title: 'Manager Account Created',
-        description: 'Welcome to the Buildbot AI Management Portal.',
-      });
-
-      router.push('/admin');
-    } catch (err: any) {
-      if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('buildbot_admin_session_active');
-      }
-      try {
-        if (createdUser) {
-          await createdUser.delete();
-        } else {
-          await signOut(auth);
-        }
-      } catch (signOutErr) {
-        console.error('Error signing out after registration error:', signOutErr);
-      }
-
-      if (err.code === 'auth/email-already-in-use') {
-        setError('An account with this email address already exists. Please sign in via System Access.');
-      } else {
-        setError(err.message || 'An error occurred during manager signup.');
-      }
-    } finally {
-      isSubmittingRef.current = false;
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleSignUpInitiate = async () => {
-    if (!auth) return;
-    setGoogleLoading(true);
-    setError(null);
-
-    try {
-      await setPersistence(auth, browserSessionPersistence);
-      const provider = getGoogleProvider();
-      const result = await signInWithPopup(auth, provider);
-      
-      setGoogleUserCredential(result.user);
-      setGoogleModalOpened(true);
-    } catch (err: any) {
-      const msg = formatGoogleAuthError(err);
-      if (msg) {
-        setError(msg);
-      }
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
-
-  const handleGoogleManagerKeySubmit = async () => {
-    if (!googleUserCredential || !googleManagerKey.trim()) {
-      setGoogleKeyError('Manager access key is required.');
-      return;
-    }
-
-    setGoogleLoading(true);
-    setGoogleKeyError(null);
-
-    try {
-      const user = googleUserCredential;
-      const idToken = await user.getIdToken();
-
-      const result = await registerManagerAction(idToken, googleManagerKey.trim());
-
-      if (result.error) {
-        if (typeof window !== 'undefined') {
-          sessionStorage.removeItem('buildbot_admin_session_active');
-        }
-        await signOut(auth!);
-        setGoogleKeyError(result.error);
-        setGoogleLoading(false);
-        return;
-      }
-
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('buildbot_admin_session_active', user.uid);
-      }
-
-      await user.getIdToken(true);
-
-      setGoogleModalOpened(false);
-      toast({
-        title: 'Manager Account Activated',
-        description: 'Google authentication verified for manager role.',
-      });
-
-      router.push('/admin');
-    } catch (err: any) {
-      if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('buildbot_admin_session_active');
-      }
-      try {
-        await signOut(auth!);
-      } catch (signOutErr) {
-        console.error('Sign out error:', signOutErr);
-      }
-      setGoogleKeyError(err.message || 'Failed to complete manager registration.');
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
+    error,
+    loading,
+    googleLoading,
+    passwordValue,
+    googleModalOpened,
+    googleUserEmail,
+    googleManagerKey,
+    setGoogleManagerKey,
+    googleKeyError,
+    handleGoogleSignUpInitiate,
+    handleCloseGoogleModal,
+    handleGoogleManagerKeySubmit,
+    onSubmit,
+  } = useManagerSignUpForm();
 
   return (
     <div
@@ -339,6 +138,44 @@ export default function ManagerSignupPage() {
 
             <form onSubmit={handleSubmit(onSubmit)} autoComplete="on">
               <Stack gap="md">
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                  <Controller
+                    name="firstName"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="First Name"
+                        placeholder="Juan"
+                        autoComplete="given-name"
+                        radius="md"
+                        size="md"
+                        leftSection={<User size={16} className="text-slate-400" />}
+                        error={errors.firstName?.message}
+                        classNames={inputClassNames}
+                        {...field}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="lastName"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Last Name"
+                        placeholder="Dela Cruz"
+                        autoComplete="family-name"
+                        radius="md"
+                        size="md"
+                        leftSection={<User size={16} className="text-slate-400" />}
+                        error={errors.lastName?.message}
+                        classNames={inputClassNames}
+                        {...field}
+                      />
+                    )}
+                  />
+                </SimpleGrid>
+
                 <Controller
                   name="email"
                   control={control}
@@ -347,15 +184,12 @@ export default function ManagerSignupPage() {
                       label="Email Address"
                       type="email"
                       placeholder="manager@example.com"
+                      autoComplete="email"
                       radius="md"
                       size="md"
                       leftSection={<Mail size={16} className="text-slate-400" />}
                       error={errors.email?.message}
-                      classNames={{
-                        label: 'text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5',
-                        input:
-                          'bg-slate-50 dark:bg-slate-900/50 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium focus:border-red-500 transition-colors',
-                      }}
+                      classNames={inputClassNames}
                       {...field}
                     />
                   )}
@@ -374,38 +208,10 @@ export default function ManagerSignupPage() {
                         size="md"
                         leftSection={<Lock size={16} className="text-slate-400" />}
                         error={errors.password?.message}
-                        classNames={{
-                          label: 'text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5',
-                          input:
-                            'bg-slate-50 dark:bg-slate-900/50 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium focus:border-red-500 transition-colors',
-                        }}
+                        classNames={inputClassNames}
                         {...field}
                       />
-
-                      {field.value && (
-                        <div className="mt-2 space-y-1.5">
-                          <Progress
-                            value={strength}
-                            size="xs"
-                            radius="xl"
-                            color={strength <= 25 ? 'red' : strength <= 50 ? 'yellow' : strength <= 75 ? 'orange' : 'teal'}
-                          />
-                          <div className="grid grid-cols-2 gap-1 text-[11px] text-slate-500 dark:text-slate-400">
-                            <span className={cn('flex items-center gap-1', field.value.length >= 6 ? 'text-teal-600 dark:text-teal-400 font-medium' : '')}>
-                              {field.value.length >= 6 ? <Check size={12} /> : <X size={12} />} 6+ characters
-                            </span>
-                            <span className={cn('flex items-center gap-1', /\d/.test(field.value) ? 'text-teal-600 dark:text-teal-400 font-medium' : '')}>
-                              {/\d/.test(field.value) ? <Check size={12} /> : <X size={12} />} At least 1 number
-                            </span>
-                            <span className={cn('flex items-center gap-1', /[a-z]/.test(field.value) && /[A-Z]/.test(field.value) ? 'text-teal-600 dark:text-teal-400 font-medium' : '')}>
-                              {/[a-z]/.test(field.value) && /[A-Z]/.test(field.value) ? <Check size={12} /> : <X size={12} />} Upper & lowercase
-                            </span>
-                            <span className={cn('flex items-center gap-1', /[^A-Za-z0-9]/.test(field.value) ? 'text-teal-600 dark:text-teal-400 font-medium' : '')}>
-                              {/[^A-Za-z0-9]/.test(field.value) ? <Check size={12} /> : <X size={12} />} Special symbol
-                            </span>
-                          </div>
-                        </div>
-                      )}
+                      <PasswordStrengthMeter password={passwordValue} highScoreColor="orange" />
                     </div>
                   )}
                 />
@@ -423,9 +229,9 @@ export default function ManagerSignupPage() {
                       leftSection={<Key size={16} className="text-slate-400" />}
                       error={errors.managerKey?.message}
                       classNames={{
-                        label: 'text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5',
+                        label: inputClassNames.label,
                         input:
-                          'bg-slate-50 dark:bg-slate-900/50 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-mono focus:border-red-500 transition-colors',
+                          'min-h-[44px] bg-slate-50 dark:bg-slate-900/50 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-mono focus:border-red-500 transition-colors',
                       }}
                       {...field}
                     />
@@ -460,105 +266,16 @@ export default function ManagerSignupPage() {
         </Paper>
       </div>
 
-      <Modal
+      <VerifyManagerKeyModal
         opened={googleModalOpened}
-        onClose={() => {
-          setGoogleModalOpened(false);
-          signOut(auth!);
-        }}
-        radius="lg"
-        centered
-        overlayProps={{
-          backgroundOpacity: 0.65,
-          blur: 4,
-        }}
-        title={
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500">
-              <Key size={18} />
-            </div>
-            <div>
-              <Title order={4} className="text-base font-bold font-headline uppercase tracking-tight text-slate-900 dark:text-slate-100">
-                Verify Manager Key
-              </Title>
-              <Text size="xs" className="text-slate-500 dark:text-slate-400">
-                {googleUserCredential?.email}
-              </Text>
-            </div>
-          </div>
-        }
-        classNames={{
-          content: "bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl overflow-hidden",
-          header: "bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200/80 dark:border-white/10 p-3",
-          body: "!p-3",
-          close: "text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors",
-        }}
-      >
-        <Stack gap="md">
-          <Text size="xs" className="text-slate-600 dark:text-slate-300 leading-relaxed">
-            Google authentication was successful. To complete your manager onboarding, enter your assigned default manager access key below.
-          </Text>
-
-          {googleKeyError && (
-            <Alert
-              color="red"
-              variant="light"
-              radius="md"
-              icon={<AlertCircle size={16} />}
-              title="Key Verification Error"
-              className="text-xs"
-            >
-              {googleKeyError}
-            </Alert>
-          )}
-
-          <div>
-            <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-              Default Manager Access Key
-            </Text>
-            <PasswordInput
-              placeholder="Enter manager key"
-              autoComplete="one-time-code"
-              value={googleManagerKey}
-              onChange={(e) => setGoogleManagerKey(e.currentTarget.value)}
-              leftSection={<Key size={16} className="text-slate-400" />}
-              radius="md"
-              size="md"
-              classNames={{
-                input: 'bg-slate-50 dark:bg-slate-900/50 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-mono focus:border-red-500',
-              }}
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 mt-2">
-            <Button
-              variant="subtle"
-              color="gray"
-              size="sm"
-              radius="md"
-              onClick={() => {
-                setGoogleModalOpened(false);
-                signOut(auth!);
-              }}
-              disabled={googleLoading}
-              className="text-xs font-semibold"
-            >
-              Cancel
-            </Button>
-            <Button
-              color="red"
-              size="sm"
-              radius="md"
-              onClick={handleGoogleManagerKeySubmit}
-              loading={googleLoading}
-              disabled={!googleManagerKey.trim()}
-              className="text-xs font-bold uppercase tracking-wider text-white bg-red-600 hover:bg-red-700 shadow-md shadow-red-600/20"
-            >
-              Confirm & Complete
-            </Button>
-          </div>
-        </Stack>
-      </Modal>
+        onClose={handleCloseGoogleModal}
+        userEmail={googleUserEmail}
+        managerKey={googleManagerKey}
+        onManagerKeyChange={setGoogleManagerKey}
+        error={googleKeyError}
+        loading={googleLoading}
+        onSubmit={handleGoogleManagerKeySubmit}
+      />
     </div>
   );
 }

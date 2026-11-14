@@ -48,10 +48,6 @@ interface AccountDirectoryListProps {
   onPurge: (account: ManagedAccountSummary) => void;
 }
 
-function formatPhp(amount: number): string {
-  return `₱${Math.round(amount).toLocaleString('en-PH')}`;
-}
-
 function formatDateShort(iso: string | null): string {
   if (!iso) return '—';
   const d = new Date(iso);
@@ -224,7 +220,6 @@ export function AccountDirectoryList({
                 <Table.Tr>
                   <Table.Th>Account</Table.Th>
                   <Table.Th>Role &amp; Status</Table.Th>
-                  <Table.Th>Orders &amp; Spend</Table.Th>
                   <Table.Th>Manager Key</Table.Th>
                   <Table.Th>Last Sign-In</Table.Th>
                   <Table.Th ta="right">Actions</Table.Th>
@@ -260,14 +255,6 @@ export function AccountDirectoryList({
                             {acc.disabled ? 'Suspended' : 'Active'}
                           </Badge>
                         </Group>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="xs" fw={600} className="text-slate-900 dark:text-white">
-                          {acc.orderCount} {acc.orderCount === 1 ? 'order' : 'orders'} · {formatPhp(acc.totalSpentPhp)}
-                        </Text>
-                        <Text size="xs" className="text-slate-500 dark:text-slate-400">
-                          {acc.inquiryCount} {acc.inquiryCount === 1 ? 'inquiry' : 'inquiries'}
-                        </Text>
                       </Table.Td>
                       <Table.Td>
                         {isManager ? (
@@ -406,34 +393,6 @@ export function AccountDirectoryList({
                       <Copy className="size-2.5" />
                     </button>
                   )}
-                </div>
-
-                {/* Recessed 3-Column Mini-Stats */}
-                <div className="grid grid-cols-3 divide-x divide-slate-200/70 dark:divide-white/10 rounded-md border border-slate-200/70 bg-slate-50/80 py-2 text-center dark:border-white/5 dark:bg-white/[0.02]">
-                  <div className="px-1">
-                    <Text size="xs" fw={700} className="font-mono text-slate-900 dark:text-slate-100">
-                      {acc.orderCount}
-                    </Text>
-                    <Text className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
-                      {acc.orderCount === 1 ? 'Order' : 'Orders'}
-                    </Text>
-                  </div>
-                  <div className="px-1">
-                    <Text size="xs" fw={700} className="font-mono text-slate-900 dark:text-slate-100 truncate">
-                      {formatPhp(acc.totalSpentPhp)}
-                    </Text>
-                    <Text className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
-                      Spend
-                    </Text>
-                  </div>
-                  <div className="px-1">
-                    <Text size="xs" fw={700} className="font-mono text-slate-900 dark:text-slate-100">
-                      {acc.inquiryCount}
-                    </Text>
-                    <Text className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
-                      {acc.inquiryCount === 1 ? 'Inquiry' : 'Inquiries'}
-                    </Text>
-                  </div>
                 </div>
 
                 {/* Card Footer: Joined Date + Inspect / Purge */}

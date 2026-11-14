@@ -56,6 +56,8 @@ import { PREBUILT_EDIT_SESSION_KEY, usePrebuiltBuilderImport } from "@/app/admin
 import { AdminSidebar, SidebarInset, SidebarProvider } from "@/app/admin/components/admin-sidebar";
 import { AdminTopbar } from "@/app/admin/components/admin-topbar";
 import { SearchNoResults } from "@/components/search-no-results";
+import { InventoryLoading } from "@/components/loading/inventory-loading";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const componentCategories = [
     { name: "Case", icon: RectangleVertical },
@@ -594,7 +596,7 @@ export default function PrebuiltBuilderPage() {
     const isBuilderLoading = partsLoading || authLoading;
 
     return (
-        <RouteGuard requiredPermission="canAccessAdmin" fallbackPath="/system-access" loadingComponent={<ProtectedPageLoading variant="admin" />}>
+        <RouteGuard requiredPermission="canAccessAdmin" fallbackPath="/system-access" loadingComponent={<ProtectedPageLoading variant="prebuilt-builder" />}>
             <SidebarProvider defaultOpen={true}>
                 <AdminSidebar
                     profile={profile}
@@ -690,7 +692,48 @@ export default function PrebuiltBuilderPage() {
                                 <div className="flex min-w-0 flex-col gap-6 lg:col-span-9">
                                 {hasNoSelectedCategories(categories) ? (
                                     <CategorySelectionEmpty itemLabel="parts" onSelectAll={() => handleCategoryChange("All", true)} />
-                                ) : isBuilderLoading ? null : prioritizedParts.length > 0 ? (
+                                ) : isBuilderLoading ? (
+                                    view === 'grid' ? (
+                                        <InventoryLoading
+                                            view="grid"
+                                            count={itemsPerPage}
+                                            gridClassName="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-4"
+                                        />
+                                    ) : (
+                                        <Card className="mt-6 overflow-hidden">
+                                            <div className="overflow-x-auto no-scrollbar">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Item</TableHead>
+                                                            <TableHead>Stock</TableHead>
+                                                            <TableHead className="text-right">Price</TableHead>
+                                                            <TableHead className="w-[50px]"></TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {Array.from({ length: itemsPerPage }, (_, index) => (
+                                                            <TableRow key={index} aria-hidden="true">
+                                                                <TableCell>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <Skeleton className="h-10 w-10 shrink-0 rounded-sm" />
+                                                                        <div className="space-y-1.5">
+                                                                            <Skeleton className="h-4 w-36" />
+                                                                            <Skeleton className="h-3 w-20" />
+                                                                        </div>
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
+                                                                <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-20" /></TableCell>
+                                                                <TableCell><Skeleton className="h-9 w-9 rounded-md" /></TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        </Card>
+                                    )
+                                ) : prioritizedParts.length > 0 ? (
                                     view === 'grid' ? (
                                         <>
                                             <div className={cn("grid grid-cols-2 gap-x-3 md:grid-cols-3 md:gap-x-4 lg:grid-cols-4 xl:grid-cols-4",

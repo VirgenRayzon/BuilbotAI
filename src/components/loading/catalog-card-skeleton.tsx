@@ -32,25 +32,36 @@ export function CatalogCardSkeleton() {
             </Badge>
           </Skeleton>
         </Group>
-        <Text size="sm" fw={600} lineClamp={2} className={catalogCardLayout.title}>
-          <span className="rounded bg-slate-200 text-transparent dark:bg-white/10">Component name</span>
-        </Text>
+        <div className={catalogCardLayout.title}>
+          <Skeleton className="inline-flex">
+            <Text size="sm" fw={600} lineClamp={2}>
+              Component name
+            </Text>
+          </Skeleton>
+        </div>
       </Stack>
       <Box className={catalogCardLayout.image}>
         <Skeleton className="absolute inset-0 rounded-none" />
       </Box>
       <Stack gap="xs" className={catalogCardLayout.footer}>
-        <Stack gap={0}>
-          <Text size="xs" tt="uppercase" fw={600} className="tracking-wider text-[10px]">
-            <span className="rounded bg-slate-200 text-transparent dark:bg-white/10">Price</span>
-          </Text>
-          <Text size="lg" fw={700} className="font-mono leading-none">
-            <span className="rounded bg-slate-200 text-transparent dark:bg-white/10">₱00,000.00</span>
-          </Text>
-        </Stack>
+        <Group justify="space-between" align="flex-end" wrap="nowrap">
+          <Stack gap={2}>
+            <Skeleton className="inline-flex w-fit">
+              <Text size="xs" tt="uppercase" fw={600} className="tracking-wider text-[10px]">
+                Price
+              </Text>
+            </Skeleton>
+            <Skeleton className="inline-flex w-fit">
+              <Text size="lg" fw={700} className="font-mono leading-none">
+                ₱00,000.00
+              </Text>
+            </Skeleton>
+          </Stack>
+          <Skeleton className="h-7 w-7 shrink-0 rounded-md" />
+        </Group>
         <Skeleton className="flex">
           <Button fullWidth radius="md" size="sm" disabled tabIndex={-1}>
-            View product
+            Add to Build
           </Button>
         </Skeleton>
       </Stack>

@@ -1,17 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import React from 'react';
 import Link from 'next/link';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useAuth, useFirestore, executeCustomerGoogleAuth, GoogleIcon } from '@/firebase';
-import {
-  createUserWithEmailAndPassword,
-  setPersistence,
-  browserLocalPersistence,
-} from 'firebase/auth';
+import { Controller } from 'react-hook-form';
 import {
   Paper,
   Title,
@@ -24,175 +15,48 @@ import {
   Anchor,
   Checkbox,
   Divider,
-  Progress,
+  SimpleGrid,
 } from '@mantine/core';
-import { Mail, Lock, AlertCircle, ArrowLeft, Check, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { createUserProfile } from '@/firebase/database';
-import { syncUserClaimsAction } from '@/app/actions';
+import { Mail, Lock, AlertCircle, ArrowLeft, User } from 'lucide-react';
+import { GoogleIcon } from '@/firebase';
 import { AuthBackground } from '@/components/auth/auth-background';
-import { useTheme } from '@/context/theme-provider';
-import { cn } from '@/lib/utils';
-import { useUserProfile } from '@/context/user-profile';
 import { TermsOfAgreementModal } from '@/components/auth/terms-of-agreement-modal';
+import { PasswordStrengthMeter } from '@/components/auth/password-strength-meter';
 import { Logo } from '@/components/logo';
+import { useTheme } from '@/context/theme-provider';
+import { useSignUpForm } from '@/hooks/use-signup-form';
+import { cn } from '@/lib/utils';
 
-const formSchema = z.object({
-  email: z.string().email('Please enter a valid email address.'),
-  password: z
-    .string()
-    .min(6, 'Password must be at least 6 characters.')
-    .regex(/[0-9]/, 'Password must include at least one number')
-    .regex(/[a-z]/, 'Password must include at least one lowercase letter')
-    .regex(/[A-Z]/, 'Password must include at least one uppercase letter'),
-  terms: z.boolean().refine((val) => val === true, {
-    message: 'You must accept the Terms and Conditions.',
-  }),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-function getPasswordStrength(password: string) {
-  let score = 0;
-  if (password.length >= 6) score += 25;
-  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 25;
-  if (/\d/.test(password)) score += 25;
-  if (/[^A-Za-z0-9]/.test(password)) score += 25;
-  return score;
-}
+const inputClassNames = {
+  label: 'text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5',
+  input:
+    'min-h-[44px] bg-slate-50 dark:bg-slate-900/50 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium focus:border-cyan-500 transition-colors',
+};
 
 export default function SignUpPage() {
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [toaOpened, setToaOpened] = useState(true);
-
-  const redirectingRef = useRef(false);
-
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const router = useRouter();
-  const auth = useAuth();
-  const firestore = useFirestore();
-  const { toast } = useToast();
-  const { authUser, profile, loading: authLoading } = useUserProfile();
-
-  useEffect(() => {
-    if (loading || googleLoading || redirectingRef.current) return;
-    if (!authLoading && authUser && profile) {
-      redirectingRef.current = true;
-      if (profile.isManager || profile.isSuperAdmin) {
-        router.replace('/admin');
-      } else {
-        router.replace('/parts');
-      }
-    }
-  }, [authUser, profile, authLoading, router, loading, googleLoading]);
 
   const {
-    control,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-      terms: false,
+    form: {
+      control,
+      handleSubmit,
+      formState: { errors },
     },
-  });
+    error,
+    loading,
+    googleLoading,
+    toaOpened,
+    setToaOpened,
+    passwordValue,
+    termsValue,
+    isRedirecting,
+    handleAcceptToa,
+    handleGoogleSignUp,
+    onSubmit,
+  } = useSignUpForm();
 
-  const passwordValue = watch('password') || '';
-  const termsValue = watch('terms');
-  const strength = getPasswordStrength(passwordValue);
-
-  const handleAcceptToa = () => {
-    setValue('terms', true, { shouldValidate: true });
-    setToaOpened(false);
-    toast({
-      title: 'Terms Accepted',
-      description: 'You can now proceed with your registration.',
-    });
-  };
-
-  const onSubmit = async (values: FormValues) => {
-    setLoading(true);
-    setError(null);
-    if (!auth || !firestore) return;
-
-    try {
-      await setPersistence(auth, browserLocalPersistence);
-      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      const user = userCredential.user;
-
-      await createUserProfile(firestore, user.uid, {
-        email: user.email!,
-        isManager: false,
-        isSuperAdmin: false,
-      });
-
-      const idToken = await user.getIdToken();
-      await syncUserClaimsAction(idToken);
-      await user.getIdToken(true);
-
-      toast({
-        title: 'Account Created',
-        description: "Welcome to Netcodex! You've been successfully signed up.",
-      });
-
-      redirectingRef.current = true;
-      router.replace('/parts');
-    } catch (err: any) {
-      redirectingRef.current = false;
-      if (err.code === 'auth/email-already-in-use') {
-        setError('An account with this email address already exists. Please sign in instead.');
-      } else {
-        setError(err.message || 'An error occurred during registration.');
-      }
-    } finally {
-      if (!redirectingRef.current) setLoading(false);
-    }
-  };
-
-  const handleGoogleSignUp = async () => {
-    if (!auth || !firestore) return;
-
-    if (!termsValue) {
-      setError('Please review and accept the Terms and Conditions before signing up.');
-      setToaOpened(true);
-      return;
-    }
-
-    setGoogleLoading(true);
-    setError(null);
-
-    try {
-      const result = await executeCustomerGoogleAuth(auth, firestore, { isSignUp: true });
-
-      if (!result.success) {
-        if (result.error) {
-          setError(result.error);
-        }
-        return;
-      }
-
-      toast({
-        title: 'Account Connected',
-        description: 'Signed up with Google successfully! Welcome to Netcodex.',
-      });
-      redirectingRef.current = true;
-      router.replace('/parts');
-    } catch (err: any) {
-      redirectingRef.current = false;
-      setError(err.message || 'Failed to sign up with Google. Please try again.');
-    } finally {
-      if (!redirectingRef.current) setGoogleLoading(false);
-    }
-  };
-
-  if ((authUser && !loading && !googleLoading) || redirectingRef.current) {
+  if (isRedirecting) {
     return null;
   }
 
@@ -274,6 +138,44 @@ export default function SignUpPage() {
 
             <form onSubmit={handleSubmit(onSubmit)}>
               <Stack gap="md">
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                  <Controller
+                    name="firstName"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="First Name"
+                        placeholder="Juan"
+                        autoComplete="given-name"
+                        radius="md"
+                        size="md"
+                        leftSection={<User size={16} className="text-slate-400" />}
+                        error={errors.firstName?.message}
+                        classNames={inputClassNames}
+                        {...field}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="lastName"
+                    control={control}
+                    render={({ field }) => (
+                      <TextInput
+                        label="Last Name"
+                        placeholder="Dela Cruz"
+                        autoComplete="family-name"
+                        radius="md"
+                        size="md"
+                        leftSection={<User size={16} className="text-slate-400" />}
+                        error={errors.lastName?.message}
+                        classNames={inputClassNames}
+                        {...field}
+                      />
+                    )}
+                  />
+                </SimpleGrid>
+
                 <Controller
                   name="email"
                   control={control}
@@ -282,15 +184,12 @@ export default function SignUpPage() {
                       label="Email Address"
                       type="email"
                       placeholder="name@example.com"
+                      autoComplete="email"
                       radius="md"
                       size="md"
                       leftSection={<Mail size={16} className="text-slate-400" />}
                       error={errors.email?.message}
-                      classNames={{
-                        label: 'text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5',
-                        input:
-                          'bg-slate-50 dark:bg-slate-900/50 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium focus:border-cyan-500 transition-colors',
-                      }}
+                      classNames={inputClassNames}
                       {...field}
                     />
                   )}
@@ -304,42 +203,15 @@ export default function SignUpPage() {
                       <PasswordInput
                         label="Password"
                         placeholder="Create a strong password"
+                        autoComplete="new-password"
                         radius="md"
                         size="md"
                         leftSection={<Lock size={16} className="text-slate-400" />}
                         error={errors.password?.message}
-                        classNames={{
-                          label: 'text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5',
-                          input:
-                            'bg-slate-50 dark:bg-slate-900/50 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium focus:border-cyan-500 transition-colors',
-                        }}
+                        classNames={inputClassNames}
                         {...field}
                       />
-
-                      {field.value && (
-                        <div className="mt-2 space-y-1.5">
-                          <Progress
-                            value={strength}
-                            size="xs"
-                            radius="xl"
-                            color={strength <= 25 ? 'red' : strength <= 50 ? 'yellow' : strength <= 75 ? 'cyan' : 'teal'}
-                          />
-                          <div className="grid grid-cols-2 gap-1 text-[11px] text-slate-500 dark:text-slate-400">
-                            <span className={cn('flex items-center gap-1', field.value.length >= 6 ? 'text-teal-600 dark:text-teal-400 font-medium' : '')}>
-                              {field.value.length >= 6 ? <Check size={12} /> : <X size={12} />} 6+ characters
-                            </span>
-                            <span className={cn('flex items-center gap-1', /\d/.test(field.value) ? 'text-teal-600 dark:text-teal-400 font-medium' : '')}>
-                              {/\d/.test(field.value) ? <Check size={12} /> : <X size={12} />} At least 1 number
-                            </span>
-                            <span className={cn('flex items-center gap-1', /[a-z]/.test(field.value) && /[A-Z]/.test(field.value) ? 'text-teal-600 dark:text-teal-400 font-medium' : '')}>
-                              {/[a-z]/.test(field.value) && /[A-Z]/.test(field.value) ? <Check size={12} /> : <X size={12} />} Upper & lowercase
-                            </span>
-                            <span className={cn('flex items-center gap-1', /[^A-Za-z0-9]/.test(field.value) ? 'text-teal-600 dark:text-teal-400 font-medium' : '')}>
-                              {/[^A-Za-z0-9]/.test(field.value) ? <Check size={12} /> : <X size={12} />} Special symbol
-                            </span>
-                          </div>
-                        </div>
-                      )}
+                      <PasswordStrengthMeter password={passwordValue} />
                     </div>
                   )}
                 />
@@ -416,7 +288,7 @@ export default function SignUpPage() {
               <Anchor
                 component={Link}
                 href="/signin"
-                className="font-bold text-cyan-600 dark:text-cyan-400 hover:underline"
+                className="font-bold text-cyan-600 dark:text-cyan-400 hover:underline whitespace-nowrap"
               >
                 Sign in
               </Anchor>
