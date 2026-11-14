@@ -16,6 +16,7 @@ import { YourBuild } from "@/components/your-build";
 import { RouteGuard } from "@/components/auth/route-guard";
 import { ProtectedPageLoading } from "@/components/auth/protected-page-loading";
 import { DeferredBuilderChat } from "@/components/deferred-builder-chat";
+import { BuildLayoutFab } from "@/components/build/layout-2d/build-layout-tab";
 import type { Part, ComponentData, Resolution, WorkloadType } from "@/lib/types";
 import { BUILDER_PART_IMAGE_SIZES } from '@/lib/inventory-image-sizes';
 import { useLiveBuildRecommendations } from '@/hooks/use-live-build-recommendations';
@@ -169,6 +170,12 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
                         />
                     </div>
                 </main>
+
+                <BuildLayoutFab
+                    build={build}
+                    onCategorySelect={handleCategoryChange}
+                    activeFilter={preferredCategory}
+                />
 
                 {authUser ? <DeferredBuilderChat build={build} /> : (
                     <Link
