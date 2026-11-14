@@ -803,6 +803,7 @@ BuilbotAI
 │   │   │   │   ├── use-refund-reconciliation.ts
 │   │   │   │   └── use-sales-actions.ts
 │   │   │   ├── prebuilt-builder
+│   │   │   │   ├── loading.tsx
 │   │   │   │   └── page.tsx
 │   │   │   ├── inventory-query-actions.ts
 │   │   │   ├── order-activity-actions.ts
@@ -1040,11 +1041,13 @@ BuilbotAI
 │   │   ├── auth
 │   │   │   ├── auth-background.module.css
 │   │   │   ├── auth-background.tsx
+│   │   │   ├── password-strength-meter.tsx
 │   │   │   ├── protected-page-loading.tsx
 │   │   │   ├── route-guard.tsx
 │   │   │   ├── session-timeout.tsx
 │   │   │   ├── sign-out-loader.tsx
-│   │   │   └── terms-of-agreement-modal.tsx
+│   │   │   ├── terms-of-agreement-modal.tsx
+│   │   │   └── verify-manager-key-modal.tsx
 │   │   ├── bottleneck
 │   │   │   ├── bottleneck-status-card.tsx
 │   │   │   ├── dual-sidebar-analyzer.tsx
@@ -1098,7 +1101,8 @@ BuilbotAI
 │   │   │   ├── prebuilt-detail-skeleton.tsx
 │   │   │   ├── prebuilt-showcase-skeleton.tsx
 │   │   │   ├── profile-list-skeleton.tsx
-│   │   │   └── table-loading-rows.tsx
+│   │   │   ├── table-loading-rows.tsx
+│   │   │   └── your-build-skeleton.tsx
 │   │   ├── management-portal
 │   │   │   ├── account-directory-list.tsx
 │   │   │   ├── account-inspector-modal.tsx
@@ -1264,6 +1268,7 @@ BuilbotAI
 │   │   ├── use-inventory-image-count.ts
 │   │   ├── use-live-build-recommendations.ts
 │   │   ├── use-management-portal.ts
+│   │   ├── use-manager-signup-form.ts
 │   │   ├── use-mobile.tsx
 │   │   ├── use-near-viewport.ts
 │   │   ├── use-order-details-modal.ts
@@ -1282,6 +1287,7 @@ BuilbotAI
 │   │   ├── use-qr-scanner.ts
 │   │   ├── use-qr-status.ts
 │   │   ├── use-quick-build-checks.ts
+│   │   ├── use-signup-form.ts
 │   │   ├── use-system-prompts.ts
 │   │   └── use-toast.ts
 │   ├── knowledge
@@ -1351,6 +1357,7 @@ BuilbotAI
 │       ├── analytics-rollups.ts
 │       ├── audit-scopes.ts
 │       ├── auth-utils.ts
+│       ├── auth-validation.ts
 │       ├── bottleneck.ts
 │       ├── build-advisor-goals.ts
 │       ├── build-pdf-categories.ts
@@ -1423,6 +1430,7 @@ BuilbotAI
 │       ├── ttl-policies.test.ts
 │       ├── ttl-policies.ts
 │       ├── types.ts
+│       ├── user-name.ts
 │       ├── utils.ts
 │       ├── validate-advisor-build.ts
 │       ├── vector-retriever.ts
