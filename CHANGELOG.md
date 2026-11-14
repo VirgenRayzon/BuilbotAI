@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-11-15]
+
+### Features
+- **builder**: Add 2D interactive PC build layout tab and component visualization ([41ab8a2](https://github.com/VirgenRayzon/BuilbotAI/commit/41ab8a2))
+
 ## [2026-11-14]
 
 ### Refactoring

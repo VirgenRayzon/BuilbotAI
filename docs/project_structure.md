@@ -1262,6 +1262,7 @@ BuilbotAI
 │   │   ├── use-address-book.ts
 │   │   ├── use-admin-session-guard.ts
 │   │   ├── use-build-actions.ts
+│   │   ├── use-build-layout.ts
 │   │   ├── use-build-pdf-download.ts
 │   │   ├── use-customer-rig-assembly.ts
 │   │   ├── use-idle-timeout.ts
@@ -1360,6 +1361,7 @@ BuilbotAI
 │       ├── auth-validation.ts
 │       ├── bottleneck.ts
 │       ├── build-advisor-goals.ts
+│       ├── build-layout-specs.ts
 │       ├── build-pdf-categories.ts
 │       ├── build-pdf.ts
 │       ├── catalog-meta.test.ts
