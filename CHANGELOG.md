@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [2026-11-15]
 
 ### Features
+- **compatibility**: Refine compatibility checks and enhance 2D layout canvas rendering ([8d48562](https://github.com/VirgenRayzon/BuilbotAI/commit/8d48562))
 - **builder**: Add 2D interactive PC build layout tab and component visualization ([41ab8a2](https://github.com/VirgenRayzon/BuilbotAI/commit/41ab8a2))
 
 ## [2026-11-14]
