@@ -107,7 +107,7 @@ export function BuildContent({
   };
 
   return (
-    <div className="p-3 flex flex-col h-full overflow-y-auto no-scrollbar">
+    <div className="p-3 flex flex-col h-full">
       <div className="space-y-3 py-1 flex-1">
         {mainCategories.map((name) => {
           const mobo = build['Motherboard'] as ComponentData | null;

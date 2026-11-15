@@ -247,17 +247,45 @@ export function BuildLayoutFab({
           </Group>
         }
       >
-        <PcLayoutCanvas
-          viewModel={viewModel}
-          hoveredCategory={hoveredCategory}
-          onHoverCategory={setHoveredCategory}
-          onSelectCategory={(cat) => {
-            handleSelectCategory(cat);
-            closeModal();
-          }}
-          activeSummary={activeSummary}
-          expanded
-        />
+        <div className="space-y-2">
+          <PcLayoutCanvas
+            viewModel={viewModel}
+            hoveredCategory={hoveredCategory}
+            onHoverCategory={setHoveredCategory}
+            onSelectCategory={(cat) => {
+              handleSelectCategory(cat);
+              closeModal();
+            }}
+            activeSummary={activeSummary}
+            expanded
+          />
+
+          {viewModel.issues.length > 0 && (
+            <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 dark:border-rose-500/30 dark:bg-rose-950/25">
+              <Stack gap={4}>
+                {viewModel.issues.map((issue, idx) => (
+                  <Group key={idx} gap={6} align="flex-start" wrap="nowrap">
+                    <AlertTriangle
+                      size={13}
+                      className={cn(
+                        "mt-0.5 shrink-0",
+                        issue.severity === "critical"
+                          ? "text-rose-500"
+                          : "text-amber-500"
+                      )}
+                    />
+                    <Text
+                      size="xs"
+                      className="text-[11px] leading-snug text-slate-900 dark:text-slate-100"
+                    >
+                      {issue.message}
+                    </Text>
+                  </Group>
+                ))}
+              </Stack>
+            </div>
+          )}
+        </div>
       </Modal>
     </>
   );

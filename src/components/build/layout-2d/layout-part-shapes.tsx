@@ -19,7 +19,7 @@ export function getRadiatorVisualDims(
 ): { lengthPx: number; thicknessPx: number } {
   const pxPerMm = isItxCase ? 0.58 : 2 / 3;
   const lengthPx = Math.round(radMm * pxPerMm);
-  const thicknessPx = radMm === 280 || radMm === 420 ? 24 : 21;
+  const thicknessPx = 21;
   return { lengthPx, thicknessPx };
 }
 

@@ -346,7 +346,7 @@ export function YourBuild({
     <>
       <div className="hidden lg:block">
         <Paper withBorder radius="lg" shadow="sm" className={cn(
-          "sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-slate-900/5 dark:shadow-black/30",
+          "sticky top-20 border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-slate-900/5 dark:shadow-black/30",
           className
         )}>
           <Box className="p-3 border-b border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">

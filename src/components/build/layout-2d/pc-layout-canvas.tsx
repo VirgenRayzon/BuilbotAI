@@ -246,6 +246,13 @@ export function PcLayoutCanvas({
                   const radMm =
                     viewModel.coolerSpec.radiatorMm ?? caseSpec.maxRadiatorMm;
                   const rightRad = getRadiatorVisualDims(radMm, false);
+                  const rightRadPalette = getStrokePalette(
+                    true,
+                    categoryStatus.Cooler.status,
+                    hoveredCategory === "Cooler",
+                    "#a855f7",
+                    "rgba(168, 85, 247, 0.22)"
+                  );
                   return (
                     <rect
                       x={caseX + caseW - 8 - rightRad.thicknessPx}
@@ -253,9 +260,9 @@ export function PcLayoutCanvas({
                       width={rightRad.thicknessPx}
                       height={rightRad.lengthPx}
                       rx={3}
-                      fill="rgba(168, 85, 247, 0.22)"
-                      stroke="#a855f7"
-                      strokeWidth={1.7}
+                      fill={rightRadPalette.fill}
+                      stroke={rightRadPalette.stroke}
+                      strokeWidth={hoveredCategory === "Cooler" ? 2.2 : 1.7}
                       style={{
                         transition: "all 260ms cubic-bezier(0.22, 1, 0.36, 1)",
                       }}

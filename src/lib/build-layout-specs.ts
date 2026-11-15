@@ -858,6 +858,17 @@ export function buildLayoutViewModel(
 
   // 10. Compatibility & Per-Category Health
   const issues = [...checkFullBuildCompatibility(build)];
+  if (
+    isAio &&
+    radiatorMm !== null &&
+    radiatorMm > maxRadiatorMm &&
+    !issues.some((i) => i.message.toLowerCase().includes("radiator"))
+  ) {
+    issues.push({
+      severity: "critical",
+      message: `Radiator Clearance: ${radiatorMm}mm AIO radiator exceeds case max radiator support (${maxRadiatorMm}mm).`,
+    });
+  }
   if (gpuPart && !isIntegrated && gpuLengthMm > maxGpuMm) {
     issues.push({
       severity: "warning",

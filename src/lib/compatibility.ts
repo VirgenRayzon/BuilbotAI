@@ -47,6 +47,67 @@ export const resolveSocket = (part?: SocketSource | null) => {
 const resolveRamType = (part?: Pick<Part | ComponentData, 'ramType' | 'specifications'> | null) =>
   normalize(part?.specifications?.['Memory Type'] || part?.specifications?.['RAM Type'] || part?.specifications?.['Memory'] || part?.specifications?.['Generation'] || part?.specifications?.['Type'] || part?.ramType);
 
+const parseMaxNumber = (raw: string | number | undefined | null): number => {
+  if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) return raw;
+  if (!raw) return 0;
+  const matches = String(raw).match(/\d+(?:\.\d+)?/g);
+  if (!matches || matches.length === 0) return 0;
+  const nums = matches.map((m) => parseFloat(m)).filter((n) => Number.isFinite(n) && n > 0);
+  return nums.length > 0 ? Math.max(...nums) : 0;
+};
+
+const getSpec = (part: SocketSource | null | undefined, keys: string[]): string => {
+  if (!part?.specifications) return '';
+  for (const key of keys) {
+    const direct = part.specifications[key];
+    if (direct !== undefined && direct !== null && String(direct).trim() !== '') {
+      return String(direct).trim();
+    }
+    const lower = key.toLowerCase();
+    const matched = Object.entries(part.specifications).find(
+      ([k]) => k.trim().toLowerCase() === lower
+    );
+    if (matched && matched[1] !== undefined && matched[1] !== null && String(matched[1]).trim() !== '') {
+      return String(matched[1]).trim();
+    }
+  }
+  return '';
+};
+
+export const resolveCoolerRadiatorMm = (cooler?: SocketSource | null): number => {
+  if (!cooler) return 0;
+  const explicitRad = parseMaxNumber(getSpec(cooler, ['Radiator Size', 'Radiator Size (mm)']));
+  if (explicitRad >= 120) return explicitRad;
+  const nameLower = `${cooler.name || ''} ${cooler.model || ''}`.toLowerCase();
+  const typeLower = getSpec(cooler, ['Type']).toLowerCase();
+  const isAio =
+    nameLower.includes('aio') ||
+    nameLower.includes('liquid') ||
+    nameLower.includes('kraken') ||
+    nameLower.includes('ryujin') ||
+    nameLower.includes('ls720') ||
+    nameLower.includes('lt720') ||
+    nameLower.includes('ls520') ||
+    nameLower.includes('arctic liquid') ||
+    nameLower.includes('galahad') ||
+    nameLower.includes('nautilus') ||
+    typeLower.includes('aio') ||
+    typeLower.includes('liquid');
+  if (!isAio) return 0;
+  if (nameLower.includes('420')) return 420;
+  if (nameLower.includes('360')) return 360;
+  if (nameLower.includes('280')) return 280;
+  if (nameLower.includes('120')) return 120;
+  return 240;
+};
+
+export const resolveCaseMaxRadiatorMm = (casePart?: SocketSource | null): number => {
+  if (!casePart) return 0;
+  return parseMaxNumber(
+    getSpec(casePart, ['Max Radiator Size (mm)', 'Radiator Support (mm)', 'Radiator Support'])
+  );
+};
+
 export const getComponentName = (comp?: any): string => {
     if (!comp) return '';
     return comp.name || comp.model || '';
@@ -208,18 +269,11 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
   if (category === 'Cooler') {
     const case_ = (currentBuild['Case'] as ComponentData | null);
     if (case_) {
-      const coolerModel = part.name.toLowerCase();
-      const radiatorSizeRaw = part.specifications?.["Radiator Size"] || "";
-      const radiatorSize = parseInt(String(radiatorSizeRaw).match(/(\d+)/)?.[0] || "0");
-      const isAio = coolerModel.includes("aio") || coolerModel.includes("liquid") || radiatorSize > 0;
+      const radiatorSize = resolveCoolerRadiatorMm(part);
+      const caseMaxRad = resolveCaseMaxRadiatorMm(case_);
 
-      if (isAio && radiatorSize > 0) {
-        const caseMaxRadRaw = case_.specifications?.["Max Radiator Size (mm)"] || 0;
-        const caseMaxRad = typeof caseMaxRadRaw === 'string' ? parseFloat(caseMaxRadRaw) : caseMaxRadRaw;
-
-        if (caseMaxRad > 0 && radiatorSize > caseMaxRad) {
-          return { compatible: false, message: `Radiator Mismatch: This ${radiatorSize}mm cooler exceeds the max radiator size (${caseMaxRad}mm) for your selected case.` };
-        }
+      if (radiatorSize > 0 && caseMaxRad > 0 && radiatorSize > caseMaxRad) {
+        return { compatible: false, message: `Radiator Mismatch: This ${radiatorSize}mm cooler exceeds the max radiator size (${caseMaxRad}mm) for your selected case.` };
       }
     }
   }
@@ -227,15 +281,10 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
   if (category === 'Case') {
     const cooler = (currentBuild['Cooler'] as ComponentData | null);
     if (cooler) {
-      const caseMaxRadRaw = part.specifications?.["Max Radiator Size (mm)"] || 0;
-      const caseMaxRad = typeof caseMaxRadRaw === 'string' ? parseFloat(caseMaxRadRaw) : caseMaxRadRaw;
+      const caseMaxRad = resolveCaseMaxRadiatorMm(part);
+      const radiatorSize = resolveCoolerRadiatorMm(cooler);
 
-      const coolerModel = getComponentName(cooler).toLowerCase();
-      const radiatorSizeRaw = cooler.specifications?.["Radiator Size"] || "";
-      const radiatorSize = parseInt(String(radiatorSizeRaw).match(/(\d+)/)?.[0] || "0");
-      const isAio = (coolerModel.includes("aio") || coolerModel.includes("liquid") || radiatorSize > 0);
-
-      if (isAio && radiatorSize > 0 && caseMaxRad > 0 && radiatorSize > caseMaxRad) {
+      if (radiatorSize > 0 && caseMaxRad > 0 && radiatorSize > caseMaxRad) {
         return { compatible: false, message: `Case Incompatible: This case supports up to ${caseMaxRad}mm radiators, but your selected cooler is ${radiatorSize}mm.` };
       }
     }
@@ -306,17 +355,10 @@ export const checkFullBuildCompatibility = (build: Record<string, ComponentData 
     }
 
     if (cooler && case_) {
-        const coolerModel = getComponentName(cooler).toLowerCase();
-        const radiatorSizeRaw = cooler.specifications?.["Radiator Size"] || "";
-        const radiatorSize = parseInt(String(radiatorSizeRaw).match(/(\d+)/)?.[0] || "0");
-        const isAio = (coolerModel.includes("aio") || coolerModel.includes("liquid") || radiatorSize > 0);
-
-        if (isAio && radiatorSize > 0) {
-            const caseMaxRadRaw = case_.specifications?.["Max Radiator Size (mm)"] || 0;
-            const caseMaxRad = typeof caseMaxRadRaw === 'string' ? parseFloat(caseMaxRadRaw) : caseMaxRadRaw;
-            if (caseMaxRad > 0 && radiatorSize > caseMaxRad) {
-                issues.push({ severity: 'critical', message: `${radiatorSize}mm cooler exceeds the max radiator size (${caseMaxRad}mm) for your selected case.` });
-            }
+        const radiatorSize = resolveCoolerRadiatorMm(cooler);
+        const caseMaxRad = resolveCaseMaxRadiatorMm(case_);
+        if (radiatorSize > 0 && caseMaxRad > 0 && radiatorSize > caseMaxRad) {
+            issues.push({ severity: 'critical', message: `Radiator Mismatch: ${radiatorSize}mm AIO radiator exceeds the max radiator size (${caseMaxRad}mm) for your selected case.` });
         }
     }
 
