@@ -1,8 +1,8 @@
 "use client";
 
 import React from 'react';
-import { ArrowRight, CheckCircle2, Clock, Lock, Sparkles, XCircle } from 'lucide-react';
-import { Badge, Text, Tooltip } from '@mantine/core';
+import { ArrowRight, CheckCircle2, Clock, Lock, XCircle } from 'lucide-react';
+import { Tooltip } from '@mantine/core';
 import {
   availableOrderStages,
   getOrderFulfillmentStage,
@@ -47,28 +47,8 @@ export function OrderCardFulfillmentStepper({
   const isOnlinePaymentPaid =
     effectivePaymentMethod === 'cod' || order.paymentStatus === 'paid';
 
-  const nextStageIndex = currentStageIdx >= 0 ? currentStageIdx + 1 : -1;
-  const nextStage =
-    nextStageIndex >= 0 && nextStageIndex < stages.length
-      ? stages[nextStageIndex]
-      : null;
-
-  const isOutForDeliveryReady =
-    nextStage === 'out_for_delivery' &&
-    !archived &&
-    order.status !== 'cancelled' &&
-    (!isCustomRig || assemblyReady) &&
-    isOnlinePaymentPaid;
-
   return (
-    <div className="w-full space-y-2">
-      {isOutForDeliveryReady && (
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-cyan-700 dark:text-cyan-300">
-          <Sparkles className="h-3.5 w-3.5 shrink-0 text-cyan-600 dark:text-cyan-400" />
-          <span>Ready for delivery: click &ldquo;Out for Delivery&rdquo;</span>
-        </div>
-      )}
-
+    <div className="w-full">
       {order.status === 'cancelled' ? (
         <div className="flex items-start gap-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-800 dark:text-rose-300">
           <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
@@ -86,7 +66,7 @@ export function OrderCardFulfillmentStepper({
         </div>
       ) : (
         <div
-          className="grid w-full gap-2"
+          className="grid w-full gap-1.5"
           style={{
             gridTemplateColumns: `repeat(${stages.length}, minmax(0, 1fr))`,
           }}
@@ -132,7 +112,6 @@ export function OrderCardFulfillmentStepper({
               }
             }
 
-            const isBreathing = isNext && isReady;
             const canClick = isNext && isReady && Boolean(onUpdateFulfillmentStage);
 
             const card = (
@@ -152,27 +131,23 @@ export function OrderCardFulfillmentStepper({
                     : undefined
                 }
                 className={cn(
-                  'flex items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition-colors select-none',
-                  isBreathing
-                    ? 'animate-breathe border-cyan-500/60 bg-cyan-500/10 text-slate-900 dark:text-cyan-100 font-semibold cursor-pointer hover:bg-cyan-500/20 active:scale-[0.99]'
+                  'flex min-h-11 sm:min-h-9 items-center justify-between gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors select-none',
+                  canClick
+                    ? 'border-cyan-500/50 bg-cyan-500/10 text-slate-900 dark:text-cyan-100 font-semibold cursor-pointer hover:border-cyan-400 hover:bg-cyan-500/20 active:scale-[0.99]'
                     : isCurrent
-                      ? 'border-cyan-500/70 bg-cyan-500/15 text-slate-900 dark:text-white font-bold shadow-xs cursor-default'
+                      ? 'border-cyan-500/70 bg-cyan-500/15 text-slate-900 dark:text-white font-bold cursor-default'
                       : isCompleted
-                        ? 'border-cyan-500/30 bg-cyan-500/10 text-slate-800 dark:text-slate-200 font-semibold cursor-default'
+                        ? 'border-cyan-500/25 bg-cyan-500/5 text-slate-700 dark:text-slate-300 font-medium cursor-default'
                         : isNext
-                          ? isReady
-                            ? 'border-cyan-500/40 bg-cyan-500/10 hover:border-cyan-400 hover:bg-cyan-500/15 text-slate-800 dark:text-slate-100 font-semibold cursor-pointer shadow-xs active:scale-[0.99]'
-                            : 'border-dashed border-slate-300 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.01] text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                          ? 'border-dashed border-slate-300 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.01] text-slate-400 dark:text-slate-500 cursor-not-allowed'
                           : 'border-slate-200/60 dark:border-white/5 bg-slate-50/40 dark:bg-transparent text-slate-400 dark:text-slate-600 opacity-60 cursor-not-allowed'
                 )}
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  {isBreathing ? (
-                    <Sparkles className="h-3.5 w-3.5 shrink-0 text-cyan-600 dark:text-cyan-400" />
-                  ) : isCurrent ? (
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {isCurrent ? (
                     <span className="h-2 w-2 rounded-full bg-cyan-500 shrink-0 mx-0.5" />
                   ) : isCompleted ? (
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-400" />
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-cyan-600 dark:text-cyan-400" />
                   ) : isNext ? (
                     isReady ? (
                       <ArrowRight className="h-3.5 w-3.5 shrink-0 text-cyan-600 dark:text-cyan-400" />
@@ -184,45 +159,6 @@ export function OrderCardFulfillmentStepper({
                   )}
                   <span className="truncate">{label}</span>
                 </div>
-
-                {isBreathing ? (
-                  <Badge
-                    size="xs"
-                    color="cyan"
-                    variant="light"
-                    className="text-[9px] font-semibold uppercase tracking-wider shrink-0"
-                  >
-                    Ready
-                  </Badge>
-                ) : isCurrent ? (
-                  <Badge
-                    size="xs"
-                    color="cyan"
-                    variant="filled"
-                    className="text-[9px] font-bold uppercase tracking-wider shrink-0"
-                  >
-                    Current
-                  </Badge>
-                ) : isCompleted ? (
-                  <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-mono shrink-0">
-                    Done
-                  </span>
-                ) : isNext ? (
-                  isReady ? (
-                    <Badge
-                      size="xs"
-                      color="cyan"
-                      variant="light"
-                      className="text-[9px] font-semibold uppercase tracking-wider shrink-0"
-                    >
-                      Advance
-                    </Badge>
-                  ) : (
-                    <span className="text-[9px] text-amber-600 dark:text-amber-400 font-mono shrink-0">
-                      {isCustomRig && !assemblyReady ? 'Checklist Pending' : 'Locked'}
-                    </span>
-                  )
-                ) : null}
               </div>
             );
 

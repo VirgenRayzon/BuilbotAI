@@ -5,11 +5,12 @@ import {
   Archive,
   History,
   MoreVertical,
+  ReceiptText,
   RotateCcw,
   Trash2,
   XCircle,
 } from 'lucide-react';
-import { ActionIcon, Button, Group, Menu, Tooltip } from '@mantine/core';
+import { ActionIcon, Button, Menu, Tooltip } from '@mantine/core';
 import { RefundReconcileControl } from './refund-reconcile-control';
 import type { ReconcileRefund } from '@/lib/order-payment';
 import { OrderPaymentControl } from './order-payment-control';
@@ -78,27 +79,16 @@ export function OrderCardControls({
         </Button>
       )}
 
-      {!archived && order.pendingRefundOperationId && onReconcileRefund ? (
+      {!archived && order.pendingRefundOperationId && onReconcileRefund && (
         <RefundReconcileControl
           order={order}
           reconciling={reconcilingId === order.id}
           reconcile={onReconcileRefund}
         />
-      ) : !archived && refundableAmount > 0 && !order.pendingRefundOperationId ? (
-        <Button
-          size="xs"
-          color="orange"
-          variant="light"
-          radius="md"
-          onClick={() => onRequestRefund(order)}
-          className="min-h-11 text-xs font-semibold"
-        >
-          Issue Refund
-        </Button>
-      ) : null}
+      )}
 
       {onOpenHistory && (
-        <Tooltip label="View order activity & audit logs" withArrow position="top">
+        <Tooltip label="Order details, address & activity" withArrow position="top">
           <ActionIcon
             size="lg"
             variant="subtle"
@@ -106,7 +96,7 @@ export function OrderCardControls({
             radius="md"
             onClick={() => onOpenHistory(order.id)}
             className="min-h-11 min-w-11"
-            aria-label="View order history"
+            aria-label="View order details and history"
           >
             <History className="h-4 w-4 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200" />
           </ActionIcon>
@@ -132,7 +122,17 @@ export function OrderCardControls({
               leftSection={<History className="h-4 w-4" />}
               onClick={() => onOpenHistory(order.id)}
             >
-              Order Activity
+              Details & Activity
+            </Menu.Item>
+          )}
+
+          {!archived && refundableAmount > 0 && !order.pendingRefundOperationId && (
+            <Menu.Item
+              color="orange"
+              leftSection={<ReceiptText className="h-4 w-4" />}
+              onClick={() => onRequestRefund(order)}
+            >
+              Issue Refund
             </Menu.Item>
           )}
 

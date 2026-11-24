@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Clock, Layers } from 'lucide-react';
-import { Badge, Button, Paper, Stack, Text, ThemeIcon, Title } from '@mantine/core';
+import { Badge, Button, Paper, Stack, Text, ThemeIcon, Title, Tooltip } from '@mantine/core';
 import { AdminHeaderSlot } from '../admin-tab-header';
 import type { useOrdersView } from '../../hooks/use-orders-view';
 import { OrdersFilterPanel } from './orders-filter-panel';
@@ -39,27 +39,26 @@ export function OrdersHeaderBar({
             radius="md"
             className="font-mono font-bold lowercase tracking-normal"
           >
-            {view.filteredOrders.length} loaded orders
+            {view.filteredOrders.length} {view.filteredOrders.length === 1 ? 'order' : 'orders'}
           </Badge>
         }
         actions={
           <div className="flex w-full flex-wrap min-w-0 items-center gap-1.5 sm:w-auto sm:gap-2">
             {!archived && onSweepExpiredOrders && view.summary.expiredOnlineHolds > 0 && (
-              <Button
-                variant="light"
-                color="orange"
-                size="xs"
-                radius="md"
-                loading={isSweepingExpired}
-                onClick={() => onSweepExpiredOrders()}
-                leftSection={<Clock size={14} />}
-                className="min-h-11 shrink-0 whitespace-nowrap text-xs"
-              >
-                <span className="hidden sm:inline">
-                  Sweep Expired ({view.summary.expiredOnlineHolds})
-                </span>
-                <span className="sm:hidden">Sweep ({view.summary.expiredOnlineHolds})</span>
-              </Button>
+              <Tooltip label={`Release ${view.summary.expiredOnlineHolds} expired 1-hour online payment hold(s)`} withArrow>
+                <Button
+                  variant="subtle"
+                  color="gray"
+                  size="xs"
+                  radius="md"
+                  loading={isSweepingExpired}
+                  onClick={() => onSweepExpiredOrders()}
+                  leftSection={<Clock size={14} />}
+                  className="min-h-11 shrink-0 whitespace-nowrap text-xs text-slate-600 dark:text-slate-300"
+                >
+                  Sweep ({view.summary.expiredOnlineHolds})
+                </Button>
+              </Tooltip>
             )}
 
             {view.summary.refundAttention > 0 && (
@@ -67,13 +66,13 @@ export function OrdersHeaderBar({
                 size="xs"
                 radius="md"
                 color="orange"
-                variant={view.refundFilter === 'due' ? 'filled' : 'light'}
+                variant={view.refundFilter === 'due' ? 'filled' : 'subtle'}
                 onClick={() =>
                   view.setRefundFilter(view.refundFilter === 'due' ? 'all' : 'due')
                 }
                 className="min-h-11 shrink-0 whitespace-nowrap text-xs"
               >
-                Refund Attention ({view.summary.refundAttention})
+                Refunds ({view.summary.refundAttention})
               </Button>
             )}
 

@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { ChevronDown, Cpu, Monitor, Package } from 'lucide-react';
-import { Badge, Collapse, Text } from '@mantine/core';
+import { Badge, Collapse } from '@mantine/core';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import {
   getCustomRigSummary,
@@ -206,30 +206,22 @@ export function OrderCardItemsList({
   }
 
   return (
-    <div className="space-y-3 w-full">
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-1.5">
-        <Text fw={700} size="xs" className="uppercase tracking-wider text-slate-500 dark:text-slate-400 text-[10px]">
-          Ordered Hardware & Components ({order.items?.length || 0})
-        </Text>
-      </div>
-
-      <div
-        data-testid="order-hardware-groups"
-        className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50/50 dark:border-white/10 dark:bg-white/[0.01]"
-      >
-        {groups.map((group, groupIdx) => (
-          <OrderItemGroupAccordion
-            key={`${order.id}-grp-${group.name}-${groupIdx}`}
-            order={order}
-            orderId={order.id}
-            orderItems={order.items || []}
-            group={group}
-            groupIdx={groupIdx}
-            catalogParts={catalogParts}
-            onAssemblyVerificationChange={onAssemblyVerificationChange}
-          />
-        ))}
-      </div>
+    <div
+      data-testid="order-hardware-groups"
+      className="w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-50/50 dark:border-white/10 dark:bg-white/[0.01]"
+    >
+      {groups.map((group, groupIdx) => (
+        <OrderItemGroupAccordion
+          key={`${order.id}-grp-${group.name}-${groupIdx}`}
+          order={order}
+          orderId={order.id}
+          orderItems={order.items || []}
+          group={group}
+          groupIdx={groupIdx}
+          catalogParts={catalogParts}
+          onAssemblyVerificationChange={onAssemblyVerificationChange}
+        />
+      ))}
     </div>
   );
 }

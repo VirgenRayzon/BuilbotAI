@@ -1,9 +1,9 @@
 "use client";
 
 import type { ReconcileRefund } from '@/lib/order-payment';
-import React from 'react';
-import { CheckCircle2, Clock, XCircle } from 'lucide-react';
-import { Badge, Button, Divider, Group, Modal, Paper, Stack, Text } from '@mantine/core';
+import React, { useState } from 'react';
+import { Check, CheckCircle2, Clock, Copy, Hash, XCircle } from 'lucide-react';
+import { ActionIcon, Badge, Button, Divider, Group, Modal, Paper, Stack, Text, Tooltip } from '@mantine/core';
 import {
   availableOrderStages,
   getNetCollectedAmount,
@@ -41,7 +41,20 @@ export function OrderHistoryModal({
   onOpenRefund,
   onReconcileRefund,
 }: OrderHistoryModalProps) {
+  const [copiedRef, setCopiedRef] = useState(false);
+
   if (!order) return null;
+
+  const handleCopyRef = async () => {
+    if (!order.paymentReference) return;
+    try {
+      await navigator.clipboard.writeText(order.paymentReference);
+      setCopiedRef(true);
+      setTimeout(() => setCopiedRef(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
 
   const displayOrderId = order.orderNumber || `#${order.id.slice(0, 10).toUpperCase()}`;
   const isLegacy = isLegacyReservationRecord(order);
@@ -171,6 +184,28 @@ export function OrderHistoryModal({
               <span>Net Collected</span>
               <span className="font-mono">{formatCurrency(netCollected)}</span>
             </div>
+            {order.paymentReference && (
+              <div className="flex items-center justify-between gap-2 pt-1.5 mt-1 border-t border-slate-200 dark:border-white/10">
+                <span className="text-slate-600 dark:text-slate-400 shrink-0">Payment Ref</span>
+                <div className="flex items-center gap-1 min-w-0">
+                  <Hash className="h-3 w-3 text-slate-400 shrink-0" />
+                  <span className="font-mono text-[11px] font-medium truncate text-slate-800 dark:text-slate-200">
+                    {order.paymentReference}
+                  </span>
+                  <Tooltip label={copiedRef ? 'Copied!' : 'Copy Payment Reference'} withArrow position="top">
+                    <ActionIcon
+                      size="xs"
+                      variant="subtle"
+                      color={copiedRef ? 'teal' : 'gray'}
+                      onClick={handleCopyRef}
+                      aria-label="Copy payment reference"
+                    >
+                      {copiedRef ? <Check size={12} /> : <Copy size={12} />}
+                    </ActionIcon>
+                  </Tooltip>
+                </div>
+              </div>
+            )}
           </Paper>
         </div>
 
