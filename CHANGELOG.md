@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [2026-11-25]
 
+### Bug Fixes
+- **analytics**: Align gross sales with revenue analytics calculations ([b666f08](https://github.com/VirgenRayzon/BuilbotAI/commit/b666f08))
+
 ### Refactoring
 - **admin**: Extract OrderItemsModal and streamline order card display ([60fba01](https://github.com/VirgenRayzon/BuilbotAI/commit/60fba01))
 
