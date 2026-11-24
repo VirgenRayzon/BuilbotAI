@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-11-24]
+
+### Miscellaneous
+- Merge origin/main into local main ([caa958c](https://github.com/VirgenRayzon/BuilbotAI/commit/caa958c))
+
 ## [2026-11-15]
 
 ### Features
@@ -277,6 +282,9 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 - **auth**: Enhance password reset feedback and add verification directive ([daf1bcf](https://github.com/VirgenRayzon/BuilbotAI/commit/daf1bcf))
+
+### Miscellaneous
+- Add Mantine skills and references for form, combobox, and custom components management ([f8ea3d9](https://github.com/VirgenRayzon/BuilbotAI/commit/f8ea3d9))
 
 ## [2026-10-11]
 

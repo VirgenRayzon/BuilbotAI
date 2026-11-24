@@ -506,10 +506,6 @@ BuilbotAI
 │       │   └── SKILL.md
 │       └── nextjs-best-practices
 │           └── SKILL.md
-├── .firebase
-│   └── studio-3150054754-c7d0b
-│       └── functions
-│           └── .env
 ├── .github
 │   └── workflows
 │       └── ci.yml
@@ -539,7 +535,6 @@ BuilbotAI
 │   └── icon.png
 ├── .vscode
 │   └── settings.json
-├── .worktrees
 ├── directives
 │   ├── admin_inventory_dialog_saving.md
 │   ├── admin_prebuilt_ai_assist.md
@@ -660,12 +655,15 @@ BuilbotAI
 │   │   │   ├── 2026-11-07-public-feature-sign-in.md
 │   │   │   ├── 2026-11-08-deployment-handover-and-cleanup.md
 │   │   │   ├── 2026-11-11-codebase-cleanup.md
-│   │   │   └── 2026-11-11-database-scalability.md
+│   │   │   ├── 2026-11-11-database-scalability.md
+│   │   │   └── 2026-11-24-cart-overhaul.md
 │   │   └── specs
 │   │       ├── 2026-11-02-customer-order-activity-payment-gate-design.md
 │   │       ├── 2026-11-02-order-receipt-design.md
 │   │       ├── 2026-11-04-admin-verification-loader-design.md
-│   │       └── 2026-11-07-public-feature-sign-in-design.md
+│   │       ├── 2026-11-07-public-feature-sign-in-design.md
+│   │       ├── 2026-11-24-cart-overhaul-design.md
+│   │       └── 2026-11-24-checkout-overhaul-design.md
 │   ├── test-cases
 │   │   └── all-pages-manual-test-cases.md
 │   ├── admin-order-phase-5.md
@@ -717,7 +715,14 @@ BuilbotAI
 │   ├── verify_legacy_path_retirement.ts
 │   ├── verify_product_identities.ts
 │   └── verify_public_firestore_reads.ts
+├── playwright-report
+│   └── index.html
 ├── public
+│   ├── images
+│   │   └── payments
+│   │       ├── gcash.png
+│   │       ├── maya.png
+│   │       └── qr-ph.svg
 │   ├── placeholders
 │   │   └── components
 │   │       ├── case.jpg
@@ -836,12 +841,11 @@ BuilbotAI
 │   │   │   │   └── sales-export
 │   │   │   │       └── route.ts
 │   │   │   ├── ai
-│   │   │   │   ├── build-advisor
-│   │   │   │   │   ├── critique
-│   │   │   │   │   │   └── route.ts
-│   │   │   │   │   └── recommendations
-│   │   │   │   │       └── route.ts
-│   │   │   │   └── live-build-recommendations
+│   │   │   │   └── build-advisor
+│   │   │   │       ├── critique
+│   │   │   │       │   └── route.ts
+│   │   │   │       └── recommendations
+│   │   │   │           └── route.ts
 │   │   │   ├── builder
 │   │   │   │   ├── download
 │   │   │   │   │   └── route.ts
@@ -900,12 +904,24 @@ BuilbotAI
 │   │   │   ├── builder-page.tsx
 │   │   │   ├── loading.tsx
 │   │   │   └── page.tsx
+│   │   ├── cart
+│   │   │   ├── components
+│   │   │   │   ├── cart-empty-state.tsx
+│   │   │   │   ├── cart-item-row.tsx
+│   │   │   │   ├── cart-order-summary.tsx
+│   │   │   │   └── cart-toolbar.tsx
+│   │   │   ├── hooks
+│   │   │   │   └── use-cart-controller.ts
+│   │   │   └── page.tsx
 │   │   ├── checkout
 │   │   │   ├── components
 │   │   │   │   ├── checkout-address-section.tsx
+│   │   │   │   ├── checkout-empty-state.tsx
 │   │   │   │   ├── checkout-fulfillment-section.tsx
 │   │   │   │   ├── checkout-order-confirmation.tsx
 │   │   │   │   ├── checkout-order-summary.tsx
+│   │   │   │   ├── checkout-package-card.tsx
+│   │   │   │   ├── checkout-package-items.tsx
 │   │   │   │   └── checkout-payment-section.tsx
 │   │   │   ├── hooks
 │   │   │   │   └── use-checkout-controller.ts
@@ -923,7 +939,6 @@ BuilbotAI
 │   │   ├── landing-video
 │   │   │   └── [name]
 │   │   │       └── route.ts
-│   │   ├── loading-audit-preview
 │   │   ├── parts
 │   │   │   ├── [productId]
 │   │   │   │   ├── loading.tsx
@@ -985,7 +1000,6 @@ BuilbotAI
 │   │   ├── q
 │   │   │   └── [token]
 │   │   │       └── page.tsx
-│   │   ├── settings
 │   │   ├── signin
 │   │   │   └── page.tsx
 │   │   ├── signup
@@ -1071,10 +1085,11 @@ BuilbotAI
 │   │   ├── contact
 │   │   │   └── contact-thread.tsx
 │   │   ├── ecommerce
-│   │   │   ├── cart-drawer.tsx
 │   │   │   ├── header-cart-button.tsx
 │   │   │   ├── mock-orders-section.tsx
+│   │   │   ├── payment-modal-order-card.tsx
 │   │   │   ├── paymongo-checkout-modal.tsx
+│   │   │   ├── qrph-checkout-modal.tsx
 │   │   │   └── simulated-gcash-modal.tsx
 │   │   ├── landing
 │   │   │   ├── accessories-section.tsx
@@ -1364,6 +1379,8 @@ BuilbotAI
 │       ├── build-layout-specs.ts
 │       ├── build-pdf-categories.ts
 │       ├── build-pdf.ts
+│       ├── cart-state.test.ts
+│       ├── cart-state.ts
 │       ├── catalog-meta.test.ts
 │       ├── catalog-meta.ts
 │       ├── catalog-name-validation.ts
@@ -1437,7 +1454,12 @@ BuilbotAI
 │       ├── validate-advisor-build.ts
 │       ├── vector-retriever.ts
 │       └── vertex-tuned-endpoint.ts
+├── test-results
+│   └── .last-run.json
 ├── tests
+│   ├── e2e
+│   │   ├── auth-guards-and-forms.spec.ts
+│   │   └── public-routes.spec.ts
 │   ├── multi-instance-cache-coherence.test.ts
 │   └── sales-export.spec.ts
 ├── .env
@@ -1455,10 +1477,12 @@ BuilbotAI
 ├── firestore.indexes.json
 ├── firestore.rules
 ├── GEMINI.md
+├── grounding-debug.log
 ├── next-env.d.ts
 ├── next.config.ts
 ├── package-lock.json
 ├── package.json
+├── playwright.config.ts
 ├── postcss.config.mjs
 ├── README.md
 ├── skills-lock.json
