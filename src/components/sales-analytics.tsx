@@ -33,7 +33,7 @@ export function SalesAnalytics({
   const mounted = useSyncExternalStore(subscribeToHydration, () => true, () => false);
 
   const { authUser, profile } = useUserProfile();
-  const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year'>('week');
+  const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year' | 'all'>('all');
   const [summary, setSummary] = useState<SalesDashboardSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 

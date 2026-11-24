@@ -15,8 +15,8 @@ import {
 
 interface SalesRevenueChartProps {
   revenueData: Array<{ name: string; revenue: number }>;
-  timeRange: 'week' | 'month' | 'year';
-  onTimeRangeChange: (range: 'week' | 'month' | 'year') => void;
+  timeRange: 'week' | 'month' | 'year' | 'all';
+  onTimeRangeChange: (range: 'week' | 'month' | 'year' | 'all') => void;
   mounted: boolean;
   isDark: boolean;
 }
@@ -59,12 +59,14 @@ export function SalesRevenueChart({
               ? 'Daily revenue tracking (Last 7 Days)'
               : timeRange === 'month'
                 ? 'Daily revenue tracking (Last 30 Days)'
-                : 'Monthly revenue tracking (Last 12 Months)'}
+                : timeRange === 'year'
+                  ? 'Monthly revenue tracking (Last 12 Months)'
+                  : 'All-time monthly revenue tracking'}
           </Text>
         </div>
 
         <SegmentedControl
-          value={timeRange}
+          value={timeRange === 'all' ? '' : timeRange}
           onChange={(v) => {
             if (v === 'week' || v === 'month' || v === 'year') onTimeRangeChange(v);
           }}

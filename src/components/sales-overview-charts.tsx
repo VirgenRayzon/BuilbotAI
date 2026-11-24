@@ -10,8 +10,8 @@ interface SalesOverviewChartsProps {
   statusData: Array<{ name: string; value: number; color: string }>;
   prebuiltTierData: Array<{ name: string; value: number; color: string }>;
   categoryData: Array<{ name: string; value: number }>;
-  timeRange: 'week' | 'month' | 'year';
-  onTimeRangeChange: (range: 'week' | 'month' | 'year') => void;
+  timeRange: 'week' | 'month' | 'year' | 'all';
+  onTimeRangeChange: (range: 'week' | 'month' | 'year' | 'all') => void;
   mounted: boolean;
   isDark: boolean;
 }

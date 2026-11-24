@@ -16,7 +16,7 @@ export interface SalesDashboardFinancials {
 }
 
 export interface SalesDashboardSummary {
-  range: 'week' | 'month' | 'year';
+  range: 'week' | 'month' | 'year' | 'all';
   financials: SalesDashboardFinancials;
   aov: number;
   cancellationRate: number;
@@ -29,7 +29,7 @@ export interface SalesDashboardSummary {
 
 export async function fetchSalesDashboardSummary(
   idToken: string,
-  range: 'week' | 'month' | 'year' = 'week'
+  range: 'week' | 'month' | 'year' | 'all' = 'all'
 ): Promise<SalesDashboardSummary> {
   if (!idToken || typeof idToken !== 'string') {
     throw new Error('Authentication token is required.');
@@ -44,7 +44,47 @@ export async function fetchSalesDashboardSummary(
   const buckets: AnalyticsBucket[] = [];
   const revenueData: Array<{ name: string; revenue: number; bucketKey: string }> = [];
 
-  if (range === 'year') {
+  if (range === 'all') {
+    const snaps = await firestore
+      .collection('analyticsMonthly')
+      .orderBy('bucketKey', 'asc')
+      .get();
+
+    snaps.docs.forEach((snap) => {
+      const data = snap.data() as AnalyticsBucket;
+      const key = data?.bucketKey || snap.id;
+      const [yearStr, monthStr] = key.split('-');
+      const yearNum = Number(yearStr);
+      const monthNum = Number(monthStr);
+      const d =
+        Number.isFinite(yearNum) && Number.isFinite(monthNum) && monthNum >= 1
+          ? new Date(Date.UTC(yearNum, monthNum - 1, 1))
+          : null;
+      const name = d
+        ? d.toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' })
+        : key;
+
+      const bucket: AnalyticsBucket = {
+        bucketKey: key,
+        grossCollectedPhp: Number(data?.grossCollectedPhp || 0),
+        refundedPhp: Number(data?.refundedPhp || 0),
+        netCollectedPhp: Number(data?.netCollectedPhp || 0),
+        paidOrderCount: Number(data?.paidOrderCount || 0),
+        cancelledOrderCount: Number(data?.cancelledOrderCount || 0),
+        customOrderCount: Number(data?.customOrderCount || 0),
+        prebuiltOrderCount: Number(data?.prebuiltOrderCount || 0),
+        byPaymentMethod: data?.byPaymentMethod || {},
+        partUnitsSold: data?.partUnitsSold || {},
+        updatedAt: Number(data?.updatedAt || 0),
+      };
+      buckets.push(bucket);
+      revenueData.push({
+        name,
+        revenue: bucket.netCollectedPhp,
+        bucketKey: bucket.bucketKey,
+      });
+    });
+  } else if (range === 'year') {
     // 12 monthly buckets
     const monthKeys: string[] = [];
     const datePoints: Date[] = [];
@@ -194,7 +234,7 @@ export async function fetchSalesDashboardSummary(
 
 export async function getSalesDashboardSummaryAction(input: {
   idToken: string;
-  range: 'week' | 'month' | 'year';
+  range: 'week' | 'month' | 'year' | 'all';
 }): Promise<SalesDashboardSummary> {
   return fetchSalesDashboardSummary(input.idToken, input.range);
 }
