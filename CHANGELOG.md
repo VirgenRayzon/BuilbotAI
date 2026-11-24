@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [2026-11-24]
 
+### Refactoring
+- **admin**: Polish order card controls, history modal, and fulfillment stepper ([c54d857](https://github.com/VirgenRayzon/BuilbotAI/commit/c54d857))
+
 ### Miscellaneous
 - Merge origin/main into local main ([caa958c](https://github.com/VirgenRayzon/BuilbotAI/commit/caa958c))
 
