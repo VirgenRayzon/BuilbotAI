@@ -764,6 +764,7 @@ BuilbotAI
 │   │   │   │   │   ├── order-card.tsx
 │   │   │   │   │   ├── order-history-ledgers.tsx
 │   │   │   │   │   ├── order-history-modal.tsx
+│   │   │   │   │   ├── order-items-modal.tsx
 │   │   │   │   │   ├── order-payment-control.tsx
 │   │   │   │   │   ├── order-payment-dialogs.tsx
 │   │   │   │   │   ├── order-stage-dialog.tsx

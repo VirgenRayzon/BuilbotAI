@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-11-25]
+
+### Refactoring
+- **admin**: Extract OrderItemsModal and streamline order card display ([60fba01](https://github.com/VirgenRayzon/BuilbotAI/commit/60fba01))
+
 ## [2026-11-24]
 
 ### Refactoring
